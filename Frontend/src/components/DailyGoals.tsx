@@ -38,12 +38,12 @@ const goalTypeConfig = {
   },
 };
 
-function DailyGoals() {
+function DailyGoals({ username }: { username: string | undefined }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: goalsData, isLoading } = useQuery({
-    queryKey: ['dailyGoals'],
-    queryFn: getDailyGoalsFn,
+    queryKey: [username, 'dailyGoals'],
+    queryFn: () => getDailyGoalsFn(username),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 

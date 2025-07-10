@@ -38,12 +38,12 @@ const goalTypeConfig = {
   },
 };
 
-function DailyGoalsCard() {
+function DailyGoalsCard({ username }: { username: string | undefined }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: goalsData, isLoading } = useQuery({
-    queryKey: ['dailyGoals'],
-    queryFn: getDailyGoalsFn,
+    queryKey: [username, 'dailyGoals'],
+    queryFn: () => getDailyGoalsFn(username), // Replace 'username' with actual username
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true, // Refetch when window regains focus
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes

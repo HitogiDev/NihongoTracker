@@ -2,20 +2,31 @@ import { Request, Response, NextFunction } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import DailyGoal from '../models/dailyGoal.model.js';
 import Log from '../models/log.model.js';
+import User from '../models/user.model.js';
 import { Anime } from '../models/media.model.js';
 import { IDailyGoal, IDailyGoalProgress, IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 
 export async function getDailyGoals(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const { user } = res.locals;
+    const { username } = req.params;
+    console.log('Fetching daily goals for user:', username);
+    if (!username) {
+      throw new customError('Username is required', 400);
+    }
+    // Find user by username
+    const foundUser = await User.findOne({ username });
+
+    if (!foundUser) {
+      throw new customError('User not found', 404);
+    }
 
     // Get user's goals
-    const goals = await DailyGoal.find({ user: user._id }).sort({
+    const goals = await DailyGoal.find({ user: foundUser._id }).sort({
       createdAt: -1,
     });
 
@@ -30,7 +41,7 @@ export async function getDailyGoals(
     endOfDay.setDate(endOfDay.getDate() + 1);
 
     const todayLogs = await Log.find({
-      user: user._id,
+      user: foundUser._id,
       date: { $gte: startOfDay, $lt: endOfDay },
     });
 

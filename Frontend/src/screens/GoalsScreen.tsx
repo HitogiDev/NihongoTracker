@@ -23,7 +23,7 @@ function GoalsScreen() {
         </div>
 
         {/* Daily Goals Component */}
-        <DailyGoals />
+        <DailyGoals username={username} />
 
         {/* Future Goals Features */}
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">

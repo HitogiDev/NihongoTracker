@@ -183,7 +183,7 @@ export interface ILog extends Document {
   pages?: number;
   chars?: number;
   time?: number;
-  date: Date | null;
+  date: Date;
 }
 
 export interface IContentMedia {

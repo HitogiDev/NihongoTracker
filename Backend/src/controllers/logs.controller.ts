@@ -729,22 +729,45 @@ export async function createLog(
 
     if (!userStats) throw new customError('User not found', 404);
 
-    // Check if lastStreakDate is yesterday
-    const yesterday = new Date();
+    // Fix streak calculation logic
+    const today = new Date();
+    const todayString = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    ).toISOString();
 
+    // Get last streak date in the same format as today for comparison
+    const lastStreakDate = userStats.stats.lastStreakDate
+      ? new Date(
+          userStats.stats.lastStreakDate.getFullYear(),
+          userStats.stats.lastStreakDate.getMonth(),
+          userStats.stats.lastStreakDate.getDate()
+        ).toISOString()
+      : null;
+
+    const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    if (
-      userStats.stats.lastStreakDate &&
-      userStats.stats.lastStreakDate.toDateString() === yesterday.toDateString()
-    ) {
+    const yesterdayString = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate()
+    ).toISOString();
+
+    if (lastStreakDate === todayString) {
+      // Already logged today, do nothing to streak count
+    } else if (lastStreakDate === yesterdayString) {
+      // Logged yesterday, increment streak
       userStats.stats.currentStreak += 1;
-    } else if (
-      userStats.stats.lastStreakDate &&
-      userStats.stats.lastStreakDate.toDateString() !== yesterday.toDateString()
-    ) {
+    } else if (!lastStreakDate || lastStreakDate !== todayString) {
+      // No previous logs or gap in logs, reset streak to 1
       userStats.stats.currentStreak = 1;
     }
-    userStats.stats.lastStreakDate = new Date();
+
+    // Update last streak date to today
+    userStats.stats.lastStreakDate = today;
+
+    // Update longest streak if current streak is longer
     if (userStats.stats.currentStreak > userStats.stats.longestStreak) {
       userStats.stats.longestStreak = userStats.stats.currentStreak;
     }
@@ -1542,6 +1565,93 @@ export async function getLogDetails(
 
     // Return all details needed for LogCard details modal
     return res.status(200).json(foundLog);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Recalculate streaks for all users (admin only)
+export async function recalculateStreaks(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Check admin permission
+    if (!res.locals.user.roles.includes('admin')) {
+      return res.status(403).json({ message: 'Admin permission required' });
+    }
+
+    const users = await User.find({});
+    if (!users.length) {
+      return res.status(404).json({ message: 'No users found' });
+    }
+
+    const results = {
+      totalUsers: users.length,
+      processedUsers: 0,
+      updatedUsers: 0,
+      errors: [] as string[],
+    };
+
+    for (const user of users) {
+      try {
+        // Fetch all logs for user, sorted by date ascending
+        const logs = await Log.find({ user: user._id }).sort({ date: 1 });
+        if (!logs.length || !user.stats) {
+          continue;
+        }
+
+        let currentStreak = 0;
+        let longestStreak = 0;
+        let lastStreakDate: Date | null = null;
+
+        for (const log of logs) {
+          // Get log date (year, month, day only)
+          const logDate = new Date(log.date.getFullYear(), log.date.getMonth(), log.date.getDate());
+
+          if (!lastStreakDate) {
+            // First log
+            currentStreak = 1;
+          } else {
+            // Calculate difference in days
+            const diffDays = Math.floor((logDate.getTime() - lastStreakDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays === 1) {
+              // Consecutive day, increment streak
+              currentStreak += 1;
+            } else if (diffDays === 0) {
+              // Same day, do nothing
+            } else {
+              // Gap, reset streak
+              currentStreak = 1;
+            }
+          }
+
+          // Update longest streak
+          if (currentStreak > longestStreak) {
+            longestStreak = currentStreak;
+          }
+
+          // Update last streak date
+          lastStreakDate = logDate;
+        }
+
+        // Update user stats
+        user.stats.currentStreak = currentStreak;
+        user.stats.longestStreak = longestStreak;
+        user.stats.lastStreakDate = lastStreakDate;
+        await user.save();
+        results.updatedUsers++;
+      } catch (error) {
+        results.errors.push(`Error processing user ${user.username}: ${(error as Error).message}`);
+      }
+      results.processedUsers++;
+    }
+
+    return res.status(200).json({
+      message: `Recalculated streaks for ${results.processedUsers} users (${results.updatedUsers} updated)`,
+      results,
+    });
   } catch (error) {
     return next(error as customError);
   }

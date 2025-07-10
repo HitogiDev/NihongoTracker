@@ -274,7 +274,7 @@ function StatsScreen() {
 
         {/* Daily Goals Section - Add this before Main Stats Cards */}
         <div className="mb-8">
-          <DailyGoals />
+          <DailyGoals username={username} />
         </div>
 
         {/* Main Stats Cards */}

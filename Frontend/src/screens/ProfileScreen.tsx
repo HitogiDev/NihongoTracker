@@ -6,10 +6,12 @@ import React, { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
+import { useUserDataStore } from '../store/userData';
 
 function ProfileScreen() {
   const limit = 10;
   const { user, username } = useOutletContext<OutletProfileContextType>();
+  const { user: loggedUser } = useUserDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<
     'all' | 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'audio' | 'other'
@@ -139,9 +141,9 @@ function ProfileScreen() {
                 </div>
               </div>
             </div>
-
-            {/* Daily Goals Card */}
-            <DailyGoalsCard />
+            {username === loggedUser?.username && (
+              <DailyGoalsCard username={username} />
+            )}
           </div>
 
           <div className="flex flex-col gap-4 md:gap-5">

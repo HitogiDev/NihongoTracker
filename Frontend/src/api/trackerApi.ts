@@ -240,8 +240,11 @@ export async function searchYouTubeVideoFn(url: string) {
   return data;
 }
 
-export async function getDailyGoalsFn() {
-  const { data } = await api.get<IDailyGoalsResponse>('goals/daily');
+export async function getDailyGoalsFn(username: string | undefined) {
+  if (!username) return null;
+  const { data } = await api.get<IDailyGoalsResponse>(
+    `goals/daily/${username}`
+  );
   return data;
 }
 
