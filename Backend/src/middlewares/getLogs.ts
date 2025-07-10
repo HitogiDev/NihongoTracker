@@ -86,6 +86,8 @@ function transformManabeLogsList(
     OUTPUT: { logType: 'other', parametro: 'time' },
     JUEGO: { logType: 'other', parametro: 'time' },
     LIBRO: { logType: 'reading', parametro: 'pages' },
+    // Add support for movie logs if Manabe sends them in the future:
+    MOVIE: { logType: 'movie', parametro: 'time' },
   };
 
   return list
@@ -220,6 +222,7 @@ function transformCSVLogsList(
     vn: 'chars',
     video: 'time',
     audio: 'time',
+    movie: 'time', // <-- add this line
     other: 'time',
   };
 

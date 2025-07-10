@@ -56,6 +56,7 @@ export default async function updateStats(
     switch (type) {
       case 'anime':
       case 'video':
+      case 'movie':
       case 'audio':
         userStats.listeningXp = Math.max(0, userStats.listeningXp + xpUpdate);
         break;

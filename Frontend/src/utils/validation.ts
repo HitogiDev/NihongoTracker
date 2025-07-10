@@ -84,6 +84,17 @@ export const validateLogData = (
     }
   }
 
+  // Movie validation - require time input
+  if (logData.type === 'movie' && touched.time) {
+    const totalMinutes = logData.hours * 60 + logData.minutes;
+    if (totalMinutes <= 0) {
+      errors.time = 'Please enter the movie duration (must be greater than 0)';
+    } else if (totalMinutes > 1000) {
+      errors.time =
+        'Movie duration seems unreasonably high (max: 1000 minutes)';
+    }
+  }
+
   const totalMinutes = logData.hours * 60 + logData.minutes;
 
   // Time validation - only show if time fields are touched

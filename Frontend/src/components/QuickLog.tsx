@@ -206,6 +206,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                         <option value="manga">Manga</option>
                         <option value="vn">Visual novels</option>
                         <option value="video">Video</option>
+                        <option value="movie">Movie</option>
                         <option value="reading">Reading</option>
                         <option value="audio">Audio</option>
                       </select>

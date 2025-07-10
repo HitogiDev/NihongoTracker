@@ -43,6 +43,8 @@ interface logDataType {
   img: undefined | string;
   cover: undefined | string;
   date: Date | undefined;
+  // Movie specific fields
+  runtime?: number;
   // YouTube specific fields
   youtubeChannelInfo: youtubeChannelInfo | null;
 }
@@ -394,6 +396,7 @@ function LogScreen() {
                 <option value="manga">Manga</option>
                 <option value="vn">Visual Novel</option>
                 <option value="video">Video</option>
+                <option value="movie">Movie</option>
                 <option value="reading">Reading</option>
                 <option value="audio">Audio</option>
               </select>

@@ -140,7 +140,6 @@ export async function createLogFn(logValues: ICreateLog) {
         : logValues.date
       : new Date().toISOString(),
   };
-  console.log('Creating log with values:', logData);
   const { data } = await api.post<ILog>(`logs`, logData);
   return data;
 }

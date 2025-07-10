@@ -46,6 +46,7 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
     case 'manga':
     case 'vn':
     case 'video':
+    case 'movie':
     case 'audio':
       log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp);
       break;
