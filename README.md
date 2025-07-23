@@ -1,84 +1,93 @@
 # NihongoTracker
 
-A comprehensive Japanese immersion tracking application that gamifies your language learning journey. Track your progress across various media types, compete with friends, and visualize your improvement over time.
+A comprehensive Japanese immersion tracker that gamifies your language learning journey. Track progress across anime, manga, visual novels, reading, videos, and audio. Compete with friends, visualize improvement, and stay motivated.
 
 ## Features
 
-### 📊 Immersion Tracking
+### Immersion Tracking
 
-- **Multiple Media Types**: Track anime, manga, visual novels, reading materials, videos, and audio content
-- **Detailed Logging**: Record episodes watched, pages read, character counts, and time spent
-- **Media Integration**: Search and assign specific media from AniList, VNDB, and other sources
-- **Auto-categorization**: Smart grouping of similar logs for easy media assignment
+- Track anime, manga, visual novels, books, videos, and audio
+- Log episodes watched, pages read, character counts, and time spent
+- Assign logs to specific media from AniList, VNDB, and YouTube
+- Smart grouping of logs for easy media assignment
 
-### 🎮 Gamification
+### Gamification
 
-- **XP & Leveling System**: Separate progression for reading and listening skills
-- **Streak Tracking**: Maintain daily immersion streaks with visual feedback
-- **Leaderboards**: Compete with friends and the community
-- **Achievement System**: Unlock titles and track milestones
+- XP & leveling system for reading and listening
+- Daily streak tracking
+- Leaderboards and achievements
 
-### 📈 Statistics & Analytics
+### Statistics & Analytics
 
-- **Comprehensive Stats**: Reading speed (characters/hour), total immersion time, progress trends
-- **Visual Charts**: Interactive graphs showing your improvement over time
-- **Monthly Comparisons**: Track progress month-over-month with percentage changes
-- **Media Breakdown**: Detailed analysis by content type
+- Reading speed (characters/hour), total immersion time, progress trends
+- Interactive charts and monthly comparisons
+- Media breakdown by content type
 
-### 🔗 Platform Integration
+### Platform Integration
 
-- **AniList Sync**: Import and sync anime/manga progress
-- **VNDB Integration**: Track visual novel progress
-- **YouTube Support**: Log Japanese YouTube content consumption
+- AniList sync for anime/manga
+- VNDB integration for visual novels
+- YouTube support for Japanese content
 
-### 👥 Social Features
+### Social Features
 
-- **Public Profiles**: Share your progress with the community
-- **Friend System**: Follow other learners' progress
-- **Privacy Controls**: Make logs private or public as desired
-- **Media Matcher**: Collaborative tool to assign media to logs
+- Public profiles and privacy controls
+- Friend system and leaderboards
+- Media matcher for collaborative log assignment
 
 ## Technology Stack
 
 ### Frontend
 
-- **React 18** with TypeScript
-- **React Router** for navigation
-- **TanStack Query** for data fetching and caching
-- **Tailwind CSS** + **DaisyUI** for styling
-- **Zustand** for state management
-- **Chart.js** for data visualization
-- **Vite** for build tooling
+- React 18 + TypeScript
+- React Router
+- TanStack Query
+- Tailwind CSS + DaisyUI
+- Zustand for state management
+- Chart.js for data visualization
+- Vite for build tooling
 
 ### Backend
 
-- **Node.js** with **Express**
-- **TypeScript** for type safety
-- **MongoDB** with **Mongoose**
-- **JWT** for authentication
-- **bcrypt** for password hashing
-- **GraphQL** for external API integration
-- **Firebase** for file storage
+- Node.js + Express
+- TypeScript
+- MongoDB + Mongoose
+- JWT authentication
+- bcrypt for password hashing
+- GraphQL for external APIs
+- Firebase for file storage
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- MongoDB database
-- Firebase account (for file storage)
+- Node.js 20+
+- MongoDB
+- Firebase (for file storage)
 - API keys for AniList, VNDB, YouTube (optional)
 
 ### Installation
 
-1. **Clone the repository**
+1. Clone the repository
 
    ```bash
-   git clone https://github.com/ElaxDev/NihongoTracker.git
+   git clone https://github.com/HitogiDev/NihongoTracker.git
    cd NihongoTracker
    ```
 
-2. **Backend Setup**
+2. **Install with Docker (recommended for production or easy setup)**
+
+   ```bash
+   # Build and start all services (backend, frontend, MongoDB)
+   docker compose up --build
+   ```
+
+   - Edit `.env` files as needed before running.
+   - The app will be available at [http://localhost:5173](http://localhost:5173) (or the port specified in your Docker config).
+
+3. **Manual Setup (for development)**
+
+   Backend Setup
 
    ```bash
    cd Backend
@@ -88,7 +97,7 @@ A comprehensive Japanese immersion tracking application that gamifies your langu
    npm run dev
    ```
 
-3. **Frontend Setup**
+   Frontend Setup
 
    ```bash
    cd Frontend
@@ -96,7 +105,7 @@ A comprehensive Japanese immersion tracking application that gamifies your langu
    npm run dev
    ```
 
-4. **Environment Variables**
+4. Environment Variables
 
    Backend `.env`:
 
@@ -112,65 +121,62 @@ A comprehensive Japanese immersion tracking application that gamifies your langu
 
 ### Usage
 
-1. **Create an Account**: Register with username and password
-2. **Start Logging**: Begin tracking your immersion activities
-3. **Assign Media**: Use the media matcher to link logs to specific content
-4. **View Progress**: Check your stats and progress charts
-5. **Join the Community**: Follow other learners and compete on leaderboards
+1. Register an account
+2. Start logging immersion activities
+3. Assign media to logs
+4. View stats and charts
+5. Compete on leaderboards
 
 ## API Endpoints
 
 ### Authentication
 
-- `POST /api/auth/register` - Create new account
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
+- `POST /api/auth/register` - Register
+- `POST /api/auth/login` - Login
+- `POST /api/auth/logout` - Logout
 
 ### Logs
 
-- `GET /api/logs` - Get user logs with filtering
-- `POST /api/logs` - Create new immersion log
-- `DELETE /api/logs/:id` - Delete specific log
-- `POST /api/logs/assign` - Assign media to logs
+- `GET /api/logs` - Get logs
+- `POST /api/logs` - Create log
+- `DELETE /api/logs/:id` - Delete log
+- `POST /api/logs/assign` - Assign media
 
 ### Media
 
-- `GET /api/search/:type` - Search for media by type
-- `GET /api/media/:type/:id` - Get specific media details
+- `GET /api/search/:type` - Search media
+- `GET /api/media/:type/:id` - Media details
 
 ### Users
 
-- `GET /api/users/:username` - Get user profile
-- `GET /api/users/:username/stats` - Get user statistics
-- `GET /api/ranking` - Get community leaderboards
+- `GET /api/users/:username` - User profile
+- `GET /api/users/:username/stats` - User stats
+- `GET /api/ranking` - Leaderboards
 
 ## Contributing
 
-We welcome contributions! Please see our contributing guidelines for more details.
+We welcome contributions! Please see our contributing guidelines.
 
 ### Development Setup
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+3. Make changes and add tests
+4. Submit a pull request
 
 ### Code Style
 
-- ESLint configuration provided
-- Use TypeScript for type safety
-- Follow existing naming conventions
-- Write meaningful commit messages
+- ESLint and Prettier config provided
+- Use TypeScript
+- Follow naming conventions
 
 ## License
 
-This project is licensed under the ISC License. See the LICENSE file for details.
+ISC License. See LICENSE for details.
 
 ## Support
 
-If you encounter any issues or have questions:
+If you have issues or questions:
 
-1. Check the Issues page
-2. Create a new issue with detailed information
-3. Join our Discord community (link in repository)
+- Check Issues page
+- Create a new issue
