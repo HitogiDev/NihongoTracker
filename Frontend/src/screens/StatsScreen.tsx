@@ -8,9 +8,11 @@ import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
 import DailyGoals from '../components/DailyGoals';
 import { numberWithCommas } from '../utils/utils';
+import { useUserDataStore } from '../store/userData';
 
 function StatsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
+  const { user: loggedUser } = useUserDataStore();
   const [currentType, setCurrentType] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<
     'today' | 'month' | 'year' | 'total'
@@ -273,9 +275,11 @@ function StatsScreen() {
         </div>
 
         {/* Daily Goals Section - Add this before Main Stats Cards */}
-        <div className="mb-8">
-          <DailyGoals username={username} />
-        </div>
+        {username === loggedUser?.username && (
+          <div className="mb-8">
+            <DailyGoals username={username} />
+          </div>
+        )}
 
         {/* Main Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
