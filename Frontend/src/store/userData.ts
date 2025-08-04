@@ -6,6 +6,7 @@ type userDataState = {
   user: ILoginResponse | null;
   setUser: (user: ILoginResponse) => void;
   logout: () => void;
+  handleTokenExpiration: () => void;
 };
 
 export const useUserDataStore = create(
@@ -26,7 +27,24 @@ export const useUserDataStore = create(
           }
         }
       },
-      logout: () => set({ user: null }),
+      logout: () => {
+        set({ user: null });
+        // Limpiar el store persistido
+        useUserDataStore.persist.clearStorage();
+      },
+      handleTokenExpiration: () => {
+        // Función específica para manejar la expiración del token
+        set({ user: null });
+        useUserDataStore.persist.clearStorage();
+
+        // Redirigir a login si no estamos ya ahí
+        if (
+          typeof window !== 'undefined' &&
+          window.location.pathname !== '/login'
+        ) {
+          window.location.href = '/login';
+        }
+      },
     }),
     {
       name: 'userData',

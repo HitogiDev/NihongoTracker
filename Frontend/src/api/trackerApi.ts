@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axiosInstance from './axiosConfig';
 import {
   ILoginResponse,
   IRegisterInput,
@@ -20,11 +20,8 @@ import {
   IJitenResponse,
 } from '../types';
 
-const BASE_URL = '/api/';
-const api = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true,
-});
+// Usar la instancia configurada con interceptores
+const api = axiosInstance;
 
 export async function registerUserFn(
   user: IRegisterInput
