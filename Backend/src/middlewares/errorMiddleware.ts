@@ -24,29 +24,59 @@ export function notFoundHandler(
 }
 
 export function errorHandler(
-  err: customError,
+  err: customError | Error,
   _req: Request,
   res: Response,
   _next: NextFunction
 ) {
-  let statusCode = err.statusCode
-    ? err.statusCode === 200
-      ? 500
-      : err.statusCode
-    : 500;
-  let message = err.message ? err.message : 'Internal Server Error';
+  // Asegurar que siempre trabajamos con customError
+  const error =
+    err instanceof customError
+      ? err
+      : new customError(err.message || 'Internal Server Error', 500);
 
-  if (err.statusCode === 500) {
-    console.error(err.message);
-  }
+  let statusCode = error.statusCode === 200 ? 500 : error.statusCode;
+  let message = error.message;
 
-  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+  // Manejo específico de errores de MongoDB
+  if (err.name === 'CastError' && 'kind' in err && err.kind === 'ObjectId') {
     statusCode = 404;
     message = 'Resource not found';
   }
 
+  // Manejo de errores de validación de MongoDB
+  if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation Error';
+  }
+
+  // Manejo específico de errores JWT
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token expired';
+  }
+
+  if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid token';
+  }
+
+  if (err.name === 'NotBeforeError') {
+    statusCode = 401;
+    message = 'Token not active';
+  }
+
+  // Log solo errores del servidor
+  if (statusCode >= 500) {
+    console.error('Server Error:', {
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   return res.status(statusCode).json({
     message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    ...(process.env.NODE_ENV !== 'production' && { stack: error.stack }),
   });
 }
