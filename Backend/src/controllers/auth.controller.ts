@@ -86,8 +86,6 @@ export async function logout(_req: Request, res: Response) {
 }
 
 export async function verifyToken(_req: Request, res: Response) {
-  // Si llegamos aquí, el middleware de auth ya verificó el token
-  // y agregó el usuario a res.locals.user
   res.status(200).json({
     valid: true,
     user: res.locals.user,

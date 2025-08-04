@@ -52,9 +52,9 @@ router.get('/untrackedlogs', protect, getUntrackedLogs);
 
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 
-router.get('/:id', getLog); // Make this route public for sharing functionality
+router.get('/:id', getLog);
 
-router.get('/:id/details', getLogDetails); // New route for detailed log information
+router.get('/:id/details', getLogDetails);
 
 router.delete('/:id', protect, deleteLog);
 
