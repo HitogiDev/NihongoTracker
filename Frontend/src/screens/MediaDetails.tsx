@@ -42,6 +42,14 @@ function MediaDetails() {
   // Ensure logs is always an array before using array methods
   const logsArray = Array.isArray(logs) ? logs : [];
 
+  // Sort logs by date (most recent first) - moved up to be used in calculations
+  const sortedLogs =
+    logsArray.length > 0
+      ? [...logsArray].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      : [];
+
   const totalXp = logsArray.reduce((acc, log) => acc + log.xp, 0);
   const totalTime = logsArray.reduce((acc, log) => acc + (log.time ?? 0), 0);
 
@@ -59,9 +67,20 @@ function MediaDetails() {
   // Calculate reading speed (chars per hour) and estimated time to finish
   const readingSpeed =
     totalTime && totalTime > 0 ? (totalCharsRead / totalTime) * 60 : 0; // chars per hour
+
+  // Calculate recent reading speed from last 10 logs
+  const recentLogs = sortedLogs.slice(0, 10);
+  const recentCharsRead = recentLogs.reduce(
+    (acc, log) => acc + (log.chars ?? 0),
+    0
+  );
+  const recentTime = recentLogs.reduce((acc, log) => acc + (log.time ?? 0), 0);
+  const recentReadingSpeed =
+    recentTime && recentTime > 0 ? (recentCharsRead / recentTime) * 60 : 0; // chars per hour
+
   const remainingChars = Math.max(totalCharCount - totalCharsRead, 0);
-  const estimatedTimeToFinish =
-    readingSpeed > 0 ? remainingChars / readingSpeed : 0; // in hours
+  const recentEstimatedTimeToFinish =
+    recentReadingSpeed > 0 ? remainingChars / recentReadingSpeed : 0; // in hours
 
   // Get difficulty info
   const difficultyLevel = mediaDocument?.jiten?.mainDeck.difficulty;
@@ -71,14 +90,6 @@ function MediaDetails() {
     difficultyLevel < difficultyLevels.length
       ? difficultyLevels[Math.floor(difficultyLevel)]
       : null;
-
-  // Sort logs by date (most recent first)
-  const sortedLogs =
-    logsArray.length > 0
-      ? [...logsArray].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-      : [];
 
   const visibleLogs = sortedLogs.slice(0, visibleLogsCount);
   const hasMoreLogs = sortedLogs.length > visibleLogsCount;
@@ -580,21 +591,25 @@ function MediaDetails() {
                       {/* Reading Statistics with Jiten data */}
                       {readingSpeed > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="card bg-base-100 shadow-md">
-                            <div className="card-body">
-                              <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Reading Speed
-                              </h3>
-                              <p className="text-2xl font-bold mt-1">
-                                {numberWithCommas(Math.round(readingSpeed))}
-                              </p>
-                              <p className="text-xs text-base-content/60">
-                                chars/hour
-                              </p>
+                          {recentReadingSpeed > 0 && recentLogs.length > 0 && (
+                            <div className="card bg-base-100 shadow-md">
+                              <div className="card-body">
+                                <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
+                                  Recent Speed
+                                </h3>
+                                <p className="text-2xl font-bold mt-1">
+                                  {numberWithCommas(
+                                    Math.round(recentReadingSpeed)
+                                  )}
+                                </p>
+                                <p className="text-xs text-base-content/60">
+                                  chars/hour (last {recentLogs.length} logs)
+                                </p>
+                              </div>
                             </div>
-                          </div>
+                          )}
 
-                          {estimatedTimeToFinish > 0 &&
+                          {recentEstimatedTimeToFinish > 0 &&
                             readingPercentage < 100 && (
                               <div className="card bg-base-100 shadow-md">
                                 <div className="card-body">
@@ -602,14 +617,17 @@ function MediaDetails() {
                                     Time to Finish
                                   </h3>
                                   <p className="text-2xl font-bold mt-1">
-                                    {estimatedTimeToFinish >= 1
-                                      ? Math.round(estimatedTimeToFinish)
-                                      : Math.round(estimatedTimeToFinish * 60)}
+                                    {recentEstimatedTimeToFinish >= 1
+                                      ? Math.round(recentEstimatedTimeToFinish)
+                                      : Math.round(
+                                          recentEstimatedTimeToFinish * 60
+                                        )}
                                   </p>
                                   <p className="text-xs text-base-content/60">
-                                    {estimatedTimeToFinish >= 1
+                                    {recentEstimatedTimeToFinish >= 1
                                       ? 'hours'
-                                      : 'minutes'}
+                                      : 'minutes'}{' '}
+                                    (recent pace)
                                   </p>
                                 </div>
                               </div>
