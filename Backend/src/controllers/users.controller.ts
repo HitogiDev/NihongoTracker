@@ -275,6 +275,39 @@ export async function getRanking(
                       ],
                     },
                   },
+                  // Calculate minutes first, then convert to hours in next stage
+                  totalMinutes: { $sum: '$time' },
+                  readingMinutes: {
+                    $sum: {
+                      $cond: [
+                        { $in: ['$type', ['reading', 'manga', 'vn']] },
+                        '$time',
+                        0,
+                      ],
+                    },
+                  },
+                  listeningMinutes: {
+                    $sum: {
+                      $cond: [
+                        { $in: ['$type', ['anime', 'audio', 'video']] },
+                        '$time',
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  userHours: {
+                    $round: [{ $divide: ['$totalMinutes', 60] }, 1],
+                  },
+                  readingHours: {
+                    $round: [{ $divide: ['$readingMinutes', 60] }, 1],
+                  },
+                  listeningHours: {
+                    $round: [{ $divide: ['$listeningMinutes', 60] }, 1],
+                  },
                 },
               },
             ],
@@ -292,6 +325,10 @@ export async function getRanking(
               readingXp: '$timeStats.readingXp',
               listeningXp: '$timeStats.listeningXp',
               userLevel: 1, // Keep the user level from the user document
+              // Use hours calculated directly from time field
+              userHours: '$timeStats.userHours',
+              readingHours: '$timeStats.readingHours',
+              listeningHours: '$timeStats.listeningHours',
             },
           },
         },
@@ -300,8 +337,72 @@ export async function getRanking(
 
       return res.status(200).json(rankingUsers);
     } else {
-      // Default behavior - get all-time stats
+      // Default behavior - get all-time stats with hours calculated from logs
       const rankingUsers = await User.aggregate([
+        {
+          $lookup: {
+            from: 'logs',
+            let: { userId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$user', '$$userId'] },
+                },
+              },
+              {
+                $group: {
+                  _id: '$user',
+                  totalMinutes: { $sum: '$time' },
+                  readingMinutes: {
+                    $sum: {
+                      $cond: [
+                        { $in: ['$type', ['reading', 'manga', 'vn']] },
+                        '$time',
+                        0,
+                      ],
+                    },
+                  },
+                  listeningMinutes: {
+                    $sum: {
+                      $cond: [
+                        { $in: ['$type', ['anime', 'audio', 'video']] },
+                        '$time',
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  totalHours: {
+                    $round: [{ $divide: ['$totalMinutes', 60] }, 1],
+                  },
+                  readingHours: {
+                    $round: [{ $divide: ['$readingMinutes', 60] }, 1],
+                  },
+                  listeningHours: {
+                    $round: [{ $divide: ['$listeningMinutes', 60] }, 1],
+                  },
+                },
+              },
+            ],
+            as: 'timeData',
+          },
+        },
+        {
+          $addFields: {
+            'stats.userHours': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.totalHours', 0] }, 0],
+            },
+            'stats.readingHours': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.readingHours', 0] }, 0],
+            },
+            'stats.listeningHours': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.listeningHours', 0] }, 0],
+            },
+          },
+        },
         { $sort: { [`stats.${filter}`]: sort === 'asc' ? 1 : -1 } },
         { $skip: skip },
         { $limit: limit },
