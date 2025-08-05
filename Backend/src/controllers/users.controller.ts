@@ -276,7 +276,27 @@ export async function getRanking(
                     },
                   },
                   // Calculate minutes first, then convert to hours in next stage
-                  totalMinutes: { $sum: '$time' },
+                  totalMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            { $eq: ['$type', 'anime'] },
+                            {
+                              $or: [
+                                { $eq: ['$time', 0] },
+                                { $eq: ['$time', null] },
+                                { $eq: [{ $type: '$time' }, 'missing'] },
+                              ],
+                            },
+                            { $gt: ['$episodes', 0] },
+                          ],
+                        },
+                        { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                        '$time',
+                      ],
+                    },
+                  },
                   readingMinutes: {
                     $sum: {
                       $cond: [
@@ -289,9 +309,27 @@ export async function getRanking(
                   listeningMinutes: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['anime', 'audio', 'video']] },
-                        '$time',
-                        0,
+                        {
+                          $and: [
+                            { $eq: ['$type', 'anime'] },
+                            {
+                              $or: [
+                                { $eq: ['$time', 0] },
+                                { $eq: ['$time', null] },
+                                { $eq: [{ $type: '$time' }, 'missing'] },
+                              ],
+                            },
+                            { $gt: ['$episodes', 0] },
+                          ],
+                        },
+                        { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                        {
+                          $cond: [
+                            { $in: ['$type', ['anime', 'audio', 'video']] },
+                            '$time',
+                            0,
+                          ],
+                        },
                       ],
                     },
                   },
@@ -352,7 +390,27 @@ export async function getRanking(
               {
                 $group: {
                   _id: '$user',
-                  totalMinutes: { $sum: '$time' },
+                  totalMinutes: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            { $eq: ['$type', 'anime'] },
+                            {
+                              $or: [
+                                { $eq: ['$time', 0] },
+                                { $eq: ['$time', null] },
+                                { $eq: [{ $type: '$time' }, 'missing'] },
+                              ],
+                            },
+                            { $gt: ['$episodes', 0] },
+                          ],
+                        },
+                        { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                        '$time',
+                      ],
+                    },
+                  },
                   readingMinutes: {
                     $sum: {
                       $cond: [
@@ -365,9 +423,27 @@ export async function getRanking(
                   listeningMinutes: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['anime', 'audio', 'video']] },
-                        '$time',
-                        0,
+                        {
+                          $and: [
+                            { $eq: ['$type', 'anime'] },
+                            {
+                              $or: [
+                                { $eq: ['$time', 0] },
+                                { $eq: ['$time', null] },
+                                { $eq: [{ $type: '$time' }, 'missing'] },
+                              ],
+                            },
+                            { $gt: ['$episodes', 0] },
+                          ],
+                        },
+                        { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                        {
+                          $cond: [
+                            { $in: ['$type', ['anime', 'audio', 'video']] },
+                            '$time',
+                            0,
+                          ],
+                        },
                       ],
                     },
                   },
