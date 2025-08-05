@@ -48,9 +48,9 @@ function RankingScreen() {
 
   // Filter options for the dropdown
   const filterOptions = [
-    { label: 'Total XP', value: 'userXp', icon: '⚡' },
-    { label: 'Reading XP', value: 'readingXp', icon: '📚' },
-    { label: 'Listening XP', value: 'listeningXp', icon: '🎧' },
+    { label: 'Total', value: 'userXp', icon: '⚡' },
+    { label: 'Reading', value: 'readingXp', icon: '📚' },
+    { label: 'Listening', value: 'listeningXp', icon: '🎧' },
   ];
 
   // Time filter options
