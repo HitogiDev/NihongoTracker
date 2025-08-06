@@ -26,6 +26,7 @@ interface logDataType {
   mediaId: string;
   episodes: number;
   duration: number;
+  customDuration?: number; // User-editable episode duration
   synonyms: string[];
   isAdult: boolean;
   watchedEpisodes: number;
@@ -61,6 +62,7 @@ function LogScreen() {
     mediaId: '',
     episodes: 0,
     duration: 0,
+    customDuration: undefined,
     synonyms: [],
     isAdult: false,
     watchedEpisodes: 0,
@@ -271,6 +273,28 @@ function LogScreen() {
       handleInputChange('cover', group.coverImage);
       handleInputChange('description', group.title.contentTitleNative);
       handleInputChange('isAdult', group.isAdult);
+
+      // For anime, store additional episode information
+      if (logData.type === 'anime') {
+        if (group.episodes) {
+          handleInputChange('episodes', group.episodes);
+        }
+        if (group.episodeDuration) {
+          handleInputChange('duration', group.episodeDuration);
+        }
+        // Reset custom duration when selecting new media
+        handleInputChange('customDuration', undefined);
+      }
+
+      // For manga, store chapter/volume information
+      if (logData.type === 'manga') {
+        if (group.chapters) {
+          handleInputChange('chapters', group.chapters);
+        }
+        if (group.volumes) {
+          handleInputChange('volumes', group.volumes);
+        }
+      }
     }
 
     setIsSuggestionsOpen(false);
@@ -386,6 +410,8 @@ function LogScreen() {
                   if (e.target.value !== 'video') {
                     handleInputChange('youtubeChannelInfo', null);
                   }
+                  // Reset custom duration when changing type
+                  handleInputChange('customDuration', undefined);
                 }}
                 value={logData.type || 'Log type'}
               >
@@ -611,7 +637,13 @@ function LogScreen() {
                         <span className="label-text font-medium">
                           Episodes Watched
                         </span>
+                        {logData.customDuration ? (
+                          <span className="label-text-alt text-sm text-warning">
+                            Episode Duration: {logData.customDuration} min
+                          </span>
+                        ) : null}
                       </label>
+
                       <input
                         type="number"
                         min="1"
@@ -627,14 +659,24 @@ function LogScreen() {
                               ? 'input-success'
                               : ''
                         }`}
-                        onChange={(e) =>
-                          handleFieldChange(
-                            'watchedEpisodes',
-                            Number(e.target.value)
-                          )
-                        }
+                        onChange={(e) => {
+                          const episodes = Number(e.target.value);
+                          handleFieldChange('watchedEpisodes', episodes);
+
+                          // Auto-calculate time based on episode duration (custom or default)
+                          const effectiveDuration =
+                            logData.customDuration || logData.duration;
+                          if (effectiveDuration && episodes > 0) {
+                            const totalMinutes = episodes * effectiveDuration;
+                            const hours = Math.floor(totalMinutes / 60);
+                            const minutes = totalMinutes % 60;
+                            handleFieldChange('hours', hours);
+                            handleFieldChange('minutes', minutes);
+                          }
+                        }}
                         value={logData.watchedEpisodes || ''}
                       />
+
                       {errors.episodes && (
                         <label className="label">
                           <span className="label-text-alt text-error flex items-center gap-1">
@@ -653,12 +695,58 @@ function LogScreen() {
                           </span>
                         </label>
                       )}
-                      {logData.episodes > 0 && (
-                        <label className="label">
-                          <span className="label-text-alt text-info">
-                            Total episodes: {logData.episodes}
+
+                      {/* Auto-calculated time display */}
+                      {logData.watchedEpisodes > 0 &&
+                      (logData.customDuration || logData.duration) ? (
+                        <div className="alert alert-success mt-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="stroke-current shrink-0 h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span>
+                            Auto-calculated time:{' '}
+                            {Math.floor(
+                              (logData.watchedEpisodes *
+                                (logData.customDuration || logData.duration)) /
+                                60
+                            )}
+                            h{' '}
+                            {(logData.watchedEpisodes *
+                              (logData.customDuration || logData.duration)) %
+                              60}
+                            m
                           </span>
-                        </label>
+                        </div>
+                      ) : null}
+
+                      {/* Total episodes info */}
+                      {logData.episodes > 0 && (
+                        <div className="alert alert-info mt-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            className="stroke-current shrink-0 w-6 h-6"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span>Total episodes: {logData.episodes}</span>
+                        </div>
                       )}
                     </div>
                   )}
@@ -873,6 +961,51 @@ function LogScreen() {
                       )}
                     </div>
                     <div className="collapse-content space-y-4">
+                      {/* Episode Duration Input for Anime */}
+                      {isAdvancedOptions && logData.type === 'anime' && (
+                        <div className="form-control">
+                          <label className="label">
+                            <span className="label-text font-medium">
+                              Episode Duration (minutes)
+                            </span>
+                            {logData.duration ? (
+                              <span className="label-text-alt text-info">
+                                Default: {logData.duration} min
+                              </span>
+                            ) : null}
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="300"
+                            placeholder={
+                              logData.duration
+                                ? `${logData.duration}`
+                                : 'Episode duration'
+                            }
+                            className="input input-bordered input-sm"
+                            onChange={(e) => {
+                              const customDuration = Number(e.target.value);
+                              handleFieldChange(
+                                'customDuration',
+                                customDuration
+                              );
+
+                              // Re-calculate time if episodes are already set
+                              if (logData.watchedEpisodes > 0) {
+                                const totalMinutes =
+                                  logData.watchedEpisodes * customDuration;
+                                const hours = Math.floor(totalMinutes / 60);
+                                const minutes = totalMinutes % 60;
+                                handleFieldChange('hours', hours);
+                                handleFieldChange('minutes', minutes);
+                              }
+                            }}
+                            value={logData.customDuration || ''}
+                          />
+                        </div>
+                      )}
+
                       {/* Time Spent Input with Enhanced Validation - Only show in advanced if not already shown */}
                       {isAdvancedOptions &&
                         !['vn', 'video', 'reading', 'audio', 'manga'].includes(
@@ -1208,6 +1341,16 @@ function LogScreen() {
                             {logData.episodes} episodes
                           </div>
                         )}
+                        {logData.type === 'anime' &&
+                          (logData.customDuration || logData.duration) && (
+                            <div className="badge badge-info">
+                              {logData.customDuration || logData.duration}{' '}
+                              min/episode
+                              {logData.customDuration && (
+                                <span className="ml-1 text-xs">(custom)</span>
+                              )}
+                            </div>
+                          )}
                         {logData.isAdult && (
                           <div className="badge badge-warning">
                             Adult Content
