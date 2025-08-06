@@ -9,6 +9,19 @@ function RankingScreen() {
   const [limit] = useState(10);
   const [xpFilter, setXpFilter] = useState<filterTypes>('userXp');
   const [timeFilter, setTimeFilter] = useState<string>('all-time');
+  const [displayMode, setDisplayMode] = useState<'xp' | 'hours'>('xp');
+
+  // Get the actual filter to send to backend based on display mode
+  const getBackendFilter = () => {
+    if (displayMode === 'hours') {
+      return xpFilter === 'userXp'
+        ? 'userHours'
+        : xpFilter === 'readingXp'
+          ? 'readingHours'
+          : 'listeningHours';
+    }
+    return xpFilter;
+  };
 
   const {
     data: rankedUsers,
@@ -17,12 +30,12 @@ function RankingScreen() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['ranking', xpFilter, timeFilter],
+    queryKey: ['ranking', xpFilter, timeFilter, displayMode],
     queryFn: ({ pageParam }) =>
       getRankingFn({
         limit,
         page: pageParam as number,
-        filter: xpFilter,
+        filter: getBackendFilter(),
         timeFilter,
       }),
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
@@ -35,9 +48,9 @@ function RankingScreen() {
 
   // Filter options for the dropdown
   const filterOptions = [
-    { label: 'Total XP', value: 'userXp', icon: '⚡' },
-    { label: 'Reading XP', value: 'readingXp', icon: '📚' },
-    { label: 'Listening XP', value: 'listeningXp', icon: '🎧' },
+    { label: 'Total', value: 'userXp', icon: '⚡' },
+    { label: 'Reading', value: 'readingXp', icon: '📚' },
+    { label: 'Listening', value: 'listeningXp', icon: '🎧' },
   ];
 
   // Time filter options
@@ -47,6 +60,35 @@ function RankingScreen() {
     { label: 'This Month', value: 'month', icon: '📊' },
     { label: 'This Year', value: 'year', icon: '🗓️' },
   ];
+
+  // Get display value based on mode
+  const getDisplayValue = (user: {
+    stats?: {
+      userXp?: number;
+      readingXp?: number;
+      listeningXp?: number;
+      userHours?: number;
+      readingHours?: number;
+      listeningHours?: number;
+    };
+  }) => {
+    if (displayMode === 'hours') {
+      return xpFilter === 'userXp'
+        ? user.stats?.userHours || 0
+        : xpFilter === 'readingXp'
+          ? user.stats?.readingHours || 0
+          : user.stats?.listeningHours || 0;
+    } else {
+      return xpFilter === 'userXp'
+        ? user.stats?.userXp || 0
+        : xpFilter === 'readingXp'
+          ? user.stats?.readingXp || 0
+          : user.stats?.listeningXp || 0;
+    }
+  };
+
+  // Get display unit
+  const getDisplayUnit = () => (displayMode === 'hours' ? 'hrs' : 'XP');
 
   // Get the correct label for the selected filter
   const getFilterLabel = () => {
@@ -101,7 +143,7 @@ function RankingScreen() {
   };
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header Section */}
         <div className="text-center mb-8">
@@ -115,6 +157,22 @@ function RankingScreen() {
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+          {/* Display Mode Toggle */}
+          <div className="join">
+            <button
+              className={`btn join-item ${displayMode === 'xp' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setDisplayMode('xp')}
+            >
+              ⚡ XP
+            </button>
+            <button
+              className={`btn join-item ${displayMode === 'hours' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setDisplayMode('hours')}
+            >
+              ⏰ Hours
+            </button>
+          </div>
+
           {/* Time filter dropdown */}
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-outline gap-2">
@@ -236,12 +294,11 @@ function RankingScreen() {
                         Lv.{rankedUsers.pages[0][1]?.stats?.userLevel ?? 1}
                       </div>
                       <div className="text-lg font-bold text-base-content mt-1">
-                        {(xpFilter === 'userXp'
-                          ? rankedUsers.pages[0][1]?.stats?.userXp
-                          : xpFilter === 'readingXp'
-                            ? rankedUsers.pages[0][1]?.stats?.readingXp
-                            : rankedUsers.pages[0][1]?.stats?.listeningXp
-                        )?.toLocaleString() ?? 0}
+                        {displayMode === 'hours'
+                          ? `${getDisplayValue(rankedUsers.pages[0][1])} hrs`
+                          : getDisplayValue(
+                              rankedUsers.pages[0][1]
+                            ).toLocaleString()}
                       </div>
                     </div>
 
@@ -280,12 +337,11 @@ function RankingScreen() {
                         Lv.{rankedUsers.pages[0][0]?.stats?.userLevel ?? 1}
                       </div>
                       <div className="text-xl font-bold text-warning mt-1">
-                        {(xpFilter === 'userXp'
-                          ? rankedUsers.pages[0][0]?.stats?.userXp
-                          : xpFilter === 'readingXp'
-                            ? rankedUsers.pages[0][0]?.stats?.readingXp
-                            : rankedUsers.pages[0][0]?.stats?.listeningXp
-                        )?.toLocaleString() ?? 0}
+                        {displayMode === 'hours'
+                          ? `${getDisplayValue(rankedUsers.pages[0][0])} hrs`
+                          : getDisplayValue(
+                              rankedUsers.pages[0][0]
+                            ).toLocaleString()}
                       </div>
                     </div>
 
@@ -321,12 +377,11 @@ function RankingScreen() {
                         Lv.{rankedUsers.pages[0][2]?.stats?.userLevel ?? 1}
                       </div>
                       <div className="text-lg font-bold text-base-content mt-1">
-                        {(xpFilter === 'userXp'
-                          ? rankedUsers.pages[0][2]?.stats?.userXp
-                          : xpFilter === 'readingXp'
-                            ? rankedUsers.pages[0][2]?.stats?.readingXp
-                            : rankedUsers.pages[0][2]?.stats?.listeningXp
-                        )?.toLocaleString() ?? 0}
+                        {displayMode === 'hours'
+                          ? `${getDisplayValue(rankedUsers.pages[0][2])} hrs`
+                          : getDisplayValue(
+                              rankedUsers.pages[0][2]
+                            ).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -341,19 +396,17 @@ function RankingScreen() {
                       <th className="text-center w-16">Rank</th>
                       <th>User</th>
                       <th className="text-center">Level</th>
-                      <th className="text-end">{getFilterLabel()}</th>
+                      <th className="text-end">
+                        {getFilterLabel()}{' '}
+                        {displayMode === 'hours' ? '(Hours)' : '(XP)'}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {rankedUsers?.pages.map((group, groupIndex) =>
                       group.map((user, index) => {
                         const rank = groupIndex * limit + index + 1;
-                        const xpValue =
-                          xpFilter === 'userXp'
-                            ? user.stats?.userXp
-                            : xpFilter === 'readingXp'
-                              ? user.stats?.readingXp
-                              : user.stats?.listeningXp;
+                        const displayValue = getDisplayValue(user);
 
                         // Skip top 3 in the table if they're already shown in podium
                         if (rank <= 3 && rankedUsers.pages[0].length >= 3)
@@ -416,10 +469,12 @@ function RankingScreen() {
                             </td>
                             <td className="text-end">
                               <div className="font-bold text-lg">
-                                {xpValue?.toLocaleString() ?? 0}
+                                {displayMode === 'hours'
+                                  ? displayValue
+                                  : displayValue.toLocaleString()}
                               </div>
                               <div className="text-xs text-base-content/60">
-                                XP
+                                {getDisplayUnit()}
                               </div>
                             </td>
                           </tr>

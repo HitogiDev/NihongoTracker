@@ -1410,15 +1410,29 @@ export async function recalculateXp(
           // Calculate new XP based on log type
           switch (log.type) {
             case 'anime':
-              log.xp = timeXp || episodesXp || 0;
+              if (timeXp) {
+                log.xp = timeXp;
+              } else if (episodesXp) {
+                log.xp = episodesXp;
+              } else {
+                log.xp = 0;
+              }
               break;
-            case 'reading':
-            case 'manga':
             case 'vn':
             case 'video':
             case 'movie':
             case 'audio':
               log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
+              break;
+            case 'reading':
+            case 'manga':
+              if (charsXp) {
+                log.xp = Math.max(charsXp, timeXp);
+              } else if (pagesXp) {
+                log.xp = Math.max(pagesXp, timeXp);
+              } else {
+                log.xp = 0;
+              }
               break;
             case 'other':
               log.xp = 0;
@@ -1608,14 +1622,24 @@ export async function recalculateStreaks(
 
         for (const log of logs) {
           // Get log date (year, month, day only)
-          const logDate = new Date(log.date.getFullYear(), log.date.getMonth(), log.date.getDate());
+
+          const logDate = new Date(
+            log.date.getFullYear(),
+            log.date.getMonth(),
+            log.date.getDate()
+          );
 
           if (!lastStreakDate) {
             // First log
             currentStreak = 1;
           } else {
             // Calculate difference in days
-            const diffDays = Math.floor((logDate.getTime() - lastStreakDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            const diffDays = Math.floor(
+              (logDate.getTime() - lastStreakDate.getTime()) /
+                (1000 * 60 * 60 * 24)
+            );
+
             if (diffDays === 1) {
               // Consecutive day, increment streak
               currentStreak += 1;
@@ -1643,7 +1667,9 @@ export async function recalculateStreaks(
         await user.save();
         results.updatedUsers++;
       } catch (error) {
-        results.errors.push(`Error processing user ${user.username}: ${(error as Error).message}`);
+        results.errors.push(
+          `Error processing user ${user.username}: ${(error as Error).message}`
+        );
       }
       results.processedUsers++;
     }

@@ -46,6 +46,10 @@ export interface IStats {
   listeningLevel: number;
   listeningXpToNextLevel: number;
   listeningXpToCurrentLevel: number;
+  // Add hours fields
+  userHours?: number;
+  readingHours?: number;
+  listeningHours?: number;
   currentStreak: number;
   longestStreak: number;
   lastStreakDate: Date | null;
@@ -136,7 +140,10 @@ export type filterTypes =
   | 'readingTime'
   | 'animeEpisodes'
   | 'animeWatchingTime'
-  | 'videoWatchingTime';
+  | 'videoWatchingTime'
+  | 'userHours'
+  | 'readingHours'
+  | 'listeningHours';
 
 export interface IRankingParams {
   page?: number;

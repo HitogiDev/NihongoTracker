@@ -191,7 +191,7 @@ function SharedLogScreen() {
       pages: customValues.pages || undefined,
       private: false,
       isAdult: sharedLog.isAdult || false,
-      date: new Date(),
+      date: sharedLog.date,
       ...(sharedLog.mediaId && { mediaId: sharedLog.mediaId }),
     };
 

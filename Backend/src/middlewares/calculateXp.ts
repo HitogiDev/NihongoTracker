@@ -40,13 +40,25 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
         log.xp = timeXp;
       } else if (episodesXp) {
         log.xp = episodesXp;
+      } else {
+        log.xp = 0;
       }
       break;
     case 'vn':
     case 'video':
     case 'movie':
     case 'audio':
-      log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp);
+      log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
+      break;
+    case 'reading':
+    case 'manga':
+      if (charsXp) {
+        log.xp = Math.max(charsXp, timeXp);
+      } else if (pagesXp) {
+        log.xp = Math.max(pagesXp, timeXp);
+      } else {
+        log.xp = 0;
+      }
       break;
     case 'reading':
     case 'manga':
