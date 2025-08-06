@@ -1622,6 +1622,7 @@ export async function recalculateStreaks(
 
         for (const log of logs) {
           // Get log date (year, month, day only)
+
           const logDate = new Date(
             log.date.getFullYear(),
             log.date.getMonth(),
@@ -1633,10 +1634,12 @@ export async function recalculateStreaks(
             currentStreak = 1;
           } else {
             // Calculate difference in days
+
             const diffDays = Math.floor(
               (logDate.getTime() - lastStreakDate.getTime()) /
                 (1000 * 60 * 60 * 24)
             );
+
             if (diffDays === 1) {
               // Consecutive day, increment streak
               currentStreak += 1;

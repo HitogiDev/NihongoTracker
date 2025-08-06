@@ -60,6 +60,16 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
         log.xp = 0;
       }
       break;
+    case 'reading':
+    case 'manga':
+      if (charsXp) {
+        log.xp = Math.max(charsXp, timeXp);
+      } else if (pagesXp) {
+        log.xp = Math.max(pagesXp, timeXp);
+      } else {
+        log.xp = 0;
+      }
+      break;
     case 'other':
       log.xp = 0;
       break;
