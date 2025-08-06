@@ -60,26 +60,56 @@ function Header() {
             {user ? (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-md bg-base-100 text-base-content rounded-box w-64"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-64 border border-base-300"
               >
                 <li>
-                  <Link to="/ranking">Ranking</Link>
+                  <Link
+                    to="/goals"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    Goals
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/ranking"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    Ranking
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to={`/user/${user.username}/list`}
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    Immersion List
+                  </Link>
                 </li>
                 <li>{/* <QuickLog /> */}</li>
                 <li className="lg:hidden">
-                  <Link to={`/user/${user.username}`}>
+                  <Link
+                    to={`/user/${user.username}`}
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
                     <MdPerson className="text-lg" />
                     Profile
                   </Link>
                 </li>
                 <li className="lg:hidden">
-                  <Link to="/settings">
+                  <Link
+                    to="/settings"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
                     <MdSettings className="text-lg" />
                     Settings
                   </Link>
                 </li>
                 <li className="lg:hidden">
-                  <a onClick={logoutHandler}>
+                  <a
+                    onClick={logoutHandler}
+                    className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
+                  >
                     <MdLogout className="text-lg" />
                     Logout
                   </a>
@@ -88,13 +118,39 @@ function Header() {
             ) : (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-md bg-base-100 text-base-content rounded-box w-64"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-64 border border-base-300"
               >
                 <li>
-                  <Link to="/">Home</Link>
+                  <Link
+                    to="/"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    Home
+                  </Link>
                 </li>
                 <li>
-                  <Link to="/features">Features</Link>
+                  <Link
+                    to="/features"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/ranking"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    Ranking
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/about"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    About
+                  </Link>
                 </li>
               </ul>
             )}
@@ -109,30 +165,66 @@ function Header() {
         {user ? (
           <div className="hidden lg:inline-flex">
             {/* <QuickLog /> */}
-            <Link
-              className="group transition duration-300 relative"
-              to="/ranking"
-            >
-              Ranking
-              <span className="block w-full h-0.5 bg-primary absolute bottom-0 left-1/2 transform -translate-x-1/2 group-hover:scale-x-100 transition-transform duration-500 scale-x-0"></span>
-            </Link>
-          </div>
-        ) : (
-          <div className="navbar-center hidden lg:flex">
-            <ul className="inline-flex flex-row gap-4">
+            <ul className="inline-flex flex-row gap-6">
               <li>
-                <Link className="group transition duration-300 relative" to="/">
-                  Home
-                  <span className="block w-full h-0.5 bg-primary absolute bottom-0 left-1/2 transform -translate-x-1/2 group-hover:scale-x-100 transition-transform duration-500 scale-x-0"></span>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/goals"
+                >
+                  Goals
                 </Link>
               </li>
               <li>
                 <Link
-                  className="group transition duration-300 relative"
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/ranking"
+                >
+                  Ranking
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to={`/user/${user.username}/list`}
+                >
+                  Immersion List
+                </Link>
+              </li>
+            </ul>
+          </div>
+        ) : (
+          <div className="navbar-center hidden lg:flex">
+            <ul className="inline-flex flex-row gap-6">
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/"
+                >
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/features"
                 >
                   Features
-                  <span className="block w-full h-0.5 bg-primary absolute bottom-0 left-1/2 transform -translate-x-1/2 group-hover:scale-x-100 transition-transform duration-500 scale-x-0"></span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/ranking"
+                >
+                  Ranking
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/about"
+                >
+                  About
                 </Link>
               </li>
             </ul>
@@ -158,25 +250,34 @@ function Header() {
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content z-[50] menu p-2 shadow-md bg-base-100 text-base-content rounded-box w-52"
+                  className="dropdown-content z-[50] menu p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-52 border border-base-300"
                 >
                   <IconContext.Provider
                     value={{ className: 'text-lg currentColor' }}
                   >
                     <li>
-                      <Link to={`/user/${user.username}`}>
+                      <Link
+                        to={`/user/${user.username}`}
+                        className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                      >
                         <MdPerson />
                         Profile
                       </Link>
                     </li>
                     <li>
-                      <Link to={`/settings`}>
+                      <Link
+                        to={`/settings`}
+                        className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                      >
                         <MdSettings />
                         Settings
                       </Link>
                     </li>
                     <li>
-                      <a onClick={logoutHandler}>
+                      <a
+                        onClick={logoutHandler}
+                        className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
+                      >
                         <MdLogout />
                         Logout
                       </a>

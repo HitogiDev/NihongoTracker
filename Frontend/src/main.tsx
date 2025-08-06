@@ -12,26 +12,27 @@ import {
   Route,
   RouterProvider,
 } from 'react-router-dom';
-import App from './App.tsx';
-import HomeScreen from './screens/HomeScreen.tsx';
-import LoginScreen from './screens/LoginScreen.tsx';
-import RegisterScreen from './screens/RegisterScreen.tsx';
 import { QueryClientProvider } from '@tanstack/react-query';
-import queryClient from './queryClient.ts';
-import ProfileScreen from './screens/ProfileScreen.tsx';
-import NotFound from './screens/NotFound.tsx';
-import StatsScreen from './screens/StatsScreen.tsx';
-import ProfileHeader from './components/ProfileHeader.tsx';
-import SettingsScreen from './screens/SettingsScreen.tsx';
-import ProtectedRoutes from './contexts/protectedRoute.tsx';
-import LogScreen from './screens/LogScreen.tsx';
-import RankingScreen from './screens/RankingScreen.tsx';
+import AboutScreen from './screens/AboutScreen.tsx';
+import App from './App.tsx';
+import FeaturesScreen from './screens/FeaturesScreen.tsx';
+import HomeScreen from './screens/HomeScreen.tsx';
 import ListScreen from './screens/ListScreen.tsx';
+import LoginScreen from './screens/LoginScreen.tsx';
+import LogScreen from './screens/LogScreen.tsx';
 import MatchMedia from './screens/MatchMedia.tsx';
 import MediaDetails from './screens/MediaDetails.tsx';
 import MediaHeader from './components/MediaHeader.tsx';
-import FeaturesScreen from './screens/FeaturesScreen.tsx';
+import NotFound from './screens/NotFound.tsx';
+import ProfileHeader from './components/ProfileHeader.tsx';
+import ProfileScreen from './screens/ProfileScreen.tsx';
+import ProtectedRoutes from './contexts/protectedRoute.tsx';
+import queryClient from './queryClient.ts';
+import RankingScreen from './screens/RankingScreen.tsx';
+import RegisterScreen from './screens/RegisterScreen.tsx';
+import SettingsScreen from './screens/SettingsScreen.tsx';
 import SharedLogScreen from './screens/SharedLogScreen.tsx';
+import StatsScreen from './screens/StatsScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -42,6 +43,7 @@ const router = createBrowserRouter(
       <Route path="settings" element={<SettingsScreen />} />
       <Route path="ranking" element={<RankingScreen />} />
       <Route path="features" element={<FeaturesScreen />} />
+      <Route path="about" element={<AboutScreen />} />
       <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
       <Route path="user/:username" element={<ProfileHeader />}>
         <Route index element={<ProfileScreen />} />
