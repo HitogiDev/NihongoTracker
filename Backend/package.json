@@ -8,7 +8,10 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "migrate:indexes": "node src/scripts/migrate-indexes.js",
+    "migrate:indexes:prod": "NODE_ENV=production node src/scripts/migrate-indexes.js",
+    "verify:indexes": "node src/scripts/verify-indexes.js"
   },
   "author": "ElaxDev",
   "license": "ISC",

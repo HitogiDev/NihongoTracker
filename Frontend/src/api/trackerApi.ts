@@ -269,3 +269,42 @@ export const getLogDetailsFn = async (logId: string) => {
   const response = await api.get(`/logs/${logId}/details`);
   return response.data;
 };
+
+export interface IComparisonStats {
+  totalXp: number;
+  totalTime: number;
+  totalChars: number;
+  totalPages: number;
+  totalEpisodes: number;
+  logCount: number;
+  readingSpeed: number;
+  readingPercentage: number;
+}
+
+export interface IComparisonResult {
+  user1: {
+    username: string;
+    stats: IComparisonStats;
+  };
+  user2: {
+    username: string;
+    stats: IComparisonStats;
+  };
+  mediaInfo: {
+    contentId: string;
+    type: string;
+    totalCharCount?: number;
+  };
+}
+
+export const compareUserStatsFn = async (
+  user1: string,
+  user2: string,
+  mediaId: string,
+  type: string
+): Promise<IComparisonResult> => {
+  const { data } = await api.get<IComparisonResult>('/compare/users', {
+    params: { user1, user2, mediaId, type },
+  });
+  return data;
+};

@@ -1,11 +1,17 @@
 import { useOutletContext } from 'react-router-dom';
-import { OutletMediaContextType } from '../types';
+import { OutletMediaContextType, ILog } from '../types';
 import ProgressChart from '../components/ProgressChart';
-import { useQuery } from '@tanstack/react-query';
-import { getUserLogsFn } from '../api/trackerApi';
+import Loader from '../components/Loader';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  getUserLogsFn,
+  compareUserStatsFn,
+  IComparisonStats,
+} from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useUserDataStore } from '../store/userData';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -19,6 +25,8 @@ const difficultyLevels = [
 function MediaDetails() {
   const { mediaDocument, mediaType, username } =
     useOutletContext<OutletMediaContextType>();
+  const { user: currentUser } = useUserDataStore();
+  const queryClient = useQueryClient();
 
   // Scroll to top when component mounts or media changes
   useEffect(() => {
@@ -27,8 +35,42 @@ function MediaDetails() {
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
 
-  const { data: logs } = useQuery({
-    queryKey: [username, 'logs', 'total', mediaDocument?.contentId],
+  // Try to get logs from existing cache first (from ProfileScreen)
+  const existingLogsData = queryClient.getQueryData([
+    'logs',
+    username,
+    '', // empty search
+    'all', // all types
+  ]);
+
+  // Extract logs for this specific media from cached data
+  const cachedMediaLogs = useMemo(() => {
+    if (!existingLogsData || !mediaDocument?.contentId) return null;
+
+    // Handle both infinite query pages and regular arrays
+    const allPages = Array.isArray(existingLogsData)
+      ? [existingLogsData]
+      : (existingLogsData as { pages?: ILog[][] })?.pages || [];
+
+    const allLogs = allPages.flat().filter((log: ILog) => {
+      return (
+        log?.mediaId === mediaDocument.contentId &&
+        log?.type === mediaDocument.type
+      );
+    });
+
+    return allLogs.length > 0 ? allLogs : null;
+  }, [existingLogsData, mediaDocument?.contentId, mediaDocument?.type]);
+
+  // Only fetch from server if we don't have the data in cache
+  const { data: logs, isLoading: logsLoading } = useQuery({
+    queryKey: [
+      username,
+      'logs',
+      'media',
+      mediaDocument?.contentId,
+      mediaDocument?.type,
+    ],
     queryFn: () => {
       if (!username || !mediaDocument?.contentId || !mediaDocument?.type) {
         throw new Error('Username, media ID and type are required');
@@ -40,52 +82,242 @@ function MediaDetails() {
         page: 1,
       });
     },
-    enabled: !!username && !!mediaDocument?.contentId && !!mediaDocument?.type,
-    staleTime: Infinity,
+    enabled:
+      !!username &&
+      !!mediaDocument?.contentId &&
+      !!mediaDocument?.type &&
+      !cachedMediaLogs,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    gcTime: 15 * 60 * 1000, // 15 minutes garbage collection
   });
 
-  // Ensure logs is always an array before using array methods
-  const logsArray = Array.isArray(logs) ? logs : [];
+  // Use cached data if available, otherwise use fetched data
+  const finalLogs = cachedMediaLogs || logs;
 
-  // Sort logs by date (most recent first) - moved up to be used in calculations
-  const sortedLogs =
-    logsArray.length > 0
-      ? [...logsArray].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-      : [];
+  // Get current user's logs for comparison (only if viewing another user's profile)
+  const isViewingOtherUser = currentUser?.username !== username;
 
-  const totalXp = logsArray.reduce((acc, log) => acc + log.xp, 0);
-  const totalTime = logsArray.reduce((acc, log) => acc + (log.time ?? 0), 0);
+  // Try to get current user's logs from cache
+  const currentUserCachedData = isViewingOtherUser
+    ? queryClient.getQueryData([
+        'logs',
+        currentUser?.username,
+        '', // empty search
+        'all', // all types
+      ])
+    : null;
 
-  // Calculate reading statistics
-  const totalCharsRead = logsArray.reduce(
-    (acc, log) => acc + (log.chars ?? 0),
-    0
+  const cachedCurrentUserLogs = useMemo(() => {
+    if (
+      !currentUserCachedData ||
+      !mediaDocument?.contentId ||
+      !isViewingOtherUser
+    )
+      return null;
+
+    const allPages = Array.isArray(currentUserCachedData)
+      ? [currentUserCachedData]
+      : (currentUserCachedData as { pages?: ILog[][] })?.pages || [];
+
+    const allLogs = allPages.flat().filter((log: ILog) => {
+      return (
+        log?.mediaId === mediaDocument.contentId &&
+        log?.type === mediaDocument.type
+      );
+    });
+
+    return allLogs.length > 0 ? allLogs : null;
+  }, [
+    currentUserCachedData,
+    mediaDocument?.contentId,
+    mediaDocument?.type,
+    isViewingOtherUser,
+  ]);
+
+  const { data: myLogs, isLoading: myLogsLoading } = useQuery({
+    queryKey: [
+      currentUser?.username,
+      'logs',
+      'media',
+      mediaDocument?.contentId,
+      mediaDocument?.type,
+    ],
+    queryFn: () => {
+      if (
+        !currentUser?.username ||
+        !mediaDocument?.contentId ||
+        !mediaDocument?.type
+      ) {
+        throw new Error('Username, media ID and type are required');
+      }
+      return getUserLogsFn(currentUser.username, {
+        mediaId: mediaDocument.contentId,
+        type: mediaDocument.type,
+        limit: 0,
+        page: 1,
+      });
+    },
+    enabled:
+      isViewingOtherUser &&
+      !!currentUser?.username &&
+      !!mediaDocument?.contentId &&
+      !!mediaDocument?.type &&
+      !cachedCurrentUserLogs,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    gcTime: 15 * 60 * 1000, // 15 minutes garbage collection
+  });
+
+  // Use cached data if available, otherwise use fetched data
+  const finalMyLogs = cachedCurrentUserLogs || myLogs;
+
+  // Use efficient comparison endpoint when viewing another user
+  const { data: comparisonData, isLoading: comparisonLoading } = useQuery({
+    queryKey: [
+      'comparison',
+      currentUser?.username,
+      username,
+      mediaDocument?.contentId,
+      mediaDocument?.type,
+    ],
+    queryFn: () => {
+      if (
+        !currentUser?.username ||
+        !username ||
+        !mediaDocument?.contentId ||
+        !mediaDocument?.type
+      ) {
+        throw new Error('Required data for comparison is missing');
+      }
+      return compareUserStatsFn(
+        currentUser.username,
+        username,
+        mediaDocument.contentId,
+        mediaDocument.type
+      );
+    },
+    enabled:
+      isViewingOtherUser &&
+      !!currentUser?.username &&
+      !!username &&
+      !!mediaDocument?.contentId &&
+      !!mediaDocument?.type,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    gcTime: 15 * 60 * 1000, // 15 minutes garbage collection
+  });
+
+  // Memoize arrays to prevent recalculation
+  const logsArray = useMemo(
+    () => (Array.isArray(finalLogs) ? (finalLogs as ILog[]) : []),
+    [finalLogs]
   );
-  const totalCharCount = mediaDocument?.jiten?.mainDeck.characterCount || 0;
-  const readingPercentage =
-    totalCharCount > 0
-      ? Math.min((totalCharsRead / totalCharCount) * 100, 100)
-      : 0;
-
-  // Calculate reading speed (chars per hour) and estimated time to finish
-  const readingSpeed =
-    totalTime && totalTime > 0 ? (totalCharsRead / totalTime) * 60 : 0; // chars per hour
-
-  // Calculate recent reading speed from last 10 logs
-  const recentLogs = sortedLogs.slice(0, 10);
-  const recentCharsRead = recentLogs.reduce(
-    (acc, log) => acc + (log.chars ?? 0),
-    0
+  const myLogsArray = useMemo(
+    () => (Array.isArray(finalMyLogs) ? (finalMyLogs as ILog[]) : []),
+    [finalMyLogs]
   );
-  const recentTime = recentLogs.reduce((acc, log) => acc + (log.time ?? 0), 0);
-  const recentReadingSpeed =
-    recentTime && recentTime > 0 ? (recentCharsRead / recentTime) * 60 : 0; // chars per hour
+  const isLoading =
+    logsLoading || (isViewingOtherUser && (myLogsLoading || comparisonLoading));
 
-  const remainingChars = Math.max(totalCharCount - totalCharsRead, 0);
-  const recentEstimatedTimeToFinish =
-    recentReadingSpeed > 0 ? remainingChars / recentReadingSpeed : 0; // in hours
+  // Memoize heavy calculations to prevent re-computation on every render
+  const calculations = useMemo(() => {
+    // Sort logs by date (most recent first) - moved up to be used in calculations
+    const sortedLogs =
+      logsArray.length > 0
+        ? [...logsArray].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          )
+        : [];
+
+    const totalXp = logsArray.reduce((acc, log) => acc + log.xp, 0);
+    const totalTime = logsArray.reduce((acc, log) => acc + (log.time ?? 0), 0);
+
+    // Calculate reading statistics
+    const totalCharsRead = logsArray.reduce(
+      (acc, log) => acc + (log.chars ?? 0),
+      0
+    );
+    const totalCharCount = mediaDocument?.jiten?.mainDeck.characterCount || 0;
+    const readingPercentage =
+      totalCharCount > 0
+        ? Math.min((totalCharsRead / totalCharCount) * 100, 100)
+        : 0;
+
+    // Calculate reading speed (chars per hour) and estimated time to finish
+    const readingSpeed =
+      totalTime && totalTime > 0 ? (totalCharsRead / totalTime) * 60 : 0; // chars per hour
+
+    // Calculate recent reading speed from last 10 logs
+    const recentLogs = sortedLogs.slice(0, 10);
+    const recentCharsRead = recentLogs.reduce(
+      (acc, log) => acc + (log.chars ?? 0),
+      0
+    );
+    const recentTime = recentLogs.reduce(
+      (acc, log) => acc + (log.time ?? 0),
+      0
+    );
+    const recentReadingSpeed =
+      recentTime && recentTime > 0 ? (recentCharsRead / recentTime) * 60 : 0; // chars per hour
+
+    const remainingChars = Math.max(totalCharCount - totalCharsRead, 0);
+    const recentEstimatedTimeToFinish =
+      recentReadingSpeed > 0 ? remainingChars / recentReadingSpeed : 0; // in hours
+
+    // Calculate my stats for comparison
+    const myTotalXp = myLogsArray.reduce((acc, log) => acc + log.xp, 0);
+    const myTotalTime = myLogsArray.reduce(
+      (acc, log) => acc + (log.time ?? 0),
+      0
+    );
+    const myTotalCharsRead = myLogsArray.reduce(
+      (acc, log) => acc + (log.chars ?? 0),
+      0
+    );
+    const myReadingPercentage =
+      totalCharCount > 0
+        ? Math.min((myTotalCharsRead / totalCharCount) * 100, 100)
+        : 0;
+    const myReadingSpeed =
+      myTotalTime && myTotalTime > 0
+        ? (myTotalCharsRead / myTotalTime) * 60
+        : 0;
+
+    return {
+      sortedLogs,
+      totalXp,
+      totalTime,
+      totalCharsRead,
+      totalCharCount,
+      readingPercentage,
+      readingSpeed,
+      recentLogs,
+      recentReadingSpeed,
+      recentEstimatedTimeToFinish,
+      myTotalXp,
+      myTotalTime,
+      myTotalCharsRead,
+      myReadingPercentage,
+      myReadingSpeed,
+    };
+  }, [logsArray, myLogsArray, mediaDocument?.jiten?.mainDeck.characterCount]);
+
+  // Destructure calculations for easier access
+  const {
+    sortedLogs,
+    totalXp,
+    totalTime,
+    totalCharsRead,
+    totalCharCount,
+    readingPercentage,
+    readingSpeed,
+    recentLogs,
+    recentReadingSpeed,
+    recentEstimatedTimeToFinish,
+    myTotalXp,
+    myTotalTime,
+    myTotalCharsRead,
+    myReadingPercentage,
+    myReadingSpeed,
+  } = calculations;
 
   // Get difficulty info
   const difficultyLevel = mediaDocument?.jiten?.mainDeck.difficulty;
@@ -101,6 +333,236 @@ function MediaDetails() {
 
   const handleShowMore = () => {
     setVisibleLogsCount((prev) => Math.min(prev + 10, sortedLogs.length));
+  };
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="flex justify-center items-center min-h-[50vh]">
+            <Loader />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Comparison Card Component
+  const ComparisonCard = () => {
+    if (!isViewingOtherUser) return null;
+
+    // Use efficient comparison data if available, otherwise use calculated data
+    const useEfficient =
+      comparisonData && comparisonData.user1 && comparisonData.user2;
+
+    // If we don't have comparison data and don't have my logs, don't show
+    if (!useEfficient && myLogsArray.length === 0) return null;
+
+    // Get stats from either efficient endpoint or calculated
+    const myStats: IComparisonStats = useEfficient
+      ? comparisonData.user1.stats
+      : {
+          totalXp: myTotalXp,
+          totalTime: myTotalTime,
+          totalChars: myTotalCharsRead,
+          readingSpeed: myReadingSpeed,
+          totalPages: myLogsArray.reduce(
+            (acc, log) => acc + (log.pages ?? 0),
+            0
+          ),
+          totalEpisodes: myLogsArray.reduce(
+            (acc, log) => acc + (log.episodes ?? 0),
+            0
+          ),
+          logCount: myLogsArray.length,
+          readingPercentage: myReadingPercentage,
+        };
+
+    const theirStats: IComparisonStats = useEfficient
+      ? comparisonData.user2.stats
+      : {
+          totalXp,
+          totalTime,
+          totalChars: totalCharsRead,
+          readingSpeed,
+          totalPages: logsArray.reduce((acc, log) => acc + (log.pages ?? 0), 0),
+          totalEpisodes: logsArray.reduce(
+            (acc, log) => acc + (log.episodes ?? 0),
+            0
+          ),
+          logCount: logsArray.length,
+          readingPercentage,
+        };
+
+    const ComparisonStat = ({
+      label,
+      myValue,
+      theirValue,
+      unit = '',
+      formatter = (val: number) => numberWithCommas(val),
+    }: {
+      label: string;
+      myValue: number;
+      theirValue: number;
+      unit?: string;
+      formatter?: (val: number) => string;
+    }) => {
+      const difference = myValue - theirValue;
+      const isHigher = difference > 0;
+      const isEqual = difference === 0;
+
+      return (
+        <div className="stat bg-base-200 rounded-lg p-3">
+          <div className="stat-title text-xs">{label}</div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+            <div className="stat-value text-sm sm:text-lg text-primary truncate">
+              {formatter(myValue)}
+              {unit}
+            </div>
+            <div className="text-xs hidden sm:block">vs</div>
+            <div className="stat-value text-sm sm:text-lg text-base-content/60 truncate">
+              {formatter(theirValue)}
+              {unit}
+            </div>
+          </div>
+          <div
+            className={`stat-desc flex items-center gap-1 text-xs ${
+              isEqual
+                ? 'text-base-content/60'
+                : isHigher
+                  ? 'text-success'
+                  : 'text-error'
+            }`}
+          >
+            {!isEqual && (
+              <svg
+                className="w-3 h-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={isHigher ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'}
+                />
+              </svg>
+            )}
+            <span className="truncate">
+              {isEqual
+                ? 'Same'
+                : `${formatter(Math.abs(difference))}${unit} ${isHigher ? 'ahead' : 'behind'}`}
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="card bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 shadow-lg">
+        <div className="card-body">
+          <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            Comparison: You vs {username}
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ComparisonStat
+              label="Total XP"
+              myValue={myStats.totalXp}
+              theirValue={theirStats.totalXp}
+            />
+
+            <ComparisonStat
+              label="Total Time"
+              myValue={myStats.totalTime}
+              theirValue={theirStats.totalTime}
+              unit="m"
+              formatter={(val) =>
+                val >= 60
+                  ? `${Math.floor(val / 60)}h ${val % 60}`
+                  : val.toString()
+              }
+            />
+
+            {(mediaDocument?.type === 'vn' ||
+              mediaDocument?.type === 'manga' ||
+              mediaDocument?.type === 'reading') &&
+              totalCharCount > 0 && (
+                <>
+                  <ComparisonStat
+                    label="Characters Read"
+                    myValue={myStats.totalChars}
+                    theirValue={theirStats.totalChars}
+                  />
+
+                  <ComparisonStat
+                    label="Completion"
+                    myValue={myStats.readingPercentage}
+                    theirValue={theirStats.readingPercentage}
+                    unit="%"
+                    formatter={(val) => val.toFixed(1)}
+                  />
+
+                  {myStats.readingSpeed > 0 && theirStats.readingSpeed > 0 && (
+                    <ComparisonStat
+                      label="Reading Speed"
+                      myValue={myStats.readingSpeed}
+                      theirValue={theirStats.readingSpeed}
+                      unit=" chars/hr"
+                      formatter={(val) => Math.round(val).toString()}
+                    />
+                  )}
+                </>
+              )}
+
+            {mediaDocument?.type === 'anime' && (
+              <ComparisonStat
+                label="Episodes Watched"
+                myValue={myStats.totalEpisodes}
+                theirValue={theirStats.totalEpisodes}
+              />
+            )}
+
+            {mediaDocument?.type === 'manga' && (
+              <ComparisonStat
+                label="Pages Read"
+                myValue={myStats.totalPages}
+                theirValue={theirStats.totalPages}
+              />
+            )}
+          </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-sm text-base-content/70">
+              You have{' '}
+              <span className="font-semibold text-primary">
+                {myStats.logCount}
+              </span>{' '}
+              log{myStats.logCount !== 1 ? 's' : ''} • {username} has{' '}
+              <span className="font-semibold text-secondary">
+                {theirStats.logCount}
+              </span>{' '}
+              log{theirStats.logCount !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -645,7 +1107,7 @@ function MediaDetails() {
             </div>
           </div>
 
-          {/* Right Column - Progress Chart + Logs */}
+          {/* Right Column - Progress Chart + Comparison + Logs */}
           <div className="space-y-6">
             {/* Progress Chart Card */}
             <div className="card bg-base-100 shadow-lg">
@@ -666,9 +1128,12 @@ function MediaDetails() {
                   </svg>
                   Progress Chart
                 </h2>
-                <ProgressChart logs={logs} />
+                <ProgressChart logs={finalLogs as ILog[]} />
               </div>
             </div>
+
+            {/* Comparison Card */}
+            <ComparisonCard />
 
             {/* Logs Section */}
             <div className="card bg-base-100 shadow-lg">
@@ -690,14 +1155,14 @@ function MediaDetails() {
                     </svg>
                     Recent Activity
                   </h2>
-                  {logs && logs.length > 0 && (
+                  {finalLogs && finalLogs.length > 0 && (
                     <div className="badge badge-neutral">
                       {sortedLogs.length} total
                     </div>
                   )}
                 </div>
 
-                {logs && logs.length > 0 ? (
+                {finalLogs && finalLogs.length > 0 ? (
                   <div className="space-y-3">
                     {visibleLogs.map((log) => (
                       <LogCard key={log._id} log={log} user={username} />

@@ -376,6 +376,7 @@ export async function getUserLogs(
       initialMatch.mediaId = req.query.mediaId;
     }
 
+    // Optimized pipeline with better index utilization
     let pipeline: PipelineStage[] = [
       {
         $match: initialMatch,
@@ -385,18 +386,19 @@ export async function getUserLogs(
           date: -1,
         },
       },
-      {
-        $skip: skip,
-      },
     ];
+
+    // Only add skip if greater than 0
+    if (skip > 0) {
+      pipeline.push({ $skip: skip });
+    }
 
     // Only add limit if it's greater than 0
     if (limit > 0) {
-      pipeline.push({
-        $limit: limit,
-      });
+      pipeline.push({ $limit: limit });
     }
 
+    // More efficient lookup - only lookup media for logs we're actually returning
     pipeline.push(
       {
         $lookup: {
@@ -404,6 +406,16 @@ export async function getUserLogs(
           localField: 'mediaId',
           foreignField: 'contentId',
           as: 'media',
+          pipeline: [
+            {
+              $project: {
+                contentId: 1,
+                title: 1,
+                contentImage: 1,
+                type: 1,
+              },
+            },
+          ],
         },
       },
       {
@@ -433,9 +445,7 @@ export async function getUserLogs(
       }
     );
 
-    const logs = await Log.aggregate(pipeline, {
-      collation: { locale: 'en', strength: 2 },
-    });
+    const logs = await Log.aggregate(pipeline);
 
     if (!logs.length) return res.sendStatus(204);
 
