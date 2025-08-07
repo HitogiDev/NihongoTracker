@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { ILog, updateLogRequest } from '../types';
 import { DateTime } from 'luxon';
 import {
@@ -19,7 +19,7 @@ import {
   MdEdit,
   MdShare,
 } from 'react-icons/md';
-import { deleteLogFn, updateLogFn, getLogDetailsFn } from '../api/trackerApi';
+import { deleteLogFn, updateLogFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import queryClient from '../queryClient';
 import { AxiosError } from 'axios';
@@ -73,16 +73,16 @@ const logTypeConfig = {
   movie: {
     label: 'Movie',
     icon: MdMovie,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
-    borderColor: 'border-primary/20',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
   },
   'tv show': {
     label: 'TV Show',
     icon: MdOutlineTv,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/20',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
   },
   other: {
     label: 'Other',
@@ -100,9 +100,6 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const deleteModalRef = useRef<HTMLDialogElement>(null);
   const editModalRef = useRef<HTMLDialogElement>(null);
   const detailsModalRef = useRef<HTMLDialogElement>(null);
-
-  // Add state for tracking when details modal is open
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Edit form state with all editable fields
   const [editData, setEditData] = useState({
@@ -196,18 +193,6 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     },
   });
 
-  // Query for detailed log information
-  const {
-    data: logDetails,
-    isLoading: isLoadingDetails,
-    error: detailsError,
-  } = useQuery({
-    queryKey: ['logDetails', log._id],
-    queryFn: () => getLogDetailsFn(log._id),
-    enabled: isDetailsModalOpen,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-
   function openEditModal() {
     setEditData({
       description: description || '',
@@ -227,13 +212,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   }
 
   function openDetailsModal() {
-    setIsDetailsModalOpen(true);
     detailsModalRef.current?.showModal();
-  }
-
-  function closeDetailsModal() {
-    setIsDetailsModalOpen(false);
-    detailsModalRef.current?.close();
   }
 
   function handleEditSubmit(e: React.FormEvent) {
@@ -362,10 +341,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           tooltip: `${time} minutes spent reading`,
         });
       }
-    } else if (
-      (type === 'video' || type === 'audio' || type === 'movie') &&
-      time
-    ) {
+    } else if ((type === 'video' || type === 'audio') && time) {
       const timeStr =
         time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
       info.push({
@@ -616,335 +592,288 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               </div>
             </div>
             <form method="dialog">
-              <button
-                className="btn btn-sm btn-circle btn-ghost"
-                onClick={closeDetailsModal}
-              >
-                ✕
-              </button>
+              <button className="btn btn-sm btn-circle btn-ghost">✕</button>
             </form>
           </div>
 
-          {isLoadingDetails ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
-              <p className="mt-4 text-base-content/60">
-                Loading log details...
-              </p>
-            </div>
-          ) : detailsError ? (
-            <div className="alert alert-error">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="stroke-current shrink-0 w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>Failed to load log details. Please try again.</span>
-            </div>
-          ) : logDetails ? (
-            <div className="space-y-6">
-              {/* Media Information */}
-              <div className="card bg-base-200 shadow-sm">
-                <div className="card-body p-4">
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <MdBook className="w-5 h-5" />
-                    Media Information
-                  </h4>
+          <div className="space-y-6">
+            {/* Media Information */}
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4">
+                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <MdBook className="w-5 h-5" />
+                  Content Information
+                </h4>
 
-                  <div className="space-y-3">
-                    <div>
-                      <span className="label-text font-medium">Title:</span>
-                      <p className="text-base-content mt-1">
-                        {logDetails.media?.title?.contentTitleNative ||
-                          logDetails.description}
-                      </p>
-                    </div>
+                <div className="space-y-3">
+                  <div>
+                    <span className="label-text font-medium">Title:</span>
+                    <p className="text-base-content mt-1">{logTitle}</p>
+                  </div>
 
-                    {logDetails.media?.title?.contentTitleEnglish && (
+                  {media &&
+                    typeof media === 'object' &&
+                    media.title?.contentTitleEnglish && (
                       <div>
                         <span className="label-text font-medium">
                           English Title:
                         </span>
                         <p className="text-base-content mt-1">
-                          {logDetails.media.title.contentTitleEnglish}
+                          {media.title.contentTitleEnglish}
                         </p>
                       </div>
                     )}
 
-                    {logDetails.media?.title?.contentTitleRomaji && (
+                  {media &&
+                    typeof media === 'object' &&
+                    media.title?.contentTitleRomaji && (
                       <div>
                         <span className="label-text font-medium">
                           Romaji Title:
                         </span>
                         <p className="text-base-content mt-1">
-                          {logDetails.media.title.contentTitleRomaji}
+                          {media.title.contentTitleRomaji}
                         </p>
                       </div>
                     )}
 
-                    {logDetails.description &&
-                      logDetails.description !==
-                        (logDetails.media?.title?.contentTitleNative ||
-                          logTitle) && (
-                        <div>
-                          <span className="label-text font-medium">
-                            Description:
-                          </span>
-                          <p className="text-base-content mt-1">
-                            {logDetails.description}
-                          </p>
-                        </div>
-                      )}
-
-                    {logDetails.media?.type && (
-                      <div>
-                        <span className="label-text font-medium">
-                          Media Type:
-                        </span>
-                        <span className="badge badge-outline ml-2 capitalize">
-                          {logDetails.media.type}
-                        </span>
-                      </div>
-                    )}
-
-                    {logDetails.media?.contentId && (
-                      <div>
-                        <span className="label-text font-medium">
-                          Content ID:
-                        </span>
-                        <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
-                          {logDetails.media.contentId}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Activity Statistics */}
-              <div className="card bg-base-200 shadow-sm">
-                <div className="card-body p-4">
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <MdTrendingUp className="w-5 h-5" />
-                    Activity Statistics
-                  </h4>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="stat bg-base-100 rounded-lg p-3">
-                      <div className="stat-title text-xs">
-                        Experience Gained
-                      </div>
-                      <div
-                        className={`stat-value text-2xl ${typeConfig.color}`}
-                      >
-                        {logDetails.xp}
-                      </div>
-                      <div className="stat-desc">XP Points</div>
-                    </div>
-
-                    {logDetails.time && logDetails.time > 0 && (
-                      <div className="stat bg-base-100 rounded-lg p-3">
-                        <div className="stat-title text-xs">Time Spent</div>
-                        <div className="stat-value text-2xl text-info">
-                          {logDetails.time >= 60
-                            ? `${Math.floor(logDetails.time / 60)}h ${logDetails.time % 60}m`
-                            : `${logDetails.time}m`}
-                        </div>
-                        <div className="stat-desc">
-                          {logDetails.time} minutes
-                        </div>
-                      </div>
-                    )}
-
-                    {logDetails.episodes && (
-                      <div className="stat bg-base-100 rounded-lg p-3">
-                        <div className="stat-title text-xs">Episodes</div>
-                        <div className="stat-value text-2xl text-secondary">
-                          {logDetails.episodes}
-                        </div>
-                        <div className="stat-desc">Watched</div>
-                      </div>
-                    )}
-
-                    {logDetails.pages && logDetails.pages > 0 && (
-                      <div className="stat bg-base-100 rounded-lg p-3">
-                        <div className="stat-title text-xs">Pages</div>
-                        <div className="stat-value text-2xl text-warning">
-                          {logDetails.pages}
-                        </div>
-                        <div className="stat-desc">Read</div>
-                      </div>
-                    )}
-
-                    {logDetails.chars && (
-                      <div className="stat bg-base-100 rounded-lg p-3">
-                        <div className="stat-title text-xs">Characters</div>
-                        <div className="stat-value text-lg text-accent">
-                          {logDetails.chars.toLocaleString()}
-                        </div>
-                        <div className="stat-desc">Read</div>
-                      </div>
-                    )}
-
-                    {(logDetails.type === 'reading' ||
-                      logDetails.type === 'vn') &&
-                      logDetails.chars &&
-                      logDetails.time &&
-                      logDetails.time > 0 && (
-                        <div className="stat bg-base-100 rounded-lg p-3">
-                          <div className="stat-title text-xs">
-                            Reading Speed
-                          </div>
-                          <div className="stat-value text-xl text-success">
-                            {Math.round(
-                              (logDetails.chars / logDetails.time) * 60
-                            )}
-                          </div>
-                          <div className="stat-desc">chars/hour</div>
-                        </div>
-                      )}
-                  </div>
-                </div>
-              </div>
-
-              {/* User Information */}
-              {logDetails.user && (
-                <div className="card bg-base-200 shadow-sm">
-                  <div className="card-body p-4">
-                    <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      User Information
-                    </h4>
-
-                    <div className="flex items-center gap-3">
-                      {logDetails.user.avatar && (
-                        <div className="avatar">
-                          <div className="w-12 h-12 rounded-full">
-                            <img
-                              src={logDetails.user.avatar}
-                              alt={logDetails.user.username}
-                            />
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium">
-                          {logDetails.user.username}
-                        </p>
-                        {logDetails.user.titles &&
-                          logDetails.user.titles.length > 0 && (
-                            <div className="flex gap-1 mt-1">
-                              {logDetails.user.titles
-                                .slice(0, 2)
-                                .map((title: string, index: number) => (
-                                  <span
-                                    key={index}
-                                    className="badge badge-primary badge-xs"
-                                  >
-                                    {title}
-                                  </span>
-                                ))}
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Technical Details */}
-              <div className="card bg-base-200 shadow-sm">
-                <div className="card-body p-4">
-                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <MdSpeed className="w-5 h-5" />
-                    Technical Details
-                  </h4>
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="label-text font-medium">Log ID:</span>
-                      <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded">
-                        {logDetails._id}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
+                  {description && description !== logTitle && (
+                    <div>
                       <span className="label-text font-medium">
-                        Content Type:
+                        Description:
                       </span>
-                      <span className="capitalize">{logDetails.type}</span>
+                      <p className="text-base-content mt-1">{description}</p>
+                    </div>
+                  )}
+
+                  {media && typeof media === 'object' && media.type && (
+                    <div>
+                      <span className="label-text font-medium">
+                        Media Type:
+                      </span>
+                      <span className="badge badge-outline ml-2 capitalize">
+                        {media.type}
+                      </span>
+                    </div>
+                  )}
+
+                  {media && typeof media === 'object' && media.contentId && (
+                    <div>
+                      <span className="label-text font-medium">
+                        Content ID:
+                      </span>
+                      <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
+                        {media.contentId}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Statistics */}
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4">
+                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <MdTrendingUp className="w-5 h-5" />
+                  Activity Statistics
+                </h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="stat bg-base-100 rounded-lg p-3">
+                    <div className="stat-title text-xs">Experience Gained</div>
+                    <div className={`stat-value text-2xl ${typeConfig.color}`}>
+                      {xp}
+                    </div>
+                    <div className="stat-desc">XP Points</div>
+                  </div>
+
+                  {time && time > 0 ? (
+                    <div className="stat bg-base-100 rounded-lg p-3">
+                      <div className="stat-title text-xs">Time Spent</div>
+                      <div className="stat-value text-2xl text-info">
+                        {time >= 60
+                          ? `${Math.floor(time / 60)}h ${time % 60}m`
+                          : `${time}m`}
+                      </div>
+                      <div className="stat-desc">{time} minutes</div>
+                    </div>
+                  ) : null}
+
+                  {episodes && (
+                    <div className="stat bg-base-100 rounded-lg p-3">
+                      <div className="stat-title text-xs">Episodes</div>
+                      <div className="stat-value text-2xl text-secondary">
+                        {episodes}
+                      </div>
+                      <div className="stat-desc">Watched</div>
+                    </div>
+                  )}
+
+                  {pages && pages > 0 ? (
+                    <div className="stat bg-base-100 rounded-lg p-3">
+                      <div className="stat-title text-xs">Pages</div>
+                      <div className="stat-value text-2xl text-warning">
+                        {pages}
+                      </div>
+                      <div className="stat-desc">Read</div>
+                    </div>
+                  ) : null}
+
+                  {chars && (
+                    <div className="stat bg-base-100 rounded-lg p-3">
+                      <div className="stat-title text-xs">Characters</div>
+                      <div className="stat-value text-lg text-accent">
+                        {chars.toLocaleString()}
+                      </div>
+                      <div className="stat-desc">Read</div>
+                    </div>
+                  )}
+
+                  {readingSpeed && (
+                    <div className="stat bg-base-100 rounded-lg p-3">
+                      <div className="stat-title text-xs">Reading Speed</div>
+                      <div className="stat-value text-xl text-success">
+                        {readingSpeed}
+                      </div>
+                      <div className="stat-desc">chars/hour</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Date and Time Information */}
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4">
+                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <MdCalendarToday className="w-5 h-5" />
+                  Date & Time
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className="label-text font-medium">Created:</span>
+                    <p className="text-base-content mt-1">{fullDate}</p>
+                    <p className="text-sm text-base-content/60">
+                      {relativeDate}
+                    </p>
+                  </div>
+
+                  {time && (
+                    <div>
+                      <span className="label-text font-medium">Duration:</span>
+                      <p className="text-base-content mt-1">
+                        {time >= 60
+                          ? `${Math.floor(time / 60)} hour${Math.floor(time / 60) !== 1 ? 's' : ''} and ${time % 60} minute${time % 60 !== 1 ? 's' : ''}`
+                          : `${time} minute${time !== 1 ? 's' : ''}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Media Details (if available) */}
+            {media && typeof media === 'object' && (
+              <div className="card bg-base-200 shadow-sm">
+                <div className="card-body p-4">
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <MdVideoLibrary className="w-5 h-5" />
+                    Media Details
+                  </h4>
+
+                  <div className="space-y-3">
+                    <div>
+                      <span className="label-text font-medium">
+                        Content ID:
+                      </span>
+                      <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
+                        {media.contentId}
+                      </span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="label-text font-medium">Created:</span>
-                      <span>
-                        {logDetails.date
-                          ? new Date(logDetails.date).toLocaleString()
-                          : 'Unknown'}
+                    <div>
+                      <span className="label-text font-medium">
+                        Media Type:
+                      </span>
+                      <span className="badge badge-outline ml-2 capitalize">
+                        {media.type}
                       </span>
                     </div>
 
-                    {logDetails.editedFields &&
-                      Object.keys(logDetails.editedFields).length > 0 && (
-                        <div>
-                          <span className="label-text font-medium">
-                            Last Edited Fields:
-                          </span>
-                          <div className="flex gap-1 mt-1">
-                            {Object.keys(logDetails.editedFields).map(
-                              (field) => (
-                                <span
-                                  key={field}
-                                  className="badge badge-warning badge-xs"
-                                >
-                                  {field}
-                                </span>
-                              )
-                            )}
+                    <div>
+                      <span className="label-text font-medium">
+                        Available Titles:
+                      </span>
+                      <div className="mt-1 space-y-1">
+                        {media.title?.contentTitleNative && (
+                          <div className="text-sm">
+                            <span className="font-medium">Native:</span>{' '}
+                            {media.title.contentTitleNative}
                           </div>
-                        </div>
-                      )}
+                        )}
+                        {media.title?.contentTitleEnglish && (
+                          <div className="text-sm">
+                            <span className="font-medium">English:</span>{' '}
+                            {media.title.contentTitleEnglish}
+                          </div>
+                        )}
+                        {media.title?.contentTitleRomaji && (
+                          <div className="text-sm">
+                            <span className="font-medium">Romaji:</span>{' '}
+                            {media.title.contentTitleRomaji}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Technical Details */}
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4">
+                <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <MdSpeed className="w-5 h-5" />
+                  Technical Details
+                </h4>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="label-text font-medium">Log ID:</span>
+                    <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded">
+                      {log._id}
+                    </span>
+                  </div>
+
+                  {logUser && (
+                    <div className="flex justify-between">
+                      <span className="label-text font-medium">User:</span>
+                      <span>{logUser}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <span className="label-text font-medium">
+                      Content Type:
+                    </span>
+                    <span className="capitalize">{type}</span>
                   </div>
                 </div>
               </div>
             </div>
-          ) : null}
+          </div>
 
           <div className="modal-action mt-6">
             <form method="dialog" className="w-full">
-              <button
-                className="btn btn-outline w-full"
-                onClick={closeDetailsModal}
-              >
-                Close
-              </button>
+              <button className="btn btn-outline w-full">Close</button>
             </form>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button aria-label="Close modal" onClick={closeDetailsModal}>
-            close
-          </button>
+          <button aria-label="Close modal">close</button>
         </form>
       </dialog>
 

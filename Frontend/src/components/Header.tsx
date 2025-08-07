@@ -64,10 +64,10 @@ function Header() {
               >
                 <li>
                   <Link
-                    to="/goals"
+                    to={`/user/${user.username}/stats`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    Goals
+                    Stats
                   </Link>
                 </li>
                 <li>
@@ -169,9 +169,9 @@ function Header() {
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
-                  to="/goals"
+                  to={`/user/${user.username}/stats`}
                 >
-                  Goals
+                  Stats
                 </Link>
               </li>
               <li>
