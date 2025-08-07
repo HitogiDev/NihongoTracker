@@ -93,4 +93,19 @@ LogSchema.virtual('media', {
   justOne: true,
 });
 
+// NOTE: In production, indexes should be created via migration scripts
+// rather than Mongoose schema definitions for better control and performance.
+// See: npm run migrate:indexes:prod
+//
+// Development indexes (only active in development mode):
+if (process.env.NODE_ENV === 'development') {
+  LogSchema.index({ user: 1, date: -1 }); // For user logs sorted by date
+  LogSchema.index({ user: 1, mediaId: 1, type: 1 }); // For specific media logs by user
+  LogSchema.index({ user: 1, type: 1, date: -1 }); // For user logs by type sorted by date
+  LogSchema.index({ mediaId: 1, type: 1, date: -1 }); // For media logs sorted by date
+  LogSchema.index({ user: 1, private: 1, date: -1 }); // For filtering private logs
+  LogSchema.index({ date: -1 }); // For recent logs across all users
+  LogSchema.index({ user: 1, mediaId: 1, type: 1, date: -1 }); // Critical compound index
+}
+
 export default model<ILog>('Log', LogSchema);
