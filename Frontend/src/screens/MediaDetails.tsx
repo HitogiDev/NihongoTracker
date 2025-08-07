@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -19,6 +19,11 @@ const difficultyLevels = [
 function MediaDetails() {
   const { mediaDocument, mediaType, username } =
     useOutletContext<OutletMediaContextType>();
+
+  // Scroll to top when component mounts or media changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [mediaDocument?.contentId]);
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
 

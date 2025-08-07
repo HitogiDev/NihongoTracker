@@ -141,6 +141,56 @@ function ListScreen() {
     return filtered;
   }, [allMedia, searchQuery, selectedFilter, sortBy]);
 
+  // Group media by type when no filters are applied
+  const groupedMedia = useMemo(() => {
+    const shouldGroup = selectedFilter === 'all' && !searchQuery.trim();
+
+    if (!shouldGroup) {
+      return { ungrouped: filteredAndSortedMedia };
+    }
+
+    const groups: Record<string, (IMediaDocument & { category: string })[]> =
+      {};
+    const typeOrder = [
+      'anime',
+      'manga',
+      'reading',
+      'vn',
+      'video',
+      'movie',
+      'tv show',
+    ];
+
+    filteredAndSortedMedia.forEach((item) => {
+      if (!groups[item.type]) {
+        groups[item.type] = [];
+      }
+      groups[item.type].push(item);
+    });
+
+    // Sort each group internally by title
+    Object.keys(groups).forEach((type) => {
+      groups[type].sort((a, b) =>
+        (a.title.contentTitleNative || '').localeCompare(
+          b.title.contentTitleNative || ''
+        )
+      );
+    });
+
+    // Return groups in the desired order
+    const orderedGroups: Record<
+      string,
+      (IMediaDocument & { category: string })[]
+    > = {};
+    typeOrder.forEach((type) => {
+      if (groups[type] && groups[type].length > 0) {
+        orderedGroups[type] = groups[type];
+      }
+    });
+
+    return orderedGroups;
+  }, [filteredAndSortedMedia, selectedFilter, searchQuery]);
+
   // Calculate statistics
   const stats = useMemo(() => {
     const totalCount = allMedia.length;
@@ -340,11 +390,21 @@ function ListScreen() {
             {/* Results Count */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <p className="text-sm text-base-content/70">
-                Showing {filteredAndSortedMedia.length} of {stats.totalCount}{' '}
-                items
+                Showing{' '}
+                {Object.keys(groupedMedia).includes('ungrouped')
+                  ? groupedMedia.ungrouped?.length || 0
+                  : Object.values(groupedMedia).reduce(
+                      (acc, group) => acc + group.length,
+                      0
+                    )}{' '}
+                of {stats.totalCount} items
                 {searchQuery && ` for "${searchQuery}"`}
               </p>
-              {filteredAndSortedMedia.length > 0 && (
+              {(Object.keys(groupedMedia).includes('ungrouped')
+                ? (groupedMedia.ungrouped?.length || 0) > 0
+                : Object.values(groupedMedia).some(
+                    (group) => group.length > 0
+                  )) && (
                 <div className="flex items-center gap-2 text-sm text-base-content/70">
                   <MdAutoAwesome className="w-4 h-4" />
                   <span>Your immersion journey</span>
@@ -357,7 +417,50 @@ function ListScreen() {
 
       {/* Media Grid/List */}
       <div className="container mx-auto px-4 py-4">
-        {filteredAndSortedMedia.length === 0 ? (
+        {Object.keys(groupedMedia).includes('ungrouped') ? (
+          // Ungrouped view (when filters are applied)
+          groupedMedia.ungrouped && groupedMedia.ungrouped.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="max-w-md mx-auto space-y-4">
+                <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
+                  <MdBookmark className="w-12 h-12 text-base-content/40" />
+                </div>
+                <h3 className="text-2xl font-bold">No media found</h3>
+                <p className="text-base-content/70">
+                  {searchQuery
+                    ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
+                    : selectedFilter !== 'all'
+                      ? `No ${selectedFilter} media in your library yet.`
+                      : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                </p>
+                {(searchQuery || selectedFilter !== 'all') && (
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedFilter('all');
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+              {groupedMedia.ungrouped?.map((item) => (
+                <MediaCard key={item.contentId} media={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {groupedMedia.ungrouped?.map((item) => (
+                <MediaListItem key={item.contentId} media={item} />
+              ))}
+            </div>
+          )
+        ) : // Grouped view (no filters applied)
+        Object.keys(groupedMedia).length === 0 ? (
           <div className="text-center py-20">
             <div className="max-w-md mx-auto space-y-4">
               <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
@@ -365,39 +468,113 @@ function ListScreen() {
               </div>
               <h3 className="text-2xl font-bold">No media found</h3>
               <p className="text-base-content/70">
-                {searchQuery
-                  ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
-                  : selectedFilter !== 'all'
-                    ? `No ${selectedFilter} media in your library yet.`
-                    : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                Your immersion library is empty. Start logging your Japanese
+                learning activities!
               </p>
-              {(searchQuery || selectedFilter !== 'all') && (
-                <button
-                  className="btn btn-outline"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedFilter('all');
-                  }}
-                >
-                  Clear filters
-                </button>
-              )}
             </div>
           </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {filteredAndSortedMedia.map((item) => (
-              <MediaCard key={item.contentId} media={item} />
-            ))}
-          </div>
         ) : (
-          <div className="space-y-3">
-            {filteredAndSortedMedia.map((item) => (
-              <MediaListItem key={item.contentId} media={item} />
+          <div className="space-y-8">
+            {Object.entries(groupedMedia).map(([type, mediaList]) => (
+              <MediaGroup
+                key={type}
+                type={type}
+                mediaList={mediaList}
+                viewMode={viewMode}
+                count={mediaList.length}
+              />
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Media Group Component for organizing by type
+function MediaGroup({
+  type,
+  mediaList,
+  viewMode,
+  count,
+}: {
+  type: string;
+  mediaList: (IMediaDocument & { category: string })[];
+  viewMode: ViewMode;
+  count: number;
+}) {
+  const typeConfig = {
+    anime: {
+      icon: MdPlayArrow,
+      color: 'text-secondary',
+      label: 'Anime',
+    },
+    manga: {
+      icon: MdBook,
+      color: 'text-warning',
+      label: 'Manga',
+    },
+    reading: {
+      icon: MdBook,
+      color: 'text-primary',
+      label: 'Reading',
+    },
+    vn: {
+      icon: MdGamepad,
+      color: 'text-accent',
+      label: 'Visual Novels',
+    },
+    video: {
+      icon: MdVideoLibrary,
+      color: 'text-info',
+      label: 'Video',
+    },
+    movie: {
+      icon: MdMovie,
+      color: 'text-error',
+      label: 'Movies',
+    },
+    'tv show': {
+      icon: MdOutlineTv,
+      color: 'text-success',
+      label: 'TV Shows',
+    },
+  };
+
+  const config = typeConfig[type as keyof typeof typeConfig];
+  const TypeIcon = config?.icon || MdBookmark;
+
+  if (!config) return null;
+
+  return (
+    <div className="space-y-4">
+      {/* Section Header */}
+      <div className="flex items-center gap-3 pb-2 border-b border-base-300">
+        <div className={`p-2 rounded-lg bg-base-200 ${config.color}`}>
+          <TypeIcon className="w-5 h-5" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold">{config.label}</h2>
+          <p className="text-sm text-base-content/60">
+            {count} {count === 1 ? 'item' : 'items'}
+          </p>
+        </div>
+      </div>
+
+      {/* Media Content */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+          {mediaList.map((item) => (
+            <MediaCard key={item.contentId} media={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {mediaList.map((item) => (
+            <MediaListItem key={item.contentId} media={item} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

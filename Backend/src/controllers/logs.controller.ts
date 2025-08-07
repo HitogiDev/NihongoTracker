@@ -397,22 +397,41 @@ export async function getUserLogs(
       });
     }
 
-    // Only project log fields and mediaId/type for the list
-    pipeline.push({
-      $project: {
-        _id: 1,
-        type: 1,
-        mediaId: 1,
-        xp: 1,
-        description: 1,
-        episodes: 1,
-        pages: 1,
-        chars: 1,
-        time: 1,
-        date: 1,
-        // No media join here
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'media',
+          localField: 'mediaId',
+          foreignField: 'contentId',
+          as: 'media',
+        },
       },
-    });
+      {
+        $unwind: {
+          path: '$media',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // Final projection to shape the output
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          mediaId: 1,
+          xp: 1,
+          description: 1,
+          episodes: 1,
+          pages: 1,
+          chars: 1,
+          time: 1,
+          date: 1,
+          'media.contentId': 1,
+          'media.title': 1,
+          'media.contentImage': 1,
+          'media.type': 1,
+        },
+      }
+    );
 
     const logs = await Log.aggregate(pipeline, {
       collation: { locale: 'en', strength: 2 },
@@ -452,19 +471,8 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
       {
         $lookup: {
           from: 'media',
-          let: { mediaId: '$mediaId', type: '$type' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$contentId', '$$mediaId'] },
-                    { $eq: ['$type', '$$type'] },
-                  ],
-                },
-              },
-            },
-          ],
+          localField: 'mediaId',
+          foreignField: 'contentId',
           as: 'mediaData',
         },
       },
@@ -1478,107 +1486,6 @@ export async function recalculateXp(
       message: `Recalculated stats for ${results.processedUsers} users (${results.updatedLogs} logs updated)`,
       results,
     });
-  } catch (error) {
-    return next(error as customError);
-  }
-}
-
-// New endpoint: getLogDetails
-export async function getLogDetails(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const logAggregation = await Log.aggregate([
-      {
-        $match: {
-          _id: new Types.ObjectId(req.params.id),
-        },
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'user',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      {
-        $unwind: {
-          path: '$user',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: 'media',
-          let: { mediaId: '$mediaId', type: '$type' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$contentId', '$$mediaId'] },
-                    { $eq: ['$type', '$$type'] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: 'mediaData',
-        },
-      },
-      {
-        $unwind: {
-          path: '$mediaData',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          type: 1,
-          description: 1,
-          episodes: 1,
-          pages: 1,
-          chars: 1,
-          time: 1,
-          date: 1,
-          mediaId: 1,
-          xp: 1,
-          editedFields: 1,
-          private: 1,
-          user: {
-            _id: 1,
-            username: 1,
-            avatar: 1,
-            titles: 1,
-          },
-          media: {
-            _id: '$mediaData._id',
-            contentId: '$mediaData.contentId',
-            type: '$mediaData.type',
-            title: '$mediaData.title',
-            contentImage: '$mediaData.contentImage',
-            coverImage: '$mediaData.coverImage',
-            description: '$mediaData.description',
-            episodes: '$mediaData.episodes',
-            episodeDuration: '$mediaData.episodeDuration',
-            chapters: '$mediaData.chapters',
-            volumes: '$mediaData.volumes',
-            isAdult: '$mediaData.isAdult',
-            synonyms: '$mediaData.synonyms',
-          },
-        },
-      },
-    ]);
-
-    const foundLog = logAggregation[0];
-    if (!foundLog) throw new customError('Log not found', 404);
-
-    // Return all details needed for LogCard details modal
-    return res.status(200).json(foundLog);
   } catch (error) {
     return next(error as customError);
   }

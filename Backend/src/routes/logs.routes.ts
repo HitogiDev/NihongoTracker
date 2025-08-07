@@ -3,7 +3,6 @@ import { ICreateLog } from '../types.js';
 import { Router } from 'express';
 import {
   getLog,
-  getLogDetails,
   createLog,
   deleteLog,
   updateLog,
@@ -53,8 +52,6 @@ router.get('/untrackedlogs', protect, getUntrackedLogs);
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 
 router.get('/:id', getLog);
-
-router.get('/:id/details', getLogDetails);
 
 router.delete('/:id', protect, deleteLog);
 
