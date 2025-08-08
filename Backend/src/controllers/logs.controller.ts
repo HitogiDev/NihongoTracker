@@ -1445,9 +1445,11 @@ export async function recalculateXp(
             case 'reading':
             case 'manga':
               if (charsXp) {
-                log.xp = Math.max(charsXp, timeXp);
+                log.xp = Math.max(charsXp, timeXp, 0);
               } else if (pagesXp) {
-                log.xp = Math.max(pagesXp, timeXp);
+                log.xp = Math.max(pagesXp, timeXp, 0);
+              } else if (timeXp) {
+                log.xp = timeXp;
               } else {
                 log.xp = 0;
               }
