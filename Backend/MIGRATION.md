@@ -71,25 +71,70 @@ npm run verify:indexes
 
 ### Step-by-Step Production Deployment
 
+#### For Docker Deployments
+
 1. **Backup Database**
 
    ```bash
    mongodump --uri="your-production-uri" --out=backup-$(date +%Y%m%d)
    ```
 
-2. **Test on Staging First**
+2. **Connect to Running Container**
+
+   ```bash
+   # Get container ID
+   docker ps
+   
+   # Execute migration in the running container
+   docker exec -it <container-id> /bin/bash
+   cd /app/Backend
+   NODE_ENV=production npm run migrate:indexes:prod
+   ```
+
+3. **Alternative: Run Migration During Deployment**
+
+   Add to your `docker-compose.yml` or deployment script:
+
+   ```yaml
+   services:
+     migration:
+       image: elaxdev/nihongo-tracker:latest
+       env_file:
+         - Backend/.env
+       depends_on:
+         - mongo
+       environment:
+         - NODE_ENV=production
+       command: >
+         sh -c "cd /app/Backend && 
+                npm run migrate:indexes:prod && 
+                echo 'Migration completed'"
+       restart: "no"
+   ```
+
+4. **Verify Migration Success**
+
+   ```bash
+   docker exec -it <container-id> /bin/bash
+   cd /app/Backend
+   npm run verify:indexes
+   ```
+
+#### For Traditional Deployments
+
+1. **Test on Staging First**
 
    ```bash
    NODE_ENV=staging npm run migrate:indexes
    ```
 
-3. **Deploy to Production During Low Traffic**
+2. **Deploy to Production During Low Traffic**
 
    ```bash
    NODE_ENV=production npm run migrate:indexes:prod
    ```
 
-4. **Monitor Performance**
+3. **Monitor Performance**
    - Watch MongoDB metrics
    - Check application response times
    - Monitor memory and CPU usage
@@ -187,6 +232,24 @@ Watch these metrics:
 
 ### CI/CD Integration
 
+#### For Docker-based Deployments
+
+Add to your deployment pipeline:
+
+```yaml
+# Example GitHub Actions step
+- name: Run Database Migration
+  run: |
+    docker run --rm \
+      --network host \
+      -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+      -e NODE_ENV=production \
+      elaxdev/nihongo-tracker:latest \
+      sh -c "cd /app/Backend && npm run migrate:indexes:prod"
+```
+
+#### For Non-Docker Deployments
+
 Add to your deployment pipeline:
 
 ```yaml
@@ -198,6 +261,61 @@ Add to your deployment pipeline:
     DATABASE_URL: ${{ secrets.DATABASE_URL }}
     NODE_ENV: production
 ```
+
+### Docker-Specific Notes
+
+#### Why Use a Separate Migration Service?
+
+**Advantages of the Migration Service Pattern:**
+
+1. **Separation of Concerns**:
+   - Application startup is independent of database migrations
+   - Migrations run once and exit, while the app runs continuously
+   - Clear distinction between infrastructure setup and application runtime
+
+2. **Zero-Downtime Deployments**:
+   - Migrations run before the application starts serving traffic
+   - No risk of users hitting an app with incomplete database schema
+   - Can run migrations during deployment without affecting running services
+
+3. **Deployment Safety**:
+   - If migration fails, deployment stops before the app starts
+   - Prevents inconsistent state where app is running with wrong database schema
+   - Easy to rollback if migration issues are detected
+
+4. **Resource Management**:
+   - Migration container exits after completion (no ongoing resource usage)
+   - Application container focuses solely on serving requests
+   - Better resource allocation and monitoring
+
+5. **CI/CD Integration**:
+   - Can be easily integrated into deployment pipelines
+   - Clear success/failure signals for automation
+   - Logs are separate and easier to track
+
+6. **Production Best Practices**:
+   - Follows the "fail fast" principle
+   - Migrations are tracked and versioned separately
+   - Easier to debug migration-specific issues
+
+**Alternative Approaches and Their Drawbacks:**
+
+- **Running migrations in app startup**: App startup becomes slower and less reliable
+- **Manual migrations**: Human error, inconsistent across environments
+- **Database init scripts**: Not idempotent, harder to version control
+
+#### Container Requirements
+
+- Ensure your Docker container includes the migration scripts
+- Database connection must be accessible from the container network
+- Use proper environment variable mounting for sensitive data
+
+#### Best Practices
+
+1. **Separate Migration Container**: Run migrations in a separate container that exits after completion
+2. **Health Checks**: Verify database connectivity before running migrations
+3. **Rollback Strategy**: Have a plan to rollback indexes if needed
+4. **Monitoring**: Use container logs to monitor migration progress
 
 ## Support
 
