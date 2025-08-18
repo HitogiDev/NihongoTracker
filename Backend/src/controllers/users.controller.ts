@@ -199,45 +199,8 @@ export async function getRanking(
 
     // If filtering by time period (not all-time), calculate stats from logs
     if (timeFilter !== 'all-time') {
-      // Calculate user stats based on logs within the date range
-      const userStats = await Log.aggregate([
-        { $match: dateFilter },
-        {
-          $group: {
-            _id: '$user',
-            userXp: { $sum: '$xp' },
-            readingXp: {
-              $sum: {
-                $cond: [
-                  { $in: ['$type', ['reading', 'manga', 'vn']] },
-                  '$xp',
-                  0,
-                ],
-              },
-            },
-            listeningXp: {
-              $sum: {
-                $cond: [
-                  { $in: ['$type', ['anime', 'audio', 'video']] },
-                  '$xp',
-                  0,
-                ],
-              },
-            },
-          },
-        },
-        { $sort: { [`${filter}`]: sort === 'asc' ? 1 : -1 } },
-        { $skip: skip },
-        { $limit: limit },
-      ]);
-
-      // Lookup user details
+      // Lookup user details with aggregated stats
       const rankingUsers = await User.aggregate([
-        {
-          $match: {
-            _id: { $in: userStats.map((stat) => stat._id) },
-          },
-        },
         {
           $lookup: {
             from: 'logs',
@@ -354,7 +317,8 @@ export async function getRanking(
             as: 'timeStats',
           },
         },
-        { $unwind: '$timeStats' },
+        // Unwind the timeStats array - this will exclude users with no logs in the time period
+        { $unwind: { path: '$timeStats', preserveNullAndEmptyArrays: false } },
         {
           $project: {
             _id: 0,
@@ -372,9 +336,17 @@ export async function getRanking(
             },
           },
         },
+        // Filter out users with 0 value for the selected metric
+        {
+          $match: {
+            [`stats.${filter}`]: { $gt: 0 },
+          },
+        },
         { $sort: { [`stats.${filter}`]: sort === 'asc' ? 1 : -1 } },
+        { $skip: skip },
+        { $limit: limit },
       ]);
-
+      console.log('Ranking users:', rankingUsers);
       return res.status(200).json(rankingUsers);
     } else {
       // Default behavior - get all-time stats with hours calculated from logs
@@ -481,6 +453,12 @@ export async function getRanking(
             'stats.listeningHours': {
               $ifNull: [{ $arrayElemAt: ['$timeData.listeningHours', 0] }, 0],
             },
+          },
+        },
+        // Filter out users with 0 value for the selected metric
+        {
+          $match: {
+            [`stats.${filter}`]: { $gt: 0 },
           },
         },
         { $sort: { [`stats.${filter}`]: sort === 'asc' ? 1 : -1 } },
