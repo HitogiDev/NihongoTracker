@@ -14,6 +14,7 @@ import useSearch from '../hooks/useSearch';
 import { DayPicker } from 'react-day-picker';
 import { useUserDataStore } from '../store/userData';
 import { validateLogData } from '../utils/validation';
+import MediaStats from '../components/MediaStats';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -1282,7 +1283,7 @@ function LogScreen() {
                 </div>
 
                 {/* Media Preview Card - Updated for YouTube */}
-                <div className="flex flex-col items-center justify-start">
+                <div className="flex flex-col items-center justify-start lg:col-span-1">
                   {logData.type === 'video' && logData.youtubeChannelInfo ? (
                     <div className="card bg-base-200 shadow-md w-full">
                       <figure className="px-4 pt-4">
@@ -1305,6 +1306,15 @@ function LogScreen() {
                             {logData.minutes > 0 && `${logData.minutes}m`}
                           </div>
                         ) : null}
+
+                        {/* Media Stats for YouTube videos */}
+                        {logData.mediaId && logData.type && (
+                          <MediaStats
+                            mediaId={logData.mediaId}
+                            mediaType={logData.type}
+                            mediaName={logData.mediaName}
+                          />
+                        )}
                       </div>
                     </div>
                   ) : logData.img &&
@@ -1360,6 +1370,15 @@ function LogScreen() {
                           <div className="text-sm mt-2 max-h-28 overflow-y-auto">
                             {logData.mediaDescription}
                           </div>
+                        )}
+
+                        {/* Media Stats for regular media */}
+                        {logData.mediaId && logData.type && (
+                          <MediaStats
+                            mediaId={logData.mediaId}
+                            mediaType={logData.type}
+                            mediaName={logData.mediaName}
+                          />
                         )}
                       </div>
                     </div>
