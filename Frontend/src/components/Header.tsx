@@ -88,6 +88,7 @@ function Header() {
                 </li>
                 <li>
                   <Link
+
                     to={`/user/${user.username}/list`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
