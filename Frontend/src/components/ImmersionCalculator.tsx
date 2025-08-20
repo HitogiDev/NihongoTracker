@@ -6,173 +6,144 @@ const XP_FACTOR_PAGES = 1.23;
 const XP_FACTOR_CHARS = 5;
 const XP_FACTOR_EPISODES = XP_FACTOR_TIME * 24;
 
-interface CalculationResult {
-  xp: number;
-  time?: number;
-  pages?: number;
-  chars?: number;
-  episodes?: number;
+interface XpToImmersionResult {
+  targetXp: number;
+  episodes: number;
+  timeHours: number;
+  timeMinutes: number;
+  characters: number;
+  pages: number;
 }
 
-type MediaType =
-  | 'anime'
-  | 'reading'
-  | 'manga'
-  | 'vn'
-  | 'video'
-  | 'movie'
-  | 'audio';
-type InputType = 'time' | 'pages' | 'chars' | 'episodes';
-type CalculationMode = 'immersion-to-xp' | 'xp-to-immersion';
+interface ImmersionToXpResult {
+  inputValue: number;
+  inputType: string;
+  inputLabel: string;
+  xpGained: number;
+}
+
+type CalculationMode = 'xp-to-immersion' | 'immersion-to-xp';
 
 const ImmersionCalculator: React.FC = () => {
-  const [mode, setMode] = useState<CalculationMode>('immersion-to-xp');
-  const [mediaType, setMediaType] = useState<MediaType>('anime');
-  const [inputValue, setInputValue] = useState<string>('');
-  const [inputType, setInputType] = useState<InputType>('time');
-  const [result, setResult] = useState<CalculationResult | null>(null);
-
-  // Calculate XP from immersion input
-  const calculateXpFromInput = React.useCallback(
-    (value: number, type: InputType, mediaType: MediaType): number => {
-      let timeXp = 0;
-      let charsXp = 0;
-      let pagesXp = 0;
-      let episodesXp = 0;
-
-      switch (type) {
-        case 'time':
-          timeXp = Math.floor(((value * 45) / 100) * XP_FACTOR_TIME);
-          break;
-        case 'chars':
-          charsXp = Math.floor((value / 350) * XP_FACTOR_CHARS);
-          break;
-        case 'pages':
-          pagesXp = Math.floor(value * XP_FACTOR_PAGES);
-          break;
-        case 'episodes':
-          episodesXp = Math.floor(((value * 45) / 100) * XP_FACTOR_EPISODES);
-          break;
-      }
-
-      // Apply media type logic
-      switch (mediaType) {
-        case 'anime':
-          if (timeXp) return timeXp;
-          if (episodesXp) return episodesXp;
-          return 0;
-        case 'vn':
-        case 'video':
-        case 'movie':
-        case 'audio':
-          return Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
-        case 'reading':
-        case 'manga':
-          if (charsXp) return Math.max(charsXp, timeXp);
-          if (pagesXp) return Math.max(pagesXp, timeXp);
-          return timeXp;
-        default:
-          return 0;
-      }
-    },
-    []
-  );
+  const [mode, setMode] = useState<CalculationMode>('xp-to-immersion');
+  const [targetXp, setTargetXp] = useState<string>('');
+  const [immersionValue, setImmersionValue] = useState<string>('');
+  const [immersionType, setImmersionType] = useState<string>('time');
+  const [xpToImmersionResult, setXpToImmersionResult] =
+    useState<XpToImmersionResult | null>(null);
+  const [immersionToXpResult, setImmersionToXpResult] =
+    useState<ImmersionToXpResult | null>(null);
 
   // Calculate immersion needed for target XP
   const calculateImmersionFromXp = React.useCallback(
-    (targetXp: number, type: InputType): number => {
-      switch (type) {
-        case 'time':
-          return Math.ceil((targetXp * 100) / (45 * XP_FACTOR_TIME));
-        case 'chars':
-          return Math.ceil((targetXp * 350) / XP_FACTOR_CHARS);
-        case 'pages':
-          return Math.ceil(targetXp / XP_FACTOR_PAGES);
-        case 'episodes':
-          return Math.ceil((targetXp * 100) / (45 * XP_FACTOR_EPISODES));
-        default:
-          return 0;
-      }
+    (targetXp: number): XpToImmersionResult => {
+      const episodes = Math.ceil((targetXp * 100) / (45 * XP_FACTOR_EPISODES));
+      const timeMinutesTotal = Math.ceil(
+        (targetXp * 100) / (45 * XP_FACTOR_TIME)
+      );
+      const timeHours = Math.floor(timeMinutesTotal / 60);
+      const timeMinutes = timeMinutesTotal % 60;
+      const characters = Math.ceil((targetXp * 350) / XP_FACTOR_CHARS);
+      const pages = Math.ceil(targetXp / XP_FACTOR_PAGES);
+
+      return {
+        targetXp,
+        episodes,
+        timeHours,
+        timeMinutes,
+        characters,
+        pages,
+      };
     },
     []
   );
 
-  const getAvailableInputTypes = (
-    mediaType: MediaType
-  ): Array<{ value: InputType; label: string }> => {
-    switch (mediaType) {
-      case 'anime':
-        return [
-          { value: 'time', label: 'Minutes' },
-          { value: 'episodes', label: 'Episodes' },
-        ];
-      case 'reading':
-      case 'manga':
-        return [
-          { value: 'time', label: 'Minutes' },
-          { value: 'chars', label: 'Characters' },
-          { value: 'pages', label: 'Pages' },
-        ];
-      case 'vn':
-        return [
-          { value: 'time', label: 'Minutes' },
-          { value: 'chars', label: 'Characters' },
-          { value: 'pages', label: 'Pages' },
-          { value: 'episodes', label: 'Episodes' },
-        ];
-      case 'video':
-      case 'movie':
-      case 'audio':
-        return [
-          { value: 'time', label: 'Minutes' },
-          { value: 'chars', label: 'Characters' },
-          { value: 'pages', label: 'Pages' },
-          { value: 'episodes', label: 'Episodes' },
-        ];
-      default:
-        return [{ value: 'time', label: 'Minutes' }];
-    }
+  // Calculate XP from immersion input
+  const calculateXpFromImmersion = React.useCallback(
+    (value: number, type: string): ImmersionToXpResult => {
+      let xpGained = 0;
+      let inputLabel = '';
+
+      switch (type) {
+        case 'time':
+          xpGained = Math.floor(((value * 45) / 100) * XP_FACTOR_TIME);
+          inputLabel = 'minutes';
+          break;
+        case 'characters':
+          xpGained = Math.floor((value / 350) * XP_FACTOR_CHARS);
+          inputLabel = 'characters';
+          break;
+        case 'pages':
+          xpGained = Math.floor(value * XP_FACTOR_PAGES);
+          inputLabel = 'pages';
+          break;
+        case 'episodes':
+          xpGained = Math.floor(((value * 45) / 100) * XP_FACTOR_EPISODES);
+          inputLabel = 'episodes';
+          break;
+      }
+
+      return {
+        inputValue: value,
+        inputType: type,
+        inputLabel,
+        xpGained,
+      };
+    },
+    []
+  );
+
+  const getAvailableInputTypes = (): Array<{
+    value: string;
+    label: string;
+  }> => {
+    return [
+      { value: 'time', label: 'Minutes' },
+      { value: 'characters', label: 'Characters' },
+      { value: 'pages', label: 'Pages' },
+      { value: 'episodes', label: 'Episodes' },
+    ];
   };
 
-  const handleCalculate = React.useCallback(() => {
-    const value = parseFloat(inputValue);
-    if (isNaN(value) || value <= 0) {
-      setResult(null);
+  // Handle XP to immersion calculation
+  const handleXpToImmersionCalculate = React.useCallback(() => {
+    const xpValue = parseFloat(targetXp);
+    if (isNaN(xpValue) || xpValue <= 0) {
+      setXpToImmersionResult(null);
       return;
     }
+    const result = calculateImmersionFromXp(xpValue);
+    setXpToImmersionResult(result);
+  }, [targetXp, calculateImmersionFromXp]);
 
-    if (mode === 'immersion-to-xp') {
-      const xp = calculateXpFromInput(value, inputType, mediaType);
-      setResult({ xp, [inputType]: value });
-    } else {
-      const immersion = calculateImmersionFromXp(value, inputType);
-      setResult({ xp: value, [inputType]: immersion });
+  // Handle immersion to XP calculation
+  const handleImmersionToXpCalculate = React.useCallback(() => {
+    const value = parseFloat(immersionValue);
+    if (isNaN(value) || value <= 0) {
+      setImmersionToXpResult(null);
+      return;
     }
-  }, [
-    inputValue,
-    inputType,
-    mediaType,
-    mode,
-    calculateXpFromInput,
-    calculateImmersionFromXp,
-  ]);
+    const result = calculateXpFromImmersion(value, immersionType);
+    setImmersionToXpResult(result);
+  }, [immersionValue, immersionType, calculateXpFromImmersion]);
 
   useEffect(() => {
-    const availableTypes = getAvailableInputTypes(mediaType);
-    if (!availableTypes.find((type) => type.value === inputType)) {
-      setInputType(availableTypes[0].value);
+    if (mode === 'xp-to-immersion' && targetXp) {
+      handleXpToImmersionCalculate();
+    } else if (mode === 'xp-to-immersion') {
+      setXpToImmersionResult(null);
     }
-  }, [mediaType, inputType]);
+  }, [mode, targetXp, handleXpToImmersionCalculate]);
 
   useEffect(() => {
-    if (inputValue) {
-      handleCalculate();
-    } else {
-      setResult(null);
+    if (mode === 'immersion-to-xp' && immersionValue) {
+      handleImmersionToXpCalculate();
+    } else if (mode === 'immersion-to-xp') {
+      setImmersionToXpResult(null);
     }
-  }, [inputValue, handleCalculate]);
+  }, [mode, immersionValue, immersionType, handleImmersionToXpCalculate]);
 
-  const availableInputTypes = getAvailableInputTypes(mediaType);
+  const availableInputTypes = getAvailableInputTypes();
 
   return (
     <div className="card bg-base-100 shadow-xl border border-base-300">
@@ -208,167 +179,183 @@ const ImmersionCalculator: React.FC = () => {
           </label>
           <div className="join w-full">
             <button
-              className={`btn join-item flex-1 ${mode === 'immersion-to-xp' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setMode('immersion-to-xp')}
-            >
-              Immersion → XP
-            </button>
-            <button
               className={`btn join-item flex-1 ${mode === 'xp-to-immersion' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('xp-to-immersion')}
             >
               XP → Immersion
             </button>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {/* Media Type Selection */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Media Type</span>
-            </label>
-            <select
-              className="select select-bordered select-primary"
-              value={mediaType}
-              onChange={(e) => setMediaType(e.target.value as MediaType)}
+            <button
+              className={`btn join-item flex-1 ${mode === 'immersion-to-xp' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setMode('immersion-to-xp')}
             >
-              <option value="anime">Anime</option>
-              <option value="reading">Reading</option>
-              <option value="manga">Manga</option>
-              <option value="vn">Visual Novel</option>
-              <option value="video">Video</option>
-              <option value="movie">Movie</option>
-              <option value="audio">Audio</option>
-            </select>
-          </div>
-
-          {/* Input Type Selection */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Metric Type</span>
-            </label>
-            <select
-              className="select select-bordered select-secondary"
-              value={inputType}
-              onChange={(e) => setInputType(e.target.value as InputType)}
-            >
-              {availableInputTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+              Immersion → XP
+            </button>
           </div>
         </div>
 
-        {/* Input Value */}
-        <div className="form-control mb-6">
-          <label className="label">
-            <span className="label-text font-medium">
-              {mode === 'immersion-to-xp'
-                ? `Enter ${availableInputTypes.find((t) => t.value === inputType)?.label.toLowerCase()}`
-                : 'Enter target XP'}
-            </span>
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              className="input input-bordered input-accent w-full pr-12 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="0"
-              min="0"
-              step={
-                inputType === 'time' || inputType === 'episodes'
-                  ? '1'
-                  : inputType === 'pages'
-                    ? '1'
-                    : '1'
-              }
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <span className="text-sm text-base-content/60">
-                {mode === 'immersion-to-xp'
-                  ? availableInputTypes
-                      .find((t) => t.value === inputType)
-                      ?.label.toLowerCase()
-                  : 'XP'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Results */}
-        {result && (
-          <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/20 rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-success"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+        {mode === 'xp-to-immersion' ? (
+          <>
+            {/* XP to Immersion Mode */}
+            <div className="form-control mb-6">
+              <label className="label">
+                <span className="label-text font-medium">Target XP</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  className="input input-bordered input-primary w-full pr-12 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value={targetXp}
+                  onChange={(e) => setTargetXp(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span className="text-sm text-base-content/60">XP</span>
+                </div>
               </div>
-              <span className="font-semibold text-lg">Result</span>
             </div>
 
-            {mode === 'immersion-to-xp' ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                  <span className="text-base-content/70">Input:</span>
-                  <span className="font-mono text-lg">
-                    {result[inputType as keyof CalculationResult]}{' '}
-                    {availableInputTypes
-                      .find((t) => t.value === inputType)
-                      ?.label.toLowerCase()}
+            {/* XP to Immersion Results */}
+            {xpToImmersionResult && (
+              <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/20 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-success"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <span className="font-semibold text-lg">
+                    Ways to get {xpToImmersionResult.targetXp} XP
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-primary/10 rounded-lg p-3">
-                  <span className="text-primary font-medium">XP Gained:</span>
-                  <span className="font-mono text-xl font-bold text-primary">
-                    {result.xp} XP
-                  </span>
+
+                <div className="grid gap-3">
+                  <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
+                    <span className="text-base-content/70">Episodes:</span>
+                    <span className="font-mono text-lg font-semibold">
+                      {xpToImmersionResult.episodes} episodes
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
+                    <span className="text-base-content/70">Time:</span>
+                    <span className="font-mono text-lg font-semibold">
+                      {xpToImmersionResult.timeHours > 0 &&
+                        `${xpToImmersionResult.timeHours}h `}
+                      {xpToImmersionResult.timeMinutes}m
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
+                    <span className="text-base-content/70">Characters:</span>
+                    <span className="font-mono text-lg font-semibold">
+                      {xpToImmersionResult.characters.toLocaleString()}{' '}
+                      characters
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
+                    <span className="text-base-content/70">Pages:</span>
+                    <span className="font-mono text-lg font-semibold">
+                      {Math.round(xpToImmersionResult.pages)} pages
+                    </span>
+                  </div>
                 </div>
-                <p className="text-sm text-base-content/60 mt-3">
-                  Based on {mediaType} calculation rules
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between bg-primary/10 rounded-lg p-3">
-                  <span className="text-primary font-medium">Target XP:</span>
-                  <span className="font-mono text-xl font-bold text-primary">
-                    {result.xp} XP
-                  </span>
-                </div>
-                <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                  <span className="text-base-content/70">Required:</span>
-                  <span className="font-mono text-lg">
-                    {result[inputType as keyof CalculationResult]}{' '}
-                    {availableInputTypes
-                      .find((t) => t.value === inputType)
-                      ?.label.toLowerCase()}
-                  </span>
-                </div>
-                <p className="text-sm text-base-content/60 mt-3">
-                  You need {result[inputType as keyof CalculationResult]}{' '}
-                  {availableInputTypes
-                    .find((t) => t.value === inputType)
-                    ?.label.toLowerCase()}{' '}
-                  to get {result.xp} XP
-                </p>
               </div>
             )}
-          </div>
+          </>
+        ) : (
+          <>
+            {/* Immersion to XP Mode */}
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Immersion Type</span>
+                </label>
+                <select
+                  className="select select-bordered select-secondary"
+                  value={immersionType}
+                  onChange={(e) => setImmersionType(e.target.value)}
+                >
+                  {availableInputTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Quantity</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    className="input input-bordered input-accent w-full pr-20 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    value={immersionValue}
+                    onChange={(e) => setImmersionValue(e.target.value)}
+                    placeholder="0"
+                    min="0"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <span className="text-sm text-base-content/60">
+                      {availableInputTypes
+                        .find((t) => t.value === immersionType)
+                        ?.label.toLowerCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Immersion to XP Results */}
+            {immersionToXpResult && (
+              <div className="bg-gradient-to-r from-success/10 to-primary/10 border border-success/20 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-success"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <span className="font-semibold text-lg">XP Calculation</span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
+                    <span className="text-base-content/70">Input:</span>
+                    <span className="font-mono text-lg">
+                      {immersionToXpResult.inputValue}{' '}
+                      {immersionToXpResult.inputLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-primary/10 rounded-lg p-3">
+                    <span className="text-primary font-medium">XP Gained:</span>
+                    <span className="font-mono text-xl font-bold text-primary">
+                      {immersionToXpResult.xpGained} XP
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
