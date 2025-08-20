@@ -9,6 +9,8 @@ import {
   importLogs,
   assignMedia,
   getUntrackedLogs,
+  getLogScreenStats,
+  getMediaStats,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
 import { protect } from '../libs/authMiddleware.js';
@@ -48,6 +50,10 @@ router.post<ParamsDictionary, any, ICreateLog>(
 );
 
 router.get('/untrackedlogs', protect, getUntrackedLogs);
+
+router.get('/stats/logscreen', protect, getLogScreenStats);
+
+router.get('/stats/media', protect, getMediaStats);
 
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 

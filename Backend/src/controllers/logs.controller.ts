@@ -1601,3 +1601,515 @@ export async function recalculateStreaks(
     return next(error as customError);
   }
 }
+
+// Get log statistics for a specific media
+export async function getMediaStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { user } = res.locals;
+  const { mediaId, type } = req.query;
+
+  try {
+    if (!mediaId || !type) {
+      return res.status(400).json({
+        message: 'MediaId and type are required',
+      });
+    }
+
+    // Create date filters for different time periods
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Build match criteria for this specific media
+    const baseMatch = {
+      user: user._id,
+      mediaId: mediaId as string,
+      type: type as string,
+    };
+
+    // Get total stats for this specific media
+    const totalStats = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: null,
+          totalLogs: { $sum: 1 },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          firstLogDate: { $min: '$date' },
+          lastLogDate: { $max: '$date' },
+        },
+      },
+    ]);
+
+    // Get recent activity stats (this week and this month)
+    const recentStats = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $facet: {
+          thisWeek: [
+            { $match: { date: { $gte: thisWeekStart } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+          thisMonth: [
+            { $match: { date: { $gte: thisMonthStart } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+          today: [
+            { $match: { date: { $gte: today } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    // Format the response
+    const total = totalStats[0] || {
+      totalLogs: 0,
+      totalEpisodes: 0,
+      totalChars: 0,
+      totalPages: 0,
+      totalTime: 0,
+      totalXp: 0,
+      firstLogDate: null,
+      lastLogDate: null,
+    };
+
+    const recent = recentStats[0];
+    const thisWeek = recent.thisWeek[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const thisMonth = recent.thisMonth[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const todayStats = recent.today[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+
+    return res.status(200).json({
+      mediaId: mediaId as string,
+      type: type as string,
+      total: {
+        logs: total.totalLogs,
+        episodes: total.totalEpisodes,
+        characters: total.totalChars,
+        pages: total.totalPages,
+        minutes: total.totalTime,
+        hours: Math.round((total.totalTime / 60) * 10) / 10,
+        xp: total.totalXp,
+        firstLogDate: total.firstLogDate,
+        lastLogDate: total.lastLogDate,
+      },
+      today: {
+        logs: todayStats.count,
+        episodes: todayStats.episodes,
+        characters: todayStats.chars,
+        pages: todayStats.pages,
+        minutes: todayStats.time,
+        hours: Math.round((todayStats.time / 60) * 10) / 10,
+        xp: todayStats.xp,
+      },
+      thisWeek: {
+        logs: thisWeek.count,
+        episodes: thisWeek.episodes,
+        characters: thisWeek.chars,
+        pages: thisWeek.pages,
+        minutes: thisWeek.time,
+        hours: Math.round((thisWeek.time / 60) * 10) / 10,
+        xp: thisWeek.xp,
+      },
+      thisMonth: {
+        logs: thisMonth.count,
+        episodes: thisMonth.episodes,
+        characters: thisMonth.chars,
+        pages: thisMonth.pages,
+        minutes: thisMonth.time,
+        hours: Math.round((thisMonth.time / 60) * 10) / 10,
+        xp: thisMonth.xp,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get log statistics for the log screen
+export async function getLogScreenStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { user } = res.locals;
+  const type = req.query.type as string;
+
+  try {
+    // Create date filters for different time periods
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Build match criteria based on type
+    const baseMatch = { user: user._id };
+    const typeMatch = type ? { ...baseMatch, type } : baseMatch;
+
+    // Get total stats for this type
+    const totalStats = await Log.aggregate([
+      { $match: typeMatch },
+      {
+        $group: {
+          _id: null,
+          totalLogs: { $sum: 1 },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+        },
+      },
+    ]);
+
+    // Get recent activity stats (this week and this month)
+    const recentStats = await Log.aggregate([
+      { $match: typeMatch },
+      {
+        $facet: {
+          thisWeek: [
+            { $match: { date: { $gte: thisWeekStart } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+          thisMonth: [
+            { $match: { date: { $gte: thisMonthStart } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+          today: [
+            { $match: { date: { $gte: today } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    // Format the response
+    const total = totalStats[0] || {
+      totalLogs: 0,
+      totalEpisodes: 0,
+      totalChars: 0,
+      totalPages: 0,
+      totalTime: 0,
+      totalXp: 0,
+    };
+
+    const recent = recentStats[0];
+    const thisWeek = recent.thisWeek[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const thisMonth = recent.thisMonth[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const todayStats = recent.today[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+
+    return res.status(200).json({
+      type: type || 'all',
+      total: {
+        logs: total.totalLogs,
+        episodes: total.totalEpisodes,
+        characters: total.totalChars,
+        pages: total.totalPages,
+        minutes: total.totalTime,
+        hours: Math.round((total.totalTime / 60) * 10) / 10,
+        xp: total.totalXp,
+      },
+      today: {
+        logs: todayStats.count,
+        episodes: todayStats.episodes,
+        characters: todayStats.chars,
+        pages: todayStats.pages,
+        minutes: todayStats.time,
+        hours: Math.round((todayStats.time / 60) * 10) / 10,
+        xp: todayStats.xp,
+      },
+      thisWeek: {
+        logs: thisWeek.count,
+        episodes: thisWeek.episodes,
+        characters: thisWeek.chars,
+        pages: thisWeek.pages,
+        minutes: thisWeek.time,
+        hours: Math.round((thisWeek.time / 60) * 10) / 10,
+        xp: thisWeek.xp,
+      },
+      thisMonth: {
+        logs: thisMonth.count,
+        episodes: thisMonth.episodes,
+        characters: thisMonth.chars,
+        pages: thisMonth.pages,
+        minutes: thisMonth.time,
+        hours: Math.round((thisMonth.time / 60) * 10) / 10,
+        xp: thisMonth.xp,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

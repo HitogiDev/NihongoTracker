@@ -1,5 +1,15 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { PiCrownSimpleFill } from 'react-icons/pi';
+import {
+  PiCrownSimpleFill,
+  PiTrophyFill,
+  PiBookOpenFill,
+  PiHeadphonesFill,
+  PiLightningFill,
+  PiClockFill,
+  PiCalendarFill,
+  PiChartBarFill,
+  PiCalendarBlankFill,
+} from 'react-icons/pi';
 import { getRankingFn } from '../api/trackerApi';
 import { useState } from 'react';
 import { filterTypes } from '../types';
@@ -48,17 +58,45 @@ function RankingScreen() {
 
   // Filter options for the dropdown
   const filterOptions = [
-    { label: 'Total', value: 'userXp', icon: '⚡' },
-    { label: 'Reading', value: 'readingXp', icon: '📚' },
-    { label: 'Listening', value: 'listeningXp', icon: '🎧' },
+    {
+      label: 'Total',
+      value: 'userXp',
+      icon: <PiLightningFill className="w-4 h-4" />,
+    },
+    {
+      label: 'Reading',
+      value: 'readingXp',
+      icon: <PiBookOpenFill className="w-4 h-4" />,
+    },
+    {
+      label: 'Listening',
+      value: 'listeningXp',
+      icon: <PiHeadphonesFill className="w-4 h-4" />,
+    },
   ];
 
   // Time filter options
   const timeFilterOptions = [
-    { label: 'All Time', value: 'all-time', icon: '🏆' },
-    { label: 'Today', value: 'today', icon: '📅' },
-    { label: 'This Month', value: 'month', icon: '📊' },
-    { label: 'This Year', value: 'year', icon: '🗓️' },
+    {
+      label: 'All Time',
+      value: 'all-time',
+      icon: <PiTrophyFill className="w-4 h-4" />,
+    },
+    {
+      label: 'Today',
+      value: 'today',
+      icon: <PiCalendarFill className="w-4 h-4" />,
+    },
+    {
+      label: 'This Month',
+      value: 'month',
+      icon: <PiChartBarFill className="w-4 h-4" />,
+    },
+    {
+      label: 'This Year',
+      value: 'year',
+      icon: <PiCalendarBlankFill className="w-4 h-4" />,
+    },
   ];
 
   // Get display value based on mode
@@ -98,7 +136,7 @@ function RankingScreen() {
 
   const getFilterIcon = () => {
     const option = filterOptions.find((option) => option.value === xpFilter);
-    return option?.icon || '⚡';
+    return option?.icon || <PiLightningFill className="w-4 h-4" />;
   };
 
   // Get the correct label for the selected time filter
@@ -113,17 +151,17 @@ function RankingScreen() {
     const option = timeFilterOptions.find(
       (option) => option.value === timeFilter
     );
-    return option?.icon || '🏆';
+    return option?.icon || <PiTrophyFill className="w-4 h-4" />;
   };
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return '🥇';
+        return <span className="text-warning text-xl">🥇</span>;
       case 2:
-        return '🥈';
+        return <span className="text-base-content text-xl">🥈</span>;
       case 3:
-        return '🥉';
+        return <span className="text-accent text-xl">🥉</span>;
       default:
         return null;
     }
@@ -147,9 +185,12 @@ function RankingScreen() {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-base-content mb-2">
-            🏆 Leaderboard
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <PiTrophyFill className="w-10 h-10 text-warning" />
+            <h1 className="text-4xl font-bold text-base-content">
+              Leaderboard
+            </h1>
+          </div>
           <p className="text-base-content/70">
             See how you stack up against other learners
           </p>
@@ -160,23 +201,25 @@ function RankingScreen() {
           {/* Display Mode Toggle */}
           <div className="join">
             <button
-              className={`btn join-item ${displayMode === 'xp' ? 'btn-primary' : 'btn-outline'}`}
+              className={`btn join-item gap-2 ${displayMode === 'xp' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setDisplayMode('xp')}
             >
-              ⚡ XP
+              <PiLightningFill className="w-4 h-4" />
+              XP
             </button>
             <button
-              className={`btn join-item ${displayMode === 'hours' ? 'btn-primary' : 'btn-outline'}`}
+              className={`btn join-item gap-2 ${displayMode === 'hours' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setDisplayMode('hours')}
             >
-              ⏰ Hours
+              <PiClockFill className="w-4 h-4" />
+              Hours
             </button>
           </div>
 
           {/* Time filter dropdown */}
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-outline gap-2">
-              <span className="text-lg">{getTimeFilterIcon()}</span>
+              {getTimeFilterIcon()}
               {getTimeFilterLabel()}
               <svg
                 className="w-4 h-4"
@@ -202,7 +245,7 @@ function RankingScreen() {
                     className={`gap-3 ${timeFilter === option.value ? 'active' : ''}`}
                     onClick={() => setTimeFilter(option.value)}
                   >
-                    <span className="text-lg">{option.icon}</span>
+                    {option.icon}
                     {option.label}
                   </button>
                 </li>
@@ -213,7 +256,7 @@ function RankingScreen() {
           {/* Filter dropdown */}
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-primary gap-2">
-              <span className="text-lg">{getFilterIcon()}</span>
+              {getFilterIcon()}
               {getFilterLabel()}
               <svg
                 className="w-4 h-4"
@@ -239,7 +282,7 @@ function RankingScreen() {
                     className={`gap-3 ${xpFilter === option.value ? 'active' : ''}`}
                     onClick={() => setXpFilter(option.value as filterTypes)}
                   >
-                    <span className="text-lg">{option.icon}</span>
+                    {option.icon}
                     {option.label}
                   </button>
                 </li>
@@ -266,7 +309,7 @@ function RankingScreen() {
                     <div className="text-center order-1">
                       <div className="relative mb-4">
                         <div className="avatar">
-                          <div className="w-16 h-16 rounded-full ring ring-base-content/20">
+                          <div className="w-16 h-16 rounded-full ring ring-base-content/40">
                             {rankedUsers.pages[0][1]?.avatar ? (
                               <img
                                 src={rankedUsers.pages[0][1].avatar}
@@ -284,12 +327,21 @@ function RankingScreen() {
                           </div>
                         </div>
                       </div>
-                      <Link
-                        to={`/user/${rankedUsers.pages[0][1]?.username}`}
-                        className="font-bold hover:underline block"
-                      >
-                        🥈 {rankedUsers.pages[0][1]?.username}
-                      </Link>
+                      <div className="flex justify-center mb-1">
+                        <div className="relative">
+                          <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
+                            <div className="badge badge-sm bg-base-content text-base-100 font-bold">
+                              2nd
+                            </div>
+                          </div>
+                          <Link
+                            to={`/user/${rankedUsers.pages[0][1]?.username}`}
+                            className="font-bold hover:underline"
+                          >
+                            {rankedUsers.pages[0][1]?.username}
+                          </Link>
+                        </div>
+                      </div>
                       <div className="text-sm text-base-content/70">
                         Lv.{rankedUsers.pages[0][1]?.stats?.userLevel ?? 1}
                       </div>
@@ -327,12 +379,21 @@ function RankingScreen() {
                           <PiCrownSimpleFill className="text-4xl text-warning" />
                         </div>
                       </div>
-                      <Link
-                        to={`/user/${rankedUsers.pages[0][0]?.username}`}
-                        className="font-bold hover:underline block text-lg"
-                      >
-                        {rankedUsers.pages[0][0]?.username}
-                      </Link>
+                      <div className="flex justify-center mb-1">
+                        <div className="relative">
+                          <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
+                            <div className="badge badge-sm bg-warning text-warning-content font-bold">
+                              1st
+                            </div>
+                          </div>
+                          <Link
+                            to={`/user/${rankedUsers.pages[0][0]?.username}`}
+                            className="font-bold hover:underline text-lg"
+                          >
+                            {rankedUsers.pages[0][0]?.username}
+                          </Link>
+                        </div>
+                      </div>
                       <div className="text-sm text-base-content/70">
                         Lv.{rankedUsers.pages[0][0]?.stats?.userLevel ?? 1}
                       </div>
@@ -349,7 +410,7 @@ function RankingScreen() {
                     <div className="text-center order-3">
                       <div className="relative mb-4">
                         <div className="avatar">
-                          <div className="w-16 h-16 rounded-full ring ring-base-content/20">
+                          <div className="w-16 h-16 rounded-full ring ring-accent/50">
                             {rankedUsers.pages[0][2]?.avatar ? (
                               <img
                                 src={rankedUsers.pages[0][2].avatar}
@@ -367,12 +428,21 @@ function RankingScreen() {
                           </div>
                         </div>
                       </div>
-                      <Link
-                        to={`/user/${rankedUsers.pages[0][2]?.username}`}
-                        className="font-bold hover:underline block"
-                      >
-                        🥉 {rankedUsers.pages[0][2]?.username}
-                      </Link>
+                      <div className="flex justify-center mb-1">
+                        <div className="relative">
+                          <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
+                            <div className="badge badge-sm bg-accent text-accent-content font-bold">
+                              3rd
+                            </div>
+                          </div>
+                          <Link
+                            to={`/user/${rankedUsers.pages[0][2]?.username}`}
+                            className="font-bold hover:underline"
+                          >
+                            {rankedUsers.pages[0][2]?.username}
+                          </Link>
+                        </div>
+                      </div>
                       <div className="text-sm text-base-content/70">
                         Lv.{rankedUsers.pages[0][2]?.stats?.userLevel ?? 1}
                       </div>
@@ -421,11 +491,7 @@ function RankingScreen() {
                               <div
                                 className={`flex items-center justify-center gap-2 ${getRankColor(rank)}`}
                               >
-                                {getRankIcon(rank) && (
-                                  <span className="text-xl">
-                                    {getRankIcon(rank)}
-                                  </span>
-                                )}
+                                {getRankIcon(rank)}
                                 <span className="font-bold text-lg">
                                   {rank}
                                 </span>

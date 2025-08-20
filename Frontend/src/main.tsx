@@ -15,6 +15,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query';
 import AboutScreen from './screens/AboutScreen.tsx';
 import App from './App.tsx';
+import CalculatorScreen from './screens/CalculatorScreen.tsx';
 import FeaturesScreen from './screens/FeaturesScreen.tsx';
 import HomeScreen from './screens/HomeScreen.tsx';
 import ListScreen from './screens/ListScreen.tsx';
@@ -42,6 +43,7 @@ const router = createBrowserRouter(
       <Route path="register" element={<RegisterScreen />} />
       <Route path="settings" element={<SettingsScreen />} />
       <Route path="ranking" element={<RankingScreen />} />
+      <Route path="calculator" element={<CalculatorScreen />} />
       <Route path="features" element={<FeaturesScreen />} />
       <Route path="about" element={<AboutScreen />} />
       <Route path="/shared-log/:logId" element={<SharedLogScreen />} />

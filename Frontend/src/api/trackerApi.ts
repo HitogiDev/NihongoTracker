@@ -308,3 +308,107 @@ export const compareUserStatsFn = async (
   });
   return data;
 };
+
+// Log screen statistics interface
+export interface ILogScreenStats {
+  type: string;
+  total: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  today: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisWeek: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisMonth: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+}
+
+export async function getLogScreenStatsFn(
+  type?: string
+): Promise<ILogScreenStats> {
+  const { data } = await api.get<ILogScreenStats>('logs/stats/logscreen', {
+    params: type ? { type } : undefined,
+  });
+  return data;
+}
+
+// Media-specific statistics interface
+export interface IMediaStats {
+  mediaId: string;
+  type: string;
+  total: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+    firstLogDate: string | null;
+    lastLogDate: string | null;
+  };
+  today: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisWeek: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisMonth: {
+    logs: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+}
+
+export async function getMediaStatsFn(
+  mediaId: string,
+  type: string
+): Promise<IMediaStats> {
+  const { data } = await api.get<IMediaStats>('logs/stats/media', {
+    params: { mediaId, type },
+  });
+  return data;
+}
