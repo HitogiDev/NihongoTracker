@@ -1,7 +1,7 @@
-import { ILog } from "../types";
-import { ChartArea, ScriptableContext } from "chart.js";
-import LineChart from "./LineChart";
-import { useEffect, useState } from "react";
+import { ILog } from '../types';
+import { ChartArea, ScriptableContext } from 'chart.js';
+import LineChart from './LineChart';
+import { useEffect, useState } from 'react';
 
 interface ProgressChartProps {
   logs?: ILog[];
@@ -20,18 +20,18 @@ interface ProgressChartProps {
     }>;
   }>;
   selectedType?: string;
-  timeframe?: "today" | "month" | "year" | "total";
+  timeframe?: 'today' | 'month' | 'year' | 'total';
 }
 
 export default function ProgressChart({
   logs,
   statsData,
-  selectedType = "all",
+  selectedType = 'all',
   timeframe: externalTimeframe,
 }: ProgressChartProps) {
   const [timeframe, setTimeframe] = useState<
-    "today" | "month" | "year" | "total"
-  >("total");
+    'today' | 'month' | 'year' | 'total'
+  >('total');
 
   useEffect(() => {
     if (externalTimeframe) {
@@ -42,12 +42,11 @@ export default function ProgressChart({
   // Process data based on which data source is provided
   let labels: string[] = [];
   let xpValues: number[] = [];
-  let hasData: boolean;
 
   if (statsData) {
     // Process data from statsData (IUserStats format)
     const relevantStats =
-      selectedType === "all"
+      selectedType === 'all'
         ? statsData
         : statsData.filter((stat) => stat.type === selectedType);
 
@@ -61,17 +60,17 @@ export default function ProgressChart({
 
         // Format date based on timeframe
         let dateKey: string;
-        if (timeframe === "today") {
+        if (timeframe === 'today') {
           dateKey = `${date.getHours()}`;
-        } else if (timeframe === "month") {
+        } else if (timeframe === 'month') {
           dateKey = `${date.getDate()}`;
-        } else if (timeframe === "year") {
+        } else if (timeframe === 'year') {
           dateKey = `${date.getMonth()}`;
         } else {
           // total
           dateKey = `${date.getFullYear()}-${String(
-            date.getMonth() + 1,
-          ).padStart(2, "0")}`;
+            date.getMonth() + 1
+          ).padStart(2, '0')}`;
         }
 
         // Accumulate XP values
@@ -83,7 +82,7 @@ export default function ProgressChart({
     });
 
     // Sort and format labels and data based on timeframe
-    if (timeframe === "today") {
+    if (timeframe === 'today') {
       // Format for hours in a day
       const hourLabels: string[] = [];
       const hourValues: number[] = [];
@@ -95,13 +94,13 @@ export default function ProgressChart({
 
       labels = hourLabels;
       xpValues = hourValues;
-    } else if (timeframe === "month") {
+    } else if (timeframe === 'month') {
       // Format for days in current month
       const currentDate = new Date();
       const daysInMonth = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() + 1,
-        0,
+        0
       ).getDate();
 
       const dayLabels: string[] = [];
@@ -114,21 +113,21 @@ export default function ProgressChart({
 
       labels = dayLabels;
       xpValues = dayValues;
-    } else if (timeframe === "year") {
+    } else if (timeframe === 'year') {
       // Format for months in a year
       const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
 
       const monthLabels: string[] = [];
@@ -147,13 +146,13 @@ export default function ProgressChart({
 
       // Convert year-month keys to readable format
       labels = sortedKeys.map((key) => {
-        const [year, month] = key.split("-");
+        const [year, month] = key.split('-');
         return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(
-          "en-US",
+          'en-US',
           {
-            year: "numeric",
-            month: "short",
-          },
+            year: 'numeric',
+            month: 'short',
+          }
         );
       });
 
@@ -163,7 +162,7 @@ export default function ProgressChart({
     // Original logic for ILog[] data
     const filteredLogs = filterLogsByTimeframe(logs, timeframe);
 
-    if (timeframe === "today") {
+    if (timeframe === 'today') {
       const xpByHour: { [key: string]: number } = {};
 
       for (let i = 0; i < 24; i++) {
@@ -182,26 +181,26 @@ export default function ProgressChart({
       xpValues = Object.keys(xpByHour)
         .sort((a, b) => parseInt(a) - parseInt(b))
         .map((hour) => xpByHour[hour]);
-    } else if (timeframe === "month") {
+    } else if (timeframe === 'month') {
       const xpByDate = getXpByDate(filteredLogs);
       const dates = Object.keys(xpByDate).sort();
       labels = dates.map((date) => new Date(date).getDate().toString());
       xpValues = dates.map((date) => xpByDate[date]);
-    } else if (timeframe === "year") {
+    } else if (timeframe === 'year') {
       const xpByMonth: { [key: string]: number } = {};
       const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
 
       filteredLogs.forEach((log) => {
@@ -226,7 +225,7 @@ export default function ProgressChart({
         const date = new Date(log.date);
         const yearMonth = `${date.getFullYear()}-${(date.getMonth() + 1)
           .toString()
-          .padStart(2, "0")}`;
+          .padStart(2, '0')}`;
 
         if (!xpByMonthYear[yearMonth]) {
           xpByMonthYear[yearMonth] = 0;
@@ -241,7 +240,7 @@ export default function ProgressChart({
   }
 
   // Check if there's actual data (sum of all values > 0)
-  hasData = xpValues.some((value) => value > 0);
+  const hasData: boolean = xpValues.some((value) => value > 0);
 
   function filterLogsByTimeframe(logs: ILog[], timeframe: string) {
     const now = new Date();
@@ -249,14 +248,14 @@ export default function ProgressChart({
     return logs.filter((log) => {
       const logDate = new Date(log.date);
 
-      if (timeframe === "today") {
+      if (timeframe === 'today') {
         return logDate.toDateString() === now.toDateString();
-      } else if (timeframe === "month") {
+      } else if (timeframe === 'month') {
         return (
           logDate.getMonth() === now.getMonth() &&
           logDate.getFullYear() === now.getFullYear()
         );
-      } else if (timeframe === "year") {
+      } else if (timeframe === 'year') {
         return logDate.getFullYear() === now.getFullYear();
       } else {
         return true;
@@ -268,7 +267,7 @@ export default function ProgressChart({
     const xpByDate: { [key: string]: number } = {};
 
     logs.forEach((log) => {
-      const dateStr = new Date(log.date).toISOString().split("T")[0];
+      const dateStr = new Date(log.date).toISOString().split('T')[0];
       if (!xpByDate[dateStr]) {
         xpByDate[dateStr] = 0;
       }
@@ -281,12 +280,12 @@ export default function ProgressChart({
   function createGradient(
     ctx: CanvasRenderingContext2D,
     chartArea: ChartArea,
-    color: string,
+    color: string
   ) {
     const { top, bottom } = chartArea;
     const gradient = ctx.createLinearGradient(0, top, 0, bottom);
     gradient.addColorStop(0, color);
-    gradient.addColorStop(1, "rgba(50, 170, 250, 0)");
+    gradient.addColorStop(1, 'rgba(50, 170, 250, 0)');
     return gradient;
   }
 
@@ -294,16 +293,16 @@ export default function ProgressChart({
     labels: labels,
     datasets: [
       {
-        label: "XP Earned",
+        label: 'XP Earned',
         data: xpValues,
         fill: true,
         pointRadius: 3,
-        borderColor: "rgb(50, 170, 250)",
-        backgroundColor: function (context: ScriptableContext<"line">) {
+        borderColor: 'rgb(50, 170, 250)',
+        backgroundColor: function (context: ScriptableContext<'line'>) {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
           if (!chartArea) return undefined;
-          return createGradient(ctx, chartArea, "rgba(50, 170, 250, 1)");
+          return createGradient(ctx, chartArea, 'rgba(50, 170, 250, 1)');
         },
         tension: 0.1,
       },
@@ -311,20 +310,20 @@ export default function ProgressChart({
   };
 
   return (
-    <div className="card bg-base-100 p-4 w-full h-full">
+    <div className="w-full h-full">
       <div className="h-full w-full">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6 px-4">
           <div>
             <h2 className="text-2xl font-bold text-primary mb-2">Progress</h2>
             {hasData ? (
               <p className="text-sm text-base-content mb-4">
-                {timeframe === "today"
-                  ? "Hourly XP - Today"
-                  : timeframe === "month"
-                    ? "Daily XP - Current Month"
-                    : timeframe === "year"
-                      ? "XP Earned Over the Year"
-                      : "Total XP Earned Over Time"}
+                {timeframe === 'today'
+                  ? 'Hourly XP - Today'
+                  : timeframe === 'month'
+                    ? 'Daily XP - Current Month'
+                    : timeframe === 'year'
+                      ? 'XP Earned Over the Year'
+                      : 'Total XP Earned Over Time'}
               </p>
             ) : null}
           </div>
@@ -334,7 +333,7 @@ export default function ProgressChart({
                 value={timeframe}
                 onChange={(e) =>
                   setTimeframe(
-                    e.target.value as "today" | "month" | "year" | "total",
+                    e.target.value as 'today' | 'month' | 'year' | 'total'
                   )
                 }
                 className="select select-bordered"
@@ -348,8 +347,11 @@ export default function ProgressChart({
           )}
         </div>
 
-        <div className="max-h-80">
-          <div className="h-full w-full">
+        <div className="overflow-x-auto overflow-y-hidden rounded-lg border border-base-300 mx-4">
+          <div
+            className="bg-base-50 p-4"
+            style={{ width: '2000px', height: '350px' }}
+          >
             {hasData ? (
               <LineChart data={consistencyData} />
             ) : (
