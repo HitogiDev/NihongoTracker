@@ -113,24 +113,28 @@ export async function getDashboardHours(
 ) {
   const { user } = res.locals;
   try {
-    // Get date ranges for current month and previous month in UTC
     const now = new Date();
-    // Use UTC methods to ensure consistent date handling regardless of server timezone
+
     const currentMonthStart = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
     );
     const previousMonthStart = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)
     );
-    const previousMonthEnd = new Date(
+
+    const lastDayOfPreviousMonth = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)
+    ).getUTCDate();
+
+    const dayToUse = Math.min(now.getUTCDate(), lastDayOfPreviousMonth);
+
+    const previousMonthActualDate = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, dayToUse)
     );
 
-    // Define reading and listening types
     const readingTypes = ['reading', 'manga', 'vn'];
     const listeningTypes = ['anime', 'audio', 'video'];
 
-    // Get current month stats
     const currentMonthStats = await Log.aggregate([
       {
         $match: {
@@ -157,7 +161,7 @@ export async function getDashboardHours(
                     { $gt: ['$episodes', 0] },
                   ],
                 },
-                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $multiply: ['$episodes', 24] },
                 '$time',
               ],
             },
@@ -183,7 +187,7 @@ export async function getDashboardHours(
                     { $gt: ['$episodes', 0] },
                   ],
                 },
-                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $multiply: ['$episodes', 24] },
                 {
                   $cond: [{ $in: ['$type', listeningTypes] }, '$time', 0],
                 },
@@ -194,12 +198,11 @@ export async function getDashboardHours(
       },
     ]);
 
-    // Get previous month stats
     const previousMonthStats = await Log.aggregate([
       {
         $match: {
           user: user._id,
-          date: { $gte: previousMonthStart, $lte: previousMonthEnd },
+          date: { $gte: previousMonthStart, $lte: previousMonthActualDate },
         },
       },
       {
@@ -221,7 +224,7 @@ export async function getDashboardHours(
                     { $gt: ['$episodes', 0] },
                   ],
                 },
-                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $multiply: ['$episodes', 24] },
                 '$time',
               ],
             },
@@ -247,7 +250,7 @@ export async function getDashboardHours(
                     { $gt: ['$episodes', 0] },
                   ],
                 },
-                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $multiply: ['$episodes', 24] },
                 {
                   $cond: [{ $in: ['$type', listeningTypes] }, '$time', 0],
                 },
@@ -258,7 +261,6 @@ export async function getDashboardHours(
       },
     ]);
 
-    // Ensure we have default values if no logs were found
     const current =
       currentMonthStats.length > 0
         ? currentMonthStats[0]
@@ -277,7 +279,6 @@ export async function getDashboardHours(
             listeningTime: 0,
           };
 
-    // Remove _id from the results
     delete current._id;
     delete previous._id;
 
@@ -316,25 +317,20 @@ export async function getUserLogs(
       : 10;
   const skip = (page - 1) * limit;
 
-  // Add start and end date filters
   const startDate = req.query.start
     ? new Date(req.query.start as string)
     : null;
   const endDate = req.query.end ? new Date(req.query.end as string) : null;
 
-  // Add type filter - handle both string and array
   const type = req.query.type;
 
-  // Add search functionality
   const search = req.query.search as string;
 
   try {
-    // Check if username exists
     if (!req.params.username) {
       throw new customError('Username is required', 400);
     }
 
-    // First verify the user exists and get their ObjectId
     const userExists = await User.findOne({
       username: req.params.username,
     }).select('_id');
@@ -342,23 +338,18 @@ export async function getUserLogs(
       throw new customError('User not found', 404);
     }
 
-    // Build the initial match criteria to filter logs efficiently
     let initialMatch: IInitialMatch = {
       user: userExists._id,
     };
 
-    // Add type filter early - handle both string and array
     if (type) {
       if (Array.isArray(type)) {
-        // If type is an array, use $in operator
         initialMatch.type = { $in: type as string[] };
       } else {
-        // If type is a string, use direct match
         initialMatch.type = type as string;
       }
     }
 
-    // Add date filter early
     if (startDate || endDate) {
       initialMatch.date = {
         ...(startDate && { $gte: startDate }),
@@ -366,17 +357,14 @@ export async function getUserLogs(
       };
     }
 
-    // Add search filter early (if provided)
     if (search) {
       initialMatch.description = { $regex: search, $options: 'i' };
     }
 
-    // Add media filters early
     if (req.query.mediaId && typeof req.query.mediaId === 'string') {
       initialMatch.mediaId = req.query.mediaId;
     }
 
-    // Optimized pipeline with better index utilization
     let pipeline: PipelineStage[] = [
       {
         $match: initialMatch,
@@ -388,17 +376,14 @@ export async function getUserLogs(
       },
     ];
 
-    // Only add skip if greater than 0
     if (skip > 0) {
       pipeline.push({ $skip: skip });
     }
 
-    // Only add limit if it's greater than 0
     if (limit > 0) {
       pipeline.push({ $limit: limit });
     }
 
-    // More efficient lookup - only lookup media for logs we're actually returning
     pipeline.push(
       {
         $lookup: {
@@ -424,7 +409,7 @@ export async function getUserLogs(
           preserveNullAndEmptyArrays: true,
         },
       },
-      // Final projection to shape the output
+
       {
         $project: {
           _id: 1,
@@ -502,7 +487,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
           chars: 1,
           time: 1,
           date: 1,
-          mediaId: 1, // Keep original mediaId field
+          mediaId: 1,
           xp: 1,
           'mediaData.title': 1,
           'mediaData.contentImage': 1,
@@ -516,7 +501,6 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
     const foundLog = logAggregation[0];
     if (!foundLog) throw new customError('Log not found', 404);
 
-    // For shared logs, we want to include media information but not expose sensitive user data
     const sharedLogData = {
       _id: foundLog._id,
       type: foundLog.type,
@@ -526,8 +510,8 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
       chars: foundLog.chars,
       time: foundLog.time,
       date: foundLog.date,
-      mediaId: foundLog.mediaId, // Original mediaId preserved
-      media: foundLog.mediaData, // Populated media data in separate field
+      mediaId: foundLog.mediaId,
+      media: foundLog.mediaData,
       xp: foundLog.xp,
       isAdult: foundLog.mediaData?.isAdult || false,
     };
@@ -555,7 +539,7 @@ export async function deleteLog(
       throw new customError('Log not found or not authorized', 404);
     }
 
-    await updateStats(res, next, true); // Pass true for deletion
+    await updateStats(res, next, true);
     return res.sendStatus(204);
   } catch (error) {
     return next(error as customError);
@@ -591,7 +575,7 @@ export async function updateLog(
     for (const key in req.body) {
       if (validKeys.includes(key as keyof IEditedFields)) {
         const value = log[key as keyof IEditedFields];
-        // Only assign if value is not null or undefined
+
         if (value !== null && value !== undefined) {
           editedFields[key as keyof IEditedFields] = value;
         }
@@ -606,7 +590,7 @@ export async function updateLog(
     log.pages = pages !== undefined ? pages : log.pages;
     log.chars = chars !== undefined ? chars : log.chars;
     log.type = type !== undefined ? type : log.type;
-    log.xp = xp !== undefined ? xp : log.xp; // Update XP from middleware calculation
+    log.xp = xp !== undefined ? xp : log.xp;
     log.editedFields = editedFields;
 
     const updatedLog = await log.save();
@@ -644,16 +628,15 @@ export async function createLog(
     if (!type) throw new customError('Log type is required', 400);
     if (!description) throw new customError('Description is required', 400);
 
-    // Parse date properly, ensuring it's stored in UTC
     let logDate: Date;
     if (date) {
       if (typeof date === 'string') {
-        logDate = new Date(date); // This will parse ISO string with timezone info correctly
+        logDate = new Date(date);
       } else {
         logDate = new Date(date);
       }
     } else {
-      logDate = new Date(); // Current time in UTC
+      logDate = new Date();
     }
 
     let logMedia;
@@ -661,14 +644,12 @@ export async function createLog(
 
     if (mediaId) {
       logMedia = await MediaBase.findOne({ contentId: mediaId, type });
-      createMedia = false; // We already have mediaId, so no need to create new media
+      createMedia = false;
     }
 
-    // Handle YouTube video creation for 'video' type logs
     if (type === 'video' && createMedia && mediaData) {
-      // Create the channel media entry (using channel ID as the main media)
       const channelMedia = await MediaBase.create({
-        contentId: mediaData.channelId, // Use channel ID as the content ID
+        contentId: mediaData.channelId,
         title: {
           contentTitleNative: mediaData.channelTitle,
           contentTitleEnglish: mediaData.channelTitle,
@@ -684,14 +665,13 @@ export async function createLog(
 
       logMedia = channelMedia;
     } else if (
-      createMedia && // Media doesn't exist yet
-      type !== 'audio' && // Not audio type
-      type !== 'other' && // Not other type
-      type !== 'video' && // Not video type (handled above)
-      mediaId && // We have a mediaId
-      mediaData // We have mediaData
+      createMedia &&
+      type !== 'audio' &&
+      type !== 'other' &&
+      type !== 'video' &&
+      mediaId &&
+      mediaData
     ) {
-      // Create AniList media document (anime, manga, etc.)
       await MediaBase.create({
         contentId: mediaId,
         title: {
@@ -715,7 +695,6 @@ export async function createLog(
     }
 
     if (!logMedia && createMedia) {
-      // If we couldn't find or create media, we need to handle it
       logMedia = await MediaBase.findOne({
         contentId: mediaId,
         type,
@@ -733,7 +712,7 @@ export async function createLog(
       description,
       private: false,
       time,
-      date: logDate, // Use properly parsed date
+      date: logDate,
       chars,
     });
     if (!newLog) throw new customError('Log could not be created', 500);
@@ -747,7 +726,6 @@ export async function createLog(
 
     if (!userStats) throw new customError('User not found', 404);
 
-    // Fix streak calculation logic
     const today = new Date();
     const todayString = new Date(
       today.getFullYear(),
@@ -755,7 +733,6 @@ export async function createLog(
       today.getDate()
     ).toISOString();
 
-    // Get last streak date in the same format as today for comparison
     const lastStreakDate = userStats.stats.lastStreakDate
       ? new Date(
           userStats.stats.lastStreakDate.getFullYear(),
@@ -773,19 +750,14 @@ export async function createLog(
     ).toISOString();
 
     if (lastStreakDate === todayString) {
-      // Already logged today, do nothing to streak count
     } else if (lastStreakDate === yesterdayString) {
-      // Logged yesterday, increment streak
       userStats.stats.currentStreak += 1;
     } else if (!lastStreakDate || lastStreakDate !== todayString) {
-      // No previous logs or gap in logs, reset streak to 1
       userStats.stats.currentStreak = 1;
     }
 
-    // Update last streak date to today
     userStats.stats.lastStreakDate = today;
 
-    // Update longest streak if current streak is longer
     if (userStats.stats.currentStreak > userStats.stats.longestStreak) {
       userStats.stats.longestStreak = userStats.stats.currentStreak;
     }
@@ -993,12 +965,10 @@ export async function assignMedia(
           media = await MediaBase.create(logsData.contentMedia);
         }
 
-        // Check if we need to convert video logs to movie logs
         const shouldConvertToMovie = media.type === 'movie';
         const updateData: any = { mediaId: media.contentId };
 
         if (shouldConvertToMovie) {
-          // Convert video type logs to movie type when matched to a movie
           updateData.type = 'movie';
         }
 
@@ -1079,13 +1049,11 @@ export async function getUserStats(
     const { timeRange = 'total', type = 'all' } =
       req.query as IGetUserStatsQuery;
 
-    // Validate timeRange
     const validTimeRanges = ['today', 'month', 'year', 'total'];
     if (!validTimeRanges.includes(timeRange)) {
       return res.status(400).json({ message: 'Invalid time range' });
     }
 
-    // Validate type - handle both string and array
     const validTypes = [
       'all',
       'anime',
@@ -1099,7 +1067,6 @@ export async function getUserStats(
     ];
 
     if (Array.isArray(type)) {
-      // If type is an array, validate each type in the array
       const invalidTypes = type.filter((t) => !validTypes.includes(t));
       if (invalidTypes.length > 0) {
         return res.status(400).json({
@@ -1113,9 +1080,8 @@ export async function getUserStats(
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Build date filter
     let dateFilter: any = {};
-    let daysPeriod = 1; // Default for 'today'
+    let daysPeriod = 1;
     const now = new Date();
     if (timeRange === 'today') {
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1124,7 +1090,7 @@ export async function getUserStats(
     } else if (timeRange === 'month') {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       dateFilter = { date: { $gte: start } };
-      daysPeriod = now.getDate(); // Days elapsed in current month
+      daysPeriod = now.getDate();
     } else if (timeRange === 'year') {
       const start = new Date(now.getFullYear(), 0, 1);
       dateFilter = { date: { $gte: start } };
@@ -1133,7 +1099,6 @@ export async function getUserStats(
         1;
       daysPeriod = dayOfYear;
     } else if (timeRange === 'total') {
-      // For total, calculate days from first log to now
       const firstLog = await Log.findOne({ user: user._id }).sort({ date: 1 });
       if (firstLog) {
         const firstLogDate = firstLog.date ?? new Date(0);
@@ -1143,14 +1108,12 @@ export async function getUserStats(
           ) + 1;
         daysPeriod = daysDiff;
       } else {
-        daysPeriod = 1; // Fallback if no logs exist
+        daysPeriod = 1;
       }
     }
 
-    // Build match filter for aggregation (this affects what gets aggregated)
     let aggregationMatch: any = { user: user._id, ...dateFilter };
 
-    // Build match filter for totals calculation - handle array and string types
     let totalsMatch: any = { user: user._id, ...dateFilter };
     if (type !== 'all') {
       if (Array.isArray(type)) {
@@ -1171,7 +1134,6 @@ export async function getUserStats(
       'other',
     ];
 
-    // Aggregate stats by type (always get all types for the statsByType array)
     const statsByType: IStatByType[] = await Log.aggregate([
       { $match: aggregationMatch },
       {
@@ -1253,7 +1215,6 @@ export async function getUserStats(
       },
     ]);
 
-    // Calculate totals based on the filtered data (respects type filter)
     const filteredStatsByType =
       type === 'all'
         ? statsByType
@@ -1269,7 +1230,6 @@ export async function getUserStats(
         acc.untrackedCount += stat.untrackedCount;
         acc.totalChars += stat.totalChars || 0;
 
-        // Separate reading and listening hours
         if (['reading', 'manga', 'vn'].includes(stat.type)) {
           acc.readingHours += stat.totalTimeHours;
         } else if (['anime', 'video', 'movie', 'audio'].includes(stat.type)) {
@@ -1290,11 +1250,9 @@ export async function getUserStats(
       }
     );
 
-    // Calculate daily average hours
     totals.dailyAverageHours =
       daysPeriod > 0 ? totals.totalTimeHours / daysPeriod : 0;
 
-    // Create a complete dataset with all types (for charts)
     const completeStats: IStatByType[] = logTypes.map((type) => {
       const typeStat = statsByType.find((stat) => stat.type === type);
       return (
@@ -1311,7 +1269,6 @@ export async function getUserStats(
       );
     });
 
-    // Calculate reading speed data for reading-type logs
     const readingSpeedData =
       type === 'all' ||
       (Array.isArray(type) &&
@@ -1352,7 +1309,6 @@ export async function getUserStats(
           ])
         : [];
 
-    // Return comprehensive stats object
     return res.json({
       totals,
       statsByType: completeStats,
@@ -1371,12 +1327,10 @@ export async function recalculateXp(
   next: NextFunction
 ) {
   try {
-    // Check admin permission
     if (!res.locals.user.roles.includes('admin')) {
       return res.status(403).json({ message: 'Admin permission required' });
     }
 
-    // Get all users
     const users = await User.find({});
 
     if (!users.length) {
@@ -1390,26 +1344,21 @@ export async function recalculateXp(
       errors: [] as string[],
     };
 
-    // Process each user
     for (const user of users) {
       try {
-        // Reset user's stats
         if (user.stats) {
           user.stats.readingXp = 0;
           user.stats.listeningXp = 0;
           user.stats.userXp = 0;
         }
 
-        // Get all logs for this user
         const logs = await Log.find({ user: user._id });
 
         if (!logs.length) {
           continue;
         }
 
-        // Process each log
         for (const log of logs) {
-          // Recalculate XP
           const timeXp = log.time
             ? Math.floor(((log.time * 45) / 100) * XP_FACTOR_TIME)
             : 0;
@@ -1425,7 +1374,6 @@ export async function recalculateXp(
 
           const oldXp = log.xp;
 
-          // Calculate new XP based on log type
           switch (log.type) {
             case 'anime':
               if (timeXp) {
@@ -1459,13 +1407,11 @@ export async function recalculateXp(
               break;
           }
 
-          // Only save if XP changed
           if (log.xp !== oldXp) {
             await log.save();
             results.updatedLogs++;
           }
 
-          // Update user's stats totals
           if (user.stats) {
             if (['anime', 'video', 'movie', 'audio'].includes(log.type)) {
               user.stats.listeningXp += log.xp;
@@ -1476,13 +1422,11 @@ export async function recalculateXp(
           }
         }
 
-        // Recalculate levels
         if (user.stats) {
           updateLevelAndXp(user.stats, 'reading');
           updateLevelAndXp(user.stats, 'listening');
           updateLevelAndXp(user.stats, 'user');
 
-          // Save user with updated stats
           await user.save();
         }
         results.processedUsers++;
@@ -1503,14 +1447,12 @@ export async function recalculateXp(
   }
 }
 
-// Recalculate streaks for all users (admin only)
 export async function recalculateStreaks(
   _req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    // Check admin permission
     if (!res.locals.user.roles.includes('admin')) {
       return res.status(403).json({ message: 'Admin permission required' });
     }
@@ -1529,7 +1471,6 @@ export async function recalculateStreaks(
 
     for (const user of users) {
       try {
-        // Fetch all logs for user, sorted by date ascending
         const logs = await Log.find({ user: user._id }).sort({ date: 1 });
         if (!logs.length || !user.stats) {
           continue;
@@ -1540,8 +1481,6 @@ export async function recalculateStreaks(
         let lastStreakDate: Date | null = null;
 
         for (const log of logs) {
-          // Get log date (year, month, day only)
-
           const logDate = new Date(
             log.date.getFullYear(),
             log.date.getMonth(),
@@ -1549,37 +1488,28 @@ export async function recalculateStreaks(
           );
 
           if (!lastStreakDate) {
-            // First log
             currentStreak = 1;
           } else {
-            // Calculate difference in days
-
             const diffDays = Math.floor(
               (logDate.getTime() - lastStreakDate.getTime()) /
                 (1000 * 60 * 60 * 24)
             );
 
             if (diffDays === 1) {
-              // Consecutive day, increment streak
               currentStreak += 1;
             } else if (diffDays === 0) {
-              // Same day, do nothing
             } else {
-              // Gap, reset streak
               currentStreak = 1;
             }
           }
 
-          // Update longest streak
           if (currentStreak > longestStreak) {
             longestStreak = currentStreak;
           }
 
-          // Update last streak date
           lastStreakDate = logDate;
         }
 
-        // Update user stats
         user.stats.currentStreak = currentStreak;
         user.stats.longestStreak = longestStreak;
         user.stats.lastStreakDate = lastStreakDate;
@@ -1602,7 +1532,6 @@ export async function recalculateStreaks(
   }
 }
 
-// Get log statistics for a specific media
 export async function getMediaStats(
   req: Request,
   res: Response,
@@ -1618,21 +1547,18 @@ export async function getMediaStats(
       });
     }
 
-    // Create date filters for different time periods
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    thisWeekStart.setDate(today.getDate() - today.getDay());
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Build match criteria for this specific media
     const baseMatch = {
       user: user._id,
       mediaId: mediaId as string,
       type: type as string,
     };
 
-    // Get total stats for this specific media
     const totalStats = await Log.aggregate([
       { $match: baseMatch },
       {
@@ -1658,7 +1584,7 @@ export async function getMediaStats(
                     { $gt: ['$episodes', 0] },
                   ],
                 },
-                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $multiply: ['$episodes', 24] },
                 { $ifNull: ['$time', 0] },
               ],
             },
@@ -1670,7 +1596,6 @@ export async function getMediaStats(
       },
     ]);
 
-    // Get recent activity stats (this week and this month)
     const recentStats = await Log.aggregate([
       { $match: baseMatch },
       {
@@ -1781,7 +1706,6 @@ export async function getMediaStats(
       },
     ]);
 
-    // Format the response
     const total = totalStats[0] || {
       totalLogs: 0,
       totalEpisodes: 0,
@@ -1866,7 +1790,6 @@ export async function getMediaStats(
   }
 }
 
-// Get log statistics for the log screen
 export async function getLogScreenStats(
   req: Request,
   res: Response,
@@ -1876,18 +1799,15 @@ export async function getLogScreenStats(
   const type = req.query.type as string;
 
   try {
-    // Create date filters for different time periods
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    thisWeekStart.setDate(today.getDate() - today.getDay());
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Build match criteria based on type
     const baseMatch = { user: user._id };
     const typeMatch = type ? { ...baseMatch, type } : baseMatch;
 
-    // Get total stats for this type
     const totalStats = await Log.aggregate([
       { $match: typeMatch },
       {
@@ -1913,7 +1833,7 @@ export async function getLogScreenStats(
                     { $gt: ['$episodes', 0] },
                   ],
                 },
-                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $multiply: ['$episodes', 24] },
                 { $ifNull: ['$time', 0] },
               ],
             },
@@ -1923,7 +1843,6 @@ export async function getLogScreenStats(
       },
     ]);
 
-    // Get recent activity stats (this week and this month)
     const recentStats = await Log.aggregate([
       { $match: typeMatch },
       {
@@ -2034,7 +1953,6 @@ export async function getLogScreenStats(
       },
     ]);
 
-    // Format the response
     const total = totalStats[0] || {
       totalLogs: 0,
       totalEpisodes: 0,
