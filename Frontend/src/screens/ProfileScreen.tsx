@@ -2,6 +2,7 @@ import { useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
 import ProgressBar from '../components/ProgressBar';
 import DailyGoalsCard from '../components/DailyGoalsCard';
+import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import React, { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
@@ -141,6 +142,15 @@ function ProfileScreen() {
                 </div>
               </div>
             </div>
+
+            {/* Immersion Heatmap */}
+            <div className="card w-full bg-base-100 shadow-sm overflow-visible">
+              <div className="card-body w-full p-4 sm:p-6 overflow-visible">
+                <h2 className="card-title mb-4">Immersion Activity</h2>
+                {username && <ImmersionHeatmap username={username} />}
+              </div>
+            </div>
+
             {username === loggedUser?.username && (
               <DailyGoalsCard username={username} />
             )}
