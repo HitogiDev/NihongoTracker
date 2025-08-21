@@ -761,7 +761,7 @@ function StatsScreen() {
                 </svg>
                 Progress Timeline
               </h3>
-              <div className="w-full" style={{ height: '300px' }}>
+              <div className="w-full" style={{ height: '450px' }}>
                 <ProgressChart
                   timeframe={timeRange}
                   statsData={userStats?.statsByType}
