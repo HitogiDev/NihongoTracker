@@ -506,7 +506,27 @@ function Hero() {
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h2 className="card-title">Monthly Progress</h2>
-                <div className="stats stats-vertical shadow">
+                <span className="text-xs text-base-content/70">
+                  Comparing{' '}
+                  {new Date().toLocaleDateString('en-US', { month: 'short' })} 1
+                  - {new Date().getDate()} vs{' '}
+                  {new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth() - 1,
+                    1
+                  ).toLocaleDateString('en-US', { month: 'short' })}{' '}
+                  1 -{' '}
+                  {Math.min(
+                    new Date().getDate(),
+                    new Date(
+                      new Date().getFullYear(),
+                      new Date().getMonth(),
+                      0
+                    ).getDate()
+                  )}{' '}
+                  of last month
+                </span>
+                <div className="stats stats-vertical">
                   <div className="stat">
                     <div className="stat-title">Reading</div>
                     <div className="stat-value text-primary">
@@ -515,16 +535,18 @@ function Hero() {
                     <div className="stat-desc">
                       {immersionStats.changes.reading > 0 ? (
                         <span className="text-success">
-                          ↗︎ {immersionStats.changes.reading}% more than last
-                          month
+                          ↗︎ {immersionStats.changes.reading}% more than same
+                          period last month
                         </span>
                       ) : immersionStats.changes.reading < 0 ? (
                         <span className="text-error">
                           ↘︎ {Math.abs(immersionStats.changes.reading)}% less
-                          than last month
+                          than same period last month
                         </span>
                       ) : (
-                        <span>Same as last month</span>
+                        <span className="text-base-content/70">
+                          Same as same period last month
+                        </span>
                       )}
                     </div>
                   </div>
@@ -536,16 +558,18 @@ function Hero() {
                     <div className="stat-desc">
                       {immersionStats.changes.listening > 0 ? (
                         <span className="text-success">
-                          ↗︎ {immersionStats.changes.listening}% more than last
-                          month
+                          ↗︎ {immersionStats.changes.listening}% more than same
+                          period last month
                         </span>
                       ) : immersionStats.changes.listening < 0 ? (
                         <span className="text-error">
                           ↘︎ {Math.abs(immersionStats.changes.listening)}% less
-                          than last month
+                          than same period last month
                         </span>
                       ) : (
-                        <span>Same as last month</span>
+                        <span className="text-base-content/70">
+                          Same as same period last month
+                        </span>
                       )}
                     </div>
                   </div>
@@ -557,16 +581,18 @@ function Hero() {
                     <div className="stat-desc">
                       {immersionStats.changes.total > 0 ? (
                         <span className="text-success">
-                          ↗︎ {immersionStats.changes.total}% more than last
-                          month
+                          ↗︎ {immersionStats.changes.total}% more than same
+                          period last month
                         </span>
                       ) : immersionStats.changes.total < 0 ? (
                         <span className="text-error">
                           ↘︎ {Math.abs(immersionStats.changes.total)}% less
-                          than last month
+                          than same period last month
                         </span>
                       ) : (
-                        <span>Same as last month</span>
+                        <span className="text-base-content/70">
+                          Same as same period last month
+                        </span>
                       )}
                     </div>
                   </div>
