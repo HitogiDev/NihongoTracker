@@ -42,7 +42,9 @@ function StatsScreen() {
   const logCountData = {
     labels:
       userStats?.statsByType.map((stat) =>
-        stat.type === 'vn' ? 'Visual Novel' : stat.type
+        stat.type === 'vn'
+          ? 'Visual Novel'
+          : stat.type.charAt(0).toUpperCase() + stat.type.slice(1)
       ) || [],
     datasets: [
       {
@@ -78,7 +80,9 @@ function StatsScreen() {
   const logTimeData = {
     labels:
       userStats?.statsByType.map((stat) =>
-        stat.type === 'vn' ? 'Visual Novel' : stat.type
+        stat.type === 'vn'
+          ? 'Visual Novel'
+          : stat.type.charAt(0).toUpperCase() + stat.type.slice(1)
       ) || [],
     datasets: [
       {
@@ -114,7 +118,9 @@ function StatsScreen() {
   const logXpData = {
     labels:
       userStats?.statsByType.map((stat) =>
-        stat.type === 'vn' ? 'Visual Novel' : stat.type
+        stat.type === 'vn'
+          ? 'Visual Novel'
+          : stat.type.charAt(0).toUpperCase() + stat.type.slice(1)
       ) || [],
     datasets: [
       {
@@ -618,7 +624,7 @@ function StatsScreen() {
                     today: "Today's",
                     month: "This month's",
                     year: "This year's",
-                    total: 'All-time',
+                    total: 'All time',
                   }[timeRange];
                   const typeText =
                     currentType === 'all'
