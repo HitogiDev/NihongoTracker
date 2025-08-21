@@ -269,7 +269,10 @@ function SpeedChart({
       ];
 
       return {
-        label: type.charAt(0).toUpperCase() + type.slice(1),
+        label:
+          type === 'vn'
+            ? 'Visual Novel'
+            : type.charAt(0).toUpperCase() + type.slice(1),
         data: (() => {
           // Create a map of dates to speeds with null gaps filled in
           const allDates = getAllDates();
