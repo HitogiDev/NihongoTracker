@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   clearUserDataFn,
   importFromCSV,
@@ -16,6 +17,7 @@ import { canvasPreview } from '../utils/canvasPreview';
 
 function SettingsScreen() {
   const { setUser, user } = useUserDataStore();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -23,6 +25,9 @@ function SettingsScreen() {
   const [discordId, setDiscordId] = useState(user?.discordId || '');
   const [blurAdult, setBlurAdult] = useState(
     user?.settings?.blurAdultContent || false
+  );
+  const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
+    user?.settings?.hideUnmatchedLogsAlert || false
   );
 
   const [avatarSrc, setAvatarSrc] = useState<string>('');
@@ -161,6 +166,7 @@ function SettingsScreen() {
     // Always append discordId (even if empty to allow clearing)
     formData.append('discordId', discordId);
     formData.append('blurAdultContent', blurAdult.toString());
+    formData.append('hideUnmatchedLogsAlert', hideUnmatchedAlert.toString());
 
     // Use cropped files if available, otherwise fall back to original files
     if (croppedAvatarFile) {
@@ -866,6 +872,27 @@ function SettingsScreen() {
                       />
                     </label>
                   </div>
+
+                  <div className="form-control">
+                    <label className="label cursor-pointer">
+                      <div>
+                        <span className="label-text font-medium">
+                          Hide Unmatched Logs Alert
+                        </span>
+                        <p className="text-sm text-base-content/60">
+                          Don't show alerts about unmatched logs
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-accent"
+                        checked={hideUnmatchedAlert}
+                        onChange={(e) =>
+                          setHideUnmatchedAlert(e.target.checked)
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -988,6 +1015,82 @@ function SettingsScreen() {
                       </button>
                     </form>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Log Management */}
+            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+              <div className="card-body">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-warning/10 rounded-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-warning"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Log Management</h2>
+                    <p className="text-base-content/70 text-sm">
+                      Match untracked logs with media
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="alert alert-info">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <div>
+                      <h3 className="font-bold">Match Media</h3>
+                      <div className="text-xs">
+                        Link your untracked logs to the correct anime, manga,
+                        books, visual novels, videos, movies, or TV shows.
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    className="btn btn-warning w-full"
+                    onClick={() => navigate('/matchmedia')}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                      />
+                    </svg>
+                    Go to Match Media
+                  </button>
                 </div>
               </div>
             </div>

@@ -12,6 +12,7 @@ export interface IUser {
   updatedAt?: Date;
   settings?: {
     blurAdultContent: boolean;
+    hideUnmatchedLogsAlert?: boolean;
   };
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }

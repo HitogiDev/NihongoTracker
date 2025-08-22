@@ -17,6 +17,7 @@ export async function updateUser(
     password,
     discordId,
     blurAdultContent,
+    hideUnmatchedLogsAlert,
   } = req.body as IUpdateRequest;
 
   try {
@@ -117,11 +118,22 @@ export async function updateUser(
       user.discordId = discordId;
     }
 
-    if (blurAdultContent) {
-      user.settings = {
-        ...user.settings,
-        blurAdultContent: blurAdultContent === 'true',
-      };
+    if (
+      blurAdultContent !== undefined ||
+      hideUnmatchedLogsAlert !== undefined
+    ) {
+      const updatedSettings: any = { ...user.settings };
+
+      if (blurAdultContent !== undefined) {
+        updatedSettings.blurAdultContent = blurAdultContent === 'true';
+      }
+
+      if (hideUnmatchedLogsAlert !== undefined) {
+        updatedSettings.hideUnmatchedLogsAlert =
+          hideUnmatchedLogsAlert === 'true';
+      }
+
+      user.settings = updatedSettings;
     }
 
     const updatedUser = await user.save();
