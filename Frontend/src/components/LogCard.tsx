@@ -437,6 +437,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                   {displayTitle}
                 </h2>
 
+                {/* Media English title */}
                 {media &&
                   typeof media === 'object' &&
                   media.title?.contentTitleEnglish && (
@@ -447,10 +448,16 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     </p>
                   )}
 
-                {/* Additional context for non-media logs */}
-                {(!media || typeof media !== 'object') &&
-                  description &&
-                  description !== logTitle && (
+                {/* Description - show when it exists and is different from both native and english titles */}
+                {description &&
+                  description.trim() !== '' &&
+                  description !== logTitle &&
+                  (!(
+                    media &&
+                    typeof media === 'object' &&
+                    media.title?.contentTitleEnglish
+                  ) ||
+                    description !== media.title.contentTitleEnglish) && (
                     <p className="text-sm text-base-content/60 mt-1 leading-tight">
                       {description.length > 45
                         ? `${description.slice(0, 45)}...`
