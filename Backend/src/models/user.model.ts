@@ -7,6 +7,7 @@ import { calculateXp } from '../services/calculateLevel.js';
 const SettingsSchema = new Schema<IUserSettings>(
   {
     blurAdultContent: { type: Boolean, default: true },
+    hideUnmatchedLogsAlert: { type: Boolean, default: false },
   },
   { _id: false }
 );

@@ -1,8 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getImmersionListFn, getUntrackedLogsFn } from '../api/trackerApi';
+import {
+  getImmersionListFn,
+  getUntrackedLogsFn,
+  updateUserFn,
+} from '../api/trackerApi';
 import { useState, useMemo } from 'react';
 import { IMediaDocument, IImmersionList } from '../types';
+import { useUserDataStore } from '../store/userData';
 import {
   MdSearch,
   MdFilterList,
@@ -20,8 +25,8 @@ import {
   MdLink,
   MdMovie,
   MdOutlineTv,
+  MdClose,
 } from 'react-icons/md';
-import { useUserDataStore } from '../store/userData';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
@@ -37,12 +42,14 @@ type FilterOption =
 
 function ListScreen() {
   const { username } = useParams<{ username: string }>();
-  const { user } = useUserDataStore();
+  const { user, setUser } = useUserDataStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterOption>('all');
   const [sortBy, setSortBy] = useState<SortOption>('title');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [showHideAlertModal, setShowHideAlertModal] = useState(false);
 
   const {
     data: immersionList,
@@ -61,6 +68,19 @@ function ListScreen() {
     queryFn: getUntrackedLogsFn,
     enabled: !!user && username === user.username,
     staleTime: 5 * 60 * 1000,
+  });
+
+  // Mutation to update user settings
+  const { mutate: updateUserSettings } = useMutation({
+    mutationFn: updateUserFn,
+    onSuccess: (data) => {
+      setUser(data);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      setShowHideAlertModal(false);
+    },
+    onError: (error) => {
+      console.error('Failed to update settings:', error);
+    },
   });
 
   // Combine all media into a single filterable array
@@ -206,6 +226,13 @@ function ListScreen() {
     return { totalCount, typeCount };
   }, [allMedia, immersionList]);
 
+  // Handler to hide unmatched logs alert permanently
+  const handleHideUnmatchedAlert = () => {
+    const formData = new FormData();
+    formData.append('hideUnmatchedLogsAlert', 'true');
+    updateUserSettings(formData);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -241,185 +268,277 @@ function ListScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* Unmatched Logs Alert */}
-      {untrackedLogs && untrackedLogs.length > 0 && (
-        <div className="container mx-auto px-4 pt-4">
-          <div role="alert" className="alert alert-warning shadow-lg">
-            <MdWarning className="h-6 w-6" />
-            <div className="flex-1">
-              <h3 className="font-bold">Unmatched Logs Found</h3>
-              <div className="text-sm">
-                You have {untrackedLogs.length} log
-                {untrackedLogs.length !== 1 ? 's' : ''} without media. Match
-                them with the correct media.
-              </div>
+    <>
+      {/* Hide Alert Confirmation Modal */}
+      {showHideAlertModal && (
+        <dialog className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Hide Unmatched Logs Alert</h3>
+            <div className="py-4">
+              <p className="mb-4">
+                Are you sure you want to stop showing alerts about unmatched
+                logs?
+              </p>
+              <p className="text-sm text-base-content/70">
+                You can still access the match media page from your{' '}
+                <span className="font-semibold">Settings</span> under the{' '}
+                <span className="font-semibold">Log Management</span> section.
+              </p>
             </div>
-            <div className="flex-none">
+            <div className="modal-action">
               <button
-                className="btn btn-sm btn-outline gap-2"
-                onClick={() => navigate('/matchmedia')}
+                className="btn btn-warning"
+                onClick={handleHideUnmatchedAlert}
               >
-                <MdLink className="h-4 w-4" />
-                Match Logs
+                Yes, hide alerts
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={() => setShowHideAlertModal(false)}
+              >
+                Cancel
               </button>
             </div>
           </div>
-        </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowHideAlertModal(false)}
+          ></div>
+        </dialog>
       )}
 
-      {/* Controls Section */}
-      <div className="container mx-auto px-4 mt-4 relative z-10">
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body p-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              {/* Search */}
-              <div className="flex-1 max-w-md">
-                <label className="input input-bordered flex items-center gap-2">
-                  <MdSearch className="w-5 h-5 opacity-70" />
-                  <input
-                    type="text"
-                    className="grow"
-                    placeholder="Search by title, romaji, or english..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-wrap gap-3">
-                {/* Type Filter */}
-                <div className="dropdown dropdown-end">
-                  <div
-                    tabIndex={0}
-                    role="button"
-                    className="btn btn-outline gap-2"
-                  >
-                    <MdFilterList className="w-4 h-4" />
-                    Filter:{' '}
-                    {selectedFilter === 'all'
-                      ? 'All Types'
-                      : selectedFilter.charAt(0).toUpperCase() +
-                        selectedFilter.slice(1)}
+      <div className="min-h-screen bg-base-200">
+        {/* Unmatched Logs Alert */}
+        {untrackedLogs &&
+          untrackedLogs.length > 0 &&
+          !user?.settings?.hideUnmatchedLogsAlert && (
+            <div className="container mx-auto px-4 pt-4">
+              <div role="alert" className="alert alert-warning shadow-lg">
+                <MdWarning className="h-6 w-6" />
+                <div className="flex-1">
+                  <h3 className="font-bold">Unmatched Logs Found</h3>
+                  <div className="text-sm">
+                    You have {untrackedLogs.length} log
+                    {untrackedLogs.length !== 1 ? 's' : ''} without media. Match
+                    them with the correct media.
                   </div>
-                  <ul
-                    tabIndex={0}
-                    className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-52"
-                  >
-                    {[
-                      { value: 'all', label: 'All Types' },
-                      { value: 'anime', label: 'Anime' },
-                      { value: 'manga', label: 'Manga' },
-                      { value: 'reading', label: 'Reading' },
-                      { value: 'vn', label: 'Visual Novels' },
-                      { value: 'video', label: 'Video' },
-                      { value: 'movie', label: 'Movies' },
-                      { value: 'tv show', label: 'TV Shows' },
-                    ].map((option) => (
-                      <li key={option.value}>
-                        <button
-                          className={
-                            selectedFilter === option.value ? 'active' : ''
-                          }
-                          onClick={() =>
-                            setSelectedFilter(option.value as FilterOption)
-                          }
-                        >
-                          {option.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-
-                {/* Sort */}
-                <div className="dropdown dropdown-end">
-                  <div
-                    tabIndex={0}
-                    role="button"
-                    className="btn btn-outline gap-2"
-                  >
-                    <MdSort className="w-4 h-4" />
-                    Sort:{' '}
-                    {sortBy === 'title'
-                      ? 'Title'
-                      : sortBy === 'type'
-                        ? 'Type'
-                        : 'Recent'}
-                  </div>
-                  <ul
-                    tabIndex={0}
-                    className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-52"
-                  >
-                    {[
-                      { value: 'title', label: 'By Title (A-Z)' },
-                      { value: 'type', label: 'By Type' },
-                      { value: 'recent', label: 'Recently Added' },
-                    ].map((option) => (
-                      <li key={option.value}>
-                        <button
-                          className={sortBy === option.value ? 'active' : ''}
-                          onClick={() => setSortBy(option.value as SortOption)}
-                        >
-                          {option.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* View Mode Toggle */}
-                <div className="join">
+                <div className="flex-none flex gap-2">
                   <button
-                    className={`btn join-item ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
-                    onClick={() => setViewMode('grid')}
+                    className="btn btn-sm btn-outline gap-2"
+                    onClick={() => navigate('/matchmedia')}
                   >
-                    <MdViewModule className="w-4 h-4" />
+                    <MdLink className="h-4 w-4" />
+                    Match Logs
                   </button>
                   <button
-                    className={`btn join-item ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
-                    onClick={() => setViewMode('list')}
+                    className="btn btn-sm btn-ghost gap-2"
+                    onClick={() => setShowHideAlertModal(true)}
+                    title="Don't show this alert again"
                   >
-                    <MdViewList className="w-4 h-4" />
+                    <MdClose className="h-4 w-4" />
+                    Don't show again
                   </button>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Results Count */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <p className="text-sm text-base-content/70">
-                Showing{' '}
-                {Object.keys(groupedMedia).includes('ungrouped')
-                  ? groupedMedia.ungrouped?.length || 0
-                  : Object.values(groupedMedia).reduce(
-                      (acc, group) => acc + group.length,
-                      0
-                    )}{' '}
-                of {stats.totalCount} items
-                {searchQuery && ` for "${searchQuery}"`}
-              </p>
-              {(Object.keys(groupedMedia).includes('ungrouped')
-                ? (groupedMedia.ungrouped?.length || 0) > 0
-                : Object.values(groupedMedia).some(
-                    (group) => group.length > 0
-                  )) && (
-                <div className="flex items-center gap-2 text-sm text-base-content/70">
-                  <MdAutoAwesome className="w-4 h-4" />
-                  <span>Your immersion journey</span>
+        {/* Controls Section */}
+        <div className="container mx-auto px-4 mt-4 relative z-10">
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body p-6">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                {/* Search */}
+                <div className="flex-1 max-w-md">
+                  <label className="input input-bordered flex items-center gap-2">
+                    <MdSearch className="w-5 h-5 opacity-70" />
+                    <input
+                      type="text"
+                      className="grow"
+                      placeholder="Search by title, romaji, or english..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </label>
                 </div>
-              )}
+
+                {/* Filters */}
+                <div className="flex flex-wrap gap-3">
+                  {/* Type Filter */}
+                  <div className="dropdown dropdown-end">
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      className="btn btn-outline gap-2"
+                    >
+                      <MdFilterList className="w-4 h-4" />
+                      Filter:{' '}
+                      {selectedFilter === 'all'
+                        ? 'All Types'
+                        : selectedFilter.charAt(0).toUpperCase() +
+                          selectedFilter.slice(1)}
+                    </div>
+                    <ul
+                      tabIndex={0}
+                      className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-52"
+                    >
+                      {[
+                        { value: 'all', label: 'All Types' },
+                        { value: 'anime', label: 'Anime' },
+                        { value: 'manga', label: 'Manga' },
+                        { value: 'reading', label: 'Reading' },
+                        { value: 'vn', label: 'Visual Novels' },
+                        { value: 'video', label: 'Video' },
+                        { value: 'movie', label: 'Movies' },
+                        { value: 'tv show', label: 'TV Shows' },
+                      ].map((option) => (
+                        <li key={option.value}>
+                          <button
+                            className={
+                              selectedFilter === option.value ? 'active' : ''
+                            }
+                            onClick={() =>
+                              setSelectedFilter(option.value as FilterOption)
+                            }
+                          >
+                            {option.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Sort */}
+                  <div className="dropdown dropdown-end">
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      className="btn btn-outline gap-2"
+                    >
+                      <MdSort className="w-4 h-4" />
+                      Sort:{' '}
+                      {sortBy === 'title'
+                        ? 'Title'
+                        : sortBy === 'type'
+                          ? 'Type'
+                          : 'Recent'}
+                    </div>
+                    <ul
+                      tabIndex={0}
+                      className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-52"
+                    >
+                      {[
+                        { value: 'title', label: 'By Title (A-Z)' },
+                        { value: 'type', label: 'By Type' },
+                        { value: 'recent', label: 'Recently Added' },
+                      ].map((option) => (
+                        <li key={option.value}>
+                          <button
+                            className={sortBy === option.value ? 'active' : ''}
+                            onClick={() =>
+                              setSortBy(option.value as SortOption)
+                            }
+                          >
+                            {option.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* View Mode Toggle */}
+                  <div className="join">
+                    <button
+                      className={`btn join-item ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <MdViewModule className="w-4 h-4" />
+                    </button>
+                    <button
+                      className={`btn join-item ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
+                      onClick={() => setViewMode('list')}
+                    >
+                      <MdViewList className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Count */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-base-content/70">
+                  Showing{' '}
+                  {Object.keys(groupedMedia).includes('ungrouped')
+                    ? groupedMedia.ungrouped?.length || 0
+                    : Object.values(groupedMedia).reduce(
+                        (acc, group) => acc + group.length,
+                        0
+                      )}{' '}
+                  of {stats.totalCount} items
+                  {searchQuery && ` for "${searchQuery}"`}
+                </p>
+                {(Object.keys(groupedMedia).includes('ungrouped')
+                  ? (groupedMedia.ungrouped?.length || 0) > 0
+                  : Object.values(groupedMedia).some(
+                      (group) => group.length > 0
+                    )) && (
+                  <div className="flex items-center gap-2 text-sm text-base-content/70">
+                    <MdAutoAwesome className="w-4 h-4" />
+                    <span>Your immersion journey</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Media Grid/List */}
-      <div className="container mx-auto px-4 py-4">
-        {Object.keys(groupedMedia).includes('ungrouped') ? (
-          // Ungrouped view (when filters are applied)
-          groupedMedia.ungrouped && groupedMedia.ungrouped.length === 0 ? (
+        {/* Media Grid/List */}
+        <div className="container mx-auto px-4 py-4">
+          {Object.keys(groupedMedia).includes('ungrouped') ? (
+            // Ungrouped view (when filters are applied)
+            groupedMedia.ungrouped && groupedMedia.ungrouped.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="max-w-md mx-auto space-y-4">
+                  <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
+                    <MdBookmark className="w-12 h-12 text-base-content/40" />
+                  </div>
+                  <h3 className="text-2xl font-bold">No media found</h3>
+                  <p className="text-base-content/70">
+                    {searchQuery
+                      ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
+                      : selectedFilter !== 'all'
+                        ? `No ${selectedFilter} media in your library yet.`
+                        : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                  </p>
+                  {(searchQuery || selectedFilter !== 'all') && (
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedFilter('all');
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : viewMode === 'grid' ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+                {groupedMedia.ungrouped?.map((item) => (
+                  <MediaCard key={item.contentId} media={item} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {groupedMedia.ungrouped?.map((item) => (
+                  <MediaListItem key={item.contentId} media={item} />
+                ))}
+              </div>
+            )
+          ) : // Grouped view (no filters applied)
+          Object.keys(groupedMedia).length === 0 ? (
             <div className="text-center py-20">
               <div className="max-w-md mx-auto space-y-4">
                 <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
@@ -427,67 +546,27 @@ function ListScreen() {
                 </div>
                 <h3 className="text-2xl font-bold">No media found</h3>
                 <p className="text-base-content/70">
-                  {searchQuery
-                    ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
-                    : selectedFilter !== 'all'
-                      ? `No ${selectedFilter} media in your library yet.`
-                      : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                  Your immersion library is empty. Start logging your Japanese
+                  learning activities!
                 </p>
-                {(searchQuery || selectedFilter !== 'all') && (
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedFilter('all');
-                    }}
-                  >
-                    Clear filters
-                  </button>
-                )}
               </div>
-            </div>
-          ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-              {groupedMedia.ungrouped?.map((item) => (
-                <MediaCard key={item.contentId} media={item} />
-              ))}
             </div>
           ) : (
-            <div className="space-y-3">
-              {groupedMedia.ungrouped?.map((item) => (
-                <MediaListItem key={item.contentId} media={item} />
+            <div className="space-y-8">
+              {Object.entries(groupedMedia).map(([type, mediaList]) => (
+                <MediaGroup
+                  key={type}
+                  type={type}
+                  mediaList={mediaList}
+                  viewMode={viewMode}
+                  count={mediaList.length}
+                />
               ))}
             </div>
-          )
-        ) : // Grouped view (no filters applied)
-        Object.keys(groupedMedia).length === 0 ? (
-          <div className="text-center py-20">
-            <div className="max-w-md mx-auto space-y-4">
-              <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
-                <MdBookmark className="w-12 h-12 text-base-content/40" />
-              </div>
-              <h3 className="text-2xl font-bold">No media found</h3>
-              <p className="text-base-content/70">
-                Your immersion library is empty. Start logging your Japanese
-                learning activities!
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {Object.entries(groupedMedia).map(([type, mediaList]) => (
-              <MediaGroup
-                key={type}
-                type={type}
-                mediaList={mediaList}
-                viewMode={viewMode}
-                count={mediaList.length}
-              />
-            ))}
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
