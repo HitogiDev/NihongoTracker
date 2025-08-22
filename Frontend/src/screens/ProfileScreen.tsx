@@ -8,6 +8,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
+import { DayPicker } from 'react-day-picker';
 
 function ProfileScreen() {
   const limit = 10;
@@ -17,6 +18,15 @@ function ProfileScreen() {
   const [filterType, setFilterType] = useState<
     'all' | 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'audio' | 'other'
   >('all');
+  const [dateFilter, setDateFilter] = useState<
+    'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
+  >('all');
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(
+    undefined
+  );
 
   // Type guard to validate log type
   const isValidLogType = (
@@ -40,19 +50,90 @@ function ProfileScreen() {
     ].includes(value);
   };
 
+  // Function to get date range based on filter
+  const getDateRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (dateFilter) {
+      case 'today': {
+        return {
+          startDate: today,
+          endDate: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1),
+        };
+      }
+      case 'week': {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+        return {
+          startDate: weekStart,
+          endDate: new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1),
+        };
+      }
+      case 'month': {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59
+        );
+        return {
+          startDate: monthStart,
+          endDate: monthEnd,
+        };
+      }
+      case 'year': {
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+        return {
+          startDate: yearStart,
+          endDate: yearEnd,
+        };
+      }
+      case 'custom': {
+        if (customStartDate && customEndDate) {
+          return {
+            startDate: customStartDate,
+            endDate: new Date(
+              customEndDate.getTime() + 24 * 60 * 60 * 1000 - 1
+            ), // End of day
+          };
+        }
+        return null;
+      }
+      default:
+        return null;
+    }
+  };
+
+  const dateRange = getDateRange();
+
   const {
     data: logs,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['logs', username, searchTerm, filterType],
+    queryKey: [
+      'logs',
+      username,
+      searchTerm,
+      filterType,
+      dateFilter,
+      customStartDate?.toISOString(),
+      customEndDate?.toISOString(),
+    ],
     queryFn: ({ pageParam }) =>
       getUserLogsFn(username as string, {
         limit,
         page: pageParam as number,
         search: searchTerm,
         type: filterType !== 'all' ? filterType : undefined,
+        start: dateRange?.startDate?.toISOString(),
+        end: dateRange?.endDate?.toISOString(),
       }),
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < limit) return undefined;
@@ -160,48 +241,263 @@ function ProfileScreen() {
             <div className="flex flex-col gap-3">
               <h2 className="card-title self-start">Activity Logs</h2>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    className="w-4 h-4 opacity-70"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-                      clipRule="evenodd"
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                      className="w-4 h-4 opacity-70"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <input
+                      type="text"
+                      className="grow"
+                      placeholder="Search logs..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                  </svg>
-                  <input
-                    type="text"
-                    className="grow"
-                    placeholder="Search logs..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </label>
+                  </label>
 
-                <select
-                  className="select select-sm select-bordered w-full sm:w-auto"
-                  value={filterType}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === 'all' || isValidLogType(value)) {
-                      setFilterType(value as typeof filterType);
-                    }
-                  }}
-                >
-                  <option value="all">All Types</option>
-                  <option value="anime">Anime</option>
-                  <option value="manga">Manga</option>
-                  <option value="reading">Reading</option>
-                  <option value="vn">Visual Novel</option>
-                  <option value="video">Video</option>
-                  <option value="audio">Audio</option>
-                  <option value="other">Other</option>
-                </select>
+                  <select
+                    className="select select-sm select-bordered w-full sm:w-auto"
+                    value={filterType}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === 'all' || isValidLogType(value)) {
+                        setFilterType(value as typeof filterType);
+                      }
+                    }}
+                  >
+                    <option value="all">All Types</option>
+                    <option value="anime">Anime</option>
+                    <option value="manga">Manga</option>
+                    <option value="reading">Reading</option>
+                    <option value="vn">Visual Novel</option>
+                    <option value="video">Video</option>
+                    <option value="audio">Audio</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {/* Date Filter Section */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select
+                    className="select select-sm select-bordered w-full sm:w-auto"
+                    value={dateFilter}
+                    onChange={(e) => {
+                      const value = e.target.value as typeof dateFilter;
+                      setDateFilter(value);
+                      // Reset custom dates when switching away from custom
+                      if (value !== 'custom') {
+                        setCustomStartDate(undefined);
+                        setCustomEndDate(undefined);
+                      }
+                    }}
+                  >
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+
+                  {/* Custom Date Range with DayPicker */}
+                  {dateFilter === 'custom' && (
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                      {/* Start Date Dropdown */}
+                      <div className="dropdown dropdown-bottom">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline btn-sm w-full sm:w-auto"
+                        >
+                          {customStartDate
+                            ? customStartDate.toLocaleDateString()
+                            : 'Start Date'}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        <div
+                          tabIndex={0}
+                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                        >
+                          <DayPicker
+                            className="react-day-picker mx-auto"
+                            mode="single"
+                            selected={customStartDate}
+                            onSelect={(date) => {
+                              setCustomStartDate(date);
+                              // Close dropdown by removing focus
+                              (document.activeElement as HTMLElement)?.blur?.();
+                              // Reset end date if it's before the new start date
+                              if (
+                                customEndDate &&
+                                date &&
+                                customEndDate < date
+                              ) {
+                                setCustomEndDate(undefined);
+                              }
+                            }}
+                            disabled={(date) => date > new Date()} // Disable future dates
+                          />
+                        </div>
+                      </div>
+
+                      <span className="hidden sm:flex items-center text-base-content/50">
+                        to
+                      </span>
+
+                      {/* End Date Dropdown */}
+                      <div className="dropdown dropdown-bottom">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className={`btn btn-outline btn-sm w-full sm:w-auto ${!customStartDate ? 'btn-disabled' : ''}`}
+                        >
+                          {customEndDate
+                            ? customEndDate.toLocaleDateString()
+                            : 'End Date'}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        {customStartDate && (
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                          >
+                            <DayPicker
+                              className="react-day-picker mx-auto"
+                              mode="single"
+                              selected={customEndDate}
+                              onSelect={(date) => {
+                                setCustomEndDate(date);
+                                // Close dropdown by removing focus
+                                (
+                                  document.activeElement as HTMLElement
+                                )?.blur?.();
+                              }}
+                              disabled={(date) => {
+                                const today = new Date();
+                                const startDate = customStartDate;
+                                return (
+                                  date > today ||
+                                  (startDate && date < startDate)
+                                );
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Active Filters Display */}
+                {(dateFilter !== 'all' ||
+                  filterType !== 'all' ||
+                  searchTerm) && (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs text-base-content/60">
+                      Active filters:
+                    </span>
+
+                    {searchTerm && (
+                      <div className="badge badge-primary badge-sm gap-1">
+                        Search: "{searchTerm}"
+                        <button
+                          className="ml-1 hover:bg-primary-focus rounded-full"
+                          onClick={() => setSearchTerm('')}
+                          aria-label="Clear search"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    {filterType !== 'all' && (
+                      <div className="badge badge-secondary badge-sm gap-1">
+                        Type: {filterType}
+                        <button
+                          className="ml-1 hover:bg-secondary-focus rounded-full"
+                          onClick={() => setFilterType('all')}
+                          aria-label="Clear type filter"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    {dateFilter !== 'all' && (
+                      <div className="badge badge-accent badge-sm gap-1">
+                        {dateFilter === 'custom'
+                          ? `${customStartDate?.toLocaleDateString() || 'Start'} to ${customEndDate?.toLocaleDateString() || 'End'}`
+                          : dateFilter === 'today'
+                            ? 'Today'
+                            : dateFilter === 'week'
+                              ? 'This Week'
+                              : dateFilter === 'month'
+                                ? 'This Month'
+                                : 'This Year'}
+                        <button
+                          className="ml-1 hover:bg-accent-focus rounded-full"
+                          onClick={() => {
+                            setDateFilter('all');
+                            setCustomStartDate(undefined);
+                            setCustomEndDate(undefined);
+                          }}
+                          aria-label="Clear date filter"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setFilterType('all');
+                        setDateFilter('all');
+                        setCustomStartDate(undefined);
+                        setCustomEndDate(undefined);
+                      }}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
