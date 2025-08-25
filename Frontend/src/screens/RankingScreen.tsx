@@ -14,12 +14,14 @@ import { getRankingFn } from '../api/trackerApi';
 import { useState } from 'react';
 import { filterTypes } from '../types';
 import { Link } from 'react-router-dom';
+import { useTimezone } from '../hooks/useTimezone';
 
 function RankingScreen() {
   const [limit] = useState(10);
   const [xpFilter, setXpFilter] = useState<filterTypes>('userXp');
   const [timeFilter, setTimeFilter] = useState<string>('all-time');
   const [displayMode, setDisplayMode] = useState<'xp' | 'hours'>('xp');
+  const { timezone } = useTimezone(); // Get user's timezone
 
   // Get the actual filter to send to backend based on display mode
   const getBackendFilter = () => {
@@ -40,13 +42,14 @@ function RankingScreen() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['ranking', xpFilter, timeFilter, displayMode],
+    queryKey: ['ranking', xpFilter, timeFilter, displayMode, timezone],
     queryFn: ({ pageParam }) =>
       getRankingFn({
         limit,
         page: pageParam as number,
         filter: getBackendFilter(),
         timeFilter,
+        timezone, // Pass user's timezone to backend
       }),
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (lastPage.length < limit) return undefined;

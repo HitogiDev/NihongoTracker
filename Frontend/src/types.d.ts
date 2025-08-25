@@ -13,6 +13,7 @@ export interface IUser {
   settings?: {
     blurAdultContent: boolean;
     hideUnmatchedLogsAlert?: boolean;
+    timezone?: string;
   };
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
@@ -152,6 +153,7 @@ export interface IRankingParams {
   sort?: sortTypes;
   filter?: filterTypes;
   timeFilter?: string; // Add time filter parameter
+  timezone?: string; // Add timezone parameter
 }
 
 export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {

@@ -30,15 +30,31 @@ export async function getDailyGoals(
       createdAt: -1,
     });
 
-    // Calculate today's progress
-    const today = new Date();
-    const startOfDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
+    // Calculate today's progress using user's timezone
+    const userTimezone = foundUser.settings?.timezone || 'UTC';
+
+    // Get the current date in the user's timezone
+    const now = new Date();
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: userTimezone })
     );
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    // Get start and end of the current day in user's timezone
+    const startOfDayLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      userDate.getDate()
+    );
+    const endOfDayLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      userDate.getDate() + 1
+    );
+
+    // Convert to UTC by calculating the offset
+    const offsetNow = now.getTime() - userDate.getTime();
+    const startOfDay = new Date(startOfDayLocal.getTime() + offsetNow);
+    const endOfDay = new Date(endOfDayLocal.getTime() + offsetNow);
 
     const todayLogs = await Log.find({
       user: foundUser._id,
@@ -47,7 +63,7 @@ export async function getDailyGoals(
 
     // Calculate progress for each type
     const progress: IDailyGoalProgress = {
-      date: startOfDay.toISOString().split('T')[0],
+      date: userDate.toISOString().split('T')[0], // Use user's timezone date
       time: 0,
       chars: 0,
       episodes: 0,

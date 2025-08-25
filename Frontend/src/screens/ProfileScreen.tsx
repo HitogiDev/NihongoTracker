@@ -9,11 +9,13 @@ import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 
 function ProfileScreen() {
   const limit = 10;
   const { user, username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedUser } = useUserDataStore();
+  const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<
     | 'all'
@@ -62,22 +64,25 @@ function ProfileScreen() {
 
   // Function to get date range based on filter
   const getDateRange = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const now = getCurrentTime();
+    const today = getDayBounds(now);
 
     switch (dateFilter) {
       case 'today': {
         return {
-          startDate: today,
-          endDate: new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1),
+          startDate: today.start,
+          endDate: today.end,
         };
       }
       case 'week': {
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+        const weekStart = new Date(today.start);
+        weekStart.setDate(today.start.getDate() - today.start.getDay()); // Start of week (Sunday)
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
         return {
           startDate: weekStart,
-          endDate: new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1),
+          endDate: weekEnd,
         };
       }
       case 'month': {
@@ -105,11 +110,11 @@ function ProfileScreen() {
       }
       case 'custom': {
         if (customStartDate && customEndDate) {
+          const startBounds = getDayBounds(customStartDate);
+          const endBounds = getDayBounds(customEndDate);
           return {
-            startDate: customStartDate,
-            endDate: new Date(
-              customEndDate.getTime() + 24 * 60 * 60 * 1000 - 1
-            ), // End of day
+            startDate: startBounds.start,
+            endDate: endBounds.end,
           };
         }
         return null;
@@ -331,7 +336,7 @@ function ProfileScreen() {
                           className="btn btn-outline btn-sm w-full sm:w-auto"
                         >
                           {customStartDate
-                            ? customStartDate.toLocaleDateString()
+                            ? formatDateOnly(customStartDate)
                             : 'Start Date'}
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -386,7 +391,7 @@ function ProfileScreen() {
                           className={`btn btn-outline btn-sm w-full sm:w-auto ${!customStartDate ? 'btn-disabled' : ''}`}
                         >
                           {customEndDate
-                            ? customEndDate.toLocaleDateString()
+                            ? formatDateOnly(customEndDate)
                             : 'End Date'}
                           <svg
                             xmlns="http://www.w3.org/2000/svg"

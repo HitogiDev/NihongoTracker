@@ -18,6 +18,7 @@ export async function updateUser(
     discordId,
     blurAdultContent,
     hideUnmatchedLogsAlert,
+    timezone,
   } = req.body as IUpdateRequest;
 
   try {
@@ -120,7 +121,8 @@ export async function updateUser(
 
     if (
       blurAdultContent !== undefined ||
-      hideUnmatchedLogsAlert !== undefined
+      hideUnmatchedLogsAlert !== undefined ||
+      timezone !== undefined
     ) {
       const updatedSettings: any = { ...user.settings };
 
@@ -131,6 +133,16 @@ export async function updateUser(
       if (hideUnmatchedLogsAlert !== undefined) {
         updatedSettings.hideUnmatchedLogsAlert =
           hideUnmatchedLogsAlert === 'true';
+      }
+
+      if (timezone !== undefined) {
+        // Validate timezone
+        try {
+          Intl.DateTimeFormat(undefined, { timeZone: timezone });
+          updatedSettings.timezone = timezone;
+        } catch (error) {
+          throw new customError('Invalid timezone', 400);
+        }
       }
 
       user.settings = updatedSettings;
@@ -185,24 +197,37 @@ export async function getRanking(
     const filter = (req.query.filter as string) || 'userLevel';
     const sort = (req.query.sort as string) || 'desc';
     const timeFilter = (req.query.timeFilter as string) || 'all-time';
+    const timezone = (req.query.timezone as string) || 'UTC'; // Accept timezone as query parameter
 
-    // Create date filter based on timeFilter using UTC
+    // Create date filter based on timeFilter using the provided timezone
     let dateFilter: { date?: { $gte: Date } } = {};
     const now = new Date();
 
+    // Get current date in the specified timezone
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: timezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+
     if (timeFilter === 'today') {
-      // Use UTC methods to ensure consistent date handling
-      const startOfDay = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+      const startOfDayLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate()
       );
+      const startOfDay = new Date(startOfDayLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: startOfDay } };
     } else if (timeFilter === 'month') {
-      const startOfMonth = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+      const startOfMonthLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        1
       );
+      const startOfMonth = new Date(startOfMonthLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: startOfMonth } };
     } else if (timeFilter === 'year') {
-      const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+      const startOfYearLocal = new Date(userDate.getFullYear(), 0, 1);
+      const startOfYear = new Date(startOfYearLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: startOfYear } };
     }
 

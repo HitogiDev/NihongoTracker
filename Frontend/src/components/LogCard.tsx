@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
 import { ILog, updateLogRequest } from '../types';
-import { DateTime } from 'luxon';
 import {
   MdDelete,
   MdSchedule,
@@ -26,6 +25,7 @@ import { AxiosError } from 'axios';
 import { useUserDataStore } from '../store/userData';
 import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 
 const logTypeConfig = {
   reading: {
@@ -97,6 +97,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const { description, xp, date, type, episodes, pages, time, chars, media } =
     log;
   const { user } = useUserDataStore();
+  const { formatRelativeDate, formatDateTime } = useDateFormatting();
   const deleteModalRef = useRef<HTMLDialogElement>(null);
   const editModalRef = useRef<HTMLDialogElement>(null);
   const detailsModalRef = useRef<HTMLDialogElement>(null);
@@ -121,29 +122,8 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const typeConfig = logTypeConfig[type];
   const TypeIcon = typeConfig.icon;
 
-  const relativeDate = date
-    ? typeof date === 'string'
-      ? DateTime.fromISO(date).toRelative()
-      : DateTime.fromJSDate(date as Date).toRelative()
-    : '';
-
-  const fullDate = date
-    ? typeof date === 'string'
-      ? DateTime.fromISO(date).toLocaleString({
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        })
-      : DateTime.fromJSDate(date as Date).toLocaleString({
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        })
-    : '';
+  const relativeDate = date ? formatRelativeDate(date) : '';
+  const fullDate = date ? formatDateTime(date) : '';
 
   const logTitle =
     media && typeof media === 'object' && media.title?.contentTitleNative

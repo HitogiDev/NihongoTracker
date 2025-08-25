@@ -113,23 +113,49 @@ export async function getDashboardHours(
 ) {
   const { user } = res.locals;
   try {
+    // Use user's timezone for date calculations
+    const userTimezone = user.settings?.timezone || 'UTC';
     const now = new Date();
 
+    // Get current date in user's timezone
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: userTimezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+
+    const currentMonthStartLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      1
+    );
     const currentMonthStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+      currentMonthStartLocal.getTime() + offsetNow
+    );
+
+    const previousMonthStartLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth() - 1,
+      1
     );
     const previousMonthStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)
+      previousMonthStartLocal.getTime() + offsetNow
     );
 
     const lastDayOfPreviousMonth = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)
-    ).getUTCDate();
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      0
+    ).getDate();
 
-    const dayToUse = Math.min(now.getUTCDate(), lastDayOfPreviousMonth);
+    const dayToUse = Math.min(userDate.getDate(), lastDayOfPreviousMonth);
 
+    const previousMonthActualDateLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth() - 1,
+      dayToUse
+    );
     const previousMonthActualDate = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, dayToUse)
+      previousMonthActualDateLocal.getTime() + offsetNow
     );
 
     const readingTypes = ['reading', 'manga', 'vn'];
@@ -1080,23 +1106,45 @@ export async function getUserStats(
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // Use user's timezone for date calculations
+    const userTimezone = user.settings?.timezone || 'UTC';
+
     let dateFilter: any = {};
     let daysPeriod = 1;
     const now = new Date();
+
+    // Get current date in user's timezone
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: userTimezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+
     if (timeRange === 'today') {
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate()
+      );
+      const start = new Date(startLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: start } };
       daysPeriod = 1;
     } else if (timeRange === 'month') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        1
+      );
+      const start = new Date(startLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: start } };
-      daysPeriod = now.getDate();
+      daysPeriod = userDate.getDate();
     } else if (timeRange === 'year') {
-      const start = new Date(now.getFullYear(), 0, 1);
+      const startLocal = new Date(userDate.getFullYear(), 0, 1);
+      const start = new Date(startLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: start } };
       const dayOfYear =
-        Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
-        1;
+        Math.floor(
+          (userDate.getTime() - startLocal.getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1;
       daysPeriod = dayOfYear;
     } else if (timeRange === 'total') {
       const firstLog = await Log.findOne({ user: user._id }).sort({ date: 1 });
@@ -1104,7 +1152,8 @@ export async function getUserStats(
         const firstLogDate = firstLog.date ?? new Date(0);
         const daysDiff =
           Math.floor(
-            (now.getTime() - firstLogDate.getTime()) / (1000 * 60 * 60 * 24)
+            (userDate.getTime() - firstLogDate.getTime()) /
+              (1000 * 60 * 60 * 24)
           ) + 1;
         daysPeriod = daysDiff;
       } else {
@@ -1547,11 +1596,33 @@ export async function getMediaStats(
       });
     }
 
+    // Use user's timezone for date calculations
+    const userTimezone = user.settings?.timezone || 'UTC';
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(today.getDate() - today.getDay());
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get current date in user's timezone
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: userTimezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+
+    const todayLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      userDate.getDate()
+    );
+    const today = new Date(todayLocal.getTime() + offsetNow);
+
+    const thisWeekStartLocal = new Date(todayLocal);
+    thisWeekStartLocal.setDate(todayLocal.getDate() - todayLocal.getDay());
+    const thisWeekStart = new Date(thisWeekStartLocal.getTime() + offsetNow);
+
+    const thisMonthStartLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      1
+    );
+    const thisMonthStart = new Date(thisMonthStartLocal.getTime() + offsetNow);
 
     const baseMatch = {
       user: user._id,
@@ -1799,11 +1870,33 @@ export async function getLogScreenStats(
   const type = req.query.type as string;
 
   try {
+    // Use user's timezone for date calculations
+    const userTimezone = user.settings?.timezone || 'UTC';
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(today.getDate() - today.getDay());
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get current date in user's timezone
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: userTimezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+
+    const todayLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      userDate.getDate()
+    );
+    const today = new Date(todayLocal.getTime() + offsetNow);
+
+    const thisWeekStartLocal = new Date(todayLocal);
+    thisWeekStartLocal.setDate(todayLocal.getDate() - todayLocal.getDay());
+    const thisWeekStart = new Date(thisWeekStartLocal.getTime() + offsetNow);
+
+    const thisMonthStartLocal = new Date(
+      userDate.getFullYear(),
+      userDate.getMonth(),
+      1
+    );
+    const thisMonthStart = new Date(thisMonthStartLocal.getTime() + offsetNow);
 
     const baseMatch = { user: user._id };
     const typeMatch = type ? { ...baseMatch, type } : baseMatch;

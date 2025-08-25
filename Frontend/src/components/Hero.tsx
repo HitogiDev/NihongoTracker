@@ -8,9 +8,11 @@ import {
 } from '../api/trackerApi';
 import { useMemo } from 'react';
 import { numberWithCommas } from '../utils/utils';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 
 function Hero() {
   const { user } = useUserDataStore();
+  const { formatRelativeDate } = useDateFormatting();
   const username = user?.username;
 
   // Fetch hours for the logged-in user
@@ -105,23 +107,10 @@ function Hero() {
       .slice(0, 3)
       .map((log) => ({
         ...log,
-        formattedDate: formatRelativeDate(new Date(log.date)),
+        formattedDate: formatRelativeDate(log.date),
         formattedTime: formatTime(log.time, log.episodes),
       }));
-  }, [logs]);
-
-  // Helper function to format relative dates
-  function formatRelativeDate(date: Date) {
-    const now = new Date();
-    const diffDays = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
-  }
+  }, [logs, formatRelativeDate]);
 
   // Helper function to format time
   function formatTime(minutes?: number, episodes?: number) {
