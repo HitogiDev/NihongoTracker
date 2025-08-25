@@ -7,6 +7,10 @@ import User from '../models/user.model.js';
 import { ObjectId, PipelineStage, Types } from 'mongoose';
 import { customError } from '../middlewares/errorMiddleware.js';
 import updateStats from '../services/updateStats.js';
+import {
+  recalculateStreaksForUser,
+  updateStreakWithLog,
+} from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
 import { updateLevelAndXp } from '../services/updateStats.js';
 import {
@@ -566,6 +570,10 @@ export async function deleteLog(
     }
 
     await updateStats(res, next, true);
+    // After deletion, streaks may change; recalc for this user
+    if (deletedLog) {
+      await recalculateStreaksForUser(res.locals.user._id);
+    }
     return res.sendStatus(204);
   } catch (error) {
     return next(error as customError);
@@ -619,12 +627,18 @@ export async function updateLog(
     log.xp = xp !== undefined ? xp : log.xp;
     log.editedFields = editedFields;
 
+    const originalDate = log.date;
     const updatedLog = await log.save();
     res.locals.log = updatedLog;
     await updateStats(res, next);
 
     log.editedFields = null;
     await log.save();
+
+    // If the date changed or type/time changed enough to affect day counts, recalc streaks
+    if (originalDate?.toISOString() !== updatedLog.date?.toISOString()) {
+      await recalculateStreaksForUser(res.locals.user._id);
+    }
 
     return res.status(200).json(updatedLog);
   } catch (error) {
@@ -747,47 +761,8 @@ export async function createLog(
 
     res.locals.log = savedLog;
     await updateStats(res, next);
-
-    const userStats = await User.findById(res.locals.user._id);
-
-    if (!userStats) throw new customError('User not found', 404);
-
-    const today = new Date();
-    const todayString = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    ).toISOString();
-
-    const lastStreakDate = userStats.stats.lastStreakDate
-      ? new Date(
-          userStats.stats.lastStreakDate.getFullYear(),
-          userStats.stats.lastStreakDate.getMonth(),
-          userStats.stats.lastStreakDate.getDate()
-        ).toISOString()
-      : null;
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayString = new Date(
-      yesterday.getFullYear(),
-      yesterday.getMonth(),
-      yesterday.getDate()
-    ).toISOString();
-
-    if (lastStreakDate === todayString) {
-    } else if (lastStreakDate === yesterdayString) {
-      userStats.stats.currentStreak += 1;
-    } else if (!lastStreakDate || lastStreakDate !== todayString) {
-      userStats.stats.currentStreak = 1;
-    }
-
-    userStats.stats.lastStreakDate = today;
-
-    if (userStats.stats.currentStreak > userStats.stats.longestStreak) {
-      userStats.stats.longestStreak = userStats.stats.currentStreak;
-    }
-    await userStats.save();
+    // Update streaks using user timezone and log date (incremental)
+    await updateStreakWithLog(res.locals.user._id, savedLog.date);
 
     return res.status(200).json(savedLog);
   } catch (error) {
@@ -944,6 +919,9 @@ export async function importLogs(
       res.locals.user._id,
       importStats.anilistMediaId
     );
+
+    // After bulk import, recalculate streaks for this user
+    await recalculateStreaksForUser(res.locals.user._id);
 
     let statusMessage = `${insertedLogs.length} log${
       insertedLogs.length > 1 ? 's' : ''
@@ -1520,49 +1498,7 @@ export async function recalculateStreaks(
 
     for (const user of users) {
       try {
-        const logs = await Log.find({ user: user._id }).sort({ date: 1 });
-        if (!logs.length || !user.stats) {
-          continue;
-        }
-
-        let currentStreak = 0;
-        let longestStreak = 0;
-        let lastStreakDate: Date | null = null;
-
-        for (const log of logs) {
-          const logDate = new Date(
-            log.date.getFullYear(),
-            log.date.getMonth(),
-            log.date.getDate()
-          );
-
-          if (!lastStreakDate) {
-            currentStreak = 1;
-          } else {
-            const diffDays = Math.floor(
-              (logDate.getTime() - lastStreakDate.getTime()) /
-                (1000 * 60 * 60 * 24)
-            );
-
-            if (diffDays === 1) {
-              currentStreak += 1;
-            } else if (diffDays === 0) {
-            } else {
-              currentStreak = 1;
-            }
-          }
-
-          if (currentStreak > longestStreak) {
-            longestStreak = currentStreak;
-          }
-
-          lastStreakDate = logDate;
-        }
-
-        user.stats.currentStreak = currentStreak;
-        user.stats.longestStreak = longestStreak;
-        user.stats.lastStreakDate = lastStreakDate;
-        await user.save();
+        await recalculateStreaksForUser(user._id);
         results.updatedUsers++;
       } catch (error) {
         results.errors.push(
