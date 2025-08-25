@@ -16,7 +16,15 @@ function ProfileScreen() {
   const { user: loggedUser } = useUserDataStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<
-    'all' | 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'audio' | 'other'
+    | 'all'
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'audio'
+    | 'other'
   >('all');
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
@@ -37,6 +45,7 @@ function ProfileScreen() {
     | 'reading'
     | 'vn'
     | 'video'
+    | 'movie'
     | 'audio'
     | 'other' => {
     return [
@@ -45,6 +54,7 @@ function ProfileScreen() {
       'reading',
       'vn',
       'video',
+      'movie',
       'audio',
       'other',
     ].includes(value);
@@ -281,6 +291,7 @@ function ProfileScreen() {
                     <option value="reading">Reading</option>
                     <option value="vn">Visual Novel</option>
                     <option value="video">Video</option>
+                    <option value="movie">Movie</option>
                     <option value="audio">Audio</option>
                     <option value="other">Other</option>
                   </select>
