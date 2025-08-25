@@ -1074,6 +1074,8 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       <option value="video">Video</option>
                       <option value="manga">Manga</option>
                       <option value="audio">Audio</option>
+                      <option value="movie">Movie</option>
+                      <option value="tv show">TV Show</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
