@@ -186,7 +186,6 @@ function RankingScreen() {
   return (
     <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Header Section */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <PiTrophyFill className="w-10 h-10 text-warning" />
@@ -199,9 +198,7 @@ function RankingScreen() {
           </p>
         </div>
 
-        {/* Controls */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-          {/* Display Mode Toggle */}
           <div className="join">
             <button
               className={`btn join-item gap-2 ${displayMode === 'xp' ? 'btn-primary' : 'btn-outline'}`}
@@ -219,7 +216,6 @@ function RankingScreen() {
             </button>
           </div>
 
-          {/* Time filter dropdown */}
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-outline gap-2">
               {getTimeFilterIcon()}
@@ -256,7 +252,6 @@ function RankingScreen() {
             </ul>
           </div>
 
-          {/* Filter dropdown */}
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-primary gap-2">
               {getFilterIcon()}
@@ -304,11 +299,9 @@ function RankingScreen() {
         ) : (
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body p-0">
-              {/* Top 3 Podium */}
               {rankedUsers?.pages[0] && rankedUsers.pages[0].length >= 3 && (
                 <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-8 rounded-t-md">
                   <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
-                    {/* 2nd Place */}
                     <div className="text-center order-1">
                       <div className="relative mb-4">
                         <div className="avatar">
@@ -357,7 +350,6 @@ function RankingScreen() {
                       </div>
                     </div>
 
-                    {/* 1st Place */}
                     <div className="text-center order-2">
                       <div className="relative mb-4">
                         <div className="avatar">
@@ -409,7 +401,6 @@ function RankingScreen() {
                       </div>
                     </div>
 
-                    {/* 3rd Place */}
                     <div className="text-center order-3">
                       <div className="relative mb-4">
                         <div className="avatar">
@@ -461,7 +452,6 @@ function RankingScreen() {
                 </div>
               )}
 
-              {/* Rankings List */}
               <div className="overflow-x-auto">
                 <table className="table w-full">
                   <thead>

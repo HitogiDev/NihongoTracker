@@ -3,7 +3,6 @@ function AboutScreen() {
     <div className="min-h-screen bg-base-100 pt-16">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
-          {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-5xl font-bold text-primary mb-6">
               About NihongoTracker
@@ -14,7 +13,6 @@ function AboutScreen() {
             </p>
           </div>
 
-          {/* Main Content */}
           <div className="grid lg:grid-cols-2 gap-12 mb-16">
             <div className="card bg-base-200 shadow-xl">
               <div className="card-body">
@@ -66,7 +64,6 @@ function AboutScreen() {
             </div>
           </div>
 
-          {/* Data Sources Section */}
           <div className="mb-16">
             <h2 className="text-3xl font-bold text-center mb-8 text-primary">
               🔗 Powered by Trusted Sources
@@ -132,7 +129,6 @@ function AboutScreen() {
             </div>
           </div>
 
-          {/* Features Section */}
           <div className="mb-16">
             <h2 className="text-3xl font-bold text-center mb-8 text-primary">
               ✨ Key Features
@@ -189,7 +185,6 @@ function AboutScreen() {
             </div>
           </div>
 
-          {/* Call to Action */}
           <div className="text-center bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8">
             <h2 className="text-2xl font-bold mb-4">
               Ready to Start Your Journey?

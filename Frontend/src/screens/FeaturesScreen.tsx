@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 function FeaturesScreen() {
   return (
     <div className="bg-base-200 min-h-screen pt-16">
-      {/* Hero Section */}
       <div className="hero py-20 bg-base-300">
         <div className="hero-content text-center">
           <div className="max-w-3xl">
@@ -18,12 +17,10 @@ function FeaturesScreen() {
         </div>
       </div>
 
-      {/* Features Grid */}
       <div className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-center mb-16">Core Features</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Feature 1 - Immersion Tracking */}
           <div className="card bg-base-100 hover:shadow-xl transition-shadow">
             <div className="card-body">
               <div className="flex justify-center mb-4">
@@ -53,7 +50,6 @@ function FeaturesScreen() {
             </div>
           </div>
 
-          {/* Feature 2 - Media Organization */}
           <div className="card bg-base-100 hover:shadow-xl transition-shadow">
             <div className="card-body">
               <div className="flex justify-center mb-4">
@@ -82,7 +78,6 @@ function FeaturesScreen() {
             </div>
           </div>
 
-          {/* Feature 3 - Statistics & Analytics */}
           <div className="card bg-base-100 hover:shadow-xl transition-shadow">
             <div className="card-body">
               <div className="flex justify-center mb-4">
@@ -113,7 +108,6 @@ function FeaturesScreen() {
             </div>
           </div>
 
-          {/* Feature 4 - Gamification */}
           <div className="card bg-base-100 hover:shadow-xl transition-shadow">
             <div className="card-body">
               <div className="flex justify-center mb-4">
@@ -142,7 +136,6 @@ function FeaturesScreen() {
             </div>
           </div>
 
-          {/* Feature 5 - Social Competition */}
           <div className="card bg-base-100 hover:shadow-xl transition-shadow">
             <div className="card-body">
               <div className="flex justify-center mb-4">
@@ -172,7 +165,6 @@ function FeaturesScreen() {
             </div>
           </div>
 
-          {/* Feature 6 - Reading Speed Metrics */}
           <div className="card bg-base-100 hover:shadow-xl transition-shadow">
             <div className="card-body">
               <div className="flex justify-center mb-4">
@@ -206,7 +198,6 @@ function FeaturesScreen() {
         </div>
       </div>
 
-      {/* Usage Section */}
       <div className="bg-base-300 py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
@@ -251,7 +242,6 @@ function FeaturesScreen() {
         </div>
       </div>
 
-      {/* Case Study/Example */}
       <div className="container mx-auto px-4 py-16">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
@@ -284,7 +274,6 @@ function FeaturesScreen() {
         </div>
       </div>
 
-      {/* Get Started CTA */}
       <div className="bg-base-300 py-16">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">

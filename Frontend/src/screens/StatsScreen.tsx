@@ -251,7 +251,6 @@ function StatsScreen() {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -263,7 +262,6 @@ function StatsScreen() {
               </p>
             </div>
 
-            {/* Controls */}
             <div className="flex flex-col sm:flex-row gap-3">
               <select
                 className="select select-bordered select-primary w-full sm:w-auto"
@@ -358,14 +356,12 @@ function StatsScreen() {
           </div>
         </div>
 
-        {/* Daily Goals Section - Add this before Main Stats Cards */}
         {username === loggedUser?.username && (
           <div className="mb-8">
             <DailyGoals username={username} />
           </div>
         )}
 
-        {/* Main Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
             <div className="card-body">
@@ -498,7 +494,6 @@ function StatsScreen() {
           </div>
         </div>
 
-        {/* Reading/Listening Balance - Only for 'all' type */}
         {currentType === 'all' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="card bg-base-100 shadow-lg">
@@ -619,7 +614,6 @@ function StatsScreen() {
           </div>
         )}
 
-        {/* Additional Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {(currentType === 'all' ||
             ['reading', 'manga', 'vn'].includes(currentType)) && (
@@ -726,7 +720,6 @@ function StatsScreen() {
           </div>
         </div>
 
-        {/* Charts Section */}
         {currentType === 'all' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="card bg-base-100 shadow-lg">
@@ -803,7 +796,6 @@ function StatsScreen() {
           </div>
         )}
 
-        {/* Large Charts */}
         <div className="space-y-6">
           {(currentType === 'all' ||
             currentType === 'reading' ||

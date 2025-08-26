@@ -239,7 +239,6 @@ function ProfileScreen() {
               </div>
             </div>
 
-            {/* Immersion Heatmap */}
             <div className="card w-full bg-base-100 shadow-sm overflow-visible">
               <div className="card-body w-full p-4 sm:p-6 overflow-visible">
                 <h2 className="card-title mb-4">Immersion Activity</h2>
@@ -301,7 +300,6 @@ function ProfileScreen() {
                   </select>
                 </div>
 
-                {/* Date Filter Section */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <select
                     className="select select-sm select-bordered w-full sm:w-auto"
@@ -324,10 +322,8 @@ function ProfileScreen() {
                     <option value="custom">Custom Range</option>
                   </select>
 
-                  {/* Custom Date Range with DayPicker */}
                   {dateFilter === 'custom' && (
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      {/* Start Date Dropdown */}
                       <div className="dropdown dropdown-bottom">
                         <div
                           tabIndex={0}
@@ -381,7 +377,6 @@ function ProfileScreen() {
                         to
                       </span>
 
-                      {/* End Date Dropdown */}
                       <div className="dropdown dropdown-bottom">
                         <div
                           tabIndex={0}
@@ -438,7 +433,6 @@ function ProfileScreen() {
                   )}
                 </div>
 
-                {/* Active Filters Display */}
                 {(dateFilter !== 'all' ||
                   filterType !== 'all' ||
                   searchTerm) && (

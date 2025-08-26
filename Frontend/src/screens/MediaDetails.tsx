@@ -569,9 +569,7 @@ function MediaDetails() {
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
-          {/* Left Column - Media Details + User Overview */}
           <div className="space-y-6">
-            {/* Media Details Card */}
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
@@ -601,7 +599,6 @@ function MediaDetails() {
                     </div>
                   </div>
 
-                  {/* Difficulty Display */}
                   {difficultyInfo && (
                     <div className="flex items-center gap-3">
                       <span className="font-medium text-base-content/70 min-w-20">
@@ -786,7 +783,6 @@ function MediaDetails() {
               </div>
             </div>
 
-            {/* User Overview Card */}
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
@@ -985,7 +981,6 @@ function MediaDetails() {
                       </div>
                     )}
 
-                  {/* Reading Speed Card - Show for reading types when we have both chars and time */}
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
@@ -1025,7 +1020,6 @@ function MediaDetails() {
                     )}
                 </div>
 
-                {/* Enhanced Progress Section - Only show when Jiten data is available */}
                 {(mediaDocument?.type === 'vn' ||
                   mediaDocument?.type === 'manga' ||
                   mediaDocument?.type === 'reading') &&
@@ -1034,7 +1028,6 @@ function MediaDetails() {
                     <div className="mt-6 space-y-4">
                       <div className="divider">Reading Progress</div>
 
-                      {/* Progress Bar */}
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium">
@@ -1055,7 +1048,6 @@ function MediaDetails() {
                         </div>
                       </div>
 
-                      {/* Reading Statistics with Jiten data */}
                       {readingSpeed > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {recentReadingSpeed > 0 && recentLogs.length > 0 && (
@@ -1107,9 +1099,7 @@ function MediaDetails() {
             </div>
           </div>
 
-          {/* Right Column - Progress Chart + Comparison + Logs */}
           <div className="space-y-6">
-            {/* Progress Chart Card */}
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
@@ -1132,10 +1122,8 @@ function MediaDetails() {
               </div>
             </div>
 
-            {/* Comparison Card */}
             <ComparisonCard />
 
-            {/* Logs Section */}
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-6">
