@@ -3,12 +3,13 @@ import { getUserStatsFn } from '../api/trackerApi';
 import { useOutletContext } from 'react-router-dom';
 import { OutletProfileContextType } from '../types';
 import PieChart from '../components/PieChart';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
 import DailyGoals from '../components/DailyGoals';
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
+import { convertToUserTimezone } from '../utils/timezone';
 
 function StatsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
@@ -17,6 +18,7 @@ function StatsScreen() {
   const [timeRange, setTimeRange] = useState<
     'today' | 'month' | 'year' | 'total'
   >('total');
+  const [onlyImmersedDays, setOnlyImmersedDays] = useState<boolean>(false);
 
   const { data: userStats, isLoading } = useQuery({
     queryKey: ['userStats', username, timeRange, currentType],
@@ -158,6 +160,82 @@ function StatsScreen() {
     currentType === 'all'
       ? userStats?.totals
       : userStats?.statsByType.find((stat) => stat.type === currentType);
+
+  // Compute daily average when toggling between all days vs immersed days only
+  const timezone =
+    useUserDataStore.getState().user?.settings?.timezone || 'UTC';
+
+  const immersedDaysCount = useMemo(() => {
+    if (!userStats) return 0;
+    // Pick relevant stats by type
+    const relevantStats =
+      currentType === 'all'
+        ? userStats.statsByType
+        : userStats.statsByType.filter((s) => s.type === currentType);
+
+    const minutesByDay = new Map<string, number>();
+
+    for (const stat of relevantStats) {
+      for (const entry of stat.dates) {
+        const dateObj = new Date(entry.date);
+        const localDate = convertToUserTimezone(dateObj, timezone);
+        const dayKey = localDate.toISOString().split('T')[0];
+
+        // Effective minutes for the entry
+        let minutes = 0;
+        if (typeof entry.time === 'number' && entry.time > 0) {
+          minutes = entry.time;
+        } else if (
+          stat.type === 'anime' &&
+          typeof entry.episodes === 'number' &&
+          entry.episodes > 0
+        ) {
+          minutes = entry.episodes * 24; // fallback for anime
+        }
+
+        if (minutes > 0) {
+          minutesByDay.set(dayKey, (minutesByDay.get(dayKey) || 0) + minutes);
+        } else if (!minutesByDay.has(dayKey)) {
+          // Ensure the day exists in the map to avoid missing days; value 0
+          minutesByDay.set(dayKey, 0);
+        }
+      }
+    }
+
+    // Count only days with > 0 minutes
+    let count = 0;
+    minutesByDay.forEach((val) => {
+      if (val > 0) count += 1;
+    });
+    return count;
+  }, [userStats, currentType, timezone]);
+
+  const dailyAverageHoursDisplay = useMemo(() => {
+    if (!userStats || !currentTypeStats) return 0;
+    // Numerator: total hours for the selected type(s)
+    const totalHours =
+      currentType === 'all'
+        ? userStats.totals.totalTimeHours
+        : 'totalTimeHours' in currentTypeStats
+          ? currentTypeStats.totalTimeHours
+          : 0;
+
+    if (!onlyImmersedDays) {
+      // Use server-provided average across all days in the period
+      return userStats.totals.dailyAverageHours;
+    }
+
+    // Immersed days only
+    const denomDays = Math.max(immersedDaysCount, 0);
+    if (denomDays <= 0) return 0;
+    return totalHours / denomDays;
+  }, [
+    userStats,
+    currentType,
+    currentTypeStats,
+    onlyImmersedDays,
+    immersedDaysCount,
+  ]);
 
   if (isLoading) {
     return (
@@ -590,30 +668,41 @@ function StatsScreen() {
 
           <div className="card bg-base-100 shadow-lg">
             <div className="card-body">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-secondary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    ></path>
-                  </svg>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-secondary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold">Daily Average</h3>
                 </div>
-                <h3 className="font-semibold">Daily Average</h3>
+                <label className="label cursor-pointer gap-2">
+                  <span className="label-text text-xs text-base-content/70">
+                    Immersed days only
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm checkbox-secondary"
+                    checked={onlyImmersedDays}
+                    onChange={(e) => setOnlyImmersedDays(e.target.checked)}
+                  />
+                </label>
               </div>
               <p className="text-2xl font-bold text-secondary">
-                {userStats?.totals.dailyAverageHours
-                  ? numberWithCommas(
-                      parseFloat(userStats.totals.dailyAverageHours.toFixed(2))
-                    )
-                  : 0}
+                {numberWithCommas(
+                  parseFloat((dailyAverageHoursDisplay || 0).toFixed(2))
+                )}
                 <span className="text-sm font-normal text-base-content/70 ml-1">
                   hours
                 </span>
