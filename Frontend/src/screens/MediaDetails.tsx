@@ -569,7 +569,7 @@ function MediaDetails() {
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
@@ -1099,7 +1099,7 @@ function MediaDetails() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
