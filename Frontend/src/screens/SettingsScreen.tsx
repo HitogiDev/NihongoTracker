@@ -497,7 +497,6 @@ function SettingsScreen() {
 
   return (
     <div className="min-h-screen bg-base-200 mt-16">
-      {/* Confirm Clear Data Modal */}
       <dialog
         id="clear_data_modal"
         className="modal modal-bottom sm:modal-middle"
@@ -537,7 +536,6 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {/* Avatar Crop Modal */}
       {showAvatarCrop && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-2xl">
@@ -580,7 +578,6 @@ function SettingsScreen() {
         </dialog>
       )}
 
-      {/* Banner Crop Modal */}
       {showBannerCrop && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-4xl">
@@ -626,7 +623,6 @@ function SettingsScreen() {
         </dialog>
       )}
 
-      {/* Hero Section */}
       <div className="bg-base-100 shadow-sm border-b border-base-300">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
@@ -640,12 +636,9 @@ function SettingsScreen() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Profile Settings - Left Column */}
           <div className="xl:col-span-2 space-y-6">
-            {/* Basic Profile Info */}
             <div className="card bg-base-100 shadow-xl border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
@@ -716,7 +709,6 @@ function SettingsScreen() {
                     </div>
                   </div>
 
-                  {/* Media Uploads */}
                   <div className="space-y-6">
                     <div className="divider">
                       <span className="text-base-content/70 font-medium">
@@ -817,7 +809,6 @@ function SettingsScreen() {
               </div>
             </div>
 
-            {/* Security Settings */}
             <div className="card bg-base-100 shadow-xl border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
@@ -948,9 +939,7 @@ function SettingsScreen() {
             </div>
           </div>
 
-          {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Preferences */}
             <div className="card bg-base-100 shadow-xl border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
@@ -1088,7 +1077,6 @@ function SettingsScreen() {
               </div>
             </div>
 
-            {/* Data Management */}
             <div className="card bg-base-100 shadow-xl border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
@@ -1117,7 +1105,6 @@ function SettingsScreen() {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Import CSV */}
                   <div>
                     <h3 className="font-semibold mb-3 text-base-content">
                       Import from CSV
@@ -1164,7 +1151,6 @@ function SettingsScreen() {
 
                   <div className="divider"></div>
 
-                  {/* Sync Logs */}
                   <div>
                     <h3 className="font-semibold mb-3 text-base-content">
                       Sync External Data
@@ -1210,7 +1196,6 @@ function SettingsScreen() {
               </div>
             </div>
 
-            {/* Log Management */}
             <div className="card bg-base-100 shadow-xl border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
@@ -1286,7 +1271,6 @@ function SettingsScreen() {
               </div>
             </div>
 
-            {/* Danger Zone */}
             <div className="card bg-error/5 border border-error/20 shadow-xl">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-4">

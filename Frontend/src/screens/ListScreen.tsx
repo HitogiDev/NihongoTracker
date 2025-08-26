@@ -269,7 +269,6 @@ function ListScreen() {
 
   return (
     <>
-      {/* Hide Alert Confirmation Modal */}
       {showHideAlertModal && (
         <dialog className="modal modal-open">
           <div className="modal-box">
@@ -308,7 +307,6 @@ function ListScreen() {
       )}
 
       <div className="min-h-screen bg-base-200">
-        {/* Unmatched Logs Alert */}
         {untrackedLogs &&
           untrackedLogs.length > 0 &&
           !user?.settings?.hideUnmatchedLogsAlert && (
@@ -344,12 +342,10 @@ function ListScreen() {
             </div>
           )}
 
-        {/* Controls Section */}
         <div className="container mx-auto px-4 mt-4 relative z-10">
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body p-6">
               <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                {/* Search */}
                 <div className="flex-1 max-w-md">
                   <label className="input input-bordered flex items-center gap-2">
                     <MdSearch className="w-5 h-5 opacity-70" />
@@ -363,9 +359,7 @@ function ListScreen() {
                   </label>
                 </div>
 
-                {/* Filters */}
                 <div className="flex flex-wrap gap-3">
-                  {/* Type Filter */}
                   <div className="dropdown dropdown-end">
                     <div
                       tabIndex={0}
@@ -409,7 +403,6 @@ function ListScreen() {
                     </ul>
                   </div>
 
-                  {/* Sort */}
                   <div className="dropdown dropdown-end">
                     <div
                       tabIndex={0}
@@ -447,7 +440,6 @@ function ListScreen() {
                     </ul>
                   </div>
 
-                  {/* View Mode Toggle */}
                   <div className="join">
                     <button
                       className={`btn join-item ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
@@ -465,7 +457,6 @@ function ListScreen() {
                 </div>
               </div>
 
-              {/* Results Count */}
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <p className="text-sm text-base-content/70">
                   Showing{' '}
@@ -493,10 +484,8 @@ function ListScreen() {
           </div>
         </div>
 
-        {/* Media Grid/List */}
         <div className="container mx-auto px-4 py-4">
           {Object.keys(groupedMedia).includes('ungrouped') ? (
-            // Ungrouped view (when filters are applied)
             groupedMedia.ungrouped && groupedMedia.ungrouped.length === 0 ? (
               <div className="text-center py-20">
                 <div className="max-w-md mx-auto space-y-4">

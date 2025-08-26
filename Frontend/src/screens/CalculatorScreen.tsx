@@ -4,11 +4,9 @@ import ImmersionCalculator from '../components/ImmersionCalculator';
 const CalculatorScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-base-200">
-      {/* Header spacing */}
       <div className="pt-20 pb-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            {/* Hero Section */}
             <div className="text-center mb-12">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
                 <svg
@@ -35,15 +33,12 @@ const CalculatorScreen: React.FC = () => {
               </p>
             </div>
 
-            {/* Main Calculator */}
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
                 <ImmersionCalculator />
               </div>
 
-              {/* Side Panel */}
               <div className="space-y-6">
-                {/* Quick Tips Card */}
                 <div className="card bg-base-100 shadow-lg border border-base-300">
                   <div className="card-body">
                     <h3 className="card-title text-lg flex items-center gap-2">

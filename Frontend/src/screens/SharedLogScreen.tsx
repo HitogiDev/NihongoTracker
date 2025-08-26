@@ -329,7 +329,6 @@ function SharedLogScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-200 to-base-300 pt-20 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 bg-base-100 rounded-full px-6 py-3 shadow-lg mb-4">
             <MdShare className="w-6 h-6 text-primary" />
@@ -345,10 +344,8 @@ function SharedLogScreen() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Cover Image & Info */}
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-              {/* Cover Image */}
               {coverImage && (
                 <div className="card bg-base-100 shadow-xl mb-6">
                   <figure className="aspect-[3/4] overflow-hidden rounded-xl">
@@ -361,7 +358,6 @@ function SharedLogScreen() {
                 </div>
               )}
 
-              {/* Type Badge */}
               <div className="card bg-base-100 shadow-xl">
                 <div className="card-body p-6">
                   <div className="flex items-center gap-3 mb-4">
@@ -402,7 +398,6 @@ function SharedLogScreen() {
 
                     <div className="divider my-4"></div>
 
-                    {/* Original Stats */}
                     <div className="space-y-2">
                       {sharedLog.episodes && (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
@@ -451,7 +446,6 @@ function SharedLogScreen() {
             </div>
           </div>
 
-          {/* Right Column - Add to Your Log */}
           <div className="lg:col-span-2">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body p-8">
@@ -467,7 +461,6 @@ function SharedLogScreen() {
                   </div>
                 </div>
 
-                {/* Quick Add Section */}
                 <div className="alert alert-success mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -498,14 +491,12 @@ function SharedLogScreen() {
                   </div>
                 </div>
 
-                {/* Optional Customization */}
                 <details className="collapse collapse-arrow bg-base-200">
                   <summary className="collapse-title text-lg font-medium">
                     Want to adjust the values? (Optional)
                   </summary>
                   <div className="collapse-content">
                     <div className="space-y-4 pt-4">
-                      {/* Description */}
                       <div>
                         <label className="label">
                           <span className="label-text font-semibold">
@@ -538,7 +529,6 @@ function SharedLogScreen() {
                         )}
                       </div>
 
-                      {/* Stats Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {sharedLog.type === 'anime' && (
                           <div>
@@ -637,7 +627,6 @@ function SharedLogScreen() {
                   </div>
                 </details>
 
-                {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-end mt-8 pt-6 border-t border-base-300">
                   <button
                     onClick={() => navigate('/')}

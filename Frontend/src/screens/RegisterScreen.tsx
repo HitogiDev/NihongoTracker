@@ -189,7 +189,6 @@ function RegisterScreen() {
                 </label>
               )}
 
-              {/* Username Requirements */}
               {showUsernameRequirements && (
                 <div className="mt-2 p-3 bg-base-200 rounded-box text-xs">
                   <p className="font-semibold mb-2 text-base-content">
@@ -263,7 +262,6 @@ function RegisterScreen() {
                 </label>
               )}
 
-              {/* Password Requirements */}
               {showPasswordRequirements && (
                 <div className="mt-2 p-3 bg-base-200 rounded-box text-xs">
                   <p className="font-semibold mb-2 text-base-content">
