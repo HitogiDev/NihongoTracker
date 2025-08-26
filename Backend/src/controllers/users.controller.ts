@@ -19,6 +19,7 @@ export async function updateUser(
     blurAdultContent,
     hideUnmatchedLogsAlert,
     timezone,
+
   } = req.body as IUpdateRequest;
 
   try {
@@ -123,6 +124,7 @@ export async function updateUser(
       blurAdultContent !== undefined ||
       hideUnmatchedLogsAlert !== undefined ||
       timezone !== undefined
+
     ) {
       const updatedSettings: any = { ...user.settings };
 
@@ -144,7 +146,6 @@ export async function updateUser(
           throw new customError('Invalid timezone', 400);
         }
       }
-
       user.settings = updatedSettings;
     }
 

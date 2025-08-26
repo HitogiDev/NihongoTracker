@@ -1063,6 +1063,27 @@ function SettingsScreen() {
                       </div>
                     </label>
                   </div>
+
+                  <div className="form-control">
+                    <label className="label cursor-pointer">
+                      <div>
+                        <span className="label-text font-medium">
+                          Hide Unmatched Logs Alert
+                        </span>
+                        <p className="text-sm text-base-content/60">
+                          Don't show alerts about unmatched logs
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-accent"
+                        checked={hideUnmatchedAlert}
+                        onChange={(e) =>
+                          setHideUnmatchedAlert(e.target.checked)
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
