@@ -21,6 +21,7 @@ interface LogData {
 }
 
 const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
+  
   const { timezone } = useTimezone();
 
   // Get logs for the past year

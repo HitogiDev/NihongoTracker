@@ -117,6 +117,7 @@ export async function getDashboardHours(
 ) {
   const { user } = res.locals;
   try {
+
     // Use user's timezone for date calculations
     const userTimezone = user.settings?.timezone || 'UTC';
     const now = new Date();
@@ -132,6 +133,7 @@ export async function getDashboardHours(
       userDate.getMonth(),
       1
     );
+
     const currentMonthStart = new Date(
       currentMonthStartLocal.getTime() + offsetNow
     );
@@ -146,6 +148,7 @@ export async function getDashboardHours(
     );
 
     const lastDayOfPreviousMonth = new Date(
+
       userDate.getFullYear(),
       userDate.getMonth(),
       0
@@ -570,10 +573,12 @@ export async function deleteLog(
     }
 
     await updateStats(res, next, true);
+
     // After deletion, streaks may change; recalc for this user
     if (deletedLog) {
       await recalculateStreaksForUser(res.locals.user._id);
     }
+
     return res.sendStatus(204);
   } catch (error) {
     return next(error as customError);
@@ -761,6 +766,7 @@ export async function createLog(
 
     res.locals.log = savedLog;
     await updateStats(res, next);
+
     // Update streaks using user timezone and log date (incremental)
     await updateStreakWithLog(res.locals.user._id, savedLog.date);
 
@@ -1114,7 +1120,9 @@ export async function getUserStats(
       );
       const start = new Date(startLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: start } };
+
       daysPeriod = userDate.getDate();
+
     } else if (timeRange === 'year') {
       const startLocal = new Date(userDate.getFullYear(), 0, 1);
       const start = new Date(startLocal.getTime() + offsetNow);
@@ -1498,7 +1506,9 @@ export async function recalculateStreaks(
 
     for (const user of users) {
       try {
+
         await recalculateStreaksForUser(user._id);
+
         results.updatedUsers++;
       } catch (error) {
         results.errors.push(

@@ -279,7 +279,6 @@ function ProfileScreen() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </label>
-
                   <select
                     className="select select-sm select-bordered w-full sm:w-auto"
                     value={filterType}
@@ -378,7 +377,6 @@ function ProfileScreen() {
                           />
                         </div>
                       </div>
-
                       <span className="hidden sm:flex items-center text-base-content/50">
                         to
                       </span>
