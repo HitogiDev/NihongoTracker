@@ -102,12 +102,23 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
     onSuccess: () => {
       resetState();
 
-      // Invalidate queries without setTimeout
+      // Comprehensive query invalidation to update all related data
       queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
       queryClient.invalidateQueries({ queryKey: ['logs', usernameFromStore] });
       queryClient.invalidateQueries({
         queryKey: ['ImmersionList', usernameFromStore],
       });
+      // Invalidate user stats to update experience points and statistics
+      queryClient.invalidateQueries({
+        queryKey: ['userStats', usernameFromStore],
+      });
+      // Invalidate user profile data to update overall stats
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          ['user', 'ranking'].includes(query.queryKey[0] as string),
+      });
+      // Invalidate daily goals as XP changes affect goal progress
+      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
       // Show count of logs assigned in the success message
       toast.success(

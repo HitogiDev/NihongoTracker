@@ -108,7 +108,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       setSelectedLogs([]);
       setSelectedGroup(null);
 
-      // Invalidate the correct queries
+      // Comprehensive query invalidation to update all related data
       queryClient.invalidateQueries({
         queryKey: ['videoLogs', username, 'video'],
       });
@@ -116,6 +116,17 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       queryClient.invalidateQueries({
         queryKey: ['ImmersionList', currentUsername],
       });
+      // Invalidate user stats to update experience points and statistics
+      queryClient.invalidateQueries({
+        queryKey: ['userStats', currentUsername],
+      });
+      // Invalidate user profile data to update overall stats
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          ['user', 'ranking'].includes(query.queryKey[0] as string),
+      });
+      // Invalidate daily goals as XP changes affect goal progress
+      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
       toast.success(
         `Successfully assigned ${totalLogs} video logs to ${channelCount} YouTube channels`

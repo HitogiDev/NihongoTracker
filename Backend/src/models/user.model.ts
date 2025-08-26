@@ -8,6 +8,7 @@ const SettingsSchema = new Schema<IUserSettings>(
   {
     blurAdultContent: { type: Boolean, default: true },
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
+    timezone: { type: String, default: 'UTC' },
   },
   { _id: false }
 );
@@ -78,7 +79,10 @@ const UserSchema = new Schema<IUser>(
       },
     ],
     lastImport: { type: Date, default: null },
-    settings: { type: SettingsSchema, default: { blurAdultContent: true } },
+    settings: {
+      type: SettingsSchema,
+      default: { blurAdultContent: true, timezone: 'UTC' },
+    },
   },
   { timestamps: true }
 );

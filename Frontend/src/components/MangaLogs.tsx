@@ -92,14 +92,25 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
       setSearchQuery('');
       setSelectedGroup(null);
 
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
-        queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
-        queryClient.invalidateQueries({
-          queryKey: ['ImmersionList', currentUsername],
-        });
-        toast.success('Media assigned successfully');
-      }, 0);
+      // Comprehensive query invalidation to update all related data
+      queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
+      queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
+      queryClient.invalidateQueries({
+        queryKey: ['ImmersionList', currentUsername],
+      });
+      // Invalidate user stats to update experience points and statistics
+      queryClient.invalidateQueries({
+        queryKey: ['userStats', currentUsername],
+      });
+      // Invalidate user profile data to update overall stats
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          ['user', 'ranking'].includes(query.queryKey[0] as string),
+      });
+      // Invalidate daily goals as XP changes affect goal progress
+      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+
+      toast.success('Media assigned successfully');
     },
     onError: (error) => {
       if (error instanceof AxiosError) {

@@ -2,6 +2,8 @@ import { ILog } from '../types';
 import { ChartArea, ScriptableContext } from 'chart.js';
 import LineChart from './LineChart';
 import { useEffect, useState } from 'react';
+import { useTimezone } from '../hooks/useTimezone';
+import { convertToUserTimezone } from '../utils/timezone';
 
 interface ProgressChartProps {
   logs?: ILog[];
@@ -29,6 +31,7 @@ export default function ProgressChart({
   selectedType = 'all',
   timeframe: externalTimeframe,
 }: ProgressChartProps) {
+  const { timezone } = useTimezone();
   const [timeframe, setTimeframe] = useState<
     'today' | 'month' | 'year' | 'total'
   >('total');
@@ -170,8 +173,11 @@ export default function ProgressChart({
       }
 
       filteredLogs.forEach((log) => {
-        const date = new Date(log.date);
-        const hour = date.getHours();
+        const logDateInUserTz = convertToUserTimezone(
+          new Date(log.date),
+          timezone
+        );
+        const hour = logDateInUserTz.getHours();
         xpByHour[hour.toString()] += log.xp;
       });
 
@@ -204,8 +210,11 @@ export default function ProgressChart({
       ];
 
       filteredLogs.forEach((log) => {
-        const date = new Date(log.date);
-        const monthIndex = date.getMonth();
+        const logDateInUserTz = convertToUserTimezone(
+          new Date(log.date),
+          timezone
+        );
+        const monthIndex = logDateInUserTz.getMonth();
         if (!xpByMonth[monthIndex.toString()]) {
           xpByMonth[monthIndex.toString()] = 0;
         }
@@ -244,19 +253,23 @@ export default function ProgressChart({
 
   function filterLogsByTimeframe(logs: ILog[], timeframe: string) {
     const now = new Date();
+    const nowInUserTz = convertToUserTimezone(now, timezone);
 
     return logs.filter((log) => {
-      const logDate = new Date(log.date);
+      const logDateInUserTz = convertToUserTimezone(
+        new Date(log.date),
+        timezone
+      );
 
       if (timeframe === 'today') {
-        return logDate.toDateString() === now.toDateString();
+        return logDateInUserTz.toDateString() === nowInUserTz.toDateString();
       } else if (timeframe === 'month') {
         return (
-          logDate.getMonth() === now.getMonth() &&
-          logDate.getFullYear() === now.getFullYear()
+          logDateInUserTz.getMonth() === nowInUserTz.getMonth() &&
+          logDateInUserTz.getFullYear() === nowInUserTz.getFullYear()
         );
       } else if (timeframe === 'year') {
-        return logDate.getFullYear() === now.getFullYear();
+        return logDateInUserTz.getFullYear() === nowInUserTz.getFullYear();
       } else {
         return true;
       }
@@ -267,7 +280,11 @@ export default function ProgressChart({
     const xpByDate: { [key: string]: number } = {};
 
     logs.forEach((log) => {
-      const dateStr = new Date(log.date).toISOString().split('T')[0];
+      const logDateInUserTz = convertToUserTimezone(
+        new Date(log.date),
+        timezone
+      );
+      const dateStr = logDateInUserTz.toISOString().split('T')[0];
       if (!xpByDate[dateStr]) {
         xpByDate[dateStr] = 0;
       }

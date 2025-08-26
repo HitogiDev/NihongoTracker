@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   clearUserDataFn,
@@ -12,6 +12,7 @@ import { ILoginResponse } from '../types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUserDataStore } from '../store/userData';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import TimezonePicker from '../components/TimezonePicker';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
 
@@ -29,6 +30,8 @@ function SettingsScreen() {
   const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
     user?.settings?.hideUnmatchedLogsAlert || false
   );
+  const [timezone, setTimezone] = useState(user?.settings?.timezone || 'UTC');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [avatarSrc, setAvatarSrc] = useState<string>('');
   const [bannerSrc, setBannerSrc] = useState<string>('');
@@ -69,6 +72,140 @@ function SettingsScreen() {
       }
     },
   });
+
+  // Separate mutation for auto-saving preferences
+  const { mutate: updatePreferences, isPending: isPreferencesPending } =
+    useMutation({
+      mutationFn: updateUserFn,
+      onSuccess: (data: ILoginResponse) => {
+        setUser(data);
+        void queryClient.invalidateQueries({
+          predicate: (query) => {
+            return ['user', 'ranking'].includes(query.queryKey[0] as string);
+          },
+        });
+      },
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          toast.error(
+            `Failed to save preference: ${error.response?.data.message}`
+          );
+        } else {
+          toast.error('Failed to save preference');
+        }
+      },
+    });
+
+  // Debounced function to update preferences automatically
+  const debouncedUpdatePreferences = useCallback(
+    (prefType: string, value: string | boolean) => {
+      const formData = new FormData();
+
+      if (prefType === 'timezone') {
+        formData.append('timezone', value as string);
+      } else if (prefType === 'blurAdultContent') {
+        formData.append('blurAdultContent', value.toString());
+      } else if (prefType === 'hideUnmatchedLogsAlert') {
+        formData.append('hideUnmatchedLogsAlert', value.toString());
+      }
+
+      updatePreferences(formData);
+    },
+    [updatePreferences]
+  );
+
+  // Use refs to track timeouts for debouncing
+  const timezoneTimeoutRef = useRef<NodeJS.Timeout>();
+  const blurAdultTimeoutRef = useRef<NodeJS.Timeout>();
+  const hideUnmatchedTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Initialize state from user data once
+  useEffect(() => {
+    if (user && !isInitialized) {
+      setDiscordId(user.discordId || '');
+      setBlurAdult(user.settings?.blurAdultContent || false);
+      setHideUnmatchedAlert(user.settings?.hideUnmatchedLogsAlert || false);
+      setTimezone(user.settings?.timezone || 'UTC');
+      setIsInitialized(true);
+    }
+  }, [user, isInitialized]);
+
+  // Auto-save preferences when they change (only after initialization)
+  useEffect(() => {
+    if (
+      isInitialized &&
+      user?.settings?.timezone !== timezone &&
+      timezone !== (user?.settings?.timezone || 'UTC')
+    ) {
+      if (timezoneTimeoutRef.current) {
+        clearTimeout(timezoneTimeoutRef.current);
+      }
+      timezoneTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences('timezone', timezone);
+      }, 500);
+    }
+
+    return () => {
+      if (timezoneTimeoutRef.current) {
+        clearTimeout(timezoneTimeoutRef.current);
+      }
+    };
+  }, [
+    timezone,
+    user?.settings?.timezone,
+    debouncedUpdatePreferences,
+    isInitialized,
+  ]);
+
+  useEffect(() => {
+    if (isInitialized && user?.settings?.blurAdultContent !== blurAdult) {
+      if (blurAdultTimeoutRef.current) {
+        clearTimeout(blurAdultTimeoutRef.current);
+      }
+      blurAdultTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences('blurAdultContent', blurAdult);
+      }, 500);
+    }
+
+    return () => {
+      if (blurAdultTimeoutRef.current) {
+        clearTimeout(blurAdultTimeoutRef.current);
+      }
+    };
+  }, [
+    blurAdult,
+    user?.settings?.blurAdultContent,
+    debouncedUpdatePreferences,
+    isInitialized,
+  ]);
+
+  useEffect(() => {
+    if (
+      isInitialized &&
+      user?.settings?.hideUnmatchedLogsAlert !== hideUnmatchedAlert
+    ) {
+      if (hideUnmatchedTimeoutRef.current) {
+        clearTimeout(hideUnmatchedTimeoutRef.current);
+      }
+      hideUnmatchedTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences(
+          'hideUnmatchedLogsAlert',
+          hideUnmatchedAlert
+        );
+      }, 500);
+    }
+
+    return () => {
+      if (hideUnmatchedTimeoutRef.current) {
+        clearTimeout(hideUnmatchedTimeoutRef.current);
+      }
+    };
+  }, [
+    hideUnmatchedAlert,
+    user?.settings?.hideUnmatchedLogsAlert,
+    debouncedUpdatePreferences,
+    isInitialized,
+  ]);
 
   const { mutate: syncLogs, isPending: isSyncPending } = useMutation({
     mutationFn: importLogsFn,
@@ -165,8 +302,9 @@ function SettingsScreen() {
 
     // Always append discordId (even if empty to allow clearing)
     formData.append('discordId', discordId);
-    formData.append('blurAdultContent', blurAdult.toString());
-    formData.append('hideUnmatchedLogsAlert', hideUnmatchedAlert.toString());
+
+    // Note: Preferences (blurAdultContent, hideUnmatchedLogsAlert, timezone)
+    // are now auto-saved and don't need to be included in manual updates
 
     // Use cropped files if available, otherwise fall back to original files
     if (croppedAvatarFile) {
@@ -855,6 +993,26 @@ function SettingsScreen() {
                   </div>
 
                   <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Timezone</span>
+                      {isPreferencesPending && (
+                        <span className="loading loading-spinner loading-sm"></span>
+                      )}
+                    </label>
+                    <TimezonePicker
+                      value={timezone}
+                      onChange={setTimezone}
+                      disabled={isPending || isPreferencesPending}
+                    />
+                    <label className="label">
+                      <span className="label-text-alt text-base-content/60 text-wrap">
+                        All dates and times will be displayed in your selected
+                        timezone
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="form-control">
                     <label className="label cursor-pointer">
                       <div>
                         <span className="label-text font-medium">
@@ -864,12 +1022,45 @@ function SettingsScreen() {
                           Hide explicit content by default
                         </p>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="toggle toggle-accent"
-                        checked={blurAdult}
-                        onChange={(e) => setBlurAdult(e.target.checked)}
-                      />
+                      <div className="flex items-center gap-2">
+                        {isPreferencesPending && (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        )}
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-accent"
+                          checked={blurAdult}
+                          onChange={(e) => setBlurAdult(e.target.checked)}
+                          disabled={isPreferencesPending}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="form-control">
+                    <label className="label cursor-pointer">
+                      <div>
+                        <span className="label-text font-medium">
+                          Hide Unmatched Logs Alert
+                        </span>
+                        <p className="text-sm text-base-content/60">
+                          Don't show alerts about unmatched logs
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isPreferencesPending && (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        )}
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-accent"
+                          checked={hideUnmatchedAlert}
+                          onChange={(e) =>
+                            setHideUnmatchedAlert(e.target.checked)
+                          }
+                          disabled={isPreferencesPending}
+                        />
+                      </div>
                     </label>
                   </div>
 

@@ -27,6 +27,7 @@ export enum userRoles {
 export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
+  timezone?: string;
 }
 
 export interface IUser extends Document {
@@ -223,6 +224,7 @@ export interface IUpdateRequest {
   discordId?: string;
   blurAdultContent?: string;
   hideUnmatchedLogsAlert?: string;
+  timezone?: string;
 }
 
 export interface IRegister {

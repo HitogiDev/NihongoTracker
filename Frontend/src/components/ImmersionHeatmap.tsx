@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
+import { useTimezone } from '../hooks/useTimezone';
+import { convertToUserTimezone } from '../utils/timezone';
 
 interface HeatmapData {
   date: string;
@@ -19,6 +21,9 @@ interface LogData {
 }
 
 const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
+  
+  const { timezone } = useTimezone();
+
   // Get logs for the past year
   const { data: logs, isLoading } = useQuery({
     queryKey: ['heatmap-logs', username],
@@ -32,27 +37,31 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     // Create a map to store daily totals
     const dailyData = new Map<string, number>();
 
-    // Get date 24 weeks ago (168 days)
-    const twentyFourWeeksAgo = new Date();
+    // Get date 24 weeks ago (168 days) in user's timezone
+    const now = new Date();
+    const todayInUserTz = convertToUserTimezone(now, timezone);
+    const twentyFourWeeksAgo = new Date(todayInUserTz);
     twentyFourWeeksAgo.setDate(twentyFourWeeksAgo.getDate() - (24 * 7 - 1));
 
-    // Process logs and group by date
+    // Process logs and group by date in user's timezone
     logs.forEach((log: LogData) => {
-      const logDate = new Date(log.date);
-      if (logDate >= twentyFourWeeksAgo) {
-        const dateKey = logDate.toISOString().split('T')[0];
+      const logDateInUserTz = convertToUserTimezone(
+        new Date(log.date),
+        timezone
+      );
+      if (logDateInUserTz >= twentyFourWeeksAgo) {
+        const dateKey = logDateInUserTz.toISOString().split('T')[0];
         const currentTotal = dailyData.get(dateKey) || 0;
         const timeValue = log.time || 0;
         dailyData.set(dateKey, currentTotal + timeValue);
       }
     });
 
-    // Generate heatmap data for 24 weeks (168 days)
+    // Generate heatmap data for 24 weeks (168 days) in user's timezone
     const heatmapData: HeatmapData[] = [];
-    const today = new Date();
 
     for (let i = 24 * 7 - 1; i >= 0; i--) {
-      const date = new Date(today);
+      const date = new Date(todayInUserTz);
       date.setDate(date.getDate() - i);
       const dateKey = date.toISOString().split('T')[0];
       const value = dailyData.get(dateKey) || 0;
@@ -72,7 +81,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     }
 
     return heatmapData;
-  }, [logs]);
+  }, [logs, timezone]);
 
   const getIntensityClass = (level: number) => {
     switch (level) {
@@ -98,6 +107,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
+      timeZone: timezone, // Use user's timezone for display
     });
     return `${formattedDate}: ${data.value} minutes`;
   };
