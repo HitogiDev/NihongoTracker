@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { ILog, updateLogRequest } from '../types';
 import {
   MdDelete,
@@ -410,12 +411,25 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h2
-                  className="font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200"
-                  title={logTitle}
-                >
-                  {displayTitle}
-                </h2>
+                {media &&
+                typeof media === 'object' &&
+                media.contentId &&
+                media.type ? (
+                  <Link
+                    to={`/${encodeURIComponent(media.type)}/${media.contentId}${logUser ? `/${encodeURIComponent(logUser)}` : ''}`}
+                    className="font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
+                    title={logTitle}
+                  >
+                    {displayTitle}
+                  </Link>
+                ) : (
+                  <h2
+                    className="font-bold text-base leading-tight text-base-content group-hover:text-primary transition-colors duration-200"
+                    title={logTitle}
+                  >
+                    {displayTitle}
+                  </h2>
+                )}
 
                 {/* Media English title */}
                 {media &&
