@@ -88,7 +88,6 @@ function Header() {
                 </li>
                 <li>
                   <Link
-
                     to={`/user/${user.username}/list`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
@@ -151,14 +150,6 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     Ranking
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/calculator"
-                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                  >
-                    Calculator
                   </Link>
                 </li>
                 <li>
@@ -242,14 +233,6 @@ function Header() {
                   to="/ranking"
                 >
                   Ranking
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
-                  to="/calculator"
-                >
-                  Calculator
                 </Link>
               </li>
               <li>
