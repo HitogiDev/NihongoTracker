@@ -15,7 +15,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
     error,
   } = useQuery<IMediaStats>({
     queryKey: ['mediaStats', mediaId, mediaType],
-  queryFn: () => getUserMediaStatsFn(mediaId, mediaType),
+    queryFn: () => getUserMediaStatsFn(mediaId, mediaType),
     enabled: !!mediaId && !!mediaType,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

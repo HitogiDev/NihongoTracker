@@ -117,7 +117,6 @@ export async function getDashboardHours(
 ) {
   const { user } = res.locals;
   try {
-
     // Use user's timezone for date calculations
     const userTimezone = user.settings?.timezone || 'UTC';
     const now = new Date();
@@ -148,7 +147,6 @@ export async function getDashboardHours(
     );
 
     const lastDayOfPreviousMonth = new Date(
-
       userDate.getFullYear(),
       userDate.getMonth(),
       0
@@ -1122,7 +1120,6 @@ export async function getUserStats(
       dateFilter = { date: { $gte: start } };
 
       daysPeriod = userDate.getDate();
-
     } else if (timeRange === 'year') {
       const startLocal = new Date(userDate.getFullYear(), 0, 1);
       const start = new Date(startLocal.getTime() + offsetNow);
@@ -1506,7 +1503,6 @@ export async function recalculateStreaks(
 
     for (const user of users) {
       try {
-
         await recalculateStreaksForUser(user._id);
 
         results.updatedUsers++;
@@ -1821,10 +1817,14 @@ export async function getGlobalMediaStats(
 
     // Use UTC boundaries for global stats
     const now = new Date();
-    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const todayUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    );
     const weekStartUTC = new Date(todayUTC);
     weekStartUTC.setUTCDate(todayUTC.getUTCDate() - todayUTC.getUTCDay());
-    const monthStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthStartUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+    );
 
     const baseMatch = {
       mediaId: mediaId as string,
@@ -1989,7 +1989,8 @@ export async function getGlobalMediaStats(
       lastLogDate: null,
     };
 
-    const recent = recentStats[0] || { thisWeek: [], thisMonth: [], today: [] } as any;
+    const recent =
+      recentStats[0] || ({ thisWeek: [], thisMonth: [], today: [] } as any);
     const thisWeek = recent.thisWeek[0] || {
       count: 0,
       episodes: 0,
@@ -2080,10 +2081,7 @@ export async function getRecentMediaLogs(
         $match: {
           mediaId: mediaId as string,
           type: type as string,
-          $or: [
-            { private: { $exists: false } },
-            { private: false },
-          ],
+          $or: [{ private: { $exists: false } }, { private: false }],
         },
       },
       { $sort: { date: -1 } },
@@ -2094,9 +2092,7 @@ export async function getRecentMediaLogs(
           localField: 'user',
           foreignField: '_id',
           as: 'user',
-          pipeline: [
-            { $project: { username: 1, avatar: 1 } },
-          ],
+          pipeline: [{ $project: { username: 1, avatar: 1 } }],
         },
       },
       { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
