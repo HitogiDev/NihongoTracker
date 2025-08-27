@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { AxiosError } from 'axios';
 import { getLogFn, createLogFn } from '../api/trackerApi';
 import { ICreateLog } from '../types';
 import { useUserDataStore } from '../store/userData';
@@ -121,13 +120,6 @@ function SharedLogScreen() {
       });
       toast.success('Log created successfully from shared link!');
       navigate(`/user/${user?.username}`);
-    },
-    onError: (error) => {
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data.message
-          : 'An error occurred';
-      toast.error(errorMessage);
     },
   });
 
@@ -293,7 +285,7 @@ function SharedLogScreen() {
             </p>
             <div className="space-y-3">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/')}
                 className="btn btn-primary w-full"
               >
                 Go to Dashboard
