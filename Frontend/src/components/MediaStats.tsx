@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMediaStatsFn, IMediaStats } from '../api/trackerApi';
+import { getUserMediaStatsFn, IMediaStats } from '../api/trackerApi';
 import { ILog } from '../types';
 
 interface MediaStatsProps {
@@ -15,7 +15,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
     error,
   } = useQuery<IMediaStats>({
     queryKey: ['mediaStats', mediaId, mediaType],
-    queryFn: () => getMediaStatsFn(mediaId, mediaType),
+  queryFn: () => getUserMediaStatsFn(mediaId, mediaType),
     enabled: !!mediaId && !!mediaType,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

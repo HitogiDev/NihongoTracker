@@ -4,16 +4,17 @@ import { getAverageColorFn, getMediaFn } from '../api/trackerApi';
 import { AxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { OutletMediaContextType } from '../types';
+import { IMediaDocument, OutletMediaContextType } from '../types';
 import { useEffect, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
 import { useUserDataStore } from '../store/userData';
+import MediaNavbar from './MediaNavbar';
 
 export default function MediaHeader() {
   const { mediaType, mediaId, username } = useParams<{
-    mediaType: string;
+    mediaType: IMediaDocument['type'] | undefined;
     mediaId: string;
     username?: string;
   }>();
@@ -165,7 +166,11 @@ export default function MediaHeader() {
           </div>
         </div>
       </div>
-
+      <MediaNavbar
+        mediaType={mediaType}
+        mediaId={mediaId as string}
+        username={username || user?.username}
+      />
       <Outlet
         context={
           {
