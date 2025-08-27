@@ -52,6 +52,8 @@ export interface IStats {
   userHours?: number;
   readingHours?: number;
   listeningHours?: number;
+  // Add chars field for global characters ranking
+  userChars?: number;
   currentStreak: number;
   longestStreak: number;
   lastStreakDate: Date | null;
@@ -124,6 +126,7 @@ export type sortTypes = 'asc' | 'desc';
 export type filterTypes =
   | 'userLevel'
   | 'userXp'
+  | 'userChars'
   | 'readingXp'
   | 'readingLevel'
   | 'listeningXp'
@@ -154,6 +157,8 @@ export interface IRankingParams {
   filter?: filterTypes;
   timeFilter?: string; // Add time filter parameter
   timezone?: string; // Add timezone parameter
+  start?: string; // YYYY-MM-DD
+  end?: string; // YYYY-MM-DD
 }
 
 export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {

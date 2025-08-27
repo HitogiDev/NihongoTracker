@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getRanking,
+  getMediumRanking,
   getUser,
   updateUser,
   getUsers,
@@ -24,6 +25,7 @@ const upload = multer({
 router.get('/', getUsers);
 
 router.get('/ranking', getRanking);
+router.get('/ranking/media', getMediumRanking);
 
 router.get('/:username', getUser);
 

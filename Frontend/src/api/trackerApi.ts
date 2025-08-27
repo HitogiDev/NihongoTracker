@@ -76,6 +76,39 @@ export async function getRankingFn(params?: IRankingParams) {
   return data;
 }
 
+export async function getMediumRankingFn(params: {
+  page?: number;
+  limit?: number;
+  type:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'audio';
+  metric: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+  timeFilter?: string;
+  timezone?: string;
+  start?: string;
+  end?: string;
+}) {
+  const { data } = await api.get<
+    Array<{
+      username: string;
+      avatar?: string;
+      stats?: { userLevel?: number };
+      xp?: number;
+      hours?: number;
+      episodes?: number;
+      chars?: number;
+      pages?: number;
+    }>
+  >(`users/ranking/media`, { params });
+  return data;
+}
+
 export async function getLogFn(id: string): Promise<ILog> {
   const { data } = await api.get<ILog>(`logs/${id}`);
   return data;
