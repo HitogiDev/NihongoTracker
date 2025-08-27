@@ -328,16 +328,6 @@ export interface AnilistSearchResult {
   };
 }
 
-export interface IVNDocument {
-  _id: string;
-  id: string;
-  title: string;
-  latin: string | null;
-  alias: string[];
-  image: string;
-  score: number;
-}
-
 export interface IAnimeDocument {
   _id: string;
   sources?: string[];

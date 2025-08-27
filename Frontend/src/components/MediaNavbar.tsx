@@ -1,33 +1,26 @@
 import { Link } from 'react-router-dom';
+import { IMediaDocument } from '../types';
 
-function MediaNavbar({ mediaName }: { mediaName: string | undefined }) {
+function MediaNavbar({
+  mediaType,
+  mediaId,
+  username,
+}: {
+  mediaType: IMediaDocument['type'] | undefined;
+  mediaId: string | undefined;
+  username: string | undefined;
+}) {
   return (
     <div className="navbar min-h-12 bg-base-100">
       <div className="mx-auto">
         <ul className="menu menu-horizontal gap-5">
           <li>
-            <Link to={`/media/${mediaName}/`}>Overview</Link>
+            <Link to={`/${mediaType}/${mediaId}/${username}`}>Overview</Link>
           </li>
           <li>
-            <Link to={`/media/${mediaName}/stats`}>Logs</Link>
-          </li>
-          <li>
-            <Link to={`/media/${mediaName}/social`}>Social</Link>
-          </li>
-          <li>
-            <a>Link</a>
-          </li>
-          <li>
-            <a>Link</a>
-          </li>
-          <li>
-            <a>Link</a>
-          </li>
-          <li>
-            <a>Link</a>
-          </li>
-          <li>
-            <a>Link</a>
+            <Link to={`/${mediaType}/${mediaId}/${username}/social`}>
+              Social
+            </Link>
           </li>
         </ul>
       </div>

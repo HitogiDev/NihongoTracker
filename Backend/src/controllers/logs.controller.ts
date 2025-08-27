@@ -1527,7 +1527,7 @@ export async function recalculateStreaks(
   }
 }
 
-export async function getMediaStats(
+export async function getUserMediaStats(
   req: Request,
   res: Response,
   next: NextFunction
@@ -1802,6 +1802,345 @@ export async function getMediaStats(
         xp: thisMonth.xp,
       },
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getGlobalMediaStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { mediaId, type } = req.query;
+
+  try {
+    if (!mediaId || !type) {
+      return res.status(400).json({ message: 'MediaId and type are required' });
+    }
+
+    // Use UTC boundaries for global stats
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const weekStartUTC = new Date(todayUTC);
+    weekStartUTC.setUTCDate(todayUTC.getUTCDate() - todayUTC.getUTCDay());
+    const monthStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+    const baseMatch = {
+      mediaId: mediaId as string,
+      type: type as string,
+    };
+
+    const totalStats = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: null,
+          totalLogs: { $sum: 1 },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] },
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          firstLogDate: { $min: '$date' },
+          lastLogDate: { $max: '$date' },
+        },
+      },
+    ]);
+
+    const recentStats = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $facet: {
+          thisWeek: [
+            { $match: { date: { $gte: weekStartUTC } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+          thisMonth: [
+            { $match: { date: { $gte: monthStartUTC } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+          today: [
+            { $match: { date: { $gte: todayUTC } } },
+            {
+              $group: {
+                _id: null,
+                count: { $sum: 1 },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+                time: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                xp: { $sum: { $ifNull: ['$xp', 0] } },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const total = totalStats[0] || {
+      totalLogs: 0,
+      totalEpisodes: 0,
+      totalChars: 0,
+      totalPages: 0,
+      totalTime: 0,
+      totalXp: 0,
+      firstLogDate: null,
+      lastLogDate: null,
+    };
+
+    const recent = recentStats[0] || { thisWeek: [], thisMonth: [], today: [] } as any;
+    const thisWeek = recent.thisWeek[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const thisMonth = recent.thisMonth[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+    const todayStats = recent.today[0] || {
+      count: 0,
+      episodes: 0,
+      chars: 0,
+      pages: 0,
+      time: 0,
+      xp: 0,
+    };
+
+    return res.status(200).json({
+      mediaId: mediaId as string,
+      type: type as string,
+      total: {
+        logs: total.totalLogs,
+        episodes: total.totalEpisodes,
+        characters: total.totalChars,
+        pages: total.totalPages,
+        minutes: total.totalTime,
+        hours: Math.round((total.totalTime / 60) * 10) / 10,
+        xp: total.totalXp,
+        firstLogDate: total.firstLogDate,
+        lastLogDate: total.lastLogDate,
+      },
+      today: {
+        logs: todayStats.count,
+        episodes: todayStats.episodes,
+        characters: todayStats.chars,
+        pages: todayStats.pages,
+        minutes: todayStats.time,
+        hours: Math.round((todayStats.time / 60) * 10) / 10,
+        xp: todayStats.xp,
+      },
+      thisWeek: {
+        logs: thisWeek.count,
+        episodes: thisWeek.episodes,
+        characters: thisWeek.chars,
+        pages: thisWeek.pages,
+        minutes: thisWeek.time,
+        hours: Math.round((thisWeek.time / 60) * 10) / 10,
+        xp: thisWeek.xp,
+      },
+      thisMonth: {
+        logs: thisMonth.count,
+        episodes: thisMonth.episodes,
+        characters: thisMonth.chars,
+        pages: thisMonth.pages,
+        minutes: thisMonth.time,
+        hours: Math.round((thisMonth.time / 60) * 10) / 10,
+        xp: thisMonth.xp,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getRecentMediaLogs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaId, type } = req.query;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+
+    if (!mediaId || !type) {
+      return res.status(400).json({ message: 'MediaId and type are required' });
+    }
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          mediaId: mediaId as string,
+          type: type as string,
+          $or: [
+            { private: { $exists: false } },
+            { private: false },
+          ],
+        },
+      },
+      { $sort: { date: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+          pipeline: [
+            { $project: { username: 1, avatar: 1 } },
+          ],
+        },
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'media',
+          localField: 'mediaId',
+          foreignField: 'contentId',
+          as: 'media',
+          pipeline: [
+            {
+              $project: {
+                contentId: 1,
+                title: 1,
+                contentImage: 1,
+                type: 1,
+              },
+            },
+          ],
+        },
+      },
+      { $unwind: { path: '$media', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          user: '$user',
+          type: 1,
+          mediaId: 1,
+          xp: 1,
+          description: 1,
+          episodes: 1,
+          pages: 1,
+          chars: 1,
+          time: 1,
+          date: 1,
+          media: 1,
+        },
+      },
+    ];
+
+    const logs = await Log.aggregate(pipeline);
+    if (!logs.length) return res.sendStatus(204);
+
+    return res.status(200).json(logs);
   } catch (error) {
     return next(error as customError);
   }

@@ -10,7 +10,9 @@ import {
   assignMedia,
   getUntrackedLogs,
   getLogScreenStats,
-  getMediaStats,
+  getUserMediaStats,
+  getGlobalMediaStats,
+  getRecentMediaLogs,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
 import { protect } from '../libs/authMiddleware.js';
@@ -53,7 +55,14 @@ router.get('/untrackedlogs', protect, getUntrackedLogs);
 
 router.get('/stats/logscreen', protect, getLogScreenStats);
 
-router.get('/stats/media', protect, getMediaStats);
+// User-scoped media stats (uses user timezone)
+router.get('/stats/media', protect, getUserMediaStats);
+
+// Global media stats across all users (UTC boundaries)
+router.get('/stats/media/global', getGlobalMediaStats);
+
+// Recent logs for a media across all users (public logs only)
+router.get('/media/recent', getRecentMediaLogs);
 
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 

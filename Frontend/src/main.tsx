@@ -35,6 +35,7 @@ import RegisterScreen from './screens/RegisterScreen.tsx';
 import SettingsScreen from './screens/SettingsScreen.tsx';
 import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
+import MediaSocial from './screens/MediaSocial.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -59,6 +60,7 @@ const router = createBrowserRouter(
       </Route>
       <Route path=":mediaType/:mediaId/:username?" element={<MediaHeader />}>
         <Route index element={<MediaDetails />} />
+        <Route path="social" element={<MediaSocial />} />
       </Route>
       <Route path="404" element={<NotFound />} />
       <Route path="*" element={<NotFound />} />

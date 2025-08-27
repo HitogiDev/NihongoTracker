@@ -270,6 +270,17 @@ export const getLogDetailsFn = async (logId: string) => {
   return response.data;
 };
 
+export async function getRecentMediaLogsFn(
+  mediaId: string,
+  type: string,
+  limit = 50
+) {
+  const { data } = await api.get<ILog[]>(`logs/media/recent`, {
+    params: { mediaId, type, limit },
+  });
+  return data;
+}
+
 export interface IComparisonStats {
   totalXp: number;
   totalTime: number;
@@ -403,11 +414,21 @@ export interface IMediaStats {
   };
 }
 
-export async function getMediaStatsFn(
+export async function getUserMediaStatsFn(
   mediaId: string,
   type: string
 ): Promise<IMediaStats> {
   const { data } = await api.get<IMediaStats>('logs/stats/media', {
+    params: { mediaId, type },
+  });
+  return data;
+}
+
+export async function getGlobalMediaStatsFn(
+  mediaId: string,
+  type: string
+): Promise<IMediaStats> {
+  const { data } = await api.get<IMediaStats>('logs/stats/media/global', {
     params: { mediaId, type },
   });
   return data;
