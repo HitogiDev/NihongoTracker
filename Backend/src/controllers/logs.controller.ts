@@ -1004,8 +1004,21 @@ export async function assignMedia(
 }
 
 interface IGetUserStatsQuery {
-  timeRange?: 'today' | 'month' | 'year' | 'total';
-  type?: 'all' | 'anime' | 'manga' | 'reading' | 'audio' | 'video';
+  timeRange?: 'today' | 'month' | 'year' | 'total' | 'custom';
+  type?:
+    | 'all'
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'audio'
+    | 'video'
+    | 'movie'
+    | 'vn'
+    | 'other'
+    | 'tv show';
+  start?: string;
+  end?: string;
+  timezone?: string;
 }
 
 interface IStatByType {
@@ -1054,10 +1067,15 @@ export async function getUserStats(
 ): Promise<Response<IUserStats> | void> {
   try {
     const { username } = req.params;
-    const { timeRange = 'total', type = 'all' } =
-      req.query as IGetUserStatsQuery;
+    const {
+      timeRange = 'total',
+      type = 'all',
+      start: startParam,
+      end: endParam,
+      timezone: tzParam,
+    } = req.query as IGetUserStatsQuery;
 
-    const validTimeRanges = ['today', 'month', 'year', 'total'];
+    const validTimeRanges = ['today', 'month', 'year', 'total', 'custom'];
     if (!validTimeRanges.includes(timeRange)) {
       return res.status(400).json({ message: 'Invalid time range' });
     }
@@ -1088,8 +1106,8 @@ export async function getUserStats(
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Use user's timezone for date calculations
-    const userTimezone = user.settings?.timezone || 'UTC';
+    // Use provided timezone or user's timezone for date calculations
+    const userTimezone = tzParam || user.settings?.timezone || 'UTC';
 
     let dateFilter: any = {};
     let daysPeriod = 1;
@@ -1101,7 +1119,55 @@ export async function getUserStats(
     );
     const offsetNow = now.getTime() - userDate.getTime();
 
-    if (timeRange === 'today') {
+    // If custom range provided (start/end), override timeRange boundaries
+    if (startParam || endParam) {
+      const makeLocal = (s: string) => new Date(`${s}T00:00:00`);
+      let startUTC: Date | undefined;
+      let endUTCLt: Date | undefined;
+      let startLocal: Date | undefined;
+      let endLocal: Date | undefined;
+
+      if (startParam) {
+        startLocal = makeLocal(startParam);
+        startUTC = new Date(startLocal.getTime() + offsetNow);
+        dateFilter = { date: { ...(dateFilter.date || {}), $gte: startUTC } };
+      }
+      if (endParam) {
+        endLocal = makeLocal(endParam);
+        const endLocalPlus = new Date(endLocal.getTime());
+        endLocalPlus.setDate(endLocalPlus.getDate() + 1);
+        endUTCLt = new Date(endLocalPlus.getTime() + offsetNow);
+        dateFilter = { date: { ...(dateFilter.date || {}), $lt: endUTCLt } };
+      }
+
+      // Compute daysPeriod for averages using local boundaries
+      if (startLocal && endLocal) {
+        const diffMs =
+          new Date(
+            endLocal.getFullYear(),
+            endLocal.getMonth(),
+            endLocal.getDate() + 1
+          ).getTime() -
+          new Date(
+            startLocal.getFullYear(),
+            startLocal.getMonth(),
+            startLocal.getDate()
+          ).getTime();
+        daysPeriod = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      } else if (startLocal && !endLocal) {
+        // from start to "today" in user's timezone
+        const endLocalToday = new Date(
+          userDate.getFullYear(),
+          userDate.getMonth(),
+          userDate.getDate() + 1
+        );
+        const diffMs = endLocalToday.getTime() - startLocal.getTime();
+        daysPeriod = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      } else if (!startLocal && endLocal) {
+        // use one day window up to end
+        daysPeriod = 1;
+      }
+    } else if (timeRange === 'today') {
       const startLocal = new Date(
         userDate.getFullYear(),
         userDate.getMonth(),
@@ -1142,6 +1208,9 @@ export async function getUserStats(
       } else {
         daysPeriod = 1;
       }
+    } else if (timeRange === 'custom') {
+      // If custom without explicit start/end, default to 1 day
+      daysPeriod = 1;
     }
 
     let aggregationMatch: any = { user: user._id, ...dateFilter };

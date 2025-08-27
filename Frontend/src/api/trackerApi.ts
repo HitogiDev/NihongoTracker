@@ -249,6 +249,9 @@ export async function getUserStatsFn(
   params?: {
     timeRange?: string;
     type?: string;
+    start?: string;
+    end?: string;
+    timezone?: string;
   }
 ) {
   if (!username) {
