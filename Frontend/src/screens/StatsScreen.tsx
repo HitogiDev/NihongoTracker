@@ -3,27 +3,57 @@ import { getUserStatsFn } from '../api/trackerApi';
 import { useOutletContext } from 'react-router-dom';
 import { OutletProfileContextType } from '../types';
 import PieChart from '../components/PieChart';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
 import DailyGoals from '../components/DailyGoals';
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
 import { convertToUserTimezone } from '../utils/timezone';
+import { DayPicker } from 'react-day-picker';
+import { useTimezone } from '../hooks/useTimezone';
 
 function StatsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedUser } = useUserDataStore();
   const [currentType, setCurrentType] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<
-    'today' | 'month' | 'year' | 'total'
+    'today' | 'month' | 'year' | 'total' | 'custom'
   >('total');
   const [onlyImmersedDays, setOnlyImmersedDays] = useState<boolean>(false);
+  const { timezone } = useTimezone();
+
+  // Custom range state
+  const [startDate, setStartDate] = useState<string>(''); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState<string>(''); // YYYY-MM-DD
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const startBtnRef = useRef<HTMLDivElement | null>(null);
+  const endBtnRef = useRef<HTMLDivElement | null>(null);
+
+  const formatDateOnly = (d?: Date) =>
+    d
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      : '';
 
   const { data: userStats, isLoading } = useQuery({
-    queryKey: ['userStats', username, timeRange, currentType],
+    queryKey: [
+      'userStats',
+      username,
+      timeRange,
+      currentType,
+      timezone,
+      startDate,
+      endDate,
+    ],
     queryFn: () =>
-      getUserStatsFn(username as string, { timeRange, type: currentType }),
+      getUserStatsFn(username as string, {
+        timeRange,
+        type: currentType,
+        timezone,
+        start: startDate || undefined,
+        end: endDate || undefined,
+      }),
     staleTime: Infinity,
     enabled: !!username,
   });
@@ -162,8 +192,7 @@ function StatsScreen() {
       : userStats?.statsByType.find((stat) => stat.type === currentType);
 
   // Compute daily average when toggling between all days vs immersed days only
-  const timezone =
-    useUserDataStore.getState().user?.settings?.timezone || 'UTC';
+  // timezone comes from useTimezone hook
 
   const immersedDaysCount = useMemo(() => {
     if (!userStats) return 0;
@@ -237,6 +266,18 @@ function StatsScreen() {
     immersedDaysCount,
   ]);
 
+  // Average reading speed (chars/hour) across reading types for current timeRange
+  const avgReadingSpeed = useMemo(() => {
+    if (!userStats) return 0;
+    const readingTypesSet = new Set(['reading', 'manga', 'vn']);
+    const readingChars = (userStats.statsByType || [])
+      .filter((s) => readingTypesSet.has(s.type))
+      .reduce((acc, s) => acc + (s.totalChars || 0), 0);
+    const hours = userStats.totals.readingHours || 0;
+    if (!hours || hours <= 0) return 0;
+    return readingChars / hours; // chars per hour
+  }, [userStats]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -263,20 +304,213 @@ function StatsScreen() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                className="select select-bordered select-primary w-full sm:w-auto"
-                value={timeRange}
-                onChange={(e) =>
-                  setTimeRange(
-                    e.target.value as 'today' | 'month' | 'year' | 'total'
-                  )
-                }
-              >
-                <option value="today">Today</option>
-                <option value="month">This Month</option>
-                <option value="year">This Year</option>
-                <option value="total">All Time</option>
-              </select>
+              <div className="dropdown dropdown-end">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn btn-outline w-full sm:w-auto gap-2"
+                >
+                  {/* Icon */}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {timeRange === 'today'
+                    ? 'Today'
+                    : timeRange === 'month'
+                      ? 'This Month'
+                      : timeRange === 'year'
+                        ? 'This Year'
+                        : timeRange === 'custom'
+                          ? 'Custom'
+                          : 'All Time'}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-72 border border-base-300"
+                >
+                  {(
+                    [
+                      { label: 'All Time', value: 'total' },
+                      { label: 'Today', value: 'today' },
+                      { label: 'This Month', value: 'month' },
+                      { label: 'This Year', value: 'year' },
+                    ] as Array<{
+                      label: string;
+                      value: 'total' | 'today' | 'month' | 'year';
+                    }>
+                  ).map((opt) => (
+                    <li key={opt.value}>
+                      <button
+                        className={timeRange === opt.value ? 'active' : ''}
+                        onClick={() => {
+                          setTimeRange(opt.value);
+                          setStartDate('');
+                          setEndDate('');
+                          setCustomStartDate(undefined);
+                          setCustomEndDate(undefined);
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    </li>
+                  ))}
+                  <li className="menu-title px-2 mt-2">Custom range</li>
+                  <li className="px-2 py-2">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="dropdown dropdown-bottom">
+                          <div
+                            tabIndex={0}
+                            role="button"
+                            className="btn btn-outline btn-sm w-full"
+                            ref={startBtnRef}
+                          >
+                            {customStartDate
+                              ? formatDateOnly(customStartDate)
+                              : 'Start Date'}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                          >
+                            <DayPicker
+                              className="react-day-picker mx-auto"
+                              mode="single"
+                              selected={customStartDate}
+                              onSelect={(date) => {
+                                setCustomStartDate(date ?? undefined);
+                                if (
+                                  customEndDate &&
+                                  date &&
+                                  customEndDate < date
+                                ) {
+                                  setCustomEndDate(undefined);
+                                }
+                                startBtnRef.current?.focus();
+                              }}
+                              disabled={(date) => date > new Date()}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-center text-base-content/50">
+                          to
+                        </span>
+                        <div className="dropdown dropdown-bottom">
+                          <div
+                            tabIndex={0}
+                            role="button"
+                            className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
+                            ref={endBtnRef}
+                          >
+                            {customEndDate
+                              ? formatDateOnly(customEndDate)
+                              : 'End Date'}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                          {customStartDate && (
+                            <div
+                              tabIndex={0}
+                              className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                            >
+                              <DayPicker
+                                className="react-day-picker mx-auto"
+                                mode="single"
+                                selected={customEndDate}
+                                onSelect={(date) => {
+                                  setCustomEndDate(date ?? undefined);
+                                  endBtnRef.current?.focus();
+                                }}
+                                disabled={(date) => {
+                                  const today = new Date();
+                                  const startD = customStartDate;
+                                  return (
+                                    date > today || (startD && date < startD)
+                                  );
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => {
+                            setStartDate(formatDateOnly(customStartDate));
+                            setEndDate(formatDateOnly(customEndDate));
+                            setTimeRange('custom');
+                          }}
+                          disabled={!customStartDate || !customEndDate}
+                        >
+                          Apply
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          onClick={() => {
+                            setStartDate('');
+                            setEndDate('');
+                            setCustomStartDate(undefined);
+                            setCustomEndDate(undefined);
+                            setTimeRange('total');
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
 
               <div className="dropdown dropdown-end">
                 <div tabIndex={0} role="button" className="btn btn-outline">
@@ -394,7 +628,17 @@ function StatsScreen() {
               </div>
               <p className="text-xs text-base-content/60 mt-2">
                 {currentType === 'all'
-                  ? `${timeRange === 'total' ? 'All time' : timeRange === 'today' ? "Today's" : timeRange === 'month' ? "This month's" : "This year's"} experience gained`
+                  ? `${
+                      (
+                        {
+                          total: 'All time',
+                          today: "Today's",
+                          month: "This month's",
+                          year: "This year's",
+                          custom: 'Custom',
+                        } as const
+                      )[timeRange]
+                    } experience gained`
                   : `${currentType.charAt(0).toUpperCase() + currentType.slice(1)} category experience`}
               </p>
             </div>
@@ -436,7 +680,17 @@ function StatsScreen() {
               </div>
               <p className="text-xs text-base-content/60 mt-2">
                 {currentType === 'all'
-                  ? `${timeRange === 'total' ? 'All time' : timeRange === 'today' ? 'Today' : timeRange === 'month' ? 'This month' : 'This year'} immersion time`
+                  ? `${
+                      (
+                        {
+                          total: 'All time',
+                          today: 'Today',
+                          month: 'This month',
+                          year: 'This year',
+                          custom: 'Custom',
+                        } as const
+                      )[timeRange]
+                    } immersion time`
                   : `${currentType.charAt(0).toUpperCase() + currentType.slice(1)} immersion time`}
               </p>
             </div>
@@ -495,7 +749,7 @@ function StatsScreen() {
         </div>
 
         {currentType === 'all' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-2">
@@ -611,6 +865,40 @@ function StatsScreen() {
                 </p>
               </div>
             </div>
+
+            <div className="card bg-base-100 shadow-lg">
+              <div className="card-body">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-primary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-primary">
+                    Avg Reading Speed
+                  </h3>
+                </div>
+                <p className="text-2xl font-bold">
+                  {numberWithCommas(Math.round(avgReadingSpeed || 0))}
+                  <span className="text-sm font-normal text-base-content/70 ml-1">
+                    chars/hr
+                  </span>
+                </p>
+                <p className="text-xs text-base-content/60 mt-1">
+                  Based on Reading, Manga, and VN
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -666,7 +954,7 @@ function StatsScreen() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
                     <svg
-                      className="w-4 h-4 text-secondary"
+                      className="w-5 h-5 text-secondary"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -675,7 +963,7 @@ function StatsScreen() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       ></path>
                     </svg>
                   </div>
@@ -708,6 +996,7 @@ function StatsScreen() {
                     month: "This month's",
                     year: "This year's",
                     total: 'All time',
+                    custom: 'Custom',
                   }[timeRange];
                   const typeText =
                     currentType === 'all'
@@ -822,7 +1111,7 @@ function StatsScreen() {
                   </h3>
                   <div className="w-full" style={{ height: '400px' }}>
                     <SpeedChart
-                      timeframe={timeRange}
+                      timeframe={timeRange === 'custom' ? 'total' : timeRange}
                       readingSpeedData={userStats.readingSpeedData}
                     />
                   </div>
@@ -850,7 +1139,7 @@ function StatsScreen() {
               </h3>
               <div className="w-full" style={{ height: '450px' }}>
                 <ProgressChart
-                  timeframe={timeRange}
+                  timeframe={timeRange === 'custom' ? 'total' : timeRange}
                   statsData={userStats?.statsByType}
                   selectedType={currentType}
                 />

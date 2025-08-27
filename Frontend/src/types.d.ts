@@ -464,7 +464,7 @@ interface IUserStats {
     pages?: number;
     charsPerHour?: number | null;
   }>;
-  timeRange: 'today' | 'month' | 'year' | 'total';
+  timeRange: 'today' | 'month' | 'year' | 'total' | 'custom';
   selectedType: string;
 }
 
