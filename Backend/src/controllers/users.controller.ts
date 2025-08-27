@@ -19,7 +19,6 @@ export async function updateUser(
     blurAdultContent,
     hideUnmatchedLogsAlert,
     timezone,
-
   } = req.body as IUpdateRequest;
 
   try {
@@ -124,7 +123,6 @@ export async function updateUser(
       blurAdultContent !== undefined ||
       hideUnmatchedLogsAlert !== undefined ||
       timezone !== undefined
-
     ) {
       const updatedSettings: any = { ...user.settings };
 
@@ -199,9 +197,11 @@ export async function getRanking(
     const sort = (req.query.sort as string) || 'desc';
     const timeFilter = (req.query.timeFilter as string) || 'all-time';
     const timezone = (req.query.timezone as string) || 'UTC'; // Accept timezone as query parameter
+    const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
+    const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
 
     // Create date filter based on timeFilter using the provided timezone
-    let dateFilter: { date?: { $gte: Date } } = {};
+    let dateFilter: { date?: { $gte?: Date; $lt?: Date } } = {};
     const now = new Date();
 
     // Get current date in the specified timezone
@@ -210,7 +210,23 @@ export async function getRanking(
     );
     const offsetNow = now.getTime() - userDate.getTime();
 
-    if (timeFilter === 'today') {
+    if (startParam || endParam) {
+      // Custom range overrides timeFilter
+      const makeLocal = (s: string) => new Date(`${s}T00:00:00`);
+      if (startParam) {
+        const startLocal = makeLocal(startParam);
+        const startUTC = new Date(startLocal.getTime() + offsetNow);
+        dateFilter.date = { ...(dateFilter.date || {}), $gte: startUTC };
+      }
+      if (endParam) {
+        const endLocal = makeLocal(endParam);
+        // add 1 day to include the whole end day
+        const endLocalPlus = new Date(endLocal.getTime());
+        endLocalPlus.setDate(endLocalPlus.getDate() + 1);
+        const endUTC = new Date(endLocalPlus.getTime() + offsetNow);
+        dateFilter.date = { ...(dateFilter.date || {}), $lt: endUTC };
+      }
+    } else if (timeFilter === 'today') {
       const startOfDayLocal = new Date(
         userDate.getFullYear(),
         userDate.getMonth(),
@@ -232,11 +248,12 @@ export async function getRanking(
       dateFilter = { date: { $gte: startOfYear } };
     }
 
-    // Extract date value for use in aggregation
-    const dateGte = dateFilter.date?.$gte || new Date(0);
+    // Extract date values for use in aggregation
+    const dateGte = dateFilter.date?.$gte;
+    const dateLt = dateFilter.date?.$lt;
 
-    // If filtering by time period (not all-time), calculate stats from logs
-    if (timeFilter !== 'all-time') {
+    // If filtering by time period or custom range, calculate stats from logs
+    if (timeFilter !== 'all-time' || startParam || endParam) {
       // Lookup user details with aggregated stats
       const rankingUsers = await User.aggregate([
         {
@@ -249,7 +266,8 @@ export async function getRanking(
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$userId'] },
-                      { $gte: ['$date', dateGte] },
+                      ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
+                      ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
                     ],
                   },
                 },
@@ -258,6 +276,7 @@ export async function getRanking(
                 $group: {
                   _id: '$user',
                   userXp: { $sum: '$xp' },
+                  totalChars: { $sum: { $ifNull: ['$chars', 0] } },
                   readingXp: {
                     $sum: {
                       $cond: [
@@ -364,6 +383,7 @@ export async function getRanking(
             avatar: 1,
             stats: {
               userXp: '$timeStats.userXp',
+              userChars: '$timeStats.totalChars',
               readingXp: '$timeStats.readingXp',
               listeningXp: '$timeStats.listeningXp',
               userLevel: 1, // Keep the user level from the user document
@@ -423,6 +443,7 @@ export async function getRanking(
                       ],
                     },
                   },
+                  totalChars: { $sum: { $ifNull: ['$chars', 0] } },
                   readingMinutes: {
                     $sum: {
                       $cond: [
@@ -474,6 +495,7 @@ export async function getRanking(
                   listeningHours: {
                     $round: [{ $divide: ['$listeningMinutes', 60] }, 1],
                   },
+                  chars: '$totalChars',
                 },
               },
             ],
@@ -490,6 +512,9 @@ export async function getRanking(
             },
             'stats.listeningHours': {
               $ifNull: [{ $arrayElemAt: ['$timeData.listeningHours', 0] }, 0],
+            },
+            'stats.userChars': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.chars', 0] }, 0],
             },
           },
         },
@@ -509,6 +534,167 @@ export async function getRanking(
 
       return res.status(200).json(rankingUsers);
     }
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Medium-based ranking with metric selection
+export async function getMediumRanking(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    const type = req.query.type as string as
+      | 'anime'
+      | 'manga'
+      | 'reading'
+      | 'vn'
+      | 'video'
+      | 'movie'
+      | 'tv show'
+      | 'audio'
+      | undefined;
+    const metric = (req.query.metric as string) || 'xp'; // xp | time | episodes | chars | pages
+    const timeFilter = (req.query.timeFilter as string) || 'all-time';
+    const timezone = (req.query.timezone as string) || 'UTC';
+    const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
+    const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
+
+    // Date filter (copied from getRanking)
+    let dateGte: Date | undefined = undefined;
+    let dateLt: Date | undefined = undefined;
+    const now = new Date();
+    const userDate = new Date(
+      now.toLocaleString('en-US', { timeZone: timezone })
+    );
+    const offsetNow = now.getTime() - userDate.getTime();
+    if (startParam || endParam) {
+      const makeLocal = (s: string) => new Date(`${s}T00:00:00`);
+      if (startParam) {
+        const startLocal = makeLocal(startParam);
+        dateGte = new Date(startLocal.getTime() + offsetNow);
+      }
+      if (endParam) {
+        const endLocal = makeLocal(endParam);
+        endLocal.setDate(endLocal.getDate() + 1);
+        dateLt = new Date(endLocal.getTime() + offsetNow);
+      }
+    } else if (timeFilter === 'today') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate()
+      );
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    } else if (timeFilter === 'month') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        1
+      );
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    } else if (timeFilter === 'year') {
+      const startLocal = new Date(userDate.getFullYear(), 0, 1);
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    }
+
+    // Build pipeline
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: 'logs',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
+                    ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
+                    ...(type ? [{ $eq: ['$type', type] }] : []),
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$user',
+                xp: { $sum: '$xp' },
+                // minutes for time metric
+                minutes: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$type', 'anime'] },
+                          {
+                            $or: [
+                              { $eq: ['$time', 0] },
+                              { $eq: ['$time', null] },
+                              { $eq: [{ $type: '$time' }, 'missing'] },
+                            ],
+                          },
+                          { $gt: ['$episodes', 0] },
+                        ],
+                      },
+                      { $multiply: ['$episodes', 24] },
+                      { $ifNull: ['$time', 0] },
+                    ],
+                  },
+                },
+                episodes: { $sum: { $ifNull: ['$episodes', 0] } },
+                chars: { $sum: { $ifNull: ['$chars', 0] } },
+                pages: { $sum: { $ifNull: ['$pages', 0] } },
+              },
+            },
+            {
+              $addFields: {
+                hours: { $round: [{ $divide: ['$minutes', 60] }, 1] },
+              },
+            },
+          ],
+          as: 'metrics',
+        },
+      },
+      { $unwind: { path: '$metrics', preserveNullAndEmptyArrays: false } },
+      {
+        $project: {
+          _id: 0,
+          username: 1,
+          avatar: 1,
+          stats: {
+            userLevel: '$stats.userLevel',
+          },
+          xp: '$metrics.xp',
+          hours: '$metrics.hours',
+          episodes: '$metrics.episodes',
+          chars: '$metrics.chars',
+          pages: '$metrics.pages',
+        },
+      },
+      // exclude zero values for selected metric
+      {
+        $match: {
+          [metric === 'time' ? 'hours' : metric]: { $gt: 0 },
+        },
+      },
+      {
+        $sort: {
+          [metric === 'time' ? 'hours' : metric]: -1,
+        },
+      },
+      { $skip: skip },
+      { $limit: limit },
+    ];
+
+    const ranking = await User.aggregate(pipeline);
+    return res.status(200).json(ranking);
   } catch (error) {
     return next(error as customError);
   }
