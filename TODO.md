@@ -15,7 +15,7 @@
 - [x] Autocompletado de información de logs
   - [x] Integración con Anilist
   - [x] Integración con Youtube
-  - [ ] Integración con TVDB
+  - [x] Integración con TVDB
   - [x] Integración con VNDB
 - [x] Importar logs de Iniesta
 - [x] Importar logs de TMW
@@ -35,7 +35,8 @@
 - [x] Obtener ranking
 - [x] Filtrar ranking de acuerdo a distintos parámetros
 - [ ] Crear clubes de inmersión
-- [ ] Logros y metas de inmersión
+- [ ] Logros de inmersión
+- [x] Metas de inmersión
 
 ## Media
 
