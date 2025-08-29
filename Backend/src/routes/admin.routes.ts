@@ -10,10 +10,10 @@ import {
   resetUserPassword,
 } from '../controllers/admin.controller.js';
 import {
-  deleteLog,
+  adminDeleteLog,
   recalculateStreaks,
   recalculateXp,
-  updateLog,
+  adminUpdateLog,
 } from '../controllers/logs.controller.js';
 import { protect } from '../libs/authMiddleware.js';
 import { checkPermission } from '../middlewares/checkPermission.js';
@@ -31,14 +31,14 @@ router.delete(
   '/logs/:id',
   protect,
   checkPermission(userRoles.admin),
-  deleteLog
+  adminDeleteLog
 );
 router.put<ParamsDictionary, any, ILog>(
   '/logs/:id',
   protect,
   checkPermission(userRoles.admin),
   calculateXp,
-  updateLog
+  adminUpdateLog
 );
 
 //User routes

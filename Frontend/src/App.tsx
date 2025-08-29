@@ -9,7 +9,9 @@ function App() {
     <>
       <Header />
       <ToastContainer autoClose={2000} position="bottom-right" />
-      <Outlet />
+      <main className="flex-1 bg-base-200">
+        <Outlet />
+      </main>
       <Footer />
     </>
   );
