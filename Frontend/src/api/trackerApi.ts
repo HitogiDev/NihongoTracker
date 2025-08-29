@@ -469,3 +469,93 @@ export async function getGlobalMediaStatsFn(
   });
   return data;
 }
+
+// Admin API functions
+export async function getAdminStatsFn() {
+  const { data } = await api.get('admin/stats');
+  return data;
+}
+
+export async function getAdminUsersFn(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}) {
+  const { data } = await api.get('admin/users', { params });
+  return data;
+}
+
+export async function deleteUserFn(userId: string) {
+  const { data } = await api.delete(`admin/users/${userId}`);
+  return data;
+}
+
+export async function recalculateStatsFn(type: 'streaks' | 'xp') {
+  const endpoint =
+    type === 'streaks' ? 'recalculateStreaks' : 'recalculateStats';
+  const { data } = await api.get(`admin/${endpoint}`);
+  return data;
+}
+
+// Admin: logs management
+export async function searchAdminLogsFn(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+  username?: string;
+  start?: string; // YYYY-MM-DD
+  end?: string; // YYYY-MM-DD
+}) {
+  const { data } = await api.get(`admin/logs`, { params });
+  return data as {
+    logs: Array<{
+      _id: string;
+      username?: string;
+      user: string;
+      type: string;
+      description: string;
+      episodes?: number;
+      pages?: number;
+      chars?: number;
+      time?: number;
+      xp: number;
+      date: string;
+      mediaTitle?: string;
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+}
+
+export async function adminUpdateLogFn(
+  logId: string,
+  payload: Partial<updateLogRequest>
+) {
+  const { data } = await api.put(`admin/logs/${logId}`, payload);
+  return data;
+}
+
+export async function adminDeleteLogFn(logId: string) {
+  const { data } = await api.delete(`admin/logs/${logId}`);
+  return data;
+}
+
+export async function adminUpdateUserFn(
+  userId: string,
+  payload: Partial<Omit<IUser, 'roles'>> & { roles?: string[] }
+) {
+  const { data } = await api.put(`admin/users/${userId}`, payload);
+  return data;
+}
+
+export async function adminResetPasswordFn(
+  userId: string,
+  newPassword: string
+) {
+  const { data } = await api.post(`admin/users/${userId}/reset-password`, {
+    newPassword,
+  });
+  return data;
+}
