@@ -325,7 +325,7 @@ export interface IComparisonStats {
   totalEpisodes: number;
   logCount: number;
   readingSpeed: number;
-  readingPercentage: number;
+  readingPercentage: number | null; // null when no character count data available
 }
 
 export interface IComparisonResult {

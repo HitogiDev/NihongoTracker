@@ -502,7 +502,9 @@ function MediaDetails() {
             {(mediaDocument?.type === 'vn' ||
               mediaDocument?.type === 'manga' ||
               mediaDocument?.type === 'reading') &&
-              totalCharCount > 0 && (
+              totalCharCount > 0 &&
+              myStats.readingPercentage !== null &&
+              theirStats.readingPercentage !== null && (
                 <>
                   <ComparisonStat
                     label="Characters Read"
