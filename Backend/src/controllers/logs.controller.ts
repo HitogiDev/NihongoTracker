@@ -583,6 +583,36 @@ export async function deleteLog(
   }
 }
 
+// Admin-only: delete any user's log by id and update that user's stats/streaks
+export async function adminDeleteLog(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const deletedLog = await Log.findByIdAndDelete(req.params.id);
+
+    if (!deletedLog) {
+      throw new customError('Log not found', 404);
+    }
+
+    // Set locals so updateStats can update the correct user's stats
+    res.locals.log = deletedLog;
+    // Overwrite user context to the log owner for stats update
+    (res.locals as any).user = {
+      id: deletedLog.user,
+      _id: deletedLog.user,
+    };
+
+    await updateStats(res, next, true);
+    await recalculateStreaksForUser(deletedLog.user);
+
+    return res.sendStatus(204);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function updateLog(
   req: Request<ParamsDictionary, any, ILog>,
   res: Response,
@@ -641,6 +671,80 @@ export async function updateLog(
     // If the date changed or type/time changed enough to affect day counts, recalc streaks
     if (originalDate?.toISOString() !== updatedLog.date?.toISOString()) {
       await recalculateStreaksForUser(res.locals.user._id);
+    }
+
+    return res.status(200).json(updatedLog);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Admin-only: update any user's log by id and update that user's stats/streaks
+export async function adminUpdateLog(
+  req: Request<ParamsDictionary, any, ILog>,
+  res: Response,
+  next: NextFunction
+) {
+  const { description, time, date, mediaId, episodes, pages, chars, type, xp } =
+    req.body;
+
+  try {
+    const log: ILog | null = await Log.findById(
+      new Types.ObjectId(req.params.id)
+    );
+
+    if (!log) throw new customError('Log not found', 404);
+
+    const validKeys: (keyof IEditedFields)[] = [
+      'episodes',
+      'pages',
+      'chars',
+      'time',
+      'xp',
+    ];
+
+    const editedFields: IEditedFields = {};
+
+    for (const key in req.body) {
+      if (validKeys.includes(key as keyof IEditedFields)) {
+        const value = log[key as keyof IEditedFields];
+
+        if (value !== null && value !== undefined) {
+          editedFields[key as keyof IEditedFields] = value;
+        }
+      }
+    }
+
+    log.description = description !== undefined ? description : log.description;
+    log.time = time !== undefined ? time : log.time;
+    log.date = date !== undefined ? date : log.date;
+    log.mediaId = mediaId !== undefined ? mediaId : log.mediaId;
+    log.episodes = episodes !== undefined ? episodes : log.episodes;
+    log.pages = pages !== undefined ? pages : log.pages;
+    log.chars = chars !== undefined ? chars : log.chars;
+    log.type = type !== undefined ? type : log.type;
+    log.xp = xp !== undefined ? xp : log.xp;
+    log.editedFields = editedFields;
+
+    const originalDate = log.date;
+    const updatedLog = await log.save();
+
+    // Set locals for stats calculation to target log owner
+    res.locals.log = updatedLog;
+    (res.locals as any).user = {
+      id: updatedLog.user,
+      _id: updatedLog.user,
+    };
+
+    await updateStats(res, next);
+
+    // Clear editedFields after stats update
+    log.editedFields = null;
+    await log.save();
+
+    // If the date changed, recalc streaks for the log owner
+    if (originalDate?.toISOString() !== updatedLog.date?.toISOString()) {
+      await recalculateStreaksForUser(updatedLog.user as any);
     }
 
     return res.status(200).json(updatedLog);

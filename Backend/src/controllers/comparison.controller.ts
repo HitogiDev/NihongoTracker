@@ -2,6 +2,56 @@ import { Request, Response, NextFunction } from 'express';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import axios from 'axios';
+
+// LinkType mapping for jiten API
+const LinkTypeObject = {
+  vn: 2, //VNDB
+  anime: 4, // Anilist
+  manga: 4, // Anilist
+  reading: 4, // Anilist
+  movie: 4, // Anilist for movies
+};
+
+interface IJitenDeck {
+  deckId: number;
+  creationDate: Date;
+  coverName: string;
+  mediaType: number;
+  originalTitle: string;
+  romajiTitle: string;
+  englishTitle: string;
+  characterCount: number;
+  wordCount: number;
+  uniqueWordCount: number;
+  uniqueWordUsedOnceCount: number;
+  uniqueKanjiCount: number;
+  uniqueKanjiUsedOnceCount: number;
+  difficulty: number;
+  difficultyRaw: number;
+  sentenceCount: number;
+  averageSentenceLength: number;
+  parentDeckId: number | null;
+  links: Array<{
+    linkId: number;
+    linkType: number;
+    url: string;
+  }>;
+  childrenDeckCount: number;
+  selectedWordOcurrences: number;
+  dialoguePercentage: number;
+}
+
+interface IJitenResponse {
+  data: {
+    parentDeck: IJitenDeck;
+    mainDeck: IJitenDeck;
+    subDecks: IJitenDeck[];
+  };
+  totalItems: number;
+  pageSize: number;
+  currentOffset: number;
+}
 
 interface IComparisonStats {
   totalXp: number;
@@ -11,7 +61,7 @@ interface IComparisonStats {
   totalEpisodes: number;
   logCount: number;
   readingSpeed: number;
-  readingPercentage: number;
+  readingPercentage: number | null; // null when no character count data available
 }
 
 interface IComparisonResult {
@@ -63,8 +113,62 @@ export async function compareUserStats(
     // Get media info for character count (if applicable)
     let totalCharCount = 0;
     if (['reading', 'manga', 'vn'].includes(type as string)) {
-      // You might want to get this from your media collection
-      // For now, we'll calculate reading percentage based on available data
+      try {
+        // Try to get character count from jiten API
+        const jitenURL = process.env.JITEN_API_URL;
+        if (jitenURL) {
+          const LinkType: number | null = type
+            ? LinkTypeObject[type as keyof typeof LinkTypeObject] ?? null
+            : null;
+
+          if (LinkType) {
+            const jitenDeck = await axios.get(
+              `${jitenURL}/media-deck/by-link-id/${LinkType}/${mediaId}`,
+              {
+                validateStatus: (status) => status === 200 || status === 404,
+              }
+            );
+
+            if (
+              jitenDeck.status === 200 &&
+              jitenDeck.data &&
+              jitenDeck.data.length > 0
+            ) {
+              const jitenDetailResponse = await axios.get(
+                `${jitenURL}/media-deck/${jitenDeck.data[0]}/detail`,
+                {
+                  validateStatus: (status) => status === 200 || status === 404,
+                }
+              );
+
+              if (jitenDetailResponse.status === 200) {
+                const jitenResponse =
+                  jitenDetailResponse.data as IJitenResponse;
+                totalCharCount = jitenResponse.data.mainDeck.characterCount;
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Error fetching jiten data for comparison:', error);
+        // Continue without character count
+      }
+    }
+
+    // Calculate reading percentages if we have character count
+    if (totalCharCount > 0) {
+      stats1.readingPercentage = Math.min(
+        (stats1.totalChars / totalCharCount) * 100,
+        100
+      );
+      stats2.readingPercentage = Math.min(
+        (stats2.totalChars / totalCharCount) * 100,
+        100
+      );
+    } else {
+      // No character count data available - set to null so frontend knows not to display completion
+      stats1.readingPercentage = null;
+      stats2.readingPercentage = null;
     }
 
     const result: IComparisonResult = {
@@ -133,6 +237,6 @@ async function calculateUserMediaStats(
   return {
     ...stats,
     readingSpeed,
-    readingPercentage: 0, // This would need media character count to calculate
+    readingPercentage: null, // Will be set to actual percentage or remain null in main function
   };
 }

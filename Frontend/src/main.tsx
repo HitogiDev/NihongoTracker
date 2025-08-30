@@ -36,6 +36,7 @@ import SettingsScreen from './screens/SettingsScreen.tsx';
 import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
 import MediaSocial from './screens/MediaSocial.tsx';
+import AdminScreen from './screens/AdminScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -48,6 +49,7 @@ const router = createBrowserRouter(
       <Route path="calculator" element={<CalculatorScreen />} />
       <Route path="features" element={<FeaturesScreen />} />
       <Route path="about" element={<AboutScreen />} />
+      <Route path="admin" element={<AdminScreen />} />
       <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
       <Route path="user/:username" element={<ProfileHeader />}>
         <Route index element={<ProfileScreen />} />

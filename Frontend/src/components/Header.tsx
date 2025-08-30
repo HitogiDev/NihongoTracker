@@ -13,6 +13,9 @@ import { IconContext } from 'react-icons';
 function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
+  const isAdmin = Array.isArray(user?.roles)
+    ? (user?.roles as string[]).includes('admin')
+    : user?.roles === 'admin';
 
   const { mutate, isPending } = useMutation({
     mutationFn: logoutUserFn,
@@ -62,6 +65,16 @@ function Header() {
                 tabIndex={0}
                 className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-64 border border-base-300"
               >
+                {isAdmin && (
+                  <li>
+                    <Link
+                      to="/admin"
+                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                    >
+                      Admin
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <Link
                     to={`/user/${user.username}/stats`}
@@ -271,6 +284,16 @@ function Header() {
                   <IconContext.Provider
                     value={{ className: 'text-lg currentColor' }}
                   >
+                    {isAdmin && (
+                      <li>
+                        <Link
+                          to="/admin"
+                          className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                        >
+                          Admin
+                        </Link>
+                      </li>
+                    )}
                     <li>
                       <Link
                         to={`/user/${user.username}`}

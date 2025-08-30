@@ -910,22 +910,31 @@ function StatsScreen() {
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                     <svg
-                      className="w-4 h-4 text-primary"
-                      fill="none"
-                      stroke="currentColor"
+                      className="w-5 h-5 text-primary"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      focusable="false"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V3a1 1 0 011 1v14a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1m0 0h10"
-                      ></path>
+                      <g transform="translate(12,12)">
+                        <text
+                          x="0"
+                          y="0"
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="currentColor"
+                          fontSize="16"
+                          fontWeight="700"
+                        >
+                          字
+                        </text>
+                      </g>
                     </svg>
                   </div>
-                  <h3 className="font-semibold">Characters Read</h3>
+                  <h3 className="font-semibold text-primary">
+                    Characters Read
+                  </h3>
                 </div>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-2xl font-bold">
                   {(() => {
                     if (currentType === 'all') {
                       return numberWithCommas(
@@ -967,7 +976,9 @@ function StatsScreen() {
                       ></path>
                     </svg>
                   </div>
-                  <h3 className="font-semibold">Daily Average</h3>
+                  <h3 className="font-semibold text-secondary">
+                    Daily Average
+                  </h3>
                 </div>
                 <label className="label cursor-pointer gap-2">
                   <span className="label-text text-xs text-base-content/70">
@@ -981,7 +992,7 @@ function StatsScreen() {
                   />
                 </label>
               </div>
-              <p className="text-2xl font-bold text-secondary">
+              <p className="text-2xl font-bold">
                 {numberWithCommas(
                   parseFloat((dailyAverageHoursDisplay || 0).toFixed(2))
                 )}
