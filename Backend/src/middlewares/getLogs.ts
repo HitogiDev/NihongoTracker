@@ -90,47 +90,6 @@ function transformManabeLogsList(
     MOVIE: { logType: 'movie', parametro: 'time' },
   };
 
-  // Helper function to convert Madrid time to user's timezone
-  const convertMadridToUserTimezone = (madridDateString: string): Date => {
-    // Get user's timezone or default to UTC
-    const userTimezone = user.settings?.timezone || 'UTC';
-
-    // If user timezone is Madrid, no conversion needed
-    if (userTimezone === 'Europe/Madrid') {
-      return new Date(madridDateString);
-    }
-
-    // The webhook sends a date string that represents Madrid local time.
-    // We need to properly interpret this and convert to user's timezone.
-
-    // Strategy: Create a date object that represents the Madrid time,
-    // then use toLocaleString to convert to the user's timezone
-
-    const originalDate = new Date(madridDateString);
-
-    // Get the Madrid time as a string in a standardized format
-    const madridTimeString = originalDate.toLocaleString('sv-SE', {
-      timeZone: 'Europe/Madrid',
-    });
-
-    // Get the user time for the same moment
-    const userTimeString = originalDate.toLocaleString('sv-SE', {
-      timeZone: userTimezone,
-    });
-
-    // Calculate the difference between Madrid time and user time
-    const madridTime = new Date(madridTimeString);
-    const userTime = new Date(userTimeString);
-    const timeDifference = userTime.getTime() - madridTime.getTime();
-
-    // Apply this difference to get the converted time
-    // The idea is: if Madrid shows 14:30 and user's timezone shows 15:30 for the same moment,
-    // then when Madrid logs show 14:30, user should see 15:30
-    const convertedTime = new Date(originalDate.getTime() + timeDifference);
-
-    return convertedTime;
-  };
-
   return list
     .filter((log) => logTypeMap.hasOwnProperty(log.medio))
     .map((log) => {
@@ -141,7 +100,7 @@ function transformManabeLogsList(
         description: log.descripcion,
         type: logType,
         [parametro]: log.parametro,
-        date: convertMadridToUserTimezone(log.createdAt),
+        date: new Date(log.createdAt), // Use the webhook timestamp directly as it's already UTC
       };
 
       if (log.tiempo) {
