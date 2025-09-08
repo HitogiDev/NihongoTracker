@@ -496,7 +496,7 @@ function RankingScreen() {
                             // Move focus back to the trigger to close only this picker and keep the main dropdown open
                             startBtnRef.current?.focus();
                           }}
-                          disabled={(date) => date > new Date()}
+                          disabled={() => false}
                         />
                       </div>
                     </div>
@@ -542,9 +542,8 @@ function RankingScreen() {
                               endBtnRef.current?.focus();
                             }}
                             disabled={(date) => {
-                              const today = new Date();
                               const startD = customStartDate;
-                              return date > today || (startD && date < startD);
+                              return startD && date < startD;
                             }}
                           />
                         </div>
