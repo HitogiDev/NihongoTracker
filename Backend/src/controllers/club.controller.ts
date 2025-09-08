@@ -1,0 +1,1335 @@
+import { Request, Response, NextFunction } from 'express';
+import { Club } from '../models/club.model.js';
+import User from '../models/user.model.js';
+import uploadFile from '../services/uploadFile.js';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { Types } from 'mongoose';
+import {
+  ICreateClubRequest,
+  IClubResponse,
+  IClubListResponse,
+  IClub,
+  IClubMember,
+} from '../types.js';
+
+// Get all clubs with filtering and pagination
+export async function getClubs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClubListResponse> | void> {
+  try {
+    const {
+      page = 1,
+      limit = 12,
+      search = '',
+      sortBy = 'totalXp',
+      sortOrder = 'desc',
+      isPublic,
+      tags,
+    } = req.query;
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build search query
+    const searchQuery: any = { isActive: true };
+
+    if (search) {
+      searchQuery.$text = { $search: search as string };
+    }
+
+    if (isPublic !== undefined) {
+      searchQuery.isPublic = isPublic === 'true';
+    }
+
+    if (tags) {
+      const tagArray = (tags as string).split(',');
+      searchQuery.tags = { $in: tagArray };
+    }
+
+    // Build sort query
+    const sortQuery: any = {};
+    sortQuery[sortBy as string] = sortOrder === 'desc' ? -1 : 1;
+
+    // Get clubs with member count
+    const clubs = await Club.aggregate([
+      { $match: searchQuery },
+      {
+        $addFields: {
+          memberCount: { $size: '$members' },
+        },
+      },
+      { $sort: sortQuery },
+      { $skip: skip },
+      { $limit: limitNum },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members.user',
+          foreignField: '_id',
+          as: 'memberDetails',
+          pipeline: [{ $project: { username: 1, avatar: 1 } }],
+        },
+      },
+    ]);
+
+    const total = await Club.countDocuments(searchQuery);
+
+    // Add user membership info if user is authenticated
+    const userId = res.locals.user?._id;
+    const clubsWithUserInfo: IClubResponse[] = clubs.map((club) => {
+      const userMember = userId
+        ? club.members.find(
+            (member: IClubMember) =>
+              member.user.toString() === userId.toString()
+          )
+        : null;
+
+      return {
+        ...club,
+        isUserMember: !!userMember,
+        userRole: userMember?.role,
+        userStatus: userMember?.status,
+      } as IClubResponse;
+    });
+
+    const response: IClubListResponse = {
+      clubs: clubsWithUserInfo,
+      total,
+      page: pageNum,
+      limit: limitNum,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get a specific club by ID
+export async function getClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClubResponse> | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user?._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId)
+      .populate('members.user', 'username avatar level totalXp')
+      .populate('currentMedia.addedBy', 'username');
+
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is a member
+    const userMember = userId
+      ? club.members.find(
+          (member) => member.user._id.toString() === userId.toString()
+        )
+      : null;
+
+    // All authenticated users can view clubs
+    // The difference between public/private is only in the joining mechanism
+
+    const clubResponse = {
+      ...club.toObject(),
+      memberCount: club.members.length,
+      isUserMember: !!userMember,
+      userRole: userMember?.role,
+      userStatus: userMember?.status,
+    } as IClubResponse;
+
+    return res.status(200).json(clubResponse);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Create a new club
+export async function createClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClub> | void> {
+  try {
+    const userId = res.locals.user._id;
+    let clubData: ICreateClubRequest = req.body;
+
+    console.log('Raw request body:', req.body);
+    console.log('Request files:', req.files);
+
+    // Parse JSON-stringified arrays from FormData
+    if (typeof clubData.tags === 'string') {
+      try {
+        clubData.tags = JSON.parse(clubData.tags);
+      } catch (error) {
+        console.error('Error parsing tags:', error);
+        clubData.tags = [];
+      }
+    }
+
+    // Convert string numbers back to numbers
+    if (typeof clubData.memberLimit === 'string') {
+      clubData.memberLimit = parseInt(clubData.memberLimit, 10);
+    }
+
+    // Convert string booleans back to booleans
+    if (typeof clubData.isPublic === 'string') {
+      clubData.isPublic = clubData.isPublic === 'true';
+    }
+
+    console.log('Parsed club data:', clubData);
+
+    // Validate required fields
+    if (!clubData.name || clubData.name.trim().length === 0) {
+      return res.status(400).json({ message: 'Club name is required' });
+    }
+
+    // Check if club name already exists
+    const existingClub = await Club.findOne({ name: clubData.name });
+    if (existingClub) {
+      return res.status(400).json({ message: 'Club name already exists' });
+    }
+
+    // Handle file uploads if present
+    let avatarUrl = '';
+    let bannerUrl = '';
+
+    if (req.files && Object.keys(req.files).length > 0) {
+      try {
+        const files = req.files as {
+          [fieldname: string]: Express.Multer.File[];
+        };
+
+        if (files.avatar?.[0]) {
+          const file = await uploadFile(files.avatar[0]);
+          avatarUrl = file.downloadURL;
+        }
+
+        if (files.banner?.[0]) {
+          const file = await uploadFile(files.banner[0]);
+          bannerUrl = file.downloadURL;
+        }
+      } catch (error) {
+        if (error instanceof customError) {
+          return next(error);
+        }
+        return next(
+          new customError(
+            'File upload failed: ' + (error as Error).message,
+            400
+          )
+        );
+      }
+    }
+
+    // Create the club with the creator as the leader
+    const newClub = new Club({
+      ...clubData,
+      avatar: avatarUrl,
+      banner: bannerUrl,
+      members: [
+        {
+          user: userId,
+          role: 'leader',
+          joinedAt: new Date(),
+          status: 'active',
+        },
+      ],
+    });
+
+    await newClub.save();
+
+    // Add club to user's clubs array
+    await User.findByIdAndUpdate(userId, {
+      $push: { clubs: newClub._id },
+    });
+
+    return res.status(201).json(newClub);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Join a club
+export async function joinClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is already a member
+    const existingMember = club.members.find((member) =>
+      member.user.equals(userId)
+    );
+
+    if (existingMember) {
+      return res.status(400).json({ message: 'Already a member of this club' });
+    }
+
+    // Check member limit
+    if (club.members.length >= club.memberLimit) {
+      return res.status(400).json({ message: 'Club has reached member limit' });
+    }
+
+    // Add member with appropriate status
+    const memberStatus = club.isPublic ? 'active' : 'pending';
+    club.members.push({
+      user: userId,
+      role: 'member',
+      joinedAt: new Date(),
+      status: memberStatus,
+    });
+
+    await club.save();
+
+    // Add club to user's clubs array if approved
+    if (memberStatus === 'active') {
+      await User.findByIdAndUpdate(userId, {
+        $push: { clubs: clubId },
+      });
+    }
+
+    const message = club.isPublic
+      ? 'Successfully joined the club'
+      : 'Join request sent, waiting for approval';
+
+    return res.status(200).json({ message });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Leave a club
+export async function leaveClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const memberIndex = club.members.findIndex((member) =>
+      member.user.equals(userId)
+    );
+
+    if (memberIndex === -1) {
+      return res.status(400).json({ message: 'Not a member of this club' });
+    }
+
+    const member = club.members[memberIndex];
+
+    // If user is the leader and there are other members, they need to transfer leadership first
+    if (member.role === 'leader' && club.members.length > 1) {
+      return res.status(400).json({
+        message:
+          'Cannot leave club as leader. Transfer leadership or disband the club first.',
+      });
+    }
+
+    // Remove member from club
+    club.members.splice(memberIndex, 1);
+
+    // If no members left, deactivate the club
+    if (club.members.length === 0) {
+      club.isActive = false;
+    }
+
+    await club.save();
+
+    // Remove club from user's clubs array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { clubs: clubId },
+    });
+
+    return res.status(200).json({ message: 'Successfully left the club' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Update club (only leaders can do this)
+export async function updateClub(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClub> | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+    const updateData = req.body;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is the leader
+    const userMember = club.members.find((member) =>
+      member.user.equals(userId)
+    );
+
+    if (!userMember || userMember.role !== 'leader') {
+      return res.status(403).json({
+        message: 'Only club leaders can update club settings',
+      });
+    }
+
+    // Update allowed fields
+    const allowedFields = [
+      'description',
+      'isPublic',
+      'tags',
+      'rules',
+      'memberLimit',
+      'avatar',
+      'banner',
+    ];
+
+    allowedFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        (club as any)[field] = updateData[field];
+      }
+    });
+
+    await club.save();
+
+    return res.status(200).json(club);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get user's clubs
+export async function getUserClubs(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response<IClub[]> | void> {
+  try {
+    const userId = res.locals.user._id;
+
+    const clubs = await Club.find({
+      'members.user': userId,
+      'members.status': 'active',
+      isActive: true,
+    }).select('name avatar level totalXp members');
+
+    return res.status(200).json(clubs);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Approve/Reject membership requests (leaders only)
+export async function manageMembershipRequest(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, memberId } = req.params;
+    const { action } = req.body; // 'approve' or 'reject'
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is the leader
+    const userMember = club.members.find((member) =>
+      member.user.equals(userId)
+    );
+
+    if (!userMember || userMember.role !== 'leader') {
+      return res.status(403).json({
+        message: 'Only club leaders can manage membership requests',
+      });
+    }
+
+    // Find the pending member
+    const pendingMember = club.members.find(
+      (member) => member.user.equals(memberId) && member.status === 'pending'
+    );
+
+    if (!pendingMember) {
+      return res.status(404).json({ message: 'Pending member not found' });
+    }
+
+    if (action === 'approve') {
+      pendingMember.status = 'active';
+      await User.findByIdAndUpdate(memberId, {
+        $push: { clubs: clubId },
+      });
+      await club.save();
+      return res.status(200).json({ message: 'Member approved' });
+    } else if (action === 'reject') {
+      club.members = club.members.filter(
+        (member) => !member.user.equals(memberId)
+      );
+      await club.save();
+      return res.status(200).json({ message: 'Member rejected' });
+    } else {
+      return res.status(400).json({ message: 'Invalid action' });
+    }
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Add media to club for members to consume
+export async function addClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { mediaId, mediaType, title, description, startDate, endDate } =
+      req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can add media' });
+    }
+
+    const newMedia = {
+      mediaId,
+      mediaType,
+      title,
+      description,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      addedBy: userId,
+      votes: [],
+      isActive: true,
+    };
+
+    club.currentMedia.push(newMedia);
+    await club.save();
+
+    return res
+      .status(201)
+      .json({ message: 'Media added successfully', media: newMedia });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club media (current and past)
+export async function getClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { active = 'true' } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId)
+      .populate('currentMedia.addedBy', 'username avatar')
+      .populate('currentMedia.votes.user', 'username avatar');
+
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const isActiveFilter = active === 'true';
+    const filteredMedia = club.currentMedia.filter(
+      (media) => media.isActive === isActiveFilter
+    );
+
+    return res.status(200).json({ media: filteredMedia });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Add review for club media
+export async function addClubReview(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { content, rating, hasSpoilers } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is a member
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can write reviews' });
+    }
+
+    // Check if media exists in club
+    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Import ClubReview model
+    const { ClubReview } = await import('../models/club.model.js');
+
+    // Check if user already reviewed this media
+    const existingReview = await ClubReview.findOne({
+      user: userId,
+      clubMedia: mediaId,
+    });
+
+    if (existingReview) {
+      return res
+        .status(400)
+        .json({ message: 'You have already reviewed this media' });
+    }
+
+    const newReview = new ClubReview({
+      user: userId,
+      clubMedia: mediaId,
+      content,
+      rating,
+      hasSpoilers: hasSpoilers || false,
+    });
+
+    await newReview.save();
+
+    return res
+      .status(201)
+      .json({ message: 'Review added successfully', review: newReview });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get reviews for club media
+export async function getClubReviews(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    // Import ClubReview model
+    const { ClubReview } = await import('../models/club.model.js');
+
+    const reviews = await ClubReview.find({ clubMedia: mediaId })
+      .populate('user', 'username avatar')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ reviews });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Vote for club media (for selection process)
+export async function voteClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { vote } = req.body; // 1-5 rating
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    if (!vote || vote < 1 || vote > 5) {
+      return res.status(400).json({ message: 'Vote must be between 1 and 5' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is a member
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can vote' });
+    }
+
+    // Find the media
+    const mediaIndex = club.currentMedia.findIndex(
+      (m) => m._id?.toString() === mediaId
+    );
+    if (mediaIndex === -1) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Check if user already voted
+    const existingVoteIndex = club.currentMedia[mediaIndex].votes.findIndex(
+      (v) => v.user.toString() === userId.toString()
+    );
+
+    if (existingVoteIndex !== -1) {
+      // Update existing vote
+      club.currentMedia[mediaIndex].votes[existingVoteIndex].vote = vote;
+    } else {
+      // Add new vote
+      club.currentMedia[mediaIndex].votes.push({ user: userId, vote });
+    }
+
+    await club.save();
+
+    return res.status(200).json({ message: 'Vote recorded successfully' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Create a new media voting (Step 1: Basic Info)
+export async function createMediaVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const {
+      title,
+      description,
+      mediaType,
+      customMediaType,
+      votingStartDate,
+      votingEndDate,
+      consumptionStartDate,
+      consumptionEndDate,
+      candidateSubmissionType,
+      suggestionStartDate,
+      suggestionEndDate,
+    } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can create votings' });
+    }
+
+    // Validate dates
+    const votingStart = new Date(votingStartDate);
+    const votingEnd = new Date(votingEndDate);
+    const consumptionStart = new Date(consumptionStartDate);
+    const consumptionEnd = new Date(consumptionEndDate);
+
+    // Allow testing with past dates by checking for a testing flag in the request
+    const isTestingMode = req.body.testingMode === true;
+    const now = new Date();
+
+    if (votingStart >= votingEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Voting end date must be after start date' });
+    }
+
+    if (consumptionStart >= consumptionEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption end date must be after start date' });
+    }
+
+    if (votingEnd >= consumptionStart) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption must start after voting ends' });
+    }
+
+    // For non-testing mode, validate that dates are in the future
+    if (!isTestingMode) {
+      if (votingStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Voting start date must be in the future' });
+      }
+    }
+
+    let suggestionStart: Date | undefined;
+    let suggestionEnd: Date | undefined;
+
+    if (candidateSubmissionType === 'member_suggestions') {
+      if (!suggestionStartDate || !suggestionEndDate) {
+        return res.status(400).json({
+          message: 'Suggestion dates are required for member suggestions',
+        });
+      }
+
+      suggestionStart = new Date(suggestionStartDate);
+      suggestionEnd = new Date(suggestionEndDate);
+
+      if (suggestionStart >= suggestionEnd) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion end date must be after start date' });
+      }
+
+      if (suggestionEnd >= votingStart) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestions must end before voting starts' });
+      }
+
+      // For non-testing mode, validate that suggestion dates are appropriate
+      if (!isTestingMode) {
+        if (suggestionStart <= now) {
+          return res
+            .status(400)
+            .json({ message: 'Suggestion start date must be in the future' });
+        }
+      }
+    }
+
+    // Determine initial status based on current time and testing mode
+    let initialStatus:
+      | 'setup'
+      | 'suggestions_open'
+      | 'suggestions_closed'
+      | 'voting_open'
+      | 'voting_closed'
+      | 'completed' = 'setup';
+
+    if (candidateSubmissionType === 'member_suggestions' && suggestionStart) {
+      if (isTestingMode) {
+        // In testing mode, allow manually setting status for past dates
+        if (suggestionStart <= now && suggestionEnd && suggestionEnd > now) {
+          initialStatus = 'suggestions_open';
+        } else if (
+          suggestionEnd &&
+          suggestionEnd <= now &&
+          votingStart <= now &&
+          votingEnd > now
+        ) {
+          initialStatus = 'voting_open';
+        } else if (
+          votingEnd <= now &&
+          consumptionStart <= now &&
+          consumptionEnd > now
+        ) {
+          initialStatus = 'completed';
+        } else if (votingEnd <= now) {
+          initialStatus = 'voting_closed';
+        } else if (suggestionEnd && suggestionEnd <= now) {
+          initialStatus = 'suggestions_closed';
+        } else {
+          initialStatus = 'suggestions_open';
+        }
+      } else {
+        // Normal mode - only set to suggestions_open if suggestion period has started
+        initialStatus = suggestionStart <= now ? 'suggestions_open' : 'setup';
+      }
+    }
+
+    const newVoting = {
+      title,
+      description,
+      mediaType,
+      customMediaType: mediaType === 'custom' ? customMediaType : undefined,
+      candidateSubmissionType,
+      suggestionStartDate: suggestionStart,
+      suggestionEndDate: suggestionEnd,
+      votingStartDate: votingStart,
+      votingEndDate: votingEnd,
+      consumptionStartDate: consumptionStart,
+      consumptionEndDate: consumptionEnd,
+      status: initialStatus,
+      isActive: true,
+      createdBy: userId,
+      candidates: [],
+    };
+
+    club.mediaVotings.push(newVoting);
+    await club.save();
+
+    // Get the saved voting with its generated _id
+    const savedClub = await Club.findById(clubId);
+    const savedVoting =
+      savedClub?.mediaVotings[savedClub.mediaVotings.length - 1];
+
+    return res.status(201).json({
+      message: 'Media voting created successfully',
+      voting: savedVoting,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Add candidate to media voting (Step 2: Add candidates or during suggestion period)
+export async function addVotingCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const { mediaId, title, description, image } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can add candidates' });
+    }
+
+    const votingIndex = club.mediaVotings.findIndex(
+      (v) => v._id?.toString() === votingId
+    );
+    if (votingIndex === -1) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const voting = club.mediaVotings[votingIndex];
+
+    // Check permissions and status
+    const canAddCandidate =
+      (voting.candidateSubmissionType === 'manual' &&
+        (userMember.role === 'leader' || userMember.role === 'moderator') &&
+        voting.status === 'setup') ||
+      (voting.candidateSubmissionType === 'member_suggestions' &&
+        voting.status === 'suggestions_open' &&
+        voting.suggestionEndDate &&
+        new Date() <= voting.suggestionEndDate);
+
+    if (!canAddCandidate) {
+      return res
+        .status(400)
+        .json({ message: 'Cannot add candidates at this time' });
+    }
+
+    // Check if media already exists in candidates
+    const existingCandidate = voting.candidates.find(
+      (c) => c.mediaId === mediaId
+    );
+    if (existingCandidate) {
+      return res
+        .status(400)
+        .json({ message: 'This media is already a candidate' });
+    }
+
+    const newCandidate = {
+      mediaId,
+      title,
+      description,
+      image,
+      addedBy: userId,
+      votes: [],
+    };
+
+    club.mediaVotings[votingIndex].candidates.push(newCandidate);
+    await club.save();
+
+    return res.status(201).json({
+      message: 'Candidate added successfully',
+      candidate: newCandidate,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Finalize voting setup (Step 3: Confirm and activate)
+export async function finalizeVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can finalize votings' });
+    }
+
+    const votingIndex = club.mediaVotings.findIndex(
+      (v) => v._id?.toString() === votingId
+    );
+    if (votingIndex === -1) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const voting = club.mediaVotings[votingIndex];
+
+    if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
+      return res
+        .status(400)
+        .json({ message: 'Voting cannot be finalized in current status' });
+    }
+
+    if (voting.candidates.length === 0) {
+      return res
+        .status(400)
+        .json({ message: 'At least one candidate is required' });
+    }
+
+    // Update status based on current time
+    const now = new Date();
+    let newStatus:
+      | 'setup'
+      | 'suggestions_open'
+      | 'suggestions_closed'
+      | 'voting_open'
+      | 'voting_closed'
+      | 'completed' = 'setup';
+
+    if (voting.candidateSubmissionType === 'member_suggestions') {
+      if (voting.suggestionEndDate && now >= voting.suggestionEndDate) {
+        newStatus = 'suggestions_closed';
+      } else {
+        newStatus = 'suggestions_open';
+      }
+    }
+
+    if (now >= voting.votingStartDate) {
+      newStatus = 'voting_open';
+    }
+
+    club.mediaVotings[votingIndex].status = newStatus;
+    await club.save();
+
+    return res.status(200).json({
+      message: 'Voting finalized successfully',
+      status: newStatus,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Vote for a candidate in media voting
+export async function voteForCandidate(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId, candidateIndex } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can vote' });
+    }
+
+    const votingIndex = club.mediaVotings.findIndex(
+      (v) => v._id?.toString() === votingId
+    );
+    if (votingIndex === -1) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const voting = club.mediaVotings[votingIndex];
+
+    if (voting.status !== 'voting_open') {
+      return res.status(400).json({ message: 'Voting is not currently open' });
+    }
+
+    if (new Date() > voting.votingEndDate) {
+      return res.status(400).json({ message: 'Voting period has ended' });
+    }
+
+    const candidateIdx = parseInt(candidateIndex);
+    if (candidateIdx < 0 || candidateIdx >= voting.candidates.length) {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
+
+    // Check if user has already voted (prevent vote changes)
+    const hasAlreadyVoted = voting.candidates.some((candidate) =>
+      candidate.votes.some((vote) => vote.toString() === userId.toString())
+    );
+
+    if (hasAlreadyVoted) {
+      return res.status(400).json({
+        message:
+          'You have already voted in this voting. Votes cannot be changed.',
+      });
+    }
+
+    // Add vote to selected candidate
+    club.mediaVotings[votingIndex].candidates[candidateIdx].votes.push(userId);
+    await club.save();
+
+    return res.status(200).json({ message: 'Vote recorded successfully' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get media votings for a club
+export async function getMediaVotings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { active = 'true' } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId)
+      .populate('mediaVotings.createdBy', 'username avatar')
+      .populate('mediaVotings.candidates.addedBy', 'username avatar');
+
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const isActiveFilter = active === 'true';
+    const filteredVotings = club.mediaVotings.filter(
+      (voting) => voting.isActive === isActiveFilter
+    );
+
+    return res.status(200).json({ votings: filteredVotings });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Complete voting and select winner
+export async function completeVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can complete votings' });
+    }
+
+    const votingIndex = club.mediaVotings.findIndex(
+      (v) => v._id?.toString() === votingId
+    );
+    if (votingIndex === -1) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const voting = club.mediaVotings[votingIndex];
+
+    if (voting.status === 'completed') {
+      return res.status(400).json({ message: 'Voting is already completed' });
+    }
+
+    // Find candidate with most votes
+    let winnerCandidate: any = null;
+    let maxVotes = 0;
+
+    voting.candidates.forEach((candidate: any) => {
+      if (candidate.votes.length > maxVotes) {
+        maxVotes = candidate.votes.length;
+        winnerCandidate = candidate;
+      }
+    });
+
+    if (winnerCandidate) {
+      // Set winner candidate
+      club.mediaVotings[votingIndex].winnerCandidate = {
+        mediaId: winnerCandidate.mediaId,
+        title: winnerCandidate.title,
+        description: winnerCandidate.description,
+        image: winnerCandidate.image,
+      };
+
+      // Add winner to currentMedia
+      const newMedia = {
+        mediaId: winnerCandidate.mediaId,
+        mediaType:
+          voting.mediaType === 'custom' ? 'reading' : (voting.mediaType as any),
+        title: winnerCandidate.title,
+        description: winnerCandidate.description,
+        startDate: voting.consumptionStartDate,
+        endDate: voting.consumptionEndDate,
+        isActive: true,
+        addedBy: voting.createdBy,
+        votes: [],
+      };
+
+      club.currentMedia.push(newMedia);
+    }
+
+    club.mediaVotings[votingIndex].status = 'completed';
+    club.mediaVotings[votingIndex].isActive = false;
+
+    await club.save();
+
+    return res.status(200).json({
+      message: 'Voting completed successfully',
+      winner: winnerCandidate,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

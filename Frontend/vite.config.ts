@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react(), tailwindcss()],
     server: {
+      host: true, // Allow external connections
+      allowedHosts: ['localhost', '.ngrok.io', '.ngrok-free.app', '.ngrok.app'],
       proxy: {
         '/api': {
           target: env.VITE_API_URL as string,

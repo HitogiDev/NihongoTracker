@@ -15,6 +15,8 @@ import adminRoutes from './routes/admin.routes.js';
 import mediaRoutes from './routes/media.routes.js';
 import dailyGoalsRoutes from './routes/dailyGoals.routes.js';
 import comparisonRoutes from './routes/comparison.routes.js';
+import clubRoutes from './routes/club.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 
 const app = express();
 
@@ -37,6 +39,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/goals', dailyGoalsRoutes);
 app.use('/api/compare', comparisonRoutes);
+app.use('/api/clubs', clubRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.use(
   '/api',

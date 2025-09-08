@@ -537,3 +537,141 @@ export interface IJitenResponse {
   mainDeck: IJitenDeck;
   subDecks: IJitenDeck[];
 }
+
+// Club-related interfaces
+export interface IClubMember {
+  user: IUser;
+  role: 'leader' | 'moderator' | 'member';
+  joinedAt: Date;
+  status: 'active' | 'pending' | 'banned';
+}
+
+export interface IClubMedia {
+  _id?: string;
+  mediaId: string;
+  mediaType: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie';
+  title: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
+  addedBy: IUser;
+  votes: Array<{
+    user: string;
+    vote: number;
+  }>;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubReview {
+  _id: string;
+  user: IUser;
+  clubMedia: string;
+  content: string;
+  rating?: number;
+  hasSpoilers: boolean;
+  likes: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubMediaCandidate {
+  mediaId: string;
+  title: string;
+  description?: string;
+  image?: string;
+  addedBy: IUser;
+  addedAt?: Date;
+  votes: string[];
+}
+
+export interface IClubMediaVoting {
+  _id?: string;
+  title: string;
+  description?: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'custom';
+  customMediaType?: string;
+
+  // Voting configuration
+  candidateSubmissionType: 'manual' | 'member_suggestions';
+
+  // Date periods
+  suggestionStartDate?: Date;
+  suggestionEndDate?: Date;
+  votingStartDate: Date;
+  votingEndDate: Date;
+  consumptionStartDate: Date;
+  consumptionEndDate: Date;
+
+  // Status and management
+  status:
+    | 'setup'
+    | 'suggestions_open'
+    | 'suggestions_closed'
+    | 'voting_open'
+    | 'voting_closed'
+    | 'completed';
+  isActive: boolean;
+  createdBy: IUser;
+
+  candidates: IClubMediaCandidate[];
+  winnerCandidate?: {
+    mediaId: string;
+    title: string;
+    description?: string;
+    image?: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClub {
+  _id: string;
+  name: string;
+  description?: string;
+  avatar?: string;
+  banner?: string;
+  isPublic: boolean;
+  level: number;
+  totalXp: number;
+  members: IClubMember[];
+  currentMedia: IClubMedia[];
+  tags: string[];
+  memberLimit: number;
+  rules?: string;
+  isActive: boolean;
+  mediaVotings: IClubMediaVoting[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubResponse extends IClub {
+  memberCount: number;
+  isUserMember: boolean;
+  userRole?: 'leader' | 'moderator' | 'member';
+  userStatus?: 'active' | 'pending' | 'banned';
+}
+
+export interface IClubListResponse {
+  clubs: IClubResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ICreateClubRequest {
+  name: string;
+  description?: string;
+  isPublic?: boolean;
+  tags?: string[];
+  rules?: string;
+  memberLimit?: number;
+}

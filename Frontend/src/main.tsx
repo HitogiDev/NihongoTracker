@@ -37,6 +37,9 @@ import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
 import MediaSocial from './screens/MediaSocial.tsx';
 import AdminScreen from './screens/AdminScreen.tsx';
+import ClubsScreen from './screens/ClubsScreen.tsx';
+import CreateClubScreen from './screens/CreateClubScreen.tsx';
+import ClubDetailScreen from './screens/ClubDetailScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -46,6 +49,9 @@ const router = createBrowserRouter(
       <Route path="register" element={<RegisterScreen />} />
       <Route path="settings" element={<SettingsScreen />} />
       <Route path="ranking" element={<RankingScreen />} />
+      <Route path="clubs" element={<ClubsScreen />} />
+      <Route path="clubs/create" element={<CreateClubScreen />} />
+      <Route path="clubs/:clubId" element={<ClubDetailScreen />} />
       <Route path="calculator" element={<CalculatorScreen />} />
       <Route path="features" element={<FeaturesScreen />} />
       <Route path="about" element={<AboutScreen />} />

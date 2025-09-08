@@ -275,3 +275,158 @@ export interface IDailyGoalProgress {
     pages: boolean;
   };
 }
+
+// Club-related interfaces
+export interface IClubMember {
+  user: Types.ObjectId;
+  role: 'leader' | 'moderator' | 'member';
+  joinedAt: Date;
+  status: 'active' | 'pending' | 'banned';
+}
+
+export interface IClubMediaCandidate {
+  mediaId: string;
+  title: string;
+  description?: string;
+  image?: string;
+  addedBy: Types.ObjectId;
+  addedAt?: Date;
+  votes: Types.ObjectId[];
+}
+
+export interface IClubMediaVoting {
+  _id?: Types.ObjectId;
+  title: string;
+  description?: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'custom';
+  customMediaType?: string;
+
+  // Voting configuration
+  candidateSubmissionType: 'manual' | 'member_suggestions';
+
+  // Date periods
+  suggestionStartDate?: Date;
+  suggestionEndDate?: Date;
+  votingStartDate: Date;
+  votingEndDate: Date;
+  consumptionStartDate: Date;
+  consumptionEndDate: Date;
+
+  // Status and management
+  status:
+    | 'setup'
+    | 'suggestions_open'
+    | 'suggestions_closed'
+    | 'voting_open'
+    | 'voting_closed'
+    | 'completed';
+  isActive: boolean;
+  createdBy: Types.ObjectId;
+
+  candidates: IClubMediaCandidate[];
+  winnerCandidate?: {
+    mediaId: string;
+    title: string;
+    description?: string;
+    image?: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubMedia {
+  _id?: Types.ObjectId;
+  mediaId: string;
+  mediaType: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie';
+  title: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
+  addedBy: Types.ObjectId;
+  votes: Array<{
+    user: Types.ObjectId;
+    vote: number;
+  }>;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClubReview extends Document {
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
+  clubMedia: Types.ObjectId;
+  content: string;
+  rating?: number;
+  hasSpoilers: boolean;
+  likes: Types.ObjectId[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IClub extends Document {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  avatar?: string;
+  banner?: string;
+  isPublic: boolean;
+  level: number;
+  totalXp: number;
+  members: IClubMember[];
+  currentMedia: IClubMedia[];
+  mediaVotings: IClubMediaVoting[];
+  tags: string[];
+  memberLimit: number;
+  rules?: string;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Club-related request/response types
+export interface ICreateClubRequest {
+  name: string;
+  description?: string;
+  isPublic?: boolean;
+  tags?: string[];
+  rules?: string;
+  memberLimit?: number;
+}
+
+export interface IClubResponse {
+  _id: Types.ObjectId;
+  name: string;
+  description?: string;
+  avatar?: string;
+  banner?: string;
+  isPublic: boolean;
+  level: number;
+  totalXp: number;
+  members: IClubMember[];
+  currentMedia: IClubMedia[];
+  tags: string[];
+  memberLimit: number;
+  rules?: string;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  memberCount: number;
+  isUserMember: boolean;
+  userRole?: 'leader' | 'moderator' | 'member';
+  userStatus?: 'active' | 'pending' | 'banned';
+}
+
+export interface IClubListResponse {
+  clubs: IClubResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}

@@ -61,7 +61,7 @@ async function uploadFile(file: Express.Multer.File): Promise<fileResponse> {
   try {
     const snapshot = await uploadBytesResumable(
       storageRef,
-      file.buffer,
+      new Uint8Array(file.buffer),
       metadata
     );
 
