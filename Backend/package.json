@@ -29,7 +29,6 @@
     "morgan": "^1.10.0",
     "prettier": "^3.2.5",
     "ts-node-dev": "^2.0.0",
-    "tsx": "^4.19.3",
     "typescript": "^5.4.2"
   },
   "dependencies": {
@@ -42,6 +41,7 @@
     "cron": "^3.1.7",
     "csvtojson": "^2.0.10",
     "dotenv": "^16.4.5",
+    "esbuild": "^0.25.9",
     "express": "^4.18.3",
     "fast-average-color-node": "^3.1.0",
     "firebase": "^10.12.5",
@@ -49,6 +49,7 @@
     "graphql-request": "^7.1.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.2.1",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "tsx": "^4.20.5"
   }
 }
