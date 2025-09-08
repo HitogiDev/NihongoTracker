@@ -18,7 +18,7 @@ function StatsScreen() {
   const { user: loggedUser } = useUserDataStore();
   const [currentType, setCurrentType] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<
-    'today' | 'month' | 'year' | 'total' | 'custom'
+    'today' | 'week' | 'month' | 'year' | 'total' | 'custom'
   >('total');
   const [onlyImmersedDays, setOnlyImmersedDays] = useState<boolean>(false);
   const { timezone } = useTimezone();
@@ -326,13 +326,15 @@ function StatsScreen() {
                   </svg>
                   {timeRange === 'today'
                     ? 'Today'
-                    : timeRange === 'month'
-                      ? 'This Month'
-                      : timeRange === 'year'
-                        ? 'This Year'
-                        : timeRange === 'custom'
-                          ? 'Custom'
-                          : 'All Time'}
+                    : timeRange === 'week'
+                      ? 'This Week'
+                      : timeRange === 'month'
+                        ? 'This Month'
+                        : timeRange === 'year'
+                          ? 'This Year'
+                          : timeRange === 'custom'
+                            ? 'Custom'
+                            : 'All Time'}
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -355,11 +357,12 @@ function StatsScreen() {
                     [
                       { label: 'All Time', value: 'total' },
                       { label: 'Today', value: 'today' },
+                      { label: 'This Week', value: 'week' },
                       { label: 'This Month', value: 'month' },
                       { label: 'This Year', value: 'year' },
                     ] as Array<{
                       label: string;
-                      value: 'total' | 'today' | 'month' | 'year';
+                      value: 'total' | 'today' | 'week' | 'month' | 'year';
                     }>
                   ).map((opt) => (
                     <li key={opt.value}>
@@ -633,6 +636,7 @@ function StatsScreen() {
                         {
                           total: 'All time',
                           today: "Today's",
+                          week: "This week's",
                           month: "This month's",
                           year: "This year's",
                           custom: 'Custom',
@@ -685,6 +689,7 @@ function StatsScreen() {
                         {
                           total: 'All time',
                           today: 'Today',
+                          week: 'This week',
                           month: 'This month',
                           year: 'This year',
                           custom: 'Custom',
@@ -1004,6 +1009,7 @@ function StatsScreen() {
                 {(() => {
                   const periodText = {
                     today: "Today's",
+                    week: "This week's",
                     month: "This month's",
                     year: "This year's",
                     total: 'All time',

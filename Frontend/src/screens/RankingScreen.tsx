@@ -241,6 +241,11 @@ function RankingScreen() {
       icon: <PiCalendarFill className="w-4 h-4" />,
     },
     {
+      label: 'This Week',
+      value: 'week',
+      icon: <PiCalendarFill className="w-4 h-4" />,
+    },
+    {
       label: 'This Month',
       value: 'month',
       icon: <PiChartBarFill className="w-4 h-4" />,

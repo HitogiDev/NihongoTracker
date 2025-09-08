@@ -25,7 +25,7 @@ ChartJS.register(
   Legend
 );
 
-type TimeframeType = 'total' | 'month' | 'year' | 'today';
+type TimeframeType = 'total' | 'today' | 'week' | 'month' | 'year';
 type ReadingType = 'reading' | 'vn' | 'manga';
 
 // Updated to include the readingSpeedData format from IUserStats
@@ -101,6 +101,13 @@ function SpeedChart({
           case 'today':
             include = itemDate.toDateString() === now.toDateString();
             break;
+          case 'week': {
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+            include = itemDate >= startOfWeek;
+            break;
+          }
           case 'month':
             include =
               itemDate.getMonth() === now.getMonth() &&
@@ -160,6 +167,13 @@ function SpeedChart({
           case 'today':
             include = logDate.toDateString() === now.toDateString();
             break;
+          case 'week': {
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+            include = logDate >= startOfWeek;
+            break;
+          }
           case 'month':
             include =
               logDate.getMonth() === now.getMonth() &&
@@ -373,6 +387,14 @@ function SpeedChart({
             onClick={() => setTimeframe('today')}
           >
             Today
+          </button>
+          <button
+            className={`btn join-item ${
+              timeframe === 'week' ? 'btn-primary' : ''
+            }`}
+            onClick={() => setTimeframe('week')}
+          >
+            This Week
           </button>
           <button
             className={`btn join-item ${

@@ -22,7 +22,7 @@ interface ProgressChartProps {
     }>;
   }>;
   selectedType?: string;
-  timeframe?: 'today' | 'month' | 'year' | 'total';
+  timeframe?: 'today' | 'week' | 'month' | 'year' | 'total';
 }
 
 export default function ProgressChart({
@@ -33,7 +33,7 @@ export default function ProgressChart({
 }: ProgressChartProps) {
   const { timezone } = useTimezone();
   const [timeframe, setTimeframe] = useState<
-    'today' | 'month' | 'year' | 'total'
+    'today' | 'week' | 'month' | 'year' | 'total'
   >('total');
 
   useEffect(() => {
@@ -65,6 +65,10 @@ export default function ProgressChart({
         let dateKey: string;
         if (timeframe === 'today') {
           dateKey = `${date.getHours()}`;
+        } else if (timeframe === 'week') {
+          const weekDay = date.getDay();
+          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          dateKey = dayNames[weekDay];
         } else if (timeframe === 'month') {
           dateKey = `${date.getDate()}`;
         } else if (timeframe === 'year') {
@@ -97,6 +101,17 @@ export default function ProgressChart({
 
       labels = hourLabels;
       xpValues = hourValues;
+    } else if (timeframe === 'week') {
+      // Format for days in a week
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayValues: number[] = [];
+
+      dayNames.forEach((day) => {
+        dayValues.push(allDatesMap[day] || 0);
+      });
+
+      labels = dayNames;
+      xpValues = dayValues;
     } else if (timeframe === 'month') {
       // Format for days in current month
       const currentDate = new Date();
@@ -187,6 +202,26 @@ export default function ProgressChart({
       xpValues = Object.keys(xpByHour)
         .sort((a, b) => parseInt(a) - parseInt(b))
         .map((hour) => xpByHour[hour]);
+    } else if (timeframe === 'week') {
+      const xpByDay: { [key: string]: number } = {};
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      dayNames.forEach((day) => {
+        xpByDay[day] = 0;
+      });
+
+      filteredLogs.forEach((log) => {
+        const logDateInUserTz = convertToUserTimezone(
+          new Date(log.date),
+          timezone
+        );
+        const dayOfWeek = logDateInUserTz.getDay();
+        const dayName = dayNames[dayOfWeek];
+        xpByDay[dayName] += log.xp;
+      });
+
+      labels = dayNames;
+      xpValues = dayNames.map((day) => xpByDay[day]);
     } else if (timeframe === 'month') {
       const xpByDate = getXpByDate(filteredLogs);
       const dates = Object.keys(xpByDate).sort();
@@ -263,6 +298,11 @@ export default function ProgressChart({
 
       if (timeframe === 'today') {
         return logDateInUserTz.toDateString() === nowInUserTz.toDateString();
+      } else if (timeframe === 'week') {
+        const startOfWeek = new Date(nowInUserTz);
+        startOfWeek.setDate(nowInUserTz.getDate() - nowInUserTz.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        return logDateInUserTz >= startOfWeek;
       } else if (timeframe === 'month') {
         return (
           logDateInUserTz.getMonth() === nowInUserTz.getMonth() &&
@@ -336,11 +376,13 @@ export default function ProgressChart({
               <p className="text-sm text-base-content mb-4">
                 {timeframe === 'today'
                   ? 'Hourly XP - Today'
-                  : timeframe === 'month'
-                    ? 'Daily XP - Current Month'
-                    : timeframe === 'year'
-                      ? 'XP Earned Over the Year'
-                      : 'Total XP Earned Over Time'}
+                  : timeframe === 'week'
+                    ? 'Daily XP - This Week'
+                    : timeframe === 'month'
+                      ? 'Daily XP - Current Month'
+                      : timeframe === 'year'
+                        ? 'XP Earned Over the Year'
+                        : 'Total XP Earned Over Time'}
               </p>
             ) : null}
           </div>
@@ -350,7 +392,12 @@ export default function ProgressChart({
                 value={timeframe}
                 onChange={(e) =>
                   setTimeframe(
-                    e.target.value as 'today' | 'month' | 'year' | 'total'
+                    e.target.value as
+                      | 'today'
+                      | 'week'
+                      | 'month'
+                      | 'year'
+                      | 'total'
                   )
                 }
                 className="select select-bordered"
@@ -358,6 +405,7 @@ export default function ProgressChart({
                 <option value="total">Total</option>
                 <option value="year">Year</option>
                 <option value="month">Month</option>
+                <option value="week">Week</option>
                 <option value="today">Today</option>
               </select>
             </div>

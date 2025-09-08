@@ -234,6 +234,14 @@ export async function getRanking(
       );
       const startOfDay = new Date(startOfDayLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: startOfDay } };
+    } else if (timeFilter === 'week') {
+      const startOfWeekLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate() - userDate.getDay()
+      );
+      const startOfWeek = new Date(startOfWeekLocal.getTime() + offsetNow);
+      dateFilter = { date: { $gte: startOfWeek } };
     } else if (timeFilter === 'month') {
       const startOfMonthLocal = new Date(
         userDate.getFullYear(),
@@ -589,6 +597,13 @@ export async function getMediumRanking(
         userDate.getFullYear(),
         userDate.getMonth(),
         userDate.getDate()
+      );
+      dateGte = new Date(startLocal.getTime() + offsetNow);
+    } else if (timeFilter === 'week') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate() - userDate.getDay()
       );
       dateGte = new Date(startLocal.getTime() + offsetNow);
     } else if (timeFilter === 'month') {

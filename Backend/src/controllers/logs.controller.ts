@@ -1108,7 +1108,7 @@ export async function assignMedia(
 }
 
 interface IGetUserStatsQuery {
-  timeRange?: 'today' | 'month' | 'year' | 'total' | 'custom';
+  timeRange?: 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
   type?:
     | 'all'
     | 'anime'
@@ -1160,7 +1160,7 @@ interface IUserStats {
     pages?: number;
     charsPerHour?: number | null;
   }>;
-  timeRange: 'today' | 'month' | 'year' | 'total';
+  timeRange: 'today' | 'week' | 'month' | 'year' | 'total';
   selectedType: string;
 }
 
@@ -1179,7 +1179,14 @@ export async function getUserStats(
       timezone: tzParam,
     } = req.query as IGetUserStatsQuery;
 
-    const validTimeRanges = ['today', 'month', 'year', 'total', 'custom'];
+    const validTimeRanges = [
+      'today',
+      'week',
+      'month',
+      'year',
+      'total',
+      'custom',
+    ];
     if (!validTimeRanges.includes(timeRange)) {
       return res.status(400).json({ message: 'Invalid time range' });
     }
@@ -1280,6 +1287,15 @@ export async function getUserStats(
       const start = new Date(startLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: start } };
       daysPeriod = 1;
+    } else if (timeRange === 'week') {
+      const startLocal = new Date(
+        userDate.getFullYear(),
+        userDate.getMonth(),
+        userDate.getDate() - userDate.getDay()
+      );
+      const start = new Date(startLocal.getTime() + offsetNow);
+      dateFilter = { date: { $gte: start } };
+      daysPeriod = userDate.getDay() + 1; // Days elapsed in current week
     } else if (timeRange === 'month') {
       const startLocal = new Date(
         userDate.getFullYear(),
