@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Club } from '../models/club.model.js';
 import User from '../models/user.model.js';
+import { MediaBase } from '../models/media.model.js';
+import Log from '../models/log.model.js';
 import uploadFile from '../services/uploadFile.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { Types } from 'mongoose';
@@ -601,7 +603,31 @@ export async function getClubMedia(
       (media) => media.isActive === isActiveFilter
     );
 
-    return res.status(200).json({ media: filteredMedia });
+    // Enhance media with actual media documents for images and metadata
+    const enhancedMedia = await Promise.all(
+      filteredMedia.map(async (media) => {
+        try {
+          // Try to find the media document in the database
+          const mediaDocument = await MediaBase.findOne({
+            contentId: media.mediaId,
+            type: media.mediaType,
+          });
+
+          return {
+            ...(media as any).toObject(),
+            mediaDocument: mediaDocument || null,
+          };
+        } catch (error) {
+          // If media document not found, return without it
+          return {
+            ...(media as any).toObject(),
+            mediaDocument: null,
+          };
+        }
+      })
+    );
+
+    return res.status(200).json({ media: enhancedMedia });
   } catch (error) {
     return next(error as customError);
   }
@@ -703,7 +729,10 @@ export async function getClubReviews(
   }
 }
 
-// Vote for club media (for selection process)
+// Vote for club media (for selection process) - REMOVED
+// This functionality has been removed since club media voting is now only for candidate selection
+// Comments/reviews are handled through the dedicated review system
+/*
 export async function voteClubMedia(
   req: Request,
   res: Response,
@@ -766,6 +795,7 @@ export async function voteClubMedia(
     return next(error as customError);
   }
 }
+*/
 
 // Create a new media voting (Step 1: Basic Info)
 export async function createMediaVoting(
@@ -1328,6 +1358,211 @@ export async function completeVoting(
     return res.status(200).json({
       message: 'Voting completed successfully',
       winner: winnerCandidate,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club member logs for specific media (after consumption period started)
+export async function getClubMediaLogs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(mediaId)) {
+      return res.status(400).json({ message: 'Invalid club or media ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Find the specific media in the club
+    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Get club member user IDs
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => member.user);
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get logs from club members for this media after the start date
+    const logs = await Log.find({
+      user: { $in: memberIds },
+      mediaId: media.mediaId,
+      type: media.mediaType,
+      createdAt: { $gte: new Date(media.startDate) },
+    })
+      .populate('user', 'username avatar')
+      .populate(
+        'mediaId',
+        'title contentTitleEnglish contentTitleRomaji contentTitleNative'
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    const total = await Log.countDocuments({
+      user: { $in: memberIds },
+      mediaId: media.mediaId,
+      type: media.mediaType,
+      createdAt: { $gte: new Date(media.startDate) },
+    });
+
+    return res.status(200).json({
+      logs,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get club member rankings for specific media (after consumption period started)
+export async function getClubMediaRankings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(mediaId)) {
+      return res.status(400).json({ message: 'Invalid club or media ID' });
+    }
+
+    const club = await Club.findById(clubId).populate(
+      'members.user',
+      'username avatar'
+    );
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Find the specific media in the club
+    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found in club' });
+    }
+
+    // Get club member user IDs
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => member.user);
+
+    // Aggregate logs to get member statistics for this media
+    const memberStats = await Log.aggregate([
+      {
+        $match: {
+          user: { $in: memberIds },
+          mediaId: media.mediaId,
+          type: media.mediaType,
+          createdAt: { $gte: new Date(media.startDate) },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          totalLogs: { $sum: 1 },
+          totalXp: { $sum: '$xp' },
+          totalTime: { $sum: '$time' },
+          totalEpisodes: { $sum: '$episodes' },
+          totalPages: { $sum: '$pages' },
+          firstLog: { $min: '$createdAt' },
+          lastLog: { $max: '$createdAt' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: '$user',
+      },
+      {
+        $project: {
+          user: {
+            _id: '$user._id',
+            username: '$user.username',
+            avatar: '$user.avatar',
+          },
+          totalLogs: 1,
+          totalXp: 1,
+          totalTime: 1,
+          totalEpisodes: 1,
+          totalPages: 1,
+          firstLog: 1,
+          lastLog: 1,
+          score: '$totalXp', // Use XP as the primary ranking metric
+        },
+      },
+      {
+        $sort: { score: -1, totalLogs: -1 },
+      },
+    ]);
+
+    // Add ranking positions
+    const rankedMembers = memberStats.map((member: any, index: number) => ({
+      ...member,
+      rank: index + 1,
+    }));
+
+    // Include members who haven't logged yet
+    const membersWithLogs = memberStats.map((stat: any) =>
+      stat.user._id.toString()
+    );
+    const membersWithoutLogs = club.members
+      .filter(
+        (member: any) =>
+          member.status === 'active' &&
+          !membersWithLogs.includes(member.user._id.toString())
+      )
+      .map((member: any) => ({
+        user: {
+          _id: member.user._id,
+          username: member.user.username,
+          avatar: member.user.avatar,
+        },
+        totalLogs: 0,
+        totalXp: 0,
+        totalTime: 0,
+        totalEpisodes: 0,
+        totalPages: 0,
+        firstLog: null,
+        lastLog: null,
+        score: 0,
+        rank: rankedMembers.length + 1,
+      }));
+
+    const allRankings = [...rankedMembers, ...membersWithoutLogs];
+
+    return res.status(200).json({
+      rankings: allRankings,
+      mediaInfo: {
+        title: media.title,
+        mediaType: media.mediaType,
+        startDate: media.startDate,
+        endDate: media.endDate,
+        isActive: media.isActive,
+      },
     });
   } catch (error) {
     return next(error as customError);

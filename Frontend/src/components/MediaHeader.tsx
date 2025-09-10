@@ -1,8 +1,8 @@
-// import MediaNavbar from './MediaNavbar';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { getAverageColorFn, getMediaFn } from '../api/trackerApi';
 import { AxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
+import { MdPlayArrow, MdBook, MdMovie } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
 import { useEffect, useState } from 'react';
@@ -11,6 +11,23 @@ import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
 import { useUserDataStore } from '../store/userData';
 import MediaNavbar from './MediaNavbar';
+
+const getMediaTypeIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'anime':
+      return <MdPlayArrow className="text-lg" />;
+    case 'manga':
+    case 'reading':
+      return <MdBook className="text-lg" />;
+    case 'movie':
+    case 'video':
+      return <MdMovie className="text-lg" />;
+    case 'vn':
+      return <MdPlayArrow className="text-lg" />;
+    default:
+      return <MdPlayArrow className="text-lg" />;
+  }
+};
 
 export default function MediaHeader() {
   const { mediaType, mediaId, username } = useParams<{
@@ -134,15 +151,27 @@ export default function MediaHeader() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] lg:grid-cols-[215px_1fr] gap-6">
             <div className="flex flex-col items-center md:items-start">
-              <div className="w-full max-w-[180px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
-                <img
-                  className={`w-full h-auto rounded shadow-md ${media?.isAdult && user?.settings?.blurAdultContent ? 'filter blur-sm' : ''}`}
-                  src={media?.contentImage ? media.contentImage : ''}
-                  alt={media?.title?.contentTitleNative || 'Media image'}
-                />
+              <div className="w-full max-w-[200px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
+                {media?.contentImage ? (
+                  <img
+                    src={media.contentImage}
+                    alt={media.title.contentTitleNative}
+                    className="w-full h-auto rounded-lg shadow-xl border-2 border-white/20"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-xl border-2 border-white/20 bg-base-200 flex items-center justify-center">
+                    <div className="text-4xl text-base-content/30">
+                      {getMediaTypeIcon(media?.type || '')}
+                    </div>
+                  </div>
+                )}
               </div>
               <button
-                className="btn btn-primary w-full max-w-[180px] mt-4"
+                className="btn btn-primary w-full max-w-[200px] mt-4"
                 onClick={() => setLogModalOpen(true)}
               >
                 Log

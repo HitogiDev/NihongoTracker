@@ -18,7 +18,6 @@ import {
   MdMovie,
   MdMusicNote,
   MdAdd,
-  MdThumbUp,
   MdClose,
   MdHowToVote,
 } from 'react-icons/md';
@@ -33,6 +32,7 @@ import { useUserDataStore } from '../store/userData';
 import { numberWithCommas } from '../utils/utils';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
+import QuickLog from '../components/QuickLog';
 
 function ClubDetailScreen() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -122,6 +122,13 @@ function ClubDetailScreen() {
   const [isAddMediaModalOpen, setIsAddMediaModalOpen] = useState(false);
   const [isCreateVotingWizardOpen, setIsCreateVotingWizardOpen] =
     useState(false);
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    _id: string;
+    mediaId: string;
+    mediaType: string;
+    title: string;
+  } | null>(null);
   const [mediaForm, setMediaForm] = useState({
     mediaId: '',
     mediaType: 'anime' as
@@ -521,83 +528,112 @@ function ClubDetailScreen() {
                     <span className="loading loading-spinner loading-md"></span>
                   </div>
                 ) : clubMedia?.media && clubMedia.media.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {clubMedia.media.map((media) => (
                       <div
                         key={media._id}
-                        className="border border-base-300 rounded-lg p-4 hover:bg-base-50 transition-colors"
+                        className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 border border-base-300"
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 text-2xl text-primary">
-                            {getMediaTypeIcon(media.mediaType)}
+                        {/* Media Image/Banner */}
+                        <figure className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20">
+                          {media.mediaDocument?.contentImage ||
+                          media.mediaDocument?.coverImage ? (
+                            <img
+                              src={
+                                media.mediaDocument.contentImage ||
+                                media.mediaDocument.coverImage
+                              }
+                              alt={media.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-6xl text-base-content/30">
+                              {getMediaTypeIcon(media.mediaType)}
+                            </div>
+                          )}
+
+                          {/* Status Badge */}
+                          <div className="absolute top-2 right-2">
+                            <span
+                              className={`badge ${
+                                media.isActive ? 'badge-success' : 'badge-ghost'
+                              } badge-sm`}
+                            >
+                              {media.isActive ? 'Active' : 'Ended'}
+                            </span>
                           </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <h3 className="font-semibold text-lg truncate">
-                                {media.title}
-                              </h3>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <span
-                                  className={`badge ${
-                                    media.isActive
-                                      ? 'badge-success'
-                                      : 'badge-ghost'
-                                  } badge-sm`}
+                          {/* Media Type Badge */}
+                          <div className="absolute top-2 left-2">
+                            <span className="badge badge-primary badge-sm capitalize">
+                              {media.mediaType}
+                            </span>
+                          </div>
+                        </figure>
+
+                        <div className="card-body p-4">
+                          <h3 className="card-title text-base font-semibold line-clamp-2 mb-2">
+                            {media.title}
+                          </h3>
+
+                          {media.description && (
+                            <p className="text-sm text-base-content/70 line-clamp-3 mb-3">
+                              {media.description}
+                            </p>
+                          )}
+
+                          <div className="flex flex-col gap-2 text-xs text-base-content/60 mb-4">
+                            <div className="flex items-center justify-between">
+                              <span>
+                                Start:{' '}
+                                {new Date(media.startDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>
+                                End:{' '}
+                                {new Date(media.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Added by: {media.addedBy.username}</span>
+                            </div>
+                          </div>
+
+                          {club.isUserMember &&
+                            club.userStatus === 'active' && (
+                              <div className="card-actions justify-between">
+                                <button
+                                  className="btn btn-outline btn-sm flex-1"
+                                  onClick={() =>
+                                    navigate(
+                                      `/clubs/${clubId}/media/${media._id}`
+                                    )
+                                  }
                                 >
-                                  {media.isActive ? 'Active' : 'Ended'}
-                                </span>
-                                <span className="badge badge-outline badge-sm capitalize">
-                                  {media.mediaType}
-                                </span>
+                                  View Details
+                                </button>
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() => {
+                                    setSelectedMedia({
+                                      _id: media._id || '',
+                                      mediaId: media.mediaId,
+                                      mediaType: media.mediaType,
+                                      title: media.title,
+                                    });
+                                    setLogModalOpen(true);
+                                  }}
+                                  title="Quick Log"
+                                >
+                                  Log
+                                </button>
                               </div>
-                            </div>
-
-                            {media.description && (
-                              <p className="text-sm text-base-content/70 mb-3 line-clamp-2">
-                                {media.description}
-                              </p>
                             )}
-
-                            <div className="flex items-center justify-between text-xs text-base-content/60">
-                              <div className="flex items-center gap-4">
-                                <span>
-                                  Start:{' '}
-                                  {new Date(
-                                    media.startDate
-                                  ).toLocaleDateString()}
-                                </span>
-                                <span>
-                                  End:{' '}
-                                  {new Date(media.endDate).toLocaleDateString()}
-                                </span>
-                              </div>
-
-                              {media.votes && media.votes.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <MdThumbUp className="text-sm" />
-                                  <span>{media.votes.length} votes</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {club.isUserMember &&
-                              club.userStatus === 'active' && (
-                                <div className="flex gap-2 mt-3">
-                                  <button className="btn btn-outline btn-xs">
-                                    View Reviews
-                                  </button>
-                                  <button className="btn btn-primary btn-xs">
-                                    Add Review
-                                  </button>
-                                  {media.isActive && (
-                                    <button className="btn btn-secondary btn-xs">
-                                      Vote
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -883,6 +919,31 @@ function ClubDetailScreen() {
           isOpen={isCreateVotingWizardOpen}
           onClose={() => setIsCreateVotingWizardOpen(false)}
           club={club}
+        />
+      )}
+
+      {/* Quick Log Modal */}
+      {selectedMedia && (
+        <QuickLog
+          open={logModalOpen}
+          onClose={() => setLogModalOpen(false)}
+          media={{
+            contentId: selectedMedia.mediaId,
+            title: {
+              contentTitleNative: selectedMedia.title,
+              contentTitleRomaji: selectedMedia.title,
+              contentTitleEnglish: selectedMedia.title,
+            },
+            type: selectedMedia.mediaType as
+              | 'anime'
+              | 'manga'
+              | 'reading'
+              | 'vn'
+              | 'video'
+              | 'movie',
+            contentImage: undefined, // Let QuickLog handle image loading
+            isAdult: false,
+          }}
         />
       )}
     </div>

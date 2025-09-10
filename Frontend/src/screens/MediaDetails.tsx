@@ -662,7 +662,7 @@ function MediaDetails() {
                     </>
                   )}
 
-                  {mediaDocument?.jiten?.mainDeck.characterCount && (
+                  {mediaDocument?.jiten?.mainDeck.characterCount ? (
                     <div className="flex items-center gap-3">
                       <span className="font-medium text-base-content/70 min-w-20">
                         Characters:
@@ -673,7 +673,7 @@ function MediaDetails() {
                         )}
                       </span>
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="divider my-4"></div>
 

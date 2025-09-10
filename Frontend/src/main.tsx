@@ -40,6 +40,11 @@ import AdminScreen from './screens/AdminScreen.tsx';
 import ClubsScreen from './screens/ClubsScreen.tsx';
 import CreateClubScreen from './screens/CreateClubScreen.tsx';
 import ClubDetailScreen from './screens/ClubDetailScreen.tsx';
+import ClubMediaHeader from './components/ClubMediaHeader.tsx';
+import ClubMediaInfo from './screens/ClubMediaInfo.tsx';
+import ClubMediaActivity from './screens/ClubMediaActivity.tsx';
+import ClubMediaReviews from './screens/ClubMediaReviews.tsx';
+import ClubMediaRankings from './screens/ClubMediaRankings.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -52,6 +57,12 @@ const router = createBrowserRouter(
       <Route path="clubs" element={<ClubsScreen />} />
       <Route path="clubs/create" element={<CreateClubScreen />} />
       <Route path="clubs/:clubId" element={<ClubDetailScreen />} />
+      <Route path="clubs/:clubId/media/:mediaId" element={<ClubMediaHeader />}>
+        <Route index element={<ClubMediaInfo />} />
+        <Route path="activity" element={<ClubMediaActivity />} />
+        <Route path="reviews" element={<ClubMediaReviews />} />
+        <Route path="rankings" element={<ClubMediaRankings />} />
+      </Route>
       <Route path="calculator" element={<CalculatorScreen />} />
       <Route path="features" element={<FeaturesScreen />} />
       <Route path="about" element={<AboutScreen />} />

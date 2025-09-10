@@ -355,6 +355,8 @@ export interface IClubMedia {
     user: Types.ObjectId;
     vote: number;
   }>;
+  // Reference to the actual media document for images and metadata
+  mediaDocument?: IMediaDocument;
   createdAt?: Date;
   updatedAt?: Date;
 }

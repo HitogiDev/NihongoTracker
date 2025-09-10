@@ -895,21 +895,21 @@ function MediaListItem({
 
                 {/* Stats */}
                 <div className="flex flex-wrap gap-1 justify-end">
-                  {media.episodes && (
+                  {media.episodes ? (
                     <span className="badge badge-ghost badge-sm">
                       {media.episodes} episodes
                     </span>
-                  )}
-                  {media.chapters && (
+                  ) : null}
+                  {media.chapters ? (
                     <span className="badge badge-ghost badge-sm">
                       {media.chapters} chapters
                     </span>
-                  )}
-                  {media.volumes && (
+                  ) : null}
+                  {media.volumes ? (
                     <span className="badge badge-ghost badge-sm">
                       {media.volumes} volumes
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>

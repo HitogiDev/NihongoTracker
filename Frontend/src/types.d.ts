@@ -35,6 +35,13 @@ export type OutletMediaContextType = {
   username?: string;
 };
 
+export type OutletClubMediaContextType = {
+  club?: IClubResponse;
+  clubMedia?: IClubMedia;
+  clubMediaData?: { media: IClubMedia[]; total?: number };
+  clubMediaError?: Error | null;
+};
+
 export interface IStats {
   userLevel: number;
   userXp: number;
@@ -257,7 +264,16 @@ export interface ICreateLog
 
 export interface ILog {
   _id: string;
-  user: string;
+  user: {
+    _id: string;
+    username: string;
+    avatar?: string;
+  };
+  userId?: {
+    _id: string;
+    username: string;
+    avatar?: string;
+  };
   type:
     | 'anime'
     | 'manga'
@@ -556,6 +572,8 @@ export interface IClubMedia {
   endDate: Date;
   isActive: boolean;
   addedBy: IUser;
+  // Reference to the actual media document for images and metadata
+  mediaDocument?: IMediaDocument | null;
   votes: Array<{
     user: string;
     vote: number;

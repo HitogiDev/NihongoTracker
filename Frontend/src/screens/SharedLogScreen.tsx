@@ -391,15 +391,15 @@ function SharedLogScreen() {
                     <div className="divider my-4"></div>
 
                     <div className="space-y-2">
-                      {sharedLog.episodes && (
+                      {sharedLog.episodes ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
                           <span className="text-sm font-medium">Episodes</span>
                           <span className="font-bold">
                             {sharedLog.episodes}
                           </span>
                         </div>
-                      )}
-                      {sharedLog.time && (
+                      ) : null}
+                      {sharedLog.time ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
                           <span className="text-sm font-medium">Time</span>
                           <span className="font-bold">
@@ -408,8 +408,8 @@ function SharedLogScreen() {
                               : `${sharedLog.time}m`}
                           </span>
                         </div>
-                      )}
-                      {sharedLog.chars && (
+                      ) : null}
+                      {sharedLog.chars ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
                           <span className="text-sm font-medium">
                             Characters
@@ -418,13 +418,13 @@ function SharedLogScreen() {
                             {sharedLog.chars.toLocaleString()}
                           </span>
                         </div>
-                      )}
-                      {sharedLog.pages && (
+                      ) : null}
+                      {sharedLog.pages ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
                           <span className="text-sm font-medium">Pages</span>
                           <span className="font-bold">{sharedLog.pages}</span>
                         </div>
-                      )}
+                      ) : null}
                       <div className="flex justify-between items-center py-2 px-3 bg-primary/10 rounded-lg">
                         <span className="text-sm font-medium">XP Earned</span>
                         <span className="font-bold text-primary">

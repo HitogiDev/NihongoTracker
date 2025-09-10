@@ -11,9 +11,11 @@ import {
   manageMembershipRequest,
   addClubMedia,
   getClubMedia,
+  getClubMediaLogs,
+  getClubMediaRankings,
   addClubReview,
   getClubReviews,
-  voteClubMedia,
+  // voteClubMedia, // Removed - votes only for candidate selection process
   createMediaVoting,
   addVotingCandidate,
   voteForCandidate,
@@ -56,7 +58,9 @@ router.post('/:clubId/members/:memberId', manageMembershipRequest); // Approve/r
 // Club Media routes
 router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moderators only)
 router.get('/:clubId/media', getClubMedia); // Get club media
-router.post('/:clubId/media/:mediaId/vote', voteClubMedia); // Vote for media selection
+router.get('/:clubId/media/:mediaId/logs', getClubMediaLogs); // Get club member logs for specific media
+router.get('/:clubId/media/:mediaId/rankings', getClubMediaRankings); // Get club member rankings for specific media
+// router.post('/:clubId/media/:mediaId/vote', voteClubMedia); // Vote for media selection (removed - votes only for selection process)
 
 // Club Reviews routes
 router.post('/:clubId/media/:mediaId/reviews', addClubReview); // Add review for club media

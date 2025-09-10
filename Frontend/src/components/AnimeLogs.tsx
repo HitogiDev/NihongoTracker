@@ -435,11 +435,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                               {anime.title.contentTitleNative}
                             </span>
                           )}
-                          {anime.episodes && (
+                          {anime.episodes ? (
                             <span className="text-xs badge badge-sm mt-1">
                               {anime.episodes} episodes
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </div>

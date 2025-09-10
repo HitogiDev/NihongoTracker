@@ -701,7 +701,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     </div>
                   ) : null}
 
-                  {episodes && (
+                  {episodes ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
                       <div className="stat-title text-xs">Episodes</div>
                       <div className="stat-value text-2xl text-secondary">
@@ -709,7 +709,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       </div>
                       <div className="stat-desc">Watched</div>
                     </div>
-                  )}
+                  ) : null}
 
                   {pages && pages > 0 ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
@@ -721,7 +721,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     </div>
                   ) : null}
 
-                  {chars && (
+                  {chars ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
                       <div className="stat-title text-xs">Characters</div>
                       <div className="stat-value text-lg text-accent">
@@ -729,7 +729,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       </div>
                       <div className="stat-desc">Read</div>
                     </div>
-                  )}
+                  ) : null}
 
                   {readingSpeed && (
                     <div className="stat bg-base-100 rounded-lg p-3">
@@ -761,7 +761,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     </p>
                   </div>
 
-                  {time && (
+                  {time ? (
                     <div>
                       <span className="label-text font-medium">Duration:</span>
                       <p className="text-base-content mt-1">
@@ -770,7 +770,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           : `${time} minute${time !== 1 ? 's' : ''}`}
                       </p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>

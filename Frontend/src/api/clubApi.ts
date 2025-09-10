@@ -8,6 +8,7 @@ import {
   IClubReview,
   IClubMediaVoting,
   IClubMediaCandidate,
+  ILog,
 } from '../types';
 
 // Get all clubs with filtering and pagination
@@ -151,7 +152,10 @@ export async function getClubMediaFn(
   return data;
 }
 
-// Vote for club media
+// Vote for club media - REMOVED
+// This functionality has been removed since club media voting is now only for candidate selection
+// Comments/reviews are handled through the dedicated review system
+/*
 export async function voteClubMediaFn(
   clubId: string,
   mediaId: string,
@@ -163,6 +167,7 @@ export async function voteClubMediaFn(
   );
   return data;
 }
+*/
 
 // Club Review Functions
 
@@ -311,5 +316,58 @@ export async function completeVotingFn(
     message: string;
     winner: IClubMediaCandidate;
   }>(`/clubs/${clubId}/votings/${votingId}/complete`);
+  return data;
+}
+
+// Get club member logs for specific media
+export async function getClubMediaLogsFn(
+  clubId: string,
+  mediaId: string,
+  params?: { page?: number; limit?: number }
+): Promise<{
+  logs: ILog[];
+  total: number;
+  page: number;
+  totalPages: number;
+}> {
+  const { data } = await axiosInstance.get(
+    `/clubs/${clubId}/media/${mediaId}/logs`,
+    { params }
+  );
+  return data;
+}
+
+// Get club member rankings for specific media
+export async function getClubMediaRankingsFn(
+  clubId: string,
+  mediaId: string
+): Promise<{
+  rankings: Array<{
+    user: {
+      _id: string;
+      username: string;
+      avatar?: string;
+    };
+    totalLogs: number;
+    totalXp: number;
+    totalTime: number;
+    totalEpisodes: number;
+    totalPages: number;
+    firstLog: string | null;
+    lastLog: string | null;
+    score: number;
+    rank: number;
+  }>;
+  mediaInfo: {
+    title: string;
+    mediaType: string;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  };
+}> {
+  const { data } = await axiosInstance.get(
+    `/clubs/${clubId}/media/${mediaId}/rankings`
+  );
   return data;
 }

@@ -419,11 +419,11 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
                               {movie.title.contentTitleNative}
                             </span>
                           )}
-                          {movie.runtime && (
+                          {movie.runtime ? (
                             <span className="text-xs badge badge-sm mt-1">
                               {movie.runtime} minutes
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </div>
