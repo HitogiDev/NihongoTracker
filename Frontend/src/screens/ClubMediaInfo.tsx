@@ -10,7 +10,11 @@ import {
   MdStars,
   MdTrendingUp,
   MdCalendarToday,
+  MdBarChart,
+  MdShowChart,
 } from 'react-icons/md';
+import BarChart from '../components/BarChart';
+import ProgressChart from '../components/ProgressChart';
 
 export default function ClubMediaInfo() {
   const { club, clubMedia } = useOutletContext<OutletClubMediaContextType>();
@@ -18,6 +22,7 @@ export default function ClubMediaInfo() {
   const [period, setPeriod] = useState<'consumption' | 'alltime'>(
     'consumption'
   );
+  const [chartView, setChartView] = useState<'progress' | 'bar'>('progress');
 
   const { data: mediaStats, isLoading } = useQuery({
     queryKey: ['clubMediaStats', clubId, mediaId, period],
@@ -109,13 +114,23 @@ export default function ClubMediaInfo() {
 
   const typeSpecificStats = getMediaTypeSpecificStats();
 
+  // Helper function to determine if consumption period is greater than 30 days
+  const isConsumptionPeriodLongerThanMonth = () => {
+    if (!mediaStats) return false;
+    const startDate = new Date(mediaStats.mediaInfo.startDate);
+    const endDate = new Date(mediaStats.mediaInfo.endDate);
+    const diffInMs = endDate.getTime() - startDate.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    return diffInDays > 30;
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
         {/* Period Toggle */}
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body p-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
               <div>
                 <h3 className="card-title text-lg">Club Media Statistics</h3>
                 <p className="text-sm text-base-content/60">
@@ -134,7 +149,8 @@ export default function ClubMediaInfo() {
                   onClick={() => setPeriod('consumption')}
                 >
                   <MdCalendarToday className="w-4 h-4 mr-1" />
-                  Consumption Period
+                  <span className="hidden sm:inline">Consumption Period</span>
+                  <span className="sm:hidden">Period</span>
                 </button>
                 <button
                   className={`btn btn-sm join-item ${
@@ -145,7 +161,8 @@ export default function ClubMediaInfo() {
                   onClick={() => setPeriod('alltime')}
                 >
                   <MdTrendingUp className="w-4 h-4 mr-1" />
-                  All Time
+                  <span className="hidden sm:inline">All Time</span>
+                  <span className="sm:hidden">All</span>
                 </button>
               </div>
             </div>
@@ -220,7 +237,9 @@ export default function ClubMediaInfo() {
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body">
               <h3 className="card-title mb-4">Recent Activity</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div
+                className={`grid grid-cols-1 ${isConsumptionPeriodLongerThanMonth() ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}
+              >
                 {/* This Week */}
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70">
@@ -248,32 +267,254 @@ export default function ClubMediaInfo() {
                   </div>
                 </div>
 
-                {/* This Month */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70">
-                    This Month
-                  </h4>
-                  <div className="stats stats-vertical shadow">
-                    <div className="stat py-2">
-                      <div className="stat-title text-xs">Logs</div>
-                      <div className="stat-value text-lg">
-                        {mediaStats.thisMonth.logs}
+                {/* This Month - Only show if consumption period > 30 days */}
+                {isConsumptionPeriodLongerThanMonth() && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70">
+                      This Month
+                    </h4>
+                    <div className="stats stats-vertical shadow">
+                      <div className="stat py-2">
+                        <div className="stat-title text-xs">Logs</div>
+                        <div className="stat-value text-lg">
+                          {mediaStats.thisMonth.logs}
+                        </div>
                       </div>
-                    </div>
-                    <div className="stat py-2">
-                      <div className="stat-title text-xs">Active Members</div>
-                      <div className="stat-value text-lg">
-                        {mediaStats.thisMonth.activeMembers}
+                      <div className="stat py-2">
+                        <div className="stat-title text-xs">Active Members</div>
+                        <div className="stat-value text-lg">
+                          {mediaStats.thisMonth.activeMembers}
+                        </div>
                       </div>
-                    </div>
-                    <div className="stat py-2">
-                      <div className="stat-title text-xs">XP Earned</div>
-                      <div className="stat-value text-lg">
-                        {mediaStats.thisMonth.xp}
+                      <div className="stat py-2">
+                        <div className="stat-title text-xs">XP Earned</div>
+                        <div className="stat-value text-lg">
+                          {mediaStats.thisMonth.xp}
+                        </div>
                       </div>
                     </div>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Data Visualization */}
+        {mediaStats && (
+          <div className="card bg-base-100 shadow-sm">
+            <div className="card-body">
+              <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-4">
+                <h3 className="card-title">Activity Visualization</h3>
+                <div className="join">
+                  <button
+                    className={`btn btn-sm join-item ${
+                      chartView === 'progress'
+                        ? 'btn-active btn-primary'
+                        : 'btn-outline'
+                    }`}
+                    onClick={() => setChartView('progress')}
+                  >
+                    <MdShowChart className="w-4 h-4 mr-1" />
+                    Progress
+                  </button>
+                  <button
+                    className={`btn btn-sm join-item ${
+                      chartView === 'bar'
+                        ? 'btn-active btn-primary'
+                        : 'btn-outline'
+                    }`}
+                    onClick={() => setChartView('bar')}
+                  >
+                    <MdBarChart className="w-4 h-4 mr-1" />
+                    Bar Chart
+                  </button>
                 </div>
+              </div>
+
+              <div className="w-full" style={{ height: '450px' }}>
+                {chartView === 'progress' ? (
+                  <ProgressChart
+                    statsData={[
+                      {
+                        type: 'all',
+                        count: mediaStats.total.logs,
+                        totalXp: mediaStats.total.xp,
+                        totalTimeMinutes: mediaStats.total.minutes,
+                        totalTimeHours: mediaStats.total.hours,
+                        untrackedCount: 0,
+                        dates: [
+                          {
+                            date: new Date(
+                              mediaStats.total.firstLogDate || new Date()
+                            ),
+                            xp: mediaStats.thisWeek.xp,
+                            time: mediaStats.thisWeek.minutes,
+                            episodes: mediaStats.thisWeek.episodes,
+                          },
+                          {
+                            date: new Date(
+                              mediaStats.total.lastLogDate || new Date()
+                            ),
+                            xp: mediaStats.thisMonth.xp,
+                            time: mediaStats.thisMonth.minutes,
+                            episodes: mediaStats.thisMonth.episodes,
+                          },
+                        ],
+                      },
+                    ]}
+                    selectedType="all"
+                    timeframe="total"
+                  />
+                ) : (
+                  <BarChart
+                    data={(() => {
+                      const mediaType = mediaStats.mediaInfo.mediaType;
+                      const showThisMonth =
+                        isConsumptionPeriodLongerThanMonth();
+
+                      // Prepare labels and data based on period length
+                      const labels = showThisMonth
+                        ? ['This Week', 'This Month', 'Total']
+                        : ['This Week', 'Total'];
+
+                      const baseDatasets = [
+                        {
+                          label: 'Logs',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.logs,
+                                mediaStats.thisMonth.logs,
+                                mediaStats.total.logs,
+                              ]
+                            : [mediaStats.thisWeek.logs, mediaStats.total.logs],
+                          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                          borderColor: 'rgba(59, 130, 246, 1)',
+                          borderWidth: 1,
+                        },
+                        {
+                          label: 'XP Earned',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.xp,
+                                mediaStats.thisMonth.xp,
+                                mediaStats.total.xp,
+                              ]
+                            : [mediaStats.thisWeek.xp, mediaStats.total.xp],
+                          backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                          borderColor: 'rgba(16, 185, 129, 1)',
+                          borderWidth: 1,
+                        },
+                        {
+                          label: 'Active Members',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.activeMembers,
+                                mediaStats.thisMonth.activeMembers,
+                                mediaStats.total.members,
+                              ]
+                            : [
+                                mediaStats.thisWeek.activeMembers,
+                                mediaStats.total.members,
+                              ],
+                          backgroundColor: 'rgba(245, 158, 11, 0.5)',
+                          borderColor: 'rgba(245, 158, 11, 1)',
+                          borderWidth: 1,
+                        },
+                      ];
+
+                      // Add media-type specific dataset
+                      if (mediaType === 'anime') {
+                        baseDatasets.push({
+                          label: 'Episodes Watched',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.episodes,
+                                mediaStats.thisMonth.episodes,
+                                mediaStats.total.episodes,
+                              ]
+                            : [
+                                mediaStats.thisWeek.episodes,
+                                mediaStats.total.episodes,
+                              ],
+                          backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                          borderColor: 'rgba(168, 85, 247, 1)',
+                          borderWidth: 1,
+                        });
+                      } else if (
+                        mediaType === 'manga' ||
+                        mediaType === 'reading'
+                      ) {
+                        baseDatasets.push({
+                          label:
+                            mediaType === 'manga'
+                              ? 'Chapters Read'
+                              : 'Pages Read',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.pages,
+                                mediaStats.thisMonth.pages,
+                                mediaStats.total.pages,
+                              ]
+                            : [
+                                mediaStats.thisWeek.pages,
+                                mediaStats.total.pages,
+                              ],
+                          backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                          borderColor: 'rgba(168, 85, 247, 1)',
+                          borderWidth: 1,
+                        });
+                      } else if (
+                        mediaType === 'reading' ||
+                        mediaType === 'vn'
+                      ) {
+                        baseDatasets.push({
+                          label: 'Characters Read',
+                          data: showThisMonth
+                            ? [
+                                mediaStats.thisWeek.characters,
+                                mediaStats.thisMonth.characters,
+                                mediaStats.total.characters,
+                              ]
+                            : [
+                                mediaStats.thisWeek.characters,
+                                mediaStats.total.characters,
+                              ],
+                          backgroundColor: 'rgba(168, 85, 247, 0.5)',
+                          borderColor: 'rgba(168, 85, 247, 1)',
+                          borderWidth: 1,
+                        });
+                      }
+
+                      return {
+                        labels,
+                        datasets: baseDatasets,
+                      };
+                    })()}
+                    options={{
+                      scales: {
+                        y: {
+                          title: {
+                            display: true,
+                            text: 'Count',
+                          },
+                        },
+                        x: {
+                          title: {
+                            display: true,
+                            text: 'Time Period',
+                          },
+                        },
+                      },
+                      plugins: {
+                        title: {
+                          display: true,
+                          text: `Club Activity for ${mediaStats.mediaInfo.title}`,
+                        },
+                      },
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
