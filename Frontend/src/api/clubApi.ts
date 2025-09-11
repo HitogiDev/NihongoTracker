@@ -371,3 +371,58 @@ export async function getClubMediaRankingsFn(
   );
   return data;
 }
+
+// Get club media statistics
+export async function getClubMediaStatsFn(
+  clubId: string,
+  mediaId: string,
+  period: 'consumption' | 'alltime' = 'consumption'
+): Promise<{
+  mediaInfo: {
+    mediaId: string;
+    mediaType: string;
+    title: string;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  };
+  period: string;
+  total: {
+    logs: number;
+    members: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+    firstLogDate: string | null;
+    lastLogDate: string | null;
+  };
+  thisWeek: {
+    logs: number;
+    activeMembers: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+  thisMonth: {
+    logs: number;
+    activeMembers: number;
+    episodes: number;
+    characters: number;
+    pages: number;
+    minutes: number;
+    hours: number;
+    xp: number;
+  };
+}> {
+  const { data } = await axiosInstance.get(
+    `/clubs/${clubId}/media/${mediaId}/stats`,
+    { params: { period } }
+  );
+  return data;
+}

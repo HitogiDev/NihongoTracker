@@ -13,6 +13,7 @@ import {
   getClubMedia,
   getClubMediaLogs,
   getClubMediaRankings,
+  getClubMediaStats,
   addClubReview,
   getClubReviews,
   // voteClubMedia, // Removed - votes only for candidate selection process
@@ -60,6 +61,7 @@ router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moder
 router.get('/:clubId/media', getClubMedia); // Get club media
 router.get('/:clubId/media/:mediaId/logs', getClubMediaLogs); // Get club member logs for specific media
 router.get('/:clubId/media/:mediaId/rankings', getClubMediaRankings); // Get club member rankings for specific media
+router.get('/:clubId/media/:mediaId/stats', getClubMediaStats); // Get club media statistics
 // router.post('/:clubId/media/:mediaId/vote', voteClubMedia); // Vote for media selection (removed - votes only for selection process)
 
 // Club Reviews routes
