@@ -2,7 +2,6 @@ import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import { Types } from 'mongoose';
 
-// Build a YYYY-MM-DD key for a date in the user's timezone
 export function getUserDayKey(date: Date, timezone: string): string {
   // Use Intl parts to avoid locale formatting surprises
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -31,7 +30,6 @@ export function dayDiff(aKey: string, bKey: string): number {
   return Math.round((b - a) / msPerDay);
 }
 
-// Recalculate streaks for a single user using their timezone and logs
 export async function recalculateStreaksForUser(
   userId: Types.ObjectId
 ): Promise<void> {

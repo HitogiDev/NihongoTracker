@@ -62,7 +62,6 @@ function ListScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch untracked logs for current user only
   const { data: untrackedLogs } = useQuery({
     queryKey: ['untrackedLogs'],
     queryFn: getUntrackedLogsFn,
@@ -70,7 +69,6 @@ function ListScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Mutation to update user settings
   const { mutate: updateUserSettings } = useMutation({
     mutationFn: updateUserFn,
     onSuccess: (data) => {
@@ -83,7 +81,6 @@ function ListScreen() {
     },
   });
 
-  // Combine all media into a single filterable array
   const allMedia = useMemo(() => {
     if (!immersionList) return [];
 
@@ -116,11 +113,9 @@ function ListScreen() {
     ];
   }, [immersionList]);
 
-  // Filter and sort media
   const filteredAndSortedMedia = useMemo(() => {
     let filtered = allMedia;
 
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -134,12 +129,10 @@ function ListScreen() {
       );
     }
 
-    // Apply type filter
     if (selectedFilter !== 'all') {
       filtered = filtered.filter((item) => item.type === selectedFilter);
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'title':
@@ -149,7 +142,6 @@ function ListScreen() {
         case 'type':
           return a.type.localeCompare(b.type);
         case 'recent':
-          // This would need creation date if available
           return (a.title.contentTitleNative || '').localeCompare(
             b.title.contentTitleNative || ''
           );
@@ -161,7 +153,6 @@ function ListScreen() {
     return filtered;
   }, [allMedia, searchQuery, selectedFilter, sortBy]);
 
-  // Group media by type when no filters are applied
   const groupedMedia = useMemo(() => {
     const shouldGroup = selectedFilter === 'all' && !searchQuery.trim();
 
@@ -188,7 +179,6 @@ function ListScreen() {
       groups[item.type].push(item);
     });
 
-    // Sort each group internally by title
     Object.keys(groups).forEach((type) => {
       groups[type].sort((a, b) =>
         (a.title.contentTitleNative || '').localeCompare(
@@ -197,7 +187,6 @@ function ListScreen() {
       );
     });
 
-    // Return groups in the desired order
     const orderedGroups: Record<
       string,
       (IMediaDocument & { category: string })[]
@@ -211,7 +200,6 @@ function ListScreen() {
     return orderedGroups;
   }, [filteredAndSortedMedia, selectedFilter, searchQuery]);
 
-  // Calculate statistics
   const stats = useMemo(() => {
     const totalCount = allMedia.length;
     const typeCount = {
@@ -226,7 +214,6 @@ function ListScreen() {
     return { totalCount, typeCount };
   }, [allMedia, immersionList]);
 
-  // Handler to hide unmatched logs alert permanently
   const handleHideUnmatchedAlert = () => {
     const formData = new FormData();
     formData.append('hideUnmatchedLogsAlert', 'true');
@@ -559,7 +546,6 @@ function ListScreen() {
   );
 }
 
-// Media Group Component for organizing by type
 function MediaGroup({
   type,
   mediaList,
@@ -616,7 +602,6 @@ function MediaGroup({
 
   return (
     <div className="space-y-4">
-      {/* Section Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-base-300">
         <div className={`p-2 rounded-lg bg-base-200 ${config.color}`}>
           <TypeIcon className="w-5 h-5" />
@@ -629,7 +614,6 @@ function MediaGroup({
         </div>
       </div>
 
-      {/* Media Content */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
           {mediaList.map((item) => (
@@ -647,7 +631,6 @@ function MediaGroup({
   );
 }
 
-// Media Card Component for Grid View
 function MediaCard({
   media,
 }: {
@@ -714,7 +697,6 @@ function MediaCard({
       className={`card bg-base-100 shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer border ${config.border}`}
       onClick={handleCardClick}
     >
-      {/* Image */}
       <figure className="relative aspect-[3/4] overflow-hidden">
         {media.contentImage || media.coverImage ? (
           <img
@@ -731,14 +713,12 @@ function MediaCard({
           </div>
         )}
 
-        {/* Adult Content Overlay */}
         {media.isAdult && (
           <div className="absolute top-2 right-2">
             <div className="badge badge-error badge-sm">18+</div>
           </div>
         )}
 
-        {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <div className="text-white text-center p-4">
             <MdTrendingUp className="w-6 h-6 mx-auto mb-2" />
@@ -747,7 +727,6 @@ function MediaCard({
         </div>
       </figure>
 
-      {/* Content */}
       <div className="card-body p-3 flex flex-col">
         <div className="flex-1 space-y-1">
           <h3
@@ -767,7 +746,6 @@ function MediaCard({
           )}
         </div>
 
-        {/* Type Badge - Pushed to bottom */}
         <div className="pt-2 mt-auto">
           <span
             className={`badge ${config.bg} ${config.color} badge-ghost badge-xs border-0`}
@@ -785,7 +763,6 @@ function MediaCard({
   );
 }
 
-// Media List Item Component for List View
 function MediaListItem({
   media,
 }: {
@@ -844,7 +821,6 @@ function MediaListItem({
             )}
           </div>
 
-          {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -888,12 +864,10 @@ function MediaListItem({
                         media.type.slice(1)}
                 </div>
 
-                {/* Adult Content Badge */}
                 {media.isAdult && (
                   <div className="badge badge-error badge-sm">18+</div>
                 )}
 
-                {/* Stats */}
                 <div className="flex flex-wrap gap-1 justify-end">
                   {media.episodes ? (
                     <span className="badge badge-ghost badge-sm">

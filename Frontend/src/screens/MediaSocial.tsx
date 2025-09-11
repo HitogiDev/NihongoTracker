@@ -19,7 +19,6 @@ export default function MediaSocial() {
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
 
-  // Basic guards
   const mediaId = mediaDocument?.contentId;
   const type = mediaDocument?.type || mediaType;
   const allowedTypes: ILog['type'][] = [
@@ -132,7 +131,6 @@ export default function MediaSocial() {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <h2 className="text-xl md:text-2xl font-bold">

@@ -33,7 +33,6 @@ const ALLOWED_MIME_TYPES = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function validateImageFile(file: Express.Multer.File): void {
-  // Check if file is an image
   if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     throw new customError(
       'Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)',
@@ -41,14 +40,12 @@ function validateImageFile(file: Express.Multer.File): void {
     );
   }
 
-  // Check file size
   if (file.size > MAX_FILE_SIZE) {
     throw new customError('File size exceeds the 5MB limit', 400);
   }
 }
 
 async function uploadFile(file: Express.Multer.File): Promise<fileResponse> {
-  // Validate file before uploading
   validateImageFile(file);
 
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);

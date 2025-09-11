@@ -125,7 +125,6 @@ const ClubReviewSchema = new Schema<IClubReview>(
   { timestamps: true }
 );
 
-// Main Club Schema
 const ClubSchema = new Schema<IClub>(
   {
     name: { type: String, required: true, maxlength: 100 },

@@ -60,12 +60,10 @@ export const validateLogData = (
 ): ValidationResult => {
   const errors: Record<string, string> = {};
 
-  // Type validation - only show if touched
   if (touched.type && !logData.type) {
     errors.type = 'Please select a log type';
   }
 
-  // Media name validation - only show if touched
   if (touched.mediaName) {
     if (!logData.mediaName.trim()) {
       errors.mediaName = 'Please enter a title or description';
@@ -74,7 +72,6 @@ export const validateLogData = (
     }
   }
 
-  // Type-specific validation - only show if relevant fields are touched
   if (logData.type === 'anime' && touched.episodes) {
     if (logData.watchedEpisodes <= 0) {
       errors.episodes =
@@ -97,7 +94,6 @@ export const validateLogData = (
 
   const totalMinutes = logData.hours * 60 + logData.minutes;
 
-  // Time validation - only show if time fields are touched
   if (
     (touched.hours || touched.minutes) &&
     ['video', 'movie', 'audio', 'other'].includes(logData.type || '')
@@ -109,7 +105,6 @@ export const validateLogData = (
     }
   }
 
-  // Type-specific time requirements - only show if time is touched and type requires it
   if (
     (touched.hours || touched.minutes) &&
     (logData.type === 'video' || logData.type === 'audio') &&
@@ -118,7 +113,6 @@ export const validateLogData = (
     errors.time = 'Please enter the time spent (must be greater than 0)';
   }
 
-  // Reading activity validation - only show if relevant fields are touched
   if (logData.type === 'reading' || logData.type === 'vn') {
     if (
       (touched.chars || touched.hours || touched.minutes) &&
@@ -141,7 +135,6 @@ export const validateLogData = (
     }
   }
 
-  // Reasonable limits validation - only show if touched
   if (touched.chars && logData.readChars > 1000000) {
     errors.chars = 'Character count seems unreasonably high (max: 1,000,000)';
   }

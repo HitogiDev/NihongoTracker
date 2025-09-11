@@ -7,10 +7,6 @@ export interface decodedJWT {
   exp: number;
 }
 
-// export interface tokenDataType {
-//   id: Types.ObjectId;
-// }
-
 export interface IRanking extends Document {
   _id: Types.ObjectId;
   month: number;
@@ -276,7 +272,6 @@ export interface IDailyGoalProgress {
   };
 }
 
-// Club-related interfaces
 export interface IClubMember {
   user: Types.ObjectId;
   role: 'leader' | 'moderator' | 'member';
@@ -393,7 +388,6 @@ export interface IClub extends Document {
   updatedAt?: Date;
 }
 
-// Club-related request/response types
 export interface ICreateClubRequest {
   name: string;
   description?: string;

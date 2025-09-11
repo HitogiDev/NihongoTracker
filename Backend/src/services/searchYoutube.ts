@@ -66,7 +66,6 @@ export async function getYouTubeVideoInfo(videoUrl: string): Promise<{
     console.log('✅ YouTube API key found');
 
     console.log('🌐 Making YouTube API request for video details...');
-    // Get video details
     const videoResponse = await axios.get(
       `https://www.googleapis.com/youtube/v3/videos`,
       {
@@ -91,7 +90,6 @@ export async function getYouTubeVideoInfo(videoUrl: string): Promise<{
 
     const videoData: YouTubeVideoData = videoResponse.data.items[0];
 
-    // Get channel details
     const channelResponse = await axios.get(
       `https://www.googleapis.com/youtube/v3/channels`,
       {

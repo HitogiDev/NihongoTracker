@@ -344,7 +344,6 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           </div>
         </div>
 
-        {/* Right panel - Anime search */}
         <div className="card bg-base-200 shadow-lg">
           <div className="card-body p-4">
             <h2 className="card-title">Find Matching Anime</h2>
