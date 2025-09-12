@@ -8,14 +8,18 @@ import {
   MdHowToVote,
   MdEmojiEvents,
   MdCheckCircle,
+  MdEdit,
+  MdDelete,
 } from 'react-icons/md';
 import {
   getMediaVotingsFn,
   voteForCandidateFn,
   completeVotingFn,
+  deleteMediaVotingFn,
 } from '../../api/clubApi';
 import { IClubMediaVoting, IClub } from '../../types';
 import { useUserDataStore } from '../../store/userData';
+import EditVotingModal from './EditVotingModal';
 
 interface VotingSystemProps {
   club: IClub;
@@ -39,6 +43,12 @@ export default function VotingSystem({
   canManageVoting,
 }: VotingSystemProps) {
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
+    null
+  );
+  const [editingVoting, setEditingVoting] = useState<IClubMediaVoting | null>(
+    null
+  );
+  const [deletingVoting, setDeletingVoting] = useState<IClubMediaVoting | null>(
     null
   );
   const queryClient = useQueryClient();
@@ -82,6 +92,21 @@ export default function VotingSystem({
       const message =
         error instanceof Error ? error.message : 'Failed to complete voting';
       toast.error(message);
+    },
+  });
+
+  const deleteVotingMutation = useMutation({
+    mutationFn: (votingId: string) => deleteMediaVotingFn(club._id, votingId),
+    onSuccess: () => {
+      toast.success('Voting deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
+      setDeletingVoting(null);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete voting';
+      toast.error(message);
+      setDeletingVoting(null);
     },
   });
 
@@ -366,115 +391,235 @@ export default function VotingSystem({
   // Show all votings if no active voting
   if (votings.length === 0) {
     return (
-      <div className="text-center py-8">
-        <MdHowToVote className="w-12 h-12 mx-auto text-base-content/50 mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No Active Votings</h3>
-        <p className="text-base-content/70">
-          {canManageVoting
-            ? 'Create a new voting for members to choose the next media.'
-            : 'No votings are currently available.'}
-        </p>
-      </div>
+      <>
+        <div className="text-center py-8">
+          <MdHowToVote className="w-12 h-12 mx-auto text-base-content/50 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Active Votings</h3>
+          <p className="text-base-content/70">
+            {canManageVoting
+              ? 'Create a new voting for members to choose the next media.'
+              : 'No votings are currently available.'}
+          </p>
+        </div>
+
+        {/* Edit Voting Modal */}
+        <EditVotingModal
+          isOpen={editingVoting !== null}
+          onClose={() => setEditingVoting(null)}
+          club={club}
+          voting={editingVoting}
+        />
+
+        {/* Delete Confirmation Modal */}
+        {deletingVoting && (
+          <div className="modal modal-open">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg">Delete Voting</h3>
+              <p className="py-4">
+                Are you sure you want to delete "{deletingVoting.title}"? This
+                action cannot be undone and will remove all associated data
+                including votes and candidates.
+              </p>
+              <div className="modal-action">
+                <button
+                  onClick={() => setDeletingVoting(null)}
+                  className="btn btn-outline"
+                  disabled={deleteVotingMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() =>
+                    deletingVoting._id &&
+                    deleteVotingMutation.mutate(deletingVoting._id)
+                  }
+                  className="btn btn-error"
+                  disabled={deleteVotingMutation.isPending}
+                >
+                  {deleteVotingMutation.isPending ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+            <div
+              className="modal-backdrop bg-black/50"
+              onClick={() => setDeletingVoting(null)}
+            ></div>
+          </div>
+        )}
+      </>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {votings.map((voting) => {
-        const status = getVotingStatus(voting);
-        const totalVotes = getTotalVotes(voting);
+    <>
+      <div className="space-y-6">
+        {votings.map((voting) => {
+          const status = getVotingStatus(voting);
+          const totalVotes = getTotalVotes(voting);
 
-        return (
-          <div
-            key={voting._id || voting.title}
-            className="card bg-base-100 shadow-sm border border-base-300"
-          >
-            <div className="card-body">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="card-title text-lg">{voting.title}</h3>
-                    <span className={`badge badge-${status.color}`}>
-                      {status.label}
-                    </span>
+          return (
+            <div
+              key={voting._id || voting.title}
+              className="card bg-base-100 shadow-sm border border-base-300"
+            >
+              <div className="card-body">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="card-title text-lg">{voting.title}</h3>
+                      <span className={`badge badge-${status.color}`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    {voting.description && (
+                      <p className="text-base-content/70 text-sm mb-4">
+                        {voting.description}
+                      </p>
+                    )}
                   </div>
-                  {voting.description && (
-                    <p className="text-base-content/70 text-sm mb-4">
-                      {voting.description}
-                    </p>
+                  {canManageVoting && (
+                    <div className="flex gap-2">
+                      {(voting.status === 'setup' ||
+                        voting.status === 'suggestions_closed') && (
+                        <>
+                          <button
+                            onClick={() => setEditingVoting(voting)}
+                            className="btn btn-sm btn-outline btn-primary"
+                            title="Edit voting"
+                          >
+                            <MdEdit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingVoting(voting)}
+                            className="btn btn-sm btn-outline btn-error"
+                            title="Delete voting"
+                          >
+                            <MdDelete className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-base-content/60 mb-4">
-                <div className="flex items-center gap-1">
-                  <MdCalendarToday className="w-4 h-4" />
-                  Voting: {formatDate(new Date(voting.votingStartDate))} -{' '}
-                  {formatDate(new Date(voting.votingEndDate))}
-                </div>
-                <div className="flex items-center gap-1">
-                  <MdSchedule className="w-4 h-4" />
-                  Consumption:{' '}
-                  {formatDate(new Date(voting.consumptionStartDate))} -{' '}
-                  {formatDate(new Date(voting.consumptionEndDate))}
-                </div>
-                <div className="flex items-center gap-1">
-                  <MdGroup className="w-4 h-4" />
-                  {totalVotes} votes
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {voting.candidates.length === 0 ? (
-                  <div className="text-center py-8 text-base-content/60">
-                    No candidates added yet.
+                <div className="flex flex-wrap gap-4 text-sm text-base-content/60 mb-4">
+                  <div className="flex items-center gap-1">
+                    <MdCalendarToday className="w-4 h-4" />
+                    Voting: {formatDate(
+                      new Date(voting.votingStartDate)
+                    )} - {formatDate(new Date(voting.votingEndDate))}
                   </div>
-                ) : (
-                  voting.candidates.map((candidate, index) => {
-                    const percentage =
-                      totalVotes > 0
-                        ? (candidate.votes.length / totalVotes) * 100
-                        : 0;
+                  <div className="flex items-center gap-1">
+                    <MdSchedule className="w-4 h-4" />
+                    Consumption:{' '}
+                    {formatDate(new Date(voting.consumptionStartDate))} -{' '}
+                    {formatDate(new Date(voting.consumptionEndDate))}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MdGroup className="w-4 h-4" />
+                    {totalVotes} votes
+                  </div>
+                </div>
 
-                    return (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            {candidate.image && (
-                              <img
-                                src={candidate.image}
-                                alt={candidate.title}
-                                className="w-12 object-cover rounded aspect-[2/3]"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <h4 className="font-medium">{candidate.title}</h4>
-                              {candidate.description && (
-                                <p className="text-sm text-base-content/70 mb-1">
-                                  {candidate.description}
-                                </p>
+                <div className="space-y-4">
+                  {voting.candidates.length === 0 ? (
+                    <div className="text-center py-8 text-base-content/60">
+                      No candidates added yet.
+                    </div>
+                  ) : (
+                    voting.candidates.map((candidate, index) => {
+                      const percentage =
+                        totalVotes > 0
+                          ? (candidate.votes.length / totalVotes) * 100
+                          : 0;
+
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              {candidate.image && (
+                                <img
+                                  src={candidate.image}
+                                  alt={candidate.title}
+                                  className="w-12 object-cover rounded aspect-[2/3]"
+                                />
                               )}
-                              <div className="text-sm text-base-content/60">
-                                {candidate.votes.length} votes (
-                                {percentage.toFixed(1)}%)
+                              <div className="flex-1">
+                                <h4 className="font-medium">
+                                  {candidate.title}
+                                </h4>
+                                {candidate.description && (
+                                  <p className="text-sm text-base-content/70 mb-1">
+                                    {candidate.description}
+                                  </p>
+                                )}
+                                <div className="text-sm text-base-content/60">
+                                  {candidate.votes.length} votes (
+                                  {percentage.toFixed(1)}%)
+                                </div>
                               </div>
                             </div>
                           </div>
+                          <progress
+                            className="progress progress-primary w-full"
+                            value={percentage}
+                            max="100"
+                          ></progress>
                         </div>
-                        <progress
-                          className="progress progress-primary w-full"
-                          value={percentage}
-                          max="100"
-                        ></progress>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </div>
+          );
+        })}
+      </div>
+
+      {/* Edit Voting Modal */}
+      <EditVotingModal
+        isOpen={editingVoting !== null}
+        onClose={() => setEditingVoting(null)}
+        club={club}
+        voting={editingVoting}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {deletingVoting && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Delete Voting</h3>
+            <p className="py-4">
+              Are you sure you want to delete "{deletingVoting.title}"? This
+              action cannot be undone and will remove all associated data
+              including votes and candidates.
+            </p>
+            <div className="modal-action">
+              <button
+                onClick={() => setDeletingVoting(null)}
+                className="btn btn-outline"
+                disabled={deleteVotingMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  deletingVoting._id &&
+                  deleteVotingMutation.mutate(deletingVoting._id)
+                }
+                className="btn btn-error"
+                disabled={deleteVotingMutation.isPending}
+              >
+                {deleteVotingMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
-        );
-      })}
-    </div>
+          <div
+            className="modal-backdrop bg-black/50"
+            onClick={() => setDeletingVoting(null)}
+          ></div>
+        </div>
+      )}
+    </>
   );
 }

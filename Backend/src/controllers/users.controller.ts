@@ -412,7 +412,6 @@ export async function getRanking(
         { $skip: skip },
         { $limit: limit },
       ]);
-      console.log('Ranking users:', rankingUsers);
       return res.status(200).json(rankingUsers);
     } else {
       // Default behavior - get all-time stats with hours calculated from logs

@@ -285,6 +285,60 @@ export async function createMediaVotingFn(
   return data;
 }
 
+// Edit media voting
+export async function editMediaVotingFn(
+  clubId: string,
+  votingId: string,
+  votingData: {
+    title: string;
+    description?: string;
+    mediaType:
+      | 'anime'
+      | 'manga'
+      | 'reading'
+      | 'vn'
+      | 'video'
+      | 'movie'
+      | 'custom';
+    customMediaType?: string;
+    candidateSubmissionType: 'manual' | 'member_suggestions';
+    suggestionStartDate?: Date;
+    suggestionEndDate?: Date;
+    votingStartDate: Date | undefined;
+    votingEndDate: Date | undefined;
+    consumptionStartDate: Date | undefined;
+    consumptionEndDate: Date | undefined;
+    testingMode?: boolean;
+  }
+): Promise<{ message: string; voting: IClubMediaVoting }> {
+  // Validate required dates
+  if (
+    !votingData.votingStartDate ||
+    !votingData.votingEndDate ||
+    !votingData.consumptionStartDate ||
+    !votingData.consumptionEndDate
+  ) {
+    throw new Error('All voting and consumption dates are required');
+  }
+
+  const { data } = await axiosInstance.put<{
+    message: string;
+    voting: IClubMediaVoting;
+  }>(`/clubs/${clubId}/votings/${votingId}`, votingData);
+  return data;
+}
+
+// Delete media voting
+export async function deleteMediaVotingFn(
+  clubId: string,
+  votingId: string
+): Promise<{ message: string }> {
+  const { data } = await axiosInstance.delete<{ message: string }>(
+    `/clubs/${clubId}/votings/${votingId}`
+  );
+  return data;
+}
+
 // Get media votings
 export async function getMediaVotingsFn(
   clubId: string,
@@ -372,7 +426,8 @@ export async function getClubMediaLogsFn(
 // Get club member rankings for specific media
 export async function getClubMediaRankingsFn(
   clubId: string,
-  mediaId: string
+  mediaId: string,
+  period: 'consumption' | 'alltime' = 'consumption'
 ): Promise<{
   rankings: Array<{
     user: {
@@ -399,7 +454,8 @@ export async function getClubMediaRankingsFn(
   };
 }> {
   const { data } = await axiosInstance.get(
-    `/clubs/${clubId}/media/${mediaId}/rankings`
+    `/clubs/${clubId}/media/${mediaId}/rankings`,
+    { params: { period } }
   );
   return data;
 }

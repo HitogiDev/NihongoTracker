@@ -1077,6 +1077,234 @@ export async function createMediaVoting(
   }
 }
 
+// Edit media voting (only in setup status)
+export async function editMediaVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const {
+      title,
+      description,
+      mediaType,
+      customMediaType,
+      votingStartDate,
+      votingEndDate,
+      consumptionStartDate,
+      consumptionEndDate,
+      candidateSubmissionType,
+      suggestionStartDate,
+      suggestionEndDate,
+    } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can edit votings' });
+    }
+
+    const votingIndex = club.mediaVotings.findIndex(
+      (v) => v._id?.toString() === votingId
+    );
+    if (votingIndex === -1) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const voting = club.mediaVotings[votingIndex];
+
+    // Only allow editing votings that are still in setup phase or suggestions_closed
+    if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
+      return res.status(400).json({
+        message:
+          'Can only edit votings that are in setup or suggestions_closed status',
+      });
+    }
+
+    // Validate dates
+    const votingStart = new Date(votingStartDate);
+    const votingEnd = new Date(votingEndDate);
+    const consumptionStart = new Date(consumptionStartDate);
+    const consumptionEnd = new Date(consumptionEndDate);
+
+    const isTestingMode = req.body.testingMode === true;
+    const now = new Date();
+
+    if (votingStart >= votingEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Voting end date must be after start date' });
+    }
+
+    if (consumptionStart >= consumptionEnd) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption end date must be after start date' });
+    }
+
+    if (votingEnd >= consumptionStart) {
+      return res
+        .status(400)
+        .json({ message: 'Consumption must start after voting ends' });
+    }
+
+    // For non-testing mode, validate that dates are in the future
+    if (!isTestingMode) {
+      if (votingStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Voting start date must be in the future' });
+      }
+    }
+
+    let suggestionStart: Date | undefined;
+    let suggestionEnd: Date | undefined;
+
+    if (candidateSubmissionType === 'member_suggestions') {
+      if (!suggestionStartDate || !suggestionEndDate) {
+        return res.status(400).json({
+          message: 'Suggestion dates are required for member suggestions',
+        });
+      }
+
+      suggestionStart = new Date(suggestionStartDate);
+      suggestionEnd = new Date(suggestionEndDate);
+
+      if (suggestionStart >= suggestionEnd) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion end date must be after start date' });
+      }
+
+      if (suggestionEnd >= votingStart) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestions must end before voting starts' });
+      }
+
+      if (!isTestingMode) {
+        if (suggestionStart <= now) {
+          return res
+            .status(400)
+            .json({ message: 'Suggestion start date must be in the future' });
+        }
+      }
+    }
+
+    // Update the voting
+    club.mediaVotings[votingIndex] = {
+      ...voting,
+      title,
+      description,
+      mediaType,
+      customMediaType: mediaType === 'custom' ? customMediaType : undefined,
+      candidateSubmissionType,
+      suggestionStartDate: suggestionStart,
+      suggestionEndDate: suggestionEnd,
+      votingStartDate: votingStart,
+      votingEndDate: votingEnd,
+      consumptionStartDate: consumptionStart,
+      consumptionEndDate: consumptionEnd,
+      // Explicitly preserve these required fields
+      createdBy: voting.createdBy,
+      isActive: voting.isActive,
+      status: voting.status,
+      candidates: voting.candidates,
+      _id: voting._id,
+    };
+
+    await club.save();
+
+    const updatedVoting = club.mediaVotings[votingIndex];
+
+    return res.status(200).json({
+      message: 'Media voting updated successfully',
+      voting: updatedVoting,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Delete media voting (only in setup status)
+export async function deleteMediaVoting(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, votingId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can delete votings' });
+    }
+
+    const votingIndex = club.mediaVotings.findIndex(
+      (v) => v._id?.toString() === votingId
+    );
+    if (votingIndex === -1) {
+      return res.status(404).json({ message: 'Voting not found' });
+    }
+
+    const voting = club.mediaVotings[votingIndex];
+
+    // Only allow deleting votings that are still in setup phase or suggestions_closed
+    if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
+      return res.status(400).json({
+        message:
+          'Can only delete votings that are in setup or suggestions_closed status',
+      });
+    }
+
+    // Remove the voting
+    club.mediaVotings.splice(votingIndex, 1);
+    await club.save();
+
+    return res.status(200).json({
+      message: 'Media voting deleted successfully',
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 // Add candidate to media voting (Step 2: Add candidates or during suggestion period)
 export async function addVotingCandidate(
   req: Request,
@@ -1528,6 +1756,7 @@ export async function getClubMediaRankings(
 ): Promise<Response | void> {
   try {
     const { clubId, mediaId } = req.params;
+    const { period = 'consumption' } = req.query; // 'consumption' or 'alltime'
 
     if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(mediaId)) {
       return res.status(400).json({ message: 'Invalid club or media ID' });
@@ -1547,29 +1776,77 @@ export async function getClubMediaRankings(
       return res.status(404).json({ message: 'Media not found in club' });
     }
 
-    // Get club member user IDs
+    // Get club member user IDs (extract just the _id from populated user objects)
     const memberIds = club.members
       .filter((member) => member.status === 'active')
-      .map((member) => member.user);
+      .map((member) => {
+        // Handle both populated and non-populated user references
+        if (typeof member.user === 'object' && member.user._id) {
+          return member.user._id;
+        }
+        return member.user;
+      });
+
+    // Base match criteria
+    const baseMatch: any = {
+      user: { $in: memberIds },
+      mediaId: media.mediaId,
+      type: media.mediaType,
+    };
+
+    // Add time filter if consumption period
+    if (period === 'consumption') {
+      baseMatch.createdAt = { $gte: new Date(media.startDate) };
+    }
 
     // Aggregate logs to get member statistics for this media
+    console.log(
+      'Rankings - Base match criteria:',
+      JSON.stringify(baseMatch, null, 2)
+    );
+    console.log(
+      'Rankings - Member IDs:',
+      memberIds.map((id) => id.toString())
+    );
+    console.log('Rankings - Media info:', {
+      mediaId: media.mediaId,
+      mediaType: media.mediaType,
+      startDate: media.startDate,
+      period,
+    });
+
     const memberStats = await Log.aggregate([
       {
-        $match: {
-          user: { $in: memberIds },
-          mediaId: media.mediaId,
-          type: media.mediaType,
-          createdAt: { $gte: new Date(media.startDate) },
-        },
+        $match: baseMatch,
       },
       {
         $group: {
           _id: '$user',
           totalLogs: { $sum: 1 },
-          totalXp: { $sum: '$xp' },
-          totalTime: { $sum: '$time' },
-          totalEpisodes: { $sum: '$episodes' },
-          totalPages: { $sum: '$pages' },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] },
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
           firstLog: { $min: '$createdAt' },
           lastLog: { $max: '$createdAt' },
         },
@@ -1699,6 +1976,21 @@ export async function getClubMediaStats(
     }
 
     // Get total statistics
+    console.log(
+      'Stats - Base match criteria:',
+      JSON.stringify(baseMatch, null, 2)
+    );
+    console.log(
+      'Stats - Member IDs:',
+      memberIds.map((id) => id.toString())
+    );
+    console.log('Stats - Media info:', {
+      mediaId: media.mediaId,
+      mediaType: media.mediaType,
+      startDate: media.startDate,
+      period,
+    });
+
     const totalStats = await Log.aggregate([
       { $match: baseMatch },
       {

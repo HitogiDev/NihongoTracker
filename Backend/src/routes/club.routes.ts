@@ -20,6 +20,8 @@ import {
   toggleReviewLike,
   // voteClubMedia, // Removed - votes only for candidate selection process
   createMediaVoting,
+  editMediaVoting,
+  deleteMediaVoting,
   addVotingCandidate,
   voteForCandidate,
   getMediaVotings,
@@ -74,6 +76,8 @@ router.post('/:clubId/media/:mediaId/reviews/:reviewId/like', toggleReviewLike);
 
 // Club Media Voting routes
 router.post('/:clubId/votings', createMediaVoting); // Create new media voting
+router.put('/:clubId/votings/:votingId', editMediaVoting); // Edit media voting
+router.delete('/:clubId/votings/:votingId', deleteMediaVoting); // Delete media voting
 router.get('/:clubId/votings', getMediaVotings); // Get media votings
 router.post('/:clubId/votings/:votingId/candidates', addVotingCandidate); // Add candidate to voting
 router.post('/:clubId/votings/:votingId/finalize', finalizeVoting); // Finalize voting setup

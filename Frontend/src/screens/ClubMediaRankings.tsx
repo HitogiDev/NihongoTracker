@@ -1,17 +1,21 @@
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdTrendingUp } from 'react-icons/md';
+import { MdTrendingUp, MdCalendarToday, MdHistory } from 'react-icons/md';
 import { getClubMediaRankingsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
+import { useState } from 'react';
 
 export default function ClubMediaRankings() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const { clubMedia } = useOutletContext<OutletClubMediaContextType>();
+  const [period, setPeriod] = useState<'consumption' | 'alltime'>(
+    'consumption'
+  );
 
   // Fetch club member rankings for this media
   const { data: clubRankingsData, isLoading: rankingsLoading } = useQuery({
-    queryKey: ['clubMediaRankings', clubId, mediaId],
-    queryFn: () => getClubMediaRankingsFn(clubId!, mediaId!),
+    queryKey: ['clubMediaRankings', clubId, mediaId, period],
+    queryFn: () => getClubMediaRankingsFn(clubId!, mediaId!, period),
     enabled: !!clubId && !!mediaId && !!clubMedia,
   });
 
@@ -28,16 +32,62 @@ export default function ClubMediaRankings() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
+        {/* Period Toggle */}
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
+              <div>
+                <h3 className="card-title text-lg">Club Member Rankings</h3>
+                <p className="text-sm text-base-content/60">
+                  How club members rank based on their activity with this media
+                </p>
+              </div>
+              <div className="join">
+                <button
+                  className={`btn btn-sm join-item ${
+                    period === 'consumption'
+                      ? 'btn-active btn-primary'
+                      : 'btn-outline'
+                  }`}
+                  onClick={() => setPeriod('consumption')}
+                >
+                  <MdCalendarToday className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">Consumption Period</span>
+                  <span className="sm:hidden">Period</span>
+                </button>
+                <button
+                  className={`btn btn-sm join-item ${
+                    period === 'alltime'
+                      ? 'btn-active btn-primary'
+                      : 'btn-outline'
+                  }`}
+                  onClick={() => setPeriod('alltime')}
+                >
+                  <MdHistory className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">All Time</span>
+                  <span className="sm:hidden">All Time</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h3 className="card-title">Club Member Rankings</h3>
-            <p className="text-base-content/70 mb-4">
-              How club members rank based on their activity with this media
-              since{' '}
-              {clubMedia?.startDate
-                ? new Date(clubMedia.startDate).toLocaleDateString()
-                : 'the start date'}
-            </p>
+            <div className="mb-4">
+              <p className="text-base-content/70">
+                {period === 'consumption' ? (
+                  <>
+                    Since{' '}
+                    {clubMedia?.startDate
+                      ? new Date(clubMedia.startDate).toLocaleDateString()
+                      : 'the start date'}
+                  </>
+                ) : (
+                  'All time activity for this media'
+                )}
+              </p>
+            </div>
 
             {rankingsLoading ? (
               <div className="flex justify-center py-8">
