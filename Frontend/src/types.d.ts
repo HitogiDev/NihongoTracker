@@ -590,6 +590,7 @@ export interface IClubReview {
   rating?: number;
   hasSpoilers: boolean;
   likes: string[];
+  editedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

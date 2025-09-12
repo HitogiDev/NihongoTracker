@@ -199,6 +199,38 @@ export async function getClubReviewsFn(
   return data;
 }
 
+// Edit review for club media
+export async function editClubReviewFn(
+  clubId: string,
+  mediaId: string,
+  reviewId: string,
+  reviewData: {
+    content: string;
+    rating?: number;
+    hasSpoilers: boolean;
+  }
+): Promise<{ message: string; review: IClubReview }> {
+  const { data } = await axiosInstance.put<{
+    message: string;
+    review: IClubReview;
+  }>(`/clubs/${clubId}/media/${mediaId}/reviews/${reviewId}`, reviewData);
+  return data;
+}
+
+// Toggle like/unlike on review
+export async function toggleReviewLikeFn(
+  clubId: string,
+  mediaId: string,
+  reviewId: string
+): Promise<{ message: string; liked: boolean; likesCount: number }> {
+  const { data } = await axiosInstance.post<{
+    message: string;
+    liked: boolean;
+    likesCount: number;
+  }>(`/clubs/${clubId}/media/${mediaId}/reviews/${reviewId}/like`);
+  return data;
+}
+
 // Club Media Voting Functions
 
 // Create new media voting (Step 1)

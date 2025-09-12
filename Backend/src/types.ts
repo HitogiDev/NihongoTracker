@@ -364,6 +364,7 @@ export interface IClubReview extends Document {
   rating?: number;
   hasSpoilers: boolean;
   likes: Types.ObjectId[];
+  editedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

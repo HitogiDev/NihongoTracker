@@ -729,26 +729,35 @@ export async function getClubReviews(
   }
 }
 
-// Vote for club media (for selection process) - REMOVED
-// This functionality has been removed since club media voting is now only for candidate selection
-// Comments/reviews are handled through the dedicated review system
-/*
-export async function voteClubMedia(
+// Edit review
+export async function editReview(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<Response | void> {
   try {
-    const { clubId, mediaId } = req.params;
-    const { vote } = req.body; // 1-5 rating
+    const { clubId, mediaId, reviewId } = req.params;
+    const { content, rating, hasSpoilers } = req.body;
     const userId = res.locals.user._id;
 
-    if (!Types.ObjectId.isValid(clubId)) {
-      return res.status(400).json({ message: 'Invalid club ID' });
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: 'Invalid club ID or review ID' });
     }
 
-    if (!vote || vote < 1 || vote > 5) {
-      return res.status(400).json({ message: 'Vote must be between 1 and 5' });
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Review content is required' });
+    }
+
+    if (content.length > 1000) {
+      return res
+        .status(400)
+        .json({ message: 'Review content must be 1000 characters or less' });
+    }
+
+    if (rating && (rating < 1 || rating > 5)) {
+      return res
+        .status(400)
+        .json({ message: 'Rating must be between 1 and 5' });
     }
 
     const club = await Club.findById(clubId);
@@ -764,38 +773,117 @@ export async function voteClubMedia(
     if (!userMember || userMember.status !== 'active') {
       return res
         .status(403)
-        .json({ message: 'Only active club members can vote' });
+        .json({ message: 'Only active club members can edit reviews' });
     }
 
-    // Find the media
-    const mediaIndex = club.currentMedia.findIndex(
-      (m) => m._id?.toString() === mediaId
+    // Import ClubReview model
+    const { ClubReview } = await import('../models/club.model.js');
+
+    const review = await ClubReview.findOne({
+      _id: reviewId,
+      clubMedia: mediaId,
+      user: userId, // Only allow users to edit their own reviews
+    });
+
+    if (!review) {
+      return res
+        .status(404)
+        .json({ message: 'Review not found or you are not the author' });
+    }
+
+    // Update the review
+    review.content = content.trim();
+    review.hasSpoilers = hasSpoilers || false;
+    review.editedAt = new Date();
+
+    if (rating !== undefined) {
+      review.rating = rating;
+    }
+
+    await review.save();
+
+    // Populate user data for response
+    const updatedReview = await ClubReview.findById(reviewId).populate(
+      'user',
+      'username avatar'
     );
-    if (mediaIndex === -1) {
-      return res.status(404).json({ message: 'Media not found in club' });
-    }
 
-    // Check if user already voted
-    const existingVoteIndex = club.currentMedia[mediaIndex].votes.findIndex(
-      (v) => v.user.toString() === userId.toString()
-    );
-
-    if (existingVoteIndex !== -1) {
-      // Update existing vote
-      club.currentMedia[mediaIndex].votes[existingVoteIndex].vote = vote;
-    } else {
-      // Add new vote
-      club.currentMedia[mediaIndex].votes.push({ user: userId, vote });
-    }
-
-    await club.save();
-
-    return res.status(200).json({ message: 'Vote recorded successfully' });
+    return res
+      .status(200)
+      .json({ message: 'Review updated successfully', review: updatedReview });
   } catch (error) {
     return next(error as customError);
   }
 }
-*/
+
+// Like/Unlike review
+export async function toggleReviewLike(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId, reviewId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: 'Invalid club ID or review ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is a member
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'Only active club members can like reviews' });
+    }
+
+    // Import ClubReview model
+    const { ClubReview } = await import('../models/club.model.js');
+
+    const review = await ClubReview.findOne({
+      _id: reviewId,
+      clubMedia: mediaId,
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const userIdString = userId.toString();
+    const isLiked = review.likes.some((id) => id.toString() === userIdString);
+
+    if (isLiked) {
+      // Unlike - remove user from likes array
+      review.likes = review.likes.filter(
+        (id) => id.toString() !== userIdString
+      );
+    } else {
+      // Like - add user to likes array
+      review.likes.push(userId); // Push the ObjectId, not the string
+    }
+
+    await review.save();
+    console.log('Updated review likes:', review.likes);
+    return res.status(200).json({
+      message: isLiked
+        ? 'Review unliked successfully'
+        : 'Review liked successfully',
+      liked: !isLiked,
+      likesCount: review.likes.length,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
 
 // Create a new media voting (Step 1: Basic Info)
 export async function createMediaVoting(

@@ -7,11 +7,18 @@ import {
   MdStar,
   MdStarBorder,
   MdWarning,
-  MdThumbUpOffAlt,
+  MdEdit,
 } from 'react-icons/md';
-import { getClubReviewsFn, addClubReviewFn } from '../api/clubApi';
+import {
+  getClubReviewsFn,
+  addClubReviewFn,
+  toggleReviewLikeFn,
+  editClubReviewFn,
+} from '../api/clubApi';
 import { useUserDataStore } from '../store/userData';
-import { OutletClubMediaContextType } from '../types';
+import { OutletClubMediaContextType, IClubReview } from '../types';
+import LikeButton from '../components/LikeButton';
+import EditReviewModal from '../components/EditReviewModal';
 
 export default function ClubMediaReviews() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
@@ -25,6 +32,7 @@ export default function ClubMediaReviews() {
     hasSpoilers: false,
   });
   const [showSpoilers, setShowSpoilers] = useState(false);
+  const [editingReview, setEditingReview] = useState<IClubReview | null>(null);
 
   // Fetch reviews for this media
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
@@ -55,6 +63,42 @@ export default function ClubMediaReviews() {
     },
   });
 
+  // Toggle like mutation
+  const toggleLikeMutation = useMutation({
+    mutationFn: (reviewId: string) =>
+      toggleReviewLikeFn(clubId!, mediaId!, reviewId),
+    onSuccess: () => {
+      // Simply invalidate and refetch the data since backend is working correctly
+      queryClient.invalidateQueries({
+        queryKey: ['clubReviews', clubId, mediaId],
+      });
+    },
+    onError: (error) => {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update like';
+      toast.error(errorMessage);
+    },
+  });
+
+  // Edit review mutation
+  const editReviewMutation = useMutation({
+    mutationFn: (data: {
+      reviewId: string;
+      reviewData: { content: string; rating?: number; hasSpoilers: boolean };
+    }) => editClubReviewFn(clubId!, mediaId!, data.reviewId, data.reviewData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['clubReviews', clubId, mediaId],
+      });
+      toast.success('Review updated successfully!');
+      setEditingReview(null);
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update review';
+      toast.error(errorMessage);
+    },
+  });
   if (!club) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -190,6 +234,9 @@ export default function ClubMediaReviews() {
                         </h4>
                         <p className="text-sm text-base-content/60">
                           {new Date(review.createdAt!).toLocaleDateString()}
+                          {review.editedAt && (
+                            <span className="ml-2 text-xs">(edited)</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -242,11 +289,25 @@ export default function ClubMediaReviews() {
 
                   <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-4">
-                      <button className="btn btn-ghost btn-xs">
-                        <MdThumbUpOffAlt className="mr-1" />
-                        {review.likes.length}
-                      </button>
+                      <LikeButton
+                        isLiked={review.likes.includes(user?._id || '')}
+                        likesCount={review.likes.length}
+                        onToggleLike={() =>
+                          toggleLikeMutation.mutate(review._id)
+                        }
+                        disabled={toggleLikeMutation.isPending || !user}
+                        size="xs"
+                      />
                     </div>
+                    {review.user._id === user?._id && (
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => setEditingReview(review)}
+                        title="Edit review"
+                      >
+                        <MdEdit />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -260,6 +321,22 @@ export default function ClubMediaReviews() {
           </div>
         )}
       </div>
+
+      {/* Edit Review Modal */}
+      {editingReview && (
+        <EditReviewModal
+          isOpen={!!editingReview}
+          onClose={() => setEditingReview(null)}
+          review={editingReview}
+          onSubmit={(reviewData) =>
+            editReviewMutation.mutate({
+              reviewId: editingReview._id,
+              reviewData,
+            })
+          }
+          isLoading={editReviewMutation.isPending}
+        />
+      )}
     </div>
   );
 }

@@ -121,6 +121,7 @@ const ClubReviewSchema = new Schema<IClubReview>(
     rating: { type: Number, min: 1, max: 5 },
     hasSpoilers: { type: Boolean, default: false },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    editedAt: { type: Date },
   },
   { timestamps: true }
 );
