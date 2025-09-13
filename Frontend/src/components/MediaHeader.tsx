@@ -153,14 +153,20 @@ export default function MediaHeader() {
                 {media?.title?.contentTitleNative}
               </h1>
               <div className="text-base-content text-opacity-75 mt-4 text-sm sm:text-base">
-                {media?.description?.filter(
-                  (desc) => desc.language === 'eng'
-                )[0].description &&
-                  renderDescription(
-                    media?.description?.filter(
-                      (desc) => desc.language === 'eng'
-                    )[0].description
-                  )}
+                {(() => {
+                  const engDescription = media?.description?.filter(
+                    (desc) => desc.language === 'eng'
+                  )[0];
+                  if (engDescription?.description) {
+                    return renderDescription(engDescription.description);
+                  }
+                  const jpnDescription = media?.description?.filter(
+                    (desc) => desc.language === 'jpn'
+                  )[0];
+                  if (jpnDescription?.description) {
+                    return renderDescription(jpnDescription.description);
+                  }
+                })()}
               </div>
             </div>
           </div>

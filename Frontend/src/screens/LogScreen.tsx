@@ -336,6 +336,15 @@ function LogScreen() {
           handleInputChange('volumes', group.volumes);
         }
       }
+
+      // For movies, auto-populate time from runtime
+      if (logData.type === 'movie' && group.runtime) {
+        const totalMinutes = group.runtime;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        handleInputChange('hours', hours);
+        handleInputChange('minutes', minutes);
+      }
     }
 
     setIsSuggestionsOpen(false);
@@ -746,15 +755,20 @@ function LogScreen() {
                         </div>
                       )}
 
-                      {['vn', 'video', 'reading', 'audio', 'manga'].includes(
-                        logData.type || ''
-                      ) && (
+                      {[
+                        'vn',
+                        'video',
+                        'reading',
+                        'audio',
+                        'manga',
+                        'movie',
+                      ].includes(logData.type || '') && (
                         <div className="form-control">
                           <label className="label">
                             <span className="label-text font-medium">
                               Time Spent
                             </span>
-                            {['video', 'audio'].includes(
+                            {['video', 'audio', 'movie'].includes(
                               logData.type || ''
                             ) && (
                               <span className="label-text-alt text-warning">
