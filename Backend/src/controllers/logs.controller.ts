@@ -467,7 +467,6 @@ export async function getUserLogs(
 
     return res.status(200).json(logs);
   } catch (error) {
-    console.error('Error in getUserLogs:', error);
     return next(error as customError);
   }
 }
@@ -791,7 +790,9 @@ export async function createLog(
 
     if (mediaId) {
       logMedia = await MediaBase.findOne({ contentId: mediaId, type });
-      createMedia = false;
+      if (logMedia) {
+        createMedia = false;
+      }
     }
 
     if (type === 'video' && createMedia && mediaData) {
@@ -819,7 +820,7 @@ export async function createLog(
       mediaId &&
       mediaData
     ) {
-      await MediaBase.create({
+      const createdMedia = await MediaBase.create({
         contentId: mediaId,
         title: {
           contentTitleNative: mediaData.contentTitleNative,
@@ -839,6 +840,8 @@ export async function createLog(
           ? [{ description: mediaData.description, language: 'eng' }]
           : undefined,
       });
+
+      logMedia = createdMedia;
     }
 
     if (!logMedia && createMedia) {
