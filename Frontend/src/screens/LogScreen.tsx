@@ -31,12 +31,15 @@ interface logDataType {
   titleRomaji: string;
   titleEnglish: string;
   description: string;
-  mediaDescription: string;
+  mediaDescription: {
+    description: string;
+    language: 'eng' | 'jpn' | 'spa';
+  }[];
   mediaName: string;
   mediaId: string;
   episodes: number;
   duration: number;
-  customDuration?: number; // User-editable episode duration
+  customDuration?: number;
   synonyms: string[];
   isAdult: boolean;
   watchedEpisodes: number;
@@ -54,9 +57,7 @@ interface logDataType {
   img: undefined | string;
   cover: undefined | string;
   date: Date | undefined;
-  // Movie specific fields
   runtime?: number;
-  // YouTube specific fields
   youtubeChannelInfo: youtubeChannelInfo | null;
 }
 
@@ -67,7 +68,12 @@ function LogScreen() {
     titleRomaji: '',
     titleEnglish: '',
     description: '',
-    mediaDescription: '',
+    mediaDescription: [
+      {
+        description: '',
+        language: 'eng',
+      },
+    ],
     mediaName: '',
     mediaId: '',
     episodes: 0,
@@ -109,7 +115,6 @@ function LogScreen() {
   const suggestionRef = useRef<HTMLDivElement>(null);
   const { user, setUser } = useUserDataStore();
 
-  // Use search hook for all types (it will handle YouTube vs AniList internally)
   const {
     data: searchResult,
     error: searchError,
@@ -142,7 +147,12 @@ function LogScreen() {
         titleRomaji: '',
         titleEnglish: '',
         description: '',
-        mediaDescription: '',
+        mediaDescription: [
+          {
+            description: '',
+            language: 'eng',
+          },
+        ],
         mediaName: '',
         mediaId: '',
         episodes: 0,
@@ -254,6 +264,7 @@ function LogScreen() {
       | string[]
       | undefined
       | youtubeChannelInfo
+      | IMediaDocument['description']
   ) => {
     setLogData((prev) => ({ ...prev, [field]: value }));
   };
@@ -314,6 +325,12 @@ function LogScreen() {
       handleInputChange('cover', group.coverImage);
       handleInputChange('description', group.title.contentTitleNative);
       handleInputChange('isAdult', group.isAdult);
+      handleInputChange(
+        'mediaDescription',
+        group.description
+          ? group.description
+          : [{ description: '', language: 'eng' }]
+      );
 
       // For anime, store additional episode information
       if (logData.type === 'anime') {

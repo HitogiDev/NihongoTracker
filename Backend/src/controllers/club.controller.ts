@@ -527,8 +527,15 @@ export async function addClubMedia(
 ): Promise<Response | void> {
   try {
     const { clubId } = req.params;
-    const { mediaId, mediaType, title, description, startDate, endDate } =
-      req.body;
+    const {
+      mediaId,
+      mediaType,
+      title,
+      description,
+      startDate,
+      endDate,
+      mediaData,
+    } = req.body;
     const userId = res.locals.user._id;
 
     if (!Types.ObjectId.isValid(clubId)) {
@@ -551,6 +558,78 @@ export async function addClubMedia(
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can add media' });
+    }
+
+    // Check if media exists in MediaBase and create it if it doesn't
+    let existingMedia = null;
+    let createMedia = true;
+
+    if (mediaId) {
+      existingMedia = await MediaBase.findOne({
+        contentId: mediaId,
+        type: mediaType,
+      });
+      if (existingMedia) {
+        createMedia = false;
+      }
+    }
+
+    // Create media if it doesn't exist and we have media data
+    if (createMedia && mediaData && mediaId) {
+      if (mediaType === 'video' && mediaData.youtubeChannelInfo) {
+        // Handle YouTube video media creation
+        const channelMedia = await MediaBase.create({
+          contentId: mediaData.youtubeChannelInfo.channelId,
+          title: {
+            contentTitleNative: mediaData.youtubeChannelInfo.channelTitle,
+            contentTitleEnglish: mediaData.youtubeChannelInfo.channelTitle,
+          },
+          contentImage: mediaData.youtubeChannelInfo.channelImage,
+          coverImage: mediaData.youtubeChannelInfo.channelImage,
+          description: [
+            {
+              description:
+                mediaData.youtubeChannelInfo.channelDescription || '',
+              language: 'eng',
+            },
+          ],
+          type: 'video',
+          isAdult: false,
+        });
+        existingMedia = channelMedia;
+      } else if (mediaType !== 'audio' && mediaType !== 'other') {
+        // Handle regular AniList content
+        const createdMedia = await MediaBase.create({
+          contentId: mediaId,
+          title: {
+            contentTitleNative: mediaData.contentTitleNative || title,
+            contentTitleEnglish: mediaData.contentTitleEnglish || '',
+            contentTitleRomaji: mediaData.contentTitleRomaji || '',
+          },
+          contentImage: mediaData.contentImage,
+          episodes: mediaData.episodes,
+          episodeDuration: mediaData.episodeDuration,
+          runtime: mediaData.runtime,
+          synonyms: mediaData.synonyms || [],
+          chapters: mediaData.chapters,
+          volumes: mediaData.volumes,
+          isAdult: mediaData.isAdult || false,
+          coverImage: mediaData.coverImage,
+          type: mediaType,
+          description: mediaData.description || [
+            { description: '', language: 'eng' },
+          ],
+        });
+        existingMedia = createdMedia;
+      }
+    }
+
+    // If we still don't have media, try one more search
+    if (!existingMedia && mediaId) {
+      existingMedia = await MediaBase.findOne({
+        contentId: mediaId,
+        type: mediaType,
+      });
     }
 
     const newMedia = {

@@ -144,6 +144,8 @@ function ClubDetailScreen() {
     description: '',
     startDate: '',
     endDate: '',
+    // Add media data for creation if media doesn't exist
+    mediaData: undefined as Partial<IMediaDocument> | undefined,
   });
 
   // Search state for media autocomplete
@@ -175,6 +177,7 @@ function ClubDetailScreen() {
         description: '',
         startDate: '',
         endDate: '',
+        mediaData: undefined,
       });
       // Reset search state
       setSearchQuery('');
@@ -269,6 +272,23 @@ function ClubDetailScreen() {
       mediaId: result.contentId,
       title,
       description: cleanDescription ? cleanDescription + '...' : '',
+      // Store full media data for potential creation
+      mediaData: {
+        contentId: result.contentId,
+        contentTitleNative: result.title.contentTitleNative,
+        contentTitleEnglish: result.title.contentTitleEnglish,
+        contentTitleRomaji: result.title.contentTitleRomaji,
+        contentImage: result.contentImage,
+        coverImage: result.coverImage,
+        episodes: result.episodes,
+        episodeDuration: result.episodeDuration,
+        runtime: result.runtime,
+        chapters: result.chapters,
+        volumes: result.volumes,
+        isAdult: result.isAdult,
+        description: result.description,
+        synonyms: result.synonyms,
+      },
     }));
     setSearchQuery(title);
     setShowResults(false);
@@ -289,6 +309,15 @@ function ClubDetailScreen() {
     setIsAddMediaModalOpen(false);
     setSearchQuery('');
     setShowResults(false);
+    setMediaForm({
+      mediaId: '',
+      mediaType: 'anime',
+      title: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      mediaData: undefined,
+    });
   };
 
   const getMediaTypeIcon = (type: string) => {

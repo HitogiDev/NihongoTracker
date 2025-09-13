@@ -18,7 +18,6 @@ import {
   getClubReviews,
   editReview,
   toggleReviewLike,
-  // voteClubMedia, // Removed - votes only for candidate selection process
   createMediaVoting,
   editMediaVoting,
   deleteMediaVoting,
@@ -66,7 +65,6 @@ router.get('/:clubId/media', getClubMedia); // Get club media
 router.get('/:clubId/media/:mediaId/logs', getClubMediaLogs); // Get club member logs for specific media
 router.get('/:clubId/media/:mediaId/rankings', getClubMediaRankings); // Get club member rankings for specific media
 router.get('/:clubId/media/:mediaId/stats', getClubMediaStats); // Get club media statistics
-// router.post('/:clubId/media/:mediaId/vote', voteClubMedia); // Vote for media selection (removed - votes only for selection process)
 
 // Club Reviews routes
 router.post('/:clubId/media/:mediaId/reviews', addClubReview); // Add review for club media

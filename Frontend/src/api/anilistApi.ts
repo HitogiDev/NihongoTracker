@@ -102,7 +102,6 @@ export async function searchAnilist(
     }),
     isAdult: media.isAdult,
   })) as IMediaDocument[];
-
   return media;
 }
 

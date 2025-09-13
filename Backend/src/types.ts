@@ -191,7 +191,10 @@ export interface IContentMedia {
   contentTitleNative: string;
   contentTitleRomaji?: string;
   contentTitleEnglish: string;
-  description?: string;
+  description?: {
+    description: string;
+    language: 'eng' | 'jpn' | 'spa';
+  }[];
   type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie';
   episodes?: number;
   episodeDuration?: number;

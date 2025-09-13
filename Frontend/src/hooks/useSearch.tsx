@@ -26,13 +26,11 @@ export default function useSearch(
     };
   }, [search]);
 
-  // Find the description in the preferred language order
   const getDescription = (
     descriptions: MediaDescription[] | undefined
   ): string => {
     if (!descriptions || descriptions.length === 0) return '';
 
-    // Try English first, then Japanese, then Spanish, then first available
     const preferredLanguages = ['eng', 'jpn', 'spa'];
 
     for (const lang of preferredLanguages) {
@@ -46,10 +44,8 @@ export default function useSearch(
   return useQuery<IMediaDocument[] | undefined, Error>({
     queryKey: ['searchMedia', debouncedSearch, type, page, perPage, ids],
     queryFn: async () => {
-      // Only proceed if we have a search term and a valid type
       if (!debouncedSearch.trim() || !type) return [];
 
-      // Handle YouTube search for video type
       if (type === 'video') {
         const isYouTubeUrl =
           /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)/.test(

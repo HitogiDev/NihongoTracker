@@ -9,6 +9,7 @@ import {
   IClubMediaVoting,
   IClubMediaCandidate,
   ILog,
+  IMediaDocument,
 } from '../types';
 
 // Get all clubs with filtering and pagination
@@ -131,6 +132,7 @@ export async function addClubMediaFn(
     description?: string;
     startDate: string;
     endDate: string;
+    mediaData?: Partial<IMediaDocument>; // Media creation data
   }
 ): Promise<{ message: string; media: IClubMedia }> {
   const { data } = await axiosInstance.post<{
@@ -151,23 +153,6 @@ export async function getClubMediaFn(
   );
   return data;
 }
-
-// Vote for club media - REMOVED
-// This functionality has been removed since club media voting is now only for candidate selection
-// Comments/reviews are handled through the dedicated review system
-/*
-export async function voteClubMediaFn(
-  clubId: string,
-  mediaId: string,
-  vote: number
-): Promise<{ message: string }> {
-  const { data } = await axiosInstance.post<{ message: string }>(
-    `/clubs/${clubId}/media/${mediaId}/vote`,
-    { vote }
-  );
-  return data;
-}
-*/
 
 // Club Review Functions
 

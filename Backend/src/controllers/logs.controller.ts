@@ -794,7 +794,7 @@ export async function createLog(
         createMedia = false;
       }
     }
-
+    console.log(mediaData);
     if (type === 'video' && createMedia && mediaData) {
       const channelMedia = await MediaBase.create({
         contentId: mediaData.channelId,
@@ -836,9 +836,7 @@ export async function createLog(
         isAdult: mediaData.isAdult,
         coverImage: mediaData.coverImage,
         type,
-        description: mediaData.description
-          ? [{ description: mediaData.description, language: 'eng' }]
-          : undefined,
+        description: mediaData.description ? mediaData.description : undefined,
       });
 
       logMedia = createdMedia;
