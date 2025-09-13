@@ -4,6 +4,7 @@ build
 .eslintrc.json
 .prettierrc
 Planning.md
+Changelog.md
 
 # Logs
 logs

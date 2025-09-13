@@ -113,6 +113,7 @@ export default function ClubMediaInfo() {
   };
 
   const typeSpecificStats = getMediaTypeSpecificStats();
+  const mediaType = mediaStats?.mediaInfo.mediaType;
 
   // Helper function to determine if consumption period is greater than 30 days
   const isConsumptionPeriodLongerThanMonth = () => {
@@ -232,70 +233,143 @@ export default function ClubMediaInfo() {
           </div>
         )}
 
-        {/* Recent Activity */}
+        {/* Activity Overview */}
         {mediaStats && (
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body">
-              <h3 className="card-title mb-4">Recent Activity</h3>
-              <div
-                className={`grid grid-cols-1 ${isConsumptionPeriodLongerThanMonth() ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}
-              >
-                {/* This Week */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70">
-                    This Week
+              <h3 className="card-title mb-4">Your Activity Overview</h3>
+
+              {/* This Week Stats - Horizontal Layout */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
+                  This Week
+                </h4>
+                <div className="stats stats-horizontal shadow w-full">
+                  <div className="stat">
+                    <div className="stat-figure text-primary">
+                      <MdLibraryBooks className="w-6 h-6" />
+                    </div>
+                    <div className="stat-title">Logs</div>
+                    <div className="stat-value text-primary">
+                      {mediaStats.thisWeek.logs}
+                    </div>
+                    <div className="stat-desc">New entries</div>
+                  </div>
+
+                  <div className="stat">
+                    <div className="stat-figure text-secondary">
+                      <MdPeople className="w-6 h-6" />
+                    </div>
+                    <div className="stat-title">Active Members</div>
+                    <div className="stat-value text-secondary">
+                      {mediaStats.thisWeek.activeMembers}
+                    </div>
+                    <div className="stat-desc">Contributing</div>
+                  </div>
+
+                  <div className="stat">
+                    <div className="stat-figure text-accent">
+                      <MdStars className="w-6 h-6" />
+                    </div>
+                    <div className="stat-title">XP Earned</div>
+                    <div className="stat-value text-accent">
+                      {mediaStats.thisWeek.xp.toLocaleString()}
+                    </div>
+                    <div className="stat-desc">Experience points</div>
+                  </div>
+
+                  {typeSpecificStats && (
+                    <div className="stat">
+                      <div className="stat-figure text-warning">
+                        <typeSpecificStats.primary.icon className="w-6 h-6" />
+                      </div>
+                      <div className="stat-title">
+                        {typeSpecificStats.primary.label}
+                      </div>
+                      <div className="stat-value text-warning">
+                        {(mediaType === 'anime'
+                          ? mediaStats.thisWeek.episodes
+                          : mediaType === 'manga'
+                            ? mediaStats.thisWeek.pages
+                            : mediaType === 'reading' || mediaType === 'vn'
+                              ? mediaStats.thisWeek.characters
+                              : Math.round(
+                                  (mediaStats.thisWeek.minutes / 60) * 100
+                                ) / 100
+                        ).toLocaleString()}
+                      </div>
+                      <div className="stat-desc">This week</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* This Month Stats - Only show if consumption period > 30 days */}
+              {isConsumptionPeriodLongerThanMonth() && (
+                <div>
+                  <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
+                    This Month
                   </h4>
-                  <div className="stats stats-vertical shadow">
-                    <div className="stat py-2">
-                      <div className="stat-title text-xs">Logs</div>
-                      <div className="stat-value text-lg">
-                        {mediaStats.thisWeek.logs}
+                  <div className="stats stats-horizontal shadow w-full">
+                    <div className="stat">
+                      <div className="stat-figure text-primary">
+                        <MdLibraryBooks className="w-6 h-6" />
                       </div>
-                    </div>
-                    <div className="stat py-2">
-                      <div className="stat-title text-xs">Active Members</div>
-                      <div className="stat-value text-lg">
-                        {mediaStats.thisWeek.activeMembers}
+                      <div className="stat-title">Logs</div>
+                      <div className="stat-value text-primary">
+                        {mediaStats.thisMonth.logs}
                       </div>
+                      <div className="stat-desc">New entries</div>
                     </div>
-                    <div className="stat py-2">
-                      <div className="stat-title text-xs">XP Earned</div>
-                      <div className="stat-value text-lg">
-                        {mediaStats.thisWeek.xp}
+
+                    <div className="stat">
+                      <div className="stat-figure text-secondary">
+                        <MdPeople className="w-6 h-6" />
                       </div>
+                      <div className="stat-title">Active Members</div>
+                      <div className="stat-value text-secondary">
+                        {mediaStats.thisMonth.activeMembers}
+                      </div>
+                      <div className="stat-desc">Contributing</div>
                     </div>
+
+                    <div className="stat">
+                      <div className="stat-figure text-accent">
+                        <MdStars className="w-6 h-6" />
+                      </div>
+                      <div className="stat-title">XP Earned</div>
+                      <div className="stat-value text-accent">
+                        {mediaStats.thisMonth.xp.toLocaleString()}
+                      </div>
+                      <div className="stat-desc">Experience points</div>
+                    </div>
+
+                    {typeSpecificStats && (
+                      <div className="stat">
+                        <div className="stat-figure text-warning">
+                          <typeSpecificStats.primary.icon className="w-6 h-6" />
+                        </div>
+                        <div className="stat-title">
+                          {typeSpecificStats.primary.label}
+                        </div>
+                        <div className="stat-value text-warning">
+                          {(mediaType === 'anime'
+                            ? mediaStats.thisMonth.episodes
+                            : mediaType === 'manga'
+                              ? mediaStats.thisMonth.pages
+                              : mediaType === 'reading' || mediaType === 'vn'
+                                ? mediaStats.thisMonth.characters
+                                : Math.round(
+                                    (mediaStats.thisMonth.minutes / 60) * 100
+                                  ) / 100
+                          ).toLocaleString()}
+                        </div>
+                        <div className="stat-desc">This month</div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* This Month - Only show if consumption period > 30 days */}
-                {isConsumptionPeriodLongerThanMonth() && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70">
-                      This Month
-                    </h4>
-                    <div className="stats stats-vertical shadow">
-                      <div className="stat py-2">
-                        <div className="stat-title text-xs">Logs</div>
-                        <div className="stat-value text-lg">
-                          {mediaStats.thisMonth.logs}
-                        </div>
-                      </div>
-                      <div className="stat py-2">
-                        <div className="stat-title text-xs">Active Members</div>
-                        <div className="stat-value text-lg">
-                          {mediaStats.thisMonth.activeMembers}
-                        </div>
-                      </div>
-                      <div className="stat py-2">
-                        <div className="stat-title text-xs">XP Earned</div>
-                        <div className="stat-value text-lg">
-                          {mediaStats.thisMonth.xp}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
         )}
