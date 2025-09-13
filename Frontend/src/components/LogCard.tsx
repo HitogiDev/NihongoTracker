@@ -358,8 +358,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           text: `I logged "${logTitle}" and thought you might want to create a similar log!`,
           url: shareUrl,
         })
-        .catch((error) => {
-          console.log('Error sharing:', error);
+        .catch(() => {
           // Fallback to clipboard
           copyToClipboard(shareUrl);
         });

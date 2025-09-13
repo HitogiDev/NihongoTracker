@@ -367,15 +367,6 @@ function SettingsScreen() {
       bannerImgRef.current &&
       bannerPreviewCanvasRef.current
     ) {
-      // Verify aspect ratio before processing
-      const aspectRatio =
-        completedBannerCrop.width / completedBannerCrop.height;
-      console.log(
-        'Banner crop aspect ratio:',
-        aspectRatio,
-        'Expected: 2.33...'
-      ); // 21/9 ≈ 2.33
-
       await canvasPreview(
         bannerImgRef.current,
         bannerPreviewCanvasRef.current,

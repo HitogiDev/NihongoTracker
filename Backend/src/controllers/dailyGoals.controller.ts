@@ -14,7 +14,6 @@ export async function getDailyGoals(
 ) {
   try {
     const { username } = req.params;
-    console.log('Fetching daily goals for user:', username);
     if (!username) {
       throw new customError('Username is required', 400);
     }

@@ -166,9 +166,6 @@ export async function createClub(
     const userId = res.locals.user._id;
     let clubData: ICreateClubRequest = req.body;
 
-    console.log('Raw request body:', req.body);
-    console.log('Request files:', req.files);
-
     // Parse JSON-stringified arrays from FormData
     if (typeof clubData.tags === 'string') {
       try {
@@ -188,8 +185,6 @@ export async function createClub(
     if (typeof clubData.isPublic === 'string') {
       clubData.isPublic = clubData.isPublic === 'true';
     }
-
-    console.log('Parsed club data:', clubData);
 
     // Validate required fields
     if (!clubData.name || clubData.name.trim().length === 0) {
@@ -686,28 +681,16 @@ export async function getClubMedia(
     const enhancedMedia = await Promise.all(
       filteredMedia.map(async (media) => {
         try {
-          // Try to find the media document in the database
-          console.log(
-            `Looking for media document: contentId=${media.mediaId}, type=${media.mediaType}`
-          );
           const mediaDocument = await MediaBase.findOne({
             contentId: media.mediaId,
             type: media.mediaType,
           });
-
-          console.log(`Found media document:`, mediaDocument ? 'YES' : 'NO');
-          if (mediaDocument) {
-            console.log(
-              `Image URLs: contentImage=${mediaDocument.contentImage}, coverImage=${mediaDocument.coverImage}`
-            );
-          }
 
           return {
             ...(media as any).toObject(),
             mediaDocument: mediaDocument || null,
           };
         } catch (error) {
-          // If media document not found, return without it
           return {
             ...(media as any).toObject(),
             mediaDocument: null,
@@ -961,7 +944,6 @@ export async function toggleReviewLike(
     }
 
     await review.save();
-    console.log('Updated review likes:', review.likes);
     return res.status(200).json({
       message: isLiked
         ? 'Review unliked successfully'
@@ -1888,22 +1870,6 @@ export async function getClubMediaRankings(
       baseMatch.createdAt = { $gte: new Date(media.startDate) };
     }
 
-    // Aggregate logs to get member statistics for this media
-    console.log(
-      'Rankings - Base match criteria:',
-      JSON.stringify(baseMatch, null, 2)
-    );
-    console.log(
-      'Rankings - Member IDs:',
-      memberIds.map((id) => id.toString())
-    );
-    console.log('Rankings - Media info:', {
-      mediaId: media.mediaId,
-      mediaType: media.mediaType,
-      startDate: media.startDate,
-      period,
-    });
-
     const memberStats = await Log.aggregate([
       {
         $match: baseMatch,
@@ -2063,22 +2029,6 @@ export async function getClubMediaStats(
     if (period === 'consumption') {
       baseMatch.createdAt = { $gte: new Date(media.startDate) };
     }
-
-    // Get total statistics
-    console.log(
-      'Stats - Base match criteria:',
-      JSON.stringify(baseMatch, null, 2)
-    );
-    console.log(
-      'Stats - Member IDs:',
-      memberIds.map((id) => id.toString())
-    );
-    console.log('Stats - Media info:', {
-      mediaId: media.mediaId,
-      mediaType: media.mediaType,
-      startDate: media.startDate,
-      period,
-    });
 
     const totalStats = await Log.aggregate([
       { $match: baseMatch },

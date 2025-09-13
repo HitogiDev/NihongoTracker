@@ -49,23 +49,17 @@ export async function getYouTubeVideoInfo(videoUrl: string): Promise<{
   channel: MediaDocument;
 } | null> {
   try {
-    console.log('🔍 Extracting video ID from URL:', videoUrl);
     const videoId = extractVideoId(videoUrl);
-    console.log('📹 Extracted video ID:', videoId);
 
     if (!videoId) {
-      console.log('❌ Failed to extract video ID');
       return null;
     }
 
     const apiKey = process.env.YOUTUBE_API_KEY;
     if (!apiKey) {
-      console.log('❌ YouTube API key not found');
       throw new Error('YouTube API key not configured');
     }
-    console.log('✅ YouTube API key found');
 
-    console.log('🌐 Making YouTube API request for video details...');
     const videoResponse = await axios.get(
       `https://www.googleapis.com/youtube/v3/videos`,
       {
@@ -77,14 +71,7 @@ export async function getYouTubeVideoInfo(videoUrl: string): Promise<{
       }
     );
 
-    console.log('📊 YouTube API response status:', videoResponse.status);
-    console.log(
-      '📊 Number of video items returned:',
-      videoResponse.data.items?.length || 0
-    );
-
     if (!videoResponse.data.items?.length) {
-      console.log('❌ No video items found in response');
       return null;
     }
 
@@ -180,31 +167,20 @@ export async function searchYouTubeVideo(
   next: NextFunction
 ) {
   try {
-    console.log('=== YouTube Search Request ===');
-    console.log('Full request URL:', req.url);
-    console.log('Request method:', req.method);
-    console.log('Query parameters:', req.query);
-    console.log('URL parameter:', req.query.url);
-
     const { url } = req.query;
 
     if (!url || typeof url !== 'string') {
-      console.log('❌ URL validation failed:', { url, type: typeof url });
       return res.status(400).json({ message: 'URL is required' });
     }
 
-    console.log('✅ URL validation passed, calling getYouTubeVideoInfo...');
     const result = await getYouTubeVideoInfo(url);
 
     if (!result) {
-      console.log('❌ No result from getYouTubeVideoInfo');
       return res.status(404).json({ message: 'Video not found' });
     }
 
-    console.log('✅ YouTube video found successfully');
     return res.status(200).json(result);
   } catch (error) {
-    console.error('❌ YouTube search error:', error);
     return next(error as customError);
   }
 }

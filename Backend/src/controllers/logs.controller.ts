@@ -794,7 +794,6 @@ export async function createLog(
         createMedia = false;
       }
     }
-    console.log(mediaData);
     if (type === 'video' && createMedia && mediaData) {
       const channelMedia = await MediaBase.create({
         contentId: mediaData.channelId,
