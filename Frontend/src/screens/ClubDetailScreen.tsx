@@ -28,6 +28,8 @@ import {
   getClubMediaFn,
   addClubMediaFn,
 } from '../api/clubApi';
+import useSearch from '../hooks/useSearch';
+import { IMediaDocument } from '../types.d';
 import { useUserDataStore } from '../store/userData';
 import { numberWithCommas } from '../utils/utils';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
@@ -144,6 +146,19 @@ function ClubDetailScreen() {
     endDate: '',
   });
 
+  // Search state for media autocomplete
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
+
+  // Use the search hook for media search
+  const { data: searchResults, isLoading: isSearching } = useSearch(
+    mediaForm.mediaType,
+    searchQuery,
+    undefined,
+    1,
+    10
+  );
+
   // Add media mutation
   const addMediaMutation = useMutation({
     mutationFn: (mediaData: typeof mediaForm) =>
@@ -161,6 +176,9 @@ function ClubDetailScreen() {
         startDate: '',
         endDate: '',
       });
+      // Reset search state
+      setSearchQuery('');
+      setShowResults(false);
     },
     onError: (error: unknown) => {
       let errorMessage = 'Failed to add media';
@@ -231,6 +249,46 @@ function ClubDetailScreen() {
     if (window.confirm('Are you sure you want to leave this club?')) {
       leaveMutation.mutate();
     }
+  };
+
+  // Handle selecting media from search results
+  const handleSelectResult = (result: IMediaDocument) => {
+    const title =
+      result.title.contentTitleEnglish ||
+      result.title.contentTitleRomaji ||
+      result.title.contentTitleNative;
+
+    // Get description from the first available description
+    const description = result.description?.[0]?.description || '';
+    const cleanDescription = description
+      .replace(/<[^>]*>/g, '')
+      .substring(0, 200);
+
+    setMediaForm((prev) => ({
+      ...prev,
+      mediaId: result.contentId,
+      title,
+      description: cleanDescription ? cleanDescription + '...' : '',
+    }));
+    setSearchQuery(title);
+    setShowResults(false);
+  };
+
+  // Handle search input
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.length >= 2) {
+      setShowResults(true);
+    } else {
+      setShowResults(false);
+    }
+  };
+
+  // Handle closing add media modal
+  const handleCloseAddMediaModal = () => {
+    setIsAddMediaModalOpen(false);
+    setSearchQuery('');
+    setShowResults(false);
   };
 
   const getMediaTypeIcon = (type: string) => {
@@ -762,7 +820,7 @@ function ClubDetailScreen() {
               <h3 className="font-bold text-lg">Add New Media</h3>
               <button
                 className="btn btn-ghost btn-sm btn-circle"
-                onClick={() => setIsAddMediaModalOpen(false)}
+                onClick={handleCloseAddMediaModal}
               >
                 <MdClose className="text-lg" />
               </button>
@@ -789,12 +847,15 @@ function ClubDetailScreen() {
                 <select
                   className="select select-bordered w-full"
                   value={mediaForm.mediaType}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setMediaForm({
                       ...mediaForm,
                       mediaType: e.target.value as typeof mediaForm.mediaType,
-                    })
-                  }
+                    });
+                    // Reset search when media type changes
+                    setSearchQuery('');
+                    setShowResults(false);
+                  }}
                 >
                   <option value="anime">Anime</option>
                   <option value="manga">Manga</option>
@@ -805,21 +866,80 @@ function ClubDetailScreen() {
                 </select>
               </div>
 
-              {/* Title */}
-              <div>
+              {/* Title with Search */}
+              <div className="relative">
                 <label className="label">
-                  <span className="label-text">Title *</span>
+                  <span className="label-text">Search for Media</span>
                 </label>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  placeholder="Enter media title"
-                  value={mediaForm.title}
-                  onChange={(e) =>
-                    setMediaForm({ ...mediaForm, title: e.target.value })
-                  }
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder={`Search for ${mediaForm.mediaType}...`}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      handleSearch(e.target.value);
+                    }}
+                  />
+                  {isSearching && (
+                    <span className="loading loading-spinner loading-sm absolute right-3 top-1/2 transform -translate-y-1/2"></span>
+                  )}
+
+                  {/* Search Results - Positioned as absolute popup */}
+                  {showResults && searchResults && searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1">
+                      <div className="card bg-base-100 shadow-xl border border-base-300 max-h-60 overflow-y-auto">
+                        <div className="card-body p-2">
+                          {searchResults.map((result) => (
+                            <div
+                              key={result.contentId}
+                              onClick={() => handleSelectResult(result)}
+                              className="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer rounded"
+                            >
+                              <img
+                                src={result.contentImage || ''}
+                                alt={
+                                  result.title.contentTitleRomaji ||
+                                  result.title.contentTitleNative
+                                }
+                                className="w-12 h-16 object-cover rounded"
+                              />
+                              <div className="flex-1">
+                                <div className="font-medium">
+                                  {result.title.contentTitleEnglish ||
+                                    result.title.contentTitleRomaji ||
+                                    result.title.contentTitleNative}
+                                </div>
+                                <div className="text-sm text-base-content/60">
+                                  {result.type}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="divider">OR</div>
+
+                <div>
+                  <label className="label">
+                    <span className="label-text">Title *</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="Enter title manually"
+                    value={mediaForm.title}
+                    onChange={(e) =>
+                      setMediaForm({ ...mediaForm, title: e.target.value })
+                    }
+                    required
+                  />
+                </div>
               </div>
 
               {/* Media ID (optional for external links) */}
@@ -891,7 +1011,7 @@ function ClubDetailScreen() {
                 <button
                   type="button"
                   className="btn btn-ghost"
-                  onClick={() => setIsAddMediaModalOpen(false)}
+                  onClick={handleCloseAddMediaModal}
                 >
                   Cancel
                 </button>

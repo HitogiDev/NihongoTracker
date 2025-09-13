@@ -608,10 +608,20 @@ export async function getClubMedia(
       filteredMedia.map(async (media) => {
         try {
           // Try to find the media document in the database
+          console.log(
+            `Looking for media document: contentId=${media.mediaId}, type=${media.mediaType}`
+          );
           const mediaDocument = await MediaBase.findOne({
             contentId: media.mediaId,
             type: media.mediaType,
           });
+
+          console.log(`Found media document:`, mediaDocument ? 'YES' : 'NO');
+          if (mediaDocument) {
+            console.log(
+              `Image URLs: contentImage=${mediaDocument.contentImage}, coverImage=${mediaDocument.coverImage}`
+            );
+          }
 
           return {
             ...(media as any).toObject(),
