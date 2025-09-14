@@ -381,39 +381,45 @@ function Hero() {
                       ) : recentLogs.length > 0 ? (
                         recentLogs.map((log) => {
                           const Icon = logTypeIcons[log.type] || MdBook;
+                          const fullTitle =
+                            log.media?.title?.contentTitleNative ||
+                            log.description;
                           return (
                             <div
                               key={log._id}
-                              className="flex items-center justify-between p-3 bg-base-200 rounded-lg"
+                              className="flex items-center justify-between p-3 bg-base-200 rounded-lg gap-3"
                             >
-                              <div className="flex items-center gap-4">
-                                <Icon className="w-6 h-6 text-primary" />
-                                <div>
+                              <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <Icon className="w-6 h-6 text-primary flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
                                   {log.media?.contentId && log.media?.type ? (
-                                    <Link
-                                      to={`/${encodeURIComponent(log.media.type)}/${log.media.contentId}`}
-                                      className="font-semibold text-base-content hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
-                                      title={
-                                        log.media?.title?.contentTitleNative ||
-                                        log.description
-                                      }
+                                    <div
+                                      className="tooltip tooltip-top"
+                                      data-tip={fullTitle}
                                     >
-                                      {log.media?.title?.contentTitleNative ||
-                                        log.description}
-                                    </Link>
+                                      <Link
+                                        to={`/${encodeURIComponent(log.media.type)}/${log.media.contentId}`}
+                                        className="font-semibold text-base-content hover:text-primary transition-colors duration-200 no-underline hover:no-underline block truncate"
+                                      >
+                                        {fullTitle}
+                                      </Link>
+                                    </div>
                                   ) : (
-                                    <p className="font-semibold">
-                                      {log.media?.title?.contentTitleNative
-                                        ? log.media.title.contentTitleNative
-                                        : log.description}
-                                    </p>
+                                    <div
+                                      className="tooltip tooltip-top"
+                                      data-tip={fullTitle}
+                                    >
+                                      <p className="font-semibold truncate">
+                                        {fullTitle}
+                                      </p>
+                                    </div>
                                   )}
-                                  <p className="text-sm text-base-content/60">
+                                  <p className="text-sm text-base-content/60 truncate">
                                     {log.formattedTime} • {log.formattedDate}
                                   </p>
                                 </div>
                               </div>
-                              <div className="badge badge-outline">
+                              <div className="badge badge-outline flex-shrink-0">
                                 +{log.xp} XP
                               </div>
                             </div>
