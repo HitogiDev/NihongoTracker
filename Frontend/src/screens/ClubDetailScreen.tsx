@@ -6,7 +6,6 @@ import {
   MdGroup,
   MdPublic,
   MdLock,
-  MdStar,
   MdEdit,
   MdPersonAdd,
   MdExitToApp,
@@ -20,6 +19,9 @@ import {
   MdAdd,
   MdClose,
   MdHowToVote,
+  MdLeaderboard,
+  MdInfo,
+  MdPeople,
 } from 'react-icons/md';
 import {
   getClubFn,
@@ -31,9 +33,9 @@ import {
 import useSearch from '../hooks/useSearch';
 import { IMediaDocument } from '../types.d';
 import { useUserDataStore } from '../store/userData';
-import { numberWithCommas } from '../utils/utils';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
+import ClubRankingsTab from '../components/ClubRankingsTab';
 import QuickLog from '../components/QuickLog';
 
 function ClubDetailScreen() {
@@ -125,6 +127,9 @@ function ClubDetailScreen() {
   const [isCreateVotingWizardOpen, setIsCreateVotingWizardOpen] =
     useState(false);
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'media' | 'members' | 'rankings'
+  >('overview');
   const [selectedMedia, setSelectedMedia] = useState<{
     _id: string;
     mediaId: string;
@@ -200,14 +205,6 @@ function ClubDetailScreen() {
       toast.error(errorMessage);
     },
   });
-
-  const levelColor = useMemo(() => {
-    if (!club) return 'text-green-500';
-    if (club.level >= 50) return 'text-purple-500';
-    if (club.level >= 25) return 'text-orange-500';
-    if (club.level >= 10) return 'text-blue-500';
-    return 'text-green-500';
-  }, [club]);
 
   const canManageClub = useMemo(() => {
     return club?.userRole === 'leader' || club?.userRole === 'moderator';
@@ -459,11 +456,6 @@ function ClubDetailScreen() {
               <div className="flex flex-col items-center sm:items-start gap-3 text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <h1 className="text-xl sm:text-2xl font-bold">{club.name}</h1>
-                  <div
-                    className={`badge badge-ghost ${levelColor} font-semibold`}
-                  >
-                    Lv. {club.level}
-                  </div>
                 </div>
 
                 {/* Stats */}
@@ -473,10 +465,6 @@ function ClubDetailScreen() {
                     <span>
                       {club.memberCount}/{club.memberLimit} members
                     </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MdStar className="text-base text-yellow-500" />
-                    <span>{numberWithCommas(club.totalXp)} XP</span>
                   </div>
                 </div>
               </div>
@@ -567,34 +555,115 @@ function ClubDetailScreen() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Club Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
-            {club.description && (
+        {/* Tab Navigation */}
+        <div className="tabs tabs-boxed mb-8 w-fit mx-auto">
+          <button
+            className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            <MdInfo className="mr-2" />
+            Overview
+          </button>
+          <button
+            className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('media')}
+          >
+            <MdPlayArrow className="mr-2" />
+            Media
+          </button>
+          <button
+            className={`tab ${activeTab === 'members' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('members')}
+          >
+            <MdPeople className="mr-2" />
+            Members
+          </button>
+          <button
+            className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('rankings')}
+          >
+            <MdLeaderboard className="mr-2" />
+            Rankings
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Club Info */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Description */}
+              {club.description && (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-4">About</h2>
+                    <p className="text-base-content/80 whitespace-pre-wrap">
+                      {club.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Rules */}
+              {club.rules && (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-4">Rules</h2>
+                    <p className="text-base-content/80 whitespace-pre-wrap">
+                      {club.rules}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Media Voting Section */}
               <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
-                  <h2 className="card-title text-lg mb-4">About</h2>
-                  <p className="text-base-content/80 whitespace-pre-wrap">
-                    {club.description}
-                  </p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="card-title text-lg flex items-center gap-2">
+                      <MdHowToVote className="text-xl" />
+                      Media Voting
+                    </h2>
+                    {canManageClub && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setIsCreateVotingWizardOpen(true)}
+                      >
+                        <MdAdd className="text-lg" />
+                        <span className="hidden sm:inline">Create Voting</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <VotingSystem club={club} canManageVoting={canManageClub} />
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Rules */}
-            {club.rules && (
-              <div className="card bg-base-100 shadow-sm">
-                <div className="card-body">
-                  <h2 className="card-title text-lg mb-4">Rules</h2>
-                  <p className="text-base-content/80 whitespace-pre-wrap">
-                    {club.rules}
-                  </p>
+            {/* Right Column - Tags */}
+            <div className="space-y-6">
+              {/* Tags */}
+              {club.tags && club.tags.length > 0 && (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-4">Tags</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {club.tags.map((tag) => (
+                        <span key={tag} className="badge badge-outline">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          </div>
+        )}
 
-            {/* Club Media Section */}
+        {/* Media Tab */}
+        {activeTab === 'media' && (
+          <div className="max-w-6xl mx-auto">
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
@@ -738,56 +807,18 @@ function ClubDetailScreen() {
                 )}
               </div>
             </div>
-
-            {/* Media Voting Section */}
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="card-title text-lg flex items-center gap-2">
-                    <MdHowToVote className="text-xl" />
-                    Media Voting
-                  </h2>
-                  {canManageClub && (
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => setIsCreateVotingWizardOpen(true)}
-                    >
-                      <MdAdd className="text-lg" />
-                      <span className="hidden sm:inline">Create Voting</span>
-                    </button>
-                  )}
-                </div>
-
-                <VotingSystem club={club} canManageVoting={canManageClub} />
-              </div>
-            </div>
           </div>
+        )}
 
-          {/* Right Column - Members & Tags */}
-          <div className="space-y-6">
-            {/* Tags */}
-            {club.tags && club.tags.length > 0 && (
-              <div className="card bg-base-100 shadow-sm">
-                <div className="card-body">
-                  <h2 className="card-title text-lg mb-4">Tags</h2>
-                  <div className="flex flex-wrap gap-2">
-                    {club.tags.map((tag) => (
-                      <span key={tag} className="badge badge-outline">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Members */}
+        {/* Members Tab */}
+        {activeTab === 'members' && (
+          <div className="max-w-4xl mx-auto">
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4">
                   Members ({club.memberCount})
                 </h2>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {club.members
                     .filter((member) => member.status === 'active')
                     .sort((a, b) => {
@@ -798,38 +829,46 @@ function ClubDetailScreen() {
                     .map((member, index) => (
                       <div
                         key={member.user._id || index}
-                        className="flex items-center gap-3"
+                        className="card bg-base-100 border border-base-300 shadow-sm"
                       >
-                        <div className="avatar">
-                          <div className="w-10 h-10 rounded-full">
-                            {member.user.avatar ? (
-                              <img
-                                src={member.user.avatar}
-                                alt={member.user.username}
-                                className="rounded-full w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-primary font-semibold">
-                                  {member.user.username.charAt(0).toUpperCase()}
+                        <div className="card-body p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="avatar">
+                              <div className="w-12 h-12 rounded-full">
+                                {member.user.avatar ? (
+                                  <img
+                                    src={member.user.avatar}
+                                    alt={member.user.username}
+                                    className="rounded-full w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-primary font-semibold">
+                                      {member.user.username
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  {member.user.username}
+                                </span>
+                                {getRoleIcon(member.role)}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                {getRoleBadge(member.role)}
+                                <span className="text-xs text-base-content/70">
+                                  Joined{' '}
+                                  {new Date(
+                                    member.joinedAt
+                                  ).toLocaleDateString()}
                                 </span>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              {member.user.username}
-                            </span>
-                            {getRoleIcon(member.role)}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {getRoleBadge(member.role)}
-                            <span className="text-xs text-base-content/70">
-                              Joined{' '}
-                              {new Date(member.joinedAt).toLocaleDateString()}
-                            </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -838,7 +877,12 @@ function ClubDetailScreen() {
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Rankings Tab */}
+        {activeTab === 'rankings' && clubId && (
+          <ClubRankingsTab clubId={clubId} />
+        )}
       </div>
 
       {/* Add Media Modal */}

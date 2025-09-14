@@ -13,6 +13,7 @@ import {
   getClubMedia,
   getClubMediaLogs,
   getClubMediaRankings,
+  getClubMemberRankings,
   getClubMediaStats,
   addClubReview,
   getClubReviews,
@@ -65,6 +66,9 @@ router.get('/:clubId/media', getClubMedia); // Get club media
 router.get('/:clubId/media/:mediaId/logs', getClubMediaLogs); // Get club member logs for specific media
 router.get('/:clubId/media/:mediaId/rankings', getClubMediaRankings); // Get club member rankings for specific media
 router.get('/:clubId/media/:mediaId/stats', getClubMediaStats); // Get club media statistics
+
+// Club Rankings routes
+router.get('/:clubId/rankings', getClubMemberRankings); // Get club member rankings (overall)
 
 // Club Reviews routes
 router.post('/:clubId/media/:mediaId/reviews', addClubReview); // Add review for club media

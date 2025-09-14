@@ -499,3 +499,43 @@ export async function getClubMediaStatsFn(
   );
   return data;
 }
+
+// Get club member rankings (overall)
+export async function getClubMemberRankingsFn(
+  clubId: string,
+  params: {
+    sortBy?: 'totalXp' | 'totalLogs' | 'totalTime' | 'level';
+    period?: 'week' | 'month' | 'all-time';
+    limit?: number;
+    page?: number;
+  } = {}
+): Promise<{
+  rankings: Array<{
+    user: {
+      _id: string;
+      username: string;
+      avatar?: string;
+      stats: {
+        userLevel: number;
+        userXp: number;
+      };
+    };
+    totalLogs: number;
+    totalXp: number;
+    totalTime: number; // in minutes
+    totalHours: number; // calculated field
+    rank: number;
+    joinDate: string;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const { data } = await axiosInstance.get(`/clubs/${clubId}/rankings`, {
+    params,
+  });
+  return data;
+}

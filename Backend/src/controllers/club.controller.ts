@@ -2270,3 +2270,192 @@ export async function getClubMediaStats(
     return next(error as customError);
   }
 }
+
+// Get club member rankings (overall, not media-specific)
+export async function getClubMemberRankings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const {
+      sortBy = 'totalXp',
+      period = 'all-time',
+      limit = 50,
+      page = 1,
+    } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId).populate(
+      'members.user',
+      'username avatar stats'
+    );
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Get club member user IDs
+    const activeMembers = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => ({
+        userId: typeof member.user === 'object' ? member.user._id : member.user,
+        joinDate: member.joinedAt,
+        userObj: member.user,
+      }));
+
+    const memberIds = activeMembers.map((m) => m.userId);
+
+    // Create date filter based on period
+    let dateFilter: { createdAt?: { $gte?: Date; $lt?: Date } } = {};
+    const now = new Date();
+
+    if (period === 'week') {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      dateFilter.createdAt = { $gte: startOfWeek };
+    } else if (period === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      dateFilter.createdAt = { $gte: startOfMonth };
+    }
+
+    // Aggregate member stats from logs
+    const memberStats = await Log.aggregate([
+      {
+        $match: {
+          user: { $in: memberIds },
+          ...dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          totalLogs: { $sum: 1 },
+          totalXp: { $sum: { $ifNull: ['$xp', 0] } },
+          totalTime: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$type', 'anime'] },
+                    {
+                      $or: [
+                        { $eq: ['$time', 0] },
+                        { $eq: ['$time', null] },
+                        { $eq: [{ $type: '$time' }, 'missing'] },
+                      ],
+                    },
+                    { $gt: ['$episodes', 0] },
+                  ],
+                },
+                { $multiply: ['$episodes', 24] }, // 24 minutes per episode
+                { $ifNull: ['$time', 0] },
+              ],
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalHours: {
+            $round: [{ $divide: ['$totalTime', 60] }, 1],
+          },
+        },
+      },
+    ]);
+
+    // Create a map for quick lookup
+    const statsMap = new Map();
+    memberStats.forEach((stat) => {
+      statsMap.set(stat._id.toString(), stat);
+    });
+
+    // Build rankings with member info
+    const rankings = activeMembers
+      .map((member) => {
+        const stats = statsMap.get(member.userId.toString()) || {
+          totalLogs: 0,
+          totalXp: 0,
+          totalTime: 0,
+          totalHours: 0,
+        };
+
+        return {
+          user: {
+            _id: member.userId,
+            username: (member.userObj as any)?.username || 'Unknown',
+            avatar: (member.userObj as any)?.avatar,
+            stats: {
+              userLevel: (member.userObj as any)?.stats?.userLevel || 1,
+              userXp: (member.userObj as any)?.stats?.userXp || 0,
+            },
+          },
+          totalLogs: stats.totalLogs,
+          totalXp: stats.totalXp,
+          totalTime: stats.totalTime, // in minutes
+          totalHours: stats.totalHours,
+          rank: 0, // Will be assigned after sorting
+          joinDate: member.joinDate.toISOString(),
+        };
+      })
+      .filter((member) => {
+        // For time-based periods, only include members with activity
+        if (period !== 'all-time') {
+          return member.totalLogs > 0;
+        }
+        return true; // Include all members for all-time
+      });
+
+    // Sort based on selected criteria
+    rankings.sort((a, b) => {
+      let aValue: number;
+      let bValue: number;
+
+      switch (sortBy) {
+        case 'totalLogs':
+          aValue = a.totalLogs;
+          bValue = b.totalLogs;
+          break;
+        case 'totalTime':
+          aValue = a.totalHours;
+          bValue = b.totalHours;
+          break;
+        case 'level':
+          aValue = a.user.stats.userLevel;
+          bValue = b.user.stats.userLevel;
+          break;
+        default: // totalXp
+          aValue = a.totalXp;
+          bValue = b.totalXp;
+          break;
+      }
+
+      return bValue - aValue; // descending order
+    });
+
+    // Assign ranks
+    rankings.forEach((member, index) => {
+      member.rank = index + 1;
+    });
+
+    // Apply pagination
+    const skip = (Number(page) - 1) * Number(limit);
+    const paginatedRankings = rankings.slice(skip, skip + Number(limit));
+
+    return res.status(200).json({
+      rankings: paginatedRankings,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: rankings.length,
+        totalPages: Math.ceil(rankings.length / Number(limit)),
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

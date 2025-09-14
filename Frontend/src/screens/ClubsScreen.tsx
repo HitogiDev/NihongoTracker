@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,14 +7,13 @@ import {
   MdGroup,
   MdPublic,
   MdLock,
-  MdStar,
   MdSort,
   MdFilterList,
+  MdExpandMore,
 } from 'react-icons/md';
 import { getClubsFn } from '../api/clubApi';
 import { IClubResponse } from '../types';
 import { useUserDataStore } from '../store/userData';
-import { numberWithCommas } from '../utils/utils';
 
 function ClubsScreen() {
   const navigate = useNavigate();
@@ -22,7 +21,7 @@ function ClubsScreen() {
 
   // Search and filter states
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('totalXp');
+  const [sortBy, setSortBy] = useState('memberCount');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showPublicOnly, setShowPublicOnly] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -77,8 +76,6 @@ function ClubsScreen() {
   };
 
   const sortOptions = [
-    { value: 'totalXp', label: 'Total XP' },
-    { value: 'level', label: 'Level' },
     { value: 'memberCount', label: 'Members' },
     { value: 'createdAt', label: 'Newest' },
     { value: 'name', label: 'Name' },
@@ -163,20 +160,41 @@ function ClubsScreen() {
                   <MdSort className="text-lg" />
                   Sort By
                 </h3>
-                <select
-                  className="select select-bordered w-full"
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setPage(1);
-                  }}
-                >
-                  {sortOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="dropdown w-full">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="btn btn-outline w-full justify-between"
+                  >
+                    <span>
+                      {sortOptions.find((opt) => opt.value === sortBy)?.label ||
+                        'Members'}
+                    </span>
+                    <MdExpandMore className="text-lg" />
+                  </div>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-full border border-base-300"
+                  >
+                    {sortOptions.map((option) => (
+                      <li key={option.value}>
+                        <button
+                          className={`text-left ${
+                            sortBy === option.value
+                              ? 'active bg-primary text-primary-content'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            setSortBy(option.value);
+                            setPage(1);
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 <div className="mt-2">
                   <label className="label cursor-pointer">
                     <span className="label-text">Descending</span>
@@ -308,13 +326,6 @@ function ClubsScreen() {
 function ClubCard({ club }: { club: IClubResponse }) {
   const navigate = useNavigate();
 
-  const levelColor = useMemo(() => {
-    if (club.level >= 50) return 'text-purple-500';
-    if (club.level >= 25) return 'text-orange-500';
-    if (club.level >= 10) return 'text-blue-500';
-    return 'text-green-500';
-  }, [club.level]);
-
   return (
     <div
       className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-base-300 hover:border-primary/30"
@@ -364,14 +375,9 @@ function ClubCard({ club }: { club: IClubResponse }) {
             </div>
           </div>
         </div>
-        {/* Club Name and Level */}
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="card-title text-lg font-bold truncate pr-2">
-            {club.name}
-          </h3>
-          <div className={`badge badge-ghost ${levelColor} font-semibold`}>
-            Lv. {club.level}
-          </div>
+        {/* Club Name */}
+        <div className="mb-3">
+          <h3 className="card-title text-lg font-bold truncate">{club.name}</h3>
         </div>
 
         {/* Description */}
@@ -382,16 +388,12 @@ function ClubCard({ club }: { club: IClubResponse }) {
         )}
 
         {/* Stats */}
-        <div className="flex items-center justify-between text-sm text-base-content/70 mb-4">
+        <div className="flex items-center text-sm text-base-content/70 mb-4">
           <div className="flex items-center gap-1">
             <MdGroup className="text-base" />
             <span>
-              {club.memberCount}/{club.memberLimit}
+              {club.memberCount}/{club.memberLimit} members
             </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <MdStar className="text-base text-yellow-500" />
-            <span>{numberWithCommas(club.totalXp)} XP</span>
           </div>
         </div>
 
