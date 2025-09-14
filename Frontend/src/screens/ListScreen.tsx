@@ -332,8 +332,9 @@ function ListScreen() {
         <div className="container mx-auto px-4 mt-4 relative z-10">
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body p-6">
-              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                <div className="flex-1 max-w-md">
+              <div className="flex flex-col gap-4">
+                {/* Search Bar */}
+                <div className="w-full">
                   <label className="input input-bordered flex items-center gap-2">
                     <MdSearch className="w-5 h-5 opacity-70" />
                     <input
@@ -346,99 +347,108 @@ function ListScreen() {
                   </label>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <div className="dropdown dropdown-end">
-                    <div
-                      tabIndex={0}
-                      role="button"
-                      className="btn btn-outline gap-2"
-                    >
-                      <MdFilterList className="w-4 h-4" />
-                      Filter:{' '}
-                      {selectedFilter === 'all'
-                        ? 'All Types'
-                        : selectedFilter.charAt(0).toUpperCase() +
-                          selectedFilter.slice(1)}
+                {/* Filters Row */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                  {/* Filter and Sort Dropdowns */}
+                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <MdFilterList className="w-4 h-4" />
+                        Filter:{' '}
+                        {selectedFilter === 'all'
+                          ? 'All Types'
+                          : selectedFilter.charAt(0).toUpperCase() +
+                            selectedFilter.slice(1)}
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
+                      >
+                        {[
+                          { value: 'all', label: 'All Types' },
+                          { value: 'anime', label: 'Anime' },
+                          { value: 'manga', label: 'Manga' },
+                          { value: 'reading', label: 'Reading' },
+                          { value: 'vn', label: 'Visual Novels' },
+                          { value: 'video', label: 'Video' },
+                          { value: 'movie', label: 'Movies' },
+                          { value: 'tv show', label: 'TV Shows' },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <button
+                              className={
+                                selectedFilter === option.value ? 'active' : ''
+                              }
+                              onClick={() =>
+                                setSelectedFilter(option.value as FilterOption)
+                              }
+                            >
+                              {option.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul
-                      tabIndex={0}
-                      className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-52"
-                    >
-                      {[
-                        { value: 'all', label: 'All Types' },
-                        { value: 'anime', label: 'Anime' },
-                        { value: 'manga', label: 'Manga' },
-                        { value: 'reading', label: 'Reading' },
-                        { value: 'vn', label: 'Visual Novels' },
-                        { value: 'video', label: 'Video' },
-                        { value: 'movie', label: 'Movies' },
-                        { value: 'tv show', label: 'TV Shows' },
-                      ].map((option) => (
-                        <li key={option.value}>
-                          <button
-                            className={
-                              selectedFilter === option.value ? 'active' : ''
-                            }
-                            onClick={() =>
-                              setSelectedFilter(option.value as FilterOption)
-                            }
-                          >
-                            {option.label}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <MdSort className="w-4 h-4" />
+                        Sort:{' '}
+                        {sortBy === 'title'
+                          ? 'Title'
+                          : sortBy === 'type'
+                            ? 'Type'
+                            : 'Recent'}
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
+                      >
+                        {[
+                          { value: 'title', label: 'By Title (A-Z)' },
+                          { value: 'type', label: 'By Type' },
+                          { value: 'recent', label: 'Recently Added' },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <button
+                              className={
+                                sortBy === option.value ? 'active' : ''
+                              }
+                              onClick={() =>
+                                setSortBy(option.value as SortOption)
+                              }
+                            >
+                              {option.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
 
-                  <div className="dropdown dropdown-end">
-                    <div
-                      tabIndex={0}
-                      role="button"
-                      className="btn btn-outline gap-2"
-                    >
-                      <MdSort className="w-4 h-4" />
-                      Sort:{' '}
-                      {sortBy === 'title'
-                        ? 'Title'
-                        : sortBy === 'type'
-                          ? 'Type'
-                          : 'Recent'}
-                    </div>
-                    <ul
-                      tabIndex={0}
-                      className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-52"
-                    >
-                      {[
-                        { value: 'title', label: 'By Title (A-Z)' },
-                        { value: 'type', label: 'By Type' },
-                        { value: 'recent', label: 'Recently Added' },
-                      ].map((option) => (
-                        <li key={option.value}>
-                          <button
-                            className={sortBy === option.value ? 'active' : ''}
-                            onClick={() =>
-                              setSortBy(option.value as SortOption)
-                            }
-                          >
-                            {option.label}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="join">
+                  {/* View Mode Toggle */}
+                  <div className="join w-full sm:w-auto">
                     <button
-                      className={`btn join-item ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
+                      className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
                       onClick={() => setViewMode('grid')}
                     >
                       <MdViewModule className="w-4 h-4" />
+                      <span className="sm:hidden ml-2">Grid</span>
                     </button>
                     <button
-                      className={`btn join-item ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
+                      className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
                       onClick={() => setViewMode('list')}
                     >
                       <MdViewList className="w-4 h-4" />
+                      <span className="sm:hidden ml-2">List</span>
                     </button>
                   </div>
                 </div>

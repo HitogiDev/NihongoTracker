@@ -951,17 +951,10 @@ function LogScreen() {
                       </div>
                       <div className="collapse-content space-y-4">
                         {isAdvancedOptions && logData.type === 'anime' && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                Episode Duration (minutes)
-                              </span>
-                              {logData.duration ? (
-                                <span className="label-text-alt text-info">
-                                  Default: {logData.duration} min
-                                </span>
-                              ) : null}
-                            </label>
+                          <fieldset className="fieldset">
+                            <legend className="fieldset-legend">
+                              Episode Duration (minutes)
+                            </legend>
                             <input
                               type="number"
                               min="1"
@@ -989,7 +982,12 @@ function LogScreen() {
                               }}
                               value={logData.customDuration || ''}
                             />
-                          </div>
+                            {logData.duration ? (
+                              <p className="label">
+                                Default: {logData.duration} min
+                              </p>
+                            ) : null}
+                          </fieldset>
                         )}
                         <div className="form-control">
                           <label className="label">

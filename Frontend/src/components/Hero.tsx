@@ -9,6 +9,7 @@ import {
 import { useMemo } from 'react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import ClubRanking from './ClubRanking';
 import {
   MdAdd,
   MdArrowDownward,
@@ -471,6 +472,9 @@ function Hero() {
                     </div>
                   </div>
                 </div>
+
+                {/* Club Ranking */}
+                <ClubRanking username={user.username} />
               </div>
             </div>
           </div>

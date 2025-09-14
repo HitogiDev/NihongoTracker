@@ -290,12 +290,12 @@ function StatsScreen() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-base-content mb-2">
+              <h1 className="text-4xl font-bold text-base-content mb-2">
                 {username}'s Statistics
               </h1>
               <p className="text-base-content/70">
@@ -351,7 +351,7 @@ function StatsScreen() {
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-72 border border-base-300"
+                  className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-72 border border-base-300"
                 >
                   {(
                     [
@@ -552,7 +552,7 @@ function StatsScreen() {
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
+                  className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300"
                 >
                   <li>
                     <button

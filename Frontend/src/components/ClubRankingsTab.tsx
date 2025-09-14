@@ -185,7 +185,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-full border border-base-300"
+                  className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-full border border-base-300"
                 >
                   {periodOptions.map((option) => (
                     <li key={option.value}>
@@ -212,7 +212,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-3">
+            <h2 className="text-2xl font-bold flex items-center gap-3">
               <MdLeaderboard className="text-2xl text-primary" />
               Club Member Rankings
             </h2>

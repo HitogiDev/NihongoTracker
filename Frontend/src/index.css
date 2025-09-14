@@ -34,10 +34,21 @@
 
 html, body {
   height: 100%;
+  overflow-x: hidden;
 }
 
 #root {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+}
+
+/* Ensure tooltips don't cause horizontal overflow on mobile */
+@media (max-width: 768px) {
+  .tooltip:before,
+  .tooltip:after {
+    max-width: calc(100vw - 2rem);
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
 }

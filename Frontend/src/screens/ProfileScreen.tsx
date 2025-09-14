@@ -10,6 +10,12 @@ import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import {
+  MdSearch,
+  MdFilterList,
+  MdSchedule,
+  MdExpandMore,
+} from 'react-icons/md';
 
 function ProfileScreen() {
   const limit = 10;
@@ -255,184 +261,235 @@ function ProfileScreen() {
             <div className="flex flex-col gap-3">
               <h2 className="card-title self-start">Activity Logs</h2>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <label className="input input-sm input-bordered flex items-center gap-2 flex-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 16 16"
-                      fill="currentColor"
-                      className="w-4 h-4 opacity-70"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-                        clipRule="evenodd"
+              <div className="flex flex-col gap-4">
+                {/* Search Bar and Filter Dropdowns Row */}
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Search Bar */}
+                  <div className="flex-1 lg:max-w-md">
+                    <label className="input input-bordered flex items-center gap-2">
+                      <MdSearch className="w-5 h-5 opacity-70" />
+                      <input
+                        type="text"
+                        className="grow"
+                        placeholder="Search logs..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                       />
-                    </svg>
-                    <input
-                      type="text"
-                      className="grow"
-                      placeholder="Search logs..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </label>
-                  <select
-                    className="select select-sm select-bordered w-full sm:w-auto"
-                    value={filterType}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === 'all' || isValidLogType(value)) {
-                        setFilterType(value as typeof filterType);
-                      }
-                    }}
-                  >
-                    <option value="all">All Types</option>
-                    <option value="anime">Anime</option>
-                    <option value="manga">Manga</option>
-                    <option value="reading">Reading</option>
-                    <option value="vn">Visual Novel</option>
-                    <option value="video">Video</option>
-                    <option value="movie">Movie</option>
-                    <option value="audio">Audio</option>
-                    <option value="other">Other</option>
-                  </select>
+                    </label>
+                  </div>
+
+                  {/* Filter Dropdowns */}
+                  <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+                    {/* Type Filter Dropdown */}
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <MdFilterList className="w-4 h-4" />
+                        {filterType === 'all'
+                          ? 'All Types'
+                          : filterType.charAt(0).toUpperCase() +
+                            filterType.slice(1)}
+                        <MdExpandMore className="w-4 h-4 ml-auto" />
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                      >
+                        {[
+                          { value: 'all', label: 'All Types' },
+                          { value: 'anime', label: 'Anime' },
+                          { value: 'manga', label: 'Manga' },
+                          { value: 'reading', label: 'Reading' },
+                          { value: 'vn', label: 'Visual Novel' },
+                          { value: 'video', label: 'Video' },
+                          { value: 'movie', label: 'Movie' },
+                          { value: 'audio', label: 'Audio' },
+                          { value: 'other', label: 'Other' },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <a
+                              className={
+                                filterType === option.value ? 'active' : ''
+                              }
+                              onClick={() => {
+                                const value = option.value;
+                                if (value === 'all' || isValidLogType(value)) {
+                                  setFilterType(value as typeof filterType);
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Date Filter Dropdown */}
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <MdSchedule className="w-4 h-4" />
+                        {dateFilter === 'all'
+                          ? 'All Time'
+                          : dateFilter === 'today'
+                            ? 'Today'
+                            : dateFilter === 'week'
+                              ? 'This Week'
+                              : dateFilter === 'month'
+                                ? 'This Month'
+                                : dateFilter === 'year'
+                                  ? 'This Year'
+                                  : 'Custom Range'}
+                        <MdExpandMore className="w-4 h-4 ml-auto" />
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                      >
+                        {[
+                          { value: 'all', label: 'All Time' },
+                          { value: 'today', label: 'Today' },
+                          { value: 'week', label: 'This Week' },
+                          { value: 'month', label: 'This Month' },
+                          { value: 'year', label: 'This Year' },
+                          { value: 'custom', label: 'Custom Range' },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <a
+                              className={
+                                dateFilter === option.value ? 'active' : ''
+                              }
+                              onClick={() => {
+                                const value = option.value as typeof dateFilter;
+                                setDateFilter(value);
+                                // Reset custom dates when switching away from custom
+                                if (value !== 'custom') {
+                                  setCustomStartDate(undefined);
+                                  setCustomEndDate(undefined);
+                                }
+                              }}
+                            >
+                              {option.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <select
-                    className="select select-sm select-bordered w-full sm:w-auto"
-                    value={dateFilter}
-                    onChange={(e) => {
-                      const value = e.target.value as typeof dateFilter;
-                      setDateFilter(value);
-                      // Reset custom dates when switching away from custom
-                      if (value !== 'custom') {
-                        setCustomStartDate(undefined);
-                        setCustomEndDate(undefined);
-                      }
-                    }}
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                    <option value="custom">Custom Range</option>
-                  </select>
-
-                  {dateFilter === 'custom' && (
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      <div className="dropdown dropdown-bottom">
-                        <div
-                          tabIndex={0}
-                          role="button"
-                          className="btn btn-outline btn-sm w-full sm:w-auto"
+                {/* Custom Date Range (when selected) - Now below the main filter row */}
+                {dateFilter === 'custom' && (
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <div className="dropdown dropdown-bottom flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline w-full sm:w-auto"
+                      >
+                        {customStartDate
+                          ? formatDateOnly(customStartDate)
+                          : 'Start Date'}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 ml-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          {customStartDate
-                            ? formatDateOnly(customStartDate)
-                            : 'Start Date'}
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 ml-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div
+                        tabIndex={0}
+                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-xl bg-base-100 border border-base-300"
+                      >
+                        <DayPicker
+                          className="react-day-picker mx-auto"
+                          mode="single"
+                          selected={customStartDate}
+                          onSelect={(date) => {
+                            setCustomStartDate(date);
+                            // Close dropdown by removing focus
+                            (document.activeElement as HTMLElement)?.blur?.();
+                            // Reset end date if it's before the new start date
+                            if (customEndDate && date && customEndDate < date) {
+                              setCustomEndDate(undefined);
+                            }
+                          }}
+                          disabled={(date) => date > new Date()} // Disable future dates
+                        />
+                      </div>
+                    </div>
+                    <span className="hidden sm:flex items-center text-base-content/50 justify-center">
+                      to
+                    </span>
+
+                    <div className="dropdown dropdown-bottom flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className={`btn btn-outline w-full sm:w-auto ${!customStartDate ? 'btn-disabled' : ''}`}
+                      >
+                        {customEndDate
+                          ? formatDateOnly(customEndDate)
+                          : 'End Date'}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 ml-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      {customStartDate && (
                         <div
                           tabIndex={0}
-                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-xl bg-base-100 border border-base-300"
                         >
                           <DayPicker
                             className="react-day-picker mx-auto"
                             mode="single"
-                            selected={customStartDate}
+                            selected={customEndDate}
                             onSelect={(date) => {
-                              setCustomStartDate(date);
+                              setCustomEndDate(date);
                               // Close dropdown by removing focus
                               (document.activeElement as HTMLElement)?.blur?.();
-                              // Reset end date if it's before the new start date
-                              if (
-                                customEndDate &&
-                                date &&
-                                customEndDate < date
-                              ) {
-                                setCustomEndDate(undefined);
-                              }
                             }}
-                            disabled={(date) => date > new Date()} // Disable future dates
+                            disabled={(date) => {
+                              const today = new Date();
+                              const startDate = customStartDate;
+                              return (
+                                date > today || (startDate && date < startDate)
+                              );
+                            }}
                           />
                         </div>
-                      </div>
-                      <span className="hidden sm:flex items-center text-base-content/50">
-                        to
-                      </span>
-
-                      <div className="dropdown dropdown-bottom">
-                        <div
-                          tabIndex={0}
-                          role="button"
-                          className={`btn btn-outline btn-sm w-full sm:w-auto ${!customStartDate ? 'btn-disabled' : ''}`}
-                        >
-                          {customEndDate
-                            ? formatDateOnly(customEndDate)
-                            : 'End Date'}
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 ml-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                        {customStartDate && (
-                          <div
-                            tabIndex={0}
-                            className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
-                          >
-                            <DayPicker
-                              className="react-day-picker mx-auto"
-                              mode="single"
-                              selected={customEndDate}
-                              onSelect={(date) => {
-                                setCustomEndDate(date);
-                                // Close dropdown by removing focus
-                                (
-                                  document.activeElement as HTMLElement
-                                )?.blur?.();
-                              }}
-                              disabled={(date) => {
-                                const today = new Date();
-                                const startDate = customStartDate;
-                                return (
-                                  date > today ||
-                                  (startDate && date < startDate)
-                                );
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
+                {/* Active Filters - Now below everything else */}
                 {(dateFilter !== 'all' ||
                   filterType !== 'all' ||
                   searchTerm) && (

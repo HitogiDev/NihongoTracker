@@ -435,7 +435,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-72 border border-base-300"
+              className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-72 border border-base-300"
             >
               {timeFilterOptions.map((option) => (
                 <li key={option.value}>

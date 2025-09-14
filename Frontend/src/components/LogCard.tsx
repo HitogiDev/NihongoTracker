@@ -517,7 +517,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               {quantityInfo.map((info, index) => (
                 <div
                   key={index}
-                  className={`tooltip ${info.tooltip ? 'tooltip-bottom' : ''}`}
+                  className={`tooltip ${info.tooltip ? 'tooltip-left md:tooltip-bottom' : ''}`}
                   data-tip={info.tooltip}
                 >
                   <div
@@ -538,7 +538,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           <footer className="flex justify-between items-center pt-2 border-t border-base-300">
             <div className="flex items-center gap-2">
               <div
-                className={`tooltip tooltip-top`}
+                className={`tooltip tooltip-left md:tooltip-top`}
                 data-tip={`Experience gained: ${xp} points`}
               >
                 <div

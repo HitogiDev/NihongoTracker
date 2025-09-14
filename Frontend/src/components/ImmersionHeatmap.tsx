@@ -21,7 +21,6 @@ interface LogData {
 }
 
 const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
-  
   const { timezone } = useTimezone();
 
   // Get logs for the past year
@@ -151,7 +150,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
                 return (
                   <div
                     key={dayIndex}
-                    className={`w-3 h-3 rounded-sm tooltip tooltip-top ${getIntensityClass(data.level)}`}
+                    className={`w-3 h-3 rounded-sm tooltip tooltip-left md:tooltip-top ${getIntensityClass(data.level)}`}
                     data-tip={formatTooltip(data)}
                   ></div>
                 );

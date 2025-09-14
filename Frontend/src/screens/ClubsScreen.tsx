@@ -103,53 +103,50 @@ function ClubsScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 pt-24 pb-12">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
+    <div className="min-h-screen pt-16 bg-base-200">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <MdGroup className="w-10 h-10 text-primary" />
+            <h1 className="text-4xl font-bold text-base-content">
               Immersion Clubs
             </h1>
-            <p className="text-lg text-base-content/70 max-w-2xl mx-auto">
-              Join clubs to immerse with others, participate in challenges, and
-              share your Japanese learning journey
-            </p>
           </div>
-
-          {/* Search and Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between max-w-4xl mx-auto">
-            {/* Search Bar */}
-            <div className="relative flex-1 w-full">
-              <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
-              <input
-                type="text"
-                placeholder="Search clubs..."
-                className="input input-bordered w-full pl-12 pr-4"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-
-            {/* Create Club Button */}
-            {user && (
-              <button
-                className="btn btn-primary gap-2 whitespace-nowrap"
-                onClick={() => navigate('/clubs/create')}
-              >
-                <MdAdd className="text-lg" />
-                Create Club
-              </button>
-            )}
-          </div>
+          <p className="text-base-content/70">
+            Join clubs to immerse with others, participate in challenges, and
+            share your Japanese learning journey
+          </p>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
+        {/* Search and Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8 max-w-4xl mx-auto">
+          {/* Search Bar */}
+          <div className="relative flex-1 w-full">
+            <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
+            <input
+              type="text"
+              placeholder="Search clubs..."
+              className="input input-bordered w-full pl-12 pr-4"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          {/* Create Club Button */}
+          {user && (
+            <button
+              className="btn btn-primary gap-2 whitespace-nowrap"
+              onClick={() => navigate('/clubs/create')}
+            >
+              <MdAdd className="text-lg" />
+              Create Club
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Filters */}
           <div className="lg:w-64 flex-shrink-0">
@@ -174,7 +171,7 @@ function ClubsScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-full border border-base-300"
+                    className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-full border border-base-300"
                   >
                     {sortOptions.map((option) => (
                       <li key={option.value}>
