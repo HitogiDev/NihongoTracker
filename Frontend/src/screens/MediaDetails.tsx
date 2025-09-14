@@ -1,7 +1,6 @@
 import { useOutletContext } from 'react-router-dom';
 import { OutletMediaContextType, ILog } from '../types';
 import ProgressChart from '../components/ProgressChart';
-import Loader from '../components/Loader';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getUserLogsFn,
@@ -10,7 +9,7 @@ import {
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useUserDataStore } from '../store/userData';
 
 const difficultyLevels = [
@@ -27,11 +26,6 @@ function MediaDetails() {
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
   const queryClient = useQueryClient();
-
-  // Scroll to top when component mounts or media changes
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [mediaDocument?.contentId]);
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
 
@@ -340,8 +334,84 @@ function MediaDetails() {
     return (
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <div className="flex justify-center items-center min-h-[50vh]">
-            <Loader />
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
+            {/* Left column skeleton - Media Details Card */}
+            <div className="space-y-6 min-w-0">
+              <div className="card bg-base-100 shadow-lg">
+                <div className="card-body">
+                  <div className="skeleton h-6 w-32 mb-4"></div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="skeleton h-4 w-16"></div>
+                      <div className="skeleton h-6 w-20 rounded-full"></div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="skeleton h-4 w-20"></div>
+                      <div className="skeleton h-6 w-24 rounded-full"></div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="skeleton h-4 w-16"></div>
+                      <div className="skeleton h-4 w-20"></div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="skeleton h-4 w-18"></div>
+                      <div className="skeleton h-4 w-16"></div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="skeleton h-4 w-20"></div>
+                      <div className="skeleton h-4 w-24"></div>
+                    </div>
+                    <div className="divider my-4"></div>
+                    <div className="skeleton h-4 w-28 mb-3"></div>
+                    <div className="flex flex-wrap gap-2">
+                      <div className="skeleton h-8 w-16 rounded-lg"></div>
+                      <div className="skeleton h-8 w-20 rounded-lg"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right column skeleton - Progress Chart and Activity Logs */}
+            <div className="space-y-6 min-w-0">
+              {/* Progress Chart skeleton */}
+              <div className="card bg-base-100 shadow-lg">
+                <div className="card-body">
+                  <div className="skeleton h-6 w-40 mb-4"></div>
+                  <div className="skeleton h-64 w-full rounded-lg"></div>
+                </div>
+              </div>
+
+              {/* Activity Logs skeleton */}
+              <div className="card bg-base-100 shadow-lg">
+                <div className="card-body">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="skeleton h-6 w-32"></div>
+                    <div className="skeleton h-8 w-24 rounded-lg"></div>
+                  </div>
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="card bg-base-200 shadow-sm">
+                        <div className="card-body p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="skeleton h-5 w-48"></div>
+                            <div className="skeleton h-4 w-16"></div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <div className="skeleton h-6 w-16 rounded-full"></div>
+                            <div className="skeleton h-6 w-20 rounded-full"></div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="skeleton h-4 w-full"></div>
+                            <div className="skeleton h-4 w-3/4"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

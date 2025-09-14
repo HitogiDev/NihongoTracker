@@ -43,6 +43,16 @@ html, body {
   min-height: 100%;
 }
 
+/* Ensure smooth scroll behavior and proper reset */
+html {
+  scroll-behavior: auto; /* Override smooth scrolling for instant resets */
+}
+
+/* Force scroll reset for navigation */
+.scroll-reset {
+  scroll-behavior: auto !important;
+}
+
 /* Ensure tooltips don't cause horizontal overflow on mobile */
 @media (max-width: 768px) {
   .tooltip:before,

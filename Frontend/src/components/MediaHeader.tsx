@@ -42,6 +42,36 @@ export default function MediaHeader() {
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
 
+  // Reset scroll when navigating to a new media
+  useEffect(() => {
+    if (mediaId && mediaType) {
+      // Add class to ensure auto scroll behavior
+      document.documentElement.classList.add('scroll-reset');
+
+      // Use multiple methods to ensure scroll reset works across browsers
+      const resetScroll = () => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      };
+
+      // Reset immediately
+      resetScroll();
+
+      // Also reset after a small delay in case of layout shifts
+      const timeoutId = setTimeout(() => {
+        resetScroll();
+        // Remove the class after scroll is complete
+        document.documentElement.classList.remove('scroll-reset');
+      }, 10);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.documentElement.classList.remove('scroll-reset');
+      };
+    }
+  }, [mediaId, mediaType]);
+
   const {
     data: media,
     error: mediaError,
@@ -57,6 +87,19 @@ export default function MediaHeader() {
     enabled: !!mediaId && !!mediaType,
     refetchOnMount: 'always',
   });
+
+  // Additional scroll reset when MediaHeader loading completes
+  useEffect(() => {
+    if (!isLoadingMedia && media) {
+      const timeoutId = setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }, 100); // Slightly longer delay to ensure skeleton content is replaced
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoadingMedia, media]);
 
   if (mediaError) {
     if (mediaError instanceof AxiosError) {
@@ -152,7 +195,9 @@ export default function MediaHeader() {
           <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] lg:grid-cols-[215px_1fr] gap-6">
             <div className="flex flex-col items-center md:items-start">
               <div className="w-full max-w-[200px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
-                {media?.contentImage ? (
+                {isLoadingMedia ? (
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-xl border-2 border-white/20 skeleton"></div>
+                ) : media?.contentImage ? (
                   <img
                     src={media.contentImage}
                     alt={media.title.contentTitleNative}
@@ -170,33 +215,51 @@ export default function MediaHeader() {
                   </div>
                 )}
               </div>
-              <button
-                className="btn btn-primary w-full max-w-[200px] mt-4"
-                onClick={() => setLogModalOpen(true)}
-              >
-                Log
-              </button>
+              {isLoadingMedia ? (
+                <div className="skeleton h-12 w-full max-w-[200px] mt-4 rounded-lg"></div>
+              ) : (
+                <button
+                  className="btn btn-primary w-full max-w-[200px] mt-4"
+                  onClick={() => setLogModalOpen(true)}
+                >
+                  Log
+                </button>
+              )}
             </div>
             <div className="py-4 px-0 md:py-5 md:px-4">
-              <h1 className="text-xl sm:text-2xl font-bold text-base-content">
-                {media?.title?.contentTitleNative}
-              </h1>
-              <div className="text-base-content text-opacity-75 mt-4 text-sm sm:text-base">
-                {(() => {
-                  const engDescription = media?.description?.filter(
-                    (desc) => desc.language === 'eng'
-                  )[0];
-                  if (engDescription?.description) {
-                    return renderDescription(engDescription.description);
-                  }
-                  const jpnDescription = media?.description?.filter(
-                    (desc) => desc.language === 'jpn'
-                  )[0];
-                  if (jpnDescription?.description) {
-                    return renderDescription(jpnDescription.description);
-                  }
-                })()}
-              </div>
+              {isLoadingMedia ? (
+                <div className="space-y-4">
+                  <div className="skeleton h-8 w-3/4"></div>
+                  <div className="space-y-2">
+                    <div className="skeleton h-4 w-full"></div>
+                    <div className="skeleton h-4 w-full"></div>
+                    <div className="skeleton h-4 w-full"></div>
+                    <div className="skeleton h-4 w-2/3"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-xl sm:text-2xl font-bold text-base-content">
+                    {media?.title?.contentTitleNative}
+                  </h1>
+                  <div className="text-base-content text-opacity-75 mt-4 text-sm sm:text-base">
+                    {(() => {
+                      const engDescription = media?.description?.filter(
+                        (desc) => desc.language === 'eng'
+                      )[0];
+                      if (engDescription?.description) {
+                        return renderDescription(engDescription.description);
+                      }
+                      const jpnDescription = media?.description?.filter(
+                        (desc) => desc.language === 'jpn'
+                      )[0];
+                      if (jpnDescription?.description) {
+                        return renderDescription(jpnDescription.description);
+                      }
+                    })()}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
