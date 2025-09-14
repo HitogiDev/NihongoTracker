@@ -389,11 +389,25 @@ function Hero() {
                               <div className="flex items-center gap-4">
                                 <Icon className="w-6 h-6 text-primary" />
                                 <div>
-                                  <p className="font-semibold">
-                                    {log.media?.title.contentTitleNative
-                                      ? log.media.title.contentTitleNative
-                                      : log.description}
-                                  </p>
+                                  {log.media?.contentId && log.media?.type ? (
+                                    <Link
+                                      to={`/${encodeURIComponent(log.media.type)}/${log.media.contentId}`}
+                                      className="font-semibold text-base-content hover:text-primary transition-colors duration-200 no-underline hover:no-underline"
+                                      title={
+                                        log.media?.title?.contentTitleNative ||
+                                        log.description
+                                      }
+                                    >
+                                      {log.media?.title?.contentTitleNative ||
+                                        log.description}
+                                    </Link>
+                                  ) : (
+                                    <p className="font-semibold">
+                                      {log.media?.title?.contentTitleNative
+                                        ? log.media.title.contentTitleNative
+                                        : log.description}
+                                    </p>
+                                  )}
                                   <p className="text-sm text-base-content/60">
                                     {log.formattedTime} • {log.formattedDate}
                                   </p>
