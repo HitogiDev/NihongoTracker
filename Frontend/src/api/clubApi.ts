@@ -101,6 +101,44 @@ export async function updateClubFn(
   return data;
 }
 
+// Update club with file uploads (leaders only)
+export async function updateClubWithFilesFn(
+  clubId: string,
+  clubData: Partial<ICreateClubRequest> & { avatarFile?: File; bannerFile?: File }
+): Promise<IClub> {
+  const formData = new FormData();
+
+  // Add regular form fields
+  Object.keys(clubData).forEach((key) => {
+    if (key !== 'avatarFile' && key !== 'bannerFile') {
+      const value = clubData[key as keyof (Partial<ICreateClubRequest>)];
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    }
+  });
+
+  // Add files if provided
+  if (clubData.avatarFile) {
+    formData.append('avatar', clubData.avatarFile);
+  }
+
+  if (clubData.bannerFile) {
+    formData.append('banner', clubData.bannerFile);
+  }
+
+  const { data } = await axiosInstance.put<IClub>(`/clubs/${clubId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+}
+
 // Get user's clubs
 export async function getUserClubsFn(): Promise<IClub[]> {
   const { data } = await axiosInstance.get<IClub[]>('/clubs/user/my-clubs');

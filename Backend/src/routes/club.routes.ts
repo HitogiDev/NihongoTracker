@@ -58,7 +58,14 @@ router.post(
 router.get('/user/my-clubs', getUserClubs); // Get user's clubs
 router.post('/:clubId/join', joinClub); // Join a club
 router.post('/:clubId/leave', leaveClub); // Leave a club
-router.put('/:clubId', updateClub); // Update club (leaders only)
+router.put(
+  '/:clubId',
+  upload.fields([
+    { name: 'avatar', maxCount: 1 },
+    { name: 'banner', maxCount: 1 },
+  ]),
+  updateClub
+); // Update club (leaders only)
 router.post('/:clubId/members/:memberId', manageMembershipRequest); // Approve/reject membership
 router.get('/:clubId/members/pending', getPendingMembershipRequests); // Get pending membership requests
 

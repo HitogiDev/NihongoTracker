@@ -71,12 +71,11 @@ function CreateClubScreen() {
     'anime',
     'manga',
     'reading',
+    'light-novel',
     'visual-novel',
     'competitive',
     'casual',
-    'study-group',
     'daily-challenge',
-    'weekend-warriors',
   ];
 
   // Create club mutation
