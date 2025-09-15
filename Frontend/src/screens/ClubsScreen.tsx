@@ -412,7 +412,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
 
         {/* Join Status */}
         <div className="card-actions justify-end">
-          {club.isUserMember ? (
+          {club.isUserMember && club.userStatus === 'active' ? (
             <div className="badge badge-primary gap-1">
               <MdGroup className="text-xs" />
               {club.userRole === 'leader'
@@ -420,6 +420,11 @@ function ClubCard({ club }: { club: IClubResponse }) {
                 : club.userRole === 'moderator'
                   ? 'Moderator'
                   : 'Member'}
+            </div>
+          ) : club.isUserMember && club.userStatus === 'pending' ? (
+            <div className="badge badge-warning gap-1">
+              <MdGroup className="text-xs" />
+              Pending
             </div>
           ) : (
             <div className="badge badge-ghost">

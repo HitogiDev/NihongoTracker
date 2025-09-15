@@ -29,6 +29,8 @@ import {
   leaveClubFn,
   getClubMediaFn,
   addClubMediaFn,
+  getPendingMembershipRequestsFn,
+  manageMembershipRequestFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
 import { IMediaDocument } from '../types.d';
@@ -209,6 +211,32 @@ function ClubDetailScreen() {
   const canManageClub = useMemo(() => {
     return club?.userRole === 'leader' || club?.userRole === 'moderator';
   }, [club?.userRole]);
+
+  // Pending membership requests (leaders only)
+  const { data: pendingRequests, refetch: refetchPending } = useQuery({
+    queryKey: ['clubPending', clubId],
+    queryFn: () => getPendingMembershipRequestsFn(clubId!),
+    enabled: !!clubId && club?.userRole === 'leader',
+  });
+
+  const membershipActionMutation = useMutation({
+    mutationFn: ({
+      memberId,
+      action,
+    }: {
+      memberId: string;
+      action: 'approve' | 'reject';
+    }) => manageMembershipRequestFn(clubId!, memberId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      refetchPending();
+    },
+    onError: (error: unknown) => {
+      let errorMessage = 'Failed to update membership';
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
 
   const canLeaveClub = useMemo(() => {
     if (!club?.isUserMember) return false;
@@ -577,6 +605,13 @@ function ClubDetailScreen() {
           >
             <MdPeople className="mr-2" />
             Members
+            {club?.userRole === 'leader' &&
+              pendingRequests?.pending &&
+              pendingRequests.pending.length > 0 && (
+                <span className="badge badge-warning badge-sm ml-2">
+                  {pendingRequests.pending.length}
+                </span>
+              )}
           </button>
           <button
             className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
@@ -818,6 +853,86 @@ function ClubDetailScreen() {
                 <h2 className="card-title text-lg mb-4">
                   Members ({club.memberCount})
                 </h2>
+                {club.userRole === 'leader' &&
+                  pendingRequests?.pending &&
+                  pendingRequests.pending.length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        Pending Requests
+                        <span className="badge badge-warning badge-sm">
+                          {pendingRequests.pending.length}
+                        </span>
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {pendingRequests.pending.map((member) => (
+                          <div
+                            key={member.user._id}
+                            className="flex items-center gap-3 p-3 rounded border border-base-300 bg-base-100"
+                          >
+                            <div className="avatar">
+                              <div className="w-10 h-10 rounded-full">
+                                {member.user.avatar ? (
+                                  <img
+                                    src={member.user.avatar}
+                                    alt={member.user.username}
+                                    className="rounded-full w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-primary font-semibold">
+                                      {member.user.username
+                                        .charAt(0)
+                                        .toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-medium">
+                                {member.user.username}
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                Requested{' '}
+                                {new Date(member.joinedAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                className="btn btn-xs btn-success"
+                                onClick={() =>
+                                  membershipActionMutation.mutate({
+                                    memberId: member.user._id,
+                                    action: 'approve',
+                                  })
+                                }
+                                disabled={membershipActionMutation.isPending}
+                              >
+                                {membershipActionMutation.isPending
+                                  ? '...'
+                                  : 'Approve'}
+                              </button>
+                              <button
+                                className="btn btn-xs btn-error"
+                                onClick={() =>
+                                  membershipActionMutation.mutate({
+                                    memberId: member.user._id,
+                                    action: 'reject',
+                                  })
+                                }
+                                disabled={membershipActionMutation.isPending}
+                              >
+                                {membershipActionMutation.isPending
+                                  ? '...'
+                                  : 'Reject'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="divider my-6" />
+                    </div>
+                  )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {club.members
                     .filter((member) => member.status === 'active')

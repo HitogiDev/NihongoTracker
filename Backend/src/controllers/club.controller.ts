@@ -55,12 +55,20 @@ export async function getClubs(
     const sortQuery: any = {};
     sortQuery[sortBy as string] = sortOrder === 'desc' ? -1 : 1;
 
-    // Get clubs with member count
+    // Get clubs with active member count (exclude pending / banned)
     const clubs = await Club.aggregate([
       { $match: searchQuery },
       {
         $addFields: {
-          memberCount: { $size: '$members' },
+          memberCount: {
+            $size: {
+              $filter: {
+                input: '$members',
+                as: 'm',
+                cond: { $eq: ['$$m.status', 'active'] },
+              },
+            },
+          },
         },
       },
       { $sort: sortQuery },
@@ -144,7 +152,7 @@ export async function getClub(
 
     const clubResponse = {
       ...club.toObject(),
-      memberCount: club.members.length,
+      memberCount: club.members.filter((m) => m.status === 'active').length,
       isUserMember: !!userMember,
       userRole: userMember?.role,
       userStatus: userMember?.status,
@@ -285,8 +293,11 @@ export async function joinClub(
       return res.status(400).json({ message: 'Already a member of this club' });
     }
 
-    // Check member limit
-    if (club.members.length >= club.memberLimit) {
+    // Check member limit (only count active members)
+    const activeMemberCount = club.members.filter(
+      (member) => member.status === 'active'
+    ).length;
+    if (activeMemberCount >= club.memberLimit) {
       return res.status(400).json({ message: 'Club has reached member limit' });
     }
 
@@ -509,6 +520,43 @@ export async function manageMembershipRequest(
     } else {
       return res.status(400).json({ message: 'Invalid action' });
     }
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Get pending membership requests (leaders only)
+export async function getPendingMembershipRequests(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId).populate(
+      'members.user',
+      'username avatar'
+    );
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find((m) => m.user.equals(userId));
+    if (!userMember || userMember.role !== 'leader') {
+      return res
+        .status(403)
+        .json({ message: 'Only club leaders can view pending requests' });
+    }
+
+    const pendingMembers = club.members.filter((m) => m.status === 'pending');
+
+    return res.status(200).json({ pending: pendingMembers });
   } catch (error) {
     return next(error as customError);
   }

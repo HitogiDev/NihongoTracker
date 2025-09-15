@@ -9,6 +9,7 @@ import {
   updateClub,
   getUserClubs,
   manageMembershipRequest,
+  getPendingMembershipRequests,
   addClubMedia,
   getClubMedia,
   getClubMediaLogs,
@@ -59,6 +60,7 @@ router.post('/:clubId/join', joinClub); // Join a club
 router.post('/:clubId/leave', leaveClub); // Leave a club
 router.put('/:clubId', updateClub); // Update club (leaders only)
 router.post('/:clubId/members/:memberId', manageMembershipRequest); // Approve/reject membership
+router.get('/:clubId/members/pending', getPendingMembershipRequests); // Get pending membership requests
 
 // Club Media routes
 router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moderators only)

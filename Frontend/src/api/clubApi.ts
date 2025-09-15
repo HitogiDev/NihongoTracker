@@ -120,6 +120,16 @@ export async function manageMembershipRequestFn(
   return data;
 }
 
+// Get pending membership requests (leaders only)
+export async function getPendingMembershipRequestsFn(
+  clubId: string
+): Promise<{ pending: IClub['members'] }> {
+  const { data } = await axiosInstance.get<{ pending: IClub['members'] }>(
+    `/clubs/${clubId}/members/pending`
+  );
+  return data;
+}
+
 // Club Media Functions
 
 // Add media to club
