@@ -6,6 +6,7 @@ import PieChart from '../components/PieChart';
 import { useMemo, useRef, useState } from 'react';
 import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
+import StackedBarChart from '../components/StackedBarChart';
 import DailyGoals from '../components/DailyGoals';
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
@@ -21,6 +22,10 @@ function StatsScreen() {
     'today' | 'week' | 'month' | 'year' | 'total' | 'custom'
   >('total');
   const [onlyImmersedDays, setOnlyImmersedDays] = useState<boolean>(false);
+  const [progressChartView, setProgressChartView] = useState<'line' | 'bar'>(
+    'line'
+  );
+  const [progressMetric, setProgressMetric] = useState<'xp' | 'hours'>('xp');
   const { timezone } = useTimezone();
 
   // Custom range state
@@ -1138,28 +1143,150 @@ function StatsScreen() {
 
           <div className="card bg-base-100 shadow-lg">
             <div className="card-body">
-              <h3 className="card-title text-xl mb-4">
-                <svg
-                  className="w-6 h-6 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  ></path>
-                </svg>
-                Progress Timeline
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="card-title text-xl">
+                  <svg
+                    className="w-6 h-6 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    ></path>
+                  </svg>
+                  Progress Timeline
+                </h3>
+
+                {/* Controls */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  {/* Metric toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-base-content/70">
+                      Metric:
+                    </span>
+                    <div className="join">
+                      <button
+                        className={`join-item btn btn-sm ${
+                          progressMetric === 'xp' ? 'btn-active' : 'btn-outline'
+                        }`}
+                        onClick={() => setProgressMetric('xp')}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
+                        </svg>
+                        XP
+                      </button>
+                      <button
+                        className={`join-item btn btn-sm ${
+                          progressMetric === 'hours'
+                            ? 'btn-active'
+                            : 'btn-outline'
+                        }`}
+                        onClick={() => setProgressMetric('hours')}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        Hours
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Chart view toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-base-content/70">View:</span>
+                    <div className="join">
+                      <button
+                        className={`join-item btn btn-sm ${
+                          progressChartView === 'line'
+                            ? 'btn-active'
+                            : 'btn-outline'
+                        }`}
+                        onClick={() => setProgressChartView('line')}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M7 12l3-3 3 3 4-4"
+                          />
+                        </svg>
+                        Line
+                      </button>
+                      <button
+                        className={`join-item btn btn-sm ${
+                          progressChartView === 'bar'
+                            ? 'btn-active'
+                            : 'btn-outline'
+                        }`}
+                        onClick={() => setProgressChartView('bar')}
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                          />
+                        </svg>
+                        Bar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="w-full" style={{ height: '450px' }}>
-                <ProgressChart
-                  timeframe={timeRange === 'custom' ? 'total' : timeRange}
-                  statsData={userStats?.statsByType}
-                  selectedType={currentType}
-                />
+                {progressChartView === 'line' ? (
+                  <ProgressChart
+                    timeframe={timeRange === 'custom' ? 'total' : timeRange}
+                    statsData={userStats?.statsByType}
+                    selectedType={currentType}
+                    metric={progressMetric}
+                  />
+                ) : (
+                  <StackedBarChart
+                    statsData={userStats?.statsByType}
+                    selectedType={currentType}
+                    metric={progressMetric}
+                    timeframe={timeRange === 'custom' ? 'total' : timeRange}
+                  />
+                )}
               </div>
             </div>
           </div>

@@ -17,6 +17,7 @@
     "@tsparticles/react": "^3.0.0",
     "axios": "^1.6.8",
     "chart.js": "^4.4.3",
+    "chartjs-plugin-zoom": "^2.2.0",
     "cors": "^2.8.5",
     "dompurify": "^3.2.5",
     "express": "^5.1.0",

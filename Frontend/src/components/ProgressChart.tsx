@@ -23,6 +23,7 @@ interface ProgressChartProps {
   }>;
   selectedType?: string;
   timeframe?: 'today' | 'week' | 'month' | 'year' | 'total';
+  metric?: 'xp' | 'hours';
 }
 
 export default function ProgressChart({
@@ -30,6 +31,7 @@ export default function ProgressChart({
   statsData,
   selectedType = 'all',
   timeframe: externalTimeframe,
+  metric = 'xp',
 }: ProgressChartProps) {
   const { timezone } = useTimezone();
   const [timeframe, setTimeframe] = useState<
@@ -44,7 +46,7 @@ export default function ProgressChart({
 
   // Process data based on which data source is provided
   let labels: string[] = [];
-  let xpValues: number[] = [];
+  let metricValues: number[] = [];
 
   if (statsData) {
     // Process data from statsData (IUserStats format)
@@ -80,11 +82,15 @@ export default function ProgressChart({
           ).padStart(2, '0')}`;
         }
 
-        // Accumulate XP values
+        // Accumulate values based on metric
         if (!allDatesMap[dateKey]) {
           allDatesMap[dateKey] = 0;
         }
-        allDatesMap[dateKey] += dateEntry.xp;
+        if (metric === 'xp') {
+          allDatesMap[dateKey] += dateEntry.xp;
+        } else {
+          allDatesMap[dateKey] += dateEntry.time || 0;
+        }
       });
     });
 
@@ -100,7 +106,7 @@ export default function ProgressChart({
       }
 
       labels = hourLabels;
-      xpValues = hourValues;
+      metricValues = hourValues;
     } else if (timeframe === 'week') {
       // Format for days in a week
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -111,7 +117,7 @@ export default function ProgressChart({
       });
 
       labels = dayNames;
-      xpValues = dayValues;
+      metricValues = dayValues;
     } else if (timeframe === 'month') {
       // Format for days in current month
       const currentDate = new Date();
@@ -130,7 +136,7 @@ export default function ProgressChart({
       }
 
       labels = dayLabels;
-      xpValues = dayValues;
+      metricValues = dayValues;
     } else if (timeframe === 'year') {
       // Format for months in a year
       const months = [
@@ -157,7 +163,7 @@ export default function ProgressChart({
       }
 
       labels = monthLabels;
-      xpValues = monthValues;
+      metricValues = monthValues;
     } else {
       // Format for total (year-month)
       const sortedKeys = Object.keys(allDatesMap).sort();
@@ -174,17 +180,17 @@ export default function ProgressChart({
         );
       });
 
-      xpValues = sortedKeys.map((key) => allDatesMap[key]);
+      metricValues = sortedKeys.map((key) => allDatesMap[key]);
     }
   } else if (logs) {
     // Original logic for ILog[] data
     const filteredLogs = filterLogsByTimeframe(logs, timeframe);
 
     if (timeframe === 'today') {
-      const xpByHour: { [key: string]: number } = {};
+      const metricByHour: { [key: string]: number } = {};
 
       for (let i = 0; i < 24; i++) {
-        xpByHour[i.toString()] = 0;
+        metricByHour[i.toString()] = 0;
       }
 
       filteredLogs.forEach((log) => {
@@ -193,21 +199,25 @@ export default function ProgressChart({
           timezone
         );
         const hour = logDateInUserTz.getHours();
-        xpByHour[hour.toString()] += log.xp;
+        if (metric === 'xp') {
+          metricByHour[hour.toString()] += log.xp;
+        } else {
+          metricByHour[hour.toString()] += log.time || 0;
+        }
       });
 
-      labels = Object.keys(xpByHour)
+      labels = Object.keys(metricByHour)
         .sort((a, b) => parseInt(a) - parseInt(b))
         .map((hour) => `${hour}:00`);
-      xpValues = Object.keys(xpByHour)
+      metricValues = Object.keys(metricByHour)
         .sort((a, b) => parseInt(a) - parseInt(b))
-        .map((hour) => xpByHour[hour]);
+        .map((hour) => metricByHour[hour]);
     } else if (timeframe === 'week') {
-      const xpByDay: { [key: string]: number } = {};
+      const metricByDay: { [key: string]: number } = {};
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
       dayNames.forEach((day) => {
-        xpByDay[day] = 0;
+        metricByDay[day] = 0;
       });
 
       filteredLogs.forEach((log) => {
@@ -217,18 +227,22 @@ export default function ProgressChart({
         );
         const dayOfWeek = logDateInUserTz.getDay();
         const dayName = dayNames[dayOfWeek];
-        xpByDay[dayName] += log.xp;
+        if (metric === 'xp') {
+          metricByDay[dayName] += log.xp;
+        } else {
+          metricByDay[dayName] += log.time || 0;
+        }
       });
 
       labels = dayNames;
-      xpValues = dayNames.map((day) => xpByDay[day]);
+      metricValues = dayNames.map((day) => metricByDay[day]);
     } else if (timeframe === 'month') {
-      const xpByDate = getXpByDate(filteredLogs);
-      const dates = Object.keys(xpByDate).sort();
+      const metricByDate = getMetricByDate(filteredLogs);
+      const dates = Object.keys(metricByDate).sort();
       labels = dates.map((date) => new Date(date).getDate().toString());
-      xpValues = dates.map((date) => xpByDate[date]);
+      metricValues = dates.map((date) => metricByDate[date]);
     } else if (timeframe === 'year') {
-      const xpByMonth: { [key: string]: number } = {};
+      const metricByMonth: { [key: string]: number } = {};
       const months = [
         'Jan',
         'Feb',
@@ -250,20 +264,26 @@ export default function ProgressChart({
           timezone
         );
         const monthIndex = logDateInUserTz.getMonth();
-        if (!xpByMonth[monthIndex.toString()]) {
-          xpByMonth[monthIndex.toString()] = 0;
+        if (!metricByMonth[monthIndex.toString()]) {
+          metricByMonth[monthIndex.toString()] = 0;
         }
-        xpByMonth[monthIndex.toString()] += log.xp;
+        if (metric === 'xp') {
+          metricByMonth[monthIndex.toString()] += log.xp;
+        } else {
+          metricByMonth[monthIndex.toString()] += log.time || 0;
+        }
       });
 
-      const monthIndices = Object.keys(xpByMonth)
+      const monthIndices = Object.keys(metricByMonth)
         .map(Number)
         .sort((a, b) => a - b);
 
       labels = monthIndices.map((monthIdx) => months[monthIdx]);
-      xpValues = monthIndices.map((monthIdx) => xpByMonth[monthIdx.toString()]);
+      metricValues = monthIndices.map(
+        (monthIdx) => metricByMonth[monthIdx.toString()]
+      );
     } else {
-      const xpByMonthYear: { [key: string]: number } = {};
+      const metricByMonthYear: { [key: string]: number } = {};
 
       filteredLogs.forEach((log) => {
         const date = new Date(log.date);
@@ -271,20 +291,24 @@ export default function ProgressChart({
           .toString()
           .padStart(2, '0')}`;
 
-        if (!xpByMonthYear[yearMonth]) {
-          xpByMonthYear[yearMonth] = 0;
+        if (!metricByMonthYear[yearMonth]) {
+          metricByMonthYear[yearMonth] = 0;
         }
-        xpByMonthYear[yearMonth] += log.xp;
+        if (metric === 'xp') {
+          metricByMonthYear[yearMonth] += log.xp;
+        } else {
+          metricByMonthYear[yearMonth] += log.time || 0;
+        }
       });
 
-      const sortedKeys = Object.keys(xpByMonthYear).sort();
+      const sortedKeys = Object.keys(metricByMonthYear).sort();
       labels = sortedKeys;
-      xpValues = sortedKeys.map((key) => xpByMonthYear[key]);
+      metricValues = sortedKeys.map((key) => metricByMonthYear[key]);
     }
   }
 
   // Check if there's actual data (sum of all values > 0)
-  const hasData: boolean = xpValues.some((value) => value > 0);
+  const hasData: boolean = metricValues.some((value) => value > 0);
 
   function filterLogsByTimeframe(logs: ILog[], timeframe: string) {
     const now = new Date();
@@ -316,8 +340,8 @@ export default function ProgressChart({
     });
   }
 
-  function getXpByDate(logs: ILog[]) {
-    const xpByDate: { [key: string]: number } = {};
+  function getMetricByDate(logs: ILog[]) {
+    const metricByDate: { [key: string]: number } = {};
 
     logs.forEach((log) => {
       const logDateInUserTz = convertToUserTimezone(
@@ -325,13 +349,17 @@ export default function ProgressChart({
         timezone
       );
       const dateStr = logDateInUserTz.toISOString().split('T')[0];
-      if (!xpByDate[dateStr]) {
-        xpByDate[dateStr] = 0;
+      if (!metricByDate[dateStr]) {
+        metricByDate[dateStr] = 0;
       }
-      xpByDate[dateStr] += log.xp;
+      if (metric === 'xp') {
+        metricByDate[dateStr] += log.xp;
+      } else {
+        metricByDate[dateStr] += log.time || 0;
+      }
     });
 
-    return xpByDate;
+    return metricByDate;
   }
 
   function createGradient(
@@ -350,8 +378,8 @@ export default function ProgressChart({
     labels: labels,
     datasets: [
       {
-        label: 'XP Earned',
-        data: xpValues,
+        label: metric === 'xp' ? 'XP Earned' : 'Time Spent (minutes)',
+        data: metricValues,
         fill: true,
         pointRadius: 3,
         borderColor: 'rgb(50, 170, 250)',
@@ -374,15 +402,20 @@ export default function ProgressChart({
             <h2 className="text-2xl font-bold text-primary mb-2">Progress</h2>
             {hasData ? (
               <p className="text-sm text-base-content mb-4">
+                {selectedType === 'all'
+                  ? 'All Media Types'
+                  : selectedType.charAt(0).toUpperCase() +
+                    selectedType.slice(1)}{' '}
+                -
                 {timeframe === 'today'
-                  ? 'Hourly XP - Today'
+                  ? ` Hourly ${metric === 'xp' ? 'XP' : 'Time'} - Today`
                   : timeframe === 'week'
-                    ? 'Daily XP - This Week'
+                    ? ` Daily ${metric === 'xp' ? 'XP' : 'Time'} - This Week`
                     : timeframe === 'month'
-                      ? 'Daily XP - Current Month'
+                      ? ` Daily ${metric === 'xp' ? 'XP' : 'Time'} - Current Month`
                       : timeframe === 'year'
-                        ? 'XP Earned Over the Year'
-                        : 'Total XP Earned Over Time'}
+                        ? `${metric === 'xp' ? 'XP' : 'Time'} Over the Year`
+                        : ` Total ${metric === 'xp' ? 'XP' : 'Time'} Over Time`}
               </p>
             ) : null}
           </div>
@@ -411,34 +444,7 @@ export default function ProgressChart({
             </div>
           )}
         </div>
-
-        <div className="overflow-x-auto overflow-y-hidden rounded-lg border border-base-300 mx-4">
-          <div
-            className="bg-base-50 p-4"
-            style={{ width: '2000px', height: '350px' }}
-          >
-            {hasData ? (
-              <LineChart data={consistencyData} />
-            ) : (
-              <div className="alert alert-info">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="stroke-current shrink-0 w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                <span>No data available for the selected timeframe.</span>
-              </div>
-            )}
-          </div>
-        </div>
+        <LineChart data={consistencyData} />
       </div>
     </div>
   );
