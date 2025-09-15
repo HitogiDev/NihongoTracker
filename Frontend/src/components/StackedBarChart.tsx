@@ -246,7 +246,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       tooltip: {
         mode: 'index',
         intersect: false,
-        backgroundColor: 'oklch(var(--b1))',
+        backgroundColor: themeColors.base100 || '#fff',
         titleColor: baseContent || 'oklch(0.6 0 0)',
         bodyColor: baseContent || 'oklch(0.6 0 0)',
         borderColor: gridColor || 'oklch(0.6 0 0 / 0.1)',

@@ -45,6 +45,9 @@ function toRGBA(color: string, alpha = 1): string {
 export function useThemeColors(alpha = 1) {
   const [colors, setColors] = useState({
     baseContent: '#000',
+    base100: '#fff',
+    base200: '#f9f9f9',
+    base300: '#e0e0e0',
     primary: '#3b82f6',
     secondary: '#f59e0b',
   });
@@ -56,6 +59,9 @@ export function useThemeColors(alpha = 1) {
           getCssVariable('--color-base-content') || '#000',
           alpha
         ),
+        base100: toRGBA(getCssVariable('--color-base-100') || '#fff', alpha),
+        base200: toRGBA(getCssVariable('--color-base-200') || '#f9f9f9', alpha),
+        base300: toRGBA(getCssVariable('--color-base-300') || '#e0e0e0', alpha),
         primary: toRGBA(getCssVariable('--color-primary') || '#3b82f6', alpha),
         secondary: toRGBA(
           getCssVariable('--color-secondary') || '#f59e0b',
