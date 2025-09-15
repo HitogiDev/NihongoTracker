@@ -396,7 +396,7 @@ export async function updateClub(
   try {
     const { clubId } = req.params;
     const userId = res.locals.user._id;
-    const updateData = req.body;
+    let updateData = req.body;
 
     if (!Types.ObjectId.isValid(clubId)) {
       return res.status(400).json({ message: 'Invalid club ID' });
@@ -418,8 +418,58 @@ export async function updateClub(
       });
     }
 
+    // Parse JSON-stringified arrays from FormData if present
+    if (typeof updateData.tags === 'string') {
+      try {
+        updateData.tags = JSON.parse(updateData.tags);
+      } catch (error) {
+        console.error('Error parsing tags:', error);
+        updateData.tags = [];
+      }
+    }
+
+    // Convert string numbers back to numbers
+    if (typeof updateData.memberLimit === 'string') {
+      updateData.memberLimit = parseInt(updateData.memberLimit, 10);
+    }
+
+    // Convert string booleans back to booleans
+    if (typeof updateData.isPublic === 'string') {
+      updateData.isPublic = updateData.isPublic === 'true';
+    }
+
+    // Handle file uploads if present
+    if (req.files && Object.keys(req.files).length > 0) {
+      try {
+        const files = req.files as {
+          [fieldname: string]: Express.Multer.File[];
+        };
+
+        if (files.avatar?.[0]) {
+          const file = await uploadFile(files.avatar[0]);
+          updateData.avatar = file.downloadURL;
+        }
+
+        if (files.banner?.[0]) {
+          const file = await uploadFile(files.banner[0]);
+          updateData.banner = file.downloadURL;
+        }
+      } catch (error) {
+        if (error instanceof customError) {
+          return next(error);
+        }
+        return next(
+          new customError(
+            'File upload failed: ' + (error as Error).message,
+            400
+          )
+        );
+      }
+    }
+
     // Update allowed fields
     const allowedFields = [
+      'name',
       'description',
       'isPublic',
       'tags',

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -31,6 +32,7 @@ import {
   addClubMediaFn,
   getPendingMembershipRequestsFn,
   manageMembershipRequestFn,
+  updateClubWithFilesFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
 import { IMediaDocument } from '../types.d';
@@ -128,6 +130,7 @@ function ClubDetailScreen() {
   const [isAddMediaModalOpen, setIsAddMediaModalOpen] = useState(false);
   const [isCreateVotingWizardOpen, setIsCreateVotingWizardOpen] =
     useState(false);
+  const [isEditClubModalOpen, setIsEditClubModalOpen] = useState(false);
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'overview' | 'media' | 'members' | 'rankings'
@@ -238,6 +241,65 @@ function ClubDetailScreen() {
     },
   });
 
+  // Edit club form state
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    isPublic: true,
+    tags: [] as string[],
+    rules: '',
+    memberLimit: 100,
+  });
+
+  // File upload state for edit
+  const [editFiles, setEditFiles] = useState<{
+    avatar?: File;
+    banner?: File;
+  }>({});
+
+  const [editPreviews, setEditPreviews] = useState<{
+    avatar?: string;
+    banner?: string;
+  }>({});
+
+  // Update club mutation
+  const updateClubMutation = useMutation({
+    mutationFn: (updateData: typeof editForm) => {
+      return updateClubWithFilesFn(clubId!, {
+        ...updateData,
+        avatarFile: editFiles.avatar,
+        bannerFile: editFiles.banner,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success('Club updated successfully!');
+      setIsEditClubModalOpen(false);
+      // Clear file selections
+      setEditFiles({});
+      setEditPreviews({});
+    },
+    onError: (error: unknown) => {
+      let errorMessage = 'Failed to update club';
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
+  // Initialize edit form when club data is loaded
+  React.useEffect(() => {
+    if (club) {
+      setEditForm({
+        name: club.name,
+        description: club.description || '',
+        isPublic: club.isPublic,
+        tags: club.tags || [],
+        rules: club.rules || '',
+        memberLimit: club.memberLimit,
+      });
+    }
+  }, [club]);
+
   const canLeaveClub = useMemo(() => {
     if (!club?.isUserMember) return false;
 
@@ -342,6 +404,71 @@ function ClubDetailScreen() {
       startDate: '',
       endDate: '',
       mediaData: undefined,
+    });
+  };
+
+  // Handle closing edit club modal
+  const handleCloseEditModal = () => {
+    setIsEditClubModalOpen(false);
+    // Reset form to original club data
+    if (club) {
+      setEditForm({
+        name: club.name,
+        description: club.description || '',
+        isPublic: club.isPublic,
+        tags: club.tags || [],
+        rules: club.rules || '',
+        memberLimit: club.memberLimit,
+      });
+    }
+    // Clear file selections
+    setEditFiles({});
+    setEditPreviews({});
+  };
+
+  // Handle file selection for edit modal
+  const handleEditFileSelect = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: 'avatar' | 'banner'
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File must be under 5MB');
+      return;
+    }
+
+    // Update file state
+    setEditFiles((prev) => ({ ...prev, [type]: file }));
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setEditPreviews((prev) => ({ ...prev, [type]: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove selected file
+  const handleEditFileRemove = (type: 'avatar' | 'banner') => {
+    setEditFiles((prev) => {
+      const newFiles = { ...prev };
+      delete newFiles[type];
+      return newFiles;
+    });
+    setEditPreviews((prev) => {
+      const newPreviews = { ...prev };
+      delete newPreviews[type];
+      return newPreviews;
     });
   };
 
@@ -502,7 +629,10 @@ function ClubDetailScreen() {
                 {user && club.isUserMember && club.userStatus === 'active' ? (
                   <>
                     {canManageClub && (
-                      <button className="btn btn-secondary btn-sm">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setIsEditClubModalOpen(true)}
+                      >
                         <MdEdit className="text-lg" />
                         <span className="hidden sm:inline">Edit</span>
                       </button>
@@ -1253,6 +1383,285 @@ function ClubDetailScreen() {
             isAdult: false,
           }}
         />
+      )}
+
+      {/* Edit Club Modal */}
+      {isEditClubModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg">Edit Club</h3>
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                onClick={handleCloseEditModal}
+              >
+                <MdClose className="text-lg" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateClubMutation.mutate(editForm);
+              }}
+              className="space-y-4"
+            >
+              {/* Club Name */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Club Name *</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                  required
+                  maxLength={100}
+                />
+              </div>
+
+              {/* Avatar Upload */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Club Avatar</span>
+                </label>
+                <div className="flex items-center gap-4">
+                  {/* Current/Preview Avatar */}
+                  <div className="avatar">
+                    <div className="w-16 h-16 rounded-full">
+                      {editPreviews.avatar ? (
+                        <img
+                          src={editPreviews.avatar}
+                          alt="New avatar preview"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : club?.avatar ? (
+                        <img
+                          src={club.avatar}
+                          alt="Current avatar"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                          <MdGroup className="text-2xl text-primary" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Upload/Remove buttons */}
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleEditFileSelect(e, 'avatar')}
+                      className="file-input file-input-bordered file-input-sm"
+                    />
+                    {(editPreviews.avatar || club?.avatar) && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm btn-error"
+                        onClick={() => handleEditFileRemove('avatar')}
+                      >
+                        Remove Avatar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="label">
+                  <span className="label-text-alt">
+                    Recommended: Square image, max 5MB
+                  </span>
+                </div>
+              </div>
+
+              {/* Banner Upload */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Club Banner</span>
+                </label>
+                <div className="space-y-2">
+                  {/* Current/Preview Banner */}
+                  {(editPreviews.banner || club?.banner) && (
+                    <div className="w-full h-24 rounded-lg overflow-hidden border border-base-300">
+                      {editPreviews.banner ? (
+                        <img
+                          src={editPreviews.banner}
+                          alt="New banner preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : club?.banner ? (
+                        <img
+                          src={club.banner}
+                          alt="Current banner"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  )}
+
+                  {/* Upload/Remove buttons */}
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleEditFileSelect(e, 'banner')}
+                      className="file-input file-input-bordered file-input-sm flex-1"
+                    />
+                    {(editPreviews.banner || club?.banner) && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm btn-error"
+                        onClick={() => handleEditFileRemove('banner')}
+                      >
+                        Remove Banner
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="label">
+                  <span className="label-text-alt">
+                    Recommended: 16:9 aspect ratio, max 5MB
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Description</span>
+                </label>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
+                  rows={3}
+                  maxLength={500}
+                />
+              </div>
+
+              {/* Privacy */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Privacy</span>
+                </label>
+                <div className="flex gap-4">
+                  <label className="label cursor-pointer">
+                    <input
+                      type="radio"
+                      name="privacy"
+                      className="radio radio-primary"
+                      checked={editForm.isPublic}
+                      onChange={() =>
+                        setEditForm({ ...editForm, isPublic: true })
+                      }
+                    />
+                    <span className="label-text ml-2">Public</span>
+                  </label>
+                  <label className="label cursor-pointer">
+                    <input
+                      type="radio"
+                      name="privacy"
+                      className="radio radio-primary"
+                      checked={!editForm.isPublic}
+                      onChange={() =>
+                        setEditForm({ ...editForm, isPublic: false })
+                      }
+                    />
+                    <span className="label-text ml-2">Private</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Member Limit */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Member Limit</span>
+                </label>
+                <input
+                  type="number"
+                  className="input input-bordered w-full"
+                  value={editForm.memberLimit}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      memberLimit: parseInt(e.target.value) || 100,
+                    })
+                  }
+                  min={1}
+                  max={1000}
+                />
+              </div>
+
+              {/* Rules */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Rules</span>
+                </label>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  value={editForm.rules}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, rules: e.target.value })
+                  }
+                  rows={4}
+                  maxLength={1000}
+                />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="label">
+                  <span className="label-text">Tags</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="Enter tags separated by commas"
+                  value={editForm.tags.join(', ')}
+                  onChange={(e) => {
+                    const tags = e.target.value
+                      .split(',')
+                      .map((tag) => tag.trim())
+                      .filter((tag) => tag.length > 0);
+                    setEditForm({ ...editForm, tags });
+                  }}
+                />
+                <div className="label">
+                  <span className="label-text-alt">
+                    Separate tags with commas (e.g., beginner, anime,
+                    study-group)
+                  </span>
+                </div>
+              </div>
+
+              {/* Submit buttons */}
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={handleCloseEditModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={
+                    updateClubMutation.isPending || !editForm.name.trim()
+                  }
+                >
+                  {updateClubMutation.isPending ? 'Updating...' : 'Update Club'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
