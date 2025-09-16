@@ -34,7 +34,7 @@
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.7",
-    "axios": "^1.7.2",
+    "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
