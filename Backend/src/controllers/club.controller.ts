@@ -358,8 +358,9 @@ export async function leaveClub(
 
     const member = club.members[memberIndex];
 
-    // If user is the leader and there are other members, they need to transfer leadership first
-    if (member.role === 'leader' && club.members.length > 1) {
+    // If user is the leader and there are other active members, they need to transfer leadership first
+    const activeMembers = club.members.filter((m) => m.status === 'active');
+    if (member.role === 'leader' && activeMembers.length > 1) {
       return res.status(400).json({
         message:
           'Cannot leave club as leader. Transfer leadership or disband the club first.',
@@ -382,6 +383,69 @@ export async function leaveClub(
     });
 
     return res.status(200).json({ message: 'Successfully left the club' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Transfer club leadership (only current leader can do this)
+export async function transferLeadership(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { newLeaderId } = req.body;
+    const currentUserId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    if (!Types.ObjectId.isValid(newLeaderId)) {
+      return res.status(400).json({ message: 'Invalid new leader ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if current user is the leader
+    const currentLeader = club.members.find(
+      (member) =>
+        member.user.equals(currentUserId) &&
+        member.role === 'leader' &&
+        member.status === 'active'
+    );
+
+    if (!currentLeader) {
+      return res
+        .status(403)
+        .json({ message: 'Only the club leader can transfer leadership' });
+    }
+
+    // Check if new leader is an active member
+    const newLeaderMember = club.members.find(
+      (member) => member.user.equals(newLeaderId) && member.status === 'active'
+    );
+
+    if (!newLeaderMember) {
+      return res
+        .status(400)
+        .json({ message: 'New leader must be an active club member' });
+    }
+
+    // Transfer leadership
+    currentLeader.role = 'member';
+    newLeaderMember.role = 'leader';
+
+    await club.save();
+
+    return res
+      .status(200)
+      .json({ message: 'Leadership transferred successfully' });
   } catch (error) {
     return next(error as customError);
   }

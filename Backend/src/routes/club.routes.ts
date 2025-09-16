@@ -6,6 +6,7 @@ import {
   createClub,
   joinClub,
   leaveClub,
+  transferLeadership,
   updateClub,
   getUserClubs,
   manageMembershipRequest,
@@ -68,6 +69,7 @@ router.put(
 ); // Update club (leaders only)
 router.post('/:clubId/members/:memberId', manageMembershipRequest); // Approve/reject membership
 router.get('/:clubId/members/pending', getPendingMembershipRequests); // Get pending membership requests
+router.post('/:clubId/transfer-leadership', transferLeadership); // Transfer club leadership (leaders only)
 
 // Club Media routes
 router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moderators only)

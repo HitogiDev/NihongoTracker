@@ -32,6 +32,7 @@ import {
   addClubMediaFn,
   getPendingMembershipRequestsFn,
   manageMembershipRequestFn,
+  transferLeadershipFn,
   updateClubWithFilesFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
@@ -132,6 +133,17 @@ function ClubDetailScreen() {
     useState(false);
   const [isEditClubModalOpen, setIsEditClubModalOpen] = useState(false);
   const [logModalOpen, setLogModalOpen] = useState(false);
+
+  // Confirmation modal states
+  const [isDisbandConfirmModalOpen, setIsDisbandConfirmModalOpen] =
+    useState(false);
+  const [isLeaveConfirmModalOpen, setIsLeaveConfirmModalOpen] = useState(false);
+  const [isTransferLeadershipModalOpen, setIsTransferLeadershipModalOpen] =
+    useState(false);
+  const [selectedNewLeader, setSelectedNewLeader] = useState<{
+    userId: string;
+    username: string;
+  } | null>(null);
   const [activeTab, setActiveTab] = useState<
     'overview' | 'media' | 'members' | 'rankings'
   >('overview');
@@ -241,6 +253,23 @@ function ClubDetailScreen() {
     },
   });
 
+  // Transfer leadership mutation
+  const transferLeadershipMutation = useMutation({
+    mutationFn: (newLeaderId: string) =>
+      transferLeadershipFn(clubId!, newLeaderId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success('Leadership transferred successfully!');
+      setIsTransferLeadershipModalOpen(false);
+      setSelectedNewLeader(null);
+    },
+    onError: (error: unknown) => {
+      let errorMessage = 'Failed to transfer leadership';
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
   // Edit club form state
   const [editForm, setEditForm] = useState({
     name: '',
@@ -327,18 +356,12 @@ function ClubDetailScreen() {
 
     // Show confirmation for leaders disbanding the club
     if (club.userRole === 'leader' && club.memberCount === 1) {
-      if (
-        window.confirm('This will permanently disband the club. Are you sure?')
-      ) {
-        leaveMutation.mutate();
-      }
+      setIsDisbandConfirmModalOpen(true);
       return;
     }
 
     // Show confirmation for regular members
-    if (window.confirm('Are you sure you want to leave this club?')) {
-      leaveMutation.mutate();
-    }
+    setIsLeaveConfirmModalOpen(true);
   };
 
   // Handle selecting media from search results
@@ -1115,6 +1138,29 @@ function ClubDetailScreen() {
                               </div>
                             </div>
                           </div>
+
+                          {/* Leadership Transfer Action - Only show for current leader */}
+                          {club?.userRole === 'leader' &&
+                            member.role !== 'leader' &&
+                            member.user._id !== user?._id && (
+                              <div className="mt-3 pt-3 border-t border-base-300">
+                                <button
+                                  className="btn btn-outline btn-xs w-full"
+                                  onClick={() => {
+                                    setSelectedNewLeader({
+                                      userId: member.user._id,
+                                      username: member.user.username,
+                                    });
+                                    setIsTransferLeadershipModalOpen(true);
+                                  }}
+                                  disabled={
+                                    transferLeadershipMutation.isPending
+                                  }
+                                >
+                                  Transfer Leadership
+                                </button>
+                              </div>
+                            )}
                         </div>
                       </div>
                     ))}
@@ -1428,10 +1474,11 @@ function ClubDetailScreen() {
                 <label className="label">
                   <span className="label-text">Club Avatar</span>
                 </label>
-                <div className="flex items-center gap-4">
-                  {/* Current/Preview Avatar */}
+
+                {/* Current/Preview Avatar - Centered */}
+                <div className="flex justify-center mb-4">
                   <div className="avatar">
-                    <div className="w-16 h-16 rounded-full">
+                    <div className="w-24 h-24 rounded-full ring ring-base-300 ring-offset-2">
                       {editPreviews.avatar ? (
                         <img
                           src={editPreviews.avatar}
@@ -1446,33 +1493,40 @@ function ClubDetailScreen() {
                         />
                       ) : (
                         <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                          <MdGroup className="text-2xl text-primary" />
+                          <MdGroup className="text-3xl text-primary" />
                         </div>
                       )}
                     </div>
                   </div>
+                </div>
 
-                  {/* Upload/Remove buttons */}
-                  <div className="flex flex-col gap-2">
+                {/* Upload/Remove buttons - Centered */}
+                <div className="flex flex-col items-center gap-2">
+                  <label className="btn btn-outline btn-sm">
+                    <MdEdit className="text-base mr-1" />
+                    {editPreviews.avatar || club?.avatar
+                      ? 'Change Avatar'
+                      : 'Upload Avatar'}
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleEditFileSelect(e, 'avatar')}
-                      className="file-input file-input-bordered file-input-sm"
+                      className="hidden"
                     />
-                    {(editPreviews.avatar || club?.avatar) && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm btn-error"
-                        onClick={() => handleEditFileRemove('avatar')}
-                      >
-                        Remove Avatar
-                      </button>
-                    )}
-                  </div>
+                  </label>
+                  {(editPreviews.avatar || club?.avatar) && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs text-error"
+                      onClick={() => handleEditFileRemove('avatar')}
+                    >
+                      Remove Avatar
+                    </button>
+                  )}
                 </div>
+
                 <div className="label">
-                  <span className="label-text-alt">
+                  <span className="label-text-alt text-center block">
                     Recommended: Square image, max 5MB
                   </span>
                 </div>
@@ -1483,47 +1537,58 @@ function ClubDetailScreen() {
                 <label className="label">
                   <span className="label-text">Club Banner</span>
                 </label>
-                <div className="space-y-2">
-                  {/* Current/Preview Banner */}
-                  {(editPreviews.banner || club?.banner) && (
-                    <div className="w-full h-24 rounded-lg overflow-hidden border border-base-300">
-                      {editPreviews.banner ? (
-                        <img
-                          src={editPreviews.banner}
-                          alt="New banner preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : club?.banner ? (
-                        <img
-                          src={club.banner}
-                          alt="Current banner"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : null}
-                    </div>
-                  )}
 
-                  {/* Upload/Remove buttons */}
-                  <div className="flex gap-2">
+                {/* Current/Preview Banner */}
+                <div className="mb-4">
+                  <div className="w-full h-32 rounded-lg overflow-hidden border-2 border-dashed border-base-300 bg-base-50 flex items-center justify-center">
+                    {editPreviews.banner ? (
+                      <img
+                        src={editPreviews.banner}
+                        alt="New banner preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : club?.banner ? (
+                      <img
+                        src={club.banner}
+                        alt="Current banner"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center text-base-content/50">
+                        <div className="text-3xl mb-2">🖼️</div>
+                        <div className="text-sm">No banner uploaded</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upload/Remove buttons - Centered */}
+                <div className="flex flex-col items-center gap-2">
+                  <label className="btn btn-outline btn-sm">
+                    <MdEdit className="text-base mr-1" />
+                    {editPreviews.banner || club?.banner
+                      ? 'Change Banner'
+                      : 'Upload Banner'}
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleEditFileSelect(e, 'banner')}
-                      className="file-input file-input-bordered file-input-sm flex-1"
+                      className="hidden"
                     />
-                    {(editPreviews.banner || club?.banner) && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm btn-error"
-                        onClick={() => handleEditFileRemove('banner')}
-                      >
-                        Remove Banner
-                      </button>
-                    )}
-                  </div>
+                  </label>
+                  {(editPreviews.banner || club?.banner) && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs text-error"
+                      onClick={() => handleEditFileRemove('banner')}
+                    >
+                      Remove Banner
+                    </button>
+                  )}
                 </div>
+
                 <div className="label">
-                  <span className="label-text-alt">
+                  <span className="label-text-alt text-center block">
                     Recommended: 16:9 aspect ratio, max 5MB
                   </span>
                 </div>
@@ -1660,6 +1725,123 @@ function ClubDetailScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Disband Club Confirmation Modal */}
+      {isDisbandConfirmModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-warning">Disband Club</h3>
+            <p className="py-4">
+              This will permanently disband the club and remove all data. This
+              action cannot be undone.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setIsDisbandConfirmModalOpen(false)}
+                disabled={leaveMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-warning"
+                onClick={() => {
+                  setIsDisbandConfirmModalOpen(false);
+                  leaveMutation.mutate();
+                }}
+                disabled={leaveMutation.isPending}
+              >
+                {leaveMutation.isPending ? 'Disbanding...' : 'Disband Club'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Club Confirmation Modal */}
+      {isLeaveConfirmModalOpen && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Leave Club</h3>
+            <p className="py-4">
+              Are you sure you want to leave this club? You will need to request
+              to join again if the club is private.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setIsLeaveConfirmModalOpen(false)}
+                disabled={leaveMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={() => {
+                  setIsLeaveConfirmModalOpen(false);
+                  leaveMutation.mutate();
+                }}
+                disabled={leaveMutation.isPending}
+              >
+                {leaveMutation.isPending ? 'Leaving...' : 'Leave Club'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Leadership Confirmation Modal */}
+      {isTransferLeadershipModalOpen && selectedNewLeader && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-warning">
+              Transfer Leadership
+            </h3>
+            <p className="py-4">
+              Are you sure you want to transfer club leadership to{' '}
+              <span className="font-semibold">
+                {selectedNewLeader.username}
+              </span>
+              ?
+            </p>
+            <div className="alert alert-warning mb-4">
+              <MdInfo className="text-lg" />
+              <div className="text-sm">
+                <div className="font-semibold">
+                  This action cannot be undone!
+                </div>
+                <div>
+                  You will become a regular member and lose all leadership
+                  privileges.
+                </div>
+              </div>
+            </div>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setIsTransferLeadershipModalOpen(false);
+                  setSelectedNewLeader(null);
+                }}
+                disabled={transferLeadershipMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-warning"
+                onClick={() =>
+                  transferLeadershipMutation.mutate(selectedNewLeader.userId)
+                }
+                disabled={transferLeadershipMutation.isPending}
+              >
+                {transferLeadershipMutation.isPending
+                  ? 'Transferring...'
+                  : 'Transfer Leadership'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -175,6 +175,18 @@ export async function getPendingMembershipRequestsFn(
   return data;
 }
 
+// Transfer club leadership (leaders only)
+export async function transferLeadershipFn(
+  clubId: string,
+  newLeaderId: string
+): Promise<{ message: string }> {
+  const { data } = await axiosInstance.post<{ message: string }>(
+    `/clubs/${clubId}/transfer-leadership`,
+    { newLeaderId }
+  );
+  return data;
+}
+
 // Club Media Functions
 
 // Add media to club
