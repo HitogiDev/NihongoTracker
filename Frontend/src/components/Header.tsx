@@ -1,6 +1,20 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MdLogout, MdPerson, MdSettings } from 'react-icons/md';
+import {
+  MdLogout,
+  MdPerson,
+  MdSettings,
+  MdBarChart,
+  MdLeaderboard,
+  MdGroup,
+  MdCalculate,
+  MdList,
+  MdAdminPanelSettings,
+  MdHome,
+  MdInfo,
+  MdStar,
+  MdMenu,
+} from 'react-icons/md';
 import { useUserDataStore } from '../store/userData';
 import { useMutation } from '@tanstack/react-query';
 import { logoutUserFn } from '../api/trackerApi';
@@ -45,41 +59,42 @@ function Header() {
         <div className="navbar-start">
           <div className="dropdown">
             <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h8m-8 6h16"
-                />
-              </svg>
+              <MdMenu className="h-6 w-6" />
             </div>
             {user ? (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-64 border border-base-300"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-xl bg-base-100 text-base-content rounded-xl w-72 border border-base-300 max-h-96 overflow-y-auto"
               >
                 {isAdmin && (
-                  <li>
-                    <Link
-                      to="/admin"
-                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                    >
-                      Admin
-                    </Link>
-                  </li>
+                  <>
+                    <li>
+                      <Link
+                        to="/admin"
+                        className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                      >
+                        <MdAdminPanelSettings className="text-lg" />
+                        Admin
+                      </Link>
+                    </li>
+                    <li>
+                      <div className="divider my-1"></div>
+                    </li>
+                  </>
                 )}
+
+                {/* Main Navigation */}
+                <li className="menu-title px-2">
+                  <span className="text-xs font-bold text-base-content/70">
+                    Navigation
+                  </span>
+                </li>
                 <li>
                   <Link
                     to={`/user/${user.username}/stats`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdBarChart className="text-lg" />
                     Stats
                   </Link>
                 </li>
@@ -88,7 +103,17 @@ function Header() {
                     to="/ranking"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdLeaderboard className="text-lg" />
                     Ranking
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/clubs"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    <MdGroup className="text-lg" />
+                    Clubs
                   </Link>
                 </li>
                 <li>
@@ -96,6 +121,7 @@ function Header() {
                     to="/calculator"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdCalculate className="text-lg" />
                     Calculator
                   </Link>
                 </li>
@@ -104,11 +130,21 @@ function Header() {
                     to={`/user/${user.username}/list`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdList className="text-lg" />
                     Immersion List
                   </Link>
                 </li>
-                <li>{/* <QuickLog /> */}</li>
-                <li className="lg:hidden">
+
+                {/* Account Section */}
+                <li>
+                  <div className="divider my-1"></div>
+                </li>
+                <li className="menu-title px-2">
+                  <span className="text-xs font-bold text-base-content/70">
+                    Account
+                  </span>
+                </li>
+                <li>
                   <Link
                     to={`/user/${user.username}`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
@@ -117,7 +153,7 @@ function Header() {
                     Profile
                   </Link>
                 </li>
-                <li className="lg:hidden">
+                <li>
                   <Link
                     to="/settings"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
@@ -126,7 +162,7 @@ function Header() {
                     Settings
                   </Link>
                 </li>
-                <li className="lg:hidden">
+                <li>
                   <a
                     onClick={logoutHandler}
                     className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
@@ -139,13 +175,14 @@ function Header() {
             ) : (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-64 border border-base-300"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-xl bg-base-100 text-base-content rounded-xl w-72 border border-base-300"
               >
                 <li>
                   <Link
                     to="/"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdHome className="text-lg" />
                     Home
                   </Link>
                 </li>
@@ -154,6 +191,7 @@ function Header() {
                     to="/features"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdStar className="text-lg" />
                     Features
                   </Link>
                 </li>
@@ -162,6 +200,7 @@ function Header() {
                     to="/ranking"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdLeaderboard className="text-lg" />
                     Ranking
                   </Link>
                 </li>
@@ -170,6 +209,7 @@ function Header() {
                     to="/clubs"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdGroup className="text-lg" />
                     Clubs
                   </Link>
                 </li>
@@ -178,6 +218,7 @@ function Header() {
                     to="/about"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
+                    <MdInfo className="text-lg" />
                     About
                   </Link>
                 </li>
