@@ -140,9 +140,21 @@ export async function getClub(
       return res.status(404).json({ message: 'Club not found' });
     }
 
+    // Auto-update voting statuses based on current date
+    await updateVotingStatuses(club);
+
+    // Refresh club data after potential status updates
+    const updatedClub = await Club.findById(clubId)
+      .populate('members.user', 'username avatar level totalXp')
+      .populate('currentMedia.addedBy', 'username');
+
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Club not found after update' });
+    }
+
     // Check if user is a member
     const userMember = userId
-      ? club.members.find(
+      ? updatedClub.members.find(
           (member) => member.user._id.toString() === userId.toString()
         )
       : null;
@@ -151,8 +163,9 @@ export async function getClub(
     // The difference between public/private is only in the joining mechanism
 
     const clubResponse = {
-      ...club.toObject(),
-      memberCount: club.members.filter((m) => m.status === 'active').length,
+      ...updatedClub.toObject(),
+      memberCount: updatedClub.members.filter((m) => m.status === 'active')
+        .length,
       isUserMember: !!userMember,
       userRole: userMember?.role,
       userStatus: userMember?.status,
@@ -1730,7 +1743,16 @@ export async function voteForCandidate(
       return res.status(404).json({ message: 'Club not found' });
     }
 
-    const userMember = club.members.find(
+    // Auto-update voting statuses based on current date
+    await updateVotingStatuses(club);
+
+    // Refresh club data after potential status updates
+    const updatedClub = await Club.findById(clubId);
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = updatedClub.members.find(
       (member) => member.user.toString() === userId.toString()
     );
 
@@ -1740,17 +1762,22 @@ export async function voteForCandidate(
         .json({ message: 'Only active club members can vote' });
     }
 
-    const votingIndex = club.mediaVotings.findIndex(
+    const votingIndex = updatedClub.mediaVotings.findIndex(
       (v) => v._id?.toString() === votingId
     );
     if (votingIndex === -1) {
       return res.status(404).json({ message: 'Voting not found' });
     }
 
-    const voting = club.mediaVotings[votingIndex];
+    const voting = updatedClub.mediaVotings[votingIndex];
 
     if (voting.status !== 'voting_open') {
-      return res.status(400).json({ message: 'Voting is not currently open' });
+      return res.status(400).json({
+        message: 'Voting is not currently open',
+        currentStatus: voting.status,
+        votingStart: voting.votingStartDate,
+        votingEnd: voting.votingEndDate,
+      });
     }
 
     if (new Date() > voting.votingEndDate) {
@@ -1775,8 +1802,10 @@ export async function voteForCandidate(
     }
 
     // Add vote to selected candidate
-    club.mediaVotings[votingIndex].candidates[candidateIdx].votes.push(userId);
-    await club.save();
+    updatedClub.mediaVotings[votingIndex].candidates[candidateIdx].votes.push(
+      userId
+    );
+    await updatedClub.save();
 
     return res.status(200).json({ message: 'Vote recorded successfully' });
   } catch (error) {
@@ -1806,8 +1835,20 @@ export async function getMediaVotings(
       return res.status(404).json({ message: 'Club not found' });
     }
 
+    // Auto-update voting statuses based on current date
+    await updateVotingStatuses(club);
+
+    // Refresh club data after potential status updates
+    const updatedClub = await Club.findById(clubId)
+      .populate('mediaVotings.createdBy', 'username avatar')
+      .populate('mediaVotings.candidates.addedBy', 'username avatar');
+
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Club not found after update' });
+    }
+
     const isActiveFilter = active === 'true';
-    const filteredVotings = club.mediaVotings.filter(
+    const filteredVotings = updatedClub.mediaVotings.filter(
       (voting) => voting.isActive === isActiveFilter
     );
 
@@ -2619,5 +2660,62 @@ export async function getClubMemberRankings(
     });
   } catch (error) {
     return next(error as customError);
+  }
+}
+
+// Auto-update voting statuses based on current date
+export async function updateVotingStatuses(club: IClub): Promise<void> {
+  const now = new Date();
+  let hasChanges = false;
+
+  for (let i = 0; i < club.mediaVotings.length; i++) {
+    const voting = club.mediaVotings[i];
+    let newStatus = voting.status;
+
+    // Skip if voting is already completed
+    if (voting.status === 'completed') {
+      continue;
+    }
+
+    // Update status based on dates
+    if (voting.candidateSubmissionType === 'member_suggestions') {
+      if (
+        voting.suggestionStartDate &&
+        now >= voting.suggestionStartDate &&
+        voting.suggestionEndDate &&
+        now < voting.suggestionEndDate
+      ) {
+        newStatus = 'suggestions_open';
+      } else if (
+        voting.suggestionEndDate &&
+        now >= voting.suggestionEndDate &&
+        now < voting.votingStartDate
+      ) {
+        newStatus = 'suggestions_closed';
+      }
+    }
+
+    // Check if voting should be open
+    if (now >= voting.votingStartDate && now < voting.votingEndDate) {
+      newStatus = 'voting_open';
+    } else if (now >= voting.votingEndDate) {
+      newStatus = 'voting_closed';
+    }
+
+    // Check if consumption period has started (auto-complete voting)
+    if (now >= voting.consumptionStartDate) {
+      newStatus = 'completed';
+    }
+
+    // Update status if changed
+    if (newStatus !== voting.status) {
+      club.mediaVotings[i].status = newStatus;
+      hasChanges = true;
+    }
+  }
+
+  // Save changes if any status was updated
+  if (hasChanges) {
+    await club.save();
   }
 }
