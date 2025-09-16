@@ -91,15 +91,11 @@ export async function getDailyGoals(
 
     // Sum up today's activity
     todayLogs.forEach((log) => {
-      // Time calculation - always include anime episodes as time
-      if (log.time) {
+      if (log.time && log.time > 0) {
         progress.time += log.time;
-      }
-
-      // For anime logs, always add episode time
-      if (log.type === 'anime' && log.episodes) {
+      } else if (log.type === 'anime' && log.episodes) {
         const media = log.mediaId ? mediaMap.get(log.mediaId) : null;
-        const episodeDuration = media?.episodeDuration || 24; // Use media duration or fallback to 24 minutes
+        const episodeDuration = media?.episodeDuration || 24;
         progress.time += log.episodes * episodeDuration;
       }
 
