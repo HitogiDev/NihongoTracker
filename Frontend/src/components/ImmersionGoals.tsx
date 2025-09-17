@@ -532,6 +532,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         goals={goalsData?.goals || []}
+        username={username}
       />
 
       {/* Edit Long-term Goal Modal */}

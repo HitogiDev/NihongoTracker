@@ -53,9 +53,10 @@ interface GoalsModalProps {
   isOpen: boolean;
   onClose: () => void;
   goals: IDailyGoal[];
+  username: string | undefined;
 }
 
-function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
+function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [goalDuration, setGoalDuration] = useState<'daily' | 'long-term'>(
@@ -88,7 +89,7 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
   const { mutate: createGoal, isPending: isCreatingGoal } = useMutation({
     mutationFn: createDailyGoalFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      queryClient.invalidateQueries({ queryKey: [username, 'dailyGoals'] });
       toast.success('Daily goal created successfully!');
       setIsCreating(false);
       setNewGoal({ type: 'time', target: 30, isActive: true });
@@ -111,7 +112,7 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
       goal: Partial<IDailyGoal>;
     }) => updateDailyGoalFn(goalId, goal),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      queryClient.invalidateQueries({ queryKey: [username, 'dailyGoals'] });
       toast.success('Daily goal updated successfully!');
       setEditingGoal(null);
       setEditGoal({});
@@ -128,7 +129,7 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
   const { mutate: deleteGoal, isPending: isDeletingGoal } = useMutation({
     mutationFn: deleteDailyGoalFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      queryClient.invalidateQueries({ queryKey: [username, 'dailyGoals'] });
       toast.success('Daily goal deleted successfully!');
     },
     onError: (error) => {
@@ -145,8 +146,10 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
     {
       mutationFn: createLongTermGoalFn,
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
-        queryClient.invalidateQueries({ queryKey: ['longTermGoals'] });
+        queryClient.invalidateQueries({ queryKey: [username, 'dailyGoals'] });
+        queryClient.invalidateQueries({
+          queryKey: [username, 'longTermGoals'],
+        });
         toast.success('Long-term goal created successfully!');
         setIsCreating(false);
         setNewLongTermGoal({
