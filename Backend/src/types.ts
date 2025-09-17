@@ -275,6 +275,32 @@ export interface IDailyGoalProgress {
   };
 }
 
+export interface ILongTermGoal extends Document {
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  totalTarget: number; // Total amount to achieve by target date
+  targetDate: Date; // Deadline for achieving the goal
+  displayTimeframe: 'daily' | 'weekly' | 'monthly'; // How to display progress
+  startDate: Date; // When the goal period started
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ILongTermGoalProgress {
+  goalId: Types.ObjectId;
+  totalProgress: number; // Current total progress
+  requiredPerTimeframe: number; // Required progress per display timeframe to meet goal
+  remainingDays: number;
+  remainingTarget: number;
+  isOnTrack: boolean; // Whether current pace will meet the goal
+  timeframeName: string; // "today", "this week", "this month"
+  progressToday?: number; // Progress made today (for context)
+  progressThisWeek?: number; // Progress made this week
+  progressThisMonth?: number; // Progress made this month
+}
+
 export interface IClubMember {
   user: Types.ObjectId;
   role: 'leader' | 'moderator' | 'member';

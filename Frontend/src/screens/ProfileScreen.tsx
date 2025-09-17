@@ -1,7 +1,7 @@
 import { useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
 import ProgressBar from '../components/ProgressBar';
-import DailyGoalsCard from '../components/DailyGoalsCard';
+import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import React, { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -253,7 +253,7 @@ function ProfileScreen() {
             </div>
 
             {username === loggedUser?.username && (
-              <DailyGoalsCard username={username} />
+              <ImmersionGoals username={username} />
             )}
           </div>
 

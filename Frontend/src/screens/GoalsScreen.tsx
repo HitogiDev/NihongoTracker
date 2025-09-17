@@ -1,6 +1,6 @@
 import { useOutletContext } from 'react-router-dom';
 import { OutletProfileContextType } from '../types';
-import DailyGoals from '../components/DailyGoals';
+import ImmersionGoals from '../components/ImmersionGoals';
 
 function GoalsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
@@ -15,13 +15,16 @@ function GoalsScreen() {
                 {username}'s Goals
               </h1>
               <p className="text-base-content/70">
-                Set and track your daily immersion goals
+                Set and track your daily and long-term immersion goals
               </p>
             </div>
           </div>
         </div>
 
-        <DailyGoals username={username} />
+        {/* Immersion Goals Section */}
+        <div className="mb-8">
+          <ImmersionGoals username={username} />
+        </div>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card bg-base-100 shadow-xl">
@@ -68,7 +71,7 @@ function GoalsScreen() {
             <div className="card-body">
               <h2 className="card-title">
                 <svg
-                  className="w-6 h-6 text-secondary"
+                  className="w-6 h-6 text-accent"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -77,14 +80,13 @@ function GoalsScreen() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                   ></path>
                 </svg>
-                Long-term Goals
+                Goal Analytics
               </h2>
               <p className="text-base-content/70 mb-4">
-                Set weekly, monthly, and yearly targets for your Japanese
-                learning journey.
+                Analyze your goal patterns, streaks, and improvement over time.
               </p>
               <div className="alert alert-info">
                 <svg
@@ -100,7 +102,7 @@ function GoalsScreen() {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>Coming soon: Weekly and monthly goal tracking!</span>
+                <span>Coming soon: Advanced goal analytics and insights!</span>
               </div>
             </div>
           </div>

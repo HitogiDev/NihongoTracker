@@ -7,7 +7,7 @@ import { useMemo, useRef, useState } from 'react';
 import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
 import StackedBarChart from '../components/StackedBarChart';
-import DailyGoals from '../components/DailyGoals';
+import ImmersionGoals from '../components/ImmersionGoals';
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
 import { convertToUserTimezone } from '../utils/timezone';
@@ -600,7 +600,7 @@ function StatsScreen() {
 
         {username === loggedUser?.username && (
           <div className="mb-8">
-            <DailyGoals username={username} />
+            <ImmersionGoals username={username} />
           </div>
         )}
 

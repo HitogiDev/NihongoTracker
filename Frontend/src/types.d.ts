@@ -519,6 +519,36 @@ export interface IDailyGoalsResponse {
   todayProgress: IDailyGoalProgress;
 }
 
+export interface ILongTermGoal {
+  _id?: string;
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  totalTarget: number; // Total amount to achieve by target date
+  targetDate: Date | string; // Deadline for achieving the goal
+  displayTimeframe: 'daily' | 'weekly' | 'monthly'; // How to display progress
+  startDate: Date | string; // When the goal period started
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  progress?: ILongTermGoalProgress; // Calculated progress data
+}
+
+export interface ILongTermGoalProgress {
+  goalId: string;
+  totalProgress: number; // Current total progress
+  requiredPerTimeframe: number; // Required progress per display timeframe to meet goal
+  remainingDays: number;
+  remainingTarget: number;
+  isOnTrack: boolean; // Whether current pace will meet the goal
+  timeframeName: string; // "today", "this week", "this month"
+  progressToday?: number; // Progress made today (for context)
+  progressThisWeek?: number; // Progress made this week
+  progressThisMonth?: number; // Progress made this month
+}
+
+export interface ILongTermGoalsResponse {
+  goals: ILongTermGoal[];
+}
+
 interface IJitenDeck {
   deckId: number;
   creationDate: Date;

@@ -17,6 +17,8 @@ import {
   updateLogRequest,
   IDailyGoal,
   IDailyGoalsResponse,
+  ILongTermGoal,
+  ILongTermGoalsResponse,
   IJitenResponse,
 } from '../types';
 
@@ -298,6 +300,38 @@ export async function updateDailyGoalFn(
 
 export async function deleteDailyGoalFn(goalId: string) {
   const { data } = await api.delete(`goals/daily/${goalId}`);
+  return data;
+}
+
+// Long-term goals API functions
+export async function getLongTermGoalsFn(username: string | undefined) {
+  if (!username) return null;
+  const { data } = await api.get<ILongTermGoalsResponse>(
+    `goals/long-term/${username}`
+  );
+  return data;
+}
+
+export async function createLongTermGoalFn(
+  goal: Omit<ILongTermGoal, '_id' | 'createdAt' | 'updatedAt' | 'progress'>
+) {
+  const { data } = await api.post<ILongTermGoal>('goals/long-term', goal);
+  return data;
+}
+
+export async function updateLongTermGoalFn(
+  goalId: string,
+  goal: Partial<ILongTermGoal>
+) {
+  const { data } = await api.patch<ILongTermGoal>(
+    `goals/long-term/${goalId}`,
+    goal
+  );
+  return data;
+}
+
+export async function deleteLongTermGoalFn(goalId: string) {
+  const { data } = await api.delete(`goals/long-term/${goalId}`);
   return data;
 }
 

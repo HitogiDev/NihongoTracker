@@ -53,6 +53,18 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
               Immersion List
             </Link>
           </li>
+          {/* <li>
+            <Link
+              to={`/user/${username}/goals`}
+              className={
+                isActive(`/user/${username}/goals`)
+                  ? 'active bg-primary text-primary-content'
+                  : ''
+              }
+            >
+              Goals
+            </Link>
+          </li> */}
         </ul>
       </div>
     </div>

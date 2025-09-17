@@ -45,6 +45,7 @@ import ClubMediaInfo from './screens/ClubMediaInfo.tsx';
 import ClubMediaActivity from './screens/ClubMediaActivity.tsx';
 import ClubMediaReviews from './screens/ClubMediaReviews.tsx';
 import ClubMediaRankings from './screens/ClubMediaRankings.tsx';
+import GoalsScreen from './screens/GoalsScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -72,6 +73,7 @@ const router = createBrowserRouter(
         <Route index element={<ProfileScreen />} />
         <Route path="stats" element={<StatsScreen />} />
         <Route path="list" element={<ListScreen />} />
+        <Route path="goals" element={<GoalsScreen />} />
       </Route>
       <Route element={<ProtectedRoutes />}>
         <Route index path="createlog" element={<LogScreen />} />

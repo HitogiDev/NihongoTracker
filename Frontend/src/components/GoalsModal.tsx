@@ -6,8 +6,9 @@ import {
   createDailyGoalFn,
   deleteDailyGoalFn,
   updateDailyGoalFn,
+  createLongTermGoalFn,
 } from '../api/trackerApi';
-import { IDailyGoal } from '../types';
+import { IDailyGoal, ILongTermGoal } from '../types';
 import {
   MdAdd,
   MdDelete,
@@ -57,11 +58,26 @@ interface GoalsModalProps {
 function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [goalDuration, setGoalDuration] = useState<'daily' | 'long-term'>(
+    'daily'
+  );
   const [newGoal, setNewGoal] = useState<
     Omit<IDailyGoal, '_id' | 'createdAt' | 'updatedAt'>
   >({
     type: 'time',
     target: 30,
+    isActive: true,
+  });
+  const [newLongTermGoal, setNewLongTermGoal] = useState<
+    Omit<ILongTermGoal, '_id' | 'createdAt' | 'updatedAt' | 'progress'>
+  >({
+    type: 'chars',
+    totalTarget: 1000000,
+    targetDate: new Date(new Date().getFullYear() + 1, 0, 1)
+      .toISOString()
+      .split('T')[0],
+    displayTimeframe: 'daily',
+    startDate: new Date().toISOString().split('T')[0],
     isActive: true,
   });
   const [editGoal, setEditGoal] = useState<Partial<IDailyGoal>>({});
@@ -124,6 +140,36 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
     },
   });
 
+  // Long-term goal mutations
+  const { mutate: createLongGoal, isPending: isCreatingLongGoal } = useMutation(
+    {
+      mutationFn: createLongTermGoalFn,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+        queryClient.invalidateQueries({ queryKey: ['longTermGoals'] });
+        toast.success('Long-term goal created successfully!');
+        setIsCreating(false);
+        setNewLongTermGoal({
+          type: 'chars',
+          totalTarget: 1000000,
+          targetDate: new Date(new Date().getFullYear() + 1, 0, 1)
+            .toISOString()
+            .split('T')[0],
+          displayTimeframe: 'daily',
+          startDate: new Date().toISOString().split('T')[0],
+          isActive: true,
+        });
+      },
+      onError: (error) => {
+        const errorMessage =
+          error instanceof AxiosError
+            ? error.response?.data.message
+            : 'An error occurred';
+        toast.error(errorMessage);
+      },
+    }
+  );
+
   const validateGoal = (
     goal: { type: string; target: number },
     isEdit = false
@@ -167,18 +213,68 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
     return validationErrors;
   };
 
-  const handleCreateGoal = () => {
-    const validationErrors = validateGoal(newGoal);
-    setErrors(validationErrors);
+  const validateLongTermGoal = (goal: {
+    type: string;
+    totalTarget: number;
+    targetDate: string | Date;
+    startDate: string | Date;
+  }) => {
+    const validationErrors: Record<string, string> = {};
 
-    if (Object.keys(validationErrors).length > 0) {
-      if (validationErrors.duplicate) {
-        toast.error(validationErrors.duplicate);
-      }
-      return;
+    if (goal.totalTarget <= 0) {
+      validationErrors.totalTarget = 'Total target must be greater than 0';
     }
 
-    createGoal(newGoal);
+    const targetDate = new Date(goal.targetDate);
+    const startDate = new Date(goal.startDate);
+    const now = new Date();
+
+    if (targetDate <= now) {
+      validationErrors.targetDate = 'Target date must be in the future';
+    }
+
+    if (startDate >= targetDate) {
+      validationErrors.startDate = 'Start date must be before target date';
+    }
+
+    // Validate reasonable targets
+    if (goal.type === 'chars' && goal.totalTarget > 10000000) {
+      validationErrors.totalTarget =
+        'Character target seems unreasonably high (max: 10M)';
+    }
+
+    if (goal.type === 'time' && goal.totalTarget > 525600) {
+      validationErrors.totalTarget =
+        'Time target seems unreasonably high (max: 1 year)';
+    }
+
+    return validationErrors;
+  };
+
+  const handleCreateGoal = () => {
+    if (goalDuration === 'daily') {
+      const validationErrors = validateGoal(newGoal);
+      setErrors(validationErrors);
+
+      if (Object.keys(validationErrors).length > 0) {
+        if (validationErrors.duplicate) {
+          toast.error(validationErrors.duplicate);
+        }
+        return;
+      }
+
+      createGoal(newGoal);
+    } else {
+      // Handle long-term goal creation
+      const validationErrors = validateLongTermGoal(newLongTermGoal);
+      setErrors(validationErrors);
+
+      if (Object.keys(validationErrors).length > 0) {
+        return;
+      }
+
+      createLongGoal(newLongTermGoal);
+    }
   };
 
   const handleUpdateGoal = (goalId: string) => {
@@ -249,6 +345,23 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
           {isCreating && (
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
+                <div className="mb-4">
+                  <label className="label">
+                    <span className="label-text">Goal Duration</span>
+                  </label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={goalDuration}
+                    onChange={(e) => {
+                      setGoalDuration(e.target.value as 'daily' | 'long-term');
+                      setErrors({});
+                    }}
+                  >
+                    <option value="daily">Daily Goal</option>
+                    <option value="long-term">Long-term Goal</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="label">
@@ -256,12 +369,23 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
                     </label>
                     <select
                       className="select select-bordered w-full"
-                      value={newGoal.type}
+                      value={
+                        goalDuration === 'daily'
+                          ? newGoal.type
+                          : newLongTermGoal.type
+                      }
                       onChange={(e) => {
-                        setNewGoal({
-                          ...newGoal,
-                          type: e.target.value as IDailyGoal['type'],
-                        });
+                        if (goalDuration === 'daily') {
+                          setNewGoal({
+                            ...newGoal,
+                            type: e.target.value as IDailyGoal['type'],
+                          });
+                        } else {
+                          setNewLongTermGoal({
+                            ...newLongTermGoal,
+                            type: e.target.value as ILongTermGoal['type'],
+                          });
+                        }
                         setErrors({});
                       }}
                     >
@@ -274,23 +398,44 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
                   </div>
                   <div>
                     <label className="label">
-                      <span className="label-text">Target</span>
+                      <span className="label-text">
+                        {goalDuration === 'daily'
+                          ? 'Daily Target'
+                          : 'Total Target'}
+                      </span>
                     </label>
                     <input
                       type="number"
                       min="1"
-                      className={`input input-bordered w-full ${errors.target ? 'input-error' : ''}`}
-                      value={newGoal.target}
+                      className={`input input-bordered w-full ${
+                        (goalDuration === 'daily' && errors.target) ||
+                        (goalDuration === 'long-term' && errors.totalTarget)
+                          ? 'input-error'
+                          : ''
+                      }`}
+                      value={
+                        goalDuration === 'daily'
+                          ? newGoal.target
+                          : newLongTermGoal.totalTarget
+                      }
                       onChange={(e) => {
-                        setNewGoal({
-                          ...newGoal,
-                          target: Number(e.target.value),
-                        });
+                        if (goalDuration === 'daily') {
+                          setNewGoal({
+                            ...newGoal,
+                            target: Number(e.target.value),
+                          });
+                        } else {
+                          setNewLongTermGoal({
+                            ...newLongTermGoal,
+                            totalTarget: Number(e.target.value),
+                          });
+                        }
                         setErrors({});
                       }}
                       placeholder="Enter target value"
                     />
-                    {errors.target && (
+                    {((goalDuration === 'daily' && errors.target) ||
+                      (goalDuration === 'long-term' && errors.totalTarget)) && (
                       <label className="label">
                         <span className="label-text-alt text-error flex items-center gap-1">
                           <svg
@@ -304,20 +449,122 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
                               clipRule="evenodd"
                             />
                           </svg>
-                          {errors.target}
+                          {goalDuration === 'daily'
+                            ? errors.target
+                            : errors.totalTarget}
                         </span>
                       </label>
                     )}
                   </div>
+
+                  {goalDuration === 'long-term' && (
+                    <div>
+                      <label className="label">
+                        <span className="label-text">Display Progress</span>
+                      </label>
+                      <select
+                        className="select select-bordered w-full"
+                        value={newLongTermGoal.displayTimeframe}
+                        onChange={(e) => {
+                          setNewLongTermGoal({
+                            ...newLongTermGoal,
+                            displayTimeframe: e.target
+                              .value as ILongTermGoal['displayTimeframe'],
+                          });
+                          setErrors({});
+                        }}
+                      >
+                        <option value="daily">Daily Progress</option>
+                        <option value="weekly">Weekly Progress</option>
+                        <option value="monthly">Monthly Progress</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {goalDuration === 'long-term' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="label">
+                        <span className="label-text">Start Date</span>
+                      </label>
+                      <input
+                        type="date"
+                        className={`input input-bordered w-full ${errors.startDate ? 'input-error' : ''}`}
+                        value={
+                          typeof newLongTermGoal.startDate === 'string'
+                            ? newLongTermGoal.startDate
+                            : new Date(newLongTermGoal.startDate)
+                                .toISOString()
+                                .split('T')[0]
+                        }
+                        onChange={(e) => {
+                          setNewLongTermGoal({
+                            ...newLongTermGoal,
+                            startDate: e.target.value,
+                          });
+                          setErrors({});
+                        }}
+                      />
+                      {errors.startDate && (
+                        <div className="label">
+                          <span className="label-text-alt text-error">
+                            {errors.startDate}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="label">
+                        <span className="label-text">Target Date</span>
+                      </label>
+                      <input
+                        type="date"
+                        className={`input input-bordered w-full ${errors.targetDate ? 'input-error' : ''}`}
+                        value={
+                          typeof newLongTermGoal.targetDate === 'string'
+                            ? newLongTermGoal.targetDate
+                            : new Date(newLongTermGoal.targetDate)
+                                .toISOString()
+                                .split('T')[0]
+                        }
+                        onChange={(e) => {
+                          setNewLongTermGoal({
+                            ...newLongTermGoal,
+                            targetDate: e.target.value,
+                          });
+                          setErrors({});
+                        }}
+                      />
+                      {errors.targetDate && (
+                        <div className="label">
+                          <span className="label-text-alt text-error">
+                            {errors.targetDate}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-4">
                   <div className="flex items-end">
                     <button
                       onClick={handleCreateGoal}
                       disabled={
-                        isCreatingGoal || Object.keys(errors).length > 0
+                        (goalDuration === 'daily'
+                          ? isCreatingGoal
+                          : isCreatingLongGoal) ||
+                        Object.keys(errors).length > 0
                       }
                       className="btn btn-primary w-full"
                     >
-                      {isCreatingGoal ? (
+                      {(
+                        goalDuration === 'daily'
+                          ? isCreatingGoal
+                          : isCreatingLongGoal
+                      ) ? (
                         <>
                           <span className="loading loading-spinner loading-sm"></span>
                           Creating...
@@ -325,7 +572,11 @@ function GoalsModal({ isOpen, onClose, goals }: GoalsModalProps) {
                       ) : (
                         <>
                           <MdSave className="w-4 h-4" />
-                          Create
+                          Create{' '}
+                          {goalDuration === 'daily'
+                            ? 'Daily'
+                            : 'Long-term'}{' '}
+                          Goal
                         </>
                       )}
                     </button>
