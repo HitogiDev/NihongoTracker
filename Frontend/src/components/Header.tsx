@@ -206,15 +206,6 @@ function Header() {
                 </li>
                 <li>
                   <Link
-                    to="/clubs"
-                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                  >
-                    <MdGroup className="text-lg" />
-                    Clubs
-                  </Link>
-                </li>
-                <li>
-                  <Link
                     to="/about"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
@@ -303,14 +294,6 @@ function Header() {
                   to="/ranking"
                 >
                   Ranking
-                </Link>
-              </li>
-              <li>
-                <Link
-                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
-                  to="/clubs"
-                >
-                  Clubs
                 </Link>
               </li>
               <li>

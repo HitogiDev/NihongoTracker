@@ -221,11 +221,11 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     return (
                       <div
                         key={goal._id}
-                        className={`stat bg-base-200 rounded-lg p-4 ${
+                        className={`stat bg-base-200 rounded-lg p-4 relative ${
                           isCompleted ? 'border-2 border-success' : ''
                         }`}
                       >
-                        <div className="stat-figure">
+                        <div className="stat-figure absolute right-4 top-4">
                           {isCompleted ? (
                             <MdCheckCircle className="w-8 h-8 text-success" />
                           ) : (
