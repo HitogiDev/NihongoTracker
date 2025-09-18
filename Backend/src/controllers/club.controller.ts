@@ -3,7 +3,7 @@ import { Club } from '../models/club.model.js';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import Log from '../models/log.model.js';
-import uploadFile from '../services/uploadFile.js';
+import uploadFile, { uploadFileWithCleanup } from '../services/uploadFile.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { Types } from 'mongoose';
 import {
@@ -523,12 +523,18 @@ export async function updateClub(
         };
 
         if (files.avatar?.[0]) {
-          const file = await uploadFile(files.avatar[0]);
+          const file = await uploadFileWithCleanup(
+            files.avatar[0],
+            club.avatar
+          );
           updateData.avatar = file.downloadURL;
         }
 
         if (files.banner?.[0]) {
-          const file = await uploadFile(files.banner[0]);
+          const file = await uploadFileWithCleanup(
+            files.banner[0],
+            club.banner
+          );
           updateData.banner = file.downloadURL;
         }
       } catch (error) {

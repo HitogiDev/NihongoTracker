@@ -3,7 +3,7 @@ import Log from '../models/log.model.js';
 import { Request, Response, NextFunction } from 'express';
 import { IMediaDocument, IUpdateRequest } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
-import uploadFile from '../services/uploadFile.js';
+import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 
 export async function updateUser(
   req: Request,
@@ -80,13 +80,23 @@ export async function updateUser(
         };
 
         if (files.avatar?.[0]) {
-          const file = await uploadFile(files.avatar[0]);
+          console.log('User avatar update - Current avatar URL:', user.avatar);
+          const file = await uploadFileWithCleanup(
+            files.avatar[0],
+            user.avatar
+          );
           user.avatar = file.downloadURL;
+          console.log('User avatar update - New avatar URL:', user.avatar);
         }
 
         if (files.banner?.[0]) {
-          const file = await uploadFile(files.banner[0]);
+          console.log('User banner update - Current banner URL:', user.banner);
+          const file = await uploadFileWithCleanup(
+            files.banner[0],
+            user.banner
+          );
           user.banner = file.downloadURL;
+          console.log('User banner update - New banner URL:', user.banner);
         }
 
         if (!files.avatar && !files.banner) {
@@ -739,10 +749,24 @@ export async function clearUserData(
       throw new customError('User not found', 404);
     }
 
+    // Delete user's files from Firebase before clearing data
+    if (user.avatar) {
+      await deleteFile(user.avatar);
+    }
+    if (user.banner) {
+      await deleteFile(user.banner);
+    }
+
     await user.updateOne({
       clubs: [],
       titles: [],
-      $unset: { stats: '', lastImport: '', discordId: '' },
+      $unset: {
+        stats: '',
+        lastImport: '',
+        discordId: '',
+        avatar: '',
+        banner: '',
+      },
     });
 
     await Log.deleteMany({ user: user._id });

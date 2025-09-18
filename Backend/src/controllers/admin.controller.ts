@@ -3,6 +3,7 @@ import Log from '../models/log.model.js';
 import { Request, Response, NextFunction } from 'express';
 import { IUser } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { deleteFile } from '../services/uploadFile.js';
 import bcrypt from 'bcryptjs';
 
 export async function getAdminStats(
@@ -177,10 +178,19 @@ export async function deleteUserById(
   next: NextFunction
 ) {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
-    if (!deletedUser) throw new customError('User not found', 404);
+    const user = await User.findById(req.params.id);
+    if (!user) throw new customError('User not found', 404);
 
-    // Also delete all logs by this user
+    // Delete user's files from Firebase before deleting user
+    if (user.avatar) {
+      await deleteFile(user.avatar);
+    }
+    if (user.banner) {
+      await deleteFile(user.banner);
+    }
+
+    // Delete the user and their logs
+    await User.findByIdAndDelete(req.params.id);
     await Log.deleteMany({ user: req.params.id });
 
     return res.sendStatus(204);
