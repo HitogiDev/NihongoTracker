@@ -67,7 +67,6 @@ export default function CreateVotingWizard({
   club,
 }: CreateVotingWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [votingId, setVotingId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
 
@@ -117,38 +116,33 @@ export default function CreateVotingWizard({
 
   const queryClient = useQueryClient();
 
-  const createVotingMutation = useMutation({
-    mutationFn: (data: VotingData) => createMediaVotingFn(club._id, data),
-    onSuccess: (response) => {
-      setVotingId(response.voting._id || '');
-      setCurrentStep(2);
-      toast.success('Voting created successfully!');
-    },
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create voting';
-      toast.error(message);
-    },
-  });
-
-  const addCandidateMutation = useMutation({
-    mutationFn: (candidate: Candidate) =>
-      addVotingCandidateFn(club._id, votingId, candidate),
-    onSuccess: () => {
-      toast.success('Candidate added successfully!');
-      resetTempCandidate();
-    },
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to add candidate';
-      toast.error(message);
-    },
-  });
-
   const finalizeVotingMutation = useMutation({
-    mutationFn: () => finalizeVotingFn(club._id, votingId),
+    mutationFn: async () => {
+      // Step 1: Create the voting
+      const votingResponse = await createMediaVotingFn(club._id, votingData);
+      const createdVotingId = votingResponse.voting._id || '';
+
+      // Step 2: Add all candidates sequentially to avoid version conflicts
+      if (candidates.length > 0) {
+        for (const candidate of candidates) {
+          await addVotingCandidateFn(club._id, createdVotingId, candidate);
+        }
+      }
+
+      // Step 3: Only finalize the voting if it's manual submission
+      // For member suggestions, leave it in 'suggestions_open' status
+      if (votingData.candidateSubmissionType === 'manual') {
+        await finalizeVotingFn(club._id, createdVotingId);
+      }
+
+      return { votingId: createdVotingId };
+    },
     onSuccess: () => {
-      toast.success('Voting finalized successfully!');
+      const message =
+        votingData.candidateSubmissionType === 'member_suggestions'
+          ? 'Voting created! Members can now submit suggestions.'
+          : 'Voting created successfully!';
+      toast.success(message);
       queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
       queryClient.invalidateQueries({ queryKey: ['club', club._id] });
       onClose();
@@ -156,14 +150,13 @@ export default function CreateVotingWizard({
     },
     onError: (error: unknown) => {
       const message =
-        error instanceof Error ? error.message : 'Failed to finalize voting';
+        error instanceof Error ? error.message : 'Failed to launch voting';
       toast.error(message);
     },
   });
 
   const resetWizard = () => {
     setCurrentStep(1);
-    setVotingId('');
     setVotingData({
       title: '',
       description: '',
@@ -231,7 +224,8 @@ export default function CreateVotingWizard({
 
     const newCandidate = { ...tempCandidate };
     setCandidates((prev) => [...prev, newCandidate]);
-    addCandidateMutation.mutate(newCandidate);
+    resetTempCandidate();
+    toast.success('Candidate added to voting!');
   };
 
   const validateStep1 = () => {
@@ -297,7 +291,8 @@ export default function CreateVotingWizard({
 
   const handleStep1Submit = () => {
     if (!validateStep1()) return;
-    createVotingMutation.mutate(votingData);
+    // Just move to next step, don't create voting yet
+    setCurrentStep(2);
   };
 
   if (!isOpen) return null;
@@ -1003,14 +998,10 @@ export default function CreateVotingWizard({
 
                     <button
                       onClick={handleAddCandidate}
-                      disabled={
-                        addCandidateMutation.isPending || !tempCandidate.title
-                      }
+                      disabled={!tempCandidate.title}
                       className="btn btn-primary"
                     >
-                      {addCandidateMutation.isPending
-                        ? 'Adding...'
-                        : 'Add Candidate'}
+                      Add Candidate
                     </button>
                   </div>
                 </div>
@@ -1169,10 +1160,7 @@ export default function CreateVotingWizard({
             <button
               onClick={() => setCurrentStep((prev) => prev - 1)}
               className="btn btn-outline"
-              disabled={
-                createVotingMutation.isPending ||
-                finalizeVotingMutation.isPending
-              }
+              disabled={finalizeVotingMutation.isPending}
             >
               <MdArrowBack className="w-4 h-4" />
               Back
@@ -1182,27 +1170,15 @@ export default function CreateVotingWizard({
           <button
             onClick={onClose}
             className="btn btn-outline"
-            disabled={
-              createVotingMutation.isPending || finalizeVotingMutation.isPending
-            }
+            disabled={finalizeVotingMutation.isPending}
           >
             Cancel
           </button>
 
           {currentStep === 1 && (
-            <button
-              onClick={handleStep1Submit}
-              disabled={createVotingMutation.isPending}
-              className="btn btn-primary"
-            >
-              {createVotingMutation.isPending ? (
-                'Creating...'
-              ) : (
-                <>
-                  Next
-                  <MdArrowForward className="w-4 h-4" />
-                </>
-              )}
+            <button onClick={handleStep1Submit} className="btn btn-primary">
+              Next
+              <MdArrowForward className="w-4 h-4" />
             </button>
           )}
 

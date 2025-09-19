@@ -4,43 +4,36 @@ import { toast } from 'react-toastify';
 import {
   MdCalendarToday,
   MdSchedule,
-  MdGroup,
   MdHowToVote,
-  MdEmojiEvents,
   MdCheckCircle,
   MdEdit,
   MdDelete,
+  MdChevronLeft,
+  MdChevronRight,
+  MdSettings,
+  MdAdd,
 } from 'react-icons/md';
 import {
   getMediaVotingsFn,
   voteForCandidateFn,
-  completeVotingFn,
   deleteMediaVotingFn,
 } from '../../api/clubApi';
 import { IClubMediaVoting, IClub } from '../../types';
 import { useUserDataStore } from '../../store/userData';
 import EditVotingModal from './EditVotingModal';
+import CreateVotingWizard from './CreateVotingWizard';
+import SuggestMediaModal from './SuggestMediaModal';
 
 interface VotingSystemProps {
   club: IClub;
   canManageVoting: boolean;
-}
-
-interface CompleteVotingResponse {
-  message: string;
-  winner: {
-    mediaId: string;
-    title: string;
-    description?: string;
-    image?: string;
-  } | null;
-  wasTie?: boolean;
-  tiedCandidatesCount?: number;
+  showManagement: boolean;
 }
 
 export default function VotingSystem({
   club,
   canManageVoting,
+  showManagement,
 }: VotingSystemProps) {
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
     null
@@ -51,6 +44,11 @@ export default function VotingSystem({
   const [deletingVoting, setDeletingVoting] = useState<IClubMediaVoting | null>(
     null
   );
+  const [currentVotingIndex, setCurrentVotingIndex] = useState(0);
+  const [showCreateWizard, setShowCreateWizard] = useState(false);
+  const [suggestingVoting, setSuggestingVoting] =
+    useState<IClubMediaVoting | null>(null);
+
   const queryClient = useQueryClient();
   const { user } = useUserDataStore();
 
@@ -74,23 +72,6 @@ export default function VotingSystem({
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : 'Failed to vote';
-      toast.error(message);
-    },
-  });
-
-  const completeVotingMutation = useMutation({
-    mutationFn: (votingId: string) => completeVotingFn(club._id, votingId),
-    onSuccess: (data: CompleteVotingResponse) => {
-      const message = data.wasTie
-        ? `Voting completed! Winner selected randomly from ${data.tiedCandidatesCount} tied candidates.`
-        : 'Voting completed successfully!';
-      toast.success(message);
-      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
-      queryClient.invalidateQueries({ queryKey: ['club', club._id] });
-    },
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : 'Failed to complete voting';
       toast.error(message);
     },
   });
@@ -158,22 +139,21 @@ export default function VotingSystem({
     );
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date';
+    }
+
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(date);
-  };
-
-  const handleVoteConfirm = (voting: IClubMediaVoting) => {
-    if (selectedCandidate === null || !voting._id) return;
-    voteMutation.mutate({
-      votingId: voting._id,
-      candidateIndex: selectedCandidate,
-    });
+    }).format(dateObj);
   };
 
   if (isLoading) {
@@ -186,425 +166,190 @@ export default function VotingSystem({
   }
 
   const votings = votingsData?.votings || [];
-  const activeVoting = votings.find((v) => v.status === 'voting_open');
+  const openVotings = votings.filter((v) => v.status === 'voting_open');
+  const suggestionVotings = votings.filter(
+    (v) => v.status === 'suggestions_open'
+  );
+  const managementVotings = votings.filter(
+    (v) => v.status === 'setup' || v.status === 'suggestions_closed'
+  );
 
-  // Show active voting prominently on club page
-  if (activeVoting) {
-    const status = getVotingStatus(activeVoting);
-    const totalVotes = getTotalVotes(activeVoting);
-
-    // Check if user has already voted
-    const userVoted = activeVoting.candidates.some((candidate) =>
-      candidate.votes.some((vote) => vote === user?._id)
-    );
-
-    // Find which candidate the user voted for (if any)
-    const userVotedCandidate = activeVoting.candidates.findIndex((candidate) =>
-      candidate.votes.some((vote) => vote === user?._id)
-    );
-
-    const canVote = status.status === 'voting_open' && !userVoted;
-
-    return (
-      <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-lg border border-primary/20">
-        <div className="card-body">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <MdHowToVote className="w-8 h-8 text-primary" />
-              <div>
-                <h3 className="card-title text-xl">Active Voting</h3>
-                <span className={`badge badge-${status.color}`}>
-                  {status.label}
-                </span>
-              </div>
-            </div>
-            {canManageVoting && status.status === 'ended' && (
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() =>
-                  activeVoting._id &&
-                  completeVotingMutation.mutate(activeVoting._id)
-                }
-                disabled={completeVotingMutation.isPending}
-              >
-                <MdEmojiEvents className="w-4 h-4" />
-                Complete Voting
-              </button>
-            )}
-          </div>
-
-          <h4 className="text-lg font-semibold mb-2">{activeVoting.title}</h4>
-
-          {activeVoting.description && (
-            <p className="text-base-content/70 text-sm mb-4">
-              {activeVoting.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-4 text-sm text-base-content/60 mb-6">
-            <div className="flex items-center gap-1">
-              <MdCalendarToday className="w-4 h-4" />
-              Voting: {formatDate(
-                new Date(activeVoting.votingStartDate)
-              )} - {formatDate(new Date(activeVoting.votingEndDate))}
-            </div>
-            <div className="flex items-center gap-1">
-              <MdSchedule className="w-4 h-4" />
-              Consumption:{' '}
-              {formatDate(new Date(activeVoting.consumptionStartDate))} -{' '}
-              {formatDate(new Date(activeVoting.consumptionEndDate))}
-            </div>
-            <div className="flex items-center gap-1">
-              <MdGroup className="w-4 h-4" />
-              {totalVotes} votes cast
-            </div>
-          </div>
-
-          {/* Candidates Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-            {activeVoting.candidates.map((candidate, index) => {
-              const percentage =
-                totalVotes > 0
-                  ? (candidate.votes.length / totalVotes) * 100
-                  : 0;
-              const isSelected = selectedCandidate === index;
-              const isUserVote = userVotedCandidate === index;
-
-              return (
-                <div
-                  key={index}
-                  className={`group relative cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-100'
-                      : isUserVote && userVoted
-                        ? 'ring-2 ring-success ring-offset-2 ring-offset-base-100'
-                        : 'hover:scale-105'
-                  } ${!canVote ? 'cursor-default' : ''}`}
-                  onClick={() =>
-                    canVote && setSelectedCandidate(isSelected ? null : index)
-                  }
-                >
-                  <div className="card bg-base-100 shadow-sm overflow-hidden">
-                    <figure className="relative aspect-[2/3] overflow-hidden">
-                      {candidate.image ? (
-                        <img
-                          src={candidate.image}
-                          alt={candidate.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-base-200 flex items-center justify-center">
-                          <span className="text-base-content/50">No Image</span>
-                        </div>
-                      )}
-
-                      {/* Hover overlay with title and description */}
-                      <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3">
-                        <h5 className="text-white font-medium text-sm mb-1">
-                          {candidate.title}
-                        </h5>
-                        {candidate.description && (
-                          <p
-                            className="text-white/80 text-xs overflow-hidden"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: 'vertical',
-                            }}
-                          >
-                            {candidate.description}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Selection indicator */}
-                      {isSelected && (
-                        <div className="absolute top-2 right-2">
-                          <MdCheckCircle className="w-6 h-6 text-primary bg-white rounded-full" />
-                        </div>
-                      )}
-
-                      {/* User's vote indicator */}
-                      {isUserVote && userVoted && (
-                        <div className="absolute top-2 left-2">
-                          <span className="badge badge-success badge-sm">
-                            Your Vote
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Vote count */}
-                      <div className="absolute bottom-2 left-2">
-                        <span className="badge badge-primary badge-sm">
-                          {candidate.votes.length} votes (
-                          {percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                    </figure>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Vote Confirmation */}
-          {canVote && selectedCandidate !== null && (
-            <div className="alert alert-info">
-              <div className="flex-1">
-                <span className="font-medium">
-                  Selected: {activeVoting.candidates[selectedCandidate]?.title}
-                </span>
-                <p className="text-sm mt-1">
-                  Click the button below to confirm your vote. Once confirmed,
-                  your vote cannot be changed.
-                </p>
-              </div>
-              <button
-                onClick={() => handleVoteConfirm(activeVoting)}
-                disabled={voteMutation.isPending}
-                className="btn btn-primary btn-sm"
-              >
-                {voteMutation.isPending ? 'Voting...' : 'Confirm Vote'}
-              </button>
-            </div>
-          )}
-
-          {userVoted && (
-            <div className="alert alert-success">
-              <div className="text-sm">
-                You have successfully voted in this voting. Your vote is final
-                and cannot be changed. Results update in real-time.
-              </div>
-            </div>
-          )}
-
-          {!canVote && !userVoted && status.status !== 'voting_open' && (
-            <div className="alert alert-warning">
-              <div className="text-sm">Voting is not currently open.</div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+  // Reset carousel index if it's out of bounds
+  if (currentVotingIndex >= openVotings.length && openVotings.length > 0) {
+    setCurrentVotingIndex(0);
   }
 
-  // Show all votings if no active voting
-  if (votings.length === 0) {
-    return (
-      <>
-        <div className="text-center py-8">
-          <MdHowToVote className="w-12 h-12 mx-auto text-base-content/50 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Active Votings</h3>
-          <p className="text-base-content/70">
-            {canManageVoting
-              ? 'Create a new voting for members to choose the next media.'
-              : 'No votings are currently available.'}
-          </p>
-        </div>
+  const nextVoting = () => {
+    setCurrentVotingIndex((prev) => (prev + 1) % openVotings.length);
+  };
 
-        {/* Edit Voting Modal */}
-        <EditVotingModal
-          isOpen={editingVoting !== null}
-          onClose={() => setEditingVoting(null)}
-          club={club}
-          voting={editingVoting}
-        />
-
-        {/* Delete Confirmation Modal */}
-        {deletingVoting && (
-          <div className="modal modal-open">
-            <div className="modal-box">
-              <h3 className="font-bold text-lg">Delete Voting</h3>
-              <p className="py-4">
-                Are you sure you want to delete "{deletingVoting.title}"? This
-                action cannot be undone and will remove all associated data
-                including votes and candidates.
-              </p>
-              <div className="modal-action">
-                <button
-                  onClick={() => setDeletingVoting(null)}
-                  className="btn btn-outline"
-                  disabled={deleteVotingMutation.isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() =>
-                    deletingVoting._id &&
-                    deleteVotingMutation.mutate(deletingVoting._id)
-                  }
-                  className="btn btn-error"
-                  disabled={deleteVotingMutation.isPending}
-                >
-                  {deleteVotingMutation.isPending ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-            <div
-              className="modal-backdrop bg-black/50"
-              onClick={() => setDeletingVoting(null)}
-            ></div>
-          </div>
-        )}
-      </>
+  const prevVoting = () => {
+    setCurrentVotingIndex((prev) =>
+      prev === 0 ? openVotings.length - 1 : prev - 1
     );
-  }
+  };
 
   return (
     <>
+      {/* Open Votings Section */}
       <div className="space-y-6">
-        {votings.map((voting) => {
-          const status = getVotingStatus(voting);
-          const totalVotes = getTotalVotes(voting);
+        {openVotings.length === 0 ? (
+          <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card-body text-center py-12">
+              <MdHowToVote className="w-16 h-16 text-base-content/20 mx-auto mb-4" />
+              <h3 className="text-xl font-medium mb-2">No Active Votings</h3>
+              <p className="text-base-content/60">
+                There are no votings open for voting right now.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Carousel Navigation */}
+            {openVotings.length > 1 && (
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={prevVoting}
+                  className="btn btn-circle btn-outline"
+                >
+                  <MdChevronLeft className="w-5 h-5" />
+                </button>
 
-          return (
-            <div
-              key={voting._id || voting.title}
-              className="card bg-base-100 shadow-sm border border-base-300"
-            >
-              <div className="card-body">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="card-title text-lg">{voting.title}</h3>
-                      <span className={`badge badge-${status.color}`}>
-                        {status.label}
-                      </span>
-                    </div>
-                    {voting.description && (
-                      <p className="text-base-content/70 text-sm mb-4">
-                        {voting.description}
-                      </p>
-                    )}
-                  </div>
-                  {canManageVoting && (
-                    <div className="flex gap-2">
-                      {(voting.status === 'setup' ||
-                        voting.status === 'suggestions_closed') && (
-                        <>
-                          <button
-                            onClick={() => setEditingVoting(voting)}
-                            className="btn btn-sm btn-outline btn-primary"
-                            title="Edit voting"
-                          >
-                            <MdEdit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeletingVoting(voting)}
-                            className="btn btn-sm btn-outline btn-error"
-                            title="Delete voting"
-                          >
-                            <MdDelete className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-4 text-sm text-base-content/60 mb-4">
-                  <div className="flex items-center gap-1">
-                    <MdCalendarToday className="w-4 h-4" />
-                    Voting: {formatDate(
-                      new Date(voting.votingStartDate)
-                    )} - {formatDate(new Date(voting.votingEndDate))}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MdSchedule className="w-4 h-4" />
-                    Consumption:{' '}
-                    {formatDate(new Date(voting.consumptionStartDate))} -{' '}
-                    {formatDate(new Date(voting.consumptionEndDate))}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MdGroup className="w-4 h-4" />
-                    {totalVotes} votes
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-base-content/60">
+                    {currentVotingIndex + 1} of {openVotings.length}
+                  </span>
+                  <div className="flex gap-1">
+                    {openVotings.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentVotingIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          index === currentVotingIndex
+                            ? 'bg-primary'
+                            : 'bg-base-300'
+                        }`}
+                      />
+                    ))}
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  {voting.candidates.length === 0 ? (
-                    <div className="text-center py-8 text-base-content/60">
-                      No candidates added yet.
-                    </div>
-                  ) : (
-                    voting.candidates.map((candidate, index) => {
-                      const percentage =
-                        totalVotes > 0
-                          ? (candidate.votes.length / totalVotes) * 100
-                          : 0;
+                <button
+                  onClick={nextVoting}
+                  className="btn btn-circle btn-outline"
+                >
+                  <MdChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
 
-                      return (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              {candidate.image && (
-                                <img
-                                  src={candidate.image}
-                                  alt={candidate.title}
-                                  className="w-12 object-cover rounded aspect-[2/3]"
-                                />
-                              )}
-                              <div className="flex-1">
-                                <h4 className="font-medium">
-                                  {candidate.title}
-                                </h4>
-                                {candidate.description && (
-                                  <p className="text-sm text-base-content/70 mb-1">
-                                    {candidate.description}
-                                  </p>
-                                )}
-                                <div className="text-sm text-base-content/60">
-                                  {candidate.votes.length} votes (
-                                  {percentage.toFixed(1)}%)
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <progress
-                            className="progress progress-primary w-full"
-                            value={percentage}
-                            max="100"
-                          ></progress>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+            {/* Display Current Open Voting */}
+            {openVotings[currentVotingIndex] && (
+              <VotingCard voting={openVotings[currentVotingIndex]} />
+            )}
+          </>
+        )}
+
+        {/* Member Suggestion Section */}
+        {suggestionVotings.length > 0 && (
+          <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card-body">
+              <h3 className="card-title flex items-center gap-2 mb-4">
+                <MdAdd className="w-5 h-5" />
+                Media Suggestions Open
+              </h3>
+
+              <div className="space-y-4">
+                {suggestionVotings.map((voting) => (
+                  <SuggestionVotingCard
+                    key={voting._id}
+                    voting={voting}
+                    onSuggest={setSuggestingVoting}
+                  />
+                ))}
               </div>
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        {/* Management Section */}
+        {canManageVoting && showManagement && (
+          <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card-body">
+              <h3 className="card-title flex items-center gap-2 mb-4">
+                <MdSettings className="w-5 h-5" />
+                Voting Management
+              </h3>
+
+              {managementVotings.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-base-content/60">
+                    No votings in setup or suggestion phase.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {managementVotings.map((voting) => (
+                    <ManagementVotingCard
+                      key={voting._id}
+                      voting={voting}
+                      onEdit={setEditingVoting}
+                      onDelete={setDeletingVoting}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Edit Voting Modal */}
-      <EditVotingModal
-        isOpen={editingVoting !== null}
-        onClose={() => setEditingVoting(null)}
-        club={club}
-        voting={editingVoting}
-      />
+      {/* Modals */}
+      {showCreateWizard && (
+        <CreateVotingWizard
+          isOpen={showCreateWizard}
+          club={club}
+          onClose={() => setShowCreateWizard(false)}
+        />
+      )}
 
-      {/* Delete Confirmation Modal */}
+      {editingVoting && (
+        <EditVotingModal
+          isOpen={editingVoting !== null}
+          club={club}
+          voting={editingVoting}
+          onClose={() => setEditingVoting(null)}
+        />
+      )}
+
+      {suggestingVoting && (
+        <SuggestMediaModal
+          isOpen={suggestingVoting !== null}
+          club={club}
+          voting={suggestingVoting}
+          onClose={() => setSuggestingVoting(null)}
+        />
+      )}
+
       {deletingVoting && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Delete Voting</h3>
-            <p className="py-4">
-              Are you sure you want to delete "{deletingVoting.title}"? This
-              action cannot be undone and will remove all associated data
-              including votes and candidates.
+            <h3 className="font-bold text-lg mb-4">Delete Voting</h3>
+            <p className="mb-6">
+              Are you sure you want to delete the voting "{deletingVoting.title}
+              "? This action cannot be undone.
             </p>
             <div className="modal-action">
               <button
                 onClick={() => setDeletingVoting(null)}
-                className="btn btn-outline"
+                className="btn btn-ghost"
                 disabled={deleteVotingMutation.isPending}
               >
                 Cancel
               </button>
               <button
                 onClick={() =>
-                  deletingVoting._id &&
+                  deletingVoting?._id &&
                   deleteVotingMutation.mutate(deletingVoting._id)
                 }
                 className="btn btn-error"
@@ -622,4 +367,328 @@ export default function VotingSystem({
       )}
     </>
   );
+
+  // VotingCard Component
+  function VotingCard({ voting }: { voting: IClubMediaVoting }) {
+    const status = getVotingStatus(voting);
+    const totalVotes = getTotalVotes(voting);
+    const userVoted = voting.candidates.some((candidate) =>
+      candidate.votes.some((vote) => vote === user?._id)
+    );
+    const userVotedCandidate = voting.candidates.findIndex((candidate) =>
+      candidate.votes.some((vote) => vote === user?._id)
+    );
+    const canVote = status.status === 'voting_open' && !userVoted;
+
+    return (
+      <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-lg border border-primary/20">
+        <div className="card-body">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="card-title text-xl">{voting.title}</h3>
+              <span className={`badge badge-${status.color}`}>
+                {status.label}
+              </span>
+            </div>
+          </div>
+
+          {voting.description && (
+            <p className="text-base-content/70 mb-4">{voting.description}</p>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="flex items-center gap-2 text-sm">
+              <MdSchedule className="w-4 h-4 text-primary" />
+              <span>
+                Voting: {formatDate(voting.votingStartDate)} -{' '}
+                {formatDate(voting.votingEndDate)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <MdCalendarToday className="w-4 h-4 text-secondary" />
+              <span>
+                Consumption: {formatDate(voting.consumptionStartDate)} -{' '}
+                {formatDate(voting.consumptionEndDate)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <MdHowToVote className="w-4 h-4" />
+              <span className="text-sm">{totalVotes} votes cast</span>
+            </div>
+          </div>
+
+          {userVoted && (
+            <div className="alert alert-success mb-6">
+              <MdCheckCircle className="w-5 h-5" />
+              <div>
+                <h4 className="font-medium">Vote submitted!</h4>
+                <p className="text-sm mt-1">
+                  You voted for:{' '}
+                  <span className="font-medium">
+                    {userVotedCandidate !== -1
+                      ? voting.candidates[userVotedCandidate].title
+                      : 'Unknown'}
+                  </span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Candidates Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {voting.candidates.map((candidate, index) => {
+              const candidateVotes = candidate.votes.length;
+              const votePercentage =
+                totalVotes > 0 ? (candidateVotes / totalVotes) * 100 : 0;
+              const isUserChoice = userVotedCandidate === index;
+              const isSelected = selectedCandidate === index;
+
+              return (
+                <div
+                  key={index}
+                  className={`card bg-base-100 cursor-pointer transition-all duration-200 ${
+                    isUserChoice
+                      ? 'ring-2 ring-success shadow-success/20'
+                      : isSelected
+                        ? 'ring-2 ring-primary shadow-primary/20'
+                        : canVote
+                          ? 'hover:shadow-lg hover:ring-1 hover:ring-primary/50'
+                          : ''
+                  } ${!canVote && !userVoted ? 'opacity-60' : ''}`}
+                  onClick={() => {
+                    if (canVote) {
+                      setSelectedCandidate(isSelected ? null : index);
+                    }
+                  }}
+                >
+                  <figure className="px-4 pt-4">
+                    {candidate.image && (
+                      <img
+                        src={candidate.image}
+                        alt={candidate.title}
+                        className="rounded-lg w-full h-48 object-cover"
+                      />
+                    )}
+                  </figure>
+                  <div className="card-body p-4">
+                    <h4 className="card-title text-base">{candidate.title}</h4>
+                    {candidate.description && (
+                      <p className="text-xs text-base-content/70 line-clamp-3">
+                        {candidate.description}
+                      </p>
+                    )}
+
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-base-content/60">
+                          Votes
+                        </span>
+                        <span className="text-sm font-medium">
+                          {candidateVotes} ({votePercentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-base-300 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-500 ${
+                            isUserChoice
+                              ? 'bg-success'
+                              : votePercentage > 0
+                                ? 'bg-primary'
+                                : 'bg-transparent'
+                          }`}
+                          style={{ width: `${votePercentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {isUserChoice && (
+                      <div className="badge badge-success badge-sm mt-2">
+                        Your Vote
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Vote Button */}
+          {canVote && selectedCandidate !== null && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  if (selectedCandidate !== null) {
+                    voteMutation.mutate({
+                      votingId: voting._id!,
+                      candidateIndex: selectedCandidate,
+                    });
+                  }
+                }}
+                disabled={voteMutation.isPending}
+                className="btn btn-primary btn-lg"
+              >
+                <MdHowToVote className="w-5 h-5" />
+                {voteMutation.isPending ? 'Submitting Vote...' : 'Submit Vote'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ManagementVotingCard Component
+  function ManagementVotingCard({
+    voting,
+    onEdit,
+    onDelete,
+  }: {
+    voting: IClubMediaVoting;
+    onEdit: (voting: IClubMediaVoting) => void;
+    onDelete: (voting: IClubMediaVoting) => void;
+  }) {
+    const status = getVotingStatus(voting);
+
+    return (
+      <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div className="card-body">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-medium">{voting.title}</h4>
+                <span className={`badge badge-${status.color} badge-sm`}>
+                  {status.label}
+                </span>
+              </div>
+              {voting.description && (
+                <p className="text-sm text-base-content/70 mb-2">
+                  {voting.description}
+                </p>
+              )}
+              <div className="text-xs text-base-content/60">
+                {voting.candidates.length} candidates • Created{' '}
+                {voting.createdAt ? formatDate(voting.createdAt) : 'Unknown'}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onEdit(voting)}
+                className="btn btn-sm btn-outline btn-primary"
+                title="Edit voting"
+              >
+                <MdEdit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(voting)}
+                className="btn btn-sm btn-outline btn-error"
+                title="Delete voting"
+              >
+                <MdDelete className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // SuggestionVotingCard Component
+  function SuggestionVotingCard({
+    voting,
+    onSuggest,
+  }: {
+    voting: IClubMediaVoting;
+    onSuggest: (voting: IClubMediaVoting) => void;
+  }) {
+    const status = getVotingStatus(voting);
+
+    return (
+      <div className="card bg-gradient-to-br from-secondary/10 to-accent/10 shadow-sm border border-secondary/20">
+        <div className="card-body">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-medium">{voting.title}</h4>
+                <span className={`badge badge-${status.color} badge-sm`}>
+                  {status.label}
+                </span>
+              </div>
+              {voting.description && (
+                <p className="text-sm text-base-content/70 mb-3">
+                  {voting.description}
+                </p>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
+                <div>
+                  <span className="font-medium">Media Type:</span>{' '}
+                  {voting.mediaType === 'custom'
+                    ? voting.customMediaType
+                    : voting.mediaType}
+                </div>
+                <div>
+                  <span className="font-medium">Suggestions Close:</span>{' '}
+                  {voting.suggestionEndDate
+                    ? formatDate(voting.suggestionEndDate)
+                    : 'Unknown'}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs text-base-content/60">
+                <span>{voting.candidates.length} suggestions so far</span>
+                <span>•</span>
+                <span>
+                  Created{' '}
+                  {voting.createdAt ? formatDate(voting.createdAt) : 'Unknown'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => onSuggest(voting)}
+                className="btn btn-secondary btn-sm"
+              >
+                <MdAdd className="w-4 h-4" />
+                Suggest Media
+              </button>
+              {voting.candidates.length > 0 && (
+                <span className="text-xs text-center text-base-content/60">
+                  {voting.candidates.length} suggestion
+                  {voting.candidates.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Show existing suggestions */}
+          {voting.candidates.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-base-300">
+              <h5 className="font-medium text-sm mb-2">Current Suggestions:</h5>
+              <div className="flex flex-wrap gap-2">
+                {voting.candidates.map((candidate, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 bg-base-200 rounded-full px-3 py-1 text-xs"
+                  >
+                    {candidate.image && (
+                      <img
+                        src={candidate.image}
+                        alt={candidate.title}
+                        className="w-4 h-4 rounded object-cover"
+                      />
+                    )}
+                    <span>{candidate.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 }

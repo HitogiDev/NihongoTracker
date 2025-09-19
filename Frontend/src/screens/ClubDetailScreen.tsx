@@ -23,6 +23,7 @@ import {
   MdLeaderboard,
   MdInfo,
   MdPeople,
+  MdSettings,
 } from 'react-icons/md';
 import {
   getClubFn,
@@ -131,6 +132,7 @@ function ClubDetailScreen() {
   const [isAddMediaModalOpen, setIsAddMediaModalOpen] = useState(false);
   const [isCreateVotingWizardOpen, setIsCreateVotingWizardOpen] =
     useState(false);
+  const [showVotingManagement, setShowVotingManagement] = useState(false);
   const [isEditClubModalOpen, setIsEditClubModalOpen] = useState(false);
   const [logModalOpen, setLogModalOpen] = useState(false);
 
@@ -813,17 +815,36 @@ function ClubDetailScreen() {
                       Media Voting
                     </h2>
                     {canManageClub && (
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => setIsCreateVotingWizardOpen(true)}
-                      >
-                        <MdAdd className="text-lg" />
-                        <span className="hidden sm:inline">Create Voting</span>
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          className={`btn btn-outline btn-sm ${showVotingManagement ? 'btn-primary' : ''}`}
+                          onClick={() =>
+                            setShowVotingManagement(!showVotingManagement)
+                          }
+                        >
+                          <MdSettings className="text-lg" />
+                          <span className="hidden sm:inline">
+                            {showVotingManagement ? 'Hide' : 'Manage'}
+                          </span>
+                        </button>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => setIsCreateVotingWizardOpen(true)}
+                        >
+                          <MdAdd className="text-lg" />
+                          <span className="hidden sm:inline">
+                            Create Voting
+                          </span>
+                        </button>
+                      </div>
                     )}
                   </div>
 
-                  <VotingSystem club={club} canManageVoting={canManageClub} />
+                  <VotingSystem
+                    club={club}
+                    canManageVoting={canManageClub}
+                    showManagement={showVotingManagement}
+                  />
                 </div>
               </div>
             </div>
