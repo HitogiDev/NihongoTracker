@@ -5,12 +5,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   MdGroup,
-  MdPublic,
-  MdLock,
   MdEdit,
   MdPersonAdd,
   MdExitToApp,
-  MdArrowBack,
   MdShield,
   MdVerified,
   MdPlayArrow,
@@ -43,6 +40,7 @@ import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
 import ClubRankingsTab from '../components/ClubRankingsTab';
 import QuickLog from '../components/QuickLog';
+import RecentActivity from '../components/club/RecentActivity';
 
 function ClubDetailScreen() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -584,28 +582,6 @@ function ClubDetailScreen() {
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-
-          {/* Back Button */}
-          <button
-            className="absolute top-4 left-4 btn btn-circle btn-ghost bg-black/20 hover:bg-black/40 text-white border-none"
-            onClick={() => navigate('/clubs')}
-          >
-            <MdArrowBack className="text-xl" />
-          </button>
-
-          {/* Privacy Badge */}
-          <div className="absolute top-4 right-4">
-            <div
-              className={`badge gap-1 ${club.isPublic ? 'badge-success' : 'badge-warning'}`}
-            >
-              {club.isPublic ? (
-                <MdPublic className="text-xs" />
-              ) : (
-                <MdLock className="text-xs" />
-              )}
-              {club.isPublic ? 'Public' : 'Private'}
-            </div>
-          </div>
         </div>
 
         {/* Club Info Overlay */}
@@ -849,7 +825,7 @@ function ClubDetailScreen() {
               </div>
             </div>
 
-            {/* Right Column - Tags */}
+            {/* Right Column - Tags and Recent Activity */}
             <div className="space-y-6">
               {/* Tags */}
               {club.tags && club.tags.length > 0 && (
@@ -865,6 +841,11 @@ function ClubDetailScreen() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Recent Activity */}
+              {club.isUserMember && club.userStatus === 'active' && (
+                <RecentActivity clubId={club._id} />
               )}
             </div>
           </div>

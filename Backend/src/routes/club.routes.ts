@@ -29,6 +29,7 @@ import {
   getMediaVotings,
   finalizeVoting,
   completeVoting,
+  getClubRecentActivity,
 } from '../controllers/club.controller.js';
 import { protect } from '../libs/authMiddleware.js';
 
@@ -47,6 +48,7 @@ router.use(protect);
 // Club routes (all authenticated)
 router.get('/', getClubs); // Get all clubs with filtering
 router.get('/:clubId', getClub); // Get specific club
+router.get('/:clubId/recent-activity', getClubRecentActivity); // Get recent club activity
 
 router.post(
   '/',

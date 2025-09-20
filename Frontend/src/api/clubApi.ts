@@ -606,3 +606,43 @@ export async function getClubMemberRankingsFn(
   });
   return data;
 }
+
+// Get recent club activity (logs and reviews)
+export async function getClubRecentActivityFn(
+  clubId: string,
+  params?: { limit?: number; days?: number; page?: number }
+): Promise<{
+  activities: Array<{
+    type: 'log' | 'review';
+    _id: string;
+    user: {
+      _id: string;
+      username: string;
+      avatar?: string;
+    };
+    media: {
+      _id: string;
+      title: string;
+    };
+    clubMedia: boolean;
+    content: string;
+    metadata: {
+      episodes?: number;
+      pages?: number;
+      time?: number;
+      xp?: number;
+      rating?: number;
+      hasSpoilers?: boolean;
+    };
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}> {
+  const { data } = await axiosInstance.get(`/clubs/${clubId}/recent-activity`, {
+    params,
+  });
+  return data;
+}

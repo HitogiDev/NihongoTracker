@@ -1960,6 +1960,218 @@ export async function completeVoting(
   }
 }
 
+// Get recent activity for club (logs and reviews from last 7 days)
+export async function getClubRecentActivity(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId } = req.params;
+    const { limit = 10, days = 7, page = 1 } = req.query;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is a member to see activity
+    const userId = res.locals.user._id;
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (!userMember || userMember.status !== 'active') {
+      return res.status(403).json({
+        message: 'Only active club members can view club activity',
+      });
+    }
+
+    // Get club member user IDs
+    const memberIds = club.members
+      .filter((member) => member.status === 'active')
+      .map((member) => member.user);
+
+    // Calculate date range
+    const daysNum = parseInt(days as string);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysNum);
+
+    const limitNum = parseInt(limit as string);
+    const pageNum = parseInt(page as string);
+    const skipNum = (pageNum - 1) * limitNum;
+    // type for recentLogs
+    interface IRecentLog {
+      _id: Types.ObjectId;
+      user: {
+        _id: Types.ObjectId;
+        username: string;
+        avatar?: string;
+      };
+      description: string;
+      episodes?: number;
+      pages?: number;
+      time?: number;
+      xp?: number;
+      createdAt: Date;
+      media?: {
+        _id: Types.ObjectId;
+        contentId: string;
+        titleEnglish?: string;
+        titleNative?: string;
+        titleRomaji?: string;
+      };
+    }
+    // Get recent logs (do NOT filter by club media)
+    const recentLogs: IRecentLog[] = await Log.aggregate([
+      { $match: { user: { $in: memberIds }, createdAt: { $gte: startDate } } },
+      { $sort: { createdAt: -1 } },
+      { $skip: skipNum },
+      { $limit: limitNum },
+      {
+        $lookup: {
+          from: 'media',
+          localField: 'mediaId',
+          foreignField: 'contentId',
+          as: 'mediaInfo',
+        },
+      },
+      {
+        $unwind: { path: '$mediaInfo', preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      {
+        $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: true },
+      },
+      {
+        $project: {
+          _id: 1,
+          user: {
+            _id: '$userInfo._id',
+            username: '$userInfo.username',
+            avatar: '$userInfo.avatar',
+          },
+          description: 1,
+          episodes: 1,
+          pages: 1,
+          time: 1,
+          xp: 1,
+          createdAt: 1,
+          media: {
+            _id: '$mediaInfo._id',
+            contentId: '$mediaInfo.contentId',
+            titleEnglish: '$mediaInfo.title.contentTitleEnglish',
+            titleNative: '$mediaInfo.title.contentTitleNative',
+            titleRomaji: '$mediaInfo.title.contentTitleRomaji',
+          },
+        },
+      },
+    ]);
+    // Get recent reviews
+    const { ClubReview } = await import('../models/club.model.js');
+    const clubMediaObjectIds = club.currentMedia.map((media) => media._id);
+
+    const recentReviews = await ClubReview.find({
+      user: { $in: memberIds },
+      clubMedia: { $in: clubMediaObjectIds },
+      createdAt: { $gte: startDate },
+    })
+      .populate('user', 'username avatar')
+      .populate('clubMedia', 'title')
+      .sort({ createdAt: -1 })
+      .skip(skipNum)
+      .limit(limitNum);
+
+    // Combine and sort by date
+    const activities = [
+      ...recentLogs.map((log) => {
+        // Try to get populated media title
+        let mediaTitle =
+          log.media?.titleEnglish ||
+          log.media?.titleRomaji ||
+          log.media?.titleNative ||
+          null;
+
+        let foundMedia = null;
+        if (log.media?.contentId) {
+          foundMedia = club.currentMedia.find(
+            (m) => m.mediaId === log.media?.contentId
+          );
+        }
+        return {
+          type: 'log' as const,
+          _id: log._id,
+          user: log.user,
+          media: {
+            _id: log.media?._id || null,
+            title: mediaTitle || 'Unknown Media',
+          },
+          clubMedia: !!foundMedia,
+          content: log.description || '',
+          metadata: {
+            episodes: log.episodes,
+            pages: log.pages,
+            time: log.time,
+            xp: log.xp,
+          },
+          createdAt: (log as any).createdAt,
+        };
+      }),
+      ...recentReviews.map((review) => ({
+        type: 'review' as const,
+        _id: review._id,
+        user: review.user,
+        media: {
+          _id: review.clubMedia._id,
+          title: (review.clubMedia as any)?.title || 'Unknown Media',
+        },
+        content: review.content,
+        metadata: {
+          rating: review.rating,
+          hasSpoilers: review.hasSpoilers,
+        },
+        createdAt: review.createdAt,
+      })),
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    // Get total count for pagination
+    const totalLogs = await Log.countDocuments({
+      user: { $in: memberIds },
+      createdAt: { $gte: startDate },
+    });
+    const totalReviews = await ClubReview.countDocuments({
+      user: { $in: memberIds },
+      clubMedia: { $in: clubMediaObjectIds },
+      createdAt: { $gte: startDate },
+    });
+    const total = totalLogs + totalReviews;
+
+    return res.status(200).json({
+      activities,
+      total,
+      page: pageNum,
+      pageSize: limitNum,
+      hasMore: pageNum * limitNum < total,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 // Get club member logs for specific media (after consumption period started)
 export async function getClubMediaLogs(
   req: Request,
