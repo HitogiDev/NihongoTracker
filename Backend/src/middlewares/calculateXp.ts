@@ -56,6 +56,8 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
         log.xp = Math.max(charsXp, timeXp);
       } else if (pagesXp) {
         log.xp = Math.max(pagesXp, timeXp);
+      } else if (timeXp) {
+        log.xp = timeXp;
       } else {
         log.xp = 0;
       }
