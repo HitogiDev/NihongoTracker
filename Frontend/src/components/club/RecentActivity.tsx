@@ -163,10 +163,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
               className="flex items-start gap-3"
             >
               {/* User Avatar */}
-              <Link
-                to={`/profile/${activity.user.username}`}
-                className="avatar"
-              >
+              <Link to={`/user/${activity.user.username}`} className="avatar">
                 <div className="w-8 h-8 rounded-full">
                   {activity.user.avatar ? (
                     <img
@@ -186,7 +183,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 flex-wrap">
                   <Link
-                    to={`/profile/${activity.user.username}`}
+                    to={`/user/${activity.user.username}`}
                     className="font-semibold text-sm truncate hover:underline"
                   >
                     {activity.user.username}
