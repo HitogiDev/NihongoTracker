@@ -44,25 +44,22 @@ export default function ClubMediaHeader() {
   } | null>(null);
   const [logModalOpen, setLogModalOpen] = useState(false);
 
-  // Fetch club data
   const { data: club, isLoading: clubLoading } = useQuery({
     queryKey: ['club', clubId],
     queryFn: () => getClubFn(clubId!),
     enabled: !!clubId,
   });
 
-  // Fetch club media with populated media documents
   const {
     data: clubMediaData,
     isLoading: clubMediaLoading,
     error: clubMediaError,
   } = useQuery({
     queryKey: ['clubMedia', clubId],
-    queryFn: () => getClubMediaFn(clubId!, true), // true = active media only
+    queryFn: () => getClubMediaFn(clubId!, true),
     enabled: !!clubId,
   });
 
-  // Find the specific media from club media (which has mediaDocument populated) or fallback to club.currentMedia
   const media =
     clubMediaData?.media.find((m) => m._id === mediaId) ||
     club?.currentMedia.find((m) => m._id === mediaId);

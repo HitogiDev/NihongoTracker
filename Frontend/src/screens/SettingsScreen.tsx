@@ -748,7 +748,7 @@ function SettingsScreen() {
                         />
                         <label className="label">
                           <span className="label-text-alt text-base-content/60">
-                            Recommended: 21:9 aspect ratio, max 5MB
+                            Recommended: 21:9 aspect ratio, max 3MB
                           </span>
                         </label>
                         <canvas

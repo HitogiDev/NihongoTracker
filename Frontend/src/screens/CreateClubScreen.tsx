@@ -181,7 +181,7 @@ function CreateClubScreen() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      // Basic validation - only accept images under 5MB
+      // Basic validation - only accept images under 3MB
       if (!file.type.startsWith('image/')) {
         toast.error(
           `${type === 'avatar' ? 'Club icon' : 'Banner'} must be an image file`
@@ -189,9 +189,9 @@ function CreateClubScreen() {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 3 * 1024 * 1024) {
         toast.error(
-          `${type === 'avatar' ? 'Club icon' : 'Banner'} must be under 5MB`
+          `${type === 'avatar' ? 'Club icon' : 'Banner'} must be under 3MB`
         );
         return;
       }
@@ -677,7 +677,7 @@ function CreateClubScreen() {
                         )}
                       </div>
                       <span className="text-xs text-base-content/60">
-                        Max size: 5MB
+                        Max size: 3MB
                       </span>
                     </div>
                   </div>
@@ -722,7 +722,7 @@ function CreateClubScreen() {
                         )}
                       </div>
                       <span className="text-xs text-base-content/60">
-                        Recommended size: 1200x400px, Max size: 5MB
+                        Recommended size: 1200x400px, Max size: 3MB
                       </span>
                     </div>
                   </div>

@@ -463,9 +463,9 @@ function ClubDetailScreen() {
       return;
     }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File must be under 5MB');
+    // Validate file size (3MB limit)
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('File must be under 3MB');
       return;
     }
 
@@ -1529,7 +1529,7 @@ function ClubDetailScreen() {
 
                 <div className="label">
                   <span className="label-text-alt text-center block">
-                    Recommended: Square image, max 5MB
+                    Recommended: Square image, max 3MB
                   </span>
                 </div>
               </div>
@@ -1591,7 +1591,7 @@ function ClubDetailScreen() {
 
                 <div className="label">
                   <span className="label-text-alt text-center block">
-                    Recommended: 16:9 aspect ratio, max 5MB
+                    Recommended: 16:9 aspect ratio, max 3MB
                   </span>
                 </div>
               </div>
