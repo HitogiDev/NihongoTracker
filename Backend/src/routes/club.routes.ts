@@ -9,8 +9,8 @@ import {
   transferLeadership,
   updateClub,
   getUserClubs,
-  manageMembershipRequest,
-  getPendingMembershipRequests,
+  manageJoinRequests,
+  getPendingJoinRequests,
   addClubMedia,
   getClubMedia,
   getClubMediaLogs,
@@ -38,7 +38,7 @@ const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 3 * 1024 * 1024, // 3MB limit
   },
 });
 
@@ -69,8 +69,8 @@ router.put(
   ]),
   updateClub
 ); // Update club (leaders only)
-router.post('/:clubId/members/:memberId', manageMembershipRequest); // Approve/reject membership
-router.get('/:clubId/members/pending', getPendingMembershipRequests); // Get pending membership requests
+router.post('/:clubId/members/:memberId', manageJoinRequests); // Approve/reject join requests (leaders only)
+router.get('/:clubId/members/pending', getPendingJoinRequests); // Get pending join requests
 router.post('/:clubId/transfer-leadership', transferLeadership); // Transfer club leadership (leaders only)
 
 // Club Media routes

@@ -12,9 +12,9 @@ import {
   IClubListResponse,
   IClub,
   IClubMember,
+  IClubMediaCandidate,
 } from '../types.js';
 
-// Get all clubs with filtering and pagination
 export async function getClubs(
   req: Request,
   res: Response,
@@ -118,7 +118,6 @@ export async function getClubs(
   }
 }
 
-// Get a specific club by ID
 export async function getClub(
   req: Request,
   res: Response,
@@ -177,7 +176,6 @@ export async function getClub(
   }
 }
 
-// Create a new club
 export async function createClub(
   req: Request,
   res: Response,
@@ -278,7 +276,6 @@ export async function createClub(
   }
 }
 
-// Join a club
 export async function joinClub(
   req: Request,
   res: Response,
@@ -342,7 +339,6 @@ export async function joinClub(
   }
 }
 
-// Leave a club
 export async function leaveClub(
   req: Request,
   res: Response,
@@ -401,7 +397,6 @@ export async function leaveClub(
   }
 }
 
-// Transfer club leadership (only current leader can do this)
 export async function transferLeadership(
   req: Request,
   res: Response,
@@ -464,7 +459,6 @@ export async function transferLeadership(
   }
 }
 
-// Update club (only leaders can do this)
 export async function updateClub(
   req: Request,
   res: Response,
@@ -576,7 +570,6 @@ export async function updateClub(
   }
 }
 
-// Get user's clubs
 export async function getUserClubs(
   _req: Request,
   res: Response,
@@ -597,8 +590,7 @@ export async function getUserClubs(
   }
 }
 
-// Approve/Reject membership requests (leaders only)
-export async function manageMembershipRequest(
+export async function manageJoinRequests(
   req: Request,
   res: Response,
   next: NextFunction
@@ -658,8 +650,7 @@ export async function manageMembershipRequest(
   }
 }
 
-// Get pending membership requests (leaders only)
-export async function getPendingMembershipRequests(
+export async function getPendingJoinRequests(
   req: Request,
   res: Response,
   next: NextFunction
@@ -695,7 +686,6 @@ export async function getPendingMembershipRequests(
   }
 }
 
-// Add media to club for members to consume
 export async function addClubMedia(
   req: Request,
   res: Response,
@@ -2921,8 +2911,53 @@ export async function updateVotingStatuses(club: IClub): Promise<void> {
     }
 
     // Check if consumption period has started (auto-complete voting)
-    if (now >= voting.consumptionStartDate) {
-      newStatus = 'completed';
+    if (
+      now >= voting.consumptionStartDate &&
+      voting.status !== 'voting_closed'
+    ) {
+      newStatus = 'voting_closed';
+
+      // Auto-select winner and add to currentMedia when voting completes
+      const winnerCandidate =
+        voting.candidates.reduce<IClubMediaCandidate | null>(
+          (winner, candidate) => {
+            if (!winner || candidate.votes.length > winner.votes.length) {
+              return candidate;
+            }
+            return winner;
+          },
+          null
+        );
+
+      if (winnerCandidate) {
+        // Set winner candidate
+        club.mediaVotings[i].winnerCandidate = {
+          mediaId: winnerCandidate.mediaId,
+          title: winnerCandidate.title,
+          description: winnerCandidate.description,
+          image: winnerCandidate.image,
+        };
+
+        // Add winner to currentMedia
+        const newMedia = {
+          mediaId: winnerCandidate.mediaId,
+          mediaType:
+            voting.mediaType === 'custom'
+              ? 'reading'
+              : (voting.mediaType as any),
+          title: winnerCandidate.title,
+          description: winnerCandidate.description,
+          startDate: voting.consumptionStartDate,
+          endDate: voting.consumptionEndDate,
+          isActive: true,
+          addedBy: voting.createdBy,
+          votes: [],
+        };
+
+        club.currentMedia.push(newMedia);
+      }
+
+      club.mediaVotings[i].isActive = false;
     }
 
     // Update status if changed
