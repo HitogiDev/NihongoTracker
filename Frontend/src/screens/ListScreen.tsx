@@ -299,7 +299,7 @@ function ListScreen() {
           !user?.settings?.hideUnmatchedLogsAlert && (
             <div className="container mx-auto px-4 pt-4">
               <div role="alert" className="alert alert-warning shadow-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center w-full gap-3">
+                <div className="flex flex-col justify-between sm:flex-row sm:items-center w-full gap-3">
                   <div className="flex items-center gap-3 flex-1">
                     <MdWarning className="h-6 w-6 flex-shrink-0" />
                     <div className="flex-1">

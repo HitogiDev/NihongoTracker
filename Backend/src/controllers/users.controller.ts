@@ -760,12 +760,14 @@ export async function clearUserData(
     await user.updateOne({
       clubs: [],
       titles: [],
+      roles: ['user'],
       $unset: {
         stats: '',
         lastImport: '',
         discordId: '',
         avatar: '',
         banner: '',
+        settings: '',
       },
     });
 

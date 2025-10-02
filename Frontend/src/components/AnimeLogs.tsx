@@ -1,7 +1,7 @@
 import { ILog, IMediaDocument } from '../types';
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { assignMediaFn, getUserLogsFn } from '../api/trackerApi';
+import { assignMediaFn, getUserLogsFn, searchMediaFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import useSearch from '../hooks/useSearch';
@@ -173,6 +173,108 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
     setShouldAnilistSearch(false);
   }, [selectedAnime, selectedLogs, assignMedia]);
 
+  const [isAutoMatching, setIsAutoMatching] = useState(false);
+  const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
+
+  const performAutoMatch = useCallback(async () => {
+    setShowAutoMatchModal(false);
+    setIsAutoMatching(true);
+    try {
+      const matches: Array<{
+        logsId: string[];
+        contentMedia: IMediaDocument;
+      }> = [];
+
+      // Only search in our database for all groups
+      for (const [groupName, logsGroup] of Object.entries(
+        filteredGroupedLogs
+      )) {
+        try {
+          const dbResults = await searchMediaFn({
+            type: 'anime',
+            search: groupName,
+            perPage: 5,
+          });
+
+          if (dbResults && dbResults.length > 0) {
+            const exactMatch = dbResults.find((anime) => {
+              const titles = [
+                anime.title.contentTitleRomaji,
+                anime.title.contentTitleEnglish,
+                anime.title.contentTitleNative,
+                ...(anime.synonyms || []),
+              ].filter(Boolean);
+
+              return titles.some(
+                (title) => title?.toLowerCase() === groupName.toLowerCase()
+              );
+            });
+
+            if (exactMatch) {
+              matches.push({
+                logsId: logsGroup.map((log) => log._id),
+                contentMedia: exactMatch,
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`DB search failed for: ${groupName}`, error);
+        }
+      }
+
+      if (matches.length > 0) {
+        // Assign media
+        await new Promise<void>((resolve, reject) => {
+          assignMedia(matches, {
+            onSuccess: () => {
+              // Update assigned logs to remove them from the list
+              const assignedLogIds = matches.flatMap((m) => m.logsId);
+              const newlyAssignedLogs =
+                logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
+              setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
+
+              // Refetch logs to update the UI
+              queryClient.invalidateQueries({
+                queryKey: ['animeLogs', username, 'anime'],
+              });
+
+              toast.success(
+                `Auto-matched ${matches.reduce((sum, m) => sum + m.logsId.length, 0)} logs to ${matches.length} anime`
+              );
+              resolve();
+            },
+            onError: (error) => {
+              reject(error);
+            },
+          });
+        });
+      } else {
+        toast.info('No exact matches found in database');
+      }
+    } catch (error) {
+      console.error('Auto-match error:', error);
+      toast.error('Failed to auto-match logs');
+    } finally {
+      setIsAutoMatching(false);
+    }
+  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username]);
+
+  const handleAutoMatch = useCallback(async () => {
+    if (Object.keys(filteredGroupedLogs).length === 0) {
+      toast.info('No log groups available to match');
+      return;
+    }
+
+    // Show warning modal if there are many groups
+    const groupCount = Object.keys(filteredGroupedLogs).length;
+    if (groupCount > 20) {
+      setShowAutoMatchModal(true);
+      return;
+    }
+
+    await performAutoMatch();
+  }, [filteredGroupedLogs, performAutoMatch]);
+
   if (isLoadingLogs) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
@@ -243,21 +345,85 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
   return (
     <div className="w-full p-4">
+      {/* Auto-match warning modal */}
+      {showAutoMatchModal && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Large Batch Auto-Match</h3>
+            <p className="py-4">
+              You have {Object.keys(filteredGroupedLogs).length} log groups to
+              process. This may take a few minutes to complete. Do you want to
+              continue?
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowAutoMatchModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={performAutoMatch}>
+                Continue
+              </button>
+            </div>
+          </div>
+          <form
+            method="dialog"
+            className="modal-backdrop"
+            onClick={() => setShowAutoMatchModal(false)}
+          >
+            <button>close</button>
+          </form>
+        </dialog>
+      )}
+
       <h1 className="text-2xl font-bold text-center mb-4">
         Assign Anime to Logs
       </h1>
 
-      <div className="stats shadow mb-4 w-full">
-        <div className="stat">
-          <div className="stat-title">Selected Logs</div>
-          <div className="stat-value">{selectedLogs.length}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-title">Available Groups</div>
-          <div className="stat-value">
-            {Object.keys(filteredGroupedLogs).length}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4 w-full">
+        <div className="stats shadow flex-1">
+          <div className="stat">
+            <div className="stat-title">Selected Logs</div>
+            <div className="stat-value">{selectedLogs.length}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Available Groups</div>
+            <div className="stat-value">
+              {Object.keys(filteredGroupedLogs).length}
+            </div>
           </div>
         </div>
+        <button
+          onClick={handleAutoMatch}
+          disabled={
+            isAutoMatching || Object.keys(filteredGroupedLogs).length === 0
+          }
+          className={`btn btn-secondary btn-lg ${isAutoMatching ? 'loading' : ''}`}
+        >
+          {isAutoMatching ? (
+            <>
+              <span className="loading loading-spinner"></span>
+              Auto-matching...
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Auto-Match All
+            </>
+          )}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
