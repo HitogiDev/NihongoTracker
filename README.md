@@ -2,6 +2,42 @@
 
 A comprehensive Japanese immersion tracker that gamifies your language learning journey. Track progress across anime, manga, visual novels, reading, videos, and audio. Compete with friends, visualize improvement, and stay motivated.
 
+---
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](./screenshots/dashboard.png)
+
+*Main dashboard showing your recent activity and progress overview*
+
+### Log Tracking
+
+![Log Tracking](./screenshots/log-tracking.png)
+
+*Track your immersion across multiple media types*
+
+### Stats
+
+![Stats](./screenshots/stats.png)
+
+*Detailed charts and statistics for your learning journey*
+
+### Leaderboards
+
+![Leaderboards](./screenshots/leaderboards.png)
+
+*Compete with other learners globally*
+
+### Clubs
+
+![Clubs](./screenshots/clubs.png)
+
+*Join or create clubs with your friends*
+
+---
+
 ## Features
 
 ### Immersion Tracking
