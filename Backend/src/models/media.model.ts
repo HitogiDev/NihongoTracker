@@ -18,8 +18,8 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
     coverImage: { type: String },
     description: [
       {
-        description: { type: String, required: true },
-        language: { type: String, enum: ['eng', 'jpn', 'spa'], required: true },
+        description: { type: String },
+        language: { type: String, enum: ['eng', 'jpn', 'spa'] },
       },
     ],
     type: {
