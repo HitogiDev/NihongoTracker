@@ -171,7 +171,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
           return matchingEntries.reduce((sum, entry) => sum + entry.xp, 0);
         } else {
           return matchingEntries.reduce(
-            (sum, entry) => sum + (entry.time || 0),
+            (sum, entry) => sum + (entry.time || 0) / 60, // Convert minutes to hours
             0
           );
         }
@@ -259,7 +259,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
             if (metric === 'xp') {
               return `${label}: ${value.toLocaleString()} XP`;
             } else {
-              return `${label}: ${value} minutes`;
+              return `${label}: ${value.toFixed(1)} hours`;
             }
           },
         },
@@ -307,7 +307,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
             if (metric === 'xp') {
               return typeof value === 'number' ? value.toLocaleString() : value;
             } else {
-              return typeof value === 'number' ? `${value}m` : value;
+              return typeof value === 'number' ? `${value.toFixed(1)}h` : value;
             }
           },
         },

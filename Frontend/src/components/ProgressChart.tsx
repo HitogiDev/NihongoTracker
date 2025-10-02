@@ -89,7 +89,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           allDatesMap[dateKey] += dateEntry.xp;
         } else {
-          allDatesMap[dateKey] += dateEntry.time || 0;
+          allDatesMap[dateKey] += (dateEntry.time || 0) / 60; // Convert minutes to hours
         }
       });
     });
@@ -202,7 +202,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByHour[hour.toString()] += log.xp;
         } else {
-          metricByHour[hour.toString()] += log.time || 0;
+          metricByHour[hour.toString()] += (log.time || 0) / 60; // Convert minutes to hours
         }
       });
 
@@ -230,7 +230,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByDay[dayName] += log.xp;
         } else {
-          metricByDay[dayName] += log.time || 0;
+          metricByDay[dayName] += (log.time || 0) / 60; // Convert minutes to hours
         }
       });
 
@@ -270,7 +270,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByMonth[monthIndex.toString()] += log.xp;
         } else {
-          metricByMonth[monthIndex.toString()] += log.time || 0;
+          metricByMonth[monthIndex.toString()] += (log.time || 0) / 60; // Convert minutes to hours
         }
       });
 
@@ -297,7 +297,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByMonthYear[yearMonth] += log.xp;
         } else {
-          metricByMonthYear[yearMonth] += log.time || 0;
+          metricByMonthYear[yearMonth] += (log.time || 0) / 60; // Convert minutes to hours
         }
       });
 
@@ -355,7 +355,7 @@ export default function ProgressChart({
       if (metric === 'xp') {
         metricByDate[dateStr] += log.xp;
       } else {
-        metricByDate[dateStr] += log.time || 0;
+        metricByDate[dateStr] += (log.time || 0) / 60; // Convert minutes to hours
       }
     });
 
@@ -378,7 +378,7 @@ export default function ProgressChart({
     labels: labels,
     datasets: [
       {
-        label: metric === 'xp' ? 'XP Earned' : 'Time Spent (minutes)',
+        label: metric === 'xp' ? 'XP Earned' : 'Time Spent (hours)',
         data: metricValues,
         fill: true,
         pointRadius: 3,
