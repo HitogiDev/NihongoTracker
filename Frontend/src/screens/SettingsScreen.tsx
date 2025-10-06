@@ -213,11 +213,17 @@ function SettingsScreen() {
       toast.success(data.message);
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['logs', 'user', 'ranking'].includes(
-            query.queryKey[0] as string
-          );
+          return [
+            'logs',
+            'user',
+            'ranking',
+            'ImmersionList',
+            'userStats',
+          ].includes(query.queryKey[0] as string);
         },
       });
+      // Also invalidate daily goals as stats changes affect goal progress
+      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -234,9 +240,13 @@ function SettingsScreen() {
       toast.success(data.message);
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['logs', 'user'].includes(query.queryKey[0] as string);
+          return ['logs', 'user', 'ImmersionList', 'userStats'].includes(
+            query.queryKey[0] as string
+          );
         },
       });
+      // Also invalidate daily goals as stats changes affect goal progress
+      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -253,9 +263,13 @@ function SettingsScreen() {
       toast.success(data.message);
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['logs', 'user'].includes(query.queryKey[0] as string);
+          return ['logs', 'user', 'ImmersionList', 'userStats'].includes(
+            query.queryKey[0] as string
+          );
         },
       });
+      // Also invalidate daily goals as stats changes affect goal progress
+      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
