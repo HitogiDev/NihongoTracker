@@ -8,12 +8,13 @@ import {
   MdMovie,
   MdCalendarToday,
 } from 'react-icons/md';
-import { getClubFn, getClubMediaFn } from '../api/clubApi';
-import Loader from './Loader';
-import QuickLog from './QuickLog';
+import { getClubFn, getClubMediaFn } from '../../api/clubApi';
+import Loader from '../Loader';
+import QuickLog from '../QuickLog';
 import ClubMediaNavbar from './ClubMediaNavbar';
-import { OutletClubMediaContextType } from '../types';
-import { getAverageColorFn } from '../api/trackerApi';
+import { OutletClubMediaContextType } from '../../types';
+import { getAverageColorFn } from '../../api/trackerApi';
+import { useUserDataStore } from '../../store/userData';
 
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -36,6 +37,7 @@ export default function ClubMediaHeader() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const navigate = useNavigate();
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
+  const { user } = useUserDataStore();
 
   const [selectedMedia, setSelectedMedia] = useState<{
     mediaId: string;
@@ -129,7 +131,13 @@ export default function ClubMediaHeader() {
         }}
       >
         {media?.mediaDocument?.coverImage ? (
-          <div className="flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover" />
+          <div
+            className={`flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover ${
+              media.mediaDocument.isAdult && user?.settings?.blurAdultContent
+                ? 'blur-sm'
+                : ''
+            }`}
+          />
         ) : (
           <></>
         )}
@@ -146,7 +154,12 @@ export default function ClubMediaHeader() {
                   <img
                     src={media.mediaDocument.contentImage}
                     alt={media.title}
-                    className="w-full h-auto rounded-lg shadow-xl border-2 border-white/20"
+                    className={`w-full h-auto rounded-lg shadow-xl border-2 border-white/20 ${
+                      media.mediaDocument.isAdult &&
+                      user?.settings?.blurAdultContent
+                        ? 'blur-sm'
+                        : ''
+                    }`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
@@ -239,6 +252,7 @@ export default function ClubMediaHeader() {
             clubMedia: media,
             clubMediaData,
             clubMediaError,
+            user,
           } satisfies OutletClubMediaContextType
         }
       />

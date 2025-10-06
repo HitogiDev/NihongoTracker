@@ -8,8 +8,8 @@ import {
   MdExpandMore,
 } from 'react-icons/md';
 import { PiCrownSimpleFill } from 'react-icons/pi';
-import { getUserClubsFn, getClubMemberRankingsFn } from '../api/clubApi';
-import { numberWithCommas } from '../utils/utils';
+import { getUserClubsFn, getClubMemberRankingsFn } from '../../api/clubApi';
+import { numberWithCommas } from '../../utils/utils';
 
 interface ClubRankingProps {
   username: string;

@@ -38,7 +38,7 @@ import { IMediaDocument } from '../types.d';
 import { useUserDataStore } from '../store/userData';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
-import ClubRankingsTab from '../components/ClubRankingsTab';
+import ClubRankingsTab from '../components/club/ClubRankingsTab';
 import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
 
@@ -890,7 +890,12 @@ function ClubDetailScreen() {
                                 media.mediaDocument.coverImage
                               }
                               alt={media.title}
-                              className="w-full h-full object-cover"
+                              className={`w-full h-full object-cover ${
+                                media.mediaDocument.isAdult &&
+                                user?.settings?.blurAdultContent
+                                  ? 'blur-sm'
+                                  : ''
+                              }`}
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';

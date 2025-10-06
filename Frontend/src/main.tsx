@@ -40,7 +40,7 @@ import AdminScreen from './screens/AdminScreen.tsx';
 import ClubsScreen from './screens/ClubsScreen.tsx';
 import CreateClubScreen from './screens/CreateClubScreen.tsx';
 import ClubDetailScreen from './screens/ClubDetailScreen.tsx';
-import ClubMediaHeader from './components/ClubMediaHeader.tsx';
+import ClubMediaHeader from './components/club/ClubMediaHeader.tsx';
 import ClubMediaInfo from './screens/ClubMediaInfo.tsx';
 import ClubMediaActivity from './screens/ClubMediaActivity.tsx';
 import ClubMediaReviews from './screens/ClubMediaReviews.tsx';

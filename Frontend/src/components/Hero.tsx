@@ -10,7 +10,7 @@ import { useMemo, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
-import ClubRanking from './ClubRanking';
+import ClubRanking from './club/ClubRanking';
 import {
   MdAdd,
   MdArrowDownward,

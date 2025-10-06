@@ -65,6 +65,7 @@ export interface IMediaDocument {
   type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'tv show';
   episodes?: number;
   episodeDuration?: number;
+  genres?: string[];
   chapters?: number;
   volumes?: number;
   seasons?: number;

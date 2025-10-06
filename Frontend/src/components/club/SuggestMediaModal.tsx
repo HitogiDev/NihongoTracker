@@ -76,6 +76,7 @@ export default function SuggestMediaModal({
         '',
       description: media.description?.[0]?.description || '',
       image: media.contentImage || '',
+      isAdult: media.isAdult || false,
     };
 
     suggestMediaMutation.mutate(candidateData);

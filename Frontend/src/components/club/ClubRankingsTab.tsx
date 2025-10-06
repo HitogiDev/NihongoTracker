@@ -10,8 +10,8 @@ import {
   MdStars,
   MdExpandMore,
 } from 'react-icons/md';
-import { getClubMemberRankingsFn } from '../api/clubApi';
-import { numberWithCommas } from '../utils/utils';
+import { getClubMemberRankingsFn } from '../../api/clubApi';
+import { numberWithCommas } from '../../utils/utils';
 
 interface ClubRankingsTabProps {
   clubId: string;

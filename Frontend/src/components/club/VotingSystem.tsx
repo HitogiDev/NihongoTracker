@@ -469,7 +469,11 @@ export default function VotingSystem({
                       <img
                         src={candidate.image}
                         alt={candidate.title}
-                        className="rounded-lg w-full h-48 object-cover"
+                        className={`rounded-lg w-full h-48 object-cover ${
+                          candidate.isAdult && user?.settings?.blurAdultContent
+                            ? 'blur-sm'
+                            : ''
+                        }`}
                       />
                     )}
                   </figure>
@@ -678,7 +682,11 @@ export default function VotingSystem({
                       <img
                         src={candidate.image}
                         alt={candidate.title}
-                        className="w-4 h-4 rounded object-cover"
+                        className={`w-4 h-4 rounded object-cover ${
+                          candidate.isAdult && user?.settings?.blurAdultContent
+                            ? 'filter blur-sm'
+                            : ''
+                        }`}
                       />
                     )}
                     <span>{candidate.title}</span>

@@ -98,6 +98,7 @@ const ClubMediaVotingSchema = new Schema(
         addedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         addedAt: { type: Date, default: Date.now },
         votes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+        isAdult: { type: Boolean, default: false },
       },
     ],
 

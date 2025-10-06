@@ -1555,7 +1555,7 @@ export async function addVotingCandidate(
 ): Promise<Response | void> {
   try {
     const { clubId, votingId } = req.params;
-    const { mediaId, title, description, image } = req.body;
+    const { mediaId, title, description, image, isAdult } = req.body;
     const userId = res.locals.user._id;
 
     if (!Types.ObjectId.isValid(clubId)) {
@@ -1619,6 +1619,7 @@ export async function addVotingCandidate(
       image,
       addedBy: userId,
       votes: [],
+      isAdult: isAdult || false,
     };
 
     club.mediaVotings[votingIndex].candidates.push(newCandidate);

@@ -16,6 +16,7 @@ import {
 } from '../../api/clubApi';
 import useSearch from '../../hooks/useSearch';
 import { IClub, IMediaDocument } from '../../types.d';
+import { useUserDataStore } from '../../store/userData';
 
 interface CreateVotingWizardProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ interface Candidate {
   title: string;
   description?: string;
   image?: string;
+  isAdult?: boolean;
 }
 
 const MEDIA_TYPES = [
@@ -69,6 +71,8 @@ export default function CreateVotingWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
+
+  const { user } = useUserDataStore();
 
   // Helper function to format date for display
   const formatDateForDisplay = (date: Date | undefined) => {
@@ -101,6 +105,7 @@ export default function CreateVotingWizard({
     title: '',
     description: '',
     image: '',
+    isAdult: false,
   });
 
   // Use the search hook for media search
@@ -180,6 +185,7 @@ export default function CreateVotingWizard({
       title: '',
       description: '',
       image: '',
+      isAdult: false,
     });
     setSearchQuery('');
     setShowResults(false);
@@ -211,6 +217,7 @@ export default function CreateVotingWizard({
       title,
       description: cleanDescription ? cleanDescription + '...' : '',
       image: result.contentImage || '',
+      isAdult: result.isAdult || false,
     });
     setSearchQuery(title);
     setShowResults(false);
@@ -1025,7 +1032,12 @@ export default function CreateVotingWizard({
                               <img
                                 src={candidate.image}
                                 alt={candidate.title}
-                                className="w-12 h-16 object-cover rounded"
+                                className={`w-12 h-16 object-cover rounded ${
+                                  candidate.isAdult &&
+                                  user?.settings?.blurAdultContent
+                                    ? 'blur-sm'
+                                    : ''
+                                }`}
                               />
                             )}
                             <div className="flex-1">

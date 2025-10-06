@@ -177,6 +177,8 @@ export default function MediaHeader() {
       <div
         className={`h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
           isLoadingMedia ? 'skeleton' : ''
+        } ${
+          media?.isAdult && user?.settings?.blurAdultContent ? 'blur-sm' : ''
         }`}
         style={{
           backgroundImage: `url(${!isLoadingMedia ? media?.coverImage : ''})`,
@@ -201,7 +203,11 @@ export default function MediaHeader() {
                   <img
                     src={media.contentImage}
                     alt={media.title.contentTitleNative}
-                    className="w-full h-auto rounded-lg shadow-xl border-2 border-white/20"
+                    className={`w-full h-auto rounded-lg shadow-xl border-2 border-white/20 ${
+                      media.isAdult && user?.settings?.blurAdultContent
+                        ? 'blur-sm'
+                        : ''
+                    }`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';

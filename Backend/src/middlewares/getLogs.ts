@@ -167,11 +167,8 @@ export async function importManabeLog(
     return res.status(404).json({ message: 'User not found' });
   }
 
-  // --- Begin: Automatic video assigning for Manabe webhook ---
-  // If the log is a video and descripcion contains a YouTube link, assign the channel as mediaId
   if (logInfo.medio === 'VIDEO' && logInfo.descripcion) {
     try {
-      // Extract YouTube video ID from descripcion (which contains the full link)
       const extractVideoId = (url: string): string | null => {
         const regex =
           /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/;
@@ -184,7 +181,6 @@ export async function importManabeLog(
 
         const ytResult = await getYouTubeVideoInfo(videoUrl);
         if (ytResult && ytResult.channel) {
-          // Upsert the channel as a Media document (if not exists)
           let channelMedia = await MediaBase.findOne({
             contentId: ytResult.channel.contentId,
             type: 'video',
@@ -194,16 +190,13 @@ export async function importManabeLog(
               ...ytResult.channel,
             });
           }
-          // Assign the channel's contentId as the log's mediaId
           logInfo.officialId = ytResult.channel.contentId;
         }
       }
     } catch (err) {
-      // If YouTube lookup fails, just continue without assigning
       console.warn('YouTube channel assign failed:', err);
     }
   }
-  // --- End: Automatic video assigning for Manabe webhook ---
 
   res.locals.user = user;
   req.body.logs = transformManabeLogsList([logInfo], user);
@@ -222,7 +215,7 @@ function transformCSVLogsList(
     vn: 'chars',
     video: 'time',
     audio: 'time',
-    movie: 'time', // <-- add this line
+    movie: 'time',
     other: 'time',
   };
 

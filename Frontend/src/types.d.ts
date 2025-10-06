@@ -40,6 +40,7 @@ export type OutletClubMediaContextType = {
   clubMedia?: IClubMedia;
   clubMediaData?: { media: IClubMedia[]; total?: number };
   clubMediaError?: Error | null;
+  user?: ILoginResponse | null;
 };
 
 export interface IStats {
@@ -633,6 +634,7 @@ export interface IClubMediaCandidate {
   addedBy: IUser;
   addedAt?: Date;
   votes: string[];
+  isAdult?: boolean;
 }
 
 export interface IClubMediaVoting {
@@ -677,6 +679,7 @@ export interface IClubMediaVoting {
     title: string;
     description?: string;
     image?: string;
+    isAdult?: boolean;
   };
   createdAt?: Date;
   updatedAt?: Date;

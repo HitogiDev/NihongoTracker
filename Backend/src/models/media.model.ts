@@ -27,6 +27,7 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
       required: true,
       enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'tv show'],
     },
+    genres: { type: [String], default: [] },
     synonyms: { type: [String], default: [] },
     isAdult: { type: Boolean, default: false },
   },

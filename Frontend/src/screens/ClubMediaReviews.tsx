@@ -15,7 +15,6 @@ import {
   toggleReviewLikeFn,
   editClubReviewFn,
 } from '../api/clubApi';
-import { useUserDataStore } from '../store/userData';
 import { OutletClubMediaContextType, IClubReview } from '../types';
 import LikeButton from '../components/LikeButton';
 import EditReviewModal from '../components/EditReviewModal';
@@ -23,8 +22,7 @@ import EditReviewModal from '../components/EditReviewModal';
 export default function ClubMediaReviews() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const queryClient = useQueryClient();
-  const { user } = useUserDataStore();
-  const { club } = useOutletContext<OutletClubMediaContextType>();
+  const { club, user } = useOutletContext<OutletClubMediaContextType>();
 
   const [reviewForm, setReviewForm] = useState({
     content: '',
