@@ -464,7 +464,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               <div className="dropdown dropdown-end">
                 <button
                   tabIndex={0}
-                  className="btn btn-ghost btn-sm btn-circle opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  className="btn btn-ghost btn-sm btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
                   aria-label="Log options"
                 >
                   <MdMoreHoriz className="w-4 h-4" />
