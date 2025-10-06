@@ -18,14 +18,14 @@ import {
   voteForCandidateFn,
   deleteMediaVotingFn,
 } from '../../api/clubApi';
-import { IClubMediaVoting, IClub } from '../../types';
+import { IClubMediaVoting, IClubResponse } from '../../types';
 import { useUserDataStore } from '../../store/userData';
 import EditVotingModal from './EditVotingModal';
 import CreateVotingWizard from './CreateVotingWizard';
 import SuggestMediaModal from './SuggestMediaModal';
 
 interface VotingSystemProps {
-  club: IClub;
+  club: IClubResponse;
   canManageVoting: boolean;
   showManagement: boolean;
 }
@@ -378,7 +378,9 @@ export default function VotingSystem({
     const userVotedCandidate = voting.candidates.findIndex((candidate) =>
       candidate.votes.some((vote) => vote === user?._id)
     );
-    const canVote = status.status === 'voting_open' && !userVoted;
+    const isUserMember = club.isUserMember;
+    const canVote =
+      status.status === 'voting_open' && !userVoted && isUserMember;
 
     return (
       <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-lg border border-primary/20">
@@ -437,6 +439,18 @@ export default function VotingSystem({
             </div>
           )}
 
+          {!isUserMember && status.status === 'voting_open' && (
+            <div className="alert alert-warning mb-6">
+              <MdHowToVote className="w-5 h-5" />
+              <div>
+                <h4 className="font-medium">Join the club to vote!</h4>
+                <p className="text-sm mt-1">
+                  You need to be a member of this club to participate in voting.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Candidates Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {voting.candidates.map((candidate, index) => {
@@ -449,15 +463,15 @@ export default function VotingSystem({
               return (
                 <div
                   key={index}
-                  className={`card bg-base-100 cursor-pointer transition-all duration-200 ${
+                  className={`card bg-base-100 transition-all duration-200 ${
                     isUserChoice
                       ? 'ring-2 ring-success shadow-success/20'
                       : isSelected
                         ? 'ring-2 ring-primary shadow-primary/20'
                         : canVote
-                          ? 'hover:shadow-lg hover:ring-1 hover:ring-primary/50'
+                          ? 'hover:shadow-lg hover:ring-1 hover:ring-primary/50 cursor-pointer'
                           : ''
-                  } ${!canVote && !userVoted ? 'opacity-60' : ''}`}
+                  } ${!canVote && !userVoted ? 'opacity-60' : ''} ${!isUserMember && status.status === 'voting_open' ? 'cursor-not-allowed' : ''}`}
                   onClick={() => {
                     if (canVote) {
                       setSelectedCandidate(isSelected ? null : index);
@@ -655,6 +669,12 @@ export default function VotingSystem({
               <button
                 onClick={() => onSuggest(voting)}
                 className="btn btn-secondary btn-sm"
+                disabled={!club.isUserMember}
+                title={
+                  !club.isUserMember
+                    ? 'You must be a club member to suggest media'
+                    : 'Suggest media for this voting'
+                }
               >
                 <MdAdd className="w-4 h-4" />
                 Suggest Media
