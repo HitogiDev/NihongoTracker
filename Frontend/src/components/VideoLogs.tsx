@@ -97,40 +97,40 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       }[]
     ) => assignMediaFn(data),
     onSuccess: (_, variables) => {
-      // Calculate totals from the variables that were passed to the mutation
-      const totalLogs = variables.reduce(
-        (sum, item) => sum + item.logsId.length,
-        0
-      );
-      const channelCount = variables.length;
+      // Only show success message and update state for manual assignments
+      // Auto-match handles its own success messages and state updates in batches
+      if (!autoMatchingProgress.isRunning) {
+        const totalLogs = variables.reduce(
+          (sum, item) => sum + item.logsId.length,
+          0
+        );
+        const channelCount = variables.length;
 
-      setAssignedLogs((prev) => [...prev, ...selectedLogs]);
-      setSelectedLogs([]);
-      setSelectedGroup(null);
+        setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+        setSelectedLogs([]);
+        setSelectedGroup(null);
 
-      // Comprehensive query invalidation to update all related data
-      queryClient.invalidateQueries({
-        queryKey: ['videoLogs', username, 'video'],
-      });
-      queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
-      queryClient.invalidateQueries({
-        queryKey: ['ImmersionList', currentUsername],
-      });
-      // Invalidate user stats to update experience points and statistics
-      queryClient.invalidateQueries({
-        queryKey: ['userStats', currentUsername],
-      });
-      // Invalidate user profile data to update overall stats
-      queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['user', 'ranking'].includes(query.queryKey[0] as string),
-      });
-      // Invalidate daily goals as XP changes affect goal progress
-      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+        // Comprehensive query invalidation to update all related data
+        queryClient.invalidateQueries({
+          queryKey: ['videoLogs', username, 'video'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
+        queryClient.invalidateQueries({
+          queryKey: ['ImmersionList', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['userStats', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            ['user', 'ranking'].includes(query.queryKey[0] as string),
+        });
+        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-      toast.success(
-        `Successfully assigned ${totalLogs} video logs to ${channelCount} YouTube channels`
-      );
+        toast.success(
+          `Successfully assigned ${totalLogs} video logs to ${channelCount} YouTube channels`
+        );
+      }
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -207,8 +207,58 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       );
 
       if (assignmentData.length > 0) {
-        // Use the mutation - success message will be shown in onSuccess callback
-        assignMedia(assignmentData);
+        // Split large batches to avoid "Request entity too large" errors
+        const BATCH_SIZE = 50; // Process 50 assignments at a time
+        const batches = [];
+        for (let i = 0; i < assignmentData.length; i += BATCH_SIZE) {
+          batches.push(assignmentData.slice(i, i + BATCH_SIZE));
+        }
+
+        let totalProcessed = 0;
+        for (const batch of batches) {
+          await new Promise<void>((resolve, reject) => {
+            assignMedia(batch, {
+              onSuccess: () => {
+                totalProcessed += batch.reduce(
+                  (sum, item) => sum + item.logsId.length,
+                  0
+                );
+                resolve();
+              },
+              onError: (error) => {
+                reject(error);
+              },
+            });
+          });
+        }
+
+        // Show final success message
+        const totalChannels = assignmentData.length;
+        toast.success(
+          `Successfully assigned ${totalProcessed} video logs to ${totalChannels} YouTube channels`
+        );
+
+        // Update state after all batches are processed
+        setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+        setSelectedLogs([]);
+        setSelectedGroup(null);
+
+        // Comprehensive query invalidation to update all related data
+        queryClient.invalidateQueries({
+          queryKey: ['videoLogs', username, 'video'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['logs', currentUsername] });
+        queryClient.invalidateQueries({
+          queryKey: ['ImmersionList', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['userStats', currentUsername],
+        });
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            ['user', 'ranking'].includes(query.queryKey[0] as string),
+        });
+        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       } else {
         toast.info('No valid YouTube channels found for auto-matching');
       }
@@ -218,7 +268,15 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     } finally {
       setAutoMatchingProgress({ current: 0, total: 0, isRunning: false });
     }
-  }, [logsWithYouTubeUrls, extractYouTubeUrl, assignMedia]);
+  }, [
+    logsWithYouTubeUrls,
+    extractYouTubeUrl,
+    assignMedia,
+    queryClient,
+    currentUsername,
+    username,
+    selectedLogs,
+  ]);
 
   if (isLoadingLogs) {
     return (

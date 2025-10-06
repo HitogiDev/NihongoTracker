@@ -223,31 +223,46 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       }
 
       if (matches.length > 0) {
-        // Assign media
-        await new Promise<void>((resolve, reject) => {
-          assignMedia(matches, {
-            onSuccess: () => {
-              // Update assigned logs to remove them from the list
-              const assignedLogIds = matches.flatMap((m) => m.logsId);
-              const newlyAssignedLogs =
-                logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
-              setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
+        // Split large batches to avoid "Request entity too large" errors
+        const BATCH_SIZE = 50; // Process 50 assignments at a time
+        const batches = [];
+        for (let i = 0; i < matches.length; i += BATCH_SIZE) {
+          batches.push(matches.slice(i, i + BATCH_SIZE));
+        }
 
-              // Refetch logs to update the UI
-              queryClient.invalidateQueries({
-                queryKey: ['animeLogs', username, 'anime'],
-              });
-
-              toast.success(
-                `Auto-matched ${matches.reduce((sum, m) => sum + m.logsId.length, 0)} logs to ${matches.length} anime`
-              );
-              resolve();
-            },
-            onError: (error) => {
-              reject(error);
-            },
+        let totalProcessed = 0;
+        for (const batch of batches) {
+          // Assign media in batches
+          await new Promise<void>((resolve, reject) => {
+            assignMedia(batch, {
+              onSuccess: () => {
+                totalProcessed += batch.reduce(
+                  (sum, m) => sum + m.logsId.length,
+                  0
+                );
+                resolve();
+              },
+              onError: (error) => {
+                reject(error);
+              },
+            });
           });
+        }
+
+        // Update assigned logs after all batches are processed
+        const assignedLogIds = matches.flatMap((m) => m.logsId);
+        const newlyAssignedLogs =
+          logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
+        setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
+
+        // Refetch logs to update the UI
+        queryClient.invalidateQueries({
+          queryKey: ['animeLogs', username, 'anime'],
         });
+
+        toast.success(
+          `Auto-matched ${totalProcessed} logs to ${matches.length} anime`
+        );
       } else {
         toast.info('No exact matches found in database');
       }
