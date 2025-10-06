@@ -34,11 +34,12 @@ import {
   updateClubWithFilesFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
-import { IMediaDocument } from '../types.d';
+import { IMediaDocument, IClubMedia } from '../types.d';
 import { useUserDataStore } from '../store/userData';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
 import ClubRankingsTab from '../components/club/ClubRankingsTab';
+import EditClubMediaModal from '../components/club/EditClubMediaModal';
 import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
 
@@ -128,6 +129,8 @@ function ClubDetailScreen() {
 
   // Add media modal state
   const [isAddMediaModalOpen, setIsAddMediaModalOpen] = useState(false);
+  const [isEditMediaModalOpen, setIsEditMediaModalOpen] = useState(false);
+  const [editingMedia, setEditingMedia] = useState<IClubMedia | null>(null);
   const [isCreateVotingWizardOpen, setIsCreateVotingWizardOpen] =
     useState(false);
   const [showVotingManagement, setShowVotingManagement] = useState(false);
@@ -968,21 +971,37 @@ function ClubDetailScreen() {
                                 >
                                   View Details
                                 </button>
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  onClick={() => {
-                                    setSelectedMedia({
-                                      _id: media._id || '',
-                                      mediaId: media.mediaId,
-                                      mediaType: media.mediaType,
-                                      title: media.title,
-                                    });
-                                    setLogModalOpen(true);
-                                  }}
-                                  title="Quick Log"
-                                >
-                                  Log
-                                </button>
+
+                                <div className="flex gap-2">
+                                  {canManageClub && (
+                                    <button
+                                      className="btn btn-outline btn-sm"
+                                      onClick={() => {
+                                        setEditingMedia(media);
+                                        setIsEditMediaModalOpen(true);
+                                      }}
+                                      title="Edit consumption period"
+                                    >
+                                      <MdEdit className="w-4 h-4" />
+                                    </button>
+                                  )}
+
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => {
+                                      setSelectedMedia({
+                                        _id: media._id || '',
+                                        mediaId: media.mediaId,
+                                        mediaType: media.mediaType,
+                                        title: media.title,
+                                      });
+                                      setLogModalOpen(true);
+                                    }}
+                                    title="Quick Log"
+                                  >
+                                    Log
+                                  </button>
+                                </div>
                               </div>
                             )}
                         </div>
@@ -1851,6 +1870,19 @@ function ClubDetailScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Club Media Modal */}
+      {editingMedia && (
+        <EditClubMediaModal
+          isOpen={isEditMediaModalOpen}
+          onClose={() => {
+            setIsEditMediaModalOpen(false);
+            setEditingMedia(null);
+          }}
+          club={club}
+          media={editingMedia}
+        />
       )}
     </div>
   );

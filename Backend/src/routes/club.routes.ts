@@ -12,6 +12,7 @@ import {
   manageJoinRequests,
   getPendingJoinRequests,
   addClubMedia,
+  editClubMedia,
   getClubMedia,
   getClubMediaLogs,
   getClubMediaRankings,
@@ -75,6 +76,7 @@ router.post('/:clubId/transfer-leadership', transferLeadership); // Transfer clu
 
 // Club Media routes
 router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moderators only)
+router.put('/:clubId/media/:mediaId', editClubMedia); // Edit club media (leaders/moderators only)
 router.get('/:clubId/media', getClubMedia); // Get club media
 router.get('/:clubId/media/:mediaId/logs', getClubMediaLogs); // Get club member logs for specific media
 router.get('/:clubId/media/:mediaId/rankings', getClubMediaRankings); // Get club member rankings for specific media

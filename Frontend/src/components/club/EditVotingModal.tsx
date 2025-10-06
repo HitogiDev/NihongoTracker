@@ -187,7 +187,14 @@ export default function EditVotingModal({
 
   // Check if voting can be edited
   const canEdit =
-    voting.status === 'setup' || voting.status === 'suggestions_closed';
+    voting.status === 'setup' ||
+    voting.status === 'suggestions_closed' ||
+    voting.status === 'voting_closed' ||
+    voting.status === 'completed';
+
+  // Check if only consumption period can be edited (for later stages)
+  const onlyConsumptionEditable =
+    voting.status === 'voting_closed' || voting.status === 'completed';
 
   if (!canEdit) {
     return (
@@ -234,6 +241,18 @@ export default function EditVotingModal({
         </div>
 
         <div className="space-y-6">
+          {onlyConsumptionEditable && (
+            <div className="alert alert-info">
+              <div>
+                <h4 className="font-medium">Limited Editing Mode</h4>
+                <p className="text-sm mt-1">
+                  Voting has progressed beyond the setup phase. Only consumption
+                  period dates can be modified.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="label">
@@ -251,6 +270,7 @@ export default function EditVotingModal({
                 }
                 className="input input-bordered w-full"
                 required
+                disabled={onlyConsumptionEditable}
               />
             </div>
 
@@ -266,6 +286,7 @@ export default function EditVotingModal({
                     }))
                   }
                   className="checkbox checkbox-primary"
+                  disabled={onlyConsumptionEditable}
                 />
                 <span className="label-text">
                   Testing Mode (Allow past dates for testing)
@@ -291,6 +312,7 @@ export default function EditVotingModal({
                 }
                 className="textarea textarea-bordered w-full"
                 rows={3}
+                disabled={onlyConsumptionEditable}
               />
             </div>
 
@@ -307,6 +329,7 @@ export default function EditVotingModal({
                   }))
                 }
                 className="select select-bordered w-full"
+                disabled={onlyConsumptionEditable}
               >
                 {MEDIA_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -332,6 +355,7 @@ export default function EditVotingModal({
                     }))
                   }
                   className="input input-bordered w-full"
+                  disabled={onlyConsumptionEditable}
                 />
               </div>
             )}
@@ -356,6 +380,7 @@ export default function EditVotingModal({
                       }))
                     }
                     className="radio radio-primary"
+                    disabled={onlyConsumptionEditable}
                   />
                   <span>
                     I'll add candidates manually (leaders/moderators only)
@@ -377,6 +402,7 @@ export default function EditVotingModal({
                       }))
                     }
                     className="radio radio-primary"
+                    disabled={onlyConsumptionEditable}
                   />
                   <span>
                     Members can suggest candidates during a suggestion period
@@ -386,13 +412,135 @@ export default function EditVotingModal({
             </div>
 
             {/* Suggestion Period (only if member_suggestions is selected) */}
-            {votingData.candidateSubmissionType === 'member_suggestions' && (
+            {votingData.candidateSubmissionType === 'member_suggestions' &&
+              !onlyConsumptionEditable && (
+                <>
+                  <div>
+                    <label className="label">
+                      <span className="label-text">
+                        Suggestion Period Start *
+                      </span>
+                    </label>
+                    <div className="dropdown dropdown-top dropdown-end w-full">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                      >
+                        <span
+                          className={
+                            votingData.suggestionStartDate
+                              ? 'text-base-content'
+                              : 'text-base-content/50'
+                          }
+                        >
+                          {formatDateForDisplay(votingData.suggestionStartDate)}
+                        </span>
+                        <MdCalendarToday className="text-lg" />
+                      </div>
+                      <div
+                        tabIndex={0}
+                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                      >
+                        <DayPicker
+                          className="react-day-picker mx-auto"
+                          mode="single"
+                          selected={votingData.suggestionStartDate}
+                          onSelect={(date) => {
+                            setVotingData((prev) => ({
+                              ...prev,
+                              suggestionStartDate: date,
+                            }));
+                            // Close dropdown by removing focus
+                            (document.activeElement as HTMLElement)?.blur?.();
+                            // Reset end date if it's before the new start date
+                            if (
+                              votingData.suggestionEndDate &&
+                              date &&
+                              votingData.suggestionEndDate < date
+                            ) {
+                              setVotingData((prev) => ({
+                                ...prev,
+                                suggestionEndDate: undefined,
+                              }));
+                            }
+                          }}
+                          disabled={
+                            votingData.testingMode
+                              ? () => false
+                              : (date) => date < new Date()
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label">
+                      <span className="label-text">
+                        Suggestion Period End *
+                      </span>
+                    </label>
+                    <div className="dropdown dropdown-top dropdown-end w-full">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                      >
+                        <span
+                          className={
+                            votingData.suggestionEndDate
+                              ? 'text-base-content'
+                              : 'text-base-content/50'
+                          }
+                        >
+                          {formatDateForDisplay(votingData.suggestionEndDate)}
+                        </span>
+                        <MdCalendarToday className="text-lg" />
+                      </div>
+                      <div
+                        tabIndex={0}
+                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                      >
+                        <DayPicker
+                          className="react-day-picker mx-auto"
+                          mode="single"
+                          selected={votingData.suggestionEndDate}
+                          onSelect={(date) => {
+                            setVotingData((prev) => ({
+                              ...prev,
+                              suggestionEndDate: date,
+                            }));
+                            // Close dropdown by removing focus
+                            (document.activeElement as HTMLElement)?.blur?.();
+                          }}
+                          disabled={
+                            votingData.testingMode
+                              ? (date) => {
+                                  // In testing mode, only disable dates before suggestion start
+                                  if (!votingData.suggestionStartDate)
+                                    return false;
+                                  return date < votingData.suggestionStartDate;
+                                }
+                              : (date) => {
+                                  if (!votingData.suggestionStartDate)
+                                    return date < new Date();
+                                  return date < votingData.suggestionStartDate;
+                                }
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+            {/* Voting Period */}
+            {!onlyConsumptionEditable && (
               <>
                 <div>
                   <label className="label">
-                    <span className="label-text">
-                      Suggestion Period Start *
-                    </span>
+                    <span className="label-text">Voting Start *</span>
                   </label>
                   <div className="dropdown dropdown-top dropdown-end w-full">
                     <div
@@ -402,12 +550,12 @@ export default function EditVotingModal({
                     >
                       <span
                         className={
-                          votingData.suggestionStartDate
+                          votingData.votingStartDate
                             ? 'text-base-content'
                             : 'text-base-content/50'
                         }
                       >
-                        {formatDateForDisplay(votingData.suggestionStartDate)}
+                        {formatDateForDisplay(votingData.votingStartDate)}
                       </span>
                       <MdCalendarToday className="text-lg" />
                     </div>
@@ -418,30 +566,51 @@ export default function EditVotingModal({
                       <DayPicker
                         className="react-day-picker mx-auto"
                         mode="single"
-                        selected={votingData.suggestionStartDate}
+                        selected={votingData.votingStartDate}
                         onSelect={(date) => {
                           setVotingData((prev) => ({
                             ...prev,
-                            suggestionStartDate: date,
+                            votingStartDate: date,
                           }));
                           // Close dropdown by removing focus
                           (document.activeElement as HTMLElement)?.blur?.();
                           // Reset end date if it's before the new start date
                           if (
-                            votingData.suggestionEndDate &&
+                            votingData.votingEndDate &&
                             date &&
-                            votingData.suggestionEndDate < date
+                            votingData.votingEndDate < date
                           ) {
                             setVotingData((prev) => ({
                               ...prev,
-                              suggestionEndDate: undefined,
+                              votingEndDate: undefined,
                             }));
                           }
                         }}
                         disabled={
                           votingData.testingMode
-                            ? () => false
-                            : (date) => date < new Date()
+                            ? (date) => {
+                                // In testing mode, only disable dates before suggestion end
+                                if (
+                                  votingData.candidateSubmissionType ===
+                                  'member_suggestions'
+                                ) {
+                                  if (!votingData.suggestionEndDate)
+                                    return false;
+                                  return date < votingData.suggestionEndDate;
+                                }
+                                return false;
+                              }
+                            : (date) => {
+                                if (
+                                  votingData.candidateSubmissionType ===
+                                  'member_suggestions'
+                                ) {
+                                  const minDate =
+                                    votingData.suggestionEndDate || new Date();
+                                  return date < minDate;
+                                }
+                                return date < new Date();
+                              }
                         }
                       />
                     </div>
@@ -450,7 +619,7 @@ export default function EditVotingModal({
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Suggestion Period End *</span>
+                    <span className="label-text">Voting End *</span>
                   </label>
                   <div className="dropdown dropdown-top dropdown-end w-full">
                     <div
@@ -460,12 +629,12 @@ export default function EditVotingModal({
                     >
                       <span
                         className={
-                          votingData.suggestionEndDate
+                          votingData.votingEndDate
                             ? 'text-base-content'
                             : 'text-base-content/50'
                         }
                       >
-                        {formatDateForDisplay(votingData.suggestionEndDate)}
+                        {formatDateForDisplay(votingData.votingEndDate)}
                       </span>
                       <MdCalendarToday className="text-lg" />
                     </div>
@@ -476,11 +645,11 @@ export default function EditVotingModal({
                       <DayPicker
                         className="react-day-picker mx-auto"
                         mode="single"
-                        selected={votingData.suggestionEndDate}
+                        selected={votingData.votingEndDate}
                         onSelect={(date) => {
                           setVotingData((prev) => ({
                             ...prev,
-                            suggestionEndDate: date,
+                            votingEndDate: date,
                           }));
                           // Close dropdown by removing focus
                           (document.activeElement as HTMLElement)?.blur?.();
@@ -488,15 +657,21 @@ export default function EditVotingModal({
                         disabled={
                           votingData.testingMode
                             ? (date) => {
-                                // In testing mode, only disable dates before suggestion start
-                                if (!votingData.suggestionStartDate)
-                                  return false;
-                                return date < votingData.suggestionStartDate;
+                                // In testing mode, only disable dates before voting start
+                                if (!votingData.votingStartDate) return false;
+                                return date < votingData.votingStartDate;
                               }
                             : (date) => {
-                                if (!votingData.suggestionStartDate)
-                                  return date < new Date();
-                                return date < votingData.suggestionStartDate;
+                                if (!votingData.votingStartDate) {
+                                  const minDate =
+                                    votingData.candidateSubmissionType ===
+                                    'member_suggestions'
+                                      ? votingData.suggestionEndDate ||
+                                        new Date()
+                                      : new Date();
+                                  return date < minDate;
+                                }
+                                return date < votingData.votingStartDate;
                               }
                         }
                       />
@@ -505,146 +680,6 @@ export default function EditVotingModal({
                 </div>
               </>
             )}
-
-            {/* Voting Period */}
-            <div>
-              <label className="label">
-                <span className="label-text">Voting Start *</span>
-              </label>
-              <div className="dropdown dropdown-top dropdown-end w-full">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
-                >
-                  <span
-                    className={
-                      votingData.votingStartDate
-                        ? 'text-base-content'
-                        : 'text-base-content/50'
-                    }
-                  >
-                    {formatDateForDisplay(votingData.votingStartDate)}
-                  </span>
-                  <MdCalendarToday className="text-lg" />
-                </div>
-                <div
-                  tabIndex={0}
-                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
-                >
-                  <DayPicker
-                    className="react-day-picker mx-auto"
-                    mode="single"
-                    selected={votingData.votingStartDate}
-                    onSelect={(date) => {
-                      setVotingData((prev) => ({
-                        ...prev,
-                        votingStartDate: date,
-                      }));
-                      // Close dropdown by removing focus
-                      (document.activeElement as HTMLElement)?.blur?.();
-                      // Reset end date if it's before the new start date
-                      if (
-                        votingData.votingEndDate &&
-                        date &&
-                        votingData.votingEndDate < date
-                      ) {
-                        setVotingData((prev) => ({
-                          ...prev,
-                          votingEndDate: undefined,
-                        }));
-                      }
-                    }}
-                    disabled={
-                      votingData.testingMode
-                        ? (date) => {
-                            // In testing mode, only disable dates before suggestion end
-                            if (
-                              votingData.candidateSubmissionType ===
-                              'member_suggestions'
-                            ) {
-                              if (!votingData.suggestionEndDate) return false;
-                              return date < votingData.suggestionEndDate;
-                            }
-                            return false;
-                          }
-                        : (date) => {
-                            if (
-                              votingData.candidateSubmissionType ===
-                              'member_suggestions'
-                            ) {
-                              const minDate =
-                                votingData.suggestionEndDate || new Date();
-                              return date < minDate;
-                            }
-                            return date < new Date();
-                          }
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="label">
-                <span className="label-text">Voting End *</span>
-              </label>
-              <div className="dropdown dropdown-top dropdown-end w-full">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
-                >
-                  <span
-                    className={
-                      votingData.votingEndDate
-                        ? 'text-base-content'
-                        : 'text-base-content/50'
-                    }
-                  >
-                    {formatDateForDisplay(votingData.votingEndDate)}
-                  </span>
-                  <MdCalendarToday className="text-lg" />
-                </div>
-                <div
-                  tabIndex={0}
-                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
-                >
-                  <DayPicker
-                    className="react-day-picker mx-auto"
-                    mode="single"
-                    selected={votingData.votingEndDate}
-                    onSelect={(date) => {
-                      setVotingData((prev) => ({
-                        ...prev,
-                        votingEndDate: date,
-                      }));
-                      // Close dropdown by removing focus
-                      (document.activeElement as HTMLElement)?.blur?.();
-                    }}
-                    disabled={
-                      votingData.testingMode
-                        ? (date) => {
-                            // In testing mode, only disable dates before voting start
-                            if (!votingData.votingStartDate) return false;
-                            return date < votingData.votingStartDate;
-                          }
-                        : (date) => {
-                            if (!votingData.votingStartDate) {
-                              const minDate =
-                                votingData.candidateSubmissionType ===
-                                'member_suggestions'
-                                  ? votingData.suggestionEndDate || new Date()
-                                  : new Date();
-                              return date < minDate;
-                            }
-                            return date < votingData.votingStartDate;
-                          }
-                    }
-                  />
-                </div>
-              </div>
-            </div>
 
             {/* Consumption Period */}
             <div>

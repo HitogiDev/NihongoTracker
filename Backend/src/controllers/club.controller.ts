@@ -821,6 +821,96 @@ export async function addClubMedia(
   }
 }
 
+// Edit club media (consumption period dates)
+export async function editClubMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, mediaId } = req.params;
+    const { title, description, startDate, endDate } = req.body;
+    const userId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId)) {
+      return res.status(400).json({ message: 'Invalid club ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const userMember = club.members.find(
+      (member) => member.user.toString() === userId.toString()
+    );
+
+    if (
+      !userMember ||
+      (userMember.role !== 'leader' && userMember.role !== 'moderator')
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Only leaders and moderators can edit media' });
+    }
+
+    // Find the media to edit
+    const mediaIndex = club.currentMedia.findIndex(
+      (media) => media._id?.toString() === mediaId
+    );
+
+    if (mediaIndex === -1) {
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
+    const media = club.currentMedia[mediaIndex];
+
+    // Validate dates
+    const newStartDate = new Date(startDate);
+    const newEndDate = new Date(endDate);
+
+    if (newStartDate >= newEndDate) {
+      return res
+        .status(400)
+        .json({ message: 'End date must be after start date' });
+    }
+
+    // Update the media using findByIdAndUpdate with arrayFilters to avoid validation issues
+    const updatedClub = await Club.findByIdAndUpdate(
+      clubId,
+      {
+        $set: {
+          'currentMedia.$[elem].title': title || media.title,
+          'currentMedia.$[elem].description':
+            description !== undefined ? description : media.description,
+          'currentMedia.$[elem].startDate': newStartDate,
+          'currentMedia.$[elem].endDate': newEndDate,
+        },
+      },
+      {
+        arrayFilters: [{ 'elem._id': new Types.ObjectId(mediaId) }],
+        new: true,
+        runValidators: false, // Skip validation to avoid required field errors
+      }
+    );
+
+    if (!updatedClub) {
+      return res.status(404).json({ message: 'Failed to update media' });
+    }
+
+    const updatedMedia = updatedClub.currentMedia.find(
+      (m) => m._id?.toString() === mediaId
+    );
+
+    return res.status(200).json({
+      message: 'Media updated successfully',
+      media: updatedMedia,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 // Get club media (current and past)
 export async function getClubMedia(
   req: Request,
@@ -1373,11 +1463,17 @@ export async function editMediaVoting(
 
     const voting = club.mediaVotings[votingIndex];
 
-    // Only allow editing votings that are still in setup phase or suggestions_closed
-    if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
+    // Allow editing votings in setup, suggestions_closed, voting_closed, or completed status
+    // In later stages, only consumption period can be modified on frontend
+    if (
+      voting.status !== 'setup' &&
+      voting.status !== 'suggestions_closed' &&
+      voting.status !== 'voting_closed' &&
+      voting.status !== 'completed'
+    ) {
       return res.status(400).json({
         message:
-          'Can only edit votings that are in setup or suggestions_closed status',
+          'Can only edit votings that are in setup, suggestions_closed, voting_closed, or completed status',
       });
     }
 
@@ -1390,37 +1486,64 @@ export async function editMediaVoting(
     const isTestingMode = req.body.testingMode === true;
     const now = new Date();
 
-    if (votingStart >= votingEnd) {
-      return res
-        .status(400)
-        .json({ message: 'Voting end date must be after start date' });
-    }
+    // Check if this is a late-stage edit (only consumption period should be modified)
+    const isLateStageEdit =
+      voting.status === 'voting_closed' || voting.status === 'completed';
 
+    // Always validate consumption period dates
     if (consumptionStart >= consumptionEnd) {
       return res
         .status(400)
         .json({ message: 'Consumption end date must be after start date' });
     }
 
-    if (votingEnd >= consumptionStart) {
-      return res
-        .status(400)
-        .json({ message: 'Consumption must start after voting ends' });
-    }
-
-    // For non-testing mode, validate that dates are in the future
-    if (!isTestingMode) {
-      if (votingStart <= now) {
+    // For late-stage edits, only validate consumption dates and skip other validations
+    if (!isLateStageEdit) {
+      // Validate all dates for early-stage edits
+      if (votingStart >= votingEnd) {
         return res
           .status(400)
-          .json({ message: 'Voting start date must be in the future' });
+          .json({ message: 'Voting end date must be after start date' });
+      }
+
+      if (votingEnd >= consumptionStart) {
+        return res
+          .status(400)
+          .json({ message: 'Consumption must start after voting ends' });
+      }
+
+      // For non-testing mode, validate that dates are in the future
+      if (!isTestingMode) {
+        if (votingStart <= now) {
+          return res
+            .status(400)
+            .json({ message: 'Voting start date must be in the future' });
+        }
+      }
+    } else {
+      // For late-stage edits, ensure consumption dates are reasonable
+      // Allow consumption to start in the past since voting may have already completed
+      if (!isTestingMode) {
+        // Only check that consumption end is not too far in the past (more than 1 year)
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        if (consumptionEnd < oneYearAgo) {
+          return res
+            .status(400)
+            .json({
+              message:
+                'Consumption end date cannot be more than 1 year in the past',
+            });
+        }
       }
     }
 
     let suggestionStart: Date | undefined;
     let suggestionEnd: Date | undefined;
 
-    if (candidateSubmissionType === 'member_suggestions') {
+    // Only validate suggestions for early-stage edits
+    if (!isLateStageEdit && candidateSubmissionType === 'member_suggestions') {
       if (!suggestionStartDate || !suggestionEndDate) {
         return res.status(400).json({
           message: 'Suggestion dates are required for member suggestions',
@@ -1449,20 +1572,33 @@ export async function editMediaVoting(
             .json({ message: 'Suggestion start date must be in the future' });
         }
       }
+    } else if (isLateStageEdit) {
+      // For late-stage edits, preserve existing suggestion dates
+      suggestionStart = voting.suggestionStartDate;
+      suggestionEnd = voting.suggestionEndDate;
     }
 
     // Update the voting
     club.mediaVotings[votingIndex] = {
       ...voting,
-      title,
-      description,
-      mediaType,
-      customMediaType: mediaType === 'custom' ? customMediaType : undefined,
-      candidateSubmissionType,
+      // For late-stage edits, only update consumption dates
+      // For early-stage edits, update all fields
+      title: isLateStageEdit ? voting.title : title,
+      description: isLateStageEdit ? voting.description : description,
+      mediaType: isLateStageEdit ? voting.mediaType : mediaType,
+      customMediaType: isLateStageEdit
+        ? voting.customMediaType
+        : mediaType === 'custom'
+          ? customMediaType
+          : undefined,
+      candidateSubmissionType: isLateStageEdit
+        ? voting.candidateSubmissionType
+        : candidateSubmissionType,
       suggestionStartDate: suggestionStart,
       suggestionEndDate: suggestionEnd,
-      votingStartDate: votingStart,
-      votingEndDate: votingEnd,
+      votingStartDate: isLateStageEdit ? voting.votingStartDate : votingStart,
+      votingEndDate: isLateStageEdit ? voting.votingEndDate : votingEnd,
+      // Always allow consumption dates to be updated
       consumptionStartDate: consumptionStart,
       consumptionEndDate: consumptionEnd,
       // Explicitly preserve these required fields

@@ -221,6 +221,24 @@ export async function getClubMediaFn(
   return data;
 }
 
+// Edit club media
+export async function editClubMediaFn(
+  clubId: string,
+  mediaId: string,
+  data: {
+    title?: string;
+    description?: string;
+    startDate: string;
+    endDate: string;
+  }
+): Promise<{ message: string; media: IClubMedia }> {
+  const res = await axiosInstance.put(
+    `/clubs/${clubId}/media/${mediaId}`,
+    data
+  );
+  return res.data;
+}
+
 // Club Review Functions
 
 // Add review for club media
@@ -607,7 +625,7 @@ export async function getClubMemberRankingsFn(
   return data;
 }
 
-// Get recent club activity (logs and reviews)
+// Get club recent activity
 export async function getClubRecentActivityFn(
   clubId: string,
   params?: { limit?: number; days?: number; page?: number }
