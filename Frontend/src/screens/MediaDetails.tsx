@@ -667,7 +667,9 @@ function MediaDetails() {
                       Type:
                     </span>
                     <div className="badge badge-primary badge-lg uppercase font-medium">
-                      {mediaType}
+                      {mediaDocument?.type === 'reading'
+                        ? 'Light Novel'
+                        : mediaDocument?.type || mediaType}
                     </div>
                   </div>
 

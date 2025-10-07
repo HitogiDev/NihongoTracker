@@ -181,6 +181,24 @@ export const validateQuickLogData = (logData: {
     errors.time = 'Please enter the time spent';
   }
 
+  if (
+    logData.type === 'manga' &&
+    logData.pages <= 0 &&
+    logData.chars <= 0 &&
+    totalMinutes <= 0
+  ) {
+    errors.activity = 'Please enter pages read, characters read, or time spent';
+  }
+
+  if (
+    logData.type === 'reading' &&
+    logData.pages <= 0 &&
+    logData.chars <= 0 &&
+    totalMinutes <= 0
+  ) {
+    errors.activity = 'Please enter pages read, characters read, or time spent';
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,

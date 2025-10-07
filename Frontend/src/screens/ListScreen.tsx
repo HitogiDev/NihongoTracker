@@ -772,7 +772,9 @@ function MediaCard({
               ? 'VN'
               : media.type === 'tv show'
                 ? 'TV Show'
-                : media.type.charAt(0).toUpperCase() + media.type.slice(1)}
+                : media.type === 'reading'
+                  ? 'Light Novel'
+                  : media.type.charAt(0).toUpperCase() + media.type.slice(1)}
           </span>
         </div>
       </div>
@@ -877,8 +879,10 @@ function MediaListItem({
                     ? 'Visual Novel'
                     : media.type === 'tv show'
                       ? 'TV Show'
-                      : media.type.charAt(0).toUpperCase() +
-                        media.type.slice(1)}
+                      : media.type === 'reading'
+                        ? 'Light Novel'
+                        : media.type.charAt(0).toUpperCase() +
+                          media.type.slice(1)}
                 </div>
 
                 {media.isAdult && (

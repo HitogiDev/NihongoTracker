@@ -86,6 +86,8 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
     } else if (
       logType !== 'video' &&
       logType !== 'audio' &&
+      logType !== 'manga' &&
+      logType !== 'reading' &&
       logType !== 'movie'
     ) {
       // Reset manual time for types that don't typically use it
@@ -513,9 +515,11 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                           </div>
                         )}
 
-                        {/* Time fields for Video, Audio, and when not auto-calculated */}
+                        {/* Time fields for Video, Audio, Manga, Reading, and when not auto-calculated */}
                         {(logType === 'video' ||
                           logType === 'audio' ||
+                          logType === 'manga' ||
+                          logType === 'reading' ||
                           (logType === 'movie' && !episodes)) && (
                           <div>
                             <label className="label">
