@@ -15,7 +15,7 @@ import {
   recalculateXp,
   adminUpdateLog,
 } from '../controllers/logs.controller.js';
-import { protect } from '../libs/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 import { checkPermission } from '../middlewares/checkPermission.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
 

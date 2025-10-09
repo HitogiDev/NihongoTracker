@@ -32,7 +32,7 @@ import {
   completeVoting,
   getClubRecentActivity,
 } from '../controllers/club.controller.js';
-import { protect } from '../libs/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

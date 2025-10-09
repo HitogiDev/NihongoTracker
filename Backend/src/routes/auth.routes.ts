@@ -5,7 +5,7 @@ import {
   logout,
   verifyToken,
 } from '../controllers/auth.controller.js';
-import { protect } from '../libs/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

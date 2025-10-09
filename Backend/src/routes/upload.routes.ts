@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { protect } from '../libs/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 import uploadFile from '../services/uploadFile.js';
 import { Request, Response, NextFunction } from 'express';
 import { customError } from '../middlewares/errorMiddleware.js';

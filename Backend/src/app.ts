@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -13,11 +13,12 @@ import logsRoutes from './routes/logs.routes.js';
 import userRoutes from './routes/user.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import mediaRoutes from './routes/media.routes.js';
-import dailyGoalsRoutes from './routes/dailyGoals.routes.js';
-import longTermGoalsRoutes from './routes/longTermGoals.routes.js';
+import goalsRoutes from './routes/goals.routes.js';
 import comparisonRoutes from './routes/comparison.routes.js';
 import clubRoutes from './routes/club.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
+import ogImageRoutes from './routes/ogImage.routes.js';
+import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
 const app = express();
 
@@ -38,11 +39,11 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/goals', dailyGoalsRoutes);
-app.use('/api/goals', longTermGoalsRoutes);
+app.use('/api/goals', goalsRoutes);
 app.use('/api/compare', comparisonRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/og-image', ogImageRoutes);
 
 app.use(
   '/api',
@@ -53,7 +54,22 @@ app.use(
 
 // Serve index.html for all non-API routes (SPA fallback)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.get('*', (req, res, next) => {
+app.use(
+  express.static(path.join(__dirname, '../dist'), {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (
+        filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/i)
+      ) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+      }
+    },
+  })
+);
+
+app.use(metaTagsMiddleware);
+
+app.get('*', (req: Request, res: Response, next: NextFunction) => {
   if (req.path.startsWith('/api')) return next();
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });

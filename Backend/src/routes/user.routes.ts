@@ -14,7 +14,7 @@ import {
   getUserLogs,
   getUserStats,
 } from '../controllers/logs.controller.js';
-import { protect } from '../libs/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
 
 const router = Router();

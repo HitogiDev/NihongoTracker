@@ -15,7 +15,7 @@ import {
   getRecentMediaLogs,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
-import { protect } from '../libs/authMiddleware.js';
+import { protect } from '../middlewares/authMiddleware.js';
 import { csvToArray } from '../middlewares/csvToArray.js';
 import multer from 'multer';
 import {
