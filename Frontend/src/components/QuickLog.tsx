@@ -106,10 +106,20 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
     onSuccess: () => {
       resetForm();
       void queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['logs', 'user'].includes(query.queryKey[0] as string),
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            key.includes('logs') ||
+            key[0] === 'logs' ||
+            (Array.isArray(key) && key.some((k) => k === 'logs'))
+          );
+        },
       });
+
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      void queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey.includes('comparison'),
+      });
       toast.success('Log created successfully!');
     },
     onError: (error) => {
