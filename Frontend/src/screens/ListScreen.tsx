@@ -298,36 +298,35 @@ function ListScreen() {
           untrackedLogs.length > 0 &&
           !user?.settings?.hideUnmatchedLogsAlert && (
             <div className="container mx-auto px-4 pt-4">
-              <div role="alert" className="alert alert-warning shadow-lg">
-                <div className="flex flex-col justify-between sm:flex-row sm:items-center w-full gap-3">
-                  <div className="flex items-center gap-3 flex-1">
-                    <MdWarning className="h-6 w-6 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="font-bold">Unmatched Logs Found</h3>
-                      <div className="text-sm">
-                        You have {untrackedLogs.length} log
-                        {untrackedLogs.length !== 1 ? 's' : ''} without media.
-                        Match them with the correct media.
-                      </div>
-                    </div>
+              <div
+                role="alert"
+                className="alert alert-warning shadow-lg alert-vertical sm:alert-horizontal"
+              >
+                <MdWarning className="h-6 w-6 flex-shrink-0" />
+                <div>
+                  <h3 className="font-bold">Unmatched Logs Found</h3>
+                  <div className="text-sm">
+                    You have {untrackedLogs.length} log
+                    {untrackedLogs.length !== 1 ? 's' : ''} without media. Match
+                    them with the correct media.
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <button
-                      className="btn btn-sm btn-outline gap-2 flex-1 sm:flex-none"
-                      onClick={() => navigate('/matchmedia')}
-                    >
-                      <MdLink className="h-4 w-4" />
-                      <span className="sm:inline">Match Logs</span>
-                    </button>
-                    <button
-                      className="btn btn-sm btn-ghost gap-2 flex-1 sm:flex-none"
-                      onClick={() => setShowHideAlertModal(true)}
-                      title="Don't show this alert again"
-                    >
-                      <MdClose className="h-4 w-4" />
-                      <span className="sm:inline">Don't show again</span>
-                    </button>
-                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    className="btn btn-sm btn-outline gap-2"
+                    onClick={() => navigate('/matchmedia')}
+                  >
+                    <MdLink className="h-4 w-4" />
+                    <span>Match Logs</span>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost gap-2"
+                    onClick={() => setShowHideAlertModal(true)}
+                    title="Don't show this alert again"
+                  >
+                    <MdClose className="h-4 w-4" />
+                    <span>Don't show again</span>
+                  </button>
                 </div>
               </div>
             </div>

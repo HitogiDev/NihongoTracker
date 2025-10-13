@@ -326,13 +326,8 @@ function SettingsScreen() {
     if (newPasswordConfirm.trim())
       formData.append('newPasswordConfirm', newPasswordConfirm);
 
-    // Always append discordId (even if empty to allow clearing)
     formData.append('discordId', discordId);
 
-    // Note: Preferences (blurAdultContent, hideUnmatchedLogsAlert, timezone)
-    // are now auto-saved and don't need to be included in manual updates
-
-    // Use cropped files if available, otherwise fall back to original files
     if (croppedAvatarFile) {
       formData.append('avatar', croppedAvatarFile);
     } else {

@@ -29,8 +29,13 @@ export async function getUntrackedLogs(
   try {
     const untrackedLogs = await Log.find({
       user: user._id,
-      type: { $in: ['anime', 'manga', 'reading', 'vn'] },
-      mediaId: { $exists: false },
+      type: { $in: ['anime', 'manga', 'reading', 'vn', 'video', 'movie'] },
+      $or: [
+        { mediaId: { $exists: false } },
+        { mediaId: null },
+        { mediaId: undefined },
+        { mediaId: '' },
+      ],
     });
     return res.status(200).json(untrackedLogs);
   } catch (error) {
