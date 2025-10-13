@@ -361,6 +361,8 @@ export async function getUserLogs(
   const type = req.query.type;
 
   const search = req.query.search as string;
+  const sortBy = (req.query.sortBy as string) || 'date';
+  const sortDirection = (req.query.sortDirection as string) || 'desc';
 
   try {
     if (!req.params.username) {
@@ -401,14 +403,37 @@ export async function getUserLogs(
       initialMatch.mediaId = req.query.mediaId;
     }
 
+    // Create sort object based on sortBy parameter and direction
+    const sortValue = sortDirection === 'asc' ? 1 : -1;
+    const sortObject: any = {};
+    switch (sortBy) {
+      case 'xp':
+        sortObject.xp = sortValue;
+        break;
+      case 'episodes':
+        sortObject.episodes = sortValue;
+        break;
+      case 'chars':
+        sortObject.chars = sortValue;
+        break;
+      case 'pages':
+        sortObject.pages = sortValue;
+        break;
+      case 'time':
+        sortObject.time = sortValue;
+        break;
+      case 'date':
+      default:
+        sortObject.date = sortValue;
+        break;
+    }
+
     let pipeline: PipelineStage[] = [
       {
         $match: initialMatch,
       },
       {
-        $sort: {
-          date: -1,
-        },
+        $sort: sortObject,
       },
     ];
 

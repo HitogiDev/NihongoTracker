@@ -15,6 +15,9 @@ import {
   MdFilterList,
   MdSchedule,
   MdExpandMore,
+  MdSort,
+  MdArrowUpward,
+  MdArrowDownward,
 } from 'react-icons/md';
 
 function ProfileScreen() {
@@ -43,6 +46,10 @@ function ProfileScreen() {
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(
     undefined
   );
+  const [sortBy, setSortBy] = useState<
+    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
+  >('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Type guard to validate log type
   const isValidLogType = (
@@ -146,6 +153,8 @@ function ProfileScreen() {
       dateFilter,
       customStartDate?.toISOString(),
       customEndDate?.toISOString(),
+      sortBy,
+      sortDirection,
     ],
     queryFn: ({ pageParam }) =>
       getUserLogsFn(username as string, {
@@ -155,6 +164,8 @@ function ProfileScreen() {
         type: filterType !== 'all' ? filterType : undefined,
         start: dateRange?.startDate?.toISOString(),
         end: dateRange?.endDate?.toISOString(),
+        sortBy: sortBy,
+        sortDirection: sortDirection,
       }),
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < limit) return undefined;
@@ -382,6 +393,86 @@ function ProfileScreen() {
                         ))}
                       </ul>
                     </div>
+
+                    {/* Combined Sort Filter Dropdown */}
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <MdSort className="w-4 h-4" />
+                        Sort:{' '}
+                        {sortBy === 'date'
+                          ? 'Date'
+                          : sortBy === 'xp'
+                            ? 'XP'
+                            : sortBy === 'episodes'
+                              ? 'Episodes'
+                              : sortBy === 'chars'
+                                ? 'Characters'
+                                : sortBy === 'pages'
+                                  ? 'Pages'
+                                  : 'Time'}{' '}
+                        {sortDirection === 'desc' ? (
+                          <MdArrowDownward className="w-3 h-3" />
+                        ) : (
+                          <MdArrowUpward className="w-3 h-3" />
+                        )}
+                        <MdExpandMore className="w-4 h-4 ml-auto" />
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
+                      >
+                        <li className="menu-title">
+                          <span>Sort Field</span>
+                        </li>
+                        {[
+                          { value: 'date', label: 'Date' },
+                          { value: 'xp', label: 'XP' },
+                          { value: 'episodes', label: 'Episodes' },
+                          { value: 'chars', label: 'Characters' },
+                          { value: 'pages', label: 'Pages' },
+                          { value: 'time', label: 'Time' },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <a
+                              className={
+                                sortBy === option.value ? 'active' : ''
+                              }
+                              onClick={() => {
+                                setSortBy(option.value as typeof sortBy);
+                              }}
+                            >
+                              {option.label}
+                            </a>
+                          </li>
+                        ))}
+                        <div className="divider my-1"></div>
+                        <li className="menu-title">
+                          <span>Sort Direction</span>
+                        </li>
+                        <li>
+                          <a
+                            className={sortDirection === 'desc' ? 'active' : ''}
+                            onClick={() => setSortDirection('desc')}
+                          >
+                            <MdArrowDownward className="w-4 h-4" />
+                            Highest to Lowest
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            className={sortDirection === 'asc' ? 'active' : ''}
+                            onClick={() => setSortDirection('asc')}
+                          >
+                            <MdArrowUpward className="w-4 h-4" />
+                            Lowest to Highest
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
@@ -549,6 +640,28 @@ function ProfileScreen() {
                       </div>
                     )}
 
+                    {sortBy !== 'date' && (
+                      <div className="badge badge-info badge-sm gap-1">
+                        Sort:{' '}
+                        {sortBy === 'xp'
+                          ? 'XP'
+                          : sortBy === 'episodes'
+                            ? 'Episodes'
+                            : sortBy === 'chars'
+                              ? 'Characters'
+                              : sortBy === 'pages'
+                                ? 'Pages'
+                                : 'Time'}
+                        <button
+                          className="ml-1 hover:bg-info-focus rounded-full"
+                          onClick={() => setSortBy('date')}
+                          aria-label="Clear sort filter"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
                     <button
                       className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
                       onClick={() => {
@@ -557,6 +670,8 @@ function ProfileScreen() {
                         setDateFilter('all');
                         setCustomStartDate(undefined);
                         setCustomEndDate(undefined);
+                        setSortBy('date');
+                        setSortDirection('desc');
                       }}
                     >
                       Clear all

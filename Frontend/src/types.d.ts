@@ -175,6 +175,8 @@ export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
   start?: string;
   end?: string;
   type?: ILog['type'] | ILog['type'][];
+  sortBy?: 'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time';
+  sortDirection?: 'asc' | 'desc';
 }
 
 // Add interface for MatchMedia logs (minimal required fields)
