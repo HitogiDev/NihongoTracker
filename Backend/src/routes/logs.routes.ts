@@ -58,10 +58,8 @@ router.get('/stats/logscreen', protect, getLogScreenStats);
 // User-scoped media stats (uses user timezone)
 router.get('/stats/media', protect, getUserMediaStats);
 
-// Global media stats across all users (UTC boundaries)
 router.get('/stats/media/global', getGlobalMediaStats);
 
-// Recent logs for a media across all users (public logs only)
 router.get('/media/recent', getRecentMediaLogs);
 
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);

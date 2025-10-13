@@ -16,6 +16,11 @@ import TimezonePicker from '../components/TimezonePicker';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
 
+const csvTypeString = {
+  tmw: 'TheMoeWay',
+  manabe: 'Manabe',
+};
+
 function SettingsScreen() {
   const { setUser, user } = useUserDataStore();
   const navigate = useNavigate();
@@ -42,9 +47,10 @@ function SettingsScreen() {
   const [showAvatarCrop, setShowAvatarCrop] = useState(false);
   const [showBannerCrop, setShowBannerCrop] = useState(false);
 
-  // Add these new state variables for cropped files
   const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
   const [croppedBannerFile, setCroppedBannerFile] = useState<File | null>(null);
+
+  const [csvType, setCSVType] = useState<'tmw' | 'manabe' | null>(null);
 
   const avatarImgRef = useRef<HTMLImageElement>(null);
   const bannerImgRef = useRef<HTMLImageElement>(null);
@@ -237,6 +243,11 @@ function SettingsScreen() {
   const { mutate: importCSVLogs, isPending: isImportPending } = useMutation({
     mutationFn: importFromCSV,
     onSuccess: (data) => {
+      // reset file input
+      const csvFileInput = document.getElementById('csv') as HTMLInputElement;
+      if (csvFileInput) {
+        csvFileInput.value = '';
+      }
       toast.success(data.message);
       void queryClient.invalidateQueries({
         predicate: (query) => {
@@ -295,6 +306,7 @@ function SettingsScreen() {
     const csvFile = csvFileInput.files[0];
     const formData = new FormData();
     formData.append('csv', csvFile);
+    formData.append('csvType', csvType ?? '');
     importCSVLogs(formData);
   }
 
@@ -1100,6 +1112,44 @@ function SettingsScreen() {
                         className="file-input file-input-bordered file-input-info w-full"
                         accept=".csv"
                       />
+                      <div className="dropdown dropdown-center w-full">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline w-full gap-2"
+                        >
+                          {csvType
+                            ? csvTypeString[csvType]
+                            : 'Choose the CSV log format'}
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-300 rounded-box z-1 w-full p-2 shadow-sm"
+                        >
+                          <li>
+                            <button
+                              type="button"
+                              className={`hover:bg-base-200 ${csvType === 'tmw' ? 'active' : ''}`}
+                              onClick={() => {
+                                setCSVType('tmw');
+                              }}
+                            >
+                              TheMoeWay
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              type="button"
+                              className={`hover:bg-base-200 ${csvType === 'manabe' ? 'active' : ''}`}
+                              onClick={() => {
+                                setCSVType('manabe');
+                              }}
+                            >
+                              Manabe
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                       <button
                         type="submit"
                         className="btn btn-info w-full"

@@ -1052,6 +1052,7 @@ export async function importLogs(
       message: statusMessage,
     });
   } catch (error) {
+    console.error(error);
     return next(error as customError);
   }
 }

@@ -242,14 +242,24 @@ export interface IRequest<Type> extends Request {
   body: Type;
 }
 
-export interface csvLogs {
-  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'audio' | 'other';
-  description: string;
-  date: string;
-  time: string;
-  quantity: string;
-  chars?: string;
-  mediaId?: string;
+export interface TMWLog {
+  'Log ID': string;
+  'Media Type': string;
+  'Media Name': string;
+  Comment: string;
+  'Amount Logged': string;
+  'Points Received': string;
+  'Log Date': string;
+}
+
+export interface ManabeTSVLog {
+  Fecha: string; // Date
+  Medio: string; // Media type
+  Cantidad: string; // Quantity/Amount
+  Descripción: string; // Description
+  Puntos: string; // Points
+  Caracteres: string; // Characters
+  Tiempo: string; // Time
 }
 
 export interface IDailyGoal extends Document {

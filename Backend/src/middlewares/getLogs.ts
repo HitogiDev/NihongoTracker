@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import { customError } from './errorMiddleware.js';
-import { IUser, ILog, csvLogs } from '../types.js';
+import { IUser, ILog, TMWLog, ManabeTSVLog } from '../types.js';
 import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
@@ -37,10 +37,6 @@ interface ILogManabeTypeMap {
   };
 }
 
-interface ILogCSVTypeMap {
-  [key: string]: string;
-}
-
 interface ManabeWebhookBody {
   userDiscordId: string;
   logInfo: manabeLogs;
@@ -49,7 +45,7 @@ interface ManabeWebhookBody {
 
 interface ILogNT {
   user: Types.ObjectId;
-  description: string;
+  description?: string;
   type: ILog['type'];
   episodes?: number;
   time?: number;
@@ -86,8 +82,6 @@ function transformManabeLogsList(
     OUTPUT: { logType: 'other', parametro: 'time' },
     JUEGO: { logType: 'other', parametro: 'time' },
     LIBRO: { logType: 'reading', parametro: 'pages' },
-    // Add support for movie logs if Manabe sends them in the future:
-    MOVIE: { logType: 'movie', parametro: 'time' },
   };
 
   return list
@@ -204,42 +198,145 @@ export async function importManabeLog(
   return next();
 }
 
-function transformCSVLogsList(
-  list: csvLogs[],
+// Transform TMW CSV format logs
+function transformTMWLogsList(
+  list: TMWLog[],
   user: Omit<IUser, 'password'>
 ): ILogNT[] {
-  const logTypeMap: ILogCSVTypeMap = {
-    anime: 'episodes',
-    manga: 'pages',
-    reading: 'chars',
-    vn: 'chars',
-    video: 'time',
-    audio: 'time',
-    movie: 'time',
-    other: 'time',
+  const mediaTypeMap: { [key: string]: ILog['type'] } = {
+    'Listening Time': 'audio',
+    'Reading Time': 'reading',
+    Book: 'reading',
+    Anime: 'anime',
+    Manga: 'manga',
+    Reading: 'reading',
+    VN: 'vn',
   };
 
   return list
-    .filter((log) => logTypeMap.hasOwnProperty(log.type))
+    .filter((log) => mediaTypeMap.hasOwnProperty(log['Media Type']))
     .map((log) => {
-      const NTLogs: ILogNT = {
+      const type = mediaTypeMap[log['Media Type']];
+      const amount = parseFloat(log['Amount Logged']) || 0;
+
+      const NTLog: ILogNT = {
         user: user._id,
-        description: log.description,
-        type: log.type,
-        [logTypeMap[log.type]]: log.quantity,
-        date: new Date(log.date),
+        type: type,
+        date: new Date(log['Log Date']),
+        description: log['Media Name'],
       };
 
-      if (log.time) {
-        NTLogs.time = parseInt(log.time);
+      // Check if is a youtube video
+      if (
+        type === 'audio' &&
+        log['Media Name'] &&
+        /^https?:\/\/(www\.)?youtu(be\.com|\.be)\//.test(log['Media Name'])
+      ) {
+        NTLog.type = 'video';
       }
-      if (log.chars) {
-        NTLogs.chars = parseInt(log.chars);
+
+      // Map amount to appropriate field based on type
+      if (type === 'audio') {
+        NTLog.time = Math.round(amount);
+      } else if (type === 'anime') {
+        NTLog.episodes = Math.round(amount);
+      } else if (type === 'manga') {
+        NTLog.pages = Math.round(amount);
+      } else if (type === 'reading') {
+        // For "Book" type, use pages; for "Reading Time", use time
+        if (log['Media Type'] === 'Book') {
+          NTLog.pages = Math.round(amount);
+        } else if (log['Media Type'] === 'Reading') {
+          NTLog.chars = Math.round(amount);
+        } else {
+          NTLog.time = Math.round(amount);
+        }
+      } else if (type === 'vn') {
+        NTLog.chars = Math.round(amount);
       }
-      if (log.mediaId) {
-        NTLogs.mediaId = log.mediaId;
+
+      // Check if Media Name is a number (AniList ID)
+      if (
+        (['Anime', 'Manga', 'Listening Time'].includes(log['Media Type']) &&
+          /^\d+$/.test(log['Media Name'])) ||
+        (log['Media Type'] === 'Visual Novel' &&
+          /^v\d+$/.test(log['Media Name']))
+      ) {
+        NTLog.mediaId = log['Media Name'];
       }
-      return NTLogs;
+
+      // Add comment if it's not "No comment" and if media name is a number
+      if (
+        log['Comment'] &&
+        log['Comment'] !== 'No comment' &&
+        /^v?\d+$/.test(log['Media Name'])
+      ) {
+        NTLog.description = log['Comment'];
+      }
+
+      return NTLog;
+    });
+}
+
+// Transform Manabe TSV format logs
+function transformManabeTSVLogsList(
+  list: ManabeTSVLog[],
+  user: Omit<IUser, 'password'>
+): ILogNT[] {
+  const logTypeMap: ILogManabeTypeMap = {
+    ANIME: {
+      logType: 'anime',
+      parametro: 'episodes',
+    },
+    MANGA: {
+      logType: 'manga',
+      parametro: 'pages',
+    },
+    LECTURA: {
+      logType: 'reading',
+      parametro: 'chars',
+    },
+    TIEMPOLECTURA: {
+      logType: 'reading',
+      parametro: 'time',
+    },
+    VN: { logType: 'vn', parametro: 'chars' },
+    VIDEO: { logType: 'video', parametro: 'time' },
+    AUDIO: { logType: 'audio', parametro: 'time' },
+    OUTPUT: { logType: 'other', parametro: 'time' },
+    JUEGO: { logType: 'other', parametro: 'time' },
+    LIBRO: { logType: 'reading', parametro: 'pages' },
+  };
+
+  return list
+    .filter((log) => logTypeMap.hasOwnProperty(log.Medio))
+    .map((log) => {
+      const { logType, parametro } = logTypeMap[log.Medio];
+      const cantidad = parseFloat(log.Cantidad) || 0;
+
+      const NTLog: ILogNT = {
+        user: user._id,
+        description: log.Descripción || 'No description',
+        type: logType,
+        [parametro]: cantidad,
+        date: new Date(log.Fecha),
+      };
+
+      if (log.Tiempo) {
+        const tiempo = parseFloat(log.Tiempo);
+        if (!isNaN(tiempo) && tiempo > 0) {
+          NTLog.time = tiempo;
+        }
+      }
+
+      if (log.Caracteres) {
+        const caracteres = parseFloat(log.Caracteres);
+        if (!isNaN(caracteres) && caracteres > 0) {
+          NTLog.chars = caracteres;
+        }
+      }
+
+      return NTLog;
     });
 }
 
@@ -249,9 +346,18 @@ export async function getLogsFromCSV(
   next: NextFunction
 ) {
   try {
-    const logs = transformCSVLogsList(req.body.logs, res.locals.user);
+    const csvType = req.body.csvType;
+    let logs: ILogNT[];
+
+    if (csvType === 'tmw') {
+      logs = transformTMWLogsList(req.body.logs, res.locals.user);
+    } else if (csvType === 'manabe') {
+      logs = transformManabeTSVLogsList(req.body.logs, res.locals.user);
+    } else {
+      throw new customError('Unsupported CSV type', 400);
+    }
+
     if (!logs) throw new customError('No logs found', 404);
-    if (logs.length === 0) throw new customError('No logs found', 404);
     req.body.logs = logs;
     return next();
   } catch (error) {
