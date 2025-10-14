@@ -132,7 +132,45 @@ export async function getLogsFromAPI(
         page: 1,
       },
     });
-    const logs = transformManabeLogsList(response.data, user);
+
+    const rawLogs: manabeLogs[] = response.data;
+
+    if (user.lastImport) {
+      for (const logInfo of rawLogs) {
+        if (logInfo.medio === 'VIDEO' && logInfo.descripcion) {
+          try {
+            const extractVideoId = (url: string): string | null => {
+              const regex =
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/;
+              const match = url.match(regex);
+              return match ? match[1] : null;
+            };
+            const videoId = extractVideoId(logInfo.descripcion);
+            if (videoId) {
+              const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+              const ytResult = await getYouTubeVideoInfo(videoUrl);
+              if (ytResult && ytResult.channel) {
+                let channelMedia = await MediaBase.findOne({
+                  contentId: ytResult.channel.contentId,
+                  type: 'video',
+                });
+                if (!channelMedia) {
+                  channelMedia = await MediaBase.create({
+                    ...ytResult.channel,
+                  });
+                }
+                logInfo.officialId = ytResult.channel.contentId;
+              }
+            }
+          } catch (err) {
+            console.warn('YouTube channel assign failed for sync log:', err);
+          }
+        }
+      }
+    }
+
+    const logs = transformManabeLogsList(rawLogs, user);
     req.body.logs = logs;
     return next();
   } catch (error) {
@@ -198,7 +236,6 @@ export async function importManabeLog(
   return next();
 }
 
-// Transform TMW CSV format logs
 function transformTMWLogsList(
   list: TMWLog[],
   user: Omit<IUser, 'password'>
@@ -235,7 +272,6 @@ function transformTMWLogsList(
         NTLog.type = 'video';
       }
 
-      // Map amount to appropriate field based on type
       if (type === 'audio') {
         NTLog.time = Math.round(amount);
       } else if (type === 'anime') {
@@ -243,7 +279,9 @@ function transformTMWLogsList(
       } else if (type === 'manga') {
         NTLog.pages = Math.round(amount);
       } else if (type === 'reading') {
-        // For "Book" type, use pages; for "Reading Time", use time
+        // For "Book" type, use pages
+        // For "Reading", use chars
+        // For "Reading Time", use time
         if (log['Media Type'] === 'Book') {
           NTLog.pages = Math.round(amount);
         } else if (log['Media Type'] === 'Reading') {
@@ -255,7 +293,6 @@ function transformTMWLogsList(
         NTLog.chars = Math.round(amount);
       }
 
-      // Check if Media Name is a number (AniList ID)
       if (
         (['Anime', 'Manga', 'Listening Time'].includes(log['Media Type']) &&
           /^\d+$/.test(log['Media Name'])) ||
@@ -265,7 +302,6 @@ function transformTMWLogsList(
         NTLog.mediaId = log['Media Name'];
       }
 
-      // Add comment if it's not "No comment" and if media name is a number
       if (
         log['Comment'] &&
         log['Comment'] !== 'No comment' &&
@@ -278,7 +314,6 @@ function transformTMWLogsList(
     });
 }
 
-// Transform Manabe TSV format logs
 function transformManabeTSVLogsList(
   list: ManabeTSVLog[],
   user: Omit<IUser, 'password'>
