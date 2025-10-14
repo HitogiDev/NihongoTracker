@@ -271,13 +271,24 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             ? `${pages} pages • ${chars.toLocaleString()} characters`
             : `${pages} pages read`,
         });
-      if (chars && !pages)
+      if (chars)
         info.push({
           label: 'Characters',
           value: chars.toLocaleString(),
           icon: MdBook,
           tooltip: `${chars.toLocaleString()} characters read`,
         });
+      // Add time for manga logs when present
+      if (time) {
+        const timeStr =
+          time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+        info.push({
+          label: 'Time',
+          value: timeStr,
+          icon: MdSchedule,
+          tooltip: `${time} minutes spent reading manga`,
+        });
+      }
     } else if (type === 'vn' || type === 'reading') {
       if (chars) {
         const readingSpeed =
