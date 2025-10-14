@@ -132,7 +132,46 @@ export async function getLogsFromAPI(
         page: 1,
       },
     });
-    const logs = transformManabeLogsList(response.data, user);
+
+    const rawLogs: manabeLogs[] = response.data;
+
+    // Only process video logs for auto-matching if this is not the first import
+    if (user.lastImport) {
+      for (const logInfo of rawLogs) {
+        if (logInfo.medio === 'VIDEO' && logInfo.descripcion) {
+          try {
+            const extractVideoId = (url: string): string | null => {
+              const regex =
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/;
+              const match = url.match(regex);
+              return match ? match[1] : null;
+            };
+            const videoId = extractVideoId(logInfo.descripcion);
+            if (videoId) {
+              const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+              const ytResult = await getYouTubeVideoInfo(videoUrl);
+              if (ytResult && ytResult.channel) {
+                let channelMedia = await MediaBase.findOne({
+                  contentId: ytResult.channel.contentId,
+                  type: 'video',
+                });
+                if (!channelMedia) {
+                  channelMedia = await MediaBase.create({
+                    ...ytResult.channel,
+                  });
+                }
+                logInfo.officialId = ytResult.channel.contentId;
+              }
+            }
+          } catch (err) {
+            console.warn('YouTube channel assign failed for sync log:', err);
+          }
+        }
+      }
+    }
+
+    const logs = transformManabeLogsList(rawLogs, user);
     req.body.logs = logs;
     return next();
   } catch (error) {
