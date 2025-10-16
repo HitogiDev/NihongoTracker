@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   clearUserDataFn,
-  importFromCSV,
+  importLogFileFn,
   importLogsFn,
   updateUserFn,
 } from '../api/trackerApi';
@@ -16,9 +16,10 @@ import TimezonePicker from '../components/TimezonePicker';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
 
-const csvTypeString = {
+const importTypeString = {
   tmw: 'TheMoeWay',
   manabe: 'Manabe',
+  vncr: 'VN Club Resurrection',
 };
 
 function SettingsScreen() {
@@ -50,7 +51,9 @@ function SettingsScreen() {
   const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
   const [croppedBannerFile, setCroppedBannerFile] = useState<File | null>(null);
 
-  const [csvType, setCSVType] = useState<'tmw' | 'manabe' | null>(null);
+  const [importType, setImportType] = useState<
+    'tmw' | 'manabe' | 'vncr' | null
+  >(null);
 
   const avatarImgRef = useRef<HTMLImageElement>(null);
   const bannerImgRef = useRef<HTMLImageElement>(null);
@@ -228,7 +231,6 @@ function SettingsScreen() {
           ].includes(query.queryKey[0] as string);
         },
       });
-      // Also invalidate daily goals as stats changes affect goal progress
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
     },
     onError: (error) => {
@@ -240,13 +242,14 @@ function SettingsScreen() {
     },
   });
 
-  const { mutate: importCSVLogs, isPending: isImportPending } = useMutation({
-    mutationFn: importFromCSV,
+  const { mutate: importFileLogs, isPending: isImportPending } = useMutation({
+    mutationFn: importLogFileFn,
     onSuccess: (data) => {
-      // reset file input
-      const csvFileInput = document.getElementById('csv') as HTMLInputElement;
-      if (csvFileInput) {
-        csvFileInput.value = '';
+      const logImportInput = document.getElementById(
+        'logImport'
+      ) as HTMLInputElement;
+      if (logImportInput) {
+        logImportInput.value = '';
       }
       toast.success(data.message);
       void queryClient.invalidateQueries({
@@ -256,7 +259,6 @@ function SettingsScreen() {
           );
         },
       });
-      // Also invalidate daily goals as stats changes affect goal progress
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
     },
     onError: (error) => {
@@ -279,7 +281,6 @@ function SettingsScreen() {
           );
         },
       });
-      // Also invalidate daily goals as stats changes affect goal progress
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
     },
     onError: (error) => {
@@ -296,18 +297,20 @@ function SettingsScreen() {
     syncLogs();
   }
 
-  async function handleImportCSV(e: React.FormEvent) {
+  async function handleFileImport(e: React.FormEvent) {
     e.preventDefault();
-    const csvFileInput = document.getElementById('csv') as HTMLInputElement;
-    if (!csvFileInput.files || csvFileInput.files.length === 0) {
-      toast.error('Please select a CSV file');
+    const logImportInput = document.getElementById(
+      'logImport'
+    ) as HTMLInputElement;
+    if (!logImportInput.files || logImportInput.files.length === 0) {
+      toast.error('Please select a file');
       return;
     }
-    const csvFile = csvFileInput.files[0];
+    const file = logImportInput.files[0];
     const formData = new FormData();
-    formData.append('csv', csvFile);
-    formData.append('csvType', csvType ?? '');
-    importCSVLogs(formData);
+    formData.append('logImport', file);
+    formData.append('logImportType', importType ?? '');
+    importFileLogs(formData);
   }
 
   async function handleClearData() {
@@ -319,7 +322,6 @@ function SettingsScreen() {
     e.preventDefault();
     const formData = new FormData();
 
-    // Only append fields that have values to avoid sending empty strings
     if (username.trim()) formData.append('username', username);
     if (password.trim()) formData.append('password', password);
     if (newPassword.trim()) formData.append('newPassword', newPassword);
@@ -363,7 +365,6 @@ function SettingsScreen() {
       );
       avatarPreviewCanvasRef.current.classList.remove('hidden');
 
-      // Convert canvas to blob and create a File
       avatarPreviewCanvasRef.current.toBlob(
         (blob) => {
           if (blob) {
@@ -395,7 +396,6 @@ function SettingsScreen() {
       );
       bannerPreviewCanvasRef.current.classList.remove('hidden');
 
-      // Convert canvas to blob and create a File
       bannerPreviewCanvasRef.current.toBlob(
         (blob) => {
           if (blob) {
@@ -415,7 +415,6 @@ function SettingsScreen() {
 
   async function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
-      // Clear any previous cropped file
       setCroppedAvatarFile(null);
 
       const reader = new FileReader();
@@ -429,7 +428,6 @@ function SettingsScreen() {
 
   async function onSelectBannerFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
-      // Clear any previous cropped file
       setCroppedBannerFile(null);
 
       const reader = new FileReader();
@@ -1098,14 +1096,14 @@ function SettingsScreen() {
                 <div className="space-y-6">
                   <div>
                     <h3 className="font-semibold mb-3 text-base-content">
-                      Import from CSV
+                      Import from File
                     </h3>
-                    <form onSubmit={handleImportCSV} className="space-y-3">
+                    <form onSubmit={handleFileImport} className="space-y-3">
                       <input
                         type="file"
-                        id="csv"
+                        id="logImport"
                         className="file-input file-input-bordered file-input-info w-full"
-                        accept=".csv"
+                        accept=".csv,.tsv,.jsonl"
                       />
                       <div className="dropdown dropdown-center w-full">
                         <div
@@ -1113,9 +1111,9 @@ function SettingsScreen() {
                           role="button"
                           className="btn btn-outline w-full gap-2"
                         >
-                          {csvType
-                            ? csvTypeString[csvType]
-                            : 'Choose the CSV log format'}
+                          {importType
+                            ? importTypeString[importType]
+                            : 'Choose the file format'}
                         </div>
                         <ul
                           tabIndex={0}
@@ -1124,9 +1122,9 @@ function SettingsScreen() {
                           <li>
                             <button
                               type="button"
-                              className={`hover:bg-base-200 ${csvType === 'tmw' ? 'active' : ''}`}
+                              className={`hover:bg-base-200 ${importType === 'tmw' ? 'active' : ''}`}
                               onClick={() => {
-                                setCSVType('tmw');
+                                setImportType('tmw');
                               }}
                             >
                               TheMoeWay
@@ -1135,12 +1133,23 @@ function SettingsScreen() {
                           <li>
                             <button
                               type="button"
-                              className={`hover:bg-base-200 ${csvType === 'manabe' ? 'active' : ''}`}
+                              className={`hover:bg-base-200 ${importType === 'manabe' ? 'active' : ''}`}
                               onClick={() => {
-                                setCSVType('manabe');
+                                setImportType('manabe');
                               }}
                             >
                               Manabe
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              type="button"
+                              className={`hover:bg-base-200 ${importType === 'vncr' ? 'active' : ''}`}
+                              onClick={() => {
+                                setImportType('vncr');
+                              }}
+                            >
+                              VN Club Resurrection
                             </button>
                           </li>
                         </ul>
@@ -1171,7 +1180,7 @@ function SettingsScreen() {
                                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                               />
                             </svg>
-                            Import CSV
+                            Import File
                           </>
                         )}
                       </button>

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import { customError } from './errorMiddleware.js';
-import { IUser, ILog, TMWLog, ManabeTSVLog } from '../types.js';
+import { IUser, ILog, TMWLog, ManabeTSVLog, VNCRLog } from '../types.js';
 import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
@@ -375,19 +375,73 @@ function transformManabeTSVLogsList(
     });
 }
 
+// Transform VN Club Resurrection JSONL format logs
+function transformVNCRLogsList(
+  list: VNCRLog[],
+  user: Omit<IUser, 'password'>
+): ILogNT[] {
+  const mediaTypeMap: { [key: string]: ILog['type'] } = {
+    anime: 'anime',
+    manga: 'manga',
+    visual_novel: 'vn',
+    book: 'reading',
+  };
+
+  return list
+    .filter((log) => mediaTypeMap.hasOwnProperty(log.media_type))
+    .map((log) => {
+      const type = mediaTypeMap[log.media_type];
+      // Convert seconds to minutes
+      const timeInMinutes = Math.round(log.duration / 60);
+
+      const NTLog: ILogNT = {
+        user: user._id,
+        type: type,
+        date: new Date(log.date),
+        description: log.name,
+      };
+
+      if (timeInMinutes > 0) {
+        NTLog.time = timeInMinutes;
+      }
+
+      if (log.meta) {
+        if (log.meta.characters) {
+          NTLog.chars = log.meta.characters;
+        }
+        if (log.meta.pages) {
+          NTLog.pages = log.meta.pages;
+        }
+        if (log.meta.episodes) {
+          NTLog.episodes = log.meta.episodes;
+        }
+
+        if (log.meta.anilist_id) {
+          NTLog.mediaId = log.meta.anilist_id.toString();
+        } else if (log.meta.vn?.id) {
+          NTLog.mediaId = log.meta.vn.id;
+        }
+      }
+
+      return NTLog;
+    });
+}
+
 export async function getLogsFromCSV(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const csvType = req.body.csvType;
+    const importType = req.body.logImportType;
     let logs: ILogNT[];
 
-    if (csvType === 'tmw') {
+    if (importType === 'tmw') {
       logs = transformTMWLogsList(req.body.logs, res.locals.user);
-    } else if (csvType === 'manabe') {
+    } else if (importType === 'manabe') {
       logs = transformManabeTSVLogsList(req.body.logs, res.locals.user);
+    } else if (importType === 'vncr') {
+      logs = transformVNCRLogsList(req.body.logs, res.locals.user);
     } else {
       throw new customError('Unsupported CSV type', 400);
     }

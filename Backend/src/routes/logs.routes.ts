@@ -33,9 +33,9 @@ const upload = multer({
 router.post('/import', protect, getLogsFromAPI, calculateXp, importLogs);
 
 router.post(
-  '/importfromcsv',
+  '/logimport',
   protect,
-  upload.single('csv'),
+  upload.single('logImport'),
   csvToArray,
   getLogsFromCSV,
   calculateXp,

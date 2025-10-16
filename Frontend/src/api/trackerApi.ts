@@ -206,8 +206,8 @@ export async function getUntrackedLogsFn() {
   return data;
 }
 
-export async function importFromCSV(file: FormData) {
-  const { data } = await api.post(`logs/importfromcsv`, file, {
+export async function importLogFileFn(file: FormData) {
+  const { data } = await api.post(`logs/logimport`, file, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

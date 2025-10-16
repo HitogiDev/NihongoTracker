@@ -262,6 +262,42 @@ export interface ManabeTSVLog {
   Tiempo: string; // Time
 }
 
+export interface VNCRLog {
+  id: number;
+  user_id: string;
+  guild_id: string;
+  name: string;
+  primary_type: 'listening' | 'reading';
+  media_type: 'anime' | 'manga' | 'visual_novel' | 'book';
+  duration: number; // in seconds
+  date: string;
+  created_at: string;
+  meta: {
+    characters?: number;
+    pages?: number;
+    episodes?: number;
+    episode_duration?: number;
+    reading_speed?: number;
+    anilist_id?: number;
+    anilist?: {
+      id: number;
+      titles: {
+        native: string;
+        romaji: string;
+        english: string;
+      };
+    };
+    vn?: {
+      id: string;
+      titles: {
+        ja: string;
+        romaji: string;
+        en: string;
+      };
+    };
+  };
+}
+
 export interface IDailyGoal extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;

@@ -922,83 +922,90 @@ async function createImportedMedia(
   userId: ObjectId,
   mediaIds?: IImportStats['anilistMediaId']
 ) {
-  let logsMediaId: IImportStats['anilistMediaId'] | undefined;
-  let createdMediaCount = 0;
+  try {
+    let logsMediaId: IImportStats['anilistMediaId'] | undefined;
+    let createdMediaCount = 0;
 
-  logsMediaId = mediaIds;
+    logsMediaId = mediaIds;
 
-  if (
-    logsMediaId &&
-    (logsMediaId.anime.length > 0 ||
-      logsMediaId.manga.length > 0 ||
-      logsMediaId.reading.length > 0)
-  ) {
-    const userLogs = await Log.find({ user: userId });
-    if (!userLogs) return 0;
-    const logsMediaId = userLogs.reduce<IImportStats['anilistMediaId']>(
-      (acc, log) => {
-        if (log.mediaId) {
-          if (log.type === 'anime') {
-            acc.anime.push(parseInt(log.mediaId));
-          } else if (log.type === 'manga') {
-            acc.manga.push(parseInt(log.mediaId));
-          } else if (log.type === 'reading') {
-            acc.reading.push(parseInt(log.mediaId));
+    if (
+      logsMediaId &&
+      (logsMediaId.anime.length > 0 ||
+        logsMediaId.manga.length > 0 ||
+        logsMediaId.reading.length > 0)
+    ) {
+      const userLogs = await Log.find({ user: userId });
+      if (!userLogs) return 0;
+      const logsMediaId = userLogs.reduce<IImportStats['anilistMediaId']>(
+        (acc, log) => {
+          if (log.mediaId) {
+            if (log.type === 'anime') {
+              acc.anime.push(parseInt(log.mediaId));
+            } else if (log.type === 'manga') {
+              acc.manga.push(parseInt(log.mediaId));
+            } else if (log.type === 'reading') {
+              acc.reading.push(parseInt(log.mediaId));
+            }
           }
-        }
-        return acc;
-      },
-      { anime: [], manga: [], reading: [] }
-    );
-    if (logsMediaId.anime.length > 0) {
-      logsMediaId.anime = [...new Set(logsMediaId.anime)];
-    }
-    if (logsMediaId.manga.length > 0) {
-      logsMediaId.manga = [...new Set(logsMediaId.manga)];
-    }
-    if (logsMediaId.reading.length > 0) {
-      logsMediaId.reading = [...new Set(logsMediaId.reading)];
-    }
-  }
-
-  for (const type in logsMediaId) {
-    if (logsMediaId[type as keyof IImportStats['anilistMediaId']].length > 0) {
-      const existingMedia = await MediaBase.find({
-        contentId: {
-          $in: logsMediaId[type as keyof IImportStats['anilistMediaId']].map(
-            (id) => id.toString()
-          ),
+          return acc;
         },
-      }).select('contentId');
-      const existingContentIds = new Set(
-        existingMedia.map((media) => media.contentId)
+        { anime: [], manga: [], reading: [] }
       );
-      const newMediaId = logsMediaId[
-        type as keyof IImportStats['anilistMediaId']
-      ].filter((id) => !existingContentIds.has(id.toString()));
-      const mediaData = await searchAnilist({
-        ids: newMediaId,
-        type: type === 'anime' ? 'ANIME' : 'MANGA',
-      });
-      if (mediaData.length > 0) {
-        if (type === 'anime') {
-          Anime.insertMany(mediaData, {
-            ordered: false,
-          });
-        } else if (type === 'manga') {
-          Manga.insertMany(mediaData, {
-            ordered: false,
-          });
-        } else if (type === 'reading') {
-          Reading.insertMany(mediaData, {
-            ordered: false,
-          });
-        }
-        return (createdMediaCount += mediaData.length);
+      if (logsMediaId.anime.length > 0) {
+        logsMediaId.anime = [...new Set(logsMediaId.anime)];
+      }
+      if (logsMediaId.manga.length > 0) {
+        logsMediaId.manga = [...new Set(logsMediaId.manga)];
+      }
+      if (logsMediaId.reading.length > 0) {
+        logsMediaId.reading = [...new Set(logsMediaId.reading)];
       }
     }
+
+    for (const type in logsMediaId) {
+      if (
+        logsMediaId[type as keyof IImportStats['anilistMediaId']].length > 0
+      ) {
+        const existingMedia = await MediaBase.find({
+          contentId: {
+            $in: logsMediaId[type as keyof IImportStats['anilistMediaId']].map(
+              (id) => id.toString()
+            ),
+          },
+        }).select('contentId');
+        const existingContentIds = new Set(
+          existingMedia.map((media) => media.contentId)
+        );
+        const newMediaId = logsMediaId[
+          type as keyof IImportStats['anilistMediaId']
+        ].filter((id) => !existingContentIds.has(id.toString()));
+        const mediaData = await searchAnilist({
+          ids: newMediaId,
+          type: type === 'anime' ? 'ANIME' : 'MANGA',
+        });
+        if (mediaData.length > 0) {
+          if (type === 'anime') {
+            Anime.insertMany(mediaData, {
+              ordered: false,
+            });
+          } else if (type === 'manga') {
+            Manga.insertMany(mediaData, {
+              ordered: false,
+            });
+          } else if (type === 'reading') {
+            Reading.insertMany(mediaData, {
+              ordered: false,
+            });
+          }
+          return (createdMediaCount += mediaData.length);
+        }
+      }
+    }
+    return createdMediaCount;
+  } catch (error) {
+    console.error(error);
+    return 0;
   }
-  return createdMediaCount;
 }
 
 export async function importLogs(
