@@ -8,6 +8,7 @@ import { MediaBase } from '../models/media.model.js';
 import { getYouTubeVideoInfo } from '../services/searchYoutube.js';
 
 type manabeLogs = {
+  _id: string;
   descripcion: string;
   medio:
     | 'ANIME'
@@ -44,6 +45,7 @@ interface ManabeWebhookBody {
 }
 
 interface ILogNT {
+  manabeId?: String;
   user: Types.ObjectId;
   description?: string;
   type: ILog['type'];
@@ -92,6 +94,7 @@ function transformManabeLogsList(
       const NTLogs: ILogNT = {
         user: user._id,
         description: log.descripcion,
+        manabeId: log._id,
         type: logType,
         [parametro]: log.parametro,
         date: new Date(log.createdAt), // Use the webhook timestamp directly as it's already UTC

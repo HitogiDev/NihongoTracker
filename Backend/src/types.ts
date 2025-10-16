@@ -172,6 +172,7 @@ export interface ILog extends Document {
     | 'movie'
     | 'other';
   mediaId?: string;
+  manabeId?: string;
   mediaTitle?: string;
   xp: number;
   private: boolean;

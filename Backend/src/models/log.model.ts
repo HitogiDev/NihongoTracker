@@ -34,6 +34,7 @@ const LogSchema = new Schema<ILog>(
       type: String,
       default: null,
     },
+    manabeId: { type: String },
     xp: { type: Number, required: true },
     private: { type: Boolean, default: false },
     isAdult: { type: Boolean, default: false },
@@ -106,6 +107,7 @@ if (process.env.NODE_ENV === 'development') {
   LogSchema.index({ user: 1, private: 1, date: -1 }); // For filtering private logs
   LogSchema.index({ date: -1 }); // For recent logs across all users
   LogSchema.index({ user: 1, mediaId: 1, type: 1, date: -1 }); // Critical compound index
+  LogSchema.index({ manabeId: 1 }, { sparse: true }); // For checking duplicate Manabe logs
 }
 
 export default model<ILog>('Log', LogSchema);

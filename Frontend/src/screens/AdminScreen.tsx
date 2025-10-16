@@ -8,6 +8,7 @@ import {
   getAdminUsersFn,
   deleteUserFn,
   recalculateStatsFn,
+  syncManabeIdsFn,
   adminUpdateUserFn,
   adminResetPasswordFn,
   searchAdminLogsFn,
@@ -124,6 +125,15 @@ function AdminScreen() {
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
     },
     onError: () => toast.error('Recalculation failed'),
+  });
+
+  const syncManabeIdsMutation = useMutation({
+    mutationFn: syncManabeIdsFn,
+    onSuccess: (data) => {
+      toast.success(data.message || 'Manabe IDs synced successfully');
+      queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
+    },
+    onError: () => toast.error('Failed to sync Manabe IDs'),
   });
 
   const deleteUserMutation = useMutation({
@@ -557,6 +567,17 @@ function AdminScreen() {
                           <span className="loading loading-spinner loading-sm"></span>
                         ) : (
                           'Recalc XP'
+                        )}
+                      </button>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => syncManabeIdsMutation.mutate()}
+                        disabled={syncManabeIdsMutation.isPending}
+                      >
+                        {syncManabeIdsMutation.isPending ? (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                          'Sync Manabe IDs'
                         )}
                       </button>
                     </div>

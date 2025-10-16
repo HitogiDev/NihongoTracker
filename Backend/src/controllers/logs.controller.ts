@@ -13,6 +13,7 @@ import {
 } from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
 import { updateLevelAndXp } from '../services/updateStats.js';
+import axios from 'axios';
 import {
   XP_FACTOR_TIME,
   XP_FACTOR_CHARS,
@@ -1015,7 +1016,30 @@ export async function importLogs(
 ) {
   const logs: ILog[] = req.body.logs;
   try {
-    const importStats: IImportStats = logs.reduce<IImportStats>(
+    // Filter out logs that already exist based on manabeId
+    const manabeIds = logs
+      .filter((log) => log.manabeId)
+      .map((log) => log.manabeId);
+
+    let existingManabeIds: string[] = [];
+    if (manabeIds.length > 0) {
+      const existingLogs = await Log.find(
+        {
+          manabeId: { $in: manabeIds },
+        },
+        { manabeId: 1 }
+      );
+      existingManabeIds = existingLogs.map((log) => log.manabeId!);
+    }
+
+    // Filter out logs that already exist
+    const newLogs = logs.filter(
+      (log) => !log.manabeId || !existingManabeIds.includes(log.manabeId)
+    );
+
+    const skippedCount = logs.length - newLogs.length;
+
+    const importStats: IImportStats = newLogs.reduce<IImportStats>(
       (acc, log) => {
         if (
           log.type === 'video' ||
@@ -1049,9 +1073,13 @@ export async function importLogs(
       }
     );
     res.locals.importedStats = importStats;
-    const insertedLogs = await Log.insertMany(logs, {
-      ordered: false,
-    });
+
+    let insertedLogs: any[] = [];
+    if (newLogs.length > 0) {
+      insertedLogs = await Log.insertMany(newLogs, {
+        ordered: false,
+      });
+    }
     await updateStats(res, next);
 
     const user = await User.findById(res.locals.user.id);
@@ -1072,9 +1100,15 @@ export async function importLogs(
       insertedLogs.length > 1 ? 's' : ''
     } imported successfully`;
 
-    if (insertedLogs.length < logs.length) {
-      statusMessage += `\n${logs.length - insertedLogs.length} log${
-        logs.length - insertedLogs.length > 1 ? 's' : ''
+    if (skippedCount > 0) {
+      statusMessage += `\n${skippedCount} duplicate log${
+        skippedCount > 1 ? 's' : ''
+      } skipped`;
+    }
+
+    if (insertedLogs.length < newLogs.length) {
+      statusMessage += `\n${newLogs.length - insertedLogs.length} log${
+        newLogs.length - insertedLogs.length > 1 ? 's' : ''
       } failed to import`;
     } else if (logs.length === 0) {
       statusMessage = 'No logs to import, your logs are up to date';
@@ -1743,6 +1777,101 @@ export async function recalculateStreaks(
 
     return res.status(200).json({
       message: `Recalculated streaks for ${results.processedUsers} users (${results.updatedUsers} updated)`,
+      results,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function syncManabeIds(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!res.locals.user.roles.includes('admin')) {
+      return res.status(403).json({ message: 'Admin permission required' });
+    }
+
+    const apiUrl = process.env.MANABE_API_URL;
+    if (!apiUrl) {
+      throw new customError('Manabe API URL not configured', 500);
+    }
+
+    // Get all users with Discord ID
+    const users = await User.find({ discordId: { $exists: true, $ne: null } });
+
+    if (!users.length) {
+      return res
+        .status(404)
+        .json({ message: 'No users with Discord ID found' });
+    }
+
+    const results = {
+      totalUsers: users.length,
+      processedUsers: 0,
+      totalLogsChecked: 0,
+      totalLogsUpdated: 0,
+      errors: [] as string[],
+    };
+
+    for (const user of users) {
+      try {
+        // Fetch all logs from Manabe API for this user
+        const response = await axios.get(apiUrl, {
+          params: {
+            user: user.discordId,
+            limit: 0, // Get all logs
+            page: 1,
+          },
+        });
+
+        const manabeLogs = response.data;
+
+        if (!manabeLogs || manabeLogs.length === 0) {
+          results.processedUsers++;
+          continue;
+        }
+
+        // Get all logs for this user that don't have a manabeId
+        const userLogs = await Log.find({
+          user: user._id,
+          manabeId: { $exists: false },
+        });
+
+        results.totalLogsChecked += userLogs.length;
+
+        let updatedCount = 0;
+
+        // Match logs by exact timestamp
+        for (const userLog of userLogs) {
+          const matchingManabeLog = manabeLogs.find((mLog: any) => {
+            const manabeDate = new Date(mLog.createdAt);
+            const userLogDate = new Date(userLog.date);
+            // Match if timestamps are exactly the same
+            return manabeDate.getTime() === userLogDate.getTime();
+          });
+
+          if (matchingManabeLog) {
+            userLog.manabeId = matchingManabeLog._id;
+            await userLog.save();
+            updatedCount++;
+            results.totalLogsUpdated++;
+          }
+        }
+
+        results.processedUsers++;
+      } catch (error) {
+        results.errors.push(
+          `Error processing user ${user.username}: ${(error as Error).message}`
+        );
+        results.processedUsers++;
+      }
+    }
+
+    return res.status(200).json({
+      message: `Synced Manabe IDs for ${results.processedUsers} users. Updated ${results.totalLogsUpdated} logs out of ${results.totalLogsChecked} checked.`,
       results,
     });
   } catch (error) {

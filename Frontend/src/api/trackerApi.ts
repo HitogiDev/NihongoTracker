@@ -531,6 +531,11 @@ export async function recalculateStatsFn(type: 'streaks' | 'xp') {
   return data;
 }
 
+export async function syncManabeIdsFn() {
+  const { data } = await api.post('logs/sync-manabe-ids');
+  return data;
+}
+
 // Admin: logs management
 export async function searchAdminLogsFn(params: {
   page?: number;

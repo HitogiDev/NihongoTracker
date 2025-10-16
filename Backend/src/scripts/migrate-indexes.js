@@ -127,6 +127,12 @@ async function createProductionIndexes() {
           description:
             'CRITICAL: Complete MediaDetails query optimization (user + media + type + date sort)',
         },
+        {
+          key: { manabeId: 1 },
+          name: 'manabeId_1',
+          description: 'Manabe log ID for duplicate detection during sync',
+          sparse: true,
+        },
       ];
 
       console.log(
@@ -147,10 +153,17 @@ async function createProductionIndexes() {
 
           const startTime = Date.now();
 
-          await collection.createIndex(indexSpec.key, {
+          const indexOptions = {
             name: indexSpec.name,
             background: true, // Critical for production: don't block operations
-          });
+          };
+
+          // Add sparse option if specified
+          if (indexSpec.sparse) {
+            indexOptions.sparse = true;
+          }
+
+          await collection.createIndex(indexSpec.key, indexOptions);
 
           const duration = Date.now() - startTime;
           console.log(`✅ Created "${indexSpec.name}" in ${duration}ms`);
