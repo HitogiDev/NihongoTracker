@@ -1648,6 +1648,9 @@ export async function getUserStats(
       );
     });
 
+    // Sort by count descending (most logs first)
+    completeStats.sort((a, b) => b.count - a.count);
+
     const readingSpeedData =
       type === 'all' ||
       (Array.isArray(type) &&
