@@ -46,6 +46,9 @@ import ClubMediaActivity from './screens/ClubMediaActivity.tsx';
 import ClubMediaReviews from './screens/ClubMediaReviews.tsx';
 import ClubMediaRankings from './screens/ClubMediaRankings.tsx';
 import GoalsScreen from './screens/GoalsScreen.tsx';
+import SupportScreen from './screens/SupportScreen.tsx';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen.tsx';
+import TermsOfServiceScreen from './screens/TermsOfServiceScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -67,6 +70,9 @@ const router = createBrowserRouter(
       <Route path="calculator" element={<CalculatorScreen />} />
       <Route path="features" element={<FeaturesScreen />} />
       <Route path="about" element={<AboutScreen />} />
+      <Route path="support" element={<SupportScreen />} />
+      <Route path="privacy" element={<PrivacyPolicyScreen />} />
+      <Route path="terms" element={<TermsOfServiceScreen />} />
       <Route path="admin" element={<AdminScreen />} />
       <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
       <Route path="user/:username" element={<ProfileHeader />}>

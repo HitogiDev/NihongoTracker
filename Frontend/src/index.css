@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "./animations.css";
 @plugin "daisyui" {
-  themes: dark --default, light, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte, abyss, silk;
+  themes: dark --default, light, cupcake, bumblebee, emerald, corporate, synthwave, retro, valentine, halloween, garden, forest, dracula, cmyk, night, winter, dim, sunset, abyss;
 }
 
 @theme {
@@ -62,4 +62,20 @@ html {
     word-wrap: break-word;
     white-space: pre-wrap;
   }
+}
+
+/* Rainbow gradient animation for badges */
+@keyframes rainbow-fade {
+  0% { background-color: #be2323; } /* Dark Red */
+  14% { background-color: #cd7b2a; } /* Dark Orange */
+  28% { background-color: #9f9f2c; } /* Gold */
+  42% { background-color: #2c942c; } /* Dark Green */
+  57% { background-color: #2a2aa3; } /* Dark Blue */
+  71% { background-color: #40135f; } /* Dark Indigo */
+  85% { background-color: #7d19a8; } /* Dark Violet */
+  100% { background-color: #be2323; } /* Dark Red */
+}
+
+.badge-rainbow {
+  animation: rainbow-fade 8s ease-in-out infinite;
 }

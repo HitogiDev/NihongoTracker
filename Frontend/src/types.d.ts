@@ -5,6 +5,16 @@ export interface IUser {
   username: string;
   clubs?: string[];
   discordId?: string;
+  patreon?: {
+    patreonId?: string;
+    patreonEmail?: string;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    isActive: boolean;
+    lastChecked?: Date;
+  };
   stats: IStats;
   titles: string[];
   roles: userRoles;
@@ -73,9 +83,11 @@ export type ILoginResponse = Pick<
   | 'username'
   | 'stats'
   | 'avatar'
+  | 'banner'
   | 'titles'
   | 'roles'
   | 'discordId'
+  | 'patreon'
   | 'settings'
 >;
 
@@ -265,6 +277,15 @@ export interface ICreateLog
   };
 }
 
+export interface ITag {
+  _id: string;
+  user: string;
+  name: string;
+  color: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
 export interface ILog {
   _id: string;
   user: {
@@ -305,6 +326,7 @@ export interface ILog {
     contentImage?: string;
     type: string;
   };
+  tags?: ITag[] | string[];
   private: boolean;
   isAdult: boolean;
 }
@@ -313,6 +335,13 @@ export interface IRankingResponse {
   username: string;
   avatar: string;
   stats: Pick<IStats, filterTypes>;
+  patreon?: {
+    isActive: boolean;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+  };
 }
 
 export interface AnilistSearchResult {

@@ -1054,6 +1054,13 @@ function RankingScreen() {
                           episodes?: number;
                           pages?: number;
                           chars?: number;
+                          patreon?: {
+                            isActive: boolean;
+                            tier: 'donator' | 'enthusiast' | 'consumer' | null;
+                            customBadgeText?: string;
+                            badgeColor?: string;
+                            badgeTextColor?: string;
+                          };
                         }>
                       ).map((user, index) => {
                         const rank = groupIndex * limit + index + 1;
@@ -1118,10 +1125,93 @@ function RankingScreen() {
                                 <div>
                                   <Link
                                     to={`/user/${user.username}`}
-                                    className="font-bold hover:text-primary transition-colors"
+                                    className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-wrap"
                                     title={`View ${user.username}'s profile`}
                                   >
                                     {user.username}
+                                    {/* Patreon Badge */}
+                                    {user.patreon?.isActive &&
+                                      user.patreon.tier === 'consumer' && (
+                                        <div
+                                          className={`badge badge-sm gap-1 ${
+                                            user.patreon.badgeColor ===
+                                            'rainbow'
+                                              ? 'badge-rainbow'
+                                              : user.patreon.badgeColor ===
+                                                  'primary'
+                                                ? 'badge-primary'
+                                                : user.patreon.badgeColor ===
+                                                    'secondary'
+                                                  ? 'badge-secondary'
+                                                  : ''
+                                          }`}
+                                          style={
+                                            user.patreon.badgeColor &&
+                                            user.patreon.badgeColor !==
+                                              'rainbow' &&
+                                            user.patreon.badgeColor !==
+                                              'primary' &&
+                                            user.patreon.badgeColor !==
+                                              'secondary'
+                                              ? {
+                                                  backgroundColor:
+                                                    user.patreon.badgeColor,
+                                                  color:
+                                                    user.patreon
+                                                      .badgeTextColor ===
+                                                      'primary-content' ||
+                                                    user.patreon
+                                                      .badgeTextColor ===
+                                                      'secondary-content'
+                                                      ? undefined
+                                                      : user.patreon
+                                                          .badgeTextColor ||
+                                                        '#ffffff',
+                                                  border: 'none',
+                                                }
+                                              : user.patreon.badgeColor ===
+                                                    'rainbow' ||
+                                                  user.patreon.badgeTextColor
+                                                ? {
+                                                    color:
+                                                      user.patreon
+                                                        .badgeTextColor ===
+                                                        'primary-content' ||
+                                                      user.patreon
+                                                        .badgeTextColor ===
+                                                        'secondary-content'
+                                                        ? undefined
+                                                        : user.patreon
+                                                            .badgeTextColor ||
+                                                          undefined,
+                                                    border:
+                                                      user.patreon
+                                                        .badgeColor ===
+                                                      'rainbow'
+                                                        ? 'none'
+                                                        : undefined,
+                                                  }
+                                                : {}
+                                          }
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-3 w-3"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          <span className="font-bold">
+                                            {user.patreon.customBadgeText ||
+                                              'Consumer'}
+                                          </span>
+                                        </div>
+                                      )}
                                   </Link>
                                 </div>
                               </div>

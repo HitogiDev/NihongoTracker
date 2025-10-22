@@ -3,7 +3,6 @@ import {
   ILoginResponse,
   IRegisterInput,
   ILoginInput,
-  // updateLogRequest,
   ICreateLog,
   ILog,
   IUser,
@@ -20,9 +19,9 @@ import {
   ILongTermGoal,
   ILongTermGoalsResponse,
   IJitenResponse,
+  ITag,
 } from '../types';
 
-// Usar la instancia configurada con interceptores
 const api = axiosInstance;
 
 export async function registerUserFn(
@@ -106,6 +105,13 @@ export async function getMediumRankingFn(params: {
       episodes?: number;
       chars?: number;
       pages?: number;
+      patreon?: {
+        isActive: boolean;
+        tier: 'donator' | 'enthusiast' | 'consumer' | null;
+        customBadgeText?: string;
+        badgeColor?: string;
+        badgeTextColor?: string;
+      };
     }>
   >(`users/ranking/media`, { params });
   return data;
@@ -254,6 +260,8 @@ export async function getUserStatsFn(
     start?: string;
     end?: string;
     timezone?: string;
+    includedTags?: string;
+    excludedTags?: string;
   }
 ) {
   if (!username) {
@@ -264,6 +272,18 @@ export async function getUserStatsFn(
   });
   return data;
 }
+
+export const compareUserStatsFn = async (
+  user1: string,
+  user2: string,
+  mediaId: string,
+  type: string
+): Promise<IComparisonResult> => {
+  const { data } = await api.get<IComparisonResult>('/users/compare', {
+    params: { user1, user2, mediaId, type },
+  });
+  return data;
+};
 
 export async function searchYouTubeVideoFn(url: string) {
   const { data } = await api.get<{
@@ -377,18 +397,6 @@ export interface IComparisonResult {
     totalCharCount?: number;
   };
 }
-
-export const compareUserStatsFn = async (
-  user1: string,
-  user2: string,
-  mediaId: string,
-  type: string
-): Promise<IComparisonResult> => {
-  const { data } = await api.get<IComparisonResult>('/compare/users', {
-    params: { user1, user2, mediaId, type },
-  });
-  return data;
-};
 
 // Log screen statistics interface
 export interface ILogScreenStats {
@@ -596,5 +604,81 @@ export async function adminResetPasswordFn(
   const { data } = await api.post(`admin/users/${userId}/reset-password`, {
     newPassword,
   });
+  return data;
+}
+
+// Patreon API functions
+export async function getPatreonStatusFn(): Promise<{
+  patreonEmail?: string;
+  patreonId?: string;
+  tier?: 'donator' | 'enthusiast' | 'consumer' | null;
+  isActive: boolean;
+  lastChecked?: Date;
+  customBadgeText?: string;
+  badgeColor?: string;
+  badgeTextColor?: string;
+}> {
+  const { data } = await api.get('patreon/status');
+  return data;
+}
+
+export async function initiatePatreonOAuthFn(): Promise<{
+  authUrl: string;
+  message: string;
+}> {
+  const { data } = await api.get('patreon/oauth/init');
+  return data;
+}
+
+export async function linkPatreonAccountFn(patreonEmail: string) {
+  const { data } = await api.post('patreon/link', { patreonEmail });
+  return data;
+}
+
+export async function unlinkPatreonAccountFn() {
+  const { data } = await api.post('patreon/unlink');
+  return data;
+}
+
+export async function updateCustomBadgeTextFn(customBadgeText: string) {
+  const { data } = await api.patch('patreon/badge', { customBadgeText });
+  return data;
+}
+
+export async function updateBadgeColorsFn(
+  badgeColor: string,
+  badgeTextColor: string
+) {
+  const { data } = await api.patch('patreon/badge-colors', {
+    badgeColor,
+    badgeTextColor,
+  });
+  return data;
+}
+
+// Tags API
+export async function getUserTagsFn(): Promise<ITag[]> {
+  const { data } = await api.get('tags');
+  return data;
+}
+
+export async function createTagFn(tag: {
+  name: string;
+  color: string;
+}): Promise<ITag> {
+  const { data } = await api.post('tags', tag);
+  return data;
+}
+
+export async function updateTagFn(
+  id: string,
+  tag: { name?: string; color?: string }
+): Promise<ITag> {
+  const { data } = await api.patch(`tags/${id}`, tag);
+  return data;
+}
+
+export async function deleteTagFn(id: string): Promise<{ message: string }> {
+  const { data } = await api.delete(`tags/${id}`);
   return data;
 }

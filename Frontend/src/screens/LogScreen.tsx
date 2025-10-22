@@ -15,6 +15,7 @@ import { DayPicker } from 'react-day-picker';
 import { useUserDataStore } from '../store/userData';
 import { validateLogData } from '../utils/validation';
 import MediaStats from '../components/MediaStats';
+import TagSelector from '../components/TagSelector';
 import {
   MdCalendarToday,
   MdCheckCircle,
@@ -101,6 +102,7 @@ function LogScreen() {
 
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isAdvancedOptions, setIsAdvancedOptions] = useState<boolean>(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -177,6 +179,7 @@ function LogScreen() {
         date: undefined,
         youtubeChannelInfo: null,
       });
+      setSelectedTags([]);
       setTouched({});
       void queryClient.invalidateQueries({
         predicate: (query) =>
@@ -455,6 +458,7 @@ function LogScreen() {
       chars: logData.readChars || undefined,
       pages: logData.readPages,
       date: logData.date,
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
     } as ICreateLog);
   };
 
@@ -1074,6 +1078,19 @@ function LogScreen() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tags Selection */}
+          {logData.type && (
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <TagSelector
+                  selectedTags={selectedTags}
+                  onChange={setSelectedTags}
+                  label="Tags (Optional)"
+                />
               </div>
             </div>
           )}

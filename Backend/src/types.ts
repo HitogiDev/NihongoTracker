@@ -26,6 +26,20 @@ export interface IUserSettings {
   timezone?: string;
 }
 
+export interface IPatreonData {
+  patreonId?: string;
+  patreonEmail?: string;
+  patreonAccessToken?: string; // OAuth2: Access token
+  patreonRefreshToken?: string; // OAuth2: Refresh token
+  patreonTokenExpiry?: Date; // OAuth2: Token expiration date
+  tier?: 'donator' | 'enthusiast' | 'consumer' | null;
+  customBadgeText?: string;
+  badgeColor?: string;
+  badgeTextColor?: string;
+  lastChecked?: Date;
+  isActive?: boolean;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   avatar?: string;
@@ -41,6 +55,7 @@ export interface IUser extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   settings?: IUserSettings;
+  patreon?: IPatreonData;
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 
@@ -160,6 +175,15 @@ export interface AnilistSearchResult {
   };
 }
 
+export interface ITag extends Document {
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
+  name: string;
+  color: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface ILog extends Document {
   user: Types.ObjectId;
   type:
@@ -184,6 +208,7 @@ export interface ILog extends Document {
   chars?: number;
   time?: number;
   date: Date;
+  tags?: Types.ObjectId[];
 }
 
 export interface IContentMedia {

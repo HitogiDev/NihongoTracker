@@ -96,7 +96,6 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
       setSearchQuery('');
       setSelectedGroup(null);
 
-      // Comprehensive query invalidation to update all related data
       queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
       queryClient.invalidateQueries({
         queryKey: ['logs', usernameFromStore],
@@ -104,16 +103,13 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
       queryClient.invalidateQueries({
         queryKey: ['ImmersionList', usernameFromStore],
       });
-      // Invalidate user stats to update experience points and statistics
       queryClient.invalidateQueries({
         queryKey: ['userStats', usernameFromStore],
       });
-      // Invalidate user profile data to update overall stats
       queryClient.invalidateQueries({
         predicate: (query) =>
           ['user', 'ranking'].includes(query.queryKey[0] as string),
       });
-      // Invalidate daily goals as XP changes affect goal progress
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
       toast.success('Media assigned successfully');
@@ -175,7 +171,6 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
         contentMedia: IMediaDocument;
       }> = [];
 
-      // For reading, only search in our database
       for (const [groupName, logsGroup] of Object.entries(
         filteredGroupedLogs
       )) {
@@ -213,8 +208,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
       }
 
       if (matches.length > 0) {
-        // Split large batches to avoid "Request entity too large" errors
-        const BATCH_SIZE = 50; // Process 50 assignments at a time
+        const BATCH_SIZE = 50;
         const batches = [];
         for (let i = 0; i < matches.length; i += BATCH_SIZE) {
           batches.push(matches.slice(i, i + BATCH_SIZE));
@@ -226,7 +220,8 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
             assignMedia(batch, {
               onSuccess: () => {
                 totalProcessed += batch.reduce(
-                  (sum, m) => sum + m.logsId.length,
+                  (toUpdateCount, toUpdate) =>
+                    toUpdateCount + toUpdate.logsId.length,
                   0
                 );
                 resolve();
@@ -238,7 +233,6 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
           });
         }
 
-        // Update assigned logs after all batches are processed
         const assignedLogIds = matches.flatMap((m) => m.logsId);
         const newlyAssignedLogs =
           logs?.filter((log) => assignedLogIds.includes(log._id)) || [];

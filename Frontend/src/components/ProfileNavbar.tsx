@@ -53,7 +53,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
               Immersion List
             </Link>
           </li>
-          {/* <li>
+          <li>
             <Link
               to={`/user/${username}/goals`}
               className={
@@ -64,7 +64,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
             >
               Goals
             </Link>
-          </li> */}
+          </li>
         </ul>
       </div>
     </div>

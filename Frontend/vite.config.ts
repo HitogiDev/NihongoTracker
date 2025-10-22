@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     define: {
-      __APP_ENV__: JSON.stringify(env.APP_ENV),
+      __APP_ENV__: JSON.stringify(env.VITE_APP_ENV),
     },
     plugins: [react(), tailwindcss()],
     server: {

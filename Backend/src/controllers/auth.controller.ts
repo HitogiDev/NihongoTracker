@@ -37,6 +37,7 @@ export async function register(
       banner: user.banner,
       titles: user.titles,
       roles: user.roles,
+      patreon: user.patreon,
     });
   } catch (error) {
     return next(error as customError);
@@ -66,6 +67,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         titles: user.titles,
         roles: user.roles,
         settings: user.settings,
+        patreon: user.patreon,
       });
     } else {
       throw new customError('Incorrect username or password', 401);

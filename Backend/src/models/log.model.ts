@@ -83,6 +83,7 @@ const LogSchema = new Schema<ILog>(
       },
     },
     date: { type: Date, default: () => new Date(), required: true },
+    tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
   },
   { timestamps: true }
 );

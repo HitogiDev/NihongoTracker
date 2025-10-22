@@ -51,9 +51,87 @@ export default function ProfileHeader() {
               </div>
             )}
             <div className="py-22px px-25px">
-              <h1 className="text-xl font-bold inline-block text-slate-100">
-                {user?.username}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold inline-block text-slate-100">
+                  {user?.username}
+                </h1>
+                {user?.patreon?.isActive && user?.patreon?.tier && (
+                  <div
+                    className={`badge gap-2 ${
+                      user.patreon.tier === 'consumer' &&
+                      user.patreon.badgeColor
+                        ? user.patreon.badgeColor === 'rainbow'
+                          ? 'badge-rainbow'
+                          : user.patreon.badgeColor === 'primary'
+                            ? 'badge-primary'
+                            : user.patreon.badgeColor === 'secondary'
+                              ? 'badge-secondary'
+                              : ''
+                        : 'badge-primary'
+                    }`}
+                    style={
+                      user.patreon.tier === 'consumer' &&
+                      user.patreon.badgeColor &&
+                      user.patreon.badgeColor !== 'rainbow' &&
+                      user.patreon.badgeColor !== 'primary' &&
+                      user.patreon.badgeColor !== 'secondary'
+                        ? {
+                            backgroundColor: user.patreon.badgeColor,
+                            color:
+                              user.patreon.badgeTextColor ===
+                                'primary-content' ||
+                              user.patreon.badgeTextColor ===
+                                'secondary-content'
+                                ? undefined
+                                : user.patreon.badgeTextColor || '#ffffff',
+                            border: 'none',
+                          }
+                        : user.patreon.tier === 'consumer' &&
+                            (user.patreon.badgeColor === 'rainbow' ||
+                              user.patreon.badgeTextColor)
+                          ? {
+                              color:
+                                user.patreon.badgeTextColor ===
+                                  'primary-content' ||
+                                user.patreon.badgeTextColor ===
+                                  'secondary-content'
+                                  ? undefined
+                                  : user.patreon.badgeTextColor || undefined,
+                              border:
+                                user.patreon.badgeColor === 'rainbow'
+                                  ? 'none'
+                                  : undefined,
+                            }
+                          : {}
+                    }
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {/* Show custom badge text for Enthusiast+ tier, otherwise show tier name */}
+                    <span className="font-bold">
+                      {(user.patreon.tier === 'enthusiast' ||
+                        user.patreon.tier === 'consumer') &&
+                      user.patreon.customBadgeText
+                        ? user.patreon.customBadgeText
+                        : user.patreon.tier === 'donator'
+                          ? 'Donator'
+                          : user.patreon.tier === 'enthusiast'
+                            ? 'Enthusiast'
+                            : 'Consumer'}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

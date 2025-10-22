@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IUser, userRoles, IUserSettings } from '../types.js';
+import { IUser, userRoles, IUserSettings, IPatreonData } from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
@@ -9,6 +9,37 @@ const SettingsSchema = new Schema<IUserSettings>(
     blurAdultContent: { type: Boolean, default: true },
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },
+  },
+  { _id: false }
+);
+
+const PatreonSchema = new Schema<IPatreonData>(
+  {
+    patreonId: { type: String, sparse: true, unique: true }, // OAuth2: ID único de Patreon
+    patreonEmail: { type: String },
+    patreonAccessToken: { type: String, select: false }, // OAuth2: Token de acceso
+    patreonRefreshToken: { type: String, select: false }, // OAuth2: Token de refresh
+    patreonTokenExpiry: { type: Date }, // OAuth2: Expiración del access token
+    tier: {
+      type: String,
+      enum: ['donator', 'enthusiast', 'consumer', null],
+      default: null,
+    },
+    customBadgeText: {
+      type: String,
+      maxlength: 20,
+      default: '',
+    },
+    badgeColor: {
+      type: String,
+      default: '',
+    },
+    badgeTextColor: {
+      type: String,
+      default: '',
+    },
+    lastChecked: { type: Date },
+    isActive: { type: Boolean, default: false },
   },
   { _id: false }
 );
@@ -82,6 +113,10 @@ const UserSchema = new Schema<IUser>(
     settings: {
       type: SettingsSchema,
       default: { blurAdultContent: true, timezone: 'UTC' },
+    },
+    patreon: {
+      type: PatreonSchema,
+      default: { tier: null, isActive: false },
     },
   },
   { timestamps: true }

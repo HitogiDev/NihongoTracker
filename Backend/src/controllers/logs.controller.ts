@@ -471,7 +471,23 @@ export async function getUserLogs(
           preserveNullAndEmptyArrays: true,
         },
       },
-
+      {
+        $lookup: {
+          from: 'tags',
+          localField: 'tags',
+          foreignField: '_id',
+          as: 'tags',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                color: 1,
+              },
+            },
+          ],
+        },
+      },
       {
         $project: {
           _id: 1,
@@ -484,6 +500,7 @@ export async function getUserLogs(
           chars: 1,
           time: 1,
           date: 1,
+          tags: 1,
           'media.contentId': 1,
           'media.title': 1,
           'media.contentImage': 1,
@@ -539,6 +556,23 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
         },
       },
       {
+        $lookup: {
+          from: 'tags',
+          localField: 'tags',
+          foreignField: '_id',
+          as: 'tags',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                color: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
         $project: {
           _id: 1,
           type: 1,
@@ -550,6 +584,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
           date: 1,
           mediaId: 1,
           xp: 1,
+          tags: 1,
           'mediaData.title': 1,
           'mediaData.contentImage': 1,
           'mediaData.type': 1,
@@ -574,6 +609,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
       mediaId: foundLog.mediaId,
       media: foundLog.mediaData,
       xp: foundLog.xp,
+      tags: foundLog.tags || [],
       isAdult: foundLog.mediaData?.isAdult || false,
     };
 
@@ -648,8 +684,18 @@ export async function updateLog(
   res: Response,
   next: NextFunction
 ) {
-  const { description, time, date, mediaId, episodes, pages, chars, type, xp } =
-    req.body;
+  const {
+    description,
+    time,
+    date,
+    mediaId,
+    episodes,
+    pages,
+    chars,
+    type,
+    xp,
+    tags,
+  } = req.body;
 
   try {
     const log: ILog | null = await Log.findOne({
@@ -688,6 +734,7 @@ export async function updateLog(
     log.chars = chars !== undefined ? chars : log.chars;
     log.type = type !== undefined ? type : log.type;
     log.xp = xp !== undefined ? xp : log.xp;
+    log.tags = tags !== undefined ? tags : log.tags;
     log.editedFields = editedFields;
 
     const originalDate = log.date;
@@ -799,6 +846,7 @@ export async function createLog(
     date,
     chars,
     mediaData,
+    tags,
   } = req.body;
 
   try {
@@ -892,6 +940,7 @@ export async function createLog(
       time,
       date: logDate,
       chars,
+      tags: tags || [],
     });
     if (!newLog) throw new customError('Log could not be created', 500);
     const savedLog = await newLog.save();
@@ -1195,6 +1244,8 @@ interface IGetUserStatsQuery {
   start?: string;
   end?: string;
   timezone?: string;
+  includedTags?: string;
+  excludedTags?: string;
 }
 
 interface IStatByType {
@@ -1249,6 +1300,8 @@ export async function getUserStats(
       start: startParam,
       end: endParam,
       timezone: tzParam,
+      includedTags: includedTagsParam,
+      excludedTags: excludedTagsParam,
     } = req.query as IGetUserStatsQuery;
 
     const validTimeRanges = [
@@ -1338,7 +1391,6 @@ export async function getUserStats(
           ).getTime();
         daysPeriod = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
       } else if (startLocal && !endLocal) {
-        // from start to "today" in user's timezone
         const endLocalToday = new Date(
           userDate.getFullYear(),
           userDate.getMonth(),
@@ -1347,7 +1399,6 @@ export async function getUserStats(
         const diffMs = endLocalToday.getTime() - startLocal.getTime();
         daysPeriod = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
       } else if (!startLocal && endLocal) {
-        // use one day window up to end
         daysPeriod = 1;
       }
     } else if (timeRange === 'today') {
@@ -1401,11 +1452,28 @@ export async function getUserStats(
         daysPeriod = 1;
       }
     } else if (timeRange === 'custom') {
-      // If custom without explicit start/end, default to 1 day
       daysPeriod = 1;
     }
 
     let aggregationMatch: any = { user: user._id, ...dateFilter };
+
+    // Tag filtering
+    if (includedTagsParam || excludedTagsParam) {
+      const tagFilter: any = {};
+      if (includedTagsParam) {
+        const includedTagIds = includedTagsParam
+          .split(',')
+          .map((id) => new Types.ObjectId(id));
+        tagFilter.$in = includedTagIds;
+      }
+      if (excludedTagsParam) {
+        const excludedTagIds = excludedTagsParam
+          .split(',')
+          .map((id) => new Types.ObjectId(id));
+        tagFilter.$nin = excludedTagIds;
+      }
+      aggregationMatch.tags = tagFilter;
+    }
 
     let totalsMatch: any = { user: user._id, ...dateFilter };
     if (type !== 'all') {
@@ -1414,6 +1482,24 @@ export async function getUserStats(
       } else {
         totalsMatch.type = type;
       }
+    }
+
+    // Tag filtering for totals
+    if (includedTagsParam || excludedTagsParam) {
+      const tagFilter: any = {};
+      if (includedTagsParam) {
+        const includedTagIds = includedTagsParam
+          .split(',')
+          .map((id) => new Types.ObjectId(id));
+        tagFilter.$in = includedTagIds;
+      }
+      if (excludedTagsParam) {
+        const excludedTagIds = excludedTagsParam
+          .split(',')
+          .map((id) => new Types.ObjectId(id));
+        tagFilter.$nin = excludedTagIds;
+      }
+      totalsMatch.tags = tagFilter;
     }
 
     const logTypes = [
@@ -1578,6 +1664,27 @@ export async function getUserStats(
                   { chars: { $ne: null, $gt: 0 } },
                   { pages: { $ne: null, $gt: 0 } },
                 ],
+                // Apply tag filtering
+                ...(includedTagsParam || excludedTagsParam
+                  ? {
+                      tags: {
+                        ...(includedTagsParam
+                          ? {
+                              $in: includedTagsParam
+                                .split(',')
+                                .map((id) => new Types.ObjectId(id)),
+                            }
+                          : {}),
+                        ...(excludedTagsParam
+                          ? {
+                              $nin: excludedTagsParam
+                                .split(',')
+                                .map((id) => new Types.ObjectId(id)),
+                            }
+                          : {}),
+                      },
+                    }
+                  : {}),
               },
             },
             {

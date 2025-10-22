@@ -62,6 +62,13 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
         userLevel: number;
         userXp: number;
       };
+      patreon?: {
+        isActive: boolean;
+        tier: 'donator' | 'enthusiast' | 'consumer' | null;
+        customBadgeText?: string;
+        badgeColor?: string;
+        badgeTextColor?: string;
+      };
     };
     totalLogs: number;
     totalXp: number;
@@ -392,9 +399,91 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                             <div>
                               <Link
                                 to={`/user/${member.user.username}`}
-                                className="font-medium hover:underline hover:text-primary transition-colors"
+                                className="font-medium hover:underline hover:text-primary transition-colors flex items-center gap-2 flex-wrap"
                               >
                                 {member.user.username}
+                                {/* Patreon Badge */}
+                                {member.user.patreon?.isActive &&
+                                  member.user.patreon.tier === 'consumer' && (
+                                    <div
+                                      className={`badge badge-sm gap-1 ${
+                                        member.user.patreon.badgeColor ===
+                                        'rainbow'
+                                          ? 'badge-rainbow'
+                                          : member.user.patreon.badgeColor ===
+                                              'primary'
+                                            ? 'badge-primary'
+                                            : member.user.patreon.badgeColor ===
+                                                'secondary'
+                                              ? 'badge-secondary'
+                                              : ''
+                                      }`}
+                                      style={
+                                        member.user.patreon.badgeColor &&
+                                        member.user.patreon.badgeColor !==
+                                          'rainbow' &&
+                                        member.user.patreon.badgeColor !==
+                                          'primary' &&
+                                        member.user.patreon.badgeColor !==
+                                          'secondary'
+                                          ? {
+                                              backgroundColor:
+                                                member.user.patreon.badgeColor,
+                                              color:
+                                                member.user.patreon
+                                                  .badgeTextColor ===
+                                                  'primary-content' ||
+                                                member.user.patreon
+                                                  .badgeTextColor ===
+                                                  'secondary-content'
+                                                  ? undefined
+                                                  : member.user.patreon
+                                                      .badgeTextColor ||
+                                                    '#ffffff',
+                                              border: 'none',
+                                            }
+                                          : member.user.patreon.badgeColor ===
+                                                'rainbow' ||
+                                              member.user.patreon.badgeTextColor
+                                            ? {
+                                                color:
+                                                  member.user.patreon
+                                                    .badgeTextColor ===
+                                                    'primary-content' ||
+                                                  member.user.patreon
+                                                    .badgeTextColor ===
+                                                    'secondary-content'
+                                                    ? undefined
+                                                    : member.user.patreon
+                                                        .badgeTextColor ||
+                                                      undefined,
+                                                border:
+                                                  member.user.patreon
+                                                    .badgeColor === 'rainbow'
+                                                    ? 'none'
+                                                    : undefined,
+                                              }
+                                            : {}
+                                      }
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      <span className="font-bold">
+                                        {member.user.patreon.customBadgeText ||
+                                          'Consumer'}
+                                      </span>
+                                    </div>
+                                  )}
                               </Link>
                             </div>
                           </div>

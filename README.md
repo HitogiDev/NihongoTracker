@@ -1,4 +1,4 @@
-# NihongoTracker
+# NihongoTracker · [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/) [![React](https://img.shields.io/badge/React-18.0+-61dafb.svg)](https://reactjs.org/) [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/) [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-47A248.svg)](https://www.mongodb.com/) [![Patreon](https://img.shields.io/badge/Support-Patreon-ff424d.svg)](https://www.patreon.com/nihongotracker)
 
 A comprehensive Japanese immersion tracker that gamifies your language learning journey. Track progress across anime, manga, visual novels, reading, videos, and audio. Compete with friends, visualize improvement, and stay motivated.
 

@@ -14,6 +14,7 @@ import {
   MdInfo,
   MdStar,
   MdMenu,
+  MdFavorite,
 } from 'react-icons/md';
 import { useUserDataStore } from '../store/userData';
 import { useMutation } from '@tanstack/react-query';
@@ -321,9 +322,73 @@ function Header() {
                 <div
                   tabIndex={0}
                   role="button"
-                  className="btn btn-sm sm:btn-md m-1"
+                  className="btn btn-sm sm:btn-md m-1 gap-2"
                 >
                   {user.username}
+                  {user?.patreon?.isActive &&
+                    user?.patreon?.tier === 'consumer' && (
+                      <div
+                        className={`badge badge-sm gap-1 ${
+                          user.patreon.badgeColor === 'rainbow'
+                            ? 'badge-rainbow'
+                            : user.patreon.badgeColor === 'primary'
+                              ? 'badge-primary'
+                              : user.patreon.badgeColor === 'secondary'
+                                ? 'badge-secondary'
+                                : ''
+                        }`}
+                        style={
+                          user.patreon.badgeColor &&
+                          user.patreon.badgeColor !== 'rainbow' &&
+                          user.patreon.badgeColor !== 'primary' &&
+                          user.patreon.badgeColor !== 'secondary'
+                            ? {
+                                backgroundColor: user.patreon.badgeColor,
+                                color:
+                                  user.patreon.badgeTextColor ===
+                                    'primary-content' ||
+                                  user.patreon.badgeTextColor ===
+                                    'secondary-content'
+                                    ? undefined
+                                    : user.patreon.badgeTextColor || '#ffffff',
+                                border: 'none',
+                              }
+                            : user.patreon.badgeColor === 'rainbow' ||
+                                user.patreon.badgeTextColor
+                              ? {
+                                  color:
+                                    user.patreon.badgeTextColor ===
+                                      'primary-content' ||
+                                    user.patreon.badgeTextColor ===
+                                      'secondary-content'
+                                      ? undefined
+                                      : user.patreon.badgeTextColor ||
+                                        undefined,
+                                  border:
+                                    user.patreon.badgeColor === 'rainbow'
+                                      ? 'none'
+                                      : undefined,
+                                }
+                              : {}
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="font-bold">
+                          {user.patreon.customBadgeText || 'Consumer'}
+                        </span>
+                      </div>
+                    )}
                 </div>
                 <ul
                   tabIndex={0}
@@ -358,6 +423,15 @@ function Header() {
                       >
                         <MdSettings />
                         Settings
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/support"
+                        className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                      >
+                        <MdFavorite />
+                        Donate
                       </Link>
                     </li>
                     <li>

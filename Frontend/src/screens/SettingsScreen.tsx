@@ -5,6 +5,12 @@ import {
   importLogFileFn,
   importLogsFn,
   updateUserFn,
+  getPatreonStatusFn,
+  // linkPatreonAccountFn, // Deprecated - now using OAuth2
+  unlinkPatreonAccountFn,
+  updateCustomBadgeTextFn,
+  updateBadgeColorsFn,
+  initiatePatreonOAuthFn,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -13,8 +19,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUserDataStore } from '../store/userData';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
+import TagManager from '../components/TagManager';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
+import Wheel from '@uiw/react-color-wheel';
 
 const importTypeString = {
   tmw: 'TheMoeWay',
@@ -30,6 +38,20 @@ function SettingsScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [discordId, setDiscordId] = useState(user?.discordId || '');
+  // const [patreonEmail, setPatreonEmail] = useState(''); // Deprecated - OAuth2 handles this
+  const [customBadgeText, setCustomBadgeText] = useState('');
+  const [badgeColor, setBadgeColor] = useState('#ff69b4');
+  const [badgeTextColor, setBadgeTextColor] = useState('#ffffff');
+  const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
+  const [patreonStatus, setPatreonStatus] = useState<{
+    patreonEmail?: string;
+    patreonId?: string;
+    tier?: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+    isActive: boolean;
+  }>({ isActive: false });
   const [blurAdult, setBlurAdult] = useState(
     user?.settings?.blurAdultContent || false
   );
@@ -124,9 +146,9 @@ function SettingsScreen() {
   );
 
   // Use refs to track timeouts for debouncing
-  const timezoneTimeoutRef = useRef<NodeJS.Timeout>();
-  const blurAdultTimeoutRef = useRef<NodeJS.Timeout>();
-  const hideUnmatchedTimeoutRef = useRef<NodeJS.Timeout>();
+  const timezoneTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const blurAdultTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const hideUnmatchedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Initialize state from user data once
   useEffect(() => {
@@ -292,6 +314,133 @@ function SettingsScreen() {
     },
   });
 
+  // Patreon mutations
+  // linkPatreon mutation removed - now using OAuth2
+  // const { mutate: linkPatreon } = useMutation({
+  //   mutationFn: linkPatreonAccountFn,
+  //   onSuccess: (data) => {
+  //     toast.success(data.message);
+  //     fetchPatreonStatus();
+  //   },
+  //   onError: (error) => {
+  //     if (error instanceof AxiosError) {
+  //       toast.error(error.response?.data.message);
+  //     } else {
+  //       toast.error('Failed to link Patreon account');
+  //     }
+  //   },
+  // });
+
+  const { mutate: unlinkPatreon, isPending: isUnlinkingPatreon } = useMutation({
+    mutationFn: unlinkPatreonAccountFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      // Reset Patreon state
+      setCustomBadgeText('');
+      setBadgeColor('#ff69b4');
+      setBadgeTextColor('#ffffff');
+      setPatreonStatus({ isActive: false });
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      } else {
+        toast.error('Failed to unlink Patreon account');
+      }
+    },
+  });
+
+  const { mutate: updateBadgeText, isPending: isUpdatingBadge } = useMutation({
+    mutationFn: updateCustomBadgeTextFn,
+    onSuccess: (data) => {
+      toast.success('Custom badge text updated!');
+      setUser(data.user);
+      fetchPatreonStatus();
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      } else {
+        toast.error('Failed to update badge text');
+      }
+    },
+  });
+
+  const { mutate: updateBadgeColors, isPending: isUpdatingColors } =
+    useMutation({
+      mutationFn: () => updateBadgeColorsFn(badgeColor, badgeTextColor),
+      onSuccess: (data) => {
+        toast.success('Badge colors updated!');
+        setUser(data.user);
+        fetchPatreonStatus();
+        // Invalidate user queries to update ProfileHeader
+        void queryClient.invalidateQueries({
+          queryKey: ['user'],
+        });
+      },
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data.message);
+        } else {
+          toast.error('Failed to update badge colors');
+        }
+      },
+    });
+
+  // Fetch Patreon status on mount
+  useEffect(() => {
+    fetchPatreonStatus();
+
+    // Handle OAuth callback from Patreon
+    const params = new URLSearchParams(window.location.search);
+    const patreonStatus = params.get('patreon');
+    const message = params.get('message');
+
+    if (patreonStatus === 'success') {
+      toast.success('✅ Patreon account linked successfully!');
+      // Limpiar URL sin recargar la página
+      window.history.replaceState({}, '', '/settings');
+      // Recargar el estado de Patreon
+      fetchPatreonStatus();
+    } else if (patreonStatus === 'error') {
+      const errorMessages: Record<string, string> = {
+        missing_params: 'Missing authorization parameters',
+        invalid_state: 'Invalid or expired authorization state',
+        oauth_not_configured: 'Patreon OAuth is not configured on the server',
+        account_already_linked:
+          'This Patreon account is already linked to another user',
+        user_not_found: 'User not found',
+        oauth_failed: 'OAuth authentication failed',
+      };
+      const errorMessage =
+        message && errorMessages[message]
+          ? errorMessages[message]
+          : 'Failed to link Patreon account';
+      toast.error(`❌ ${errorMessage}`);
+      // Limpiar URL
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
+
+  async function fetchPatreonStatus() {
+    try {
+      const status = await getPatreonStatusFn();
+      setPatreonStatus(status);
+      // patreonEmail no longer needed - OAuth2 manages email
+      if (status.customBadgeText) {
+        setCustomBadgeText(status.customBadgeText);
+      }
+      if (status.badgeColor) {
+        setBadgeColor(status.badgeColor);
+      }
+      if (status.badgeTextColor) {
+        setBadgeTextColor(status.badgeTextColor);
+      }
+    } catch (error) {
+      console.error('Failed to fetch Patreon status:', error);
+    }
+  }
+
   async function handleSyncLogs(e: React.FormEvent) {
     e.preventDefault();
     syncLogs();
@@ -316,6 +465,23 @@ function SettingsScreen() {
   async function handleClearData() {
     (document.getElementById('clear_data_modal') as HTMLDialogElement).close();
     clearData();
+  }
+
+  async function handleUnlinkPatreon() {
+    unlinkPatreon();
+  }
+
+  async function handlePatreonOAuth() {
+    setIsInitiatingOAuth(true);
+    try {
+      const { authUrl } = await initiatePatreonOAuthFn();
+      // Redirigir al usuario a Patreon para autorizar
+      window.location.href = authUrl;
+    } catch (error) {
+      setIsInitiatingOAuth(false);
+      toast.error('Failed to initiate Patreon OAuth');
+      console.error('OAuth initiation error:', error);
+    }
   }
 
   async function handleUpdateUser(e: React.FormEvent) {
@@ -717,7 +883,220 @@ function SettingsScreen() {
                         </span>
                       </label>
                     </div>
+
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text font-medium">
+                          Patreon Account
+                        </span>
+                      </label>
+                      {patreonStatus.patreonId ? (
+                        <div className="space-y-4">
+                          {/* Connected Status */}
+                          <div className="flex items-center justify-between p-4 bg-success/10 border border-success/20 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <svg
+                                className="w-5 h-5 text-success"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
+                              </svg>
+                              <div>
+                                <div className="font-semibold text-success">
+                                  Connected
+                                </div>
+                                {patreonStatus.patreonEmail && (
+                                  <div className="text-xs text-base-content/70">
+                                    {patreonStatus.patreonEmail}
+                                  </div>
+                                )}
+                                <div className="text-xs text-base-content/60 mt-1">
+                                  ID: {patreonStatus.patreonId}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {patreonStatus.tier ? (
+                                <span className="badge badge-primary badge-sm">
+                                  {patreonStatus.tier === 'donator' &&
+                                    'Donator'}
+                                  {patreonStatus.tier === 'enthusiast' &&
+                                    'Enthusiast'}
+                                  {patreonStatus.tier === 'consumer' &&
+                                    'Consumer'}
+                                </span>
+                              ) : (
+                                <span className="badge badge-ghost badge-sm">
+                                  Free Tier
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            className="btn btn-outline btn-error btn-sm w-full"
+                            onClick={handleUnlinkPatreon}
+                            disabled={isUnlinkingPatreon}
+                          >
+                            {isUnlinkingPatreon ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                  />
+                                </svg>
+                                Unlink Patreon
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <button
+                              className="btn btn-primary flex-1 gap-2"
+                              onClick={handlePatreonOAuth}
+                              disabled={isInitiatingOAuth}
+                            >
+                              {isInitiatingOAuth ? (
+                                <span className="loading loading-spinner loading-sm"></span>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-5 h-5"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                  >
+                                    <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
+                                  </svg>
+                                  Connect with Patreon
+                                </>
+                              )}
+                            </button>
+                            <a
+                              href={
+                                import.meta.env.VITE_APP_ENV === 'development'
+                                  ? 'http://localhost:5173/support'
+                                  : `${import.meta.env.VITE_PROD_DOMAIN_URL}/support`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-ghost btn-sm gap-1"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              Benefits
+                            </a>
+                          </div>
+                          <div className="text-xs text-center text-base-content/60">
+                            🔒 Secure OAuth - credentials never shared
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Custom Badge Text - Enthusiast+ Only */}
+                  {patreonStatus.patreonId &&
+                    (patreonStatus.tier === 'enthusiast' ||
+                      patreonStatus.tier === 'consumer') && (
+                      <div className="space-y-4 mt-6">
+                        <div className="divider">
+                          <span className="text-base-content/70 font-medium">
+                            Badge Customization
+                          </span>
+                        </div>
+
+                        <div className="card bg-base-200/50 border border-base-300">
+                          <div className="card-body">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <label className="label">
+                                  <span className="label-text font-medium">
+                                    Custom Badge Text
+                                  </span>
+                                  <span className="label-text-alt badge badge-ghost badge-sm">
+                                    {customBadgeText.length}/20
+                                  </span>
+                                </label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    className="input input-bordered focus:input-primary transition-colors flex-1"
+                                    placeholder="Enter custom text"
+                                    value={customBadgeText}
+                                    onChange={(e) =>
+                                      setCustomBadgeText(
+                                        e.target.value.slice(0, 20)
+                                      )
+                                    }
+                                    maxLength={20}
+                                  />
+                                  <button
+                                    className="btn btn-primary"
+                                    onClick={() =>
+                                      updateBadgeText(customBadgeText)
+                                    }
+                                    disabled={isUpdatingBadge}
+                                  >
+                                    {isUpdatingBadge ? (
+                                      <span className="loading loading-spinner loading-sm"></span>
+                                    ) : (
+                                      <>
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-4 w-4"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M5 13l4 4L19 7"
+                                          />
+                                        </svg>
+                                        Save
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                <label className="label">
+                                  <span className="label-text-alt text-base-content/60">
+                                    Leave empty to use default tier name
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                   <div className="space-y-6">
                     <div className="divider">
@@ -726,59 +1105,102 @@ function SettingsScreen() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text font-medium">Avatar</span>
                         </label>
-                        <input
-                          type="file"
-                          id="avatar"
-                          className="file-input file-input-bordered file-input-primary"
-                          accept="image/*"
-                          onChange={onSelectAvatarFile}
-                        />
-                        <label className="label">
-                          <span className="label-text-alt text-base-content/60">
-                            Recommended: Square image, max 2MB
-                          </span>
-                        </label>
-                        <canvas
-                          ref={avatarPreviewCanvasRef}
-                          className="rounded-lg border-2 border-base-300 mt-4 hidden shadow-sm"
-                          style={{
-                            objectFit: 'contain',
-                            width: 120,
-                            height: 120,
-                          }}
-                        />
+                        <div className="flex flex-col sm:flex-row gap-4 items-start">
+                          <div className="flex-1 w-full">
+                            <input
+                              type="file"
+                              id="avatar"
+                              className="file-input file-input-bordered file-input-primary w-full"
+                              accept={
+                                user?.patreon?.isActive &&
+                                (user?.patreon?.tier === 'enthusiast' ||
+                                  user?.patreon?.tier === 'consumer')
+                                  ? 'image/*'
+                                  : 'image/jpeg,image/jpg,image/png,image/webp'
+                              }
+                              onChange={onSelectAvatarFile}
+                            />
+                            <label className="label pt-1">
+                              <span className="label-text-alt text-base-content/60 leading-relaxed">
+                                Allowed Formats: JPEG, PNG, WebP
+                                {user?.patreon?.isActive &&
+                                (user?.patreon?.tier === 'enthusiast' ||
+                                  user?.patreon?.tier === 'consumer')
+                                  ? ', GIF'
+                                  : ''}
+                                . Max size: 3mb. Optimal dimensions: 230x230
+                              </span>
+                            </label>
+                          </div>
+                          <div className="flex flex-col items-center gap-2">
+                            {user?.avatar && !croppedAvatarFile && (
+                              <img
+                                src={user.avatar}
+                                alt="Current avatar"
+                                className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
+                                style={{
+                                  width: 120,
+                                  height: 120,
+                                }}
+                              />
+                            )}
+                            <canvas
+                              ref={avatarPreviewCanvasRef}
+                              className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
+                              style={{
+                                objectFit: 'contain',
+                                width: 120,
+                                height: 120,
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text font-medium">Banner</span>
                         </label>
-                        <input
-                          type="file"
-                          id="banner"
-                          className="file-input file-input-bordered file-input-primary"
-                          accept="image/*"
-                          onChange={onSelectBannerFile}
-                        />
-                        <label className="label">
-                          <span className="label-text-alt text-base-content/60">
-                            Recommended: 21:9 aspect ratio, max 3MB
-                          </span>
-                        </label>
-                        <canvas
-                          ref={bannerPreviewCanvasRef}
-                          className="rounded-lg border-2 border-base-300 mt-4 hidden shadow-sm"
-                          style={{
-                            objectFit: 'contain',
-                            width: '100%',
-                            maxHeight: 150,
-                          }}
-                        />
+                        <div className="flex flex-col gap-4">
+                          <div className="w-full">
+                            <input
+                              type="file"
+                              id="banner"
+                              className="file-input file-input-bordered file-input-primary w-full"
+                              accept="image/*"
+                              onChange={onSelectBannerFile}
+                            />
+                            <label className="label pt-1">
+                              <span className="label-text-alt text-base-content/60 leading-relaxed">
+                                Allowed Formats: JPEG, PNG. Max size: 6mb.
+                                Optimal dimensions: 1700x330
+                              </span>
+                            </label>
+                          </div>
+                          {user?.banner && !croppedBannerFile && (
+                            <img
+                              src={user.banner}
+                              alt="Current banner"
+                              className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
+                              style={{
+                                maxHeight: 150,
+                              }}
+                            />
+                          )}
+                          <canvas
+                            ref={bannerPreviewCanvasRef}
+                            className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
+                            style={{
+                              objectFit: 'contain',
+                              maxHeight: 150,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -816,6 +1238,37 @@ function SettingsScreen() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+
+            {/* Tag Management Section */}
+            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+              <div className="card-body">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-accent/10 rounded-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-accent"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Tags</h2>
+                    <p className="text-base-content/70">
+                      Create and manage tags to organize your logs
+                    </p>
+                  </div>
+                </div>
+                <TagManager />
               </div>
             </div>
 
@@ -945,6 +1398,235 @@ function SettingsScreen() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+
+            {/* Badge Customization Card - Always visible, locked for non-Consumer */}
+            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+              <div className="card-body relative">
+                {/* Lock Overlay for non-Consumer tiers */}
+                {!(
+                  patreonStatus.isActive && patreonStatus.tier === 'consumer'
+                ) && (
+                  <div className="absolute inset-0 bg-base-300/70 backdrop-blur-sm rounded-xl z-10 flex items-center justify-center">
+                    <div className="text-center p-6">
+                      <div className="p-4 bg-base-100/80 rounded-lg inline-block">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-12 w-12 text-primary mx-auto mb-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                        <h3 className="text-xl font-bold mb-2">
+                          Consumer Tier Only
+                        </h3>
+                        {patreonStatus.patreonId ? (
+                          <>
+                            <p className="text-sm text-base-content/70 mb-4">
+                              Become a Consumer patron to unlock custom badge
+                              colors
+                            </p>
+                            <a
+                              href="https://www.patreon.com/nihongotracker"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-primary btn-sm gap-2"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
+                              </svg>
+                              Pledge on Patreon
+                            </a>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-base-content/70 mb-4">
+                              Unlock custom badge colors by becoming a Consumer
+                              patron
+                            </p>
+                            <button
+                              className="btn btn-primary btn-sm gap-2"
+                              onClick={handlePatreonOAuth}
+                              disabled={isInitiatingOAuth}
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
+                              </svg>
+                              Support on Patreon
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-primary"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">
+                      Badge Color Customization
+                    </h2>
+                    <p className="text-base-content/70">
+                      Personalize your Consumer tier badge colors
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Badge Preview */}
+                  <div className="flex items-center justify-center p-6 bg-base-200 rounded-lg">
+                    <div
+                      className={`badge badge-lg gap-2 px-4 py-3 font-bold ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'badge-primary' : badgeColor === 'secondary' ? 'badge-secondary' : ''}`}
+                      style={
+                        badgeColor !== 'rainbow' &&
+                        badgeColor !== 'primary' &&
+                        badgeColor !== 'secondary'
+                          ? {
+                              backgroundColor: badgeColor,
+                              color:
+                                badgeTextColor === 'primary-content'
+                                  ? undefined
+                                  : badgeTextColor === 'secondary-content'
+                                    ? undefined
+                                    : badgeTextColor,
+                              border: 'none',
+                            }
+                          : {
+                              color:
+                                badgeTextColor === 'primary-content' ||
+                                badgeTextColor === 'secondary-content'
+                                  ? undefined
+                                  : badgeTextColor,
+                            }
+                      }
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        className="inline-block w-4 h-4"
+                      >
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                      <span className="font-bold">
+                        {user?.patreon?.customBadgeText || 'Consumer'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Color Selectors */}
+                  <div className="flex items-center justify-center gap-4">
+                    {/* Background Color */}
+                    <button
+                      type="button"
+                      className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
+                      onClick={() =>
+                        (
+                          document.getElementById(
+                            'bg_color_modal'
+                          ) as HTMLDialogElement
+                        )?.showModal()
+                      }
+                    >
+                      <div
+                        className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'bg-primary' : badgeColor === 'secondary' ? 'bg-secondary' : ''}`}
+                        style={
+                          badgeColor !== 'rainbow' &&
+                          badgeColor !== 'primary' &&
+                          badgeColor !== 'secondary'
+                            ? { backgroundColor: badgeColor }
+                            : undefined
+                        }
+                      />
+                      <span className="text-xs text-base-content/70">
+                        Background
+                      </span>
+                    </button>
+
+                    {/* Text Color */}
+                    <button
+                      type="button"
+                      className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
+                      onClick={() =>
+                        (
+                          document.getElementById(
+                            'text_color_modal'
+                          ) as HTMLDialogElement
+                        )?.showModal()
+                      }
+                    >
+                      <div
+                        className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeTextColor === 'primary-content' ? 'bg-primary-content' : badgeTextColor === 'secondary-content' ? 'bg-secondary-content' : ''}`}
+                        style={
+                          badgeTextColor !== 'primary-content' &&
+                          badgeTextColor !== 'secondary-content'
+                            ? { backgroundColor: badgeTextColor }
+                            : undefined
+                        }
+                      />
+                      <span className="text-xs text-base-content/70">Text</span>
+                    </button>
+                  </div>
+
+                  {/* Save Button */}
+                  <button
+                    type="button"
+                    className="btn btn-primary w-full"
+                    onClick={() => updateBadgeColors()}
+                    disabled={isUpdatingColors}
+                  >
+                    {isUpdatingColors ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        Save Badge Colors
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1392,6 +2074,178 @@ function SettingsScreen() {
           </div>
         </div>
       </div>
+
+      {/* Background Color Picker Modal */}
+      <dialog id="bg_color_modal" className="modal">
+        <div className="modal-box max-w-md">
+          <h3 className="font-bold text-lg mb-4">Badge Background Color</h3>
+
+          {/* Theme Presets */}
+          <div className="space-y-3 mb-4">
+            <button
+              type="button"
+              className="btn btn-outline w-full justify-start"
+              onClick={() => {
+                setBadgeColor('primary');
+                (
+                  document.getElementById('bg_color_modal') as HTMLDialogElement
+                )?.close();
+              }}
+            >
+              <div className="w-6 h-6 rounded bg-primary"></div>
+              <span>Primary</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline w-full justify-start"
+              onClick={() => {
+                setBadgeColor('secondary');
+                (
+                  document.getElementById('bg_color_modal') as HTMLDialogElement
+                )?.close();
+              }}
+            >
+              <div className="w-6 h-6 rounded bg-secondary"></div>
+              <span>Secondary</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline w-full justify-start badge-rainbow"
+              style={{ justifyContent: 'flex-start' }}
+              onClick={() => {
+                setBadgeColor('rainbow');
+                (
+                  document.getElementById('bg_color_modal') as HTMLDialogElement
+                )?.close();
+              }}
+            >
+              <div className="w-6 h-6 rounded badge-rainbow"></div>
+              <span style={{ color: 'inherit' }}>🌈 Rainbow</span>
+            </button>
+          </div>
+
+          <div className="divider">OR</div>
+
+          {/* Custom Color Picker */}
+          <div className="flex flex-col items-center gap-3">
+            <div style={{ width: '200px', height: '200px' }}>
+              <Wheel
+                color={
+                  badgeColor === 'rainbow' ||
+                  badgeColor === 'primary' ||
+                  badgeColor === 'secondary'
+                    ? '#ff69b4'
+                    : badgeColor
+                }
+                onChange={(color: { hex: string }) => setBadgeColor(color.hex)}
+              />
+            </div>
+            <input
+              type="text"
+              className="input input-bordered input-sm w-full text-center"
+              value={
+                badgeColor === 'rainbow' ||
+                badgeColor === 'primary' ||
+                badgeColor === 'secondary'
+                  ? ''
+                  : badgeColor
+              }
+              onChange={(e) => setBadgeColor(e.target.value)}
+              placeholder="#ff69b4"
+            />
+          </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-sm">Done</button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+
+      {/* Text Color Picker Modal */}
+      <dialog id="text_color_modal" className="modal">
+        <div className="modal-box max-w-md">
+          <h3 className="font-bold text-lg mb-4">Badge Text Color</h3>
+
+          {/* Theme Presets */}
+          <div className="space-y-3 mb-4">
+            <button
+              type="button"
+              className="btn btn-outline w-full justify-start"
+              onClick={() => {
+                setBadgeTextColor('primary-content');
+                (
+                  document.getElementById(
+                    'text_color_modal'
+                  ) as HTMLDialogElement
+                )?.close();
+              }}
+            >
+              <div className="w-6 h-6 rounded bg-primary-content border border-base-300"></div>
+              <span>Primary Text</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline w-full justify-start"
+              onClick={() => {
+                setBadgeTextColor('secondary-content');
+                (
+                  document.getElementById(
+                    'text_color_modal'
+                  ) as HTMLDialogElement
+                )?.close();
+              }}
+            >
+              <div className="w-6 h-6 rounded bg-secondary-content border border-base-300"></div>
+              <span>Secondary Text</span>
+            </button>
+          </div>
+
+          <div className="divider">OR</div>
+
+          {/* Custom Color Picker */}
+          <div className="flex flex-col items-center gap-3">
+            <div style={{ width: '200px', height: '200px' }}>
+              <Wheel
+                color={
+                  badgeTextColor === 'primary-content' ||
+                  badgeTextColor === 'secondary-content'
+                    ? '#ffffff'
+                    : badgeTextColor
+                }
+                onChange={(color: { hex: string }) =>
+                  setBadgeTextColor(color.hex)
+                }
+              />
+            </div>
+            <input
+              type="text"
+              className="input input-bordered input-sm w-full text-center"
+              value={
+                badgeTextColor === 'primary-content' ||
+                badgeTextColor === 'secondary-content'
+                  ? ''
+                  : badgeTextColor
+              }
+              onChange={(e) => setBadgeTextColor(e.target.value)}
+              placeholder="#ffffff"
+            />
+          </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-sm">Done</button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
   );
 }

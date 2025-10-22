@@ -61,7 +61,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     []
   );
 
-  // Extract YouTube URLs from log descriptions
   const extractYouTubeUrl = useCallback(
     (description: string): string | null => {
       const youtubeRegex =
@@ -80,7 +79,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     assignedLogs
   );
 
-  // Get logs with YouTube URLs for auto-matching
   const logsWithYouTubeUrls = useMemo(() => {
     if (!logs) return [];
     return logs.filter((log) => {
@@ -97,8 +95,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       }[]
     ) => assignMediaFn(data),
     onSuccess: (_, variables) => {
-      // Only show success message and update state for manual assignments
-      // Auto-match handles its own success messages and state updates in batches
       if (!autoMatchingProgress.isRunning) {
         const totalLogs = variables.reduce(
           (sum, item) => sum + item.logsId.length,
@@ -110,7 +106,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         setSelectedLogs([]);
         setSelectedGroup(null);
 
-        // Comprehensive query invalidation to update all related data
         queryClient.invalidateQueries({
           queryKey: ['videoLogs', username, 'video'],
         });
@@ -141,7 +136,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     },
   });
 
-  // Auto-match function
   const handleAutoMatch = useCallback(async () => {
     if (logsWithYouTubeUrls.length === 0) {
       toast.info('No video logs with YouTube URLs found to auto-match');
@@ -190,7 +184,6 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         setAutoMatchingProgress((prev) => ({ ...prev, current: processed }));
       }
 
-      // Assign all grouped logs to their channels using the mutation
       const assignmentData = Array.from(channelGroups.values()).map(
         ({ logs, channel }) => ({
           logsId: logs.map((log) => log._id),
@@ -207,8 +200,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       );
 
       if (assignmentData.length > 0) {
-        // Split large batches to avoid "Request entity too large" errors
-        const BATCH_SIZE = 50; // Process 50 assignments at a time
+        const BATCH_SIZE = 50;
         const batches = [];
         for (let i = 0; i < assignmentData.length; i += BATCH_SIZE) {
           batches.push(assignmentData.slice(i, i + BATCH_SIZE));

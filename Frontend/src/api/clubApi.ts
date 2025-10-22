@@ -12,6 +12,8 @@ import {
   IMediaDocument,
 } from '../types';
 
+const api = axiosInstance;
+
 // Get all clubs with filtering and pagination
 export async function getClubsFn(params: {
   page?: number;
@@ -22,7 +24,7 @@ export async function getClubsFn(params: {
   isPublic?: boolean;
   tags?: string;
 }): Promise<IClubListResponse> {
-  const { data } = await axiosInstance.get<IClubListResponse>('/clubs', {
+  const { data } = await api.get<IClubListResponse>('/clubs', {
     params,
   });
   return data;
@@ -30,7 +32,7 @@ export async function getClubsFn(params: {
 
 // Get a specific club by ID
 export async function getClubFn(clubId: string): Promise<IClubResponse> {
-  const { data } = await axiosInstance.get<IClubResponse>(`/clubs/${clubId}`);
+  const { data } = await api.get<IClubResponse>(`/clubs/${clubId}`);
   return data;
 }
 
@@ -63,7 +65,7 @@ export async function createClubFn(
     formData.append('banner', clubData.bannerFile);
   }
 
-  const { data } = await axiosInstance.post<IClub>('/clubs', formData, {
+  const { data } = await api.post<IClub>('/clubs', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -73,9 +75,7 @@ export async function createClubFn(
 
 // Join a club
 export async function joinClubFn(clubId: string): Promise<{ message: string }> {
-  const { data } = await axiosInstance.post<{ message: string }>(
-    `/clubs/${clubId}/join`
-  );
+  const { data } = await api.post<{ message: string }>(`/clubs/${clubId}/join`);
   return data;
 }
 
@@ -83,7 +83,7 @@ export async function joinClubFn(clubId: string): Promise<{ message: string }> {
 export async function leaveClubFn(
   clubId: string
 ): Promise<{ message: string }> {
-  const { data } = await axiosInstance.post<{ message: string }>(
+  const { data } = await api.post<{ message: string }>(
     `/clubs/${clubId}/leave`
   );
   return data;
@@ -94,10 +94,7 @@ export async function updateClubFn(
   clubId: string,
   updateData: Partial<ICreateClubRequest & { avatar?: string; banner?: string }>
 ): Promise<IClub> {
-  const { data } = await axiosInstance.put<IClub>(
-    `/clubs/${clubId}`,
-    updateData
-  );
+  const { data } = await api.put<IClub>(`/clubs/${clubId}`, updateData);
   return data;
 }
 
@@ -134,21 +131,17 @@ export async function updateClubWithFilesFn(
     formData.append('banner', clubData.bannerFile);
   }
 
-  const { data } = await axiosInstance.put<IClub>(
-    `/clubs/${clubId}`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
-  );
+  const { data } = await api.put<IClub>(`/clubs/${clubId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return data;
 }
 
 // Get user's clubs
 export async function getUserClubsFn(): Promise<IClub[]> {
-  const { data } = await axiosInstance.get<IClub[]>('/clubs/user/my-clubs');
+  const { data } = await api.get<IClub[]>('/clubs/user/my-clubs');
   return data;
 }
 
@@ -158,7 +151,7 @@ export async function manageMembershipRequestFn(
   memberId: string,
   action: 'approve' | 'reject'
 ): Promise<{ message: string }> {
-  const { data } = await axiosInstance.post<{ message: string }>(
+  const { data } = await api.post<{ message: string }>(
     `/clubs/${clubId}/members/${memberId}`,
     { action }
   );
@@ -169,7 +162,7 @@ export async function manageMembershipRequestFn(
 export async function getPendingMembershipRequestsFn(
   clubId: string
 ): Promise<{ pending: IClub['members'] }> {
-  const { data } = await axiosInstance.get<{ pending: IClub['members'] }>(
+  const { data } = await api.get<{ pending: IClub['members'] }>(
     `/clubs/${clubId}/members/pending`
   );
   return data;
@@ -180,7 +173,7 @@ export async function transferLeadershipFn(
   clubId: string,
   newLeaderId: string
 ): Promise<{ message: string }> {
-  const { data } = await axiosInstance.post<{ message: string }>(
+  const { data } = await api.post<{ message: string }>(
     `/clubs/${clubId}/transfer-leadership`,
     { newLeaderId }
   );
@@ -202,7 +195,7 @@ export async function addClubMediaFn(
     mediaData?: Partial<IMediaDocument>; // Media creation data
   }
 ): Promise<{ message: string; media: IClubMedia }> {
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     media: IClubMedia;
   }>(`/clubs/${clubId}/media`, mediaData);
@@ -214,7 +207,7 @@ export async function getClubMediaFn(
   clubId: string,
   active: boolean = true
 ): Promise<{ media: IClubMedia[] }> {
-  const { data } = await axiosInstance.get<{ media: IClubMedia[] }>(
+  const { data } = await api.get<{ media: IClubMedia[] }>(
     `/clubs/${clubId}/media`,
     { params: { active: active.toString() } }
   );
@@ -232,10 +225,7 @@ export async function editClubMediaFn(
     endDate: string;
   }
 ): Promise<{ message: string; media: IClubMedia }> {
-  const res = await axiosInstance.put(
-    `/clubs/${clubId}/media/${mediaId}`,
-    data
-  );
+  const res = await api.put(`/clubs/${clubId}/media/${mediaId}`, data);
   return res.data;
 }
 
@@ -251,7 +241,7 @@ export async function addClubReviewFn(
     hasSpoilers?: boolean;
   }
 ): Promise<{ message: string; review: IClubReview }> {
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     review: IClubReview;
   }>(`/clubs/${clubId}/media/${mediaId}/reviews`, reviewData);
@@ -263,7 +253,7 @@ export async function getClubReviewsFn(
   clubId: string,
   mediaId: string
 ): Promise<{ reviews: IClubReview[] }> {
-  const { data } = await axiosInstance.get<{ reviews: IClubReview[] }>(
+  const { data } = await api.get<{ reviews: IClubReview[] }>(
     `/clubs/${clubId}/media/${mediaId}/reviews`
   );
   return data;
@@ -280,7 +270,7 @@ export async function editClubReviewFn(
     hasSpoilers: boolean;
   }
 ): Promise<{ message: string; review: IClubReview }> {
-  const { data } = await axiosInstance.put<{
+  const { data } = await api.put<{
     message: string;
     review: IClubReview;
   }>(`/clubs/${clubId}/media/${mediaId}/reviews/${reviewId}`, reviewData);
@@ -293,7 +283,7 @@ export async function toggleReviewLikeFn(
   mediaId: string,
   reviewId: string
 ): Promise<{ message: string; liked: boolean; likesCount: number }> {
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     liked: boolean;
     likesCount: number;
@@ -348,7 +338,7 @@ export async function createMediaVotingFn(
     consumptionEndDate: votingData.consumptionEndDate.toISOString(),
   };
 
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     voting: IClubMediaVoting;
   }>(`/clubs/${clubId}/votings`, apiData);
@@ -391,7 +381,7 @@ export async function editMediaVotingFn(
     throw new Error('All voting and consumption dates are required');
   }
 
-  const { data } = await axiosInstance.put<{
+  const { data } = await api.put<{
     message: string;
     voting: IClubMediaVoting;
   }>(`/clubs/${clubId}/votings/${votingId}`, votingData);
@@ -403,7 +393,7 @@ export async function deleteMediaVotingFn(
   clubId: string,
   votingId: string
 ): Promise<{ message: string }> {
-  const { data } = await axiosInstance.delete<{ message: string }>(
+  const { data } = await api.delete<{ message: string }>(
     `/clubs/${clubId}/votings/${votingId}`
   );
   return data;
@@ -414,7 +404,7 @@ export async function getMediaVotingsFn(
   clubId: string,
   active: boolean = true
 ): Promise<{ votings: IClubMediaVoting[] }> {
-  const { data } = await axiosInstance.get<{ votings: IClubMediaVoting[] }>(
+  const { data } = await api.get<{ votings: IClubMediaVoting[] }>(
     `/clubs/${clubId}/votings`,
     { params: { active: active.toString() } }
   );
@@ -432,7 +422,7 @@ export async function addVotingCandidateFn(
     image?: string;
   }
 ): Promise<{ message: string; candidate: IClubMediaCandidate }> {
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     candidate: IClubMediaCandidate;
   }>(`/clubs/${clubId}/votings/${votingId}/candidates`, candidateData);
@@ -444,7 +434,7 @@ export async function finalizeVotingFn(
   clubId: string,
   votingId: string
 ): Promise<{ message: string; status: string }> {
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     status: string;
   }>(`/clubs/${clubId}/votings/${votingId}/finalize`);
@@ -457,7 +447,7 @@ export async function voteForCandidateFn(
   votingId: string,
   candidateIndex: number
 ): Promise<{ message: string }> {
-  const { data } = await axiosInstance.post<{ message: string }>(
+  const { data } = await api.post<{ message: string }>(
     `/clubs/${clubId}/votings/${votingId}/vote/${candidateIndex}`
   );
   return data;
@@ -468,7 +458,7 @@ export async function completeVotingFn(
   clubId: string,
   votingId: string
 ): Promise<{ message: string; winner: IClubMediaCandidate }> {
-  const { data } = await axiosInstance.post<{
+  const { data } = await api.post<{
     message: string;
     winner: IClubMediaCandidate;
   }>(`/clubs/${clubId}/votings/${votingId}/complete`);
@@ -486,10 +476,9 @@ export async function getClubMediaLogsFn(
   page: number;
   totalPages: number;
 }> {
-  const { data } = await axiosInstance.get(
-    `/clubs/${clubId}/media/${mediaId}/logs`,
-    { params }
-  );
+  const { data } = await api.get(`/clubs/${clubId}/media/${mediaId}/logs`, {
+    params,
+  });
   return data;
 }
 
@@ -523,10 +512,9 @@ export async function getClubMediaRankingsFn(
     isActive: boolean;
   };
 }> {
-  const { data } = await axiosInstance.get(
-    `/clubs/${clubId}/media/${mediaId}/rankings`,
-    { params: { period } }
-  );
+  const { data } = await api.get(`/clubs/${clubId}/media/${mediaId}/rankings`, {
+    params: { period },
+  });
   return data;
 }
 
@@ -578,10 +566,9 @@ export async function getClubMediaStatsFn(
     xp: number;
   };
 }> {
-  const { data } = await axiosInstance.get(
-    `/clubs/${clubId}/media/${mediaId}/stats`,
-    { params: { period } }
-  );
+  const { data } = await api.get(`/clubs/${clubId}/media/${mediaId}/stats`, {
+    params: { period },
+  });
   return data;
 }
 
@@ -604,6 +591,13 @@ export async function getClubMemberRankingsFn(
         userLevel: number;
         userXp: number;
       };
+      patreon?: {
+        isActive: boolean;
+        tier: 'donator' | 'enthusiast' | 'consumer' | null;
+        customBadgeText?: string;
+        badgeColor?: string;
+        badgeTextColor?: string;
+      };
     };
     totalLogs: number;
     totalXp: number;
@@ -619,7 +613,7 @@ export async function getClubMemberRankingsFn(
     totalPages: number;
   };
 }> {
-  const { data } = await axiosInstance.get(`/clubs/${clubId}/rankings`, {
+  const { data } = await api.get(`/clubs/${clubId}/rankings`, {
     params,
   });
   return data;
@@ -659,7 +653,7 @@ export async function getClubRecentActivityFn(
   pageSize: number;
   hasMore: boolean;
 }> {
-  const { data } = await axiosInstance.get(`/clubs/${clubId}/recent-activity`, {
+  const { data } = await api.get(`/clubs/${clubId}/recent-activity`, {
     params,
   });
   return data;

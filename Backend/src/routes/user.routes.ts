@@ -7,6 +7,7 @@ import {
   getUsers,
   clearUserData,
   getImmersionList,
+  compareUserStats,
 } from '../controllers/users.controller.js';
 import {
   getDashboardHours,
@@ -23,6 +24,8 @@ const upload = multer({
 });
 
 router.get('/', getUsers);
+
+router.get('/compare', compareUserStats);
 
 router.get('/ranking', getRanking);
 router.get('/ranking/media', getMediumRanking);

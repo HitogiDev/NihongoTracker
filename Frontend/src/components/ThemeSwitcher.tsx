@@ -1,42 +1,29 @@
 import { useEffect, useState } from 'react';
+import { useUserDataStore } from '../store/userData';
 
-const themes = [
-  'light',
-  'dark',
+const freeThemes = ['light', 'dark'];
+
+const patreonThemes = [
   'cupcake',
   'bumblebee',
   'emerald',
   'corporate',
   'synthwave',
   'retro',
-  'cyberpunk',
   'valentine',
   'halloween',
   'garden',
   'forest',
-  'aqua',
-  'lofi',
-  'pastel',
-  'fantasy',
-  'wireframe',
-  'black',
-  'luxury',
   'dracula',
   'cmyk',
-  'autumn',
-  'business',
-  'acid',
-  'lemonade',
   'night',
-  'coffee',
   'winter',
   'dim',
-  'nord',
   'sunset',
-  'caramellatte',
   'abyss',
-  'silk',
 ];
+
+const themes = [...freeThemes, ...patreonThemes];
 
 // Global theme management to prevent conflicts
 let globalTheme: string | null = null;
@@ -62,8 +49,19 @@ if (typeof document !== 'undefined') {
 }
 
 export default function ThemeSwitcher() {
+  const { user } = useUserDataStore();
+  const hasPatreonAccess = user?.patreon?.isActive && user?.patreon?.tier;
+
   // Always use the current theme from localStorage, not the initial value
   const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'dark';
+    }
+    return 'dark';
+  });
+
+  // Track the theme when entering settings (for reverting on exit)
+  const [originalTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') || 'dark';
     }
@@ -76,6 +74,21 @@ export default function ThemeSwitcher() {
     localStorage.setItem('theme', theme);
     globalTheme = theme; // Update global reference
   }, [theme]);
+
+  // Revert to original theme on unmount if user selected premium theme without access
+  useEffect(() => {
+    return () => {
+      if (!hasPatreonAccess && !freeThemes.includes(theme)) {
+        // Revert to original theme if it was a free theme, otherwise default to dark
+        const revertTheme = freeThemes.includes(originalTheme)
+          ? originalTheme
+          : 'dark';
+        document.documentElement.setAttribute('data-theme', revertTheme);
+        localStorage.setItem('theme', revertTheme);
+        globalTheme = revertTheme;
+      }
+    };
+  }, [hasPatreonAccess, theme, originalTheme]);
 
   // Sync theme between tabs and components
   useEffect(() => {
@@ -129,21 +142,41 @@ export default function ThemeSwitcher() {
         tabIndex={0}
         className="dropdown-content bg-base-300 rounded-box z-50 w-52 p-2 shadow-2xl overflow-y-auto max-h-72"
       >
-        {themes.map((t) => (
-          <li key={t}>
-            <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-base-200 rounded">
-              <input
-                type="radio"
-                name="theme-controller"
-                className="theme-controller"
-                value={t}
-                checked={theme === t}
-                onChange={() => handleThemeChange(t)}
-              />
-              <span className="capitalize">{t}</span>
-            </label>
-          </li>
-        ))}
+        {themes.map((t) => {
+          const isLocked = !hasPatreonAccess && patreonThemes.includes(t);
+          return (
+            <li key={t}>
+              <label
+                className={`flex items-center gap-2 cursor-pointer p-2 hover:bg-base-200 rounded ${isLocked ? 'opacity-50' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="theme-controller"
+                  className="theme-controller"
+                  value={t}
+                  checked={theme === t}
+                  onChange={() => handleThemeChange(t)}
+                  disabled={isLocked}
+                />
+                <span className="capitalize flex-1">{t}</span>
+                {isLocked && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-warning"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </label>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

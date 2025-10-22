@@ -82,7 +82,6 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
     assignedLogs
   );
 
-  // Add a function to reset the component state
   const resetState = useCallback(() => {
     setAssignedLogs((prev) => [...prev, ...selectedLogs]);
     setSelectedLogs([]);
@@ -102,25 +101,20 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
     onSuccess: () => {
       resetState();
 
-      // Comprehensive query invalidation to update all related data
       queryClient.invalidateQueries({ queryKey: ['logsAssign'] });
       queryClient.invalidateQueries({ queryKey: ['logs', usernameFromStore] });
       queryClient.invalidateQueries({
         queryKey: ['ImmersionList', usernameFromStore],
       });
-      // Invalidate user stats to update experience points and statistics
       queryClient.invalidateQueries({
         queryKey: ['userStats', usernameFromStore],
       });
-      // Invalidate user profile data to update overall stats
       queryClient.invalidateQueries({
         predicate: (query) =>
           ['user', 'ranking'].includes(query.queryKey[0] as string),
       });
-      // Invalidate daily goals as XP changes affect goal progress
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-      // Show count of logs assigned in the success message
       toast.success(
         `Successfully assigned ${selectedLogs.length} logs to anime`
       );
@@ -185,7 +179,6 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         contentMedia: IMediaDocument;
       }> = [];
 
-      // Only search in our database for all groups
       for (const [groupName, logsGroup] of Object.entries(
         filteredGroupedLogs
       )) {
@@ -223,8 +216,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       }
 
       if (matches.length > 0) {
-        // Split large batches to avoid "Request entity too large" errors
-        const BATCH_SIZE = 50; // Process 50 assignments at a time
+        const BATCH_SIZE = 50;
         const batches = [];
         for (let i = 0; i < matches.length; i += BATCH_SIZE) {
           batches.push(matches.slice(i, i + BATCH_SIZE));
@@ -232,12 +224,12 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
         let totalProcessed = 0;
         for (const batch of batches) {
-          // Assign media in batches
           await new Promise<void>((resolve, reject) => {
             assignMedia(batch, {
               onSuccess: () => {
                 totalProcessed += batch.reduce(
-                  (sum, m) => sum + m.logsId.length,
+                  (toUpdateCount, toUpdate) =>
+                    toUpdateCount + toUpdate.logsId.length,
                   0
                 );
                 resolve();
@@ -249,13 +241,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           });
         }
 
-        // Update assigned logs after all batches are processed
         const assignedLogIds = matches.flatMap((m) => m.logsId);
         const newlyAssignedLogs =
           logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
         setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
 
-        // Refetch logs to update the UI
         queryClient.invalidateQueries({
           queryKey: ['animeLogs', username, 'anime'],
         });

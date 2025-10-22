@@ -14,10 +14,11 @@ import userRoutes from './routes/user.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import mediaRoutes from './routes/media.routes.js';
 import goalsRoutes from './routes/goals.routes.js';
-import comparisonRoutes from './routes/comparison.routes.js';
 import clubRoutes from './routes/club.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import ogImageRoutes from './routes/ogImage.routes.js';
+import patreonRoutes from './routes/patreon.routes.js';
+import tagRoutes from './routes/tag.routes.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
 const app = express();
@@ -40,9 +41,10 @@ app.use('/api/logs', logsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/goals', goalsRoutes);
-app.use('/api/compare', comparisonRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/patreon', patreonRoutes);
+app.use('/api/tags', tagRoutes);
 app.use('/og-image', ogImageRoutes);
 
 app.use(

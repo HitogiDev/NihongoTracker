@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "license": "CC-BY-NC-SA-4.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -15,6 +16,7 @@
     "@tanstack/react-query": "^5.29.2",
     "@tsparticles/confetti": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
+    "@uiw/react-color-wheel": "^2.9.0",
     "axios": "^1.6.8",
     "chart.js": "^4.4.3",
     "chartjs-plugin-zoom": "^2.2.0",
@@ -45,6 +47,7 @@
     "@stylistic/eslint-plugin-js": "^3.0.1",
     "@types/lodash": "^4.17.6",
     "@types/luxon": "^3.4.2",
+    "@types/node": "^24.8.1",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^7.0.2",

@@ -7,16 +7,14 @@ import { useMemo, useRef, useState } from 'react';
 import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
 import StackedBarChart from '../components/StackedBarChart';
-import ImmersionGoals from '../components/ImmersionGoals';
 import { numberWithCommas } from '../utils/utils';
-import { useUserDataStore } from '../store/userData';
 import { convertToUserTimezone } from '../utils/timezone';
 import { DayPicker } from 'react-day-picker';
 import { useTimezone } from '../hooks/useTimezone';
+import TagFilter from '../components/TagFilter';
 
 function StatsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
-  const { user: loggedUser } = useUserDataStore();
   const [currentType, setCurrentType] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<
     'today' | 'week' | 'month' | 'year' | 'total' | 'custom'
@@ -26,6 +24,8 @@ function StatsScreen() {
     'line'
   );
   const [progressMetric, setProgressMetric] = useState<'xp' | 'hours'>('xp');
+  const [includedTags, setIncludedTags] = useState<string[]>([]);
+  const [excludedTags, setExcludedTags] = useState<string[]>([]);
   const { timezone } = useTimezone();
 
   // Custom range state
@@ -50,6 +50,8 @@ function StatsScreen() {
       timezone,
       startDate,
       endDate,
+      includedTags,
+      excludedTags,
     ],
     queryFn: () =>
       getUserStatsFn(username as string, {
@@ -58,6 +60,10 @@ function StatsScreen() {
         timezone,
         start: startDate || undefined,
         end: endDate || undefined,
+        includedTags:
+          includedTags.length > 0 ? includedTags.join(',') : undefined,
+        excludedTags:
+          excludedTags.length > 0 ? excludedTags.join(',') : undefined,
       }),
     staleTime: Infinity,
     enabled: !!username,
@@ -309,6 +315,14 @@ function StatsScreen() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
+              {/* Tag Filter Dropdown */}
+              <TagFilter
+                includedTags={includedTags}
+                excludedTags={excludedTags}
+                onIncludeChange={setIncludedTags}
+                onExcludeChange={setExcludedTags}
+              />
+
               <div className="dropdown dropdown-end">
                 <div
                   tabIndex={0}
@@ -597,12 +611,6 @@ function StatsScreen() {
             </div>
           </div>
         </div>
-
-        {username === loggedUser?.username && (
-          <div className="mb-8">
-            <ImmersionGoals username={username} />
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
@@ -1112,7 +1120,8 @@ function StatsScreen() {
             currentType === 'reading' ||
             currentType === 'manga' ||
             currentType === 'vn') &&
-            userStats?.readingSpeedData && (
+            userStats?.readingSpeedData &&
+            userStats.readingSpeedData.length > 0 && (
               <div className="card bg-base-100 shadow-lg">
                 <div className="card-body">
                   <h3 className="card-title text-xl mb-4">

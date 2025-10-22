@@ -207,8 +207,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
       }
 
       if (matches.length > 0) {
-        // Split large batches to avoid "Request entity too large" errors
-        const BATCH_SIZE = 50; // Process 50 assignments at a time
+        const BATCH_SIZE = 50;
         const batches = [];
         for (let i = 0; i < matches.length; i += BATCH_SIZE) {
           batches.push(matches.slice(i, i + BATCH_SIZE));
@@ -220,7 +219,8 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
             assignMedia(batch, {
               onSuccess: () => {
                 totalProcessed += batch.reduce(
-                  (sum, m) => sum + m.logsId.length,
+                  (toUpdateCount, toUpdate) =>
+                    toUpdateCount + toUpdate.logsId.length,
                   0
                 );
                 resolve();
@@ -232,7 +232,6 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
           });
         }
 
-        // Update assigned logs after all batches are processed
         const assignedLogIds = matches.flatMap((m) => m.logsId);
         const newlyAssignedLogs =
           logs?.filter((log) => assignedLogIds.includes(log._id)) || [];
