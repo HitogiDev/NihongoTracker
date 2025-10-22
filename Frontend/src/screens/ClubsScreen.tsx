@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,12 +20,23 @@ function ClubsScreen() {
   const { user } = useUserDataStore();
 
   // Search and filter states
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Input value
+  const [search, setSearch] = useState(''); // Debounced value for query
   const [sortBy, setSortBy] = useState('memberCount');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showPublicOnly, setShowPublicOnly] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Query clubs
   const {
@@ -52,6 +63,7 @@ function ClubsScreen() {
         isPublic: showPublicOnly ? true : undefined,
         tags: selectedTags.join(','),
       }),
+    placeholderData: (previousData) => previousData,
   });
 
   // Available tags for filtering
@@ -127,10 +139,9 @@ function ClubsScreen() {
               type="text"
               placeholder="Search clubs..."
               className="input input-bordered w-full pl-12 pr-4"
-              value={search}
+              value={searchInput}
               onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
+                setSearchInput(e.target.value);
               }}
             />
           </div>

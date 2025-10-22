@@ -39,7 +39,10 @@ export async function getClubs(
     const searchQuery: any = { isActive: true };
 
     if (search) {
-      searchQuery.$text = { $search: search as string };
+      searchQuery.$or = [
+        { name: { $regex: search as string, $options: 'i' } },
+        { description: { $regex: search as string, $options: 'i' } },
+      ];
     }
 
     if (isPublic !== undefined) {
