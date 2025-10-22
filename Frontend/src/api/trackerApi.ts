@@ -656,6 +656,11 @@ export async function updateBadgeColorsFn(
   return data;
 }
 
+export async function getPatronStatsFn() {
+  const { data } = await api.get('admin/stats/patrons');
+  return data;
+}
+
 // Tags API
 export async function getUserTagsFn(): Promise<ITag[]> {
   const { data } = await api.get('tags');
@@ -680,5 +685,76 @@ export async function updateTagFn(
 
 export async function deleteTagFn(id: string): Promise<{ message: string }> {
   const { data } = await api.delete(`tags/${id}`);
+  return data;
+}
+
+// Changelog API
+export interface IChangelogChange {
+  type: 'feature' | 'improvement' | 'bugfix' | 'breaking';
+  description: string;
+}
+
+export interface IChangelog {
+  _id: string;
+  version: string;
+  title: string;
+  description?: string;
+  changes: IChangelogChange[];
+  date: Date;
+  createdBy: {
+    _id: string;
+    username: string;
+  };
+  published: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export async function getChangelogsFn(): Promise<IChangelog[]> {
+  const { data } = await api.get('changelogs');
+  return data.data;
+}
+
+export async function getAdminChangelogsFn(): Promise<IChangelog[]> {
+  const { data } = await api.get('changelogs/admin/all');
+  return data.data;
+}
+
+export async function getChangelogByIdFn(id: string): Promise<IChangelog> {
+  const { data } = await api.get(`changelogs/${id}`);
+  return data.data;
+}
+
+export async function createChangelogFn(payload: {
+  version: string;
+  title: string;
+  description?: string;
+  changes: IChangelogChange[];
+  date?: Date;
+  published?: boolean;
+}): Promise<IChangelog> {
+  const { data } = await api.post('changelogs', payload);
+  return data.data;
+}
+
+export async function updateChangelogFn(
+  id: string,
+  payload: Partial<{
+    version: string;
+    title: string;
+    description: string;
+    changes: IChangelogChange[];
+    date: Date;
+    published: boolean;
+  }>
+): Promise<IChangelog> {
+  const { data } = await api.patch(`changelogs/${id}`, payload);
+  return data.data;
+}
+
+export async function deleteChangelogFn(
+  id: string
+): Promise<{ message: string }> {
+  const { data } = await api.delete(`changelogs/${id}`);
   return data;
 }

@@ -29,9 +29,9 @@ export interface IUserSettings {
 export interface IPatreonData {
   patreonId?: string;
   patreonEmail?: string;
-  patreonAccessToken?: string; // OAuth2: Access token
-  patreonRefreshToken?: string; // OAuth2: Refresh token
-  patreonTokenExpiry?: Date; // OAuth2: Token expiration date
+  patreonAccessToken?: string;
+  patreonRefreshToken?: string;
+  patreonTokenExpiry?: Date;
   tier?: 'donator' | 'enthusiast' | 'consumer' | null;
   customBadgeText?: string;
   badgeColor?: string;
@@ -352,10 +352,10 @@ export interface ILongTermGoal extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
   type: 'time' | 'chars' | 'episodes' | 'pages';
-  totalTarget: number; // Total amount to achieve by target date
-  targetDate: Date; // Deadline for achieving the goal
-  displayTimeframe: 'daily' | 'weekly' | 'monthly'; // How to display progress
-  startDate: Date; // When the goal period started
+  totalTarget: number;
+  targetDate: Date;
+  displayTimeframe: 'daily' | 'weekly' | 'monthly';
+  startDate: Date;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -363,15 +363,15 @@ export interface ILongTermGoal extends Document {
 
 export interface ILongTermGoalProgress {
   goalId: Types.ObjectId;
-  totalProgress: number; // Current total progress
-  requiredPerTimeframe: number; // Required progress per display timeframe to meet goal
+  totalProgress: number;
+  requiredPerTimeframe: number;
   remainingDays: number;
   remainingTarget: number;
-  isOnTrack: boolean; // Whether current pace will meet the goal
-  timeframeName: string; // "today", "this week", "this month"
-  progressToday?: number; // Progress made today (for context)
-  progressThisWeek?: number; // Progress made this week
-  progressThisMonth?: number; // Progress made this month
+  isOnTrack: boolean;
+  timeframeName: string;
+  progressToday?: number;
+  progressThisWeek?: number;
+  progressThisMonth?: number;
 }
 
 export interface IClubMember {
@@ -452,7 +452,6 @@ export interface IClubMedia {
     user: Types.ObjectId;
     vote: number;
   }>;
-  // Reference to the actual media document for images and metadata
   mediaDocument?: IMediaDocument;
   createdAt?: Date;
   updatedAt?: Date;
@@ -528,4 +527,22 @@ export interface IClubListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface IChangelogChange {
+  type: 'feature' | 'improvement' | 'bugfix' | 'breaking';
+  description: string;
+}
+
+export interface IChangelog extends Document {
+  _id: Types.ObjectId;
+  version: string;
+  title: string;
+  description: string;
+  changes: IChangelogChange[];
+  date: Date;
+  createdBy: Types.ObjectId;
+  published: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

@@ -8,6 +8,7 @@ import {
   getAdminUsers,
   searchAdminLogs,
   resetUserPassword,
+  getPatronStats,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -23,6 +24,12 @@ const router = Router();
 
 // Admin dashboard routes
 router.get('/stats', protect, checkPermission(userRoles.admin), getAdminStats);
+router.get(
+  '/stats/patrons',
+  protect,
+  checkPermission(userRoles.admin),
+  getPatronStats
+);
 
 router.get('/users', protect, checkPermission(userRoles.admin), getAdminUsers);
 

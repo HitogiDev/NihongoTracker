@@ -403,6 +403,7 @@ function Header() {
                           to="/admin"
                           className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                         >
+                          <MdAdminPanelSettings />
                           Admin
                         </Link>
                       </li>

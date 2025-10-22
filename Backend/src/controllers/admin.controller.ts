@@ -353,3 +353,44 @@ export async function searchAdminLogs(
     return next(error as customError);
   }
 }
+
+// Get paid users statistics
+export async function getPatronStats(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Count users by tier
+    const [donatorCount, enthusiastCount, consumerCount] = await Promise.all([
+      User.countDocuments({ 'patreon.tier': 'donator' }),
+      User.countDocuments({ 'patreon.tier': 'enthusiast' }),
+      User.countDocuments({ 'patreon.tier': 'consumer' }),
+    ]);
+
+    const totalPaidUsers = donatorCount + enthusiastCount + consumerCount;
+
+    // Get all paid users
+    const paidUsers = await User.find({
+      'patreon.tier': { $in: ['donator', 'enthusiast', 'consumer'] },
+    })
+      .select('username patreon.tier stats.userXp createdAt')
+      .sort({ 'stats.userXp': -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total: totalPaidUsers,
+        byTier: {
+          donator: donatorCount,
+          enthusiast: enthusiastCount,
+          consumer: consumerCount,
+        },
+        users: paidUsers,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

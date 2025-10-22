@@ -1195,13 +1195,11 @@ export async function toggleReviewLike(
     const isLiked = review.likes.some((id) => id.toString() === userIdString);
 
     if (isLiked) {
-      // Unlike - remove user from likes array
       review.likes = review.likes.filter(
         (id) => id.toString() !== userIdString
       );
     } else {
-      // Like - add user to likes array
-      review.likes.push(userId); // Push the ObjectId, not the string
+      review.likes.push(userId);
     }
 
     await review.save();
@@ -1529,12 +1527,10 @@ export async function editMediaVoting(
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
         if (consumptionEnd < oneYearAgo) {
-          return res
-            .status(400)
-            .json({
-              message:
-                'Consumption end date cannot be more than 1 year in the past',
-            });
+          return res.status(400).json({
+            message:
+              'Consumption end date cannot be more than 1 year in the past',
+          });
         }
       }
     }
@@ -2951,11 +2947,10 @@ export async function getClubMemberRankings(
         };
       })
       .filter((member) => {
-        // For time-based periods, only include members with activity
         if (period !== 'all-time') {
           return member.totalLogs > 0;
         }
-        return true; // Include all members for all-time
+        return true;
       });
 
     // Sort based on selected criteria
