@@ -87,6 +87,7 @@ export interface IMediaDocument {
   runtime?: number;
   synonyms?: string[];
   isAdult: boolean;
+  lastLogDate?: Date;
 }
 
 export interface IImportLogs {

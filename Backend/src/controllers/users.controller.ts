@@ -811,6 +811,7 @@ export async function getImmersionList(
       {
         $group: {
           _id: { mediaId: '$mediaId', type: '$type' },
+          lastLogDate: { $max: '$date' },
         },
       },
       {
@@ -833,6 +834,11 @@ export async function getImmersionList(
         },
       },
       { $unwind: '$mediaDetails' },
+      {
+        $addFields: {
+          'mediaDetails.lastLogDate': '$lastLogDate',
+        },
+      },
       {
         $replaceRoot: { newRoot: '$mediaDetails' },
       },

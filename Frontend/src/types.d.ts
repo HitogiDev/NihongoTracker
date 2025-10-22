@@ -443,6 +443,7 @@ export interface IMediaDocument {
   volumes?: number;
   synonyms?: string[] | null;
   isAdult: boolean;
+  lastLogDate?: string;
 }
 
 export interface IAverageColor {

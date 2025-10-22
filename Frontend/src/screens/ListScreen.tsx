@@ -59,7 +59,7 @@ function ListScreen() {
     queryKey: ['ImmersionList', username],
     queryFn: () => getImmersionListFn(username!),
     enabled: !!username,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const { data: untrackedLogs } = useQuery({
@@ -141,10 +141,12 @@ function ListScreen() {
           );
         case 'type':
           return a.type.localeCompare(b.type);
-        case 'recent':
-          return (a.title.contentTitleNative || '').localeCompare(
-            b.title.contentTitleNative || ''
-          );
+        case 'recent': {
+          // Sort by lastLogDate, most recent first
+          const dateA = a.lastLogDate ? new Date(a.lastLogDate).getTime() : 0;
+          const dateB = b.lastLogDate ? new Date(b.lastLogDate).getTime() : 0;
+          return dateB - dateA;
+        }
         default:
           return 0;
       }
@@ -179,12 +181,25 @@ function ListScreen() {
       groups[item.type].push(item);
     });
 
+    // Sort each group according to the selected sortBy option
     Object.keys(groups).forEach((type) => {
-      groups[type].sort((a, b) =>
-        (a.title.contentTitleNative || '').localeCompare(
-          b.title.contentTitleNative || ''
-        )
-      );
+      groups[type].sort((a, b) => {
+        switch (sortBy) {
+          case 'title':
+            return (a.title.contentTitleNative || '').localeCompare(
+              b.title.contentTitleNative || ''
+            );
+          case 'type':
+            return a.type.localeCompare(b.type);
+          case 'recent': {
+            const dateA = a.lastLogDate ? new Date(a.lastLogDate).getTime() : 0;
+            const dateB = b.lastLogDate ? new Date(b.lastLogDate).getTime() : 0;
+            return dateB - dateA;
+          }
+          default:
+            return 0;
+        }
+      });
     });
 
     const orderedGroups: Record<
@@ -198,7 +213,7 @@ function ListScreen() {
     });
 
     return orderedGroups;
-  }, [filteredAndSortedMedia, selectedFilter, searchQuery]);
+  }, [filteredAndSortedMedia, selectedFilter, searchQuery, sortBy]);
 
   const stats = useMemo(() => {
     const totalCount = allMedia.length;
@@ -418,7 +433,7 @@ function ListScreen() {
                         {[
                           { value: 'title', label: 'By Title (A-Z)' },
                           { value: 'type', label: 'By Type' },
-                          { value: 'recent', label: 'Recently Added' },
+                          { value: 'recent', label: 'Recently Logged' },
                         ].map((option) => (
                           <li key={option.value}>
                             <button
