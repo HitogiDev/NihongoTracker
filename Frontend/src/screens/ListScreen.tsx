@@ -311,7 +311,8 @@ function ListScreen() {
       <div className="min-h-screen bg-base-200">
         {untrackedLogs &&
           untrackedLogs.length > 0 &&
-          !user?.settings?.hideUnmatchedLogsAlert && (
+          !user?.settings?.hideUnmatchedLogsAlert &&
+          user?.username === username && (
             <div className="container mx-auto px-4 pt-4">
               <div
                 role="alert"
