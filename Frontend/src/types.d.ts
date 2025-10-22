@@ -497,6 +497,8 @@ interface IUserStats {
     totalTimeMinutes: number;
     totalTimeHours: number;
     totalChars: number;
+    totalPages: number;
+    totalEpisodes: number;
     untrackedCount: number;
     dates: Array<{
       date: Date;

@@ -1253,6 +1253,8 @@ interface IStatByType {
   count: number;
   totalXp: number;
   totalChars: number;
+  totalPages: number;
+  totalEpisodes: number;
   totalTimeMinutes: number;
   totalTimeHours: number;
   untrackedCount: number;
@@ -1521,6 +1523,8 @@ export async function getUserStats(
           count: { $sum: 1 },
           totalXp: { $sum: '$xp' },
           totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+          totalPages: { $sum: { $ifNull: ['$pages', 0] } },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
           totalTime: {
             $sum: {
               $cond: [
@@ -1586,6 +1590,8 @@ export async function getUserStats(
           count: 1,
           totalXp: 1,
           totalChars: 1,
+          totalPages: 1,
+          totalEpisodes: 1,
           totalTimeMinutes: '$totalTime',
           totalTimeHours: { $divide: ['$totalTime', 60] },
           untrackedCount: 1,
@@ -1640,6 +1646,8 @@ export async function getUserStats(
           count: 0,
           totalXp: 0,
           totalChars: 0,
+          totalPages: 0,
+          totalEpisodes: 0,
           totalTimeMinutes: 0,
           totalTimeHours: 0,
           untrackedCount: 0,
