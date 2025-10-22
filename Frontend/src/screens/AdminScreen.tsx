@@ -14,6 +14,11 @@ import {
   searchAdminLogsFn,
   adminUpdateLogFn,
   adminDeleteLogFn,
+  getPatronStatsFn,
+  getAdminChangelogsFn,
+  createChangelogFn,
+  updateChangelogFn,
+  deleteChangelogFn,
 } from '../api/trackerApi';
 import { FiUsers } from 'react-icons/fi';
 import type { updateLogRequest } from '../types';
@@ -41,6 +46,25 @@ type AdminLogRow = {
   date: string;
 };
 
+type PatronStatsResponse = {
+  success: boolean;
+  data: {
+    total: number;
+    byTier: {
+      donator: number;
+      enthusiast: number;
+      consumer: number;
+    };
+    users: Array<{
+      _id: string;
+      username: string;
+      patreon: { tier: string };
+      stats: { userXp: number };
+      createdAt: Date;
+    }>;
+  };
+};
+
 function AdminScreen() {
   const { user } = useUserDataStore();
   const isAdmin = Array.isArray(user?.roles)
@@ -50,7 +74,7 @@ function AdminScreen() {
 
   // Tabs and filters
   const [selectedTab, setSelectedTab] = useState<
-    'overview' | 'users' | 'logs' | 'system'
+    'overview' | 'users' | 'logs' | 'changelogs' | 'system'
   >('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [userPage, setUserPage] = useState(1);
@@ -77,6 +101,21 @@ function AdminScreen() {
   const [logEnd, setLogEnd] = useState('');
   const [editLogOpen, setEditLogOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AdminLogRow | null>(null);
+
+  // Changelog tab state
+  const [changelogModalOpen, setChangelogModalOpen] = useState(false);
+  const [selectedChangelog, setSelectedChangelog] = useState<{
+    _id?: string;
+    version: string;
+    title: string;
+    description: string;
+    changes: Array<{
+      type: 'feature' | 'improvement' | 'bugfix' | 'breaking';
+      description: string;
+    }>;
+    date: string;
+    published: boolean;
+  } | null>(null);
 
   // Queries
   const { data: adminStats, isLoading: statsLoading } = useQuery({
@@ -115,6 +154,20 @@ function AdminScreen() {
       }),
     enabled: isAdmin && selectedTab === 'logs',
     staleTime: 10_000,
+  });
+
+  const { data: patronStats } = useQuery({
+    queryKey: ['patronStats'],
+    queryFn: getPatronStatsFn,
+    enabled: isAdmin,
+    staleTime: 30_000,
+  }) as { data: PatronStatsResponse | undefined };
+
+  const { data: changelogs, isLoading: changelogsLoading } = useQuery({
+    queryKey: ['adminChangelogs'],
+    queryFn: getAdminChangelogsFn,
+    enabled: isAdmin && selectedTab === 'changelogs',
+    staleTime: 30_000,
   });
 
   // Mutations
@@ -194,6 +247,44 @@ function AdminScreen() {
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
     },
     onError: () => toast.error('Failed to delete log'),
+  });
+
+  const createChangelogMutation = useMutation({
+    mutationFn: createChangelogFn,
+    onSuccess: () => {
+      toast.success('Changelog created');
+      setChangelogModalOpen(false);
+      setSelectedChangelog(null);
+      queryClient.invalidateQueries({ queryKey: ['adminChangelogs'] });
+    },
+    onError: () => toast.error('Failed to create changelog'),
+  });
+
+  const updateChangelogMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Parameters<typeof updateChangelogFn>[1];
+    }) => updateChangelogFn(id, payload),
+    onSuccess: () => {
+      toast.success('Changelog updated');
+      setChangelogModalOpen(false);
+      setSelectedChangelog(null);
+      queryClient.invalidateQueries({ queryKey: ['adminChangelogs'] });
+      queryClient.invalidateQueries({ queryKey: ['changelogs'] });
+    },
+    onError: () => toast.error('Failed to update changelog'),
+  });
+
+  const deleteChangelogMutation = useMutation({
+    mutationFn: (id: string) => deleteChangelogFn(id),
+    onSuccess: () => {
+      toast.success('Changelog deleted');
+      queryClient.invalidateQueries({ queryKey: ['adminChangelogs'] });
+    },
+    onError: () => toast.error('Failed to delete changelog'),
   });
 
   const formatUptime = (days: number) => {
@@ -288,6 +379,25 @@ function AdminScreen() {
               />
             </svg>
             Logs
+          </button>
+          <button
+            className={`tab tab-lg ${selectedTab === 'changelogs' ? 'tab-active' : ''}`}
+            onClick={() => setSelectedTab('changelogs')}
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+              />
+            </svg>
+            Changelogs
           </button>
           <button
             className={`tab tab-lg ${selectedTab === 'system' ? 'tab-active' : ''}`}
@@ -438,6 +548,35 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
+              <div className="card bg-base-100 shadow-lg">
+                <div className="card-body">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-primary"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-base-content/70">
+                        Paid Users
+                      </h3>
+                      <p className="text-2xl font-bold">
+                        {numberWithCommas(patronStats?.data?.total || 0)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -477,6 +616,52 @@ function AdminScreen() {
                         </div>
                       )
                     )}
+                  </div>
+                </div>
+              </div>
+              <div className="card bg-base-100 shadow-lg">
+                <div className="card-body">
+                  <h3 className="card-title mb-4">Paid Users Breakdown</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold">
+                          C
+                        </div>
+                        <span className="font-medium">Consumer</span>
+                      </div>
+                      <span className="text-lg font-bold">
+                        {numberWithCommas(
+                          patronStats?.data?.byTier?.consumer || 0
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 text-white font-bold">
+                          E
+                        </div>
+                        <span className="font-medium">Enthusiast</span>
+                      </div>
+                      <span className="text-lg font-bold">
+                        {numberWithCommas(
+                          patronStats?.data?.byTier?.enthusiast || 0
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500 text-white font-bold">
+                          D
+                        </div>
+                        <span className="font-medium">Donator</span>
+                      </div>
+                      <span className="text-lg font-bold">
+                        {numberWithCommas(
+                          patronStats?.data?.byTier?.donator || 0
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -976,51 +1161,53 @@ function AdminScreen() {
                           </td>
                         </tr>
                       ) : (
-                        adminLogs?.logs?.map((log: AdminLogRow) => (
-                          <tr key={log._id}>
-                            <td>{new Date(log.date).toLocaleDateString()}</td>
-                            <td>{log.username ?? log.user}</td>
-                            <td>
-                              <div className="badge badge-ghost">
-                                {log.type}
-                              </div>
-                            </td>
-                            <td
-                              className="max-w-[24rem] truncate"
-                              title={log.description}
-                            >
-                              {log.description}
-                            </td>
-                            <td>{log.time ?? 0}</td>
-                            <td>{log.episodes ?? 0}</td>
-                            <td>{log.pages ?? 0}</td>
-                            <td>{log.chars ?? 0}</td>
-                            <td>{log.xp ?? 0}</td>
-                            <td>
-                              <div className="flex gap-2">
-                                <button
-                                  className="btn btn-ghost btn-xs"
-                                  onClick={() => {
-                                    setSelectedLog(log);
-                                    setEditLogOpen(true);
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-error btn-xs"
-                                  onClick={() => {
-                                    if (confirm('Delete this log?'))
-                                      deleteLogMutation.mutate(log._id);
-                                  }}
-                                  disabled={deleteLogMutation.isPending}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                        <>
+                          {adminLogs?.logs?.map((log: AdminLogRow) => (
+                            <tr key={log._id}>
+                              <td>{new Date(log.date).toLocaleDateString()}</td>
+                              <td>{log.username ?? log.user}</td>
+                              <td>
+                                <div className="badge badge-ghost">
+                                  {log.type}
+                                </div>
+                              </td>
+                              <td
+                                className="max-w-[24rem] truncate"
+                                title={log.description}
+                              >
+                                {log.description}
+                              </td>
+                              <td>{log.time ?? 0}</td>
+                              <td>{log.episodes ?? 0}</td>
+                              <td>{log.pages ?? 0}</td>
+                              <td>{log.chars ?? 0}</td>
+                              <td>{log.xp ?? 0}</td>
+                              <td>
+                                <div className="flex gap-2">
+                                  <button
+                                    className="btn btn-ghost btn-xs"
+                                    onClick={() => {
+                                      setSelectedLog(log);
+                                      setEditLogOpen(true);
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    className="btn btn-error btn-xs"
+                                    onClick={() => {
+                                      if (confirm('Delete this log?'))
+                                        deleteLogMutation.mutate(log._id);
+                                    }}
+                                    disabled={deleteLogMutation.isPending}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </>
                       )}
                     </tbody>
                   </table>
@@ -1204,6 +1391,437 @@ function AdminScreen() {
                 </div>
                 <form method="dialog" className="modal-backdrop">
                   <button onClick={() => setEditLogOpen(false)}>close</button>
+                </form>
+              </dialog>
+            )}
+          </div>
+        )}
+
+        {/* Changelogs Tab */}
+        {selectedTab === 'changelogs' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Changelog Management</h2>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setSelectedChangelog({
+                    version: '',
+                    title: '',
+                    description: '',
+                    changes: [{ type: 'feature', description: '' }],
+                    date: new Date().toISOString().split('T')[0],
+                    published: false,
+                  });
+                  setChangelogModalOpen(true);
+                }}
+              >
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                New Changelog
+              </button>
+            </div>
+
+            <div className="card bg-base-100 shadow-lg">
+              <div className="card-body">
+                {changelogsLoading ? (
+                  <div className="text-center py-8">
+                    <span className="loading loading-spinner loading-md"></span>
+                  </div>
+                ) : changelogs && changelogs.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Version</th>
+                          <th>Title</th>
+                          <th>Date</th>
+                          <th>Changes</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {changelogs.map(
+                          (changelog: {
+                            _id: string;
+                            version: string;
+                            title: string;
+                            description?: string;
+                            changes: Array<{
+                              type:
+                                | 'feature'
+                                | 'improvement'
+                                | 'bugfix'
+                                | 'breaking';
+                              description: string;
+                            }>;
+                            date: Date;
+                            published: boolean;
+                          }) => (
+                            <tr key={changelog._id}>
+                              <td>
+                                <span className="badge badge-neutral">
+                                  {changelog.version}
+                                </span>
+                              </td>
+                              <td className="max-w-xs truncate">
+                                {changelog.title}
+                              </td>
+                              <td>
+                                {new Date(changelog.date).toLocaleDateString()}
+                              </td>
+                              <td>
+                                <span className="text-sm text-base-content/70">
+                                  {changelog.changes.length} change
+                                  {changelog.changes.length !== 1 ? 's' : ''}
+                                </span>
+                              </td>
+                              <td>
+                                {changelog.published ? (
+                                  <span className="badge badge-success">
+                                    Published
+                                  </span>
+                                ) : (
+                                  <span className="badge badge-ghost">
+                                    Draft
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="flex gap-2">
+                                  <button
+                                    className="btn btn-ghost btn-xs"
+                                    onClick={() => {
+                                      setSelectedChangelog({
+                                        _id: changelog._id,
+                                        version: changelog.version,
+                                        title: changelog.title,
+                                        description:
+                                          changelog.description || '',
+                                        changes: changelog.changes,
+                                        date: new Date(changelog.date)
+                                          .toISOString()
+                                          .split('T')[0],
+                                        published: changelog.published,
+                                      });
+                                      setChangelogModalOpen(true);
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    className="btn btn-ghost btn-xs"
+                                    onClick={() => {
+                                      if (changelog._id) {
+                                        updateChangelogMutation.mutate({
+                                          id: changelog._id,
+                                          payload: {
+                                            published: !changelog.published,
+                                          },
+                                        });
+                                      }
+                                    }}
+                                    disabled={updateChangelogMutation.isPending}
+                                  >
+                                    {changelog.published
+                                      ? 'Unpublish'
+                                      : 'Publish'}
+                                  </button>
+                                  <button
+                                    className="btn btn-error btn-xs"
+                                    onClick={() => {
+                                      if (
+                                        confirm(
+                                          `Delete changelog ${changelog.version}?`
+                                        )
+                                      ) {
+                                        deleteChangelogMutation.mutate(
+                                          changelog._id
+                                        );
+                                      }
+                                    }}
+                                    disabled={deleteChangelogMutation.isPending}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-base-content/70">
+                    <p>No changelogs yet. Create your first one!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Changelog Modal */}
+            {changelogModalOpen && selectedChangelog && (
+              <dialog className="modal" open>
+                <div className="modal-box max-w-3xl">
+                  <h3 className="font-bold text-lg mb-4">
+                    {selectedChangelog._id ? 'Edit Changelog' : 'New Changelog'}
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text">Version *</span>
+                        </div>
+                        <input
+                          type="text"
+                          className="input input-bordered"
+                          placeholder="v1.0.0"
+                          value={selectedChangelog.version}
+                          onChange={(e) =>
+                            setSelectedChangelog({
+                              ...selectedChangelog,
+                              version: e.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text">Date *</span>
+                        </div>
+                        <input
+                          type="date"
+                          className="input input-bordered"
+                          value={selectedChangelog.date}
+                          onChange={(e) =>
+                            setSelectedChangelog({
+                              ...selectedChangelog,
+                              date: e.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <label className="form-control w-full">
+                      <div className="label">
+                        <span className="label-text">Title *</span>
+                      </div>
+                      <input
+                        type="text"
+                        className="input input-bordered w-full"
+                        placeholder="New Features and Improvements"
+                        value={selectedChangelog.title}
+                        onChange={(e) =>
+                          setSelectedChangelog({
+                            ...selectedChangelog,
+                            title: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="form-control w-full">
+                      <div className="label">
+                        <span className="label-text">
+                          Description (optional)
+                        </span>
+                      </div>
+                      <textarea
+                        className="textarea textarea-bordered h-20 w-full"
+                        placeholder="Brief summary of this release..."
+                        value={selectedChangelog.description}
+                        onChange={(e) =>
+                          setSelectedChangelog({
+                            ...selectedChangelog,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="label-text font-medium">
+                          Changes *
+                        </span>
+                        <button
+                          className="btn btn-sm btn-ghost"
+                          onClick={() =>
+                            setSelectedChangelog({
+                              ...selectedChangelog,
+                              changes: [
+                                ...selectedChangelog.changes,
+                                { type: 'feature', description: '' },
+                              ],
+                            })
+                          }
+                        >
+                          + Add Change
+                        </button>
+                      </div>
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {selectedChangelog.changes.map((change, index) => (
+                          <div key={index} className="flex gap-2 items-start">
+                            <select
+                              className="select select-bordered select-sm"
+                              value={change.type}
+                              onChange={(e) => {
+                                const newChanges = [
+                                  ...selectedChangelog.changes,
+                                ];
+                                newChanges[index].type = e.target.value as
+                                  | 'feature'
+                                  | 'improvement'
+                                  | 'bugfix'
+                                  | 'breaking';
+                                setSelectedChangelog({
+                                  ...selectedChangelog,
+                                  changes: newChanges,
+                                });
+                              }}
+                            >
+                              <option value="feature">Feature</option>
+                              <option value="improvement">Improvement</option>
+                              <option value="bugfix">Bug Fix</option>
+                              <option value="breaking">Breaking</option>
+                            </select>
+                            <input
+                              type="text"
+                              className="input input-bordered input-sm flex-1"
+                              placeholder="Description of change..."
+                              value={change.description}
+                              onChange={(e) => {
+                                const newChanges = [
+                                  ...selectedChangelog.changes,
+                                ];
+                                newChanges[index].description = e.target.value;
+                                setSelectedChangelog({
+                                  ...selectedChangelog,
+                                  changes: newChanges,
+                                });
+                              }}
+                            />
+                            {selectedChangelog.changes.length > 1 && (
+                              <button
+                                className="btn btn-ghost btn-sm btn-square"
+                                onClick={() => {
+                                  const newChanges =
+                                    selectedChangelog.changes.filter(
+                                      (_, i) => i !== index
+                                    );
+                                  setSelectedChangelog({
+                                    ...selectedChangelog,
+                                    changes: newChanges,
+                                  });
+                                }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <label className="label cursor-pointer justify-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={selectedChangelog.published}
+                        onChange={(e) =>
+                          setSelectedChangelog({
+                            ...selectedChangelog,
+                            published: e.target.checked,
+                          })
+                        }
+                      />
+                      <span className="label-text">Publish immediately</span>
+                    </label>
+                  </div>
+
+                  <div className="modal-action">
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setChangelogModalOpen(false);
+                        setSelectedChangelog(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => {
+                        if (
+                          !selectedChangelog.version ||
+                          !selectedChangelog.title
+                        ) {
+                          toast.error('Version and title are required');
+                          return;
+                        }
+                        if (
+                          selectedChangelog.changes.some((c) => !c.description)
+                        ) {
+                          toast.error('All changes must have descriptions');
+                          return;
+                        }
+                        if (selectedChangelog._id) {
+                          updateChangelogMutation.mutate({
+                            id: selectedChangelog._id,
+                            payload: {
+                              version: selectedChangelog.version,
+                              title: selectedChangelog.title,
+                              description:
+                                selectedChangelog.description || undefined,
+                              changes: selectedChangelog.changes,
+                              date: new Date(selectedChangelog.date),
+                              published: selectedChangelog.published,
+                            },
+                          });
+                        } else {
+                          createChangelogMutation.mutate({
+                            version: selectedChangelog.version,
+                            title: selectedChangelog.title,
+                            description:
+                              selectedChangelog.description || undefined,
+                            changes: selectedChangelog.changes,
+                            date: new Date(selectedChangelog.date),
+                            published: selectedChangelog.published,
+                          });
+                        }
+                      }}
+                      disabled={
+                        createChangelogMutation.isPending ||
+                        updateChangelogMutation.isPending
+                      }
+                    >
+                      {selectedChangelog._id ? 'Update' : 'Create'}
+                    </button>
+                  </div>
+                </div>
+                <form method="dialog" className="modal-backdrop">
+                  <button
+                    onClick={() => {
+                      setChangelogModalOpen(false);
+                      setSelectedChangelog(null);
+                    }}
+                  >
+                    close
+                  </button>
                 </form>
               </dialog>
             )}

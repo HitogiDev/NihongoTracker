@@ -19,6 +19,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import ogImageRoutes from './routes/ogImage.routes.js';
 import patreonRoutes from './routes/patreon.routes.js';
 import tagRoutes from './routes/tag.routes.js';
+import changelogRoutes from './routes/changelog.routes.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/clubs', clubRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/patreon', patreonRoutes);
 app.use('/api/tags', tagRoutes);
+app.use('/api/changelogs', changelogRoutes);
 app.use('/og-image', ogImageRoutes);
 
 app.use(

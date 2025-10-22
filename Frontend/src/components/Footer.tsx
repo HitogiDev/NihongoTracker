@@ -25,6 +25,12 @@ function Footer() {
           Terms of Service
         </Link>
         <Link
+          to="/changelog"
+          className="text-sm hover:text-primary transition-colors"
+        >
+          Changelog
+        </Link>
+        <Link
           to="/support"
           className="flex items-center gap-2 text-base-content hover:text-primary transition-colors duration-200"
         >

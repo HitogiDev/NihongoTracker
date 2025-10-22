@@ -276,9 +276,13 @@ function SettingsScreen() {
       toast.success(data.message);
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['logs', 'user', 'ImmersionList', 'userStats'].includes(
-            query.queryKey[0] as string
-          );
+          return [
+            'logs',
+            'user',
+            'ranking',
+            'ImmersionList',
+            'userStats',
+          ].includes(query.queryKey[0] as string);
         },
       });
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
@@ -298,9 +302,13 @@ function SettingsScreen() {
       toast.success(data.message);
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['logs', 'user', 'ImmersionList', 'userStats'].includes(
-            query.queryKey[0] as string
-          );
+          return [
+            'logs',
+            'user',
+            'ranking',
+            'ImmersionList',
+            'userStats',
+          ].includes(query.queryKey[0] as string);
         },
       });
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
@@ -314,23 +322,6 @@ function SettingsScreen() {
     },
   });
 
-  // Patreon mutations
-  // linkPatreon mutation removed - now using OAuth2
-  // const { mutate: linkPatreon } = useMutation({
-  //   mutationFn: linkPatreonAccountFn,
-  //   onSuccess: (data) => {
-  //     toast.success(data.message);
-  //     fetchPatreonStatus();
-  //   },
-  //   onError: (error) => {
-  //     if (error instanceof AxiosError) {
-  //       toast.error(error.response?.data.message);
-  //     } else {
-  //       toast.error('Failed to link Patreon account');
-  //     }
-  //   },
-  // });
-
   const { mutate: unlinkPatreon, isPending: isUnlinkingPatreon } = useMutation({
     mutationFn: unlinkPatreonAccountFn,
     onSuccess: (data) => {
@@ -340,6 +331,10 @@ function SettingsScreen() {
       setBadgeColor('#ff69b4');
       setBadgeTextColor('#ffffff');
       setPatreonStatus({ isActive: false });
+      // Invalidate user query to update profile display
+      void queryClient.invalidateQueries({
+        queryKey: ['user'],
+      });
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -356,6 +351,10 @@ function SettingsScreen() {
       toast.success('Custom badge text updated!');
       setUser(data.user);
       fetchPatreonStatus();
+      // Invalidate user query to update profile display
+      void queryClient.invalidateQueries({
+        queryKey: ['user'],
+      });
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -844,13 +843,13 @@ function SettingsScreen() {
 
                 <form onSubmit={handleUpdateUser} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="form-control">
+                    <div className="form-control w-full">
                       <label className="label">
                         <span className="label-text font-medium">Username</span>
                       </label>
                       <input
                         type="text"
-                        className="input input-bordered focus:input-primary transition-colors"
+                        className="input input-bordered focus:input-primary transition-colors w-full"
                         placeholder={user?.username || 'Enter username'}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -862,7 +861,7 @@ function SettingsScreen() {
                       </label>
                     </div>
 
-                    <div className="form-control">
+                    <div className="form-control w-full">
                       <label className="label">
                         <span className="label-text font-medium">
                           Discord ID
@@ -870,7 +869,7 @@ function SettingsScreen() {
                       </label>
                       <input
                         type="text"
-                        className="input input-bordered focus:input-primary transition-colors"
+                        className="input input-bordered focus:input-primary transition-colors w-full"
                         placeholder="Enter Discord ID (e.g., 123456789012345678)"
                         value={discordId}
                         onChange={(e) => setDiscordId(e.target.value)}

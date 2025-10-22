@@ -49,6 +49,7 @@ import GoalsScreen from './screens/GoalsScreen.tsx';
 import SupportScreen from './screens/SupportScreen.tsx';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen.tsx';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen.tsx';
+import ChangelogScreen from './screens/ChangelogScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -73,6 +74,7 @@ const router = createBrowserRouter(
       <Route path="support" element={<SupportScreen />} />
       <Route path="privacy" element={<PrivacyPolicyScreen />} />
       <Route path="terms" element={<TermsOfServiceScreen />} />
+      <Route path="changelog" element={<ChangelogScreen />} />
       <Route path="admin" element={<AdminScreen />} />
       <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
       <Route path="user/:username" element={<ProfileHeader />}>
