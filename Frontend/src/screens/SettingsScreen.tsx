@@ -77,6 +77,9 @@ function SettingsScreen() {
     'tmw' | 'manabe' | 'vncr' | null
   >(null);
 
+  const confirmUsernameRef = useRef<HTMLInputElement>(null);
+  const [isUsernameMatch, setIsUsernameMatch] = useState(false);
+
   const avatarImgRef = useRef<HTMLImageElement>(null);
   const bannerImgRef = useRef<HTMLImageElement>(null);
   const avatarPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -300,18 +303,11 @@ function SettingsScreen() {
     mutationFn: clearUserDataFn,
     onSuccess: (data) => {
       toast.success(data.message);
-      void queryClient.invalidateQueries({
-        predicate: (query) => {
-          return [
-            'logs',
-            'user',
-            'ranking',
-            'ImmersionList',
-            'userStats',
-          ].includes(query.queryKey[0] as string);
-        },
-      });
-      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      // Update user state with cleared data
+      if (data.user) {
+        setUser(data.user);
+      }
+      void queryClient.invalidateQueries();
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -462,8 +458,18 @@ function SettingsScreen() {
   }
 
   async function handleClearData() {
+    if (!user) return;
+    const inputValue = confirmUsernameRef.current?.value || '';
+    if (inputValue !== user.username) {
+      toast.error('Username does not match. Data was not deleted.');
+      return;
+    }
     (document.getElementById('clear_data_modal') as HTMLDialogElement).close();
-    clearData();
+    if (confirmUsernameRef.current) {
+      confirmUsernameRef.current.value = '';
+    }
+    setIsUsernameMatch(false);
+    clearData(inputValue);
   }
 
   async function handleUnlinkPatreon() {
@@ -682,15 +688,28 @@ function SettingsScreen() {
           </h3>
           <div className="divider"></div>
           <p className="py-4">
-            This will permanently delete all your logs and statistics. This
-            action cannot be undone.
+            This will permanently delete all your logs, statistics, and goals.
+            This action cannot be undone.
           </p>
+
+          <label className="input input-bordered flex items-center gap-2 w-full">
+            <span className="label">Type your username to confirm:</span>
+            <input
+              ref={confirmUsernameRef}
+              type="text"
+              placeholder={user?.username || ''}
+              onChange={(e) =>
+                setIsUsernameMatch(e.target.value === user?.username)
+              }
+              className="grow"
+            />
+          </label>
 
           <div className="modal-action">
             <button
               className="btn btn-error"
               onClick={handleClearData}
-              disabled={isClearDataPending}
+              disabled={isClearDataPending || !isUsernameMatch}
             >
               {isClearDataPending ? (
                 <>
@@ -702,12 +721,31 @@ function SettingsScreen() {
               )}
             </button>
             <form method="dialog">
-              <button className="btn btn-outline">Cancel</button>
+              <button
+                className="btn btn-outline"
+                onClick={() => {
+                  if (confirmUsernameRef.current) {
+                    confirmUsernameRef.current.value = '';
+                  }
+                  setIsUsernameMatch(false);
+                }}
+              >
+                Cancel
+              </button>
             </form>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button>close</button>
+          <button
+            onClick={() => {
+              if (confirmUsernameRef.current) {
+                confirmUsernameRef.current.value = '';
+              }
+              setIsUsernameMatch(false);
+            }}
+          >
+            close
+          </button>
         </form>
       </dialog>
 
@@ -1136,28 +1174,30 @@ function SettingsScreen() {
                               </span>
                             </label>
                           </div>
-                          <div className="flex flex-col items-center gap-2">
-                            {user?.avatar && !croppedAvatarFile && (
-                              <img
-                                src={user.avatar}
-                                alt="Current avatar"
-                                className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
+                          {user?.avatar || croppedAvatarFile ? (
+                            <div className="flex flex-col items-center gap-2">
+                              {user?.avatar && !croppedAvatarFile && (
+                                <img
+                                  src={user.avatar}
+                                  alt="Current avatar"
+                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
+                                  style={{
+                                    width: 120,
+                                    height: 120,
+                                  }}
+                                />
+                              )}
+                              <canvas
+                                ref={avatarPreviewCanvasRef}
+                                className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
                                 style={{
+                                  objectFit: 'contain',
                                   width: 120,
                                   height: 120,
                                 }}
                               />
-                            )}
-                            <canvas
-                              ref={avatarPreviewCanvasRef}
-                              className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
-                              style={{
-                                objectFit: 'contain',
-                                width: 120,
-                                height: 120,
-                              }}
-                            />
-                          </div>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
@@ -1181,24 +1221,28 @@ function SettingsScreen() {
                               </span>
                             </label>
                           </div>
-                          {user?.banner && !croppedBannerFile && (
-                            <img
-                              src={user.banner}
-                              alt="Current banner"
-                              className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
-                              style={{
-                                maxHeight: 150,
-                              }}
-                            />
-                          )}
-                          <canvas
-                            ref={bannerPreviewCanvasRef}
-                            className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
-                            style={{
-                              objectFit: 'contain',
-                              maxHeight: 150,
-                            }}
-                          />
+                          {user?.banner || croppedBannerFile ? (
+                            <>
+                              {user?.banner && !croppedBannerFile && (
+                                <img
+                                  src={user.banner}
+                                  alt="Current banner"
+                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
+                                  style={{
+                                    maxHeight: 150,
+                                  }}
+                                />
+                              )}
+                              <canvas
+                                ref={bannerPreviewCanvasRef}
+                                className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
+                                style={{
+                                  objectFit: 'contain',
+                                  maxHeight: 150,
+                                }}
+                              />
+                            </>
+                          ) : null}
                         </div>
                       </div>
                     </div>

@@ -65,8 +65,8 @@ export async function updateUserFn(updateValues: FormData) {
   return data;
 }
 
-export async function clearUserDataFn() {
-  const { data } = await api.post(`users/cleardata`);
+export async function clearUserDataFn(username: string) {
+  const { data } = await api.post(`users/cleardata`, { username });
   return data;
 }
 

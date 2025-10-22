@@ -31,7 +31,6 @@ function Header() {
   const isAdmin = Array.isArray(user?.roles)
     ? (user?.roles as string[]).includes('admin')
     : user?.roles === 'admin';
-  console.log(user?.roles);
   const { mutate, isPending } = useMutation({
     mutationFn: logoutUserFn,
     onSuccess: (data: logoutResponseType) => {

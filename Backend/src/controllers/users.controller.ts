@@ -1,5 +1,6 @@
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
+import Tag from '../models/tag.model.js';
 import { Request, Response, NextFunction } from 'express';
 import { IMediaDocument, IUpdateRequest } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
@@ -81,23 +82,19 @@ export async function updateUser(
         };
 
         if (files.avatar?.[0]) {
-          console.log('User avatar update - Current avatar URL:', user.avatar);
           const file = await uploadFileWithCleanup(
             files.avatar[0],
             user.avatar
           );
           user.avatar = file.downloadURL;
-          console.log('User avatar update - New avatar URL:', user.avatar);
         }
 
         if (files.banner?.[0]) {
-          console.log('User banner update - Current banner URL:', user.banner);
           const file = await uploadFileWithCleanup(
             files.banner[0],
             user.banner
           );
           user.banner = file.downloadURL;
-          console.log('User banner update - New banner URL:', user.banner);
         }
 
         if (!files.avatar && !files.banner) {
@@ -741,14 +738,24 @@ export async function getUsers(
 }
 
 export async function clearUserData(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
+    const { username } = req.body;
+
     const user = await User.findById(res.locals.user._id);
     if (!user) {
       throw new customError('User not found', 404);
+    }
+
+    // Verify username matches for extra confirmation
+    if (username !== user.username) {
+      throw new customError(
+        'Username does not match. Please type your username to confirm.',
+        400
+      );
     }
 
     // Delete user's files from Firebase before clearing data
@@ -773,9 +780,37 @@ export async function clearUserData(
       },
     });
 
+    // Delete all logs
     await Log.deleteMany({ user: user._id });
 
-    return res.status(200).json({ message: 'User data cleared' });
+    // Delete all goals
+    const DailyGoal = (await import('../models/dailyGoal.model.js')).default;
+    const LongTermGoal = (await import('../models/longTermGoal.model.js'))
+      .default;
+    await DailyGoal.deleteMany({ user: user._id });
+    await LongTermGoal.deleteMany({ user: user._id });
+    await Tag.deleteMany({ user: user._id });
+
+    // Fetch updated user to return
+    const updatedUser = await User.findById(user._id);
+    if (!updatedUser) {
+      throw new customError('User not found', 404);
+    }
+
+    return res.status(200).json({
+      message: 'User data cleared',
+      user: {
+        _id: updatedUser._id,
+        username: updatedUser.username,
+        discordId: updatedUser.discordId,
+        stats: updatedUser.stats,
+        avatar: updatedUser.avatar,
+        banner: updatedUser.banner,
+        titles: updatedUser.titles,
+        roles: updatedUser.roles,
+        settings: updatedUser.settings,
+      },
+    });
   } catch (error) {
     return next(error as customError);
   }

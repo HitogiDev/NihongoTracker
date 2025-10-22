@@ -103,9 +103,6 @@ export default function useSearch(
             return dbResults;
           }
 
-          // If no results in database, fall back to AniList
-          console.log(`No DB results for ${type}, searching AniList...`);
-
           if (type === 'anime') {
             return searchAnilist(
               debouncedSearch,

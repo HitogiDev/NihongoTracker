@@ -3,6 +3,7 @@ import { IUser, userRoles, IUserSettings, IPatreonData } from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
+import Tag from './tag.model.js';
 
 const SettingsSchema = new Schema<IUserSettings>(
   {
@@ -135,6 +136,15 @@ UserSchema.pre(
   { document: true, query: false },
   async function (this: IUser, next) {
     await Log.deleteMany({ user: this._id });
+    next();
+  }
+);
+
+UserSchema.pre(
+  'findOneAndDelete',
+  { document: true, query: false },
+  async function (this: IUser, next) {
+    await Tag.deleteMany({ user: this._id });
     next();
   }
 );

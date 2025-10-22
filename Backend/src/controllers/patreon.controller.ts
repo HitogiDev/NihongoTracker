@@ -231,8 +231,6 @@ export async function handlePatreonWebhook(
     const event = req.body;
     const eventType = req.headers['x-patreon-event'] as string;
 
-    console.log(`Received Patreon webhook: ${eventType}`);
-
     // Handle different webhook events
     switch (eventType) {
       case 'members:pledge:create':
@@ -243,12 +241,10 @@ export async function handlePatreonWebhook(
         await handlePledgeDelete(event);
         break;
       default:
-        console.log(`Unhandled webhook event: ${eventType}`);
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error('Patreon webhook error:', error);
     return next(error);
   }
 }
@@ -262,7 +258,6 @@ async function handlePledgeCreateOrUpdate(event: any) {
       event.data?.attributes?.currently_entitled_amount_cents || 0;
 
     if (!patronId) {
-      console.error('❌ No patron ID found in webhook data');
       return;
     }
 
@@ -284,25 +279,20 @@ async function handlePledgeCreateOrUpdate(event: any) {
       'patreon.patreonId': patronId,
     });
 
-    if (user) {
-      user.patreon = {
-        ...user.patreon,
-        patreonId: patronId,
-        patreonEmail: patronEmail?.toLowerCase(),
-        tier: tier,
-        isActive: true,
-        lastChecked: new Date(),
-      };
-
-      await user.save();
-      console.log(
-        `✅ Updated benefits for user: ${user.username} (Patreon ID: ${patronId}) - Tier: ${tier}`
-      );
-    } else {
-      console.log(
-        `⚠️ No user found with Patreon ID: ${patronId}. User needs to link account via OAuth first.`
-      );
+    if (!user) {
+      throw new customError('User not found', 404);
     }
+
+    user.patreon = {
+      ...user.patreon,
+      patreonId: patronId,
+      patreonEmail: patronEmail?.toLowerCase(),
+      tier: tier,
+      isActive: true,
+      lastChecked: new Date(),
+    };
+
+    return await user.save();
   } catch (error) {
     console.error('Error handling pledge create/update:', error);
   }
