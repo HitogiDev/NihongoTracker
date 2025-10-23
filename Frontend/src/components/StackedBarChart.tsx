@@ -257,9 +257,9 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
             const label = context.dataset.label || '';
 
             if (metric === 'xp') {
-              return `${label}: ${value.toLocaleString()} XP`;
+              return `${label}: ${value?.toLocaleString() ?? 0} XP`;
             } else {
-              return `${label}: ${value.toFixed(1)} hours`;
+              return `${label}: ${value?.toFixed(1) ?? '0.0'} hours`;
             }
           },
         },

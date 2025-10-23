@@ -1034,6 +1034,7 @@ function SettingsScreen() {
                           </div>
 
                           <button
+                            type="button"
                             className="btn btn-outline btn-error btn-sm w-full"
                             onClick={handleUnlinkPatreon}
                             disabled={isUnlinkingPatreon}
@@ -1065,6 +1066,7 @@ function SettingsScreen() {
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
                             <button
+                              type="button"
                               className="btn btn-primary flex-1 gap-2"
                               onClick={handlePatreonOAuth}
                               disabled={isInitiatingOAuth}
@@ -1152,6 +1154,7 @@ function SettingsScreen() {
                                     maxLength={20}
                                   />
                                   <button
+                                    type="button"
                                     className="btn btn-primary"
                                     onClick={() =>
                                       updateBadgeText(customBadgeText)

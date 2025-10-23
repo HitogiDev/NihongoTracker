@@ -40,7 +40,7 @@ function BarChart({ data, options }: BarChartProps) {
           label: (context: TooltipItem<'bar'>) => {
             const label = context.dataset.label || '';
             const value = context.parsed.y;
-            return `${label}: ${value.toLocaleString()}`;
+            return `${label}: ${value?.toLocaleString() ?? 0}`;
           },
         },
       },

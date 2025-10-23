@@ -25,11 +25,17 @@ export const validateEmail = (email: string): string => {
 export const validateLogin = (usernameOrEmail: string): string => {
   if (!usernameOrEmail.trim()) return 'Username or email is required';
 
-  const emailError = validateEmail(usernameOrEmail);
-  if (emailError) return emailError;
+  // Check if it looks like an email (contains @)
+  if (usernameOrEmail.includes('@')) {
+    // Validate as email
+    const emailError = validateEmail(usernameOrEmail);
+    if (emailError) return emailError;
+  } else {
+    // Validate as username
+    const usernameError = validateUsername(usernameOrEmail);
+    if (usernameError) return usernameError;
+  }
 
-  const usernameError = validateUsername(usernameOrEmail);
-  if (usernameError) return usernameError;
   return '';
 };
 
