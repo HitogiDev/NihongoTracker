@@ -421,7 +421,7 @@ export async function handlePatreonOAuthCallback(
 
     if (!code || !state) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/settings?patreon=error&message=missing_params`
+        `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=error&message=missing_params`
       );
     }
 
@@ -429,7 +429,7 @@ export async function handlePatreonOAuthCallback(
     const stateData = oauthStateStore.get(state as string);
     if (!stateData) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/settings?patreon=error&message=invalid_state`
+        `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=error&message=invalid_state`
       );
     }
 
@@ -438,11 +438,11 @@ export async function handlePatreonOAuthCallback(
 
     const clientId = process.env.PATREON_CLIENT_ID;
     const clientSecret = process.env.PATREON_CLIENT_SECRET;
-    const redirectUri = `${process.env.BACKEND_URL}/api/patreon/oauth/callback`;
+    const redirectUri = `${process.env.NODE_ENV === 'development' ? process.env.BACKEND_URL : process.env.PROD_DOMAIN}/api/patreon/oauth/callback`;
 
     if (!clientId || !clientSecret) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/settings?patreon=error&message=oauth_not_configured`
+        `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=error&message=oauth_not_configured`
       );
     }
 
@@ -521,7 +521,7 @@ export async function handlePatreonOAuthCallback(
 
     if (existingUser) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/settings?patreon=error&message=account_already_linked`
+        `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=error&message=account_already_linked`
       );
     }
 
@@ -530,16 +530,12 @@ export async function handlePatreonOAuthCallback(
 
     if (!user) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/settings?patreon=error&message=user_not_found`
+        `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=error&message=user_not_found`
       );
     }
 
     // Calculate token expiry
     const tokenExpiry = new Date(Date.now() + expires_in * 1000);
-
-    // TESTING: Force consumer tier (REMOVE IN PRODUCTION)
-    tier = 'enthusiast';
-    isActive = true;
 
     user.patreon = {
       ...user.patreon,
@@ -560,11 +556,13 @@ export async function handlePatreonOAuthCallback(
     );
 
     // Redirect to frontend with success
-    res.redirect(`${process.env.FRONTEND_URL}/settings?patreon=success`);
+    res.redirect(
+      `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=success`
+    );
   } catch (error) {
     console.error('Patreon OAuth callback error:', error);
     res.redirect(
-      `${process.env.FRONTEND_URL}/settings?patreon=error&message=oauth_failed`
+      `${process.env.NODE_ENV === 'development' ? process.env.FRONTEND_URL : process.env.PROD_DOMAIN}/settings?patreon=error&message=oauth_failed`
     );
   }
 }
