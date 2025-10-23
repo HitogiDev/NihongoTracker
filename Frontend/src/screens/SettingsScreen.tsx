@@ -11,6 +11,7 @@ import {
   updateCustomBadgeTextFn,
   updateBadgeColorsFn,
   initiatePatreonOAuthFn,
+  resendVerificationEmailFn,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -34,9 +35,10 @@ function SettingsScreen() {
   const { setUser, user } = useUserDataStore();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
+  const newPasswordConfirmRef = useRef<HTMLInputElement>(null);
   const [discordId, setDiscordId] = useState(user?.discordId || '');
   // const [patreonEmail, setPatreonEmail] = useState(''); // Deprecated - OAuth2 handles this
   const [customBadgeText, setCustomBadgeText] = useState('');
@@ -79,6 +81,13 @@ function SettingsScreen() {
 
   const confirmUsernameRef = useRef<HTMLInputElement>(null);
   const [isUsernameMatch, setIsUsernameMatch] = useState(false);
+  const [isEmailChanged, setIsEmailChanged] = useState(false);
+  const [hasPassword, setHasPassword] = useState(false);
+  const [hasNewPassword, setHasNewPassword] = useState(false);
+  const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [showEmailSentModal, setShowEmailSentModal] = useState(false);
+  const [emailSentTo, setEmailSentTo] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const avatarImgRef = useRef<HTMLImageElement>(null);
   const bannerImgRef = useRef<HTMLImageElement>(null);
@@ -90,7 +99,19 @@ function SettingsScreen() {
   const { mutate: updateUser, isPending } = useMutation({
     mutationFn: updateUserFn,
     onSuccess: (data: ILoginResponse) => {
-      toast.success('User updated');
+      // Check if email was changed
+      const currentEmail = emailRef.current?.value || '';
+      const emailWasChanged = currentEmail !== (user?.email || '');
+
+      if (emailWasChanged) {
+        setEmailSentTo(currentEmail);
+        setShowEmailSentModal(true);
+        setResendCooldown(60); // Start cooldown immediately after sending verification email
+      } else {
+        // Only show toast if email wasn't changed (no modal will be shown)
+        toast.success('User updated');
+      }
+
       setUser(data);
       void queryClient.invalidateQueries({
         predicate: (query) => {
@@ -129,6 +150,40 @@ function SettingsScreen() {
         }
       },
     });
+
+  // Mutation for resending verification email
+  const { mutate: resendVerificationEmail, isPending: isResendingEmail } =
+    useMutation({
+      mutationFn: resendVerificationEmailFn,
+      onSuccess: () => {
+        toast.success('Verification email sent!');
+        setResendCooldown(60); // Start 60-second cooldown
+      },
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          const errorMessage =
+            error.response?.data.message || 'An error occurred';
+          toast.error(errorMessage);
+          // If error mentions remaining time, extract it and set cooldown
+          const match = errorMessage.match(/wait (\d+) seconds/);
+          if (match && match[1]) {
+            setResendCooldown(parseInt(match[1], 10));
+          }
+        } else {
+          toast.error('Failed to send verification email');
+        }
+      },
+    });
+
+  // Cooldown timer for resend verification email
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   // Debounced function to update preferences automatically
   const debouncedUpdatePreferences = useCallback(
@@ -303,7 +358,6 @@ function SettingsScreen() {
     mutationFn: clearUserDataFn,
     onSuccess: (data) => {
       toast.success(data.message);
-      // Update user state with cleared data
       if (data.user) {
         setUser(data.user);
       }
@@ -492,12 +546,20 @@ function SettingsScreen() {
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
     const formData = new FormData();
+    const currentEmail = emailRef.current?.value || '';
+    const currentPassword = passwordRef.current?.value || '';
+    const currentNewPassword = newPasswordRef.current?.value || '';
+    const currentNewPasswordConfirm =
+      newPasswordConfirmRef.current?.value || '';
 
     if (username.trim()) formData.append('username', username);
-    if (password.trim()) formData.append('password', password);
-    if (newPassword.trim()) formData.append('newPassword', newPassword);
-    if (newPasswordConfirm.trim())
-      formData.append('newPasswordConfirm', newPasswordConfirm);
+    if (currentEmail !== (user?.email || ''))
+      formData.append('email', currentEmail);
+    if (currentPassword.trim()) formData.append('password', currentPassword);
+    if (currentNewPassword.trim())
+      formData.append('newPassword', currentNewPassword);
+    if (currentNewPasswordConfirm.trim())
+      formData.append('newPasswordConfirm', currentNewPasswordConfirm);
 
     formData.append('discordId', discordId);
 
@@ -675,7 +737,7 @@ function SettingsScreen() {
       });
     }
   }
-
+  console.log('render');
   return (
     <div className="min-h-screen bg-base-200 mt-16">
       <dialog
@@ -1346,15 +1408,109 @@ function SettingsScreen() {
                   <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">
+                        Email Address (optional)
+                      </span>
+                      {user?.email && (
+                        <span
+                          className={`badge badge-sm ${
+                            user.verified ? 'badge-success' : 'badge-warning'
+                          }`}
+                        >
+                          {user.verified ? 'Verified' : 'Not Verified'}
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      ref={emailRef}
+                      type="email"
+                      className="input input-bordered focus:input-secondary transition-colors w-full"
+                      placeholder="Enter your email address"
+                      defaultValue={user?.email || ''}
+                      onChange={(e) => {
+                        const emailValue = e.target.value;
+                        setIsEmailChanged(emailValue !== (user?.email || ''));
+                      }}
+                    />
+
+                    {user?.email && !user.verified && (
+                      <div className="mt-3 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                        <p className="text-sm text-warning mb-2">
+                          📧 Verification email sent to your inbox. Check your
+                          spam folder if needed.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-warning"
+                          onClick={() => resendVerificationEmail()}
+                          disabled={resendCooldown > 0 || isResendingEmail}
+                        >
+                          {isResendingEmail ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Sending...
+                            </>
+                          ) : resendCooldown > 0 ? (
+                            <>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                className="w-4 h-4 stroke-current"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              Resend in {resendCooldown}s
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                className="w-4 h-4 stroke-current"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                              </svg>
+                              Resend Verification Email
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {!user?.email && (
+                      <label className="label">
+                        <span className="label-text-alt text-base-content/60">
+                          Recommended for account recovery
+                        </span>
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text font-medium">
                         Current Password
                       </span>
                     </label>
                     <input
+                      ref={passwordRef}
                       type="password"
                       className="input input-bordered focus:input-secondary transition-colors w-full"
                       placeholder="Enter current password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) =>
+                        setHasPassword(e.target.value.trim().length > 0)
+                      }
                     />
                     <label className="label">
                       <span className="label-text-alt text-base-content/60">
@@ -1366,19 +1522,25 @@ function SettingsScreen() {
                   <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">
-                        New Password
+                        New Password (optional)
                       </span>
                     </label>
                     <input
+                      ref={newPasswordRef}
                       type="password"
                       className="input input-bordered focus:input-secondary transition-colors w-full"
                       placeholder="Enter new password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={(e) => {
+                        const newPwd = e.target.value;
+                        setHasNewPassword(newPwd.trim().length > 0);
+                        const confirmPwd =
+                          newPasswordConfirmRef.current?.value || '';
+                        setPasswordsMatch(!newPwd || newPwd === confirmPwd);
+                      }}
                     />
                     <label className="label">
                       <span className="label-text-alt text-base-content/60">
-                        Choose a strong password
+                        Leave blank to keep current password
                       </span>
                     </label>
                   </div>
@@ -1390,15 +1552,19 @@ function SettingsScreen() {
                       </span>
                     </label>
                     <input
+                      ref={newPasswordConfirmRef}
                       type="password"
                       className="input input-bordered focus:input-secondary transition-colors w-full"
                       placeholder="Confirm new password"
-                      value={newPasswordConfirm}
-                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                      onChange={(e) => {
+                        const confirmPwd = e.target.value;
+                        const newPwd = newPasswordRef.current?.value || '';
+                        setPasswordsMatch(!newPwd || newPwd === confirmPwd);
+                      }}
                     />
                     <label className="label">
                       <span className="label-text-alt text-base-content/60">
-                        Must match the new password above
+                        Required only if changing password
                       </span>
                     </label>
                   </div>
@@ -1409,9 +1575,9 @@ function SettingsScreen() {
                       className="btn btn-secondary btn-lg"
                       disabled={
                         isPending ||
-                        !password ||
-                        !newPassword ||
-                        !newPasswordConfirm
+                        !hasPassword ||
+                        (!isEmailChanged && !hasNewPassword) ||
+                        (hasNewPassword && !passwordsMatch)
                       }
                     >
                       {isPending ? (
@@ -1435,7 +1601,7 @@ function SettingsScreen() {
                               d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
                             />
                           </svg>
-                          Change Password
+                          Update Security Settings
                         </>
                       )}
                     </button>
@@ -2287,6 +2453,53 @@ function SettingsScreen() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button>close</button>
+        </form>
+      </dialog>
+
+      {/* Email Sent Modal */}
+      <dialog
+        className="modal"
+        open={showEmailSentModal}
+        onClose={() => setShowEmailSentModal(false)}
+      >
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">Verification Email Sent!</h3>
+          <div className="py-4">
+            <p className="mb-3">
+              We've sent a verification email to{' '}
+              <span className="font-semibold">{emailSentTo}</span>
+            </p>
+            <div className="alert alert-info">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                className="h-6 w-6 shrink-0 stroke-current"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <span>
+                Please check your spam or junk folder if you don't see the email
+                in your inbox.
+              </span>
+            </div>
+          </div>
+          <div className="modal-action">
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowEmailSentModal(false)}
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setShowEmailSentModal(false)}>close</button>
         </form>
       </dialog>
     </div>

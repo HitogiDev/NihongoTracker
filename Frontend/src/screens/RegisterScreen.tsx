@@ -12,14 +12,16 @@ import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import Loader from '../components/Loader';
 import {
-  validateUsername,
+  validateEmail,
   validatePassword,
   validatePasswordMatch,
+  validateUsername,
 } from '../utils/validation';
 
 function RegisterScreen() {
   const { user, setUser } = useUserDataStore();
   const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [showPasswordRequirements, setShowPasswordRequirements] =
@@ -79,6 +81,11 @@ function RegisterScreen() {
       if (usernameError) newErrors.username = usernameError;
     }
 
+    if (touched.email) {
+      const emailError = validateEmail(email);
+      if (emailError) newErrors.email = emailError;
+    }
+
     if (touched.password) {
       const passwordError = validatePassword(password);
       if (passwordError) newErrors.password = passwordError;
@@ -94,7 +101,7 @@ function RegisterScreen() {
     }
 
     setErrors(newErrors);
-  }, [username, password, passwordConfirmation, touched]);
+  }, [username, email, password, passwordConfirmation, touched]);
 
   const isFormValid = () => {
     return (
@@ -111,6 +118,7 @@ function RegisterScreen() {
     setTouched((prev) => ({ ...prev, [field]: true }));
 
     if (field === 'username') setUsername(value);
+    if (field === 'email') setEmail(value);
     if (field === 'password') setPassword(value);
     if (field === 'passwordConfirmation') setPasswordConfirmation(value);
   };
@@ -140,7 +148,7 @@ function RegisterScreen() {
       return;
     }
 
-    mutate({ username, password, passwordConfirmation });
+    mutate({ username, email, password, passwordConfirmation });
   }
 
   useEffect(() => {
@@ -229,6 +237,32 @@ function RegisterScreen() {
                     </li>
                   </ul>
                 </div>
+              )}
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Email (optional)</span>
+              </label>
+              <input
+                type="email"
+                placeholder="Email"
+                className={`input input-bordered ${
+                  errors.email
+                    ? 'input-error'
+                    : touched.email && !errors.email && email
+                      ? 'input-success'
+                      : ''
+                }`}
+                value={email}
+                onChange={(e) => handleFieldChange('email', e.target.value)}
+              />
+              {errors.email && (
+                <label className="label">
+                  <span className="label-text-alt text-error">
+                    {errors.email}
+                  </span>
+                </label>
               )}
             </div>
 

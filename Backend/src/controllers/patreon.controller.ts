@@ -295,6 +295,7 @@ async function handlePledgeCreateOrUpdate(event: any) {
     return await user.save();
   } catch (error) {
     console.error('Error handling pledge create/update:', error);
+    return null;
   }
 }
 

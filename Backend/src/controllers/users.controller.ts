@@ -6,6 +6,8 @@ import { IMediaDocument, IUpdateRequest } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import axios from 'axios';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '../mailtrap/emails.js';
 
 export async function updateUser(
   req: Request,
@@ -14,6 +16,7 @@ export async function updateUser(
 ) {
   const {
     username,
+    email,
     newPassword,
     newPasswordConfirm,
     password,
@@ -73,6 +76,50 @@ export async function updateUser(
       }
 
       if (user.username !== username) user.username = username;
+    }
+
+    if (email !== undefined) {
+      // Allow empty string to remove email
+      if (email === '') {
+        user.email = undefined;
+        user.verified = false;
+      } else {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new customError('Invalid email format', 400);
+        }
+
+        // Check if email is already in use by another user
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (
+          existingUser &&
+          existingUser._id.toString() !== user._id.toString()
+        ) {
+          throw new customError('Email already in use', 400);
+        }
+
+        if (!password) {
+          throw new customError('Password is required', 400);
+        }
+        if (!(await user.matchPassword(password))) {
+          throw new customError('Incorrect password', 401);
+        }
+
+        // If email is being changed, mark as unverified
+        if (user.email !== email.toLowerCase()) {
+          user.email = email.toLowerCase();
+          user.verified = false;
+
+          // Generate verification token
+          const verificationToken = crypto.randomBytes(32).toString('hex');
+          user.verificationToken = verificationToken;
+          user.verificationTokenExpiry = new Date(
+            Date.now() + 24 * 60 * 60 * 1000
+          ); // 24 hours
+          user.lastVerificationEmailSent = new Date();
+        }
+      }
     }
 
     if (req.files && Object.keys(req.files).length > 0) {
@@ -157,9 +204,30 @@ export async function updateUser(
 
     const updatedUser = await user.save();
 
+    // Send verification email if email was changed
+    if (
+      email !== undefined &&
+      email !== '' &&
+      updatedUser.email &&
+      !updatedUser.verified &&
+      updatedUser.verificationToken
+    ) {
+      try {
+        await sendVerificationEmail(
+          updatedUser.email,
+          updatedUser.verificationToken
+        );
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't throw error - user update should still succeed
+      }
+    }
+
     return res.status(200).json({
       _id: updatedUser._id,
       username: updatedUser.username,
+      email: updatedUser.email,
+      verified: updatedUser.verified,
       discordId: updatedUser.discordId,
       stats: updatedUser.stats,
       avatar: updatedUser.avatar,

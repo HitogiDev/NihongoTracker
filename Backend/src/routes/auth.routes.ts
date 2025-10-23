@@ -4,6 +4,10 @@ import {
   register,
   logout,
   verifyToken,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  resendVerificationEmail,
 } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -16,5 +20,13 @@ router.post('/login', login);
 router.post('/logout', logout);
 
 router.get('/verify', protect, verifyToken);
+
+router.post('/verify-email', verifyEmail);
+
+router.post('/resend-verification', protect, resendVerificationEmail);
+
+router.post('/forgot-password', forgotPassword);
+
+router.post('/reset-password/:token', resetPassword);
 
 export default router;

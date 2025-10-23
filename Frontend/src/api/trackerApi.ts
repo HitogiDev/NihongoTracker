@@ -51,6 +51,28 @@ export async function logoutUserFn() {
   return data;
 }
 
+export async function forgotPasswordFn(email: string) {
+  const { data } = await api.post('auth/forgot-password', { email });
+  return data;
+}
+
+export async function resetPasswordFn(
+  token: string,
+  password: string,
+  passwordConfirmation: string
+) {
+  const { data } = await api.post(`auth/reset-password/${token}`, {
+    password,
+    passwordConfirmation,
+  });
+  return data;
+}
+
+export async function resendVerificationEmailFn() {
+  const { data } = await api.post('auth/resend-verification');
+  return data;
+}
+
 export async function getUserFn(username: string): Promise<IUser> {
   const { data } = await api.get<IUser>(`users/${username}`);
   return data;

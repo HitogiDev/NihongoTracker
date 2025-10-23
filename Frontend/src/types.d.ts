@@ -3,6 +3,8 @@ export interface IUser {
   avatar?: string;
   banner?: string;
   username: string;
+  email?: string;
+  verified?: boolean;
   clubs?: string[];
   discordId?: string;
   patreon?: {
@@ -81,6 +83,8 @@ export type ILoginResponse = Pick<
   IUser,
   | '_id'
   | 'username'
+  | 'email'
+  | 'verified'
   | 'stats'
   | 'avatar'
   | 'banner'
@@ -93,13 +97,23 @@ export type ILoginResponse = Pick<
 
 export interface IRegisterInput {
   username: string;
+  email?: string;
   password: string;
   passwordConfirmation: string;
 }
 
 export interface ILoginInput {
-  username: string;
+  login: string;
   password: string;
+}
+
+export interface IForgotPasswordInput {
+  email: string;
+}
+
+export interface IResetPasswordInput {
+  password: string;
+  passwordConfirmation: string;
 }
 
 // Add validation interfaces
@@ -216,6 +230,7 @@ export interface IMatchMediaLog {
 
 export interface updateUserRequest {
   username?: string;
+  email?: string;
   password?: string;
   discordId?: string;
   avatar?: string;

@@ -7,12 +7,12 @@ import { useUserDataStore } from '../store/userData';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import Loader from '../components/Loader';
-import { validateUsername } from '../utils/validation';
+import { validateLogin } from '../utils/validation';
 
 function LoginScreen() {
-  const [username, setUsername] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [touched, setTouched] = useState({ username: false, password: false });
+  const [touched, setTouched] = useState({ login: false, password: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { setUser } = useUserDataStore();
   const navigate = useNavigate();
@@ -21,10 +21,10 @@ function LoginScreen() {
   useEffect(() => {
     const newErrors: Record<string, string> = {};
 
-    if (touched.username) {
-      const usernameError = validateUsername(username);
-      if (usernameError) {
-        newErrors.username = usernameError;
+    if (touched.login) {
+      const usernameOrEmailError = validateLogin(usernameOrEmail);
+      if (usernameOrEmailError) {
+        newErrors.usernameOrEmail = usernameOrEmailError;
       }
     }
 
@@ -33,14 +33,14 @@ function LoginScreen() {
     }
 
     setErrors(newErrors);
-  }, [username, password, touched]);
+  }, [usernameOrEmail, password, touched]);
 
-  const isFormValid = username.trim().length > 0 && password.length > 0;
+  const isFormValid = usernameOrEmail.trim().length > 0 && password.length > 0;
 
-  const handleFieldChange = (field: 'username' | 'password', value: string) => {
+  const handleFieldChange = (field: 'login' | 'password', value: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
 
-    if (field === 'username') setUsername(value);
+    if (field === 'login') setUsernameOrEmail(value);
     if (field === 'password') setPassword(value);
   };
 
@@ -62,14 +62,14 @@ function LoginScreen() {
     e.preventDefault();
 
     // Mark all fields as touched for validation display
-    setTouched({ username: true, password: true });
+    setTouched({ login: true, password: true });
 
     if (!isFormValid) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    mutate({ username: username.trim(), password });
+    mutate({ login: usernameOrEmail.trim(), password });
   }
 
   useEffect(() => {
@@ -90,26 +90,28 @@ function LoginScreen() {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Username</span>
+                <span className="label-text">Username or Email</span>
               </label>
               <input
                 type="text"
                 placeholder="Enter your username"
-                className={`input input-bordered ${
-                  errors.username
+                className={`w-full input input-bordered ${
+                  errors.usernameOrEmailError
                     ? 'input-error'
-                    : touched.username && !errors.username && username
+                    : touched.login &&
+                        !errors.usernameOrEmailError &&
+                        usernameOrEmail
                       ? 'input-success'
                       : ''
                 }`}
-                value={username}
-                onChange={(e) => handleFieldChange('username', e.target.value)}
+                value={usernameOrEmail}
+                onChange={(e) => handleFieldChange('login', e.target.value)}
                 required
               />
-              {errors.username && (
+              {errors.usernameOrEmailError && (
                 <label className="label">
                   <span className="label-text-alt text-error">
-                    {errors.username}
+                    {errors.usernameOrEmailError}
                   </span>
                 </label>
               )}
@@ -122,7 +124,7 @@ function LoginScreen() {
               <input
                 type="password"
                 placeholder="Enter your password"
-                className={`input input-bordered ${
+                className={`w-full input input-bordered ${
                   errors.password
                     ? 'input-error'
                     : touched.password && !errors.password && password
@@ -141,9 +143,15 @@ function LoginScreen() {
                 </label>
               )}
 
-              <label className="label">
+              <label className="label justify-between w-full">
                 <Link to="/register" className="label-text-alt link link-hover">
                   Don't have an account?
+                </Link>
+                <Link
+                  to="/forgot-password"
+                  className="label-text-alt link link-hover"
+                >
+                  Forgot password?
                 </Link>
               </label>
             </div>

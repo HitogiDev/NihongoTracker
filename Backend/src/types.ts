@@ -45,6 +45,13 @@ export interface IUser extends Document {
   avatar?: string;
   banner?: string;
   username: string;
+  email?: string;
+  verified?: boolean;
+  verificationToken?: string;
+  verificationTokenExpiry?: Date;
+  lastVerificationEmailSent?: Date;
+  resetPasswordToken?: string;
+  resetPasswordTokenExpiry?: Date;
   password: string;
   discordId?: string;
   clubs?: Types.ObjectId[];
@@ -245,6 +252,7 @@ export interface ICreateLog extends ILog {
 
 export interface IUpdateRequest {
   username?: string;
+  email?: string;
   password?: string;
   newPassword?: string;
   newPasswordConfirm?: string;
@@ -256,12 +264,13 @@ export interface IUpdateRequest {
 
 export interface IRegister {
   username: string;
+  email?: string;
   password: string;
   passwordConfirmation: string;
 }
 
 export interface ILogin {
-  username: string;
+  login: string;
   password: string;
 }
 

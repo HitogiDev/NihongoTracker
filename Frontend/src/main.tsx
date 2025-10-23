@@ -31,7 +31,7 @@ import ProfileScreen from './screens/ProfileScreen.tsx';
 import ProtectedRoutes from './contexts/protectedRoute.tsx';
 import queryClient from './queryClient.ts';
 import RankingScreen from './screens/RankingScreen.tsx';
-// import RegisterScreen from './screens/RegisterScreen.tsx';
+import RegisterScreen from './screens/RegisterScreen.tsx';
 import SettingsScreen from './screens/SettingsScreen.tsx';
 import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
@@ -50,13 +50,19 @@ import SupportScreen from './screens/SupportScreen.tsx';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen.tsx';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen.tsx';
 import ChangelogScreen from './screens/ChangelogScreen.tsx';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen.tsx';
+import ResetPasswordScreen from './screens/ResetPasswordScreen.tsx';
+import VerifyEmailScreen from './screens/VerifyEmailScreen.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
       <Route index={true} path="/" element={<HomeScreen />} />
       <Route path="login" element={<LoginScreen />} />
-      {/* <Route path="register" element={<RegisterScreen />} /> */}
+      <Route path="register" element={<RegisterScreen />} />
+      <Route path="forgot-password" element={<ForgotPasswordScreen />} />
+      <Route path="reset-password/:token" element={<ResetPasswordScreen />} />
+      <Route path="verify-email/:token" element={<VerifyEmailScreen />} />
       <Route path="settings" element={<SettingsScreen />} />
       <Route path="ranking" element={<RankingScreen />} />
       <Route path="clubs" element={<ClubsScreen />} />

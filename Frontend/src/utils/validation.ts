@@ -15,6 +15,24 @@ export const validateUsername = (username: string): string => {
   return '';
 };
 
+export const validateEmail = (email: string): string => {
+  if (!email.trim()) return '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return 'Please enter a valid email address';
+  return '';
+};
+
+export const validateLogin = (usernameOrEmail: string): string => {
+  if (!usernameOrEmail.trim()) return 'Username or email is required';
+
+  const emailError = validateEmail(usernameOrEmail);
+  if (emailError) return emailError;
+
+  const usernameError = validateUsername(usernameOrEmail);
+  if (usernameError) return usernameError;
+  return '';
+};
+
 export const validatePassword = (password: string): string | null => {
   if (password.length < 8) {
     return 'Password must be at least 8 characters long';
@@ -28,13 +46,6 @@ export const validatePasswordMatch = (
 ): string => {
   if (!confirmPassword && password) return 'Please confirm your password';
   if (password !== confirmPassword) return 'Passwords do not match';
-  return '';
-};
-
-export const validateEmail = (email: string): string => {
-  if (!email.trim()) return '';
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) return 'Please enter a valid email address';
   return '';
 };
 
