@@ -1,5 +1,6 @@
 client_secret.json
 .env
+.env.production
 build
 .eslintrc.json
 .prettierrc

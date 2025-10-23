@@ -1085,11 +1085,7 @@ function SettingsScreen() {
                               )}
                             </button>
                             <a
-                              href={
-                                import.meta.env.VITE_APP_ENV === 'development'
-                                  ? 'http://localhost:5173/support'
-                                  : `${import.meta.env.VITE_PROD_DOMAIN_URL}/support`
-                              }
+                              href={`${import.meta.env.VITE_DOMAIN_URL}/support`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="btn btn-ghost btn-sm gap-1"
