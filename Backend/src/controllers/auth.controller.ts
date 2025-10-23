@@ -306,3 +306,35 @@ export async function resendVerificationEmail(
     return next(error as customError);
   }
 }
+
+// Public stats endpoint for homepage/register page
+export async function getPublicStats(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const Log = (await import('../models/log.model.js')).default;
+
+    const [totalUsers, totalLogs, totalXpAgg] = await Promise.all([
+      User.countDocuments(),
+      Log.countDocuments(),
+      User.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalXp: { $sum: '$stats.userXp' },
+          },
+        },
+      ]),
+    ]);
+
+    res.status(200).json({
+      totalUsers,
+      totalLogs,
+      totalXp: totalXpAgg[0]?.totalXp || 0,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}

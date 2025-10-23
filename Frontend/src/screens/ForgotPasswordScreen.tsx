@@ -92,7 +92,7 @@ function ForgotPasswordScreen() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-control w-full mb-4">
-              <label className="label">
+              <label className="label justify-center">
                 <span className="label-text">Email</span>
               </label>
               <input
@@ -106,7 +106,7 @@ function ForgotPasswordScreen() {
                 disabled={isPending}
               />
               {errors.email && (
-                <label className="label">
+                <label className="label justify-center">
                   <span className="label-text-alt text-error">
                     {errors.email}
                   </span>
@@ -114,10 +114,10 @@ function ForgotPasswordScreen() {
               )}
             </div>
 
-            <div className="form-control mt-6">
+            <div className="form-control mt-6 items-center">
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn btn-primary w-full"
                 disabled={!isFormValid || isPending}
               >
                 {isPending ? (

@@ -8,6 +8,7 @@ import {
   forgotPassword,
   resetPassword,
   resendVerificationEmail,
+  getPublicStats,
 } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -28,5 +29,7 @@ router.post('/resend-verification', protect, resendVerificationEmail);
 router.post('/forgot-password', forgotPassword);
 
 router.post('/reset-password/:token', resetPassword);
+
+router.get('/stats', getPublicStats);
 
 export default router;

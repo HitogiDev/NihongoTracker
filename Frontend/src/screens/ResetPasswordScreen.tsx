@@ -228,10 +228,10 @@ function ResetPasswordScreen() {
               )}
             </div>
 
-            <div className="form-control mt-6">
+            <div className="form-control mt-6 items-center">
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn btn-primary w-full"
                 disabled={!isFormValid || isPending}
               >
                 {isPending ? (

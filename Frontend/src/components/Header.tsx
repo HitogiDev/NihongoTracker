@@ -452,12 +452,12 @@ function Header() {
               <Link className="btn btn-primary btn-sm sm:btn-md" to="/login">
                 Sign In
               </Link>
-              {/* <Link
+              <Link
                 className="btn btn-primary btn-outline btn-sm sm:btn-md"
                 to="/register"
               >
                 Sign Up
-              </Link> */}
+              </Link>
             </>
           )}
         </div>

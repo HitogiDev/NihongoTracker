@@ -73,6 +73,15 @@ export async function resendVerificationEmailFn() {
   return data;
 }
 
+export async function getPublicStatsFn(): Promise<{
+  totalUsers: number;
+  totalLogs: number;
+  totalXp: number;
+}> {
+  const { data } = await api.get('auth/stats');
+  return data;
+}
+
 export async function getUserFn(username: string): Promise<IUser> {
   const { data } = await api.get<IUser>(`users/${username}`);
   return data;
