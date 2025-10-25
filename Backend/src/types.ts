@@ -40,6 +40,12 @@ export interface IPatreonData {
   isActive?: boolean;
 }
 
+export interface IUserAchievement {
+  achievement: Types.ObjectId;
+  unlockedAt: Date;
+  progress?: number; // For tracking partial progress (optional)
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   avatar?: string;
@@ -63,6 +69,8 @@ export interface IUser extends Document {
   updatedAt?: Date;
   settings?: IUserSettings;
   patreon?: IPatreonData;
+  achievements?: IUserAchievement[];
+  achievementPoints?: number;
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 
@@ -553,6 +561,63 @@ export interface IChangelog extends Document {
   date: Date;
   createdBy: Types.ObjectId;
   published: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Achievement System Types
+export enum AchievementCategory {
+  GENERAL = 'general',
+  READING = 'reading',
+  LISTENING = 'listening',
+  ANIME = 'anime',
+  MANGA = 'manga',
+  VN = 'vn',
+  VIDEO = 'video',
+  STREAK = 'streak',
+  LEVEL = 'level',
+  SOCIAL = 'social',
+}
+
+export enum AchievementRarity {
+  C = 'C',      // Common - Easy achievements (50-60% of achievements)
+  B = 'B',      // Uncommon - Regular achievements (25-30%)
+  A = 'A',      // Rare - Challenging achievements (10-15%)
+  S = 'S',      // Super Rare - Difficult achievements (5-8%)
+  SS = 'SS',    // Super Super Rare - Very difficult (2-3%)
+  SSR = 'SSR',  // Super Super Rare+ - Legendary achievements (<1%)
+}
+
+export interface IAchievementCriteria {
+  type:
+    | 'total_xp'
+    | 'category_xp'
+    | 'level_reached'
+    | 'category_level'
+    | 'streak_days'
+    | 'total_logs'
+    | 'category_logs'
+    | 'episodes_watched'
+    | 'pages_read'
+    | 'chars_read'
+    | 'hours_listened'
+    | 'club_member'
+    | 'club_owner';
+  category?: 'reading' | 'listening';
+  threshold: number;
+}
+
+export interface IAchievement extends Document {
+  _id: Types.ObjectId;
+  key: string; // Unique identifier (e.g., 'first_log', 'reading_master_100k')
+  name: string;
+  description: string;
+  icon?: string; // Emoji or icon identifier
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  criteria: IAchievementCriteria;
+  points: number; // Achievement points for gamification
+  hidden: boolean; // Secret achievements
   createdAt?: Date;
   updatedAt?: Date;
 }

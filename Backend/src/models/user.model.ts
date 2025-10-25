@@ -1,5 +1,11 @@
 import { Schema, model } from 'mongoose';
-import { IUser, userRoles, IUserSettings, IPatreonData } from '../types.js';
+import {
+  IUser,
+  userRoles,
+  IUserSettings,
+  IPatreonData,
+  IUserAchievement,
+} from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
@@ -41,6 +47,26 @@ const PatreonSchema = new Schema<IPatreonData>(
     },
     lastChecked: { type: Date },
     isActive: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
+const UserAchievementSchema = new Schema<IUserAchievement>(
+  {
+    achievement: {
+      type: Schema.Types.ObjectId,
+      ref: 'Achievement',
+      required: true,
+    },
+    unlockedAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    progress: {
+      type: Number,
+      required: false,
+    },
   },
   { _id: false }
 );
@@ -139,6 +165,14 @@ const UserSchema = new Schema<IUser>(
     patreon: {
       type: PatreonSchema,
       default: { tier: null, isActive: false },
+    },
+    achievements: {
+      type: [UserAchievementSchema],
+      default: [],
+    },
+    achievementPoints: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

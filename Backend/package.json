@@ -12,6 +12,7 @@
     "migrate:indexes": "node src/scripts/migrate-indexes.js",
     "migrate:indexes:prod": "NODE_ENV=production node src/scripts/migrate-indexes.js",
     "verify:indexes": "node src/scripts/verify-indexes.js",
+    "seed:achievements": "tsx src/scripts/runSeedAchievements.ts",
     "build:frontend": "cd ../Frontend && npm run build && if not exist ..\\Backend\\dist mkdir ..\\Backend\\dist && xcopy dist ..\\Backend\\dist /E /I /Y",
     "test:meta": "npm run build:frontend && curl -A \"Discordbot\" http://localhost:3000/user/hitogi",
     "test:meta:twitter": "curl -A \"Twitterbot\" http://localhost:3000/user/hitogi"
