@@ -257,6 +257,7 @@ export interface updateLogRequest {
   pages?: number;
   chars?: number;
   mediaId?: string;
+  tags?: string[];
 }
 
 export interface IContentMedia {

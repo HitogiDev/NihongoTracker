@@ -18,6 +18,7 @@ import {
   MdTimer,
   MdEdit,
   MdShare,
+  MdLabel,
 } from 'react-icons/md';
 import { deleteLogFn, updateLogFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
@@ -27,6 +28,7 @@ import { useUserDataStore } from '../store/userData';
 import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import TagSelector from './TagSelector';
 
 const logTypeConfig = {
   reading: {
@@ -94,6 +96,29 @@ const logTypeConfig = {
   },
 };
 
+type EditLogFormState = {
+  description: string;
+  type: ILog['type'];
+  date: string;
+  episodes: number;
+  pages: number;
+  chars: number;
+  hours: number;
+  minutes: number;
+  tags: string[];
+};
+
+function extractTagIds(tags?: ILog['tags']): string[] {
+  if (!tags) return [];
+
+  return (tags as Array<string | { _id?: string }>)
+    .map((tag) => {
+      if (typeof tag === 'string') return tag;
+      return tag?._id ?? '';
+    })
+    .filter((id): id is string => Boolean(id));
+}
+
 function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const { description, xp, date, type, episodes, pages, time, chars, media } =
     log;
@@ -103,10 +128,9 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const editModalRef = useRef<HTMLDialogElement>(null);
   const detailsModalRef = useRef<HTMLDialogElement>(null);
 
-  // Edit form state with all editable fields
-  const [editData, setEditData] = useState({
+  const buildEditState = (): EditLogFormState => ({
     description: description || '',
-    type: type,
+    type,
     date: date
       ? typeof date === 'string'
         ? date.split('T')[0]
@@ -117,7 +141,13 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     chars: chars || 0,
     hours: time ? Math.floor(time / 60) : 0,
     minutes: time ? time % 60 : 0,
+    tags: extractTagIds(log.tags),
   });
+
+  // Edit form state with all editable fields
+  const [editData, setEditData] = useState<EditLogFormState>(() =>
+    buildEditState()
+  );
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
   const typeConfig = logTypeConfig[type];
@@ -175,20 +205,8 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   });
 
   function openEditModal() {
-    setEditData({
-      description: description || '',
-      type: type,
-      date: date
-        ? typeof date === 'string'
-          ? date.split('T')[0]
-          : new Date(date).toISOString().split('T')[0]
-        : '',
-      episodes: episodes || 0,
-      pages: pages || 0,
-      chars: chars || 0,
-      hours: time ? Math.floor(time / 60) : 0,
-      minutes: time ? time % 60 : 0,
-    });
+    setEditErrors({});
+    setEditData(buildEditState());
     editModalRef.current?.showModal();
   }
 
@@ -226,6 +244,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
       episodes: editData.episodes || undefined,
       pages: editData.pages || undefined,
       chars: editData.chars || undefined,
+      tags: editData.tags,
     };
 
     // Remove undefined values
@@ -1299,6 +1318,26 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Tags Section */}
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body p-4">
+                <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <MdLabel className="w-5 h-5" />
+                  Tags
+                </h4>
+                <TagSelector
+                  selectedTags={editData.tags}
+                  onChange={(tags) =>
+                    setEditData((prev) => ({
+                      ...prev,
+                      tags,
+                    }))
+                  }
+                  label="Tags (optional)"
+                />
               </div>
             </div>
 
