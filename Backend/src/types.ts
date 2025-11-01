@@ -40,6 +40,181 @@ export interface IPatreonData {
   isActive?: boolean;
 }
 
+export interface IPatreonEvent {
+  data: {
+    attributes: {
+      campaign_lifetime_support_cents: number;
+      currently_entitled_amount_cents: number;
+      email: string;
+      full_name: string;
+      is_follower: boolean;
+      last_charge_date: Date;
+      last_charge_status: string;
+      lifetime_support_cents: number;
+      next_charge_date: Date;
+      note: string;
+      patron_status: string;
+      pledge_cadence: number;
+      pledge_relationship_start: Date;
+      will_pay_amount_cents: number;
+    };
+    id: string;
+    relationships: {
+      address: {
+        data?: unknown[];
+      };
+      campaign: {
+        data: {
+          id: number;
+          type: string;
+        };
+        links: {
+          related: string;
+        };
+      };
+      currently_entitled_tiers: {
+        data: unknown[];
+      };
+      user: {
+        data: {
+          id: number;
+          type: string;
+        };
+        links: {
+          related: string;
+        };
+      };
+    };
+    type: string;
+  };
+  included: {
+    attributes:
+      | {
+          created_at: Date;
+          creation_name: string;
+          discord_server_id?: string;
+          google_analytics_id?: string;
+          has_rss: boolean;
+          has_sent_rss_notify: boolean;
+          image_small_url: string;
+          image_url: string;
+          is_charged_immediately: boolean;
+          is_monthly: boolean;
+          is_nsfw: boolean;
+          main_video_embed?: string;
+          main_video_url?: string;
+          one_liner?: string;
+          patron_count: number;
+          pay_per_name: string;
+          pledge_url: string;
+          published_at: Date;
+          rss_artwork_url?: string;
+          rss_feed_title?: string;
+          summary: string;
+          thanks_embed?: string;
+          thanks_msg?: string;
+          thanks_video_url?: string;
+          url: string;
+          vanity: string;
+        }
+      | {
+          attributes: {
+            about: string;
+            created: Date;
+            first_name: string;
+            full_name: string;
+            hide_pledges: boolean;
+            image_url: string;
+            is_creator: boolean;
+            last_name: string;
+            like_count: number;
+            social_connections: {
+              deviantart?: string;
+              discord?: string;
+              facebook?: string;
+              google?: string;
+              instagram?: string;
+              reddit?: string;
+              spotify?: string;
+              twitch?: string;
+              twitter?: string;
+              vimeo?: string;
+              youtube?: string;
+            };
+            thumb_url: string;
+            url: string;
+            vanity?: string;
+          };
+          id: number;
+          type: string;
+        }[];
+  };
+  links: {
+    self: string;
+  };
+}
+
+export interface IPatreonIncludedTier {
+  id: string;
+  type: 'tier';
+  attributes: {
+    title: string;
+    amount_cents: number;
+  };
+}
+
+export interface IPatreonIncludedMember {
+  id: string;
+  type: 'member';
+  attributes: {
+    patron_status: 'active_patron' | 'former_patron' | string | null;
+    currently_entitled_amount_cents: number | null;
+  };
+  relationships?: {
+    campaign: {
+      data: {
+        id: string;
+        type: 'campaign';
+      };
+      links: {
+        related: string;
+      };
+    };
+    currently_entitled_tiers?: {
+      data: Array<{
+        id: string;
+        type: 'tier';
+      }>;
+    };
+  };
+}
+
+export interface IPatreonIdentityResponse {
+  data: {
+    id: string;
+    type: 'user';
+    attributes: {
+      email: string | null;
+      full_name: string | null;
+      is_email_verified?: boolean; // Patreon la envía solo si aplica
+    };
+    relationships: {
+      memberships?: {
+        data: Array<{
+          id: string;
+          type: 'membership';
+        }>;
+      };
+    };
+  };
+
+  included?: Array<IPatreonIncludedMember | IPatreonIncludedTier>;
+
+  links?: {
+    self: string;
+  };
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   avatar?: string;

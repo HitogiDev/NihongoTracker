@@ -25,6 +25,24 @@ import { metaTagsMiddleware } from './middlewares/metaTags.js';
 const app = express();
 
 app.use(
+  '/api/patreon/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res, next) => {
+    if (req.body) {
+      // Guardar raw body para verificación de firma
+      (req as any).rawBody = req.body.toString('utf8');
+      // Parsear JSON manualmente
+      try {
+        req.body = JSON.parse((req as any).rawBody);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
+    }
+    return next();
+  }
+);
+
+app.use(
   cors({
     origin: '*',
     credentials: true,

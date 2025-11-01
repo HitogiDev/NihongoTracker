@@ -3,6 +3,8 @@ import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import crypto from 'crypto';
 import axios from 'axios';
+import qs from 'qs';
+import { IPatreonIdentityResponse } from '../types.js';
 
 // Helper function to get backend and frontend URLs
 function getUrls() {
@@ -234,21 +236,44 @@ export async function handlePatreonWebhook(
     const webhookSecret = process.env.PATREON_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error('PATREON_WEBHOOK_SECRET not configured');
+      console.error('❌ PATREON_WEBHOOK_SECRET not configured');
       return res.status(500).json({ error: 'Webhook not configured' });
     }
 
-    // Verify webhook signature
+    if (!signature) {
+      console.error('❌ Missing X-Patreon-Signature header');
+      return res.status(403).json({ error: 'Missing signature' });
+    }
+
+    // ✅ IMPORTANTE: req.body debe estar como string RAW para verificar firma
+    // Express debe usar express.raw() o bodyParser.raw() para webhooks
+    const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+
+    // Verify webhook signature using MD5 HMAC
     const hmac = crypto.createHmac('md5', webhookSecret);
-    const digest = hmac.update(JSON.stringify(req.body)).digest('hex');
+    const digest = hmac.update(rawBody).digest('hex');
+
+    console.log('🔐 Webhook signature verification:', {
+      received: signature,
+      computed: digest,
+      match: signature === digest,
+      bodyLength: rawBody.length,
+    });
 
     if (signature !== digest) {
-      console.error('Invalid webhook signature');
+      console.error('❌ Invalid webhook signature', {
+        received: signature,
+        expected: digest,
+      });
       return res.status(403).json({ error: 'Invalid signature' });
     }
 
+    console.log('✅ Webhook signature valid');
+
     const event = req.body;
     const eventType = req.headers['x-patreon-event'] as string;
+
+    console.log(`📬 Patreon webhook received: ${eventType}`);
 
     // Handle different webhook events
     switch (eventType) {
@@ -256,44 +281,82 @@ export async function handlePatreonWebhook(
       case 'members:pledge:update':
         await handlePledgeCreateOrUpdate(event);
         break;
+
       case 'members:pledge:delete':
         await handlePledgeDelete(event);
         break;
+
       default:
+        console.log(`ℹ️  Unhandled webhook event type: ${eventType}`);
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
+    console.error('❌ Patreon webhook error:', error);
     return next(error);
   }
 }
 
-// Helper function to handle pledge creation/update
 async function handlePledgeCreateOrUpdate(event: any) {
   try {
-    const patronId = event.data?.id; // CRÍTICO: Usar ID de Patreon, no email
+    // Get user ID from the relationships (member event)
+    const patronId = event.data?.relationships?.user?.data?.id;
     const patronEmail = event.data?.attributes?.email;
-    const pledgeAmountCents =
-      event.data?.attributes?.currently_entitled_amount_cents || 0;
+    const currentlyEntitledTiers =
+      event.data?.relationships?.currently_entitled_tiers?.data || [];
+
+    console.log('📥 Webhook received:', {
+      eventType: 'pledge:create/update',
+      event: JSON.stringify(event),
+    });
 
     if (!patronId) {
+      console.error('❌ No patron ID found in webhook event');
       return;
     }
 
-    // Determine tier based on pledge amount
     let tier: 'donator' | 'enthusiast' | 'consumer' | null = null;
-    if (pledgeAmountCents >= 1000) {
-      // $10+
-      tier = 'consumer';
-    } else if (pledgeAmountCents >= 500) {
-      // $5+
-      tier = 'enthusiast';
-    } else if (pledgeAmountCents >= 100) {
-      // $1+
-      tier = 'donator';
+
+    const included = event.included || [];
+    for (const tierData of currentlyEntitledTiers) {
+      const tierDetails = included.find(
+        (item: any) => item.type === 'tier' && item.id === tierData.id
+      );
+
+      if (tierDetails?.attributes?.title) {
+        const tierTitle = tierDetails.attributes.title.toLowerCase();
+
+        // Map tier titles to internal tier names
+        if (
+          tierTitle.includes('consumer') ||
+          tierTitle.includes('avid consumer')
+        ) {
+          tier = 'consumer';
+          break; // Consumer is highest, use it if found
+        } else if (
+          tierTitle.includes('enthusiast') ||
+          tierTitle.includes('immersion enthusiast')
+        ) {
+          tier = 'enthusiast';
+        } else if (tierTitle.includes('donator') && !tier) {
+          tier = 'donator';
+        }
+      }
     }
 
-    // ✅ SEGURIDAD: Buscar usuario por patreonId (único e imposible de falsificar)
+    // If no tier found but they have entitled tiers, log for debugging
+    if (!tier && currentlyEntitledTiers.length > 0) {
+      console.warn(
+        'Could not determine tier from titles:',
+        currentlyEntitledTiers.map((t: any) => {
+          const details = included.find(
+            (item: any) => item.type === 'tier' && item.id === t.id
+          );
+          return details?.attributes?.title;
+        })
+      );
+    }
+
     const user = await User.findOne({
       'patreon.patreonId': patronId,
     });
@@ -492,13 +555,13 @@ export async function handlePatreonOAuthCallback(
     // Exchange code for access token
     const tokenResponse = await axios.post(
       'https://www.patreon.com/api/oauth2/token',
-      {
+      qs.stringify({
         code,
         grant_type: 'authorization_code',
         client_id: clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri,
-      },
+      }),
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -509,82 +572,94 @@ export async function handlePatreonOAuthCallback(
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
     console.log('✅ Access token obtained');
 
-    // Get user identity from Patreon
     console.log('🔄 Fetching user identity from Patreon...');
-    const identityResponse = await axios.get(
+
+    const userFields = 'email,full_name,is_email_verified';
+    const memberFields = 'patron_status,currently_entitled_amount_cents';
+    const tierFields = 'title,amount_cents';
+
+    const includes =
+      'memberships,memberships.currently_entitled_tiers,memberships.campaign';
+
+    const identityResponse = await axios.get<IPatreonIdentityResponse>(
       'https://www.patreon.com/api/oauth2/v2/identity',
       {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
         params: {
-          // ✅ FIX: Agregar email explícitamente
-          'fields[user]': 'email,full_name,is_email_verified',
-          'fields[member]': 'currently_entitled_amount_cents,patron_status',
-          include: 'memberships',
+          'fields[user]': userFields,
+          'fields[member]': memberFields,
+          'fields[tier]': tierFields,
+          include: includes,
         },
       }
     );
 
+    console.log('✅ Patreon identity response received.');
+
+    console.log(JSON.stringify(identityResponse.data, null, 2));
+
     const patreonData = identityResponse.data.data;
     const patreonId = patreonData.id;
     const patreonEmail = patreonData.attributes?.email;
-    const isEmailVerified = patreonData.attributes?.is_email_verified;
-
-    console.log('📧 Patreon data received:', {
-      patreonId,
-      email: patreonEmail
-        ? `✅ ${patreonEmail}`
-        : '⚠️  not provided (optional)',
-      emailVerified: isEmailVerified ?? 'N/A',
-      fullName: patreonData.attributes?.full_name || 'N/A',
-    });
-
-    // Email is optional - not all users have verified emails on Patreon
-    if (!patreonEmail) {
-      console.log(
-        '📝 Note: Patreon account will be linked using ID only (email not available)'
-      );
-    }
 
     // Get membership information
     const memberships =
       identityResponse.data.included?.filter(
-        (item: any) => item.type === 'member'
+        (item) => item.type === 'member'
       ) || [];
 
     console.log(`👥 Found ${memberships.length} membership(s)`);
 
     // Find active membership (if any)
     const activeMembership = memberships.find(
-      (m: any) => m.attributes.patron_status === 'active_patron'
+      (membership) =>
+        membership.attributes &&
+        membership.relationships &&
+        membership.relationships.campaign.data.id &&
+        membership.relationships.campaign.data.id ===
+          process.env.PATREON_CAMPAIGN_ID &&
+        membership.attributes.patron_status === 'active_patron'
     );
 
+    // Para acceder a los tiers:
+    const tiers =
+      identityResponse.data.included?.filter((item) => item.type === 'tier') ||
+      [];
+
+    const campaignTier = tiers.find((tier) => {
+      return (
+        activeMembership &&
+        activeMembership.relationships?.currently_entitled_tiers?.data.some(
+          (entitledTier) => entitledTier.id === tier.id
+        )
+      );
+    });
+
+    let campaignTierTitle: string | undefined | null =
+      campaignTier?.attributes.title.toLowerCase();
     let tier: 'donator' | 'enthusiast' | 'consumer' | null = null;
-    let isActive = false;
-
-    if (activeMembership) {
-      const pledgeAmountCents =
-        activeMembership.attributes.currently_entitled_amount_cents || 0;
-      isActive = true;
-
-      console.log(`💰 Active pledge: $${pledgeAmountCents / 100}`);
-
-      // Determine tier based on pledge amount
-      if (pledgeAmountCents >= 1000) {
-        tier = 'consumer'; // $10+
-      } else if (pledgeAmountCents >= 500) {
-        tier = 'enthusiast'; // $5+
-      } else if (pledgeAmountCents >= 100) {
-        tier = 'donator'; // $1+
-      }
-
-      console.log(`🎖️  Tier assigned: ${tier}`);
-    } else {
-      console.log('ℹ️  No active membership found');
+    if (
+      campaignTierTitle?.includes('consumer') ||
+      campaignTierTitle?.includes('avid consumer')
+    ) {
+      tier = 'consumer';
+    } else if (
+      campaignTierTitle?.includes('enthusiast') ||
+      campaignTierTitle?.includes('immersion enthusiast')
+    ) {
+      tier = 'enthusiast';
+    } else if (campaignTierTitle?.includes('donator')) {
+      tier = 'donator';
     }
 
-    // Check if this Patreon account is already linked to another user
+    const isActive = !!activeMembership;
+
+    console.log(
+      `🎖️  User Patreon tier: ${tier || 'none'}, active: ${isActive}`
+    );
+
     const existingUser = await User.findOne({
       'patreon.patreonId': patreonId,
       _id: { $ne: stateData.userId },
@@ -599,7 +674,6 @@ export async function handlePatreonOAuthCallback(
       );
     }
 
-    // Update user with Patreon data
     const user = await User.findById(stateData.userId);
 
     if (!user) {
@@ -609,10 +683,8 @@ export async function handlePatreonOAuthCallback(
       );
     }
 
-    // Calculate token expiry
     const tokenExpiry = new Date(Date.now() + expires_in * 1000);
 
-    // ✅ FIX: Permitir undefined si Patreon no devuelve email
     user.patreon = {
       ...user.patreon,
       patreonId,
@@ -641,7 +713,7 @@ export async function handlePatreonOAuthCallback(
   } catch (error: any) {
     console.error('❌ Patreon OAuth callback error:', {
       message: error.message,
-      response: error.response?.data,
+      response: JSON.stringify(error.response?.data),
       status: error.response?.status,
     });
     const { frontendUrl } = getUrls();
