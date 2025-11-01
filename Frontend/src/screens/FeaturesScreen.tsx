@@ -24,7 +24,7 @@ import {
   MdCloudUpload,
   MdDevices,
   MdFavorite,
-  MdKeyboardArrowRight,
+  // MdKeyboardArrowRight,
   MdExpandMore,
   MdExpandLess,
 } from 'react-icons/md';
@@ -549,9 +549,12 @@ function FeaturesScreen() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center animate-fade-in-up delay-400">
             <Link to="/register">
-              <button className="btn btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover-glow animate-pulse-glow">
-                Start Your Journey - Free
-                <MdKeyboardArrowRight className="ml-2 w-6 h-6" />
+              <button
+                disabled
+                className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover-glow animate-pulse-glow"
+              >
+                Coming Soon!
+                {/*<MdKeyboardArrowRight className="ml-2 w-6 h-6" />*/}
               </button>
             </Link>
 

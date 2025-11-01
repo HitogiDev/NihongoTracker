@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import {
   MdFavorite,
   MdPeople,
@@ -10,7 +10,7 @@ import {
   MdBook,
   MdMovie,
   MdPlayArrow,
-} from 'react-icons/md';
+} from "react-icons/md";
 
 function AboutScreen() {
   return (
@@ -24,8 +24,8 @@ function AboutScreen() {
             </h1>
             <p className="text-xl md:text-2xl text-base-content/80 max-w-3xl mx-auto leading-relaxed">
               I'm a solo developer and Japanese learner who got tired of using
-              spreadsheets and Discord bots and built something{' '}
-              <span className="font-semibold text-primary">actually fun</span>{' '}
+              spreadsheets and Discord bots and built something{" "}
+              <span className="font-semibold text-primary">actually fun</span>{" "}
               for tracking immersion.
             </p>
           </div>
@@ -324,10 +324,10 @@ function AboutScreen() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/register"
-                className="btn btn-primary btn-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+                className="btn btn-disabled btn-primary btn-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
-                <MdPlayArrow className="w-6 h-6" />
-                Start Your Journey - Free!
+                {/*<MdPlayArrow className="w-6 h-6" />*/}
+                Coming Soon!
               </Link>
               <Link
                 to="/features"

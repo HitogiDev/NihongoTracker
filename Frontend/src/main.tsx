@@ -31,7 +31,7 @@ import ProfileScreen from './screens/ProfileScreen.tsx';
 import ProtectedRoutes from './contexts/protectedRoute.tsx';
 import queryClient from './queryClient.ts';
 import RankingScreen from './screens/RankingScreen.tsx';
-import RegisterScreen from './screens/RegisterScreen.tsx';
+// import RegisterScreen from './screens/RegisterScreen.tsx';
 import SettingsScreen from './screens/SettingsScreen.tsx';
 import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
@@ -59,7 +59,7 @@ const router = createBrowserRouter(
     <Route path="/" element={<App />}>
       <Route index={true} path="/" element={<HomeScreen />} />
       <Route path="login" element={<LoginScreen />} />
-      <Route path="register" element={<RegisterScreen />} />
+      {/* <Route path="register" element={<RegisterScreen />} /> */}
       <Route path="forgot-password" element={<ForgotPasswordScreen />} />
       <Route path="reset-password/:token" element={<ResetPasswordScreen />} />
       <Route path="verify-email/:token" element={<VerifyEmailScreen />} />

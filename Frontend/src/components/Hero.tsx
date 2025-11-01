@@ -1,16 +1,16 @@
-import { Link } from 'react-router-dom';
-import { useUserDataStore } from '../store/userData';
-import { useQuery } from '@tanstack/react-query';
+import { Link } from "react-router-dom";
+import { useUserDataStore } from "../store/userData";
+import { useQuery } from "@tanstack/react-query";
 import {
   getDashboardHoursFn,
   getRankingFn,
   getRecentLogsFn,
-} from '../api/trackerApi';
-import { useMemo, useRef, useEffect } from 'react';
-import { gsap } from 'gsap';
-import { numberWithCommas } from '../utils/utils';
-import { useDateFormatting } from '../hooks/useDateFormatting';
-import ClubRanking from './club/ClubRanking';
+} from "../api/trackerApi";
+import { useMemo, useRef, useEffect } from "react";
+import { gsap } from "gsap";
+import { numberWithCommas } from "../utils/utils";
+import { useDateFormatting } from "../hooks/useDateFormatting";
+import ClubRanking from "./club/ClubRanking";
 import {
   MdAdd,
   MdArrowDownward,
@@ -25,9 +25,9 @@ import {
   MdTrendingUp,
   MdVideoLibrary,
   MdVolumeUp,
-} from 'react-icons/md';
+} from "react-icons/md";
 import {
-  HiArrowRight,
+  // HiArrowRight,
   HiInformationCircle,
   HiCheck,
   HiUsers,
@@ -39,7 +39,7 @@ import {
   HiLightningBolt,
   HiHeart,
   HiEyeOff,
-} from 'react-icons/hi';
+} from "react-icons/hi";
 
 // Simplified log type config for icons
 const logTypeIcons: { [key: string]: React.ElementType } = {
@@ -50,7 +50,7 @@ const logTypeIcons: { [key: string]: React.ElementType } = {
   manga: MdBook,
   audio: MdVolumeUp,
   movie: MdMovie,
-  'tv show': MdOutlineTv,
+  "tv show": MdOutlineTv,
 };
 
 function Hero() {
@@ -86,7 +86,7 @@ function Hero() {
         duration: 1.2,
         opacity: 1,
         y: 0,
-        ease: 'back.out(1.7)',
+        ease: "back.out(1.7)",
       })
         .to(
           subtitleRef.current,
@@ -94,9 +94,9 @@ function Hero() {
             duration: 1,
             opacity: 1,
             y: 0,
-            ease: 'power3.out',
+            ease: "power3.out",
           },
-          '-=0.8'
+          "-=0.8",
         )
         .to(
           ctaRef.current,
@@ -104,13 +104,13 @@ function Hero() {
             duration: 0.8,
             opacity: 1,
             y: 0,
-            ease: 'power2.out',
+            ease: "power2.out",
           },
-          '-=0.5'
+          "-=0.5",
         );
 
       // Background floating animation
-      const floatingElements = heroRef.current.querySelectorAll('.floating-bg');
+      const floatingElements = heroRef.current.querySelectorAll(".floating-bg");
       floatingElements.forEach((element, index) => {
         gsap.to(element, {
           duration: 2 + index * 0.5,
@@ -119,7 +119,7 @@ function Hero() {
           rotation: 5,
           repeat: -1,
           yoyo: true,
-          ease: 'power2.inOut',
+          ease: "power2.inOut",
           delay: index * 0.3,
         });
       });
@@ -128,14 +128,14 @@ function Hero() {
 
   // Fetch hours for the logged-in user
   const { data: hours, isError: hoursError } = useQuery({
-    queryKey: ['logsHero', username],
+    queryKey: ["logsHero", username],
     queryFn: () => getDashboardHoursFn(username),
     staleTime: Infinity,
     enabled: !!username,
   });
 
   const { data: logs } = useQuery({
-    queryKey: ['recentLogs', username],
+    queryKey: ["recentLogs", username],
     queryFn: () => getRecentLogsFn(username).catch(() => []),
     staleTime: Infinity,
     enabled: !!username,
@@ -143,13 +143,13 @@ function Hero() {
 
   // Fetch ranking for the logged-in user
   const { data: ranking } = useQuery({
-    queryKey: ['ranking'],
+    queryKey: ["ranking"],
     queryFn: () =>
       getRankingFn({
         limit: 3,
         page: 1,
-        filter: 'userXp',
-        timeFilter: 'all-time',
+        filter: "userXp",
+        timeFilter: "all-time",
       }).catch(() => []),
     staleTime: Infinity,
     enabled: !!username,
@@ -182,11 +182,11 @@ function Hero() {
 
     const readingChange = calculatePercentChange(
       currentReadingTime,
-      lastReadingTime
+      lastReadingTime,
     );
     const listeningChange = calculatePercentChange(
       currentListeningTime,
-      lastListeningTime
+      lastListeningTime,
     );
     const totalChange = calculatePercentChange(currentTotal, lastTotal);
 
@@ -228,20 +228,20 @@ function Hero() {
     if (minutes && minutes > 0) {
       const hours = Math.floor(minutes / 60);
       const mins = minutes % 60;
-      return hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ''}` : `${mins}m`;
+      return hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ""}` : `${mins}m`;
     } else if (episodes) {
-      return `${episodes} ep${episodes > 1 ? 's' : ''}`;
+      return `${episodes} ep${episodes > 1 ? "s" : ""}`;
     }
-    return 'N/A';
+    return "N/A";
   }
 
   const randomGreeting = useMemo(() => {
     const greetings = [
       "Let's get some immersion done!",
-      'Time to track your progress!',
-      'Another day, another step towards fluency!',
-      'Keep up the great work!',
-      'The journey of a thousand miles begins with a single step.',
+      "Time to track your progress!",
+      "Another day, another step towards fluency!",
+      "Keep up the great work!",
+      "The journey of a thousand miles begins with a single step.",
     ];
     return greetings[Math.floor(Math.random() * greetings.length)];
   }, []);
@@ -288,9 +288,12 @@ function Hero() {
                 className="flex flex-col sm:flex-row gap-6 justify-center items-center"
               >
                 <Link to="/register">
-                  <button className="btn btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                    Start Your Journey
-                    <HiArrowRight className="ml-2" />
+                  <button
+                    disabled
+                    className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                  >
+                    Coming Soon!
+                    {/*<HiArrowRight className="ml-2" />*/}
                   </button>
                 </Link>
 
@@ -514,9 +517,12 @@ function Hero() {
 
               <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                 <Link to="/register">
-                  <button className="btn btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                  <button
+                    disabled
+                    className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                  >
                     Start Free Today
-                    <HiArrowRight className="ml-2" />
+                    {/*<HiArrowRight className="ml-2" />*/}
                   </button>
                 </Link>
 
@@ -547,7 +553,7 @@ function Hero() {
                     {user.stats?.currentStreak ?? 0}
                   </div>
                   <div className="stat-desc">
-                    day{user.stats?.currentStreak !== 1 ? 's' : ''}
+                    day{user.stats?.currentStreak !== 1 ? "s" : ""}
                   </div>
                 </div>
               </div>
@@ -592,10 +598,10 @@ function Hero() {
                         <div
                           className={`stat-desc flex items-center gap-1 ${
                             immersionStats.changes.reading > 0
-                              ? 'text-success'
+                              ? "text-success"
                               : immersionStats.changes.reading < 0
-                                ? 'text-error'
-                                : ''
+                                ? "text-error"
+                                : ""
                           }`}
                         >
                           {immersionStats.changes.reading !== 0 &&
@@ -606,7 +612,7 @@ function Hero() {
                             ))}
                           {immersionStats.changes.reading !== 0
                             ? `${Math.abs(immersionStats.changes.reading)}%`
-                            : 'No change'}
+                            : "No change"}
                         </div>
                       </div>
                       <div className="stat">
@@ -617,10 +623,10 @@ function Hero() {
                         <div
                           className={`stat-desc flex items-center gap-1 ${
                             immersionStats.changes.listening > 0
-                              ? 'text-success'
+                              ? "text-success"
                               : immersionStats.changes.listening < 0
-                                ? 'text-error'
-                                : ''
+                                ? "text-error"
+                                : ""
                           }`}
                         >
                           {immersionStats.changes.listening !== 0 &&
@@ -631,7 +637,7 @@ function Hero() {
                             ))}
                           {immersionStats.changes.listening !== 0
                             ? `${Math.abs(immersionStats.changes.listening)}%`
-                            : 'No change'}
+                            : "No change"}
                         </div>
                       </div>
                       <div className="stat">
@@ -642,10 +648,10 @@ function Hero() {
                         <div
                           className={`stat-desc flex items-center gap-1 ${
                             immersionStats.changes.total > 0
-                              ? 'text-success'
+                              ? "text-success"
                               : immersionStats.changes.total < 0
-                                ? 'text-error'
-                                : ''
+                                ? "text-error"
+                                : ""
                           }`}
                         >
                           {immersionStats.changes.total !== 0 &&
@@ -656,7 +662,7 @@ function Hero() {
                             ))}
                           {immersionStats.changes.total !== 0
                             ? `${Math.abs(immersionStats.changes.total)}%`
-                            : 'No change'}
+                            : "No change"}
                         </div>
                       </div>
                     </div>
@@ -758,8 +764,8 @@ function Hero() {
                               key={rank.username}
                               className={
                                 rank.username === user.username
-                                  ? 'bg-primary/10 font-bold'
-                                  : ''
+                                  ? "bg-primary/10 font-bold"
+                                  : ""
                               }
                             >
                               <th>{index + 1}</th>

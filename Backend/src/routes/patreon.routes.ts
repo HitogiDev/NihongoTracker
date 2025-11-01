@@ -23,6 +23,7 @@ router.patch('/badge-colors', protect, updateBadgeColors);
 // OAuth2 routes
 router.get('/oauth/init', protect, initiatePatreonOAuth);
 router.get('/oauth/callback', handlePatreonOAuthCallback);
+router.get('/campaign-members');
 
 // Webhook route (public, but verified by signature)
 router.post('/webhook', handlePatreonWebhook);
