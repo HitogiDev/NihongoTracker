@@ -625,7 +625,7 @@ export interface IClubMediaVoting {
 
 export interface IClubMedia {
   _id?: Types.ObjectId;
-  mediaId: string;
+  mediaId?: string;
   mediaType: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie';
   title: string;
   description?: string;

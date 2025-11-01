@@ -23,7 +23,7 @@ const ClubMemberSchema = new Schema<IClubMember>(
 // Club Media Schema (for club reading/watching challenges)
 const ClubMediaSchema = new Schema<IClubMedia>(
   {
-    mediaId: { type: String, required: true },
+    mediaId: { type: String },
     mediaType: {
       type: String,
       enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie'],
