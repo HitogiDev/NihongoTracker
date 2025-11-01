@@ -21,8 +21,11 @@ import { useUserDataStore } from '../store/userData';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import { Crop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
+import ImageCropDialog, {
+  ImageCropResult,
+} from '../components/ImageCropDialog';
 import Wheel from '@uiw/react-color-wheel';
 
 const importTypeString = {
@@ -65,10 +68,6 @@ function SettingsScreen() {
 
   const [avatarSrc, setAvatarSrc] = useState<string>('');
   const [bannerSrc, setBannerSrc] = useState<string>('');
-  const [avatarCrop, setAvatarCrop] = useState<Crop>();
-  const [bannerCrop, setBannerCrop] = useState<Crop>();
-  const [completedAvatarCrop, setCompletedAvatarCrop] = useState<PixelCrop>();
-  const [completedBannerCrop, setCompletedBannerCrop] = useState<PixelCrop>();
   const [showAvatarCrop, setShowAvatarCrop] = useState(false);
   const [showBannerCrop, setShowBannerCrop] = useState(false);
 
@@ -89,8 +88,6 @@ function SettingsScreen() {
   const [emailSentTo, setEmailSentTo] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  const avatarImgRef = useRef<HTMLImageElement>(null);
-  const bannerImgRef = useRef<HTMLImageElement>(null);
   const avatarPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -584,18 +581,71 @@ function SettingsScreen() {
     updateUser(formData);
   }
 
-  async function handleAvatarCropComplete() {
-    if (
-      completedAvatarCrop?.width &&
-      completedAvatarCrop?.height &&
-      avatarImgRef.current &&
-      avatarPreviewCanvasRef.current
-    ) {
-      await canvasPreview(
-        avatarImgRef.current,
-        avatarPreviewCanvasRef.current,
-        completedAvatarCrop
-      );
+  const getDefaultAvatarCrop = useCallback((image: HTMLImageElement): Crop => {
+    const sizePx = Math.min(image.naturalWidth, image.naturalHeight) * 0.9;
+    const widthPercent = (sizePx / image.naturalWidth) * 100;
+    const heightPercent = (sizePx / image.naturalHeight) * 100;
+
+    return {
+      unit: '%',
+      width: widthPercent,
+      height: heightPercent,
+      x: (100 - widthPercent) / 2,
+      y: (100 - heightPercent) / 2,
+    };
+  }, []);
+
+  const getInitialBannerCrop = useCallback((image: HTMLImageElement): Crop => {
+    const { naturalWidth, naturalHeight } = image;
+    const targetAspectRatio = 21 / 9;
+    const imageAspectRatio = naturalWidth / naturalHeight;
+
+    let cropWidthPercent: number;
+    let cropHeightPercent: number;
+
+    if (imageAspectRatio > targetAspectRatio) {
+      cropHeightPercent = 80;
+      cropWidthPercent =
+        (cropHeightPercent * targetAspectRatio * naturalHeight) / naturalWidth;
+
+      if (cropWidthPercent > 95) {
+        cropWidthPercent = 80;
+        cropHeightPercent =
+          (cropWidthPercent * naturalWidth) /
+          (targetAspectRatio * naturalHeight);
+      }
+    } else {
+      cropWidthPercent = 80;
+      cropHeightPercent =
+        (cropWidthPercent * naturalWidth) / (targetAspectRatio * naturalHeight);
+
+      if (cropHeightPercent > 95) {
+        cropHeightPercent = 80;
+        cropWidthPercent =
+          (cropHeightPercent * targetAspectRatio * naturalHeight) /
+          naturalWidth;
+      }
+    }
+
+    const cropX = (100 - cropWidthPercent) / 2;
+    const cropY = (100 - cropHeightPercent) / 2;
+
+    return {
+      unit: '%',
+      width: cropWidthPercent,
+      height: cropHeightPercent,
+      x: cropX,
+      y: cropY,
+    };
+  }, []);
+
+  const handleAvatarCropApply = useCallback(
+    async ({ crop, image }: ImageCropResult) => {
+      if (!avatarPreviewCanvasRef.current) {
+        return;
+      }
+
+      await canvasPreview(image, avatarPreviewCanvasRef.current, crop);
       avatarPreviewCanvasRef.current.classList.remove('hidden');
 
       avatarPreviewCanvasRef.current.toBlob(
@@ -610,23 +660,17 @@ function SettingsScreen() {
         'image/jpeg',
         0.9
       );
+    },
+    []
+  );
 
-      setShowAvatarCrop(false);
-    }
-  }
+  const handleBannerCropApply = useCallback(
+    async ({ crop, image }: ImageCropResult) => {
+      if (!bannerPreviewCanvasRef.current) {
+        return;
+      }
 
-  async function handleBannerCropComplete() {
-    if (
-      completedBannerCrop?.width &&
-      completedBannerCrop?.height &&
-      bannerImgRef.current &&
-      bannerPreviewCanvasRef.current
-    ) {
-      await canvasPreview(
-        bannerImgRef.current,
-        bannerPreviewCanvasRef.current,
-        completedBannerCrop
-      );
+      await canvasPreview(image, bannerPreviewCanvasRef.current, crop);
       bannerPreviewCanvasRef.current.classList.remove('hidden');
 
       bannerPreviewCanvasRef.current.toBlob(
@@ -641,10 +685,9 @@ function SettingsScreen() {
         'image/jpeg',
         0.9
       );
-
-      setShowBannerCrop(false);
-    }
-  }
+    },
+    []
+  );
 
   async function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
@@ -672,72 +715,6 @@ function SettingsScreen() {
     }
   }
 
-  function onAvatarImageLoad() {
-    setAvatarCrop({
-      unit: '%',
-      width: 90,
-      height: 90,
-      x: 5,
-      y: 5,
-    });
-  }
-
-  function onBannerImageLoad() {
-    if (bannerImgRef.current) {
-      const { naturalWidth, naturalHeight } = bannerImgRef.current;
-
-      // Calculate the maximum crop size that fits in the image with 21:9 aspect ratio
-      const targetAspectRatio = 21 / 9; // ~2.33
-      const imageAspectRatio = naturalWidth / naturalHeight;
-
-      let cropWidthPercent, cropHeightPercent;
-
-      if (imageAspectRatio > targetAspectRatio) {
-        // Image is wider than 21:9, constrain by height
-        // Use 80% of height, then calculate width to maintain aspect ratio
-        cropHeightPercent = 80;
-        cropWidthPercent =
-          (cropHeightPercent * targetAspectRatio * naturalHeight) /
-          naturalWidth;
-
-        // If the calculated width exceeds 100%, constrain by width instead
-        if (cropWidthPercent > 95) {
-          cropWidthPercent = 80;
-          cropHeightPercent =
-            (cropWidthPercent * naturalWidth) /
-            (targetAspectRatio * naturalHeight);
-        }
-      } else {
-        // Image is narrower than 21:9, constrain by width
-        // Use 80% of width, then calculate height to maintain aspect ratio
-        cropWidthPercent = 80;
-        cropHeightPercent =
-          (cropWidthPercent * naturalWidth) /
-          (targetAspectRatio * naturalHeight);
-
-        // If the calculated height exceeds 100%, constrain by height instead
-        if (cropHeightPercent > 95) {
-          cropHeightPercent = 80;
-          cropWidthPercent =
-            (cropHeightPercent * targetAspectRatio * naturalHeight) /
-            naturalWidth;
-        }
-      }
-
-      // Center the crop
-      const cropX = (100 - cropWidthPercent) / 2;
-      const cropY = (100 - cropHeightPercent) / 2;
-
-      setBannerCrop({
-        unit: '%',
-        width: cropWidthPercent,
-        height: cropHeightPercent,
-        x: cropX,
-        y: cropY,
-      });
-    }
-  }
-  console.log('render');
   return (
     <div className="min-h-screen bg-base-200 mt-16">
       <dialog
@@ -811,92 +788,30 @@ function SettingsScreen() {
         </form>
       </dialog>
 
-      {showAvatarCrop && (
-        <dialog className="modal modal-open">
-          <div className="modal-box max-w-2xl">
-            <h3 className="font-bold text-lg mb-4">Crop Avatar</h3>
-            <div className="flex justify-center">
-              <ReactCrop
-                crop={avatarCrop}
-                onChange={(_, percentCrop) => setAvatarCrop(percentCrop)}
-                onComplete={(c) => setCompletedAvatarCrop(c)}
-                aspect={1}
-                circularCrop
-              >
-                <img
-                  ref={avatarImgRef}
-                  alt="Crop avatar"
-                  src={avatarSrc}
-                  onLoad={onAvatarImageLoad}
-                  className="max-h-96"
-                />
-              </ReactCrop>
-            </div>
-            <div className="modal-action">
-              <button
-                className="btn btn-primary"
-                onClick={handleAvatarCropComplete}
-                disabled={
-                  !completedAvatarCrop?.width || !completedAvatarCrop?.height
-                }
-              >
-                Apply Crop
-              </button>
-              <button
-                className="btn btn-outline"
-                onClick={() => setShowAvatarCrop(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </dialog>
-      )}
+      <ImageCropDialog
+        title="Crop Avatar"
+        imageSrc={avatarSrc}
+        isOpen={showAvatarCrop}
+        aspect={1}
+        circular
+        onClose={() => setShowAvatarCrop(false)}
+        onApply={handleAvatarCropApply}
+        getInitialCrop={getDefaultAvatarCrop}
+      />
 
-      {showBannerCrop && (
-        <dialog className="modal modal-open">
-          <div className="modal-box max-w-4xl">
-            <h3 className="font-bold text-lg mb-4">Crop Banner</h3>
-            <div className="flex justify-center">
-              <ReactCrop
-                crop={bannerCrop}
-                onChange={(_, percentCrop) => setBannerCrop(percentCrop)}
-                onComplete={(c) => setCompletedBannerCrop(c)}
-                aspect={21 / 9}
-                minWidth={105}
-                minHeight={45} // 105 * (9/21) = 45
-                keepSelection
-                ruleOfThirds
-              >
-                <img
-                  ref={bannerImgRef}
-                  alt="Crop banner"
-                  src={bannerSrc}
-                  onLoad={onBannerImageLoad}
-                  className="max-h-96"
-                />
-              </ReactCrop>
-            </div>
-            <div className="modal-action">
-              <button
-                className="btn btn-primary"
-                onClick={handleBannerCropComplete}
-                disabled={
-                  !completedBannerCrop?.width || !completedBannerCrop?.height
-                }
-              >
-                Apply Crop
-              </button>
-              <button
-                className="btn btn-outline"
-                onClick={() => setShowBannerCrop(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </dialog>
-      )}
+      <ImageCropDialog
+        title="Crop Banner"
+        imageSrc={bannerSrc}
+        isOpen={showBannerCrop}
+        aspect={21 / 9}
+        minWidth={105}
+        minHeight={45}
+        keepSelection
+        ruleOfThirds
+        onClose={() => setShowBannerCrop(false)}
+        onApply={handleBannerCropApply}
+        getInitialCrop={getInitialBannerCrop}
+      />
 
       <div className="bg-base-100 shadow-sm border-b border-base-300">
         <div className="container mx-auto px-4 py-8">

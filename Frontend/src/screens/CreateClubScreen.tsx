@@ -1,11 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+import { Crop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
+import ImageCropDialog, {
+  ImageCropResult,
+} from '../components/ImageCropDialog';
 import {
   MdAdd,
   MdArrowBack,
@@ -18,9 +20,6 @@ import {
   MdWarning,
   MdUpload,
   MdDelete,
-  MdCrop,
-  MdCheck,
-  MdClose,
 } from 'react-icons/md';
 import { createClubFn } from '../api/clubApi';
 import { ICreateClubRequest } from '../types';
@@ -47,16 +46,10 @@ function CreateClubScreen() {
   // Cropping state
   const [avatarSrc, setAvatarSrc] = useState<string>('');
   const [bannerSrc, setBannerSrc] = useState<string>('');
-  const [avatarCrop, setAvatarCrop] = useState<Crop>();
-  const [bannerCrop, setBannerCrop] = useState<Crop>();
-  const [completedAvatarCrop, setCompletedAvatarCrop] = useState<PixelCrop>();
-  const [completedBannerCrop, setCompletedBannerCrop] = useState<PixelCrop>();
   const [showAvatarCrop, setShowAvatarCrop] = useState(false);
   const [showBannerCrop, setShowBannerCrop] = useState(false);
 
   // Refs for cropping
-  const avatarImgRef = useRef<HTMLImageElement>(null);
-  const bannerImgRef = useRef<HTMLImageElement>(null);
   const avatarPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -127,7 +120,6 @@ function CreateClubScreen() {
       return;
     }
 
-    // Create form data with files
     const submissionData = {
       ...formData,
       avatarFile: avatarFile || undefined,
@@ -144,7 +136,6 @@ function CreateClubScreen() {
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Clear error for this field
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
     }
@@ -211,67 +202,76 @@ function CreateClubScreen() {
     }
   };
 
-  // Avatar image load handler
-  const onAvatarImageLoad = () => {
-    setAvatarCrop({
+  const getDefaultAvatarCrop = useCallback((image: HTMLImageElement): Crop => {
+    const sizePx = Math.min(image.naturalWidth, image.naturalHeight) * 0.9;
+    const widthPercent = (sizePx / image.naturalWidth) * 100;
+    const heightPercent = (sizePx / image.naturalHeight) * 100;
+
+    return {
       unit: '%',
-      width: 90,
-      height: 90,
-      x: 5,
-      y: 5,
-    });
-  };
+      width: widthPercent,
+      height: heightPercent,
+      x: (100 - widthPercent) / 2,
+      y: (100 - heightPercent) / 2,
+    };
+  }, []);
 
-  // Banner image load handler
-  const onBannerImageLoad = () => {
-    if (bannerImgRef.current) {
-      const { naturalWidth, naturalHeight } = bannerImgRef.current;
+  const getInitialBannerCrop = useCallback((image: HTMLImageElement): Crop => {
+    const { naturalWidth, naturalHeight } = image;
+    const targetAspectRatio = 21 / 9;
+    const imageAspectRatio = naturalWidth / naturalHeight;
 
-      // Calculate the maximum crop size that fits in the image with 21:9 aspect ratio
-      const targetAspectRatio = 21 / 9; // ~2.33
-      const imageAspectRatio = naturalWidth / naturalHeight;
+    let cropWidthPercent: number;
+    let cropHeightPercent: number;
 
-      let cropWidthPercent, cropHeightPercent;
+    if (imageAspectRatio > targetAspectRatio) {
+      cropHeightPercent = 85;
+      cropWidthPercent =
+        (cropHeightPercent * targetAspectRatio * naturalHeight) / naturalWidth;
 
-      if (imageAspectRatio > targetAspectRatio) {
-        // Image is wider than target ratio, limit by height
-        cropHeightPercent = 90;
-        cropWidthPercent =
-          (cropHeightPercent * targetAspectRatio * naturalHeight) /
-          naturalWidth;
-      } else {
-        // Image is taller than target ratio, limit by width
-        cropWidthPercent = 90;
+      if (cropWidthPercent > 95) {
+        cropWidthPercent = 85;
         cropHeightPercent =
           (cropWidthPercent * naturalWidth) /
           (targetAspectRatio * naturalHeight);
       }
+    } else {
+      cropWidthPercent = 85;
+      cropHeightPercent =
+        (cropWidthPercent * naturalWidth) / (targetAspectRatio * naturalHeight);
 
-      setBannerCrop({
-        unit: '%',
-        width: Math.min(cropWidthPercent, 90),
-        height: Math.min(cropHeightPercent, 90),
-        x: (100 - Math.min(cropWidthPercent, 90)) / 2,
-        y: (100 - Math.min(cropHeightPercent, 90)) / 2,
-      });
+      if (cropHeightPercent > 95) {
+        cropHeightPercent = 85;
+        cropWidthPercent =
+          (cropHeightPercent * targetAspectRatio * naturalHeight) /
+          naturalWidth;
+      }
     }
-  };
 
-  // Handle avatar crop complete
-  const handleAvatarCropComplete = async () => {
-    if (
-      completedAvatarCrop?.width &&
-      completedAvatarCrop?.height &&
-      avatarImgRef.current &&
-      avatarPreviewCanvasRef.current
-    ) {
-      await canvasPreview(
-        avatarImgRef.current,
-        avatarPreviewCanvasRef.current,
-        completedAvatarCrop
-      );
+    const cropX = (100 - cropWidthPercent) / 2;
+    const cropY = (100 - cropHeightPercent) / 2;
 
-      // Convert canvas to blob and create a File
+    return {
+      unit: '%',
+      width: cropWidthPercent,
+      height: cropHeightPercent,
+      x: cropX,
+      y: cropY,
+    };
+  }, []);
+
+  const handleAvatarCropApply = useCallback(
+    async ({ crop, image }: ImageCropResult) => {
+      if (!avatarPreviewCanvasRef.current) {
+        return;
+      }
+
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+
+      await canvasPreview(image, avatarPreviewCanvasRef.current, crop);
+
       avatarPreviewCanvasRef.current.toBlob(
         (blob) => {
           if (blob) {
@@ -285,26 +285,22 @@ function CreateClubScreen() {
         'image/jpeg',
         0.9
       );
+    },
+    [avatarPreview]
+  );
 
-      setShowAvatarCrop(false);
-    }
-  };
+  const handleBannerCropApply = useCallback(
+    async ({ crop, image }: ImageCropResult) => {
+      if (!bannerPreviewCanvasRef.current) {
+        return;
+      }
 
-  // Handle banner crop complete
-  const handleBannerCropComplete = async () => {
-    if (
-      completedBannerCrop?.width &&
-      completedBannerCrop?.height &&
-      bannerImgRef.current &&
-      bannerPreviewCanvasRef.current
-    ) {
-      await canvasPreview(
-        bannerImgRef.current,
-        bannerPreviewCanvasRef.current,
-        completedBannerCrop
-      );
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
 
-      // Convert canvas to blob and create a File
+      await canvasPreview(image, bannerPreviewCanvasRef.current, crop);
+
       bannerPreviewCanvasRef.current.toBlob(
         (blob) => {
           if (blob) {
@@ -318,10 +314,9 @@ function CreateClubScreen() {
         'image/jpeg',
         0.9
       );
-
-      setShowBannerCrop(false);
-    }
-  };
+    },
+    [bannerPreview]
+  );
 
   // Cancel cropping
   const cancelCropping = (type: 'avatar' | 'banner') => {
@@ -807,100 +802,30 @@ function CreateClubScreen() {
         </div>
       </div>
 
-      {/* Avatar Cropping Modal */}
-      {showAvatarCrop && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <MdCrop />
-              Crop Club Icon
-            </h3>
-            <div className="flex flex-col items-center gap-4">
-              <ReactCrop
-                crop={avatarCrop}
-                onChange={(c) => setAvatarCrop(c)}
-                onComplete={(c) => setCompletedAvatarCrop(c)}
-                aspect={1}
-                circularCrop
-              >
-                <img
-                  ref={avatarImgRef}
-                  alt="Crop me"
-                  src={avatarSrc}
-                  style={{ maxHeight: '400px' }}
-                  onLoad={onAvatarImageLoad}
-                />
-              </ReactCrop>
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-success"
-                  onClick={handleAvatarCropComplete}
-                  disabled={
-                    !completedAvatarCrop?.width || !completedAvatarCrop?.height
-                  }
-                >
-                  <MdCheck />
-                  Apply Crop
-                </button>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => cancelCropping('avatar')}
-                >
-                  <MdClose />
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ImageCropDialog
+        title="Crop Club Icon"
+        imageSrc={avatarSrc}
+        isOpen={showAvatarCrop}
+        aspect={1}
+        circular
+        onClose={() => cancelCropping('avatar')}
+        onApply={handleAvatarCropApply}
+        getInitialCrop={getDefaultAvatarCrop}
+      />
 
-      {/* Banner Cropping Modal */}
-      {showBannerCrop && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-6xl">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <MdCrop />
-              Crop Club Banner
-            </h3>
-            <div className="flex flex-col items-center gap-4">
-              <ReactCrop
-                crop={bannerCrop}
-                onChange={(c) => setBannerCrop(c)}
-                onComplete={(c) => setCompletedBannerCrop(c)}
-                aspect={21 / 9}
-              >
-                <img
-                  ref={bannerImgRef}
-                  alt="Crop me"
-                  src={bannerSrc}
-                  style={{ maxHeight: '400px' }}
-                  onLoad={onBannerImageLoad}
-                />
-              </ReactCrop>
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-success"
-                  onClick={handleBannerCropComplete}
-                  disabled={
-                    !completedBannerCrop?.width || !completedBannerCrop?.height
-                  }
-                >
-                  <MdCheck />
-                  Apply Crop
-                </button>
-                <button
-                  className="btn btn-ghost"
-                  onClick={() => cancelCropping('banner')}
-                >
-                  <MdClose />
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ImageCropDialog
+        title="Crop Club Banner"
+        imageSrc={bannerSrc}
+        isOpen={showBannerCrop}
+        aspect={21 / 9}
+        minWidth={200}
+        minHeight={86}
+        keepSelection
+        ruleOfThirds
+        onClose={() => cancelCropping('banner')}
+        onApply={handleBannerCropApply}
+        getInitialCrop={getInitialBannerCrop}
+      />
 
       {/* Hidden canvases for preview */}
       <canvas ref={avatarPreviewCanvasRef} className="hidden" />
