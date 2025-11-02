@@ -20,7 +20,8 @@ type manabeLogs = {
     | 'AUDIO'
     | 'OUTPUT'
     | 'JUEGO'
-    | 'LIBRO';
+    | 'LIBRO'
+    | 'JUEGOLECTURA';
   tiempo?: number;
   caracteres?: number;
   parametro: number;
@@ -78,12 +79,10 @@ function transformManabeLogsList(
       logType: 'reading',
       parametro: 'time',
     },
+    LIBRO: { logType: 'reading', parametro: 'pages' },
     VN: { logType: 'vn', parametro: 'chars' },
     VIDEO: { logType: 'video', parametro: 'time' },
     AUDIO: { logType: 'audio', parametro: 'time' },
-    OUTPUT: { logType: 'other', parametro: 'time' },
-    JUEGO: { logType: 'other', parametro: 'time' },
-    LIBRO: { logType: 'reading', parametro: 'pages' },
   };
 
   return list
@@ -97,7 +96,7 @@ function transformManabeLogsList(
         manabeId: log._id,
         type: logType,
         [parametro]: log.parametro,
-        date: new Date(log.createdAt), // Use the webhook timestamp directly as it's already UTC
+        date: new Date(log.createdAt),
       };
 
       if (log.tiempo) {
