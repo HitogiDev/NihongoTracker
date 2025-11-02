@@ -8,7 +8,6 @@ import SpeedChart from '../components/SpeedChart';
 import ProgressChart from '../components/ProgressChart';
 import StackedBarChart from '../components/StackedBarChart';
 import { numberWithCommas } from '../utils/utils';
-import { convertToUserTimezone } from '../utils/timezone';
 import { DayPicker } from 'react-day-picker';
 import { useTimezone } from '../hooks/useTimezone';
 import TagFilter from '../components/TagFilter';
@@ -217,11 +216,9 @@ function StatsScreen() {
 
     for (const stat of relevantStats) {
       for (const entry of stat.dates) {
-        const dateObj = new Date(entry.date);
-        const localDate = convertToUserTimezone(dateObj, timezone);
-        const dayKey = localDate.toISOString().split('T')[0];
+        if (!entry.localDate) continue;
+        const dayKey = entry.localDate.dayKey;
 
-        // Effective minutes for the entry
         let minutes = 0;
         if (typeof entry.time === 'number' && entry.time > 0) {
           minutes = entry.time;
@@ -230,13 +227,12 @@ function StatsScreen() {
           typeof entry.episodes === 'number' &&
           entry.episodes > 0
         ) {
-          minutes = entry.episodes * 24; // fallback for anime
+          minutes = entry.episodes * 24;
         }
 
         if (minutes > 0) {
           minutesByDay.set(dayKey, (minutesByDay.get(dayKey) || 0) + minutes);
         } else if (!minutesByDay.has(dayKey)) {
-          // Ensure the day exists in the map to avoid missing days; value 0
           minutesByDay.set(dayKey, 0);
         }
       }
@@ -248,7 +244,7 @@ function StatsScreen() {
       if (val > 0) count += 1;
     });
     return count;
-  }, [userStats, currentType, timezone]);
+  }, [userStats, currentType]);
 
   const dailyAverageHoursDisplay = useMemo(() => {
     if (!userStats || !currentTypeStats) return 0;

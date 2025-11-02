@@ -1263,6 +1263,7 @@ interface IStatByType {
     xp: number;
     time?: number;
     episodes?: number;
+    localDate?: ILocalDateInfo;
   }>;
 }
 
@@ -1284,9 +1285,24 @@ interface IUserStats {
     chars?: number;
     pages?: number;
     charsPerHour?: number | null;
+    localDate?: ILocalDateInfo;
   }>;
   timeRange: 'today' | 'week' | 'month' | 'year' | 'total';
   selectedType: string;
+  timezone: string;
+}
+
+interface ILocalDateInfo {
+  iso: string;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+  dayKey: string;
+  monthKey: string;
+  utcMillis: number;
 }
 
 export async function getUserStats(
@@ -1420,7 +1436,7 @@ export async function getUserStats(
       );
       const start = new Date(startLocal.getTime() + offsetNow);
       dateFilter = { date: { $gte: start } };
-      daysPeriod = userDate.getDay() + 1; // Days elapsed in current week
+      daysPeriod = userDate.getDay() + 1;
     } else if (timeRange === 'month') {
       const startLocal = new Date(
         userDate.getFullYear(),
@@ -1459,7 +1475,6 @@ export async function getUserStats(
 
     let aggregationMatch: any = { user: user._id, ...dateFilter };
 
-    // Tag filtering
     if (includedTagsParam || excludedTagsParam) {
       const tagFilter: any = {};
       if (includedTagsParam) {
@@ -1600,6 +1615,51 @@ export async function getUserStats(
       },
     ]);
 
+    const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: userTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    const createLocalDateInfo = (dateValue: Date | string): ILocalDateInfo => {
+      const sourceDate =
+        dateValue instanceof Date ? dateValue : new Date(dateValue);
+      const parts = dateFormatter.formatToParts(sourceDate);
+      const partValue = (type: Intl.DateTimeFormatPart['type']) =>
+        parts.find((part) => part.type === type)?.value || '00';
+
+      const year = Number(partValue('year')) || 0;
+      const month = Number(partValue('month')) || 1;
+      const day = Number(partValue('day')) || 1;
+      const hour = Number(partValue('hour')) || 0;
+      const minute = Number(partValue('minute')) || 0;
+      const second = Number(partValue('second')) || 0;
+
+      const pad = (value: number) => value.toString().padStart(2, '0');
+      const monthKey = `${year.toString().padStart(4, '0')}-${pad(month)}`;
+      const dayKey = `${monthKey}-${pad(day)}`;
+      const iso = `${monthKey}-${pad(day)}T${pad(hour)}:${pad(minute)}:${pad(second)}`;
+      const utcMillis = Date.UTC(year, month - 1, day, hour, minute, second, 0);
+
+      return {
+        iso,
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        dayKey,
+        monthKey,
+        utcMillis,
+      };
+    };
+
     const filteredStatsByType =
       type === 'all'
         ? statsByType
@@ -1658,6 +1718,14 @@ export async function getUserStats(
 
     // Sort by count descending (most logs first)
     completeStats.sort((a, b) => b.count - a.count);
+
+    const statsWithLocalDates = completeStats.map((stat) => ({
+      ...stat,
+      dates: stat.dates.map((entry) => ({
+        ...entry,
+        localDate: createLocalDateInfo(entry.date),
+      })),
+    }));
 
     const readingSpeedData =
       type === 'all' ||
@@ -1720,12 +1788,18 @@ export async function getUserStats(
           ])
         : [];
 
+    const readingSpeedWithLocalDates = readingSpeedData.map((entry) => ({
+      ...entry,
+      localDate: createLocalDateInfo(entry.date),
+    }));
+
     return res.json({
       totals,
-      statsByType: completeStats,
-      readingSpeedData,
+      statsByType: statsWithLocalDates,
+      readingSpeedData: readingSpeedWithLocalDates,
       timeRange,
       selectedType: Array.isArray(type) ? type.join(',') : type,
+      timezone: userTimezone,
     });
   } catch (error) {
     return next(error);

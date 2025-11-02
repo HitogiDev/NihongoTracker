@@ -12,6 +12,8 @@ import {
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Bar } from 'react-chartjs-2';
 import { useThemeColors } from '../hooks/useThemeColors';
+import { useTimezone } from '../hooks/useTimezone';
+import { convertToUserTimezone } from '../utils/timezone';
 
 ChartJS.register(
   CategoryScale,
@@ -23,16 +25,30 @@ ChartJS.register(
   zoomPlugin
 );
 
+interface LocalDateInfo {
+  iso: string;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+  dayKey: string;
+  monthKey: string;
+  utcMillis: number;
+}
+
 interface StatsByType {
   type: string;
   count: number;
   totalTimeHours: number;
   totalXp: number;
   dates: Array<{
-    date: Date;
+    date: Date | string;
     xp: number;
     time?: number;
     episodes?: number;
+    localDate?: LocalDateInfo;
   }>;
 }
 
@@ -63,6 +79,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
 }) => {
   const themeColors = useThemeColors(1);
   const [colorsReady, setColorsReady] = useState(false);
+  const { timezone } = useTimezone();
 
   useEffect(() => {
     if (themeColors.baseContent && !themeColors.baseContent.startsWith('#')) {
@@ -104,77 +121,121 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
 
     if (filteredData.length === 0) return null;
 
-    // Group all dates from all types and sort them
-    const allDates = new Set<string>();
-    filteredData.forEach((stat) => {
-      stat.dates.forEach((dateEntry) => {
-        const date = new Date(dateEntry.date);
-        let dateKey: string;
+    const pad = (value: number) => value.toString().padStart(2, '0');
 
-        // Format based on timeframe
-        switch (timeframe) {
-          case 'today':
-            dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
-            break;
-          case 'week': {
-            // Get week start (Monday)
-            const weekStart = new Date(date);
-            weekStart.setDate(date.getDate() - date.getDay() + 1);
-            dateKey = weekStart.toISOString().split('T')[0];
-            break;
-          }
-          case 'month':
-          default:
-            dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            break;
-          case 'year':
-            dateKey = date.getFullYear().toString();
-            break;
+    const toUtcDate = (local: LocalDateInfo) => new Date(local.utcMillis);
+
+    const getWeekStartKey = (local: LocalDateInfo): string => {
+      const weekStart = toUtcDate(local);
+      const dayIndex = weekStart.getUTCDay();
+      const diff = dayIndex === 0 ? -6 : 1 - dayIndex; // Monday start
+      weekStart.setUTCDate(weekStart.getUTCDate() + diff);
+      return `${weekStart.getUTCFullYear()}-${pad(weekStart.getUTCMonth() + 1)}-${pad(weekStart.getUTCDate())}`;
+    };
+
+    const getDateKey = (local: LocalDateInfo): string => {
+      switch (timeframe) {
+        case 'today':
+        case 'month':
+          return local.dayKey;
+        case 'week':
+          return getWeekStartKey(local);
+        case 'year':
+          return local.monthKey;
+        default:
+          return local.monthKey;
+      }
+    };
+
+    const allDates = new Set<string>();
+    const aggregatedStats = filteredData.map((stat) => {
+      const grouped = new Map<string, { xp: number; minutes: number }>();
+
+      stat.dates.forEach((dateEntry) => {
+        if (!dateEntry.localDate) {
+          return;
         }
+
+        const dateKey = getDateKey(dateEntry.localDate);
         allDates.add(dateKey);
+
+        const existing = grouped.get(dateKey);
+        const minutesIncrement =
+          typeof dateEntry.time === 'number' ? dateEntry.time : 0;
+
+        if (existing) {
+          existing.xp += dateEntry.xp;
+          existing.minutes += minutesIncrement;
+        } else {
+          grouped.set(dateKey, {
+            xp: dateEntry.xp,
+            minutes: minutesIncrement,
+          });
+        }
       });
+
+      return { stat, grouped };
     });
 
-    const sortedDates = Array.from(allDates).sort();
+    let sortedDates = Array.from(allDates).sort();
 
-    // Create datasets for each media type
-    const datasets = filteredData.map((stat) => {
-      const data = sortedDates.map((dateKey) => {
-        // Find entries for this date period
-        const matchingEntries = stat.dates.filter((dateEntry) => {
-          const date = new Date(dateEntry.date);
-          let entryDateKey: string;
+    if (timeframe === 'month') {
+      const nowLocal = convertToUserTimezone(new Date(), timezone);
+      const currentYearMonth = `${nowLocal.getFullYear()}-${pad(nowLocal.getMonth() + 1)}`;
 
-          switch (timeframe) {
-            case 'today':
-              entryDateKey = date.toISOString().split('T')[0];
-              break;
-            case 'week': {
-              const weekStart = new Date(date);
-              weekStart.setDate(date.getDate() - date.getDay() + 1);
-              entryDateKey = weekStart.toISOString().split('T')[0];
-              break;
-            }
-            case 'month':
-            default:
-              entryDateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-              break;
-            case 'year':
-              entryDateKey = date.getFullYear().toString();
-              break;
-          }
-          return entryDateKey === dateKey;
-        });
+      let monthDates = sortedDates.filter((key) =>
+        key.startsWith(`${currentYearMonth}-`)
+      );
 
-        // Sum up the values for this period
-        if (metric === 'xp') {
-          return matchingEntries.reduce((sum, entry) => sum + entry.xp, 0);
-        } else {
-          return matchingEntries.reduce(
-            (sum, entry) => sum + (entry.time || 0) / 60, // Convert minutes to hours
-            0
-          );
+      if (monthDates.length === 0 && sortedDates.length > 0) {
+        const fallbackYearMonth = sortedDates[sortedDates.length - 1].slice(
+          0,
+          7
+        );
+        monthDates = sortedDates.filter((key) =>
+          key.startsWith(`${fallbackYearMonth}-`)
+        );
+      }
+
+      if (monthDates.length === 0) {
+        monthDates = [];
+      }
+
+      const referenceYearMonth = monthDates.length
+        ? monthDates[0].slice(0, 7)
+        : currentYearMonth;
+
+      const [refYearStr, refMonthStr] = referenceYearMonth.split('-');
+      const refYear = parseInt(refYearStr, 10) || nowLocal.getFullYear();
+      const refMonthIndex =
+        (parseInt(refMonthStr, 10) || nowLocal.getMonth() + 1) - 1;
+      const yearMonthKey = `${refYear.toString().padStart(4, '0')}-${pad(refMonthIndex + 1)}`;
+      const daysInMonth = new Date(refYear, refMonthIndex + 1, 0).getDate();
+
+      const monthSet = new Set(monthDates);
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayKey = `${yearMonthKey}-${pad(day)}`;
+        if (!monthSet.has(dayKey)) {
+          monthDates.push(dayKey);
+          monthSet.add(dayKey);
         }
+      }
+
+      monthDates.sort();
+      sortedDates = monthDates;
+    }
+
+    const datasets = aggregatedStats.map(({ stat, grouped }) => {
+      const data = sortedDates.map((dateKey) => {
+        const aggregated = grouped.get(dateKey);
+        if (!aggregated) return 0;
+
+        if (metric === 'xp') {
+          return aggregated.xp;
+        }
+
+        return aggregated.minutes / 60;
       });
 
       return {
@@ -190,31 +251,45 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     // Format labels for display
     const labels = sortedDates.map((dateKey) => {
       switch (timeframe) {
-        case 'today':
-          return new Date(dateKey).toLocaleDateString('en-US', {
+        case 'today': {
+          const [year, month, day] = dateKey
+            .split('-')
+            .map((v) => parseInt(v, 10));
+          const displayDate = new Date(
+            Date.UTC(year, (month || 1) - 1, day || 1)
+          );
+          return displayDate.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
           });
+        }
         case 'week': {
-          const weekDate = new Date(dateKey);
+          const [year, month, day] = dateKey
+            .split('-')
+            .map((v) => parseInt(v, 10));
+          const weekDate = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
           return `Week of ${weekDate.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
           })}`;
         }
-        case 'month':
+        case 'month': {
+          const parts = dateKey.split('-');
+          const day = parts[2] ? parseInt(parts[2], 10) : NaN;
+          return Number.isFinite(day) ? day.toString() : dateKey;
+        }
+        case 'year':
+          return dateKey;
         default: {
           const [year, month] = dateKey.split('-');
-          return new Date(
-            parseInt(year),
-            parseInt(month) - 1
-          ).toLocaleDateString('en-US', {
+          const displayDate = new Date(
+            Date.UTC(parseInt(year, 10), parseInt(month, 10) - 1, 1)
+          );
+          return displayDate.toLocaleDateString('en-US', {
             month: 'short',
             year: 'numeric',
           });
         }
-        case 'year':
-          return dateKey;
       }
     });
 
@@ -222,7 +297,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       labels,
       datasets,
     };
-  }, [statsData, selectedType, metric, timeframe]);
+  }, [statsData, selectedType, metric, timeframe, timezone]);
 
   const options: ChartOptions<'bar'> = {
     responsive: true,

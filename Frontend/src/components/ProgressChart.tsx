@@ -5,6 +5,19 @@ import { useEffect, useState } from 'react';
 import { useTimezone } from '../hooks/useTimezone';
 import { convertToUserTimezone } from '../utils/timezone';
 
+interface LocalDateInfo {
+  iso: string;
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+  dayKey: string;
+  monthKey: string;
+  utcMillis: number;
+}
+
 interface ProgressChartProps {
   logs?: ILog[];
   statsData?: Array<{
@@ -15,10 +28,11 @@ interface ProgressChartProps {
     totalTimeHours: number;
     untrackedCount: number;
     dates: Array<{
-      date: Date;
+      date: Date | string;
       xp: number;
       time?: number;
       episodes?: number;
+      localDate?: LocalDateInfo;
     }>;
   }>;
   selectedType?: string;
@@ -48,6 +62,9 @@ export default function ProgressChart({
   let labels: string[] = [];
   let metricValues: number[] = [];
 
+  const getUtcDateFromLocal = (local: LocalDateInfo) =>
+    new Date(local.utcMillis);
+
   if (statsData) {
     // Process data from statsData (IUserStats format)
     const relevantStats =
@@ -61,35 +78,34 @@ export default function ProgressChart({
     // Fill with data
     relevantStats.forEach((typeStat) => {
       typeStat.dates.forEach((dateEntry) => {
-        const date = new Date(dateEntry.date);
-
-        // Format date based on timeframe
-        let dateKey: string;
-        if (timeframe === 'today') {
-          dateKey = `${date.getHours()}`;
-        } else if (timeframe === 'week') {
-          const weekDay = date.getDay();
-          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          dateKey = dayNames[weekDay];
-        } else if (timeframe === 'month') {
-          dateKey = `${date.getDate()}`;
-        } else if (timeframe === 'year') {
-          dateKey = `${date.getMonth()}`;
-        } else {
-          // total
-          dateKey = `${date.getFullYear()}-${String(
-            date.getMonth() + 1
-          ).padStart(2, '0')}`;
+        if (!dateEntry.localDate) {
+          return;
         }
 
-        // Accumulate values based on metric
+        const local = dateEntry.localDate;
+        let dateKey: string;
+
+        if (timeframe === 'today') {
+          dateKey = `${local.hour}`;
+        } else if (timeframe === 'week') {
+          const dateObj = getUtcDateFromLocal(local);
+          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          dateKey = dayNames[dateObj.getUTCDay()];
+        } else if (timeframe === 'month') {
+          dateKey = `${local.day}`;
+        } else if (timeframe === 'year') {
+          dateKey = `${local.month - 1}`;
+        } else {
+          dateKey = local.monthKey;
+        }
+
         if (!allDatesMap[dateKey]) {
           allDatesMap[dateKey] = 0;
         }
         if (metric === 'xp') {
           allDatesMap[dateKey] += dateEntry.xp;
         } else {
-          allDatesMap[dateKey] += (dateEntry.time || 0) / 60; // Convert minutes to hours
+          allDatesMap[dateKey] += (dateEntry.time || 0) / 60;
         }
       });
     });
@@ -120,10 +136,10 @@ export default function ProgressChart({
       metricValues = dayValues;
     } else if (timeframe === 'month') {
       // Format for days in current month
-      const currentDate = new Date();
+      const currentLocal = convertToUserTimezone(new Date(), timezone);
       const daysInMonth = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth() + 1,
+        currentLocal.getFullYear(),
+        currentLocal.getMonth() + 1,
         0
       ).getDate();
 

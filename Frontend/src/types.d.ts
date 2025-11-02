@@ -521,6 +521,18 @@ interface IUserStats {
       xp: number;
       time?: number;
       episodes?: number;
+      localDate?: {
+        iso: string;
+        year: number;
+        month: number;
+        day: number;
+        hour: number;
+        minute: number;
+        second: number;
+        dayKey: string;
+        monthKey: string;
+        utcMillis: number;
+      };
     }>;
   }>;
   readingSpeedData?: Array<{
@@ -530,9 +542,22 @@ interface IUserStats {
     chars?: number;
     pages?: number;
     charsPerHour?: number | null;
+    localDate?: {
+      iso: string;
+      year: number;
+      month: number;
+      day: number;
+      hour: number;
+      minute: number;
+      second: number;
+      dayKey: string;
+      monthKey: string;
+      utcMillis: number;
+    };
   }>;
-  timeRange: 'today' | 'month' | 'year' | 'total' | 'custom';
+  timeRange: 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
   selectedType: string;
+  timezone: string;
 }
 
 export interface youtubeChannelInfo {

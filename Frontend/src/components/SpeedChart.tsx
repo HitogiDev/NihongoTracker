@@ -13,6 +13,7 @@ import {
   ScriptableContext,
 } from 'chart.js';
 import { ILog } from '../types';
+import { useTimezone } from '../hooks/useTimezone';
 
 // Register Chart.js components
 ChartJS.register(
@@ -39,6 +40,18 @@ interface SpeedChartProps {
     chars?: number;
     pages?: number;
     charsPerHour?: number | null;
+    localDate?: {
+      iso: string;
+      year: number;
+      month: number;
+      day: number;
+      hour: number;
+      minute: number;
+      second: number;
+      dayKey: string;
+      monthKey: string;
+      utcMillis: number;
+    };
   }>;
 }
 
@@ -64,6 +77,7 @@ function SpeedChart({
     () => ['reading', 'vn', 'manga'],
     []
   );
+  const { timezone } = useTimezone();
 
   useEffect(() => {
     if (externalTimeframe) {
@@ -72,61 +86,95 @@ function SpeedChart({
   }, [externalTimeframe]);
 
   useEffect(() => {
-    const now = new Date();
     const filtered: FilteredData = {};
+
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    const getWeekStartKey = (info: { utcMillis: number }) => {
+      const date = new Date(info.utcMillis);
+      const dayIndex = date.getUTCDay();
+      const diff = dayIndex === 0 ? -6 : 1 - dayIndex;
+      date.setUTCDate(date.getUTCDate() + diff);
+      return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+    };
+
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    const createLocalInfo = (date: Date) => {
+      const parts = formatter.formatToParts(date);
+      const partValue = (type: Intl.DateTimeFormatPart['type']) =>
+        parts.find((part) => part.type === type)?.value || '00';
+
+      const year = Number(partValue('year')) || 0;
+      const month = Number(partValue('month')) || 1;
+      const day = Number(partValue('day')) || 1;
+      const hour = Number(partValue('hour')) || 0;
+      const minute = Number(partValue('minute')) || 0;
+      const second = Number(partValue('second')) || 0;
+      const monthKey = `${year.toString().padStart(4, '0')}-${pad(month)}`;
+      const dayKey = `${monthKey}-${pad(day)}`;
+      const utcMillis = Date.UTC(year, month - 1, day, hour, minute, second, 0);
+
+      return {
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        dayKey,
+        monthKey,
+        utcMillis,
+      };
+    };
+
+    const nowInfo = createLocalInfo(new Date());
+    const nowWeekKey = getWeekStartKey(nowInfo);
 
     // Initialize empty arrays for each reading type
     readingTypes.forEach((type) => {
       filtered[type] = [];
     });
 
-    // If readingSpeedData is provided, use it (already pre-processed)
     if (readingSpeedData && readingSpeedData.length > 0) {
       readingSpeedData.forEach((item) => {
-        // Only process data for the reading types we're interested in
         if (!readingTypes.includes(item.type as ReadingType)) return;
+        if (!item.localDate) return;
 
-        // Format date string
-        const itemDate = new Date(item.date);
-        // Format date as YYYY-MM-DD for consistent comparison
-        const dateStr = itemDate.toISOString().split('T')[0];
-        // For year and total views, use YYYY-MM format for grouping by month
-        const monthStr = `${itemDate.getFullYear()}-${String(
-          itemDate.getMonth() + 1
-        ).padStart(2, '0')}`;
+        const monthStr = item.localDate.monthKey;
+        const dateStr = item.localDate.dayKey;
 
-        // Filter based on timeframe
         let include = false;
         switch (timeframe) {
           case 'today':
-            include = itemDate.toDateString() === now.toDateString();
+            include = item.localDate.dayKey === nowInfo.dayKey;
             break;
-          case 'week': {
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay());
-            startOfWeek.setHours(0, 0, 0, 0);
-            include = itemDate >= startOfWeek;
+          case 'week':
+            include = getWeekStartKey(item.localDate) === nowWeekKey;
             break;
-          }
           case 'month':
-            include =
-              itemDate.getMonth() === now.getMonth() &&
-              itemDate.getFullYear() === now.getFullYear();
+            include = item.localDate.monthKey === nowInfo.monthKey;
             break;
           case 'year':
-            include = itemDate.getFullYear() === now.getFullYear();
+            include = item.localDate.year === nowInfo.year;
             break;
-          case 'total':
+          default:
             include = true;
             break;
         }
 
         if (include) {
           const type = item.type as ReadingType;
-          // Use charsPerHour if available, otherwise calculate speed
           let speed = item.charsPerHour || 0;
           if (!speed && item.chars && item.time) {
-            // Calculate characters per hour (time is in seconds)
             speed = item.chars / (item.time / 3600);
           }
 
@@ -139,50 +187,31 @@ function SpeedChart({
           });
         }
       });
-    }
-    // If readingData is provided, process logs and calculate reading speed
-    else if (readingData && readingData.length > 0) {
+    } else if (readingData && readingData.length > 0) {
       readingData.forEach((log) => {
-        // Only process logs that have the types we're interested in
         if (!readingTypes.includes(log.type as ReadingType)) return;
-
-        // Skip if no characters or time data
         if (!log.chars || !log.time || log.time <= 0) return;
 
-        // Calculate reading speed (chars per hour)
-        const speed = (log.chars / (log.time / 60)) * 60; // Convert chars per minute to chars per hour
+        const speed = (log.chars / (log.time / 60)) * 60;
+        const logInfo = createLocalInfo(new Date(log.date));
+        const dateStr = logInfo.dayKey;
+        const monthStr = logInfo.monthKey;
 
-        // Format date as YYYY-MM-DD for consistent comparison
-        const logDate = new Date(log.date);
-        const dateStr = logDate.toISOString().split('T')[0];
-
-        // For year and total views, we'll use YYYY-MM format for grouping by month
-        const monthStr = `${logDate.getFullYear()}-${String(
-          logDate.getMonth() + 1
-        ).padStart(2, '0')}`;
-
-        // Filter based on timeframe
         let include = false;
         switch (timeframe) {
           case 'today':
-            include = logDate.toDateString() === now.toDateString();
+            include = logInfo.dayKey === nowInfo.dayKey;
             break;
-          case 'week': {
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay());
-            startOfWeek.setHours(0, 0, 0, 0);
-            include = logDate >= startOfWeek;
+          case 'week':
+            include = getWeekStartKey(logInfo) === nowWeekKey;
             break;
-          }
           case 'month':
-            include =
-              logDate.getMonth() === now.getMonth() &&
-              logDate.getFullYear() === now.getFullYear();
+            include = logInfo.monthKey === nowInfo.monthKey;
             break;
           case 'year':
-            include = logDate.getFullYear() === now.getFullYear();
+            include = logInfo.year === nowInfo.year;
             break;
-          case 'total':
+          default:
             include = true;
             break;
         }
@@ -228,7 +257,7 @@ function SpeedChart({
     });
 
     setFilteredData(filtered);
-  }, [timeframe, readingData, readingSpeedData, readingTypes]);
+  }, [timeframe, readingData, readingSpeedData, readingTypes, timezone]);
 
   // Get all unique dates across all reading types
   const getAllDates = () => {
