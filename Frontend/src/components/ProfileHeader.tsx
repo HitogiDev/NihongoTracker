@@ -5,6 +5,7 @@ import { AxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { OutletProfileContextType } from '../types';
+import { getPatreonBadgeProps } from '../utils/patreonBadge';
 
 export default function ProfileHeader() {
   const { username } = useParams<{ username: string }>();
@@ -29,6 +30,8 @@ export default function ProfileHeader() {
     }
   }
 
+  const patreonBadge = getPatreonBadgeProps(user?.patreon);
+
   return (
     <div className="flex flex-col justify-center bg-base-200 text-base-content">
       <div
@@ -40,70 +43,27 @@ export default function ProfileHeader() {
         }}
       >
         <div className="flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover">
-          <div className="flex items-end min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
-            {isLoadingUser ? (
-              <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>
-            ) : (
-              <div className="avatar">
-                <div className="w-24 rounded-full">
-                  <img src={user?.avatar ? user.avatar : ''} />
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end min-w-80 px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full mb-2">
+            <div className="mb-2 sm:mb-0">
+              {isLoadingUser ? (
+                <div className="skeleton h-24 w-24 shrink-0 rounded-full"></div>
+              ) : (
+                <div className="avatar">
+                  <div className="w-24 rounded-full">
+                    <img src={user?.avatar ? user.avatar : ''} />
+                  </div>
                 </div>
-              </div>
-            )}
-            <div className="py-22px px-25px">
-              <div className="flex items-center gap-3">
+              )}
+            </div>
+            <div className="py-22px px-25px w-full sm:w-auto text-center sm:text-left">
+              <div className="flex flex-col items-center gap-2 flex-wrap sm:flex-row sm:items-center sm:gap-3">
                 <h1 className="text-xl font-bold inline-block text-slate-100">
                   {user?.username}
                 </h1>
-                {user?.patreon?.isActive && user?.patreon?.tier && (
+                {patreonBadge && (
                   <div
-                    className={`badge gap-2 ${
-                      user.patreon.tier === 'consumer' &&
-                      user.patreon.badgeColor
-                        ? user.patreon.badgeColor === 'rainbow'
-                          ? 'badge-rainbow'
-                          : user.patreon.badgeColor === 'primary'
-                            ? 'badge-primary'
-                            : user.patreon.badgeColor === 'secondary'
-                              ? 'badge-secondary'
-                              : ''
-                        : 'badge-primary'
-                    }`}
-                    style={
-                      user.patreon.tier === 'consumer' &&
-                      user.patreon.badgeColor &&
-                      user.patreon.badgeColor !== 'rainbow' &&
-                      user.patreon.badgeColor !== 'primary' &&
-                      user.patreon.badgeColor !== 'secondary'
-                        ? {
-                            backgroundColor: user.patreon.badgeColor,
-                            color:
-                              user.patreon.badgeTextColor ===
-                                'primary-content' ||
-                              user.patreon.badgeTextColor ===
-                                'secondary-content'
-                                ? undefined
-                                : user.patreon.badgeTextColor || '#ffffff',
-                            border: 'none',
-                          }
-                        : user.patreon.tier === 'consumer' &&
-                            (user.patreon.badgeColor === 'rainbow' ||
-                              user.patreon.badgeTextColor)
-                          ? {
-                              color:
-                                user.patreon.badgeTextColor ===
-                                  'primary-content' ||
-                                user.patreon.badgeTextColor ===
-                                  'secondary-content'
-                                  ? undefined
-                                  : user.patreon.badgeTextColor || undefined,
-                              border:
-                                user.patreon.badgeColor === 'rainbow'
-                                  ? 'none'
-                                  : undefined,
-                            }
-                          : {}
-                    }
+                    className={`badge gap-2 ${patreonBadge.colorClass}`}
+                    style={patreonBadge.style}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -117,18 +77,7 @@ export default function ProfileHeader() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    {/* Show custom badge text for Enthusiast+ tier, otherwise show tier name */}
-                    <span className="font-bold">
-                      {(user.patreon.tier === 'enthusiast' ||
-                        user.patreon.tier === 'consumer') &&
-                      user.patreon.customBadgeText
-                        ? user.patreon.customBadgeText
-                        : user.patreon.tier === 'donator'
-                          ? 'Donator'
-                          : user.patreon.tier === 'enthusiast'
-                            ? 'Enthusiast'
-                            : 'Consumer'}
-                    </span>
+                    <span className="font-bold">{patreonBadge.text}</span>
                   </div>
                 )}
               </div>

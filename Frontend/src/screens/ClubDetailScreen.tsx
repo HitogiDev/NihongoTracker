@@ -42,6 +42,7 @@ import ClubRankingsTab from '../components/club/ClubRankingsTab';
 import EditClubMediaModal from '../components/club/EditClubMediaModal';
 import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
+import { getPatreonBadgeProps } from '../utils/patreonBadge';
 
 function ClubDetailScreen() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -1116,105 +1117,50 @@ function ClubDetailScreen() {
                   {club.members
                     .filter((member) => member.status === 'active')
                     .sort((a, b) => {
-                      // Sort by role: leader first, then moderator, then member
                       const roleOrder = { leader: 0, moderator: 1, member: 2 };
                       return roleOrder[a.role] - roleOrder[b.role];
                     })
-                    .map((member, index) => (
-                      <div
-                        key={member.user._id || index}
-                        className="card bg-base-100 border border-base-300 shadow-sm"
-                      >
-                        <div className="card-body p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="avatar">
-                              <div className="w-12 h-12 rounded-full">
-                                {member.user.avatar ? (
-                                  <img
-                                    src={member.user.avatar}
-                                    alt={member.user.username}
-                                    className="rounded-full w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                    <span className="text-primary font-semibold">
-                                      {member.user.username
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </span>
-                                  </div>
-                                )}
+                    .map((member, index) => {
+                      const patreonBadge = getPatreonBadgeProps(
+                        member.user.patreon
+                      );
+
+                      return (
+                        <div
+                          key={member.user._id || index}
+                          className="card bg-base-100 border border-base-300 shadow-sm"
+                        >
+                          <div className="card-body p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="avatar">
+                                <div className="w-12 h-12 rounded-full">
+                                  {member.user.avatar ? (
+                                    <img
+                                      src={member.user.avatar}
+                                      alt={member.user.username}
+                                      className="rounded-full w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                                      <span className="text-primary font-semibold">
+                                        {member.user.username
+                                          .charAt(0)
+                                          .toUpperCase()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-medium">
-                                  {member.user.username}
-                                </span>
-                                {getRoleIcon(member.role)}
-                                {/* Patreon Badge */}
-                                {member.user.patreon?.isActive &&
-                                  member.user.patreon.tier === 'consumer' && (
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium">
+                                    {member.user.username}
+                                  </span>
+                                  {getRoleIcon(member.role)}
+                                  {patreonBadge && (
                                     <div
-                                      className={`badge badge-sm gap-1 ${
-                                        member.user.patreon.badgeColor ===
-                                        'rainbow'
-                                          ? 'badge-rainbow'
-                                          : member.user.patreon.badgeColor ===
-                                              'primary'
-                                            ? 'badge-primary'
-                                            : member.user.patreon.badgeColor ===
-                                                'secondary'
-                                              ? 'badge-secondary'
-                                              : ''
-                                      }`}
-                                      style={
-                                        member.user.patreon.badgeColor &&
-                                        member.user.patreon.badgeColor !==
-                                          'rainbow' &&
-                                        member.user.patreon.badgeColor !==
-                                          'primary' &&
-                                        member.user.patreon.badgeColor !==
-                                          'secondary'
-                                          ? {
-                                              backgroundColor:
-                                                member.user.patreon.badgeColor,
-                                              color:
-                                                member.user.patreon
-                                                  .badgeTextColor ===
-                                                  'primary-content' ||
-                                                member.user.patreon
-                                                  .badgeTextColor ===
-                                                  'secondary-content'
-                                                  ? undefined
-                                                  : member.user.patreon
-                                                      .badgeTextColor ||
-                                                    '#ffffff',
-                                              border: 'none',
-                                            }
-                                          : member.user.patreon.badgeColor ===
-                                                'rainbow' ||
-                                              member.user.patreon.badgeTextColor
-                                            ? {
-                                                color:
-                                                  member.user.patreon
-                                                    .badgeTextColor ===
-                                                    'primary-content' ||
-                                                  member.user.patreon
-                                                    .badgeTextColor ===
-                                                    'secondary-content'
-                                                    ? undefined
-                                                    : member.user.patreon
-                                                        .badgeTextColor ||
-                                                      undefined,
-                                                border:
-                                                  member.user.patreon
-                                                    .badgeColor === 'rainbow'
-                                                    ? 'none'
-                                                    : undefined,
-                                              }
-                                            : {}
-                                      }
+                                      className={`badge badge-sm gap-1 ${patreonBadge.colorClass}`}
+                                      style={patreonBadge.style}
                                     >
                                       <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -1229,25 +1175,24 @@ function ClubDetailScreen() {
                                         />
                                       </svg>
                                       <span className="font-bold">
-                                        {member.user.patreon.customBadgeText ||
-                                          'Consumer'}
+                                        {patreonBadge.text}
                                       </span>
                                     </div>
                                   )}
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                {getRoleBadge(member.role)}
-                                <span className="text-xs text-base-content/70">
-                                  Joined{' '}
-                                  {new Date(
-                                    member.joinedAt
-                                  ).toLocaleDateString()}
-                                </span>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  {getRoleBadge(member.role)}
+                                  <span className="text-xs text-base-content/70">
+                                    Joined{' '}
+                                    {new Date(
+                                      member.joinedAt
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
 
-                          {/* Leadership Transfer Action - Only show for current leader */}
                           {club?.userRole === 'leader' &&
                             member.role !== 'leader' &&
                             member.user._id !== user?._id && (
@@ -1270,8 +1215,8 @@ function ClubDetailScreen() {
                               </div>
                             )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </div>
             </div>

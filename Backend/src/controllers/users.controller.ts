@@ -466,6 +466,13 @@ export async function getRanking(
             _id: 0,
             username: 1,
             avatar: 1,
+            patreon: {
+              isActive: '$patreon.isActive',
+              tier: '$patreon.tier',
+              customBadgeText: '$patreon.customBadgeText',
+              badgeColor: '$patreon.badgeColor',
+              badgeTextColor: '$patreon.badgeTextColor',
+            },
             stats: {
               userXp: '$timeStats.userXp',
               userChars: '$timeStats.totalChars',
@@ -612,7 +619,19 @@ export async function getRanking(
         { $skip: skip },
         { $limit: limit },
         {
-          $project: { _id: 0, avatar: 1, username: 1, stats: 1 },
+          $project: {
+            _id: 0,
+            avatar: 1,
+            username: 1,
+            stats: 1,
+            patreon: {
+              isActive: '$patreon.isActive',
+              tier: '$patreon.tier',
+              customBadgeText: '$patreon.customBadgeText',
+              badgeColor: '$patreon.badgeColor',
+              badgeTextColor: '$patreon.badgeTextColor',
+            },
+          },
         },
       ]);
 
@@ -759,6 +778,13 @@ export async function getMediumRanking(
           _id: 0,
           username: 1,
           avatar: 1,
+          patreon: {
+            isActive: '$patreon.isActive',
+            tier: '$patreon.tier',
+            customBadgeText: '$patreon.customBadgeText',
+            badgeColor: '$patreon.badgeColor',
+            badgeTextColor: '$patreon.badgeTextColor',
+          },
           stats: {
             userLevel: '$stats.userLevel',
           },

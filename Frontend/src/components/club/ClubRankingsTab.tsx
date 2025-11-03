@@ -12,6 +12,7 @@ import {
 } from 'react-icons/md';
 import { getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
+import { getPatreonBadgeProps } from '../../utils/patreonBadge';
 
 interface ClubRankingsTabProps {
   clubId: string;
@@ -360,111 +361,57 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {rankings.rankings.map((member) => (
-                      <tr
-                        key={member.user._id}
-                        className="hover:bg-base-200/50 transition-colors"
-                      >
-                        <td className="text-center py-4">
-                          <div
-                            className={`flex items-center justify-center gap-2 ${getRankColor(member.rank)}`}
-                          >
-                            {getRankIcon(member.rank)}
-                            <span className="font-bold text-lg">
-                              {member.rank}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="avatar">
-                              <div className="w-12 h-12 rounded-full">
-                                {member.user.avatar ? (
-                                  <img
-                                    src={member.user.avatar}
-                                    alt={`${member.user.username}'s Avatar`}
-                                    className="rounded-full w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                    <span className="text-primary font-semibold">
-                                      {member.user.username
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+                    {rankings.rankings.map((member) => {
+                      const patreonBadge = getPatreonBadgeProps(
+                        member.user.patreon
+                      );
+
+                      return (
+                        <tr
+                          key={member.user._id}
+                          className="hover:bg-base-200/50 transition-colors"
+                        >
+                          <td className="text-center py-4">
+                            <div
+                              className={`flex items-center justify-center gap-2 ${getRankColor(member.rank)}`}
+                            >
+                              {getRankIcon(member.rank)}
+                              <span className="font-bold text-lg">
+                                {member.rank}
+                              </span>
                             </div>
-                            <div>
-                              <Link
-                                to={`/user/${member.user.username}`}
-                                className="font-medium hover:underline hover:text-primary transition-colors flex items-center gap-2 flex-wrap"
-                              >
-                                {member.user.username}
-                                {/* Patreon Badge */}
-                                {member.user.patreon?.isActive &&
-                                  member.user.patreon.tier === 'consumer' && (
+                          </td>
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="avatar">
+                                <div className="w-12 h-12 rounded-full">
+                                  {member.user.avatar ? (
+                                    <img
+                                      src={member.user.avatar}
+                                      alt={`${member.user.username}'s Avatar`}
+                                      className="rounded-full w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
+                                      <span className="text-primary font-semibold">
+                                        {member.user.username
+                                          .charAt(0)
+                                          .toUpperCase()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <Link
+                                  to={`/user/${member.user.username}`}
+                                  className="font-medium hover:underline hover:text-primary transition-colors flex items-center gap-2 flex-wrap"
+                                >
+                                  {member.user.username}
+                                  {patreonBadge && (
                                     <div
-                                      className={`badge badge-sm gap-1 ${
-                                        member.user.patreon.badgeColor ===
-                                        'rainbow'
-                                          ? 'badge-rainbow'
-                                          : member.user.patreon.badgeColor ===
-                                              'primary'
-                                            ? 'badge-primary'
-                                            : member.user.patreon.badgeColor ===
-                                                'secondary'
-                                              ? 'badge-secondary'
-                                              : ''
-                                      }`}
-                                      style={
-                                        member.user.patreon.badgeColor &&
-                                        member.user.patreon.badgeColor !==
-                                          'rainbow' &&
-                                        member.user.patreon.badgeColor !==
-                                          'primary' &&
-                                        member.user.patreon.badgeColor !==
-                                          'secondary'
-                                          ? {
-                                              backgroundColor:
-                                                member.user.patreon.badgeColor,
-                                              color:
-                                                member.user.patreon
-                                                  .badgeTextColor ===
-                                                  'primary-content' ||
-                                                member.user.patreon
-                                                  .badgeTextColor ===
-                                                  'secondary-content'
-                                                  ? undefined
-                                                  : member.user.patreon
-                                                      .badgeTextColor ||
-                                                    '#ffffff',
-                                              border: 'none',
-                                            }
-                                          : member.user.patreon.badgeColor ===
-                                                'rainbow' ||
-                                              member.user.patreon.badgeTextColor
-                                            ? {
-                                                color:
-                                                  member.user.patreon
-                                                    .badgeTextColor ===
-                                                    'primary-content' ||
-                                                  member.user.patreon
-                                                    .badgeTextColor ===
-                                                    'secondary-content'
-                                                    ? undefined
-                                                    : member.user.patreon
-                                                        .badgeTextColor ||
-                                                      undefined,
-                                                border:
-                                                  member.user.patreon
-                                                    .badgeColor === 'rainbow'
-                                                    ? 'none'
-                                                    : undefined,
-                                              }
-                                            : {}
-                                      }
+                                      className={`badge badge-sm gap-1 ${patreonBadge.colorClass}`}
+                                      style={patreonBadge.style}
                                     >
                                       <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -479,30 +426,30 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                                         />
                                       </svg>
                                       <span className="font-bold">
-                                        {member.user.patreon.customBadgeText ||
-                                          'Consumer'}
+                                        {patreonBadge.text}
                                       </span>
                                     </div>
                                   )}
-                              </Link>
+                                </Link>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="text-center py-4">
-                          <span className="badge badge-outline badge-lg">
-                            Lv.{member.user.stats.userLevel}
-                          </span>
-                        </td>
-                        <td className="text-center text-sm text-base-content/70 py-4">
-                          {new Date(member.joinDate).toLocaleDateString()}
-                        </td>
-                        <td className="text-end py-4">
-                          <span className="font-mono font-bold text-lg">
-                            {getDisplayValue(member)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="text-center py-4">
+                            <span className="badge badge-outline badge-lg">
+                              Lv.{member.user.stats.userLevel}
+                            </span>
+                          </td>
+                          <td className="text-center text-sm text-base-content/70 py-4">
+                            {new Date(member.joinDate).toLocaleDateString()}
+                          </td>
+                          <td className="text-end py-4">
+                            <span className="font-mono font-bold text-lg">
+                              {getDisplayValue(member)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

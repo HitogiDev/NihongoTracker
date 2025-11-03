@@ -11,11 +11,30 @@ import {
 } from 'react-icons/pi';
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
 import { useEffect, useRef, useState } from 'react';
-import { filterTypes } from '../types';
+import { filterTypes, IStats } from '../types';
 import { Link } from 'react-router-dom';
 import { useTimezone } from '../hooks/useTimezone';
 import { numberWithCommas } from '../utils/utils';
 import { DayPicker } from 'react-day-picker';
+import { getPatreonBadgeProps } from '../utils/patreonBadge';
+
+type RankedUser = {
+  username: string;
+  avatar?: string;
+  stats?: Partial<IStats>;
+  xp?: number;
+  hours?: number;
+  episodes?: number;
+  pages?: number;
+  chars?: number;
+  patreon?: {
+    isActive: boolean;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
+    customBadgeText?: string;
+    badgeColor?: string;
+    badgeTextColor?: string;
+  };
+};
 
 function RankingScreen() {
   const [limit] = useState(10);
@@ -325,6 +344,22 @@ function RankingScreen() {
             : user.xp || 0;
     return numberWithCommas(val);
   };
+
+  const topGlobalUsers = (
+    (rankedUsers?.pages?.[0] ?? []) as RankedUser[]
+  ).slice(0, 3);
+  const [firstGlobalUser, secondGlobalUser, thirdGlobalUser] = topGlobalUsers;
+  const firstGlobalBadge = getPatreonBadgeProps(firstGlobalUser?.patreon);
+  const secondGlobalBadge = getPatreonBadgeProps(secondGlobalUser?.patreon);
+  const thirdGlobalBadge = getPatreonBadgeProps(thirdGlobalUser?.patreon);
+
+  const topMediumUsers = (
+    (mediumUsers?.pages?.[0] ?? []) as RankedUser[]
+  ).slice(0, 3);
+  const [firstMediumUser, secondMediumUser, thirdMediumUser] = topMediumUsers;
+  const firstMediumBadge = getPatreonBadgeProps(firstMediumUser?.patreon);
+  const secondMediumBadge = getPatreonBadgeProps(secondMediumUser?.patreon);
+  const thirdMediumBadge = getPatreonBadgeProps(thirdMediumUser?.patreon);
 
   // (units displayed inline per mode)
 
@@ -744,17 +779,19 @@ function RankingScreen() {
                         <div className="relative mb-4">
                           <div className="avatar">
                             <div className="w-16 h-16 rounded-full ring ring-base-content/40">
-                              {rankedUsers.pages[0][1]?.avatar ? (
+                              {secondGlobalUser?.avatar ? (
                                 <img
-                                  src={rankedUsers.pages[0][1].avatar}
-                                  alt={`${rankedUsers.pages[0][1].username}'s Avatar`}
+                                  src={secondGlobalUser.avatar}
+                                  alt={`${secondGlobalUser.username}'s Avatar`}
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
                                   <span className="text-xl font-bold">
-                                    {rankedUsers.pages[0][1]?.username
-                                      .charAt(0)
-                                      .toUpperCase()}
+                                    {secondGlobalUser?.username
+                                      ? secondGlobalUser.username
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : ''}
                                   </span>
                                 </div>
                               )}
@@ -769,18 +806,42 @@ function RankingScreen() {
                               </div>
                             </div>
                             <Link
-                              to={`/user/${rankedUsers.pages[0][1]?.username}`}
-                              className="font-bold hover:underline"
+                              to={`/user/${secondGlobalUser?.username ?? ''}`}
+                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
                             >
-                              {rankedUsers.pages[0][1]?.username}
+                              {secondGlobalUser?.username}
+                              {secondGlobalBadge && (
+                                <div
+                                  className={`badge badge-sm gap-1 ${secondGlobalBadge.colorClass}`}
+                                  style={secondGlobalBadge.style}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3 w-3"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span className="font-bold">
+                                    {secondGlobalBadge.text}
+                                  </span>
+                                </div>
+                              )}
                             </Link>
                           </div>
                         </div>
                         <div className="text-sm text-base-content/70">
-                          Lv.{rankedUsers.pages[0][1]?.stats?.userLevel ?? 1}
+                          Lv.{secondGlobalUser?.stats?.userLevel ?? 1}
                         </div>
                         <div className="text-lg font-bold text-base-content mt-1">
-                          {getTopDisplayValue(rankedUsers.pages[0][1])}
+                          {secondGlobalUser
+                            ? getTopDisplayValue(secondGlobalUser)
+                            : null}
                         </div>
                       </div>
 
@@ -788,17 +849,19 @@ function RankingScreen() {
                         <div className="relative mb-4">
                           <div className="avatar">
                             <div className="w-20 h-20 rounded-full ring ring-warning ring-offset-2">
-                              {rankedUsers.pages[0][0]?.avatar ? (
+                              {firstGlobalUser?.avatar ? (
                                 <img
-                                  src={rankedUsers.pages[0][0].avatar}
-                                  alt={`${rankedUsers.pages[0][0].username}'s Avatar`}
+                                  src={firstGlobalUser.avatar}
+                                  alt={`${firstGlobalUser.username}'s Avatar`}
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
                                   <span className="text-2xl font-bold">
-                                    {rankedUsers.pages[0][0]?.username
-                                      .charAt(0)
-                                      .toUpperCase()}
+                                    {firstGlobalUser?.username
+                                      ? firstGlobalUser.username
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : ''}
                                   </span>
                                 </div>
                               )}
@@ -816,18 +879,42 @@ function RankingScreen() {
                               </div>
                             </div>
                             <Link
-                              to={`/user/${rankedUsers.pages[0][0]?.username}`}
-                              className="font-bold hover:underline text-lg"
+                              to={`/user/${firstGlobalUser?.username ?? ''}`}
+                              className="font-bold hover:underline text-lg flex items-center justify-center gap-2 flex-wrap"
                             >
-                              {rankedUsers.pages[0][0]?.username}
+                              {firstGlobalUser?.username}
+                              {firstGlobalBadge && (
+                                <div
+                                  className={`badge badge-sm gap-1 ${firstGlobalBadge.colorClass}`}
+                                  style={firstGlobalBadge.style}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3 w-3"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span className="font-bold">
+                                    {firstGlobalBadge.text}
+                                  </span>
+                                </div>
+                              )}
                             </Link>
                           </div>
                         </div>
                         <div className="text-sm text-base-content/70">
-                          Lv.{rankedUsers.pages[0][0]?.stats?.userLevel ?? 1}
+                          Lv.{firstGlobalUser?.stats?.userLevel ?? 1}
                         </div>
                         <div className="text-xl font-bold text-warning mt-1">
-                          {getTopDisplayValue(rankedUsers.pages[0][0])}
+                          {firstGlobalUser
+                            ? getTopDisplayValue(firstGlobalUser)
+                            : null}
                         </div>
                       </div>
 
@@ -835,17 +922,19 @@ function RankingScreen() {
                         <div className="relative mb-4">
                           <div className="avatar">
                             <div className="w-16 h-16 rounded-full ring ring-accent/50">
-                              {rankedUsers.pages[0][2]?.avatar ? (
+                              {thirdGlobalUser?.avatar ? (
                                 <img
-                                  src={rankedUsers.pages[0][2].avatar}
-                                  alt={`${rankedUsers.pages[0][2].username}'s Avatar`}
+                                  src={thirdGlobalUser.avatar}
+                                  alt={`${thirdGlobalUser.username}'s Avatar`}
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
                                   <span className="text-xl font-bold">
-                                    {rankedUsers.pages[0][2]?.username
-                                      .charAt(0)
-                                      .toUpperCase()}
+                                    {thirdGlobalUser?.username
+                                      ? thirdGlobalUser.username
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : ''}
                                   </span>
                                 </div>
                               )}
@@ -860,18 +949,42 @@ function RankingScreen() {
                               </div>
                             </div>
                             <Link
-                              to={`/user/${rankedUsers.pages[0][2]?.username}`}
-                              className="font-bold hover:underline"
+                              to={`/user/${thirdGlobalUser?.username ?? ''}`}
+                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
                             >
-                              {rankedUsers.pages[0][2]?.username}
+                              {thirdGlobalUser?.username}
+                              {thirdGlobalBadge && (
+                                <div
+                                  className={`badge badge-sm gap-1 ${thirdGlobalBadge.colorClass}`}
+                                  style={thirdGlobalBadge.style}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3 w-3"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span className="font-bold">
+                                    {thirdGlobalBadge.text}
+                                  </span>
+                                </div>
+                              )}
                             </Link>
                           </div>
                         </div>
                         <div className="text-sm text-base-content/70">
-                          Lv.{rankedUsers.pages[0][2]?.stats?.userLevel ?? 1}
+                          Lv.{thirdGlobalUser?.stats?.userLevel ?? 1}
                         </div>
                         <div className="text-lg font-bold text-base-content mt-1">
-                          {getTopDisplayValue(rankedUsers.pages[0][2])}
+                          {thirdGlobalUser
+                            ? getTopDisplayValue(thirdGlobalUser)
+                            : null}
                         </div>
                       </div>
                     </div>
@@ -887,17 +1000,19 @@ function RankingScreen() {
                         <div className="relative mb-4">
                           <div className="avatar">
                             <div className="w-16 h-16 rounded-full ring ring-base-content/40">
-                              {mediumUsers.pages[0][1]?.avatar ? (
+                              {secondMediumUser?.avatar ? (
                                 <img
-                                  src={mediumUsers.pages[0][1].avatar}
-                                  alt={`${mediumUsers.pages[0][1].username}'s Avatar`}
+                                  src={secondMediumUser.avatar}
+                                  alt={`${secondMediumUser.username}'s Avatar`}
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
                                   <span className="text-xl font-bold">
-                                    {mediumUsers.pages[0][1]?.username
-                                      .charAt(0)
-                                      .toUpperCase()}
+                                    {secondMediumUser?.username
+                                      ? secondMediumUser.username
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : ''}
                                   </span>
                                 </div>
                               )}
@@ -912,18 +1027,42 @@ function RankingScreen() {
                               </div>
                             </div>
                             <Link
-                              to={`/user/${mediumUsers.pages[0][1]?.username}`}
-                              className="font-bold hover:underline"
+                              to={`/user/${secondMediumUser?.username ?? ''}`}
+                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
                             >
-                              {mediumUsers.pages[0][1]?.username}
+                              {secondMediumUser?.username}
+                              {secondMediumBadge && (
+                                <div
+                                  className={`badge badge-sm gap-1 ${secondMediumBadge.colorClass}`}
+                                  style={secondMediumBadge.style}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3 w-3"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span className="font-bold">
+                                    {secondMediumBadge.text}
+                                  </span>
+                                </div>
+                              )}
                             </Link>
                           </div>
                         </div>
                         <div className="text-sm text-base-content/70">
-                          Lv.{mediumUsers.pages[0][1]?.stats?.userLevel ?? 1}
+                          Lv.{secondMediumUser?.stats?.userLevel ?? 1}
                         </div>
                         <div className="text-lg font-bold text-base-content mt-1">
-                          {getTopDisplayValueMedium(mediumUsers.pages[0][1])}
+                          {secondMediumUser
+                            ? getTopDisplayValueMedium(secondMediumUser)
+                            : null}
                         </div>
                       </div>
 
@@ -931,17 +1070,19 @@ function RankingScreen() {
                         <div className="relative mb-4">
                           <div className="avatar">
                             <div className="w-20 h-20 rounded-full ring ring-warning ring-offset-2">
-                              {mediumUsers.pages[0][0]?.avatar ? (
+                              {firstMediumUser?.avatar ? (
                                 <img
-                                  src={mediumUsers.pages[0][0].avatar}
-                                  alt={`${mediumUsers.pages[0][0].username}'s Avatar`}
+                                  src={firstMediumUser.avatar}
+                                  alt={`${firstMediumUser.username}'s Avatar`}
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
                                   <span className="text-2xl font-bold">
-                                    {mediumUsers.pages[0][0]?.username
-                                      .charAt(0)
-                                      .toUpperCase()}
+                                    {firstMediumUser?.username
+                                      ? firstMediumUser.username
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : ''}
                                   </span>
                                 </div>
                               )}
@@ -959,18 +1100,42 @@ function RankingScreen() {
                               </div>
                             </div>
                             <Link
-                              to={`/user/${mediumUsers.pages[0][0]?.username}`}
-                              className="font-bold hover:underline text-lg"
+                              to={`/user/${firstMediumUser?.username ?? ''}`}
+                              className="font-bold hover:underline text-lg flex items-center justify-center gap-2 flex-wrap"
                             >
-                              {mediumUsers.pages[0][0]?.username}
+                              {firstMediumUser?.username}
+                              {firstMediumBadge && (
+                                <div
+                                  className={`badge badge-sm gap-1 ${firstMediumBadge.colorClass}`}
+                                  style={firstMediumBadge.style}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3 w-3"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span className="font-bold">
+                                    {firstMediumBadge.text}
+                                  </span>
+                                </div>
+                              )}
                             </Link>
                           </div>
                         </div>
                         <div className="text-sm text-base-content/70">
-                          Lv.{mediumUsers.pages[0][0]?.stats?.userLevel ?? 1}
+                          Lv.{firstMediumUser?.stats?.userLevel ?? 1}
                         </div>
                         <div className="text-xl font-bold text-warning mt-1">
-                          {getTopDisplayValueMedium(mediumUsers.pages[0][0])}
+                          {firstMediumUser
+                            ? getTopDisplayValueMedium(firstMediumUser)
+                            : null}
                         </div>
                       </div>
 
@@ -978,17 +1143,19 @@ function RankingScreen() {
                         <div className="relative mb-4">
                           <div className="avatar">
                             <div className="w-16 h-16 rounded-full ring ring-accent/50">
-                              {mediumUsers.pages[0][2]?.avatar ? (
+                              {thirdMediumUser?.avatar ? (
                                 <img
-                                  src={mediumUsers.pages[0][2].avatar}
-                                  alt={`${mediumUsers.pages[0][2].username}'s Avatar`}
+                                  src={thirdMediumUser.avatar}
+                                  alt={`${thirdMediumUser?.username ?? 'User'}'s Avatar`}
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
                                   <span className="text-xl font-bold">
-                                    {mediumUsers.pages[0][2]?.username
-                                      .charAt(0)
-                                      .toUpperCase()}
+                                    {thirdMediumUser?.username
+                                      ? thirdMediumUser.username
+                                          .charAt(0)
+                                          .toUpperCase()
+                                      : ''}
                                   </span>
                                 </div>
                               )}
@@ -1003,18 +1170,42 @@ function RankingScreen() {
                               </div>
                             </div>
                             <Link
-                              to={`/user/${mediumUsers.pages[0][2]?.username}`}
-                              className="font-bold hover:underline"
+                              to={`/user/${thirdMediumUser?.username ?? ''}`}
+                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
                             >
-                              {mediumUsers.pages[0][2]?.username}
+                              {thirdMediumUser?.username}
+                              {thirdMediumBadge && (
+                                <div
+                                  className={`badge badge-sm gap-1 ${thirdMediumBadge.colorClass}`}
+                                  style={thirdMediumBadge.style}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-3 w-3"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  <span className="font-bold">
+                                    {thirdMediumBadge.text}
+                                  </span>
+                                </div>
+                              )}
                             </Link>
                           </div>
                         </div>
                         <div className="text-sm text-base-content/70">
-                          Lv.{mediumUsers.pages[0][2]?.stats?.userLevel ?? 1}
+                          Lv.{thirdMediumUser?.stats?.userLevel ?? 1}
                         </div>
                         <div className="text-lg font-bold text-base-content mt-1">
-                          {getTopDisplayValueMedium(mediumUsers.pages[0][2])}
+                          {thirdMediumUser
+                            ? getTopDisplayValueMedium(thirdMediumUser)
+                            : null}
                         </div>
                       </div>
                     </div>
@@ -1078,6 +1269,7 @@ function RankingScreen() {
                                   : mediumMetric === 'chars'
                                     ? user.chars || 0
                                     : user.xp || 0;
+                        const patreonBadge = getPatreonBadgeProps(user.patreon);
 
                         // Skip top 3 in the table if they're already shown in podium
                         if (
@@ -1130,88 +1322,28 @@ function RankingScreen() {
                                   >
                                     {user.username}
                                     {/* Patreon Badge */}
-                                    {user.patreon?.isActive &&
-                                      user.patreon.tier === 'consumer' && (
-                                        <div
-                                          className={`badge badge-sm gap-1 ${
-                                            user.patreon.badgeColor ===
-                                            'rainbow'
-                                              ? 'badge-rainbow'
-                                              : user.patreon.badgeColor ===
-                                                  'primary'
-                                                ? 'badge-primary'
-                                                : user.patreon.badgeColor ===
-                                                    'secondary'
-                                                  ? 'badge-secondary'
-                                                  : ''
-                                          }`}
-                                          style={
-                                            user.patreon.badgeColor &&
-                                            user.patreon.badgeColor !==
-                                              'rainbow' &&
-                                            user.patreon.badgeColor !==
-                                              'primary' &&
-                                            user.patreon.badgeColor !==
-                                              'secondary'
-                                              ? {
-                                                  backgroundColor:
-                                                    user.patreon.badgeColor,
-                                                  color:
-                                                    user.patreon
-                                                      .badgeTextColor ===
-                                                      'primary-content' ||
-                                                    user.patreon
-                                                      .badgeTextColor ===
-                                                      'secondary-content'
-                                                      ? undefined
-                                                      : user.patreon
-                                                          .badgeTextColor ||
-                                                        '#ffffff',
-                                                  border: 'none',
-                                                }
-                                              : user.patreon.badgeColor ===
-                                                    'rainbow' ||
-                                                  user.patreon.badgeTextColor
-                                                ? {
-                                                    color:
-                                                      user.patreon
-                                                        .badgeTextColor ===
-                                                        'primary-content' ||
-                                                      user.patreon
-                                                        .badgeTextColor ===
-                                                        'secondary-content'
-                                                        ? undefined
-                                                        : user.patreon
-                                                            .badgeTextColor ||
-                                                          undefined,
-                                                    border:
-                                                      user.patreon
-                                                        .badgeColor ===
-                                                      'rainbow'
-                                                        ? 'none'
-                                                        : undefined,
-                                                  }
-                                                : {}
-                                          }
+                                    {patreonBadge && (
+                                      <div
+                                        className={`badge badge-sm gap-1 ${patreonBadge.colorClass}`}
+                                        style={patreonBadge.style}
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
                                         >
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-3 w-3"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                          >
-                                            <path
-                                              fillRule="evenodd"
-                                              d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                              clipRule="evenodd"
-                                            />
-                                          </svg>
-                                          <span className="font-bold">
-                                            {user.patreon.customBadgeText ||
-                                              'Consumer'}
-                                          </span>
-                                        </div>
-                                      )}
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                        <span className="font-bold">
+                                          {patreonBadge.text}
+                                        </span>
+                                      </div>
+                                    )}
                                   </Link>
                                 </div>
                               </div>
