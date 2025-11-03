@@ -8,6 +8,7 @@ import {
 import { useState, useMemo } from 'react';
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
+import DOMPurify from 'dompurify';
 import {
   MdSearch,
   MdFilterList,
@@ -27,6 +28,7 @@ import {
   MdOutlineTv,
   MdClose,
 } from 'react-icons/md';
+import { convertBBCodeToHtml } from '../utils/utils';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
@@ -805,6 +807,66 @@ function MediaListItem({
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
+  const descriptionText = useMemo(() => {
+    if (!media.description || media.description.length === 0) {
+      return '';
+    }
+
+    const rawDescription =
+      media.description.find((desc) => desc.language === 'eng')?.description ??
+      media.description[0]?.description ??
+      '';
+
+    const normalizedSource = rawDescription
+      .replace(/\r\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, ' ')
+      .replace(/\u00a0/gi, ' ');
+
+    const sourceWithoutQuoteMarkers = normalizedSource.replace(
+      /(^|\n)\s*>+\s?/g,
+      '$1'
+    );
+
+    if (!sourceWithoutQuoteMarkers.trim()) {
+      return 'No description available';
+    }
+
+    let formattedDescription = sourceWithoutQuoteMarkers;
+
+    if (
+      /\[(b|i|u|s|url|img|spoiler|quote|code|list|\*)\b/i.test(
+        sourceWithoutQuoteMarkers
+      )
+    ) {
+      formattedDescription = convertBBCodeToHtml(sourceWithoutQuoteMarkers);
+    } else if (!/<[a-z][\s\S]*>/i.test(sourceWithoutQuoteMarkers)) {
+      formattedDescription = sourceWithoutQuoteMarkers.replace(/\n+/g, '\n');
+    }
+
+    const normalizedDescription = formattedDescription
+      .replace(/<br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/?(div|li)>/gi, '\n')
+      .replace(/<\/?h[1-6][^>]*>/gi, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\n{3,}/g, '\n\n');
+
+    const plainDescription = DOMPurify.sanitize(normalizedDescription, {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    });
+
+    const withoutQuoteMarkers = plainDescription
+      .replace(/(^|\n)\s*>+\s?/g, '$1')
+      .replace(/(^|\n)\s*&gt;\s?/gi, '$1');
+
+    return withoutQuoteMarkers
+      .replace(/\\n/g, ' ')
+      .replace(/[\s\u00A0]+/g, ' ')
+      .trim();
+  }, [media.description]);
+
   const handleCardClick = () => {
     navigate(`/${media.type}/${media.contentId}/${username}`);
   };
@@ -874,12 +936,12 @@ function MediaListItem({
                   </p>
                 )}
 
-                {media.description && media.description.length > 0 && (
-                  <p className="text-sm text-base-content/70 line-clamp-2">
-                    {media.description.find((desc) => desc.language === 'eng')
-                      ?.description ||
-                      media.description[0]?.description ||
-                      'No description available'}
+                {descriptionText && (
+                  <p
+                    className="text-sm text-base-content/70 line-clamp-2"
+                    title={descriptionText}
+                  >
+                    {descriptionText}
                   </p>
                 )}
               </div>

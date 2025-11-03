@@ -113,30 +113,63 @@ export default function MediaHeader() {
   }
 
   const renderDescription = (description: string) => {
-    // First check if it contains BBCode tags
-    if (/\[(b|i|u|s|url|img|spoiler|quote|code|list|\*)\b/i.test(description)) {
-      const htmlFromBBCode = convertBBCodeToHtml(description);
+    const normalizedSource = description
+      .replace(/\r\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, ' ')
+      .replace(/\u00a0/gi, ' ');
+
+    const sourceWithoutQuoteMarkers = normalizedSource.replace(
+      /(^|\n)\s*>+\s?/g,
+      '$1'
+    );
+
+    if (!sourceWithoutQuoteMarkers.trim()) {
+      return null;
+    }
+
+    if (
+      /\[(b|i|u|s|url|img|spoiler|quote|code|list|\*)\b/i.test(
+        sourceWithoutQuoteMarkers
+      )
+    ) {
+      const htmlFromBBCode = convertBBCodeToHtml(
+        sourceWithoutQuoteMarkers
+      ).replace(/\\n/g, '\n');
 
       const sanitizedDescription = DOMPurify.sanitize(
-        htmlFromBBCode.replace(/<br\s*\/?>/gi, '<br />')
+        htmlFromBBCode.replace(/<br\s*\/?/gi, '<br />')
       );
-      return <div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />;
+
+      const cleanedDescription = sanitizedDescription.replace(
+        /(^|<br\s*\/?\s*>)(?:\s*(?:&gt;|>)+\s*)/gi,
+        '$1'
+      );
+
+      return <div dangerouslySetInnerHTML={{ __html: cleanedDescription }} />;
     }
 
-    if (!/<[a-z][\s\S]*>/i.test(description)) {
-      return description.split('\n').map((line, index) => (
-        <p key={index}>
-          {line}
-          <br />
-        </p>
-      ));
+    if (!/<[a-z][\s\S]*>/i.test(sourceWithoutQuoteMarkers)) {
+      return sourceWithoutQuoteMarkers.split('\n').map((line, index) => {
+        const cleanedLine = line.replace(/^\s*(?:&gt;|>)+\s*/, '');
+        return (
+          <p key={`description-line-${index}`}>
+            {cleanedLine.length > 0 ? cleanedLine : '\u00A0'}
+          </p>
+        );
+      });
     }
 
-    // Render HTML safely
     const sanitizedDescription = DOMPurify.sanitize(
-      description.replace(/<br\s*\/?>/gi, '<br />')
+      sourceWithoutQuoteMarkers.replace(/<br\s*\/?/gi, '<br />')
     );
-    return <div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />;
+
+    const cleanedDescription = sanitizedDescription.replace(
+      /(^|<br\s*\/?\s*>)(?:\s*(?:&gt;|>)+\s*)/gi,
+      '$1'
+    );
+
+    return <div dangerouslySetInnerHTML={{ __html: cleanedDescription }} />;
   };
 
   useEffect(() => {
