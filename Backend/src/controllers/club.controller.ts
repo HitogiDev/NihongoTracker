@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Club } from '../models/club.model.js';
+import { ClubMediaVoting } from '../models/clubMediaVoting.model.js';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import Log from '../models/log.model.js';
@@ -12,8 +13,13 @@ import {
   IClubListResponse,
   IClub,
   IClubMember,
-  IClubMediaCandidate,
 } from '../types.js';
+import {
+  completeVotingDocument,
+  deleteVotingById,
+  findVotingForClub,
+  updateVotingStatusesForClub,
+} from '../services/clubMediaVoting.js';
 
 export async function getClubs(
   req: Request,
@@ -143,7 +149,7 @@ export async function getClub(
     }
 
     // Auto-update voting statuses based on current date
-    await updateVotingStatuses(club);
+    await updateVotingStatusesForClub(club);
 
     // Refresh club data after potential status updates
     const updatedClub = await Club.findById(clubId)
@@ -1263,13 +1269,11 @@ export async function createMediaVoting(
         .json({ message: 'Only leaders and moderators can create votings' });
     }
 
-    // Validate dates
     const votingStart = new Date(votingStartDate);
     const votingEnd = new Date(votingEndDate);
     const consumptionStart = new Date(consumptionStartDate);
     const consumptionEnd = new Date(consumptionEndDate);
 
-    // Allow testing with past dates by checking for a testing flag in the request
     const isTestingMode = req.body.testingMode === true;
     const now = new Date();
 
@@ -1291,13 +1295,10 @@ export async function createMediaVoting(
         .json({ message: 'Consumption must start after voting ends' });
     }
 
-    // For non-testing mode, validate that dates are in the future
-    if (!isTestingMode) {
-      if (votingStart <= now) {
-        return res
-          .status(400)
-          .json({ message: 'Voting start date must be in the future' });
-      }
+    if (!isTestingMode && votingStart <= now) {
+      return res
+        .status(400)
+        .json({ message: 'Voting start date must be in the future' });
     }
 
     let suggestionStart: Date | undefined;
@@ -1325,17 +1326,13 @@ export async function createMediaVoting(
           .json({ message: 'Suggestions must end before voting starts' });
       }
 
-      // For non-testing mode, validate that suggestion dates are appropriate
-      if (!isTestingMode) {
-        if (suggestionStart <= now) {
-          return res
-            .status(400)
-            .json({ message: 'Suggestion start date must be in the future' });
-        }
+      if (!isTestingMode && suggestionStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion start date must be in the future' });
       }
     }
 
-    // Determine initial status based on current time and testing mode
     let initialStatus:
       | 'setup'
       | 'suggestions_open'
@@ -1346,7 +1343,6 @@ export async function createMediaVoting(
 
     if (candidateSubmissionType === 'member_suggestions' && suggestionStart) {
       if (isTestingMode) {
-        // In testing mode, allow manually setting status for past dates
         if (suggestionStart <= now && suggestionEnd && suggestionEnd > now) {
           initialStatus = 'suggestions_open';
         } else if (
@@ -1370,12 +1366,12 @@ export async function createMediaVoting(
           initialStatus = 'suggestions_open';
         }
       } else {
-        // Normal mode - only set to suggestions_open if suggestion period has started
         initialStatus = suggestionStart <= now ? 'suggestions_open' : 'setup';
       }
     }
 
-    const newVoting = {
+    const newVoting = await ClubMediaVoting.create({
+      club: club._id,
       title,
       description,
       mediaType,
@@ -1391,19 +1387,11 @@ export async function createMediaVoting(
       isActive: true,
       createdBy: userId,
       candidates: [],
-    };
-
-    club.mediaVotings.push(newVoting);
-    await club.save();
-
-    // Get the saved voting with its generated _id
-    const savedClub = await Club.findById(clubId);
-    const savedVoting =
-      savedClub?.mediaVotings[savedClub.mediaVotings.length - 1];
+    });
 
     return res.status(201).json({
       message: 'Media voting created successfully',
-      voting: savedVoting,
+      voting: newVoting,
     });
   } catch (error) {
     return next(error as customError);
@@ -1455,17 +1443,11 @@ export async function editMediaVoting(
         .json({ message: 'Only leaders and moderators can edit votings' });
     }
 
-    const votingIndex = club.mediaVotings.findIndex(
-      (v) => v._id?.toString() === votingId
-    );
-    if (votingIndex === -1) {
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
       return res.status(404).json({ message: 'Voting not found' });
     }
 
-    const voting = club.mediaVotings[votingIndex];
-
-    // Allow editing votings in setup, suggestions_closed, voting_closed, or completed status
-    // In later stages, only consumption period can be modified on frontend
     if (
       voting.status !== 'setup' &&
       voting.status !== 'suggestions_closed' &&
@@ -1478,29 +1460,41 @@ export async function editMediaVoting(
       });
     }
 
-    // Validate dates
-    const votingStart = new Date(votingStartDate);
-    const votingEnd = new Date(votingEndDate);
-    const consumptionStart = new Date(consumptionStartDate);
-    const consumptionEnd = new Date(consumptionEndDate);
+    const submissionType =
+      candidateSubmissionType ?? voting.candidateSubmissionType;
+    const votingStart = new Date(votingStartDate ?? voting.votingStartDate);
+    const votingEnd = new Date(votingEndDate ?? voting.votingEndDate);
+    const consumptionStart = new Date(
+      consumptionStartDate ?? voting.consumptionStartDate
+    );
+    const consumptionEnd = new Date(
+      consumptionEndDate ?? voting.consumptionEndDate
+    );
+
+    const invalidDateProvided = [
+      votingStart,
+      votingEnd,
+      consumptionStart,
+      consumptionEnd,
+    ].some((date) => Number.isNaN(date.getTime()));
+
+    if (invalidDateProvided) {
+      return res.status(400).json({ message: 'Invalid date values provided' });
+    }
 
     const isTestingMode = req.body.testingMode === true;
     const now = new Date();
 
-    // Check if this is a late-stage edit (only consumption period should be modified)
     const isLateStageEdit =
       voting.status === 'voting_closed' || voting.status === 'completed';
 
-    // Always validate consumption period dates
     if (consumptionStart >= consumptionEnd) {
       return res
         .status(400)
         .json({ message: 'Consumption end date must be after start date' });
     }
 
-    // For late-stage edits, only validate consumption dates and skip other validations
     if (!isLateStageEdit) {
-      // Validate all dates for early-stage edits
       if (votingStart >= votingEnd) {
         return res
           .status(400)
@@ -1513,44 +1507,39 @@ export async function editMediaVoting(
           .json({ message: 'Consumption must start after voting ends' });
       }
 
-      // For non-testing mode, validate that dates are in the future
-      if (!isTestingMode) {
-        if (votingStart <= now) {
-          return res
-            .status(400)
-            .json({ message: 'Voting start date must be in the future' });
-        }
+      if (!isTestingMode && votingStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Voting start date must be in the future' });
       }
-    } else {
-      // For late-stage edits, ensure consumption dates are reasonable
-      // Allow consumption to start in the past since voting may have already completed
-      if (!isTestingMode) {
-        // Only check that consumption end is not too far in the past (more than 1 year)
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    } else if (!isTestingMode) {
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        if (consumptionEnd < oneYearAgo) {
-          return res.status(400).json({
-            message:
-              'Consumption end date cannot be more than 1 year in the past',
-          });
-        }
+      if (consumptionEnd < oneYearAgo) {
+        return res.status(400).json({
+          message:
+            'Consumption end date cannot be more than 1 year in the past',
+        });
       }
     }
 
     let suggestionStart: Date | undefined;
     let suggestionEnd: Date | undefined;
 
-    // Only validate suggestions for early-stage edits
-    if (!isLateStageEdit && candidateSubmissionType === 'member_suggestions') {
-      if (!suggestionStartDate || !suggestionEndDate) {
+    if (!isLateStageEdit && submissionType === 'member_suggestions') {
+      suggestionStart = suggestionStartDate
+        ? new Date(suggestionStartDate)
+        : (voting.suggestionStartDate ?? undefined);
+      suggestionEnd = suggestionEndDate
+        ? new Date(suggestionEndDate)
+        : (voting.suggestionEndDate ?? undefined);
+
+      if (!suggestionStart || !suggestionEnd) {
         return res.status(400).json({
           message: 'Suggestion dates are required for member suggestions',
         });
       }
-
-      suggestionStart = new Date(suggestionStartDate);
-      suggestionEnd = new Date(suggestionEndDate);
 
       if (suggestionStart >= suggestionEnd) {
         return res
@@ -1564,62 +1553,56 @@ export async function editMediaVoting(
           .json({ message: 'Suggestions must end before voting starts' });
       }
 
-      if (!isTestingMode) {
-        if (suggestionStart <= now) {
-          return res
-            .status(400)
-            .json({ message: 'Suggestion start date must be in the future' });
-        }
+      if (!isTestingMode && suggestionStart <= now) {
+        return res
+          .status(400)
+          .json({ message: 'Suggestion start date must be in the future' });
       }
     } else if (isLateStageEdit) {
-      // For late-stage edits, preserve existing suggestion dates
-      suggestionStart = voting.suggestionStartDate;
-      suggestionEnd = voting.suggestionEndDate;
+      suggestionStart = voting.suggestionStartDate ?? undefined;
+      suggestionEnd = voting.suggestionEndDate ?? undefined;
     }
 
-    // Update the voting
-    club.mediaVotings[votingIndex] = {
-      ...voting,
-      // For late-stage edits, only update consumption dates
-      // For early-stage edits, update all fields
-      title: isLateStageEdit ? voting.title : title,
-      description: isLateStageEdit ? voting.description : description,
-      mediaType: isLateStageEdit ? voting.mediaType : mediaType,
-      customMediaType: isLateStageEdit
-        ? voting.customMediaType
-        : mediaType === 'custom'
-          ? customMediaType
-          : undefined,
-      candidateSubmissionType: isLateStageEdit
-        ? voting.candidateSubmissionType
-        : candidateSubmissionType,
-      suggestionStartDate: suggestionStart,
-      suggestionEndDate: suggestionEnd,
-      votingStartDate: isLateStageEdit ? voting.votingStartDate : votingStart,
-      votingEndDate: isLateStageEdit ? voting.votingEndDate : votingEnd,
-      // Always allow consumption dates to be updated
-      consumptionStartDate: consumptionStart,
-      consumptionEndDate: consumptionEnd,
-      // Explicitly preserve these required fields
-      createdBy: voting.createdBy,
-      isActive: voting.isActive,
-      status: voting.status,
-      candidates: voting.candidates,
-      _id: voting._id,
-    };
+    if (!isLateStageEdit) {
+      if (typeof title === 'string') {
+        voting.title = title;
+      }
 
-    await club.save();
+      if (typeof description === 'string') {
+        voting.description = description;
+      }
 
-    const updatedVoting = club.mediaVotings[votingIndex];
+      if (mediaType) {
+        voting.mediaType = mediaType;
+        voting.customMediaType =
+          mediaType === 'custom' ? customMediaType : undefined;
+      }
+
+      if (submissionType) {
+        voting.candidateSubmissionType = submissionType;
+      }
+
+      voting.suggestionStartDate = suggestionStart;
+      voting.suggestionEndDate = suggestionEnd;
+      voting.votingStartDate = votingStart;
+      voting.votingEndDate = votingEnd;
+    }
+
+    voting.consumptionStartDate = consumptionStart;
+    voting.consumptionEndDate = consumptionEnd;
+
+    await voting.save();
 
     return res.status(200).json({
       message: 'Media voting updated successfully',
-      voting: updatedVoting,
+      voting,
     });
   } catch (error) {
     return next(error as customError);
   }
 }
+
+// Auto-update voting statuses based on current date
 
 // Delete media voting (only in setup status)
 export async function deleteMediaVoting(
@@ -1653,16 +1636,11 @@ export async function deleteMediaVoting(
         .json({ message: 'Only leaders and moderators can delete votings' });
     }
 
-    const votingIndex = club.mediaVotings.findIndex(
-      (v) => v._id?.toString() === votingId
-    );
-    if (votingIndex === -1) {
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
       return res.status(404).json({ message: 'Voting not found' });
     }
 
-    const voting = club.mediaVotings[votingIndex];
-
-    // Only allow deleting votings that are still in setup phase or suggestions_closed
     if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
       return res.status(400).json({
         message:
@@ -1670,9 +1648,7 @@ export async function deleteMediaVoting(
       });
     }
 
-    // Remove the voting
-    club.mediaVotings.splice(votingIndex, 1);
-    await club.save();
+    await deleteVotingById(club._id, votingId);
 
     return res.status(200).json({
       message: 'Media voting deleted successfully',
@@ -1712,16 +1688,12 @@ export async function addVotingCandidate(
         .json({ message: 'Only active club members can add candidates' });
     }
 
-    const votingIndex = club.mediaVotings.findIndex(
-      (v) => v._id?.toString() === votingId
-    );
-    if (votingIndex === -1) {
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
       return res.status(404).json({ message: 'Voting not found' });
     }
 
-    const voting = club.mediaVotings[votingIndex];
-
-    // Check permissions and status
+    const now = new Date();
     const canAddCandidate =
       (voting.candidateSubmissionType === 'manual' &&
         (userMember.role === 'leader' || userMember.role === 'moderator') &&
@@ -1729,7 +1701,7 @@ export async function addVotingCandidate(
       (voting.candidateSubmissionType === 'member_suggestions' &&
         voting.status === 'suggestions_open' &&
         voting.suggestionEndDate &&
-        new Date() <= voting.suggestionEndDate);
+        now <= voting.suggestionEndDate);
 
     if (!canAddCandidate) {
       return res
@@ -1757,8 +1729,8 @@ export async function addVotingCandidate(
       isAdult: isAdult || false,
     };
 
-    club.mediaVotings[votingIndex].candidates.push(newCandidate);
-    await club.save();
+    voting.candidates.push(newCandidate);
+    await voting.save();
 
     return res.status(201).json({
       message: 'Candidate added successfully',
@@ -1801,14 +1773,10 @@ export async function finalizeVoting(
         .json({ message: 'Only leaders and moderators can finalize votings' });
     }
 
-    const votingIndex = club.mediaVotings.findIndex(
-      (v) => v._id?.toString() === votingId
-    );
-    if (votingIndex === -1) {
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
       return res.status(404).json({ message: 'Voting not found' });
     }
-
-    const voting = club.mediaVotings[votingIndex];
 
     if (voting.status !== 'setup' && voting.status !== 'suggestions_closed') {
       return res
@@ -1822,7 +1790,6 @@ export async function finalizeVoting(
         .json({ message: 'At least one candidate is required' });
     }
 
-    // Update status based on current time
     const now = new Date();
     let newStatus:
       | 'setup'
@@ -1844,8 +1811,8 @@ export async function finalizeVoting(
       newStatus = 'voting_open';
     }
 
-    club.mediaVotings[votingIndex].status = newStatus;
-    await club.save();
+    voting.status = newStatus;
+    await voting.save();
 
     return res.status(200).json({
       message: 'Voting finalized successfully',
@@ -1875,10 +1842,8 @@ export async function voteForCandidate(
       return res.status(404).json({ message: 'Club not found' });
     }
 
-    // Auto-update voting statuses based on current date
-    await updateVotingStatuses(club);
+    await updateVotingStatusesForClub(club);
 
-    // Refresh club data after potential status updates
     const updatedClub = await Club.findById(clubId);
     if (!updatedClub) {
       return res.status(404).json({ message: 'Club not found' });
@@ -1894,14 +1859,10 @@ export async function voteForCandidate(
         .json({ message: 'Only active club members can vote' });
     }
 
-    const votingIndex = updatedClub.mediaVotings.findIndex(
-      (v) => v._id?.toString() === votingId
-    );
-    if (votingIndex === -1) {
+    const voting = await findVotingForClub(updatedClub._id, votingId);
+    if (!voting) {
       return res.status(404).json({ message: 'Voting not found' });
     }
-
-    const voting = updatedClub.mediaVotings[votingIndex];
 
     if (voting.status !== 'voting_open') {
       return res.status(400).json({
@@ -1934,10 +1895,8 @@ export async function voteForCandidate(
     }
 
     // Add vote to selected candidate
-    updatedClub.mediaVotings[votingIndex].candidates[candidateIdx].votes.push(
-      userId
-    );
-    await updatedClub.save();
+    voting.candidates[candidateIdx].votes.push(userId);
+    await voting.save();
 
     return res.status(200).json({ message: 'Vote recorded successfully' });
   } catch (error) {
@@ -1959,32 +1918,24 @@ export async function getMediaVotings(
       return res.status(400).json({ message: 'Invalid club ID' });
     }
 
-    const club = await Club.findById(clubId)
-      .populate('mediaVotings.createdBy', 'username avatar')
-      .populate('mediaVotings.candidates.addedBy', 'username avatar');
-
+    const club = await Club.findById(clubId);
     if (!club) {
       return res.status(404).json({ message: 'Club not found' });
     }
 
-    // Auto-update voting statuses based on current date
-    await updateVotingStatuses(club);
+    await updateVotingStatusesForClub(club);
 
-    // Refresh club data after potential status updates
-    const updatedClub = await Club.findById(clubId)
-      .populate('mediaVotings.createdBy', 'username avatar')
-      .populate('mediaVotings.candidates.addedBy', 'username avatar');
-
-    if (!updatedClub) {
-      return res.status(404).json({ message: 'Club not found after update' });
+    const filter: Record<string, unknown> = { club: club._id };
+    if (active === 'true' || active === 'false') {
+      filter.isActive = active === 'true';
     }
 
-    const isActiveFilter = active === 'true';
-    const filteredVotings = updatedClub.mediaVotings.filter(
-      (voting) => voting.isActive === isActiveFilter
-    );
+    const votings = await ClubMediaVoting.find(filter)
+      .populate('createdBy', 'username avatar')
+      .populate('candidates.addedBy', 'username avatar')
+      .sort({ votingStartDate: 1 });
 
-    return res.status(200).json({ votings: filteredVotings });
+    return res.status(200).json({ votings });
   } catch (error) {
     return next(error as customError);
   }
@@ -2022,64 +1973,20 @@ export async function completeVoting(
         .json({ message: 'Only leaders and moderators can complete votings' });
     }
 
-    const votingIndex = club.mediaVotings.findIndex(
-      (v) => v._id?.toString() === votingId
-    );
-    if (votingIndex === -1) {
+    const voting = await findVotingForClub(club._id, votingId);
+    if (!voting) {
       return res.status(404).json({ message: 'Voting not found' });
     }
-
-    const voting = club.mediaVotings[votingIndex];
 
     if (voting.status === 'completed') {
       return res.status(400).json({ message: 'Voting is already completed' });
     }
 
-    // Find candidate with most votes
-    let winnerCandidate: any = null;
-    let maxVotes = 0;
-
-    voting.candidates.forEach((candidate: any) => {
-      if (candidate.votes.length > maxVotes) {
-        maxVotes = candidate.votes.length;
-        winnerCandidate = candidate;
-      }
-    });
-
-    if (winnerCandidate) {
-      // Set winner candidate
-      club.mediaVotings[votingIndex].winnerCandidate = {
-        mediaId: winnerCandidate.mediaId,
-        title: winnerCandidate.title,
-        description: winnerCandidate.description,
-        image: winnerCandidate.image,
-      };
-
-      // Add winner to currentMedia
-      const newMedia = {
-        mediaId: winnerCandidate.mediaId,
-        mediaType:
-          voting.mediaType === 'custom' ? 'reading' : (voting.mediaType as any),
-        title: winnerCandidate.title,
-        description: winnerCandidate.description,
-        startDate: voting.consumptionStartDate,
-        endDate: voting.consumptionEndDate,
-        isActive: true,
-        addedBy: voting.createdBy,
-        votes: [],
-      };
-
-      club.currentMedia.push(newMedia);
-    }
-
-    club.mediaVotings[votingIndex].status = 'completed';
-    club.mediaVotings[votingIndex].isActive = false;
-
-    await club.save();
+    const { winner } = await completeVotingDocument(club, voting);
 
     return res.status(200).json({
       message: 'Voting completed successfully',
-      winner: winnerCandidate,
+      winner,
     });
   } catch (error) {
     return next(error as customError);
@@ -3003,107 +2910,5 @@ export async function getClubMemberRankings(
     });
   } catch (error) {
     return next(error as customError);
-  }
-}
-
-// Auto-update voting statuses based on current date
-export async function updateVotingStatuses(club: IClub): Promise<void> {
-  const now = new Date();
-  let hasChanges = false;
-
-  for (let i = 0; i < club.mediaVotings.length; i++) {
-    const voting = club.mediaVotings[i];
-    let newStatus = voting.status;
-
-    // Skip if voting is already completed
-    if (voting.status === 'completed') {
-      continue;
-    }
-
-    // Update status based on dates
-    if (voting.candidateSubmissionType === 'member_suggestions') {
-      if (
-        voting.suggestionStartDate &&
-        now >= voting.suggestionStartDate &&
-        voting.suggestionEndDate &&
-        now < voting.suggestionEndDate
-      ) {
-        newStatus = 'suggestions_open';
-      } else if (
-        voting.suggestionEndDate &&
-        now >= voting.suggestionEndDate &&
-        now < voting.votingStartDate
-      ) {
-        newStatus = 'suggestions_closed';
-      }
-    }
-
-    // Check if voting should be open
-    if (now >= voting.votingStartDate && now < voting.votingEndDate) {
-      newStatus = 'voting_open';
-    } else if (now >= voting.votingEndDate) {
-      newStatus = 'voting_closed';
-    }
-
-    // Check if consumption period has started (auto-complete voting)
-    if (
-      now >= voting.consumptionStartDate &&
-      voting.status !== 'voting_closed'
-    ) {
-      newStatus = 'voting_closed';
-
-      // Auto-select winner and add to currentMedia when voting completes
-      const winnerCandidate =
-        voting.candidates.reduce<IClubMediaCandidate | null>(
-          (winner, candidate) => {
-            if (!winner || candidate.votes.length > winner.votes.length) {
-              return candidate;
-            }
-            return winner;
-          },
-          null
-        );
-
-      if (winnerCandidate) {
-        // Set winner candidate
-        club.mediaVotings[i].winnerCandidate = {
-          mediaId: winnerCandidate.mediaId,
-          title: winnerCandidate.title,
-          description: winnerCandidate.description,
-          image: winnerCandidate.image,
-        };
-
-        // Add winner to currentMedia
-        const newMedia = {
-          mediaId: winnerCandidate.mediaId,
-          mediaType:
-            voting.mediaType === 'custom'
-              ? 'reading'
-              : (voting.mediaType as any),
-          title: winnerCandidate.title,
-          description: winnerCandidate.description,
-          startDate: voting.consumptionStartDate,
-          endDate: voting.consumptionEndDate,
-          isActive: true,
-          addedBy: voting.createdBy,
-          votes: [],
-        };
-
-        club.currentMedia.push(newMedia);
-      }
-
-      club.mediaVotings[i].isActive = false;
-    }
-
-    // Update status if changed
-    if (newStatus !== voting.status) {
-      club.mediaVotings[i].status = newStatus;
-      hasChanges = true;
-    }
-  }
-
-  // Save changes if any status was updated
-  if (hasChanges) {
-    await club.save();
   }
 }

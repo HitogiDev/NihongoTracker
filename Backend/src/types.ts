@@ -574,10 +574,12 @@ export interface IClubMediaCandidate {
   addedBy: Types.ObjectId;
   addedAt?: Date;
   votes: Types.ObjectId[];
+  isAdult?: boolean;
 }
 
 export interface IClubMediaVoting {
   _id?: Types.ObjectId;
+  club: Types.ObjectId;
   title: string;
   description?: string;
   mediaType:
@@ -619,6 +621,7 @@ export interface IClubMediaVoting {
     description?: string;
     image?: string;
   };
+  completedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -633,6 +636,7 @@ export interface IClubMedia {
   endDate: Date;
   isActive: boolean;
   addedBy: Types.ObjectId;
+  votingId?: Types.ObjectId; // Links to the voting that created this media
   votes: Array<{
     user: Types.ObjectId;
     vote: number;
@@ -666,11 +670,12 @@ export interface IClub extends Document {
   totalXp: number;
   members: IClubMember[];
   currentMedia: IClubMedia[];
-  mediaVotings: IClubMediaVoting[];
   tags: string[];
   memberLimit: number;
   rules?: string;
   isActive: boolean;
+  legacyMediaVotings?: IClubMediaVoting[];
+  migratedMediaVotingsAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

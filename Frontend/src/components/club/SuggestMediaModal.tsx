@@ -39,6 +39,14 @@ export default function SuggestMediaModal({
   );
 
   const queryClient = useQueryClient();
+  const invalidateVotingQueries = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'active'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'inactive'],
+    });
+  };
 
   const suggestMediaMutation = useMutation({
     mutationFn: (candidateData: {
@@ -49,7 +57,7 @@ export default function SuggestMediaModal({
     }) => addVotingCandidateFn(club._id, voting._id!, candidateData),
     onSuccess: () => {
       toast.success('Media suggestion submitted successfully!');
-      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
+      invalidateVotingQueries();
       handleClose();
     },
     onError: (error: AxiosError<{ message?: string }>) => {

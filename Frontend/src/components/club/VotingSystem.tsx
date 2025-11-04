@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
@@ -12,6 +12,8 @@ import {
   MdChevronRight,
   MdSettings,
   MdAdd,
+  MdHourglassBottom,
+  MdEmojiEvents,
 } from 'react-icons/md';
 import {
   getMediaVotingsFn,
@@ -23,6 +25,17 @@ import { useUserDataStore } from '../../store/userData';
 import EditVotingModal from './EditVotingModal';
 import CreateVotingWizard from './CreateVotingWizard';
 import SuggestMediaModal from './SuggestMediaModal';
+
+type ResultsTimespan = '7' | '30' | '90' | '180' | '365' | 'all';
+
+const RESULTS_TIMESPAN_OPTIONS: { label: string; value: ResultsTimespan }[] = [
+  { label: 'Last 7 days', value: '7' },
+  { label: 'Last 30 days', value: '30' },
+  { label: 'Last 90 days', value: '90' },
+  { label: 'Last 6 months', value: '180' },
+  { label: 'Last 12 months', value: '365' },
+  { label: 'All time', value: 'all' },
+];
 
 interface VotingSystemProps {
   club: IClubResponse;
@@ -48,13 +61,28 @@ export default function VotingSystem({
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [suggestingVoting, setSuggestingVoting] =
     useState<IClubMediaVoting | null>(null);
+  const [resultsTimespan, setResultsTimespan] = useState<ResultsTimespan>('30');
 
   const queryClient = useQueryClient();
   const { user } = useUserDataStore();
 
+  const invalidateVotingQueries = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'active'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'inactive'],
+    });
+  };
+
   const { data: votingsData, isLoading } = useQuery({
-    queryKey: ['club-votings', club._id],
+    queryKey: ['club-votings', club._id, 'active'],
     queryFn: () => getMediaVotingsFn(club._id, true),
+  });
+
+  const { data: inactiveVotingsData } = useQuery({
+    queryKey: ['club-votings', club._id, 'inactive'],
+    queryFn: () => getMediaVotingsFn(club._id, false),
   });
 
   const voteMutation = useMutation({
@@ -67,7 +95,7 @@ export default function VotingSystem({
     }) => voteForCandidateFn(club._id, votingId, candidateIndex),
     onSuccess: () => {
       toast.success('Vote recorded successfully!');
-      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
+      invalidateVotingQueries();
       setSelectedCandidate(null);
     },
     onError: (error: unknown) => {
@@ -80,7 +108,7 @@ export default function VotingSystem({
     mutationFn: (votingId: string) => deleteMediaVotingFn(club._id, votingId),
     onSuccess: () => {
       toast.success('Voting deleted successfully!');
-      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
+      invalidateVotingQueries();
       setDeletingVoting(null);
     },
     onError: (error: unknown) => {
@@ -156,7 +184,72 @@ export default function VotingSystem({
     }).format(dateObj);
   };
 
-  if (isLoading) {
+  const votings = votingsData?.votings || [];
+
+  const openVotings = useMemo(
+    () => votings.filter((v) => v.status === 'voting_open'),
+    [votings]
+  );
+
+  const suggestionVotings = useMemo(
+    () => votings.filter((v) => v.status === 'suggestions_open'),
+    [votings]
+  );
+
+  const managementVotings = useMemo(
+    () =>
+      votings.filter(
+        (v) => v.status === 'setup' || v.status === 'suggestions_closed'
+      ),
+    [votings]
+  );
+
+  const closedVotings = useMemo(
+    () => votings.filter((v) => v.status === 'voting_closed'),
+    [votings]
+  );
+
+  const completedVotings = useMemo(() => {
+    const activeCompleted = votings.filter((v) => v.status === 'completed');
+    const inactiveCompleted = (inactiveVotingsData?.votings ?? []).filter(
+      (v) => v.status === 'completed'
+    );
+
+    const combined = new Map<string, IClubMediaVoting>();
+
+    [...activeCompleted, ...inactiveCompleted].forEach((voting) => {
+      const key = voting._id
+        ? voting._id.toString()
+        : `${voting.title}-${voting.votingStartDate}`;
+      combined.set(key, voting);
+    });
+
+    return Array.from(combined.values()).sort(
+      (a, b) =>
+        new Date(b.votingEndDate).getTime() -
+        new Date(a.votingEndDate).getTime()
+    );
+  }, [inactiveVotingsData, votings]);
+
+  const filteredCompletedVotings = useMemo(() => {
+    if (resultsTimespan === 'all') {
+      return completedVotings;
+    }
+
+    const days = Number(resultsTimespan);
+    if (Number.isNaN(days)) {
+      return completedVotings;
+    }
+
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+
+    return completedVotings.filter((voting) => {
+      const votingEndTime = new Date(voting.votingEndDate).getTime();
+      return votingEndTime >= cutoff;
+    });
+  }, [completedVotings, resultsTimespan]);
+
+  if (isLoading && votings.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
         <span className="loading loading-spinner loading-md"></span>
@@ -164,15 +257,6 @@ export default function VotingSystem({
       </div>
     );
   }
-
-  const votings = votingsData?.votings || [];
-  const openVotings = votings.filter((v) => v.status === 'voting_open');
-  const suggestionVotings = votings.filter(
-    (v) => v.status === 'suggestions_open'
-  );
-  const managementVotings = votings.filter(
-    (v) => v.status === 'setup' || v.status === 'suggestions_closed'
-  );
 
   // Reset carousel index if it's out of bounds
   if (currentVotingIndex >= openVotings.length && openVotings.length > 0) {
@@ -248,6 +332,93 @@ export default function VotingSystem({
               <VotingCard voting={openVotings[currentVotingIndex]} />
             )}
           </>
+        )}
+
+        {closedVotings.length > 0 && (
+          <div className="card bg-base-100 shadow-sm border border-warning/30">
+            <div className="card-body">
+              <h3 className="card-title flex items-center gap-2 mb-4">
+                <MdHourglassBottom className="w-5 h-5" />
+                Voting Closed
+              </h3>
+
+              <p className="text-sm text-base-content/60 mb-4">
+                These votings have ended and will finalize automatically when
+                the consumption period begins.
+              </p>
+
+              <div className="space-y-4">
+                {closedVotings
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      new Date(b.votingEndDate).getTime() -
+                      new Date(a.votingEndDate).getTime()
+                  )
+                  .slice(0, 3)
+                  .map((voting, index) => (
+                    <ClosedVotingCard
+                      key={
+                        voting._id
+                          ? voting._id.toString()
+                          : `${voting.title}-${index}`
+                      }
+                      voting={voting}
+                    />
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {completedVotings.length > 0 && (
+          <div className="card bg-base-100 shadow-sm border border-success/30">
+            <div className="card-body">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <h3 className="card-title flex items-center gap-2">
+                  <MdEmojiEvents className="w-5 h-5" />
+                  Recent Results
+                </h3>
+                <label className="form-control w-full md:w-auto">
+                  <span className="label-text text-xs uppercase tracking-wide text-base-content/60">
+                    Timespan
+                  </span>
+                  <select
+                    className="select select-sm"
+                    value={resultsTimespan}
+                    onChange={(event) =>
+                      setResultsTimespan(event.target.value as ResultsTimespan)
+                    }
+                  >
+                    {RESULTS_TIMESPAN_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {filteredCompletedVotings.length === 0 ? (
+                <p className="text-sm text-base-content/60">
+                  No completed votings found in this timespan.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {filteredCompletedVotings.map((voting, index) => (
+                    <CompletedVotingCard
+                      key={
+                        voting._id
+                          ? voting._id.toString()
+                          : `${voting.title}-${index}`
+                      }
+                      voting={voting}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Member Suggestion Section */}
@@ -551,6 +722,227 @@ export default function VotingSystem({
                 <MdHowToVote className="w-5 h-5" />
                 {voteMutation.isPending ? 'Submitting Vote...' : 'Submit Vote'}
               </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ClosedVotingCard Component
+  function ClosedVotingCard({ voting }: { voting: IClubMediaVoting }) {
+    const totalVotes = getTotalVotes(voting);
+    const sortedCandidates = voting.candidates
+      .slice()
+      .sort((a, b) => b.votes.length - a.votes.length)
+      .slice(0, 3);
+
+    return (
+      <div className="card bg-base-100 border border-base-300 shadow-sm">
+        <div className="card-body">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-medium">{voting.title}</h4>
+                <span className="badge badge-error badge-sm">
+                  Voting Closed
+                </span>
+              </div>
+              <p className="text-sm text-base-content/70">
+                Consumption begins on {formatDate(voting.consumptionStartDate)}.
+              </p>
+              <p className="text-xs text-base-content/50 mt-1">
+                Results will finalize automatically when the consumption period
+                starts.
+              </p>
+            </div>
+            <MdHourglassBottom className="w-6 h-6 text-warning flex-shrink-0" />
+          </div>
+
+          {sortedCandidates.length > 0 && (
+            <div className="mt-4 space-y-3">
+              {sortedCandidates.map((candidate, index) => {
+                const votes = candidate.votes.length;
+                const percentage =
+                  totalVotes > 0 ? (votes / totalVotes) * 100 : 0;
+
+                return (
+                  <div
+                    key={`${candidate.mediaId}-${index}`}
+                    className={`rounded-lg border p-3 transition-colors ${
+                      index === 0
+                        ? 'border-primary/40 bg-primary/5'
+                        : 'border-base-300 bg-base-200/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`badge badge-sm ${
+                            index === 0 ? 'badge-primary' : 'badge-ghost'
+                          }`}
+                        >
+                          #{index + 1}
+                        </span>
+                        <span className="font-medium text-sm">
+                          {candidate.title}
+                        </span>
+                      </div>
+                      <span className="text-xs text-base-content/60">
+                        {votes} vote{votes === 1 ? '' : 's'} (
+                        {percentage.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-base-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          index === 0 ? 'bg-primary' : 'bg-base-content/30'
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // CompletedVotingCard Component
+  function CompletedVotingCard({ voting }: { voting: IClubMediaVoting }) {
+    const totalVotes = getTotalVotes(voting);
+    const sortedCandidates = voting.candidates
+      .slice()
+      .sort((a, b) => b.votes.length - a.votes.length);
+
+    const winnerFromCandidates = sortedCandidates.find((candidate) =>
+      voting.winnerCandidate
+        ? candidate.mediaId === voting.winnerCandidate.mediaId
+        : false
+    );
+
+    const winner =
+      voting.winnerCandidate ||
+      (sortedCandidates.length > 0
+        ? {
+            mediaId: sortedCandidates[0].mediaId,
+            title: sortedCandidates[0].title,
+            description: sortedCandidates[0].description,
+            image: sortedCandidates[0].image,
+          }
+        : undefined);
+
+    const winnerVotes = winnerFromCandidates
+      ? winnerFromCandidates.votes.length
+      : sortedCandidates.length > 0
+        ? sortedCandidates[0].votes.length
+        : 0;
+
+    return (
+      <div className="card bg-base-100 border border-success/40 shadow-sm">
+        <div className="card-body">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-medium">{voting.title}</h4>
+                <span className="badge badge-success badge-sm">Completed</span>
+              </div>
+              <p className="text-sm text-base-content/70">
+                Consumption period: {formatDate(voting.consumptionStartDate)}
+                {' – '}
+                {formatDate(voting.consumptionEndDate)}
+              </p>
+              <p className="text-xs text-base-content/50 mt-1">
+                {totalVotes} total vote{totalVotes === 1 ? '' : 's'} cast.
+              </p>
+            </div>
+            <MdEmojiEvents className="w-6 h-6 text-success flex-shrink-0" />
+          </div>
+
+          {winner ? (
+            <div className="mt-4 flex flex-col md:flex-row gap-4">
+              {winner.image && (
+                <img
+                  src={winner.image}
+                  alt={winner.title}
+                  className="w-28 h-36 object-cover rounded-lg shadow"
+                />
+              )}
+              <div className="flex-1">
+                <h5 className="font-semibold text-base">
+                  Winner: {winner.title}
+                </h5>
+                {winner.description && (
+                  <p className="text-sm text-base-content/70 mt-2 line-clamp-4">
+                    {winner.description}
+                  </p>
+                )}
+                <p className="text-sm text-base-content/60 mt-2">
+                  {winnerVotes} vote{winnerVotes === 1 ? '' : 's'} in favour.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-base-content/60">
+              No winner was recorded for this voting.
+            </p>
+          )}
+
+          {sortedCandidates.length > 0 && (
+            <div className="mt-6">
+              <h6 className="text-xs uppercase font-semibold text-base-content/50 mb-2">
+                Final standings
+              </h6>
+              <div className="space-y-3">
+                {sortedCandidates.slice(0, 5).map((candidate, index) => {
+                  const votes = candidate.votes.length;
+                  const percentage =
+                    totalVotes > 0 ? (votes / totalVotes) * 100 : 0;
+                  const isWinner =
+                    winner && candidate.mediaId === winner.mediaId;
+
+                  return (
+                    <div
+                      key={`${candidate.mediaId}-${index}`}
+                      className={`rounded-lg border p-3 transition-colors ${
+                        isWinner
+                          ? 'border-success/50 bg-success/5'
+                          : 'border-base-300 bg-base-200/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`badge badge-sm ${
+                              isWinner ? 'badge-success' : 'badge-ghost'
+                            }`}
+                          >
+                            #{index + 1}
+                          </span>
+                          <span className="font-medium text-sm">
+                            {candidate.title}
+                          </span>
+                        </div>
+                        <span className="text-xs text-base-content/60">
+                          {votes} vote{votes === 1 ? '' : 's'} (
+                          {percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-base-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full ${
+                            isWinner ? 'bg-success' : 'bg-base-content/30'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

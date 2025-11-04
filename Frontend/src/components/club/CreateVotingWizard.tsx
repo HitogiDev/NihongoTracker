@@ -120,6 +120,14 @@ export default function CreateVotingWizard({
   );
 
   const queryClient = useQueryClient();
+  const invalidateVotingQueries = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'active'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'inactive'],
+    });
+  };
 
   const finalizeVotingMutation = useMutation({
     mutationFn: async () => {
@@ -148,7 +156,7 @@ export default function CreateVotingWizard({
           ? 'Voting created! Members can now submit suggestions.'
           : 'Voting created successfully!';
       toast.success(message);
-      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
+      invalidateVotingQueries();
       queryClient.invalidateQueries({ queryKey: ['club', club._id] });
       onClose();
       resetWizard();

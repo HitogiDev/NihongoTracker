@@ -52,6 +52,14 @@ export default function EditVotingModal({
   voting,
 }: EditVotingModalProps) {
   const queryClient = useQueryClient();
+  const invalidateVotingQueries = () => {
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'active'],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['club-votings', club._id, 'inactive'],
+    });
+  };
 
   // Helper function to format date for display
   const formatDateForDisplay = (date: Date | undefined) => {
@@ -109,7 +117,7 @@ export default function EditVotingModal({
     },
     onSuccess: () => {
       toast.success('Voting updated successfully!');
-      queryClient.invalidateQueries({ queryKey: ['club-votings', club._id] });
+      invalidateVotingQueries();
       queryClient.invalidateQueries({ queryKey: ['club', club._id] });
       onClose();
     },
