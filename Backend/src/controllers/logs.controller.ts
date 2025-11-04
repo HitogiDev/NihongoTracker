@@ -1850,6 +1850,9 @@ export async function recalculateXp(
           const charsXp = log.chars
             ? Math.floor((log.chars / 350) * XP_FACTOR_CHARS)
             : 0;
+          const readingPagesXp = log.pages
+            ? Math.floor(log.pages * XP_FACTOR_CHARS)
+            : 0;
           const pagesXp = log.pages
             ? Math.floor(log.pages * XP_FACTOR_PAGES)
             : 0;
@@ -1876,6 +1879,16 @@ export async function recalculateXp(
               log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
               break;
             case 'reading':
+              if (charsXp) {
+                log.xp = Math.max(charsXp, timeXp);
+              } else if (timeXp) {
+                log.xp = timeXp;
+              } else if (readingPagesXp) {
+                log.xp = readingPagesXp;
+              } else {
+                log.xp = 0;
+              }
+              break;
             case 'manga':
               if (charsXp) {
                 log.xp = Math.max(charsXp, timeXp, 0);
