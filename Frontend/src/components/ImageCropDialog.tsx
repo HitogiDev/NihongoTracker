@@ -14,6 +14,7 @@ type ImageCropDialogProps = {
   aspect: number;
   onClose: () => void;
   onApply: (result: ImageCropResult) => void | Promise<void>;
+  onCancel?: () => void;
   getInitialCrop?: (image: HTMLImageElement) => Crop;
   circular?: boolean;
   minWidth?: number;
@@ -30,6 +31,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
     aspect,
     onClose,
     onApply,
+    onCancel,
     getInitialCrop,
     circular,
     minWidth,
@@ -77,6 +79,14 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
       onClose();
     }, [completedCrop, onApply, onClose]);
 
+    const handleCancel = useCallback(() => {
+      if (onCancel) {
+        onCancel();
+      } else {
+        onClose();
+      }
+    }, [onCancel, onClose]);
+
     if (!isOpen) {
       return null;
     }
@@ -113,7 +123,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
             >
               Apply Crop
             </button>
-            <button className="btn btn-outline" onClick={onClose}>
+            <button className="btn btn-outline" onClick={handleCancel}>
               Cancel
             </button>
           </div>

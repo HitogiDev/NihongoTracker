@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   clearUserDataFn,
@@ -6,7 +12,6 @@ import {
   importLogsFn,
   updateUserFn,
   getPatreonStatusFn,
-  // linkPatreonAccountFn, // Deprecated - now using OAuth2
   unlinkPatreonAccountFn,
   updateCustomBadgeTextFn,
   updateBadgeColorsFn,
@@ -28,6 +33,39 @@ import ImageCropDialog, {
 } from '../components/ImageCropDialog';
 import Wheel from '@uiw/react-color-wheel';
 
+const PRESET_BADGE_BACKGROUND_COLORS = ['rainbow', 'primary', 'secondary'];
+const PRESET_BADGE_TEXT_COLORS = ['primary-content', 'secondary-content'];
+
+function isPresetBackground(color: string | null): boolean {
+  return color ? PRESET_BADGE_BACKGROUND_COLORS.includes(color) : false;
+}
+
+function isPresetTextColor(color: string | null): boolean {
+  return color ? PRESET_BADGE_TEXT_COLORS.includes(color) : false;
+}
+
+function sanitizeHex(color: string | null): string | null {
+  if (!color) return null;
+  const normalized = color.trim().toLowerCase();
+  const hexMatch = /^#?[0-9a-f]{6}$/.test(normalized);
+  if (!hexMatch) return null;
+  return normalized.startsWith('#') ? normalized : `#${normalized}`;
+}
+
+function getContrastColor(hexColor: string | null): string | undefined {
+  const sanitized = sanitizeHex(hexColor);
+  if (!sanitized) return undefined;
+  const hex = sanitized.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  if ([r, g, b].some((value) => Number.isNaN(value))) {
+    return undefined;
+  }
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
 const importTypeString = {
   tmw: 'TheMoeWay',
   manabe: 'Manabe',
@@ -43,10 +81,15 @@ function SettingsScreen() {
   const newPasswordRef = useRef<HTMLInputElement>(null);
   const newPasswordConfirmRef = useRef<HTMLInputElement>(null);
   const [discordId, setDiscordId] = useState(user?.discordId || '');
-  // const [patreonEmail, setPatreonEmail] = useState(''); // Deprecated - OAuth2 handles this
   const [customBadgeText, setCustomBadgeText] = useState('');
   const [badgeColor, setBadgeColor] = useState('#ff69b4');
   const [badgeTextColor, setBadgeTextColor] = useState('#ffffff');
+  const [pendingBadgeColor, setPendingBadgeColor] = useState<string | null>(
+    null
+  );
+  const [pendingBadgeTextColor, setPendingBadgeTextColor] = useState<
+    string | null
+  >(null);
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
   const [patreonStatus, setPatreonStatus] = useState<{
     patreonEmail?: string;
@@ -73,6 +116,14 @@ function SettingsScreen() {
 
   const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
   const [croppedBannerFile, setCroppedBannerFile] = useState<File | null>(null);
+  const [avatarFileName, setAvatarFileName] = useState<string | null>(null);
+  const [bannerFileName, setBannerFileName] = useState<string | null>(null);
+  const [avatarOriginalFileName, setAvatarOriginalFileName] = useState<
+    string | null
+  >(null);
+  const [bannerOriginalFileName, setBannerOriginalFileName] = useState<
+    string | null
+  >(null);
 
   const [importType, setImportType] = useState<
     'tmw' | 'manabe' | 'vncr' | null
@@ -90,6 +141,8 @@ function SettingsScreen() {
 
   const avatarPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const queryClient = useQueryClient();
 
@@ -110,6 +163,20 @@ function SettingsScreen() {
       }
 
       setUser(data);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+      setCroppedAvatarFile(null);
+      setAvatarFileName(null);
+      setAvatarOriginalFileName(null);
+      if (avatarPreviewCanvasRef.current) {
+        const canvas = avatarPreviewCanvasRef.current;
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        canvas.classList.add('hidden');
+      }
       void queryClient.invalidateQueries({
         predicate: (query) => {
           return ['user', 'ranking'].includes(query.queryKey[0] as string);
@@ -540,6 +607,66 @@ function SettingsScreen() {
     }
   }
 
+  const openBadgeColorModal = useCallback(() => {
+    setPendingBadgeColor(badgeColor);
+    const modal = document.getElementById(
+      'bg_color_modal'
+    ) as HTMLDialogElement | null;
+    modal?.showModal();
+  }, [badgeColor]);
+
+  const openBadgeTextColorModal = useCallback(() => {
+    setPendingBadgeTextColor(badgeTextColor);
+    const modal = document.getElementById(
+      'text_color_modal'
+    ) as HTMLDialogElement | null;
+    modal?.showModal();
+  }, [badgeTextColor]);
+
+  const handleBadgeColorModalClose = useCallback(() => {
+    setPendingBadgeColor(null);
+  }, []);
+
+  const handleBadgeTextModalClose = useCallback(() => {
+    setPendingBadgeTextColor(null);
+  }, []);
+
+  const handleBadgeColorDone = useCallback(() => {
+    const modal = document.getElementById(
+      'bg_color_modal'
+    ) as HTMLDialogElement | null;
+    const rawValue =
+      pendingBadgeColor === null || pendingBadgeColor === ''
+        ? badgeColor
+        : pendingBadgeColor;
+    const finalColor = isPresetBackground(rawValue)
+      ? rawValue
+      : (sanitizeHex(rawValue) ?? badgeColor);
+    if (finalColor && finalColor !== badgeColor) {
+      setBadgeColor(finalColor);
+    }
+    modal?.close();
+    setPendingBadgeColor(null);
+  }, [pendingBadgeColor, badgeColor]);
+
+  const handleBadgeTextDone = useCallback(() => {
+    const modal = document.getElementById(
+      'text_color_modal'
+    ) as HTMLDialogElement | null;
+    const rawValue =
+      pendingBadgeTextColor === null || pendingBadgeTextColor === ''
+        ? badgeTextColor
+        : pendingBadgeTextColor;
+    const finalColor = isPresetTextColor(rawValue)
+      ? rawValue
+      : (sanitizeHex(rawValue) ?? badgeTextColor);
+    if (finalColor && finalColor !== badgeTextColor) {
+      setBadgeTextColor(finalColor);
+    }
+    modal?.close();
+    setPendingBadgeTextColor(null);
+  }, [pendingBadgeTextColor, badgeTextColor]);
+
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
     const formData = new FormData();
@@ -562,20 +689,20 @@ function SettingsScreen() {
 
     if (croppedAvatarFile) {
       formData.append('avatar', croppedAvatarFile);
-    } else {
-      const avatarInput = document.getElementById('avatar') as HTMLInputElement;
-      if (avatarInput.files && avatarInput.files.length > 0) {
-        formData.append('avatar', avatarInput.files[0]);
-      }
+    } else if (
+      avatarInputRef.current?.files &&
+      avatarInputRef.current.files.length > 0
+    ) {
+      formData.append('avatar', avatarInputRef.current.files[0]);
     }
 
     if (croppedBannerFile) {
       formData.append('banner', croppedBannerFile);
-    } else {
-      const bannerInput = document.getElementById('banner') as HTMLInputElement;
-      if (bannerInput.files && bannerInput.files.length > 0) {
-        formData.append('banner', bannerInput.files[0]);
-      }
+    } else if (
+      bannerInputRef.current?.files &&
+      bannerInputRef.current.files.length > 0
+    ) {
+      formData.append('banner', bannerInputRef.current.files[0]);
     }
 
     updateUser(formData);
@@ -651,17 +778,27 @@ function SettingsScreen() {
       avatarPreviewCanvasRef.current.toBlob(
         (blob) => {
           if (blob) {
-            const croppedFile = new File([blob], 'avatar.jpg', {
+            const sourceName = avatarOriginalFileName || avatarFileName;
+            const baseName = sourceName
+              ? sourceName.replace(/\.[^/.]+$/, '')
+              : 'avatar';
+            const croppedFile = new File([blob], `${baseName}-cropped.jpg`, {
               type: 'image/jpeg',
             });
             setCroppedAvatarFile(croppedFile);
+            setAvatarFileName(croppedFile.name);
+            if (avatarInputRef.current) {
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(croppedFile);
+              avatarInputRef.current.files = dataTransfer.files;
+            }
           }
         },
         'image/jpeg',
         0.9
       );
     },
-    []
+    [avatarFileName, avatarOriginalFileName]
   );
 
   const handleBannerCropApply = useCallback(
@@ -676,45 +813,172 @@ function SettingsScreen() {
       bannerPreviewCanvasRef.current.toBlob(
         (blob) => {
           if (blob) {
-            const croppedFile = new File([blob], 'banner.jpg', {
+            const sourceName = bannerOriginalFileName || bannerFileName;
+            const baseName = sourceName
+              ? sourceName.replace(/\.[^/.]+$/, '')
+              : 'banner';
+            const croppedFile = new File([blob], `${baseName}-cropped.jpg`, {
               type: 'image/jpeg',
             });
             setCroppedBannerFile(croppedFile);
+            setBannerFileName(croppedFile.name);
+            if (bannerInputRef.current) {
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(croppedFile);
+              bannerInputRef.current.files = dataTransfer.files;
+            }
           }
         },
         'image/jpeg',
         0.9
       );
     },
-    []
+    [bannerFileName, bannerOriginalFileName]
   );
+
+  const handleAvatarCropClose = useCallback(() => {
+    setShowAvatarCrop(false);
+    setAvatarSrc('');
+  }, []);
+
+  const handleAvatarCropCancel = useCallback(() => {
+    setShowAvatarCrop(false);
+    setAvatarSrc('');
+    setAvatarFileName(null);
+    setAvatarOriginalFileName(null);
+    setCroppedAvatarFile(null);
+    if (avatarPreviewCanvasRef.current) {
+      const canvas = avatarPreviewCanvasRef.current;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      canvas.classList.add('hidden');
+    }
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = '';
+    }
+  }, []);
+
+  const handleBannerCropClose = useCallback(() => {
+    setShowBannerCrop(false);
+    setBannerSrc('');
+  }, []);
+
+  const handleBannerCropCancel = useCallback(() => {
+    setShowBannerCrop(false);
+    setBannerSrc('');
+    setBannerFileName(null);
+    setBannerOriginalFileName(null);
+    setCroppedBannerFile(null);
+    if (bannerPreviewCanvasRef.current) {
+      const canvas = bannerPreviewCanvasRef.current;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      canvas.classList.add('hidden');
+    }
+    if (bannerInputRef.current) {
+      bannerInputRef.current.value = '';
+    }
+  }, []);
 
   async function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setAvatarFileName(file.name);
+      setAvatarOriginalFileName(file.name);
       setCroppedAvatarFile(null);
-
+      if (avatarPreviewCanvasRef.current) {
+        avatarPreviewCanvasRef.current.classList.add('hidden');
+      }
       const reader = new FileReader();
       reader.addEventListener('load', () => {
         setAvatarSrc(reader.result?.toString() || '');
         setShowAvatarCrop(true);
       });
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   }
 
   async function onSelectBannerFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setBannerFileName(file.name);
+      setBannerOriginalFileName(file.name);
       setCroppedBannerFile(null);
-
+      if (bannerPreviewCanvasRef.current) {
+        bannerPreviewCanvasRef.current.classList.add('hidden');
+      }
       const reader = new FileReader();
       reader.addEventListener('load', () => {
         setBannerSrc(reader.result?.toString() || '');
         setShowBannerCrop(true);
       });
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
     }
   }
 
+  const badgeHexInputValue = useMemo(() => {
+    if (pendingBadgeColor !== null) {
+      return isPresetBackground(pendingBadgeColor) ? '' : pendingBadgeColor;
+    }
+    return isPresetBackground(badgeColor) ? '' : badgeColor;
+  }, [pendingBadgeColor, badgeColor]);
+
+  const badgeInputBackgroundColor = useMemo(() => {
+    const candidate =
+      pendingBadgeColor !== null ? pendingBadgeColor : badgeColor;
+    if (!candidate || isPresetBackground(candidate)) {
+      return undefined;
+    }
+    return sanitizeHex(candidate) ?? undefined;
+  }, [pendingBadgeColor, badgeColor]);
+
+  const badgeInputTextColor = useMemo(() => {
+    return getContrastColor(badgeInputBackgroundColor ?? null);
+  }, [badgeInputBackgroundColor]);
+
+  const badgeWheelColor = useMemo(() => {
+    const candidate =
+      pendingBadgeColor !== null ? pendingBadgeColor : badgeColor;
+    if (!candidate || isPresetBackground(candidate)) {
+      return '#ff69b4';
+    }
+    return sanitizeHex(candidate) ?? '#ff69b4';
+  }, [pendingBadgeColor, badgeColor]);
+
+  const badgeTextHexInputValue = useMemo(() => {
+    if (pendingBadgeTextColor !== null) {
+      return isPresetTextColor(pendingBadgeTextColor)
+        ? ''
+        : pendingBadgeTextColor;
+    }
+    return isPresetTextColor(badgeTextColor) ? '' : badgeTextColor;
+  }, [pendingBadgeTextColor, badgeTextColor]);
+
+  const badgeTextInputBackgroundColor = useMemo(() => {
+    const candidate =
+      pendingBadgeTextColor !== null ? pendingBadgeTextColor : badgeTextColor;
+    if (!candidate || isPresetTextColor(candidate)) {
+      return undefined;
+    }
+    return sanitizeHex(candidate) ?? undefined;
+  }, [pendingBadgeTextColor, badgeTextColor]);
+
+  const badgeTextInputTextColor = useMemo(() => {
+    return getContrastColor(badgeTextInputBackgroundColor ?? null);
+  }, [badgeTextInputBackgroundColor]);
+
+  const badgeTextWheelColor = useMemo(() => {
+    const candidate =
+      pendingBadgeTextColor !== null ? pendingBadgeTextColor : badgeTextColor;
+    if (!candidate || isPresetTextColor(candidate)) {
+      return '#ffffff';
+    }
+    return sanitizeHex(candidate) ?? '#ffffff';
+  }, [pendingBadgeTextColor, badgeTextColor]);
   return (
     <div className="min-h-screen bg-base-200 mt-16">
       <dialog
@@ -794,7 +1058,8 @@ function SettingsScreen() {
         isOpen={showAvatarCrop}
         aspect={1}
         circular
-        onClose={() => setShowAvatarCrop(false)}
+        onClose={handleAvatarCropClose}
+        onCancel={handleAvatarCropCancel}
         onApply={handleAvatarCropApply}
         getInitialCrop={getDefaultAvatarCrop}
       />
@@ -808,7 +1073,8 @@ function SettingsScreen() {
         minHeight={45}
         keepSelection
         ruleOfThirds
-        onClose={() => setShowBannerCrop(false)}
+        onClose={handleBannerCropClose}
+        onCancel={handleBannerCropCancel}
         onApply={handleBannerCropApply}
         getInitialCrop={getInitialBannerCrop}
       />
@@ -1128,6 +1394,7 @@ function SettingsScreen() {
                             <input
                               type="file"
                               id="avatar"
+                              ref={avatarInputRef}
                               className="file-input file-input-bordered file-input-primary w-full"
                               accept={
                                 user?.patreon?.isActive &&
@@ -1138,7 +1405,7 @@ function SettingsScreen() {
                               }
                               onChange={onSelectAvatarFile}
                             />
-                            <label className="label pt-1">
+                            <label className="label pt-1 flex flex-col items-start gap-1">
                               <span className="label-text-alt text-base-content/60 leading-relaxed">
                                 Allowed Formats: JPEG, PNG, WebP
                                 {user?.patreon?.isActive &&
@@ -1148,6 +1415,11 @@ function SettingsScreen() {
                                   : ''}
                                 . Max size: 3mb. Optimal dimensions: 230x230
                               </span>
+                              {croppedAvatarFile && (
+                                <span className="label-text-alt text-success">
+                                  Cropped avatar ready to upload
+                                </span>
+                              )}
                             </label>
                           </div>
                           {user?.avatar || croppedAvatarFile ? (
@@ -1186,15 +1458,21 @@ function SettingsScreen() {
                             <input
                               type="file"
                               id="banner"
+                              ref={bannerInputRef}
                               className="file-input file-input-bordered file-input-primary w-full"
                               accept="image/*"
                               onChange={onSelectBannerFile}
                             />
-                            <label className="label pt-1">
+                            <label className="label pt-1 flex flex-col items-start gap-1">
                               <span className="label-text-alt text-base-content/60 leading-relaxed">
                                 Allowed Formats: JPEG, PNG. Max size: 6mb.
                                 Optimal dimensions: 1700x330
                               </span>
+                              {croppedBannerFile && (
+                                <span className="label-text-alt text-success">
+                                  Cropped banner ready to upload
+                                </span>
+                              )}
                             </label>
                           </div>
                           {user?.banner || croppedBannerFile ? (
@@ -1669,13 +1947,7 @@ function SettingsScreen() {
                     <button
                       type="button"
                       className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
-                      onClick={() =>
-                        (
-                          document.getElementById(
-                            'bg_color_modal'
-                          ) as HTMLDialogElement
-                        )?.showModal()
-                      }
+                      onClick={openBadgeColorModal}
                     >
                       <div
                         className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'bg-primary' : badgeColor === 'secondary' ? 'bg-secondary' : ''}`}
@@ -1696,13 +1968,7 @@ function SettingsScreen() {
                     <button
                       type="button"
                       className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
-                      onClick={() =>
-                        (
-                          document.getElementById(
-                            'text_color_modal'
-                          ) as HTMLDialogElement
-                        )?.showModal()
-                      }
+                      onClick={openBadgeTextColorModal}
                     >
                       <div
                         className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeTextColor === 'primary-content' ? 'bg-primary-content' : badgeTextColor === 'secondary-content' ? 'bg-secondary-content' : ''}`}
@@ -2199,7 +2465,11 @@ function SettingsScreen() {
       </div>
 
       {/* Background Color Picker Modal */}
-      <dialog id="bg_color_modal" className="modal">
+      <dialog
+        id="bg_color_modal"
+        className="modal"
+        onClose={handleBadgeColorModalClose}
+      >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-4">Badge Background Color</h3>
 
@@ -2208,12 +2478,7 @@ function SettingsScreen() {
             <button
               type="button"
               className="btn btn-outline w-full justify-start"
-              onClick={() => {
-                setBadgeColor('primary');
-                (
-                  document.getElementById('bg_color_modal') as HTMLDialogElement
-                )?.close();
-              }}
+              onClick={() => setPendingBadgeColor('primary')}
             >
               <div className="w-6 h-6 rounded bg-primary"></div>
               <span>Primary</span>
@@ -2221,12 +2486,7 @@ function SettingsScreen() {
             <button
               type="button"
               className="btn btn-outline w-full justify-start"
-              onClick={() => {
-                setBadgeColor('secondary');
-                (
-                  document.getElementById('bg_color_modal') as HTMLDialogElement
-                )?.close();
-              }}
+              onClick={() => setPendingBadgeColor('secondary')}
             >
               <div className="w-6 h-6 rounded bg-secondary"></div>
               <span>Secondary</span>
@@ -2235,12 +2495,7 @@ function SettingsScreen() {
               type="button"
               className="btn btn-outline w-full justify-start badge-rainbow"
               style={{ justifyContent: 'flex-start' }}
-              onClick={() => {
-                setBadgeColor('rainbow');
-                (
-                  document.getElementById('bg_color_modal') as HTMLDialogElement
-                )?.close();
-              }}
+              onClick={() => setPendingBadgeColor('rainbow')}
             >
               <div className="w-6 h-6 rounded badge-rainbow"></div>
               <span style={{ color: 'inherit' }}>🌈 Rainbow</span>
@@ -2253,35 +2508,35 @@ function SettingsScreen() {
           <div className="flex flex-col items-center gap-3">
             <div style={{ width: '200px', height: '200px' }}>
               <Wheel
-                color={
-                  badgeColor === 'rainbow' ||
-                  badgeColor === 'primary' ||
-                  badgeColor === 'secondary'
-                    ? '#ff69b4'
-                    : badgeColor
+                color={badgeWheelColor}
+                onChange={(color: { hex: string }) =>
+                  setPendingBadgeColor(color.hex)
                 }
-                onChange={(color: { hex: string }) => setBadgeColor(color.hex)}
               />
             </div>
             <input
               type="text"
               className="input input-bordered input-sm w-full text-center"
-              value={
-                badgeColor === 'rainbow' ||
-                badgeColor === 'primary' ||
-                badgeColor === 'secondary'
-                  ? ''
-                  : badgeColor
-              }
-              onChange={(e) => setBadgeColor(e.target.value)}
+              value={badgeHexInputValue}
+              onChange={(e) => setPendingBadgeColor(e.target.value)}
               placeholder="#ff69b4"
+              style={{
+                backgroundColor: badgeInputBackgroundColor,
+                color: badgeInputBackgroundColor
+                  ? badgeInputTextColor
+                  : undefined,
+              }}
             />
           </div>
 
           <div className="modal-action">
-            <form method="dialog">
-              <button className="btn btn-sm">Done</button>
-            </form>
+            <button
+              className="btn btn-sm"
+              type="button"
+              onClick={handleBadgeColorDone}
+            >
+              Done
+            </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
@@ -2290,7 +2545,11 @@ function SettingsScreen() {
       </dialog>
 
       {/* Text Color Picker Modal */}
-      <dialog id="text_color_modal" className="modal">
+      <dialog
+        id="text_color_modal"
+        className="modal"
+        onClose={handleBadgeTextModalClose}
+      >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-4">Badge Text Color</h3>
 
@@ -2299,14 +2558,7 @@ function SettingsScreen() {
             <button
               type="button"
               className="btn btn-outline w-full justify-start"
-              onClick={() => {
-                setBadgeTextColor('primary-content');
-                (
-                  document.getElementById(
-                    'text_color_modal'
-                  ) as HTMLDialogElement
-                )?.close();
-              }}
+              onClick={() => setPendingBadgeTextColor('primary-content')}
             >
               <div className="w-6 h-6 rounded bg-primary-content border border-base-300"></div>
               <span>Primary Text</span>
@@ -2314,14 +2566,7 @@ function SettingsScreen() {
             <button
               type="button"
               className="btn btn-outline w-full justify-start"
-              onClick={() => {
-                setBadgeTextColor('secondary-content');
-                (
-                  document.getElementById(
-                    'text_color_modal'
-                  ) as HTMLDialogElement
-                )?.close();
-              }}
+              onClick={() => setPendingBadgeTextColor('secondary-content')}
             >
               <div className="w-6 h-6 rounded bg-secondary-content border border-base-300"></div>
               <span>Secondary Text</span>
@@ -2334,35 +2579,35 @@ function SettingsScreen() {
           <div className="flex flex-col items-center gap-3">
             <div style={{ width: '200px', height: '200px' }}>
               <Wheel
-                color={
-                  badgeTextColor === 'primary-content' ||
-                  badgeTextColor === 'secondary-content'
-                    ? '#ffffff'
-                    : badgeTextColor
-                }
+                color={badgeTextWheelColor}
                 onChange={(color: { hex: string }) =>
-                  setBadgeTextColor(color.hex)
+                  setPendingBadgeTextColor(color.hex)
                 }
               />
             </div>
             <input
               type="text"
               className="input input-bordered input-sm w-full text-center"
-              value={
-                badgeTextColor === 'primary-content' ||
-                badgeTextColor === 'secondary-content'
-                  ? ''
-                  : badgeTextColor
-              }
-              onChange={(e) => setBadgeTextColor(e.target.value)}
+              value={badgeTextHexInputValue}
+              onChange={(e) => setPendingBadgeTextColor(e.target.value)}
               placeholder="#ffffff"
+              style={{
+                backgroundColor: badgeTextInputBackgroundColor,
+                color: badgeTextInputBackgroundColor
+                  ? badgeTextInputTextColor
+                  : undefined,
+              }}
             />
           </div>
 
           <div className="modal-action">
-            <form method="dialog">
-              <button className="btn btn-sm">Done</button>
-            </form>
+            <button
+              className="btn btn-sm"
+              type="button"
+              onClick={handleBadgeTextDone}
+            >
+              Done
+            </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
