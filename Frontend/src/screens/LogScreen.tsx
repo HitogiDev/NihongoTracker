@@ -62,44 +62,50 @@ interface logDataType {
   youtubeChannelInfo: youtubeChannelInfo | null;
 }
 
-function LogScreen() {
-  const [logData, setLogData] = useState<logDataType>({
-    type: null,
-    titleNative: '',
-    titleRomaji: '',
-    titleEnglish: '',
-    description: '',
-    mediaDescription: [
-      {
-        description: '',
-        language: 'eng',
-      },
-    ],
-    mediaName: '',
-    mediaId: '',
-    episodes: 0,
-    duration: 0,
-    customDuration: undefined,
-    synonyms: [],
-    isAdult: false,
-    watchedEpisodes: 0,
-    time: 0,
-    chars: 0,
-    readChars: 0,
-    pages: 0,
-    readPages: 0,
-    chapters: undefined,
-    volumes: undefined,
-    hours: 0,
-    minutes: 0,
-    showTime: false,
-    showChars: false,
-    img: undefined,
-    cover: undefined,
-    date: undefined,
-    youtubeChannelInfo: null,
-  });
+const createInitialLogState = (
+  type: ILog['type'] | null = null
+): logDataType => ({
+  type,
+  titleNative: '',
+  titleRomaji: '',
+  titleEnglish: '',
+  description: '',
+  mediaDescription: [
+    {
+      description: '',
+      language: 'eng',
+    },
+  ],
+  mediaName: '',
+  mediaId: '',
+  episodes: 0,
+  duration: 0,
+  customDuration: undefined,
+  synonyms: [],
+  isAdult: false,
+  watchedEpisodes: 0,
+  time: 0,
+  chars: 0,
+  readChars: 0,
+  pages: 0,
+  readPages: 0,
+  chapters: undefined,
+  volumes: undefined,
+  hours: 0,
+  minutes: 0,
+  showTime: false,
+  showChars: false,
+  img: undefined,
+  cover: undefined,
+  date: undefined,
+  runtime: undefined,
+  youtubeChannelInfo: null,
+});
 
+function LogScreen() {
+  const [logData, setLogData] = useState<logDataType>(() =>
+    createInitialLogState()
+  );
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isAdvancedOptions, setIsAdvancedOptions] = useState<boolean>(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -476,6 +482,20 @@ function LogScreen() {
     { value: 'audio', label: 'Audio' },
   ];
 
+  const showEpisodesInMain = logData.type === 'anime';
+  const showTimeInMain = [
+    'vn',
+    'video',
+    'reading',
+    'audio',
+    'manga',
+    'movie',
+  ].includes(logData.type ?? '');
+  const showCharsInMain = ['vn', 'reading', 'manga'].includes(
+    logData.type ?? ''
+  );
+  const showPagesInMain = logData.type === 'manga';
+
   return (
     <div className="pt-24 pb-16 px-4 flex justify-center items-start bg-base-200 min-h-screen">
       <div className="w-full max-w-6xl">
@@ -507,11 +527,14 @@ function LogScreen() {
                         : 'btn-outline'
                     }`}
                     onClick={() => {
-                      handleFieldChange('type', option.value as ILog['type']);
-                      if (option.value !== 'video') {
-                        handleInputChange('youtubeChannelInfo', null);
-                      }
-                      handleInputChange('customDuration', undefined);
+                      const newType = option.value as ILog['type'];
+                      setLogData(createInitialLogState(newType));
+                      setSelectedTags([]);
+                      setTouched({});
+                      setErrors({});
+                      setIsFormValid(false);
+                      setIsSuggestionsOpen(false);
+                      setIsAdvancedOptions(false);
                     }}
                   >
                     <span>{option.label}</span>
@@ -776,14 +799,7 @@ function LogScreen() {
                         </div>
                       )}
 
-                      {[
-                        'vn',
-                        'video',
-                        'reading',
-                        'audio',
-                        'manga',
-                        'movie',
-                      ].includes(logData.type || '') && (
+                      {showTimeInMain && (
                         <div className="form-control">
                           <label className="label">
                             <span className="label-text font-medium">
@@ -862,9 +878,7 @@ function LogScreen() {
                         </div>
                       )}
 
-                      {['vn', 'reading', 'manga'].includes(
-                        logData.type || ''
-                      ) && (
+                      {showCharsInMain && (
                         <div className="form-control">
                           <label className="label">
                             <span className="label-text font-medium">
@@ -902,7 +916,7 @@ function LogScreen() {
                         </div>
                       )}
 
-                      {logData.type === 'manga' && (
+                      {showPagesInMain && (
                         <div className="form-control">
                           <label className="label">
                             <span className="label-text font-medium">
@@ -955,10 +969,12 @@ function LogScreen() {
                       </div>
                       <div className="collapse-content space-y-4">
                         {isAdvancedOptions && logData.type === 'anime' && (
-                          <fieldset className="fieldset">
-                            <legend className="fieldset-legend">
-                              Episode Duration (minutes)
-                            </legend>
+                          <div className="form-control">
+                            <label className="label flex flex-col items-start gap-1">
+                              <span className="label-text">
+                                Episode Duration (minutes)
+                              </span>
+                            </label>
                             <input
                               type="number"
                               min="1"
@@ -987,14 +1003,120 @@ function LogScreen() {
                               value={logData.customDuration || ''}
                             />
                             {logData.duration ? (
-                              <p className="label">
+                              <p className="label flex flex-col items-start gap-1">
                                 Default: {logData.duration} min
                               </p>
                             ) : null}
-                          </fieldset>
+                          </div>
+                        )}
+                        {!showEpisodesInMain && (
+                          <div className="form-control">
+                            <label className="label flex flex-col items-start gap-1">
+                              <span className="label-text">
+                                Episodes Watched (optional)
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              onInput={preventNegativeValues}
+                              className="input input-bordered"
+                              value={logData.watchedEpisodes || ''}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  'watchedEpisodes',
+                                  Number(e.target.value)
+                                )
+                              }
+                            />
+                          </div>
+                        )}
+                        {!showTimeInMain && (
+                          <div className="form-control">
+                            <label className="label flex flex-col items-start gap-1">
+                              <span className="label-text">
+                                Time Spent (optional)
+                              </span>
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                className="input input-bordered w-1/2"
+                                placeholder="Hours"
+                                value={logData.hours || ''}
+                                onInput={preventNegativeValues}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    'hours',
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                max="59"
+                                className="input input-bordered w-1/2"
+                                placeholder="Minutes"
+                                value={logData.minutes || ''}
+                                onInput={preventNegativeValues}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    'minutes',
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {!showCharsInMain && (
+                          <div className="form-control">
+                            <label className="label flex flex-col items-start gap-1">
+                              <span className="label-text">
+                                Characters Read (optional)
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="input input-bordered"
+                              value={logData.readChars || ''}
+                              onInput={preventNegativeValues}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  'readChars',
+                                  Number(e.target.value)
+                                )
+                              }
+                            />
+                          </div>
+                        )}
+                        {!showPagesInMain && (
+                          <div className="form-control">
+                            <label className="label flex flex-col items-start gap-1">
+                              <span className="label-text">
+                                Pages Read (optional)
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              className="input input-bordered"
+                              value={logData.readPages || ''}
+                              onInput={preventNegativeValues}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  'readPages',
+                                  Number(e.target.value)
+                                )
+                              }
+                            />
+                          </div>
                         )}
                         <div className="form-control">
-                          <label className="label">
+                          <label className="label flex flex-col items-start gap-1">
                             <span className="label-text">Date</span>
                           </label>
                           <button
@@ -1009,7 +1131,7 @@ function LogScreen() {
                           </button>
                         </div>
                         <div className="form-control">
-                          <label className="label">
+                          <label className="label flex flex-col items-start gap-1">
                             <span className="label-text">
                               Custom Description (Optional)
                             </span>

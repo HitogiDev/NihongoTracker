@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
@@ -184,7 +184,7 @@ export default function VotingSystem({
     }).format(dateObj);
   };
 
-  const votings = votingsData?.votings || [];
+  const votings = useMemo(() => votingsData?.votings ?? [], [votingsData]);
 
   const openVotings = useMemo(
     () => votings.filter((v) => v.status === 'voting_open'),
@@ -249,6 +249,20 @@ export default function VotingSystem({
     });
   }, [completedVotings, resultsTimespan]);
 
+  // Reset carousel index if it's out of bounds
+  useEffect(() => {
+    if (openVotings.length === 0) {
+      if (currentVotingIndex !== 0) {
+        setCurrentVotingIndex(0);
+      }
+      return;
+    }
+
+    if (currentVotingIndex >= openVotings.length) {
+      setCurrentVotingIndex(0);
+    }
+  }, [currentVotingIndex, openVotings.length]);
+
   if (isLoading && votings.length === 0) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -256,11 +270,6 @@ export default function VotingSystem({
         <span className="ml-2">Loading votings...</span>
       </div>
     );
-  }
-
-  // Reset carousel index if it's out of bounds
-  if (currentVotingIndex >= openVotings.length && openVotings.length > 0) {
-    setCurrentVotingIndex(0);
   }
 
   const nextVoting = () => {
