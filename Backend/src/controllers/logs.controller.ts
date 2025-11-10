@@ -1,7 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { MediaBase, Anime, Manga, Reading } from '../models/media.model.js';
-import { ILog, IEditedFields, ICreateLog, IMediaDocument } from '../types.js';
+import {
+  ILog,
+  IEditedFields,
+  ICreateLog,
+  IMediaDocument,
+  manabeLogs,
+} from '../types.js';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
 import { ObjectId, PipelineStage, Types } from 'mongoose';
@@ -104,6 +110,7 @@ export async function getRecentLogs(
           time: 1,
           episodes: 1,
           mediaId: 1,
+          manabeId: 1,
           media: 1,
           xp: 1,
         },
@@ -493,6 +500,7 @@ export async function getUserLogs(
           _id: 1,
           type: 1,
           mediaId: 1,
+          manabeId: 1,
           xp: 1,
           description: 1,
           episodes: 1,
@@ -583,6 +591,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
           time: 1,
           date: 1,
           mediaId: 1,
+          manabeId: 1,
           xp: 1,
           tags: 1,
           'mediaData.title': 1,
@@ -1133,7 +1142,7 @@ export async function importLogs(
 
     const user = await User.findById(res.locals.user.id);
     if (!user) throw new customError('User not found', 404);
-    user.lastImport = new Date();
+    user.firstImport = false;
     const savedUser = await user.save();
     if (!savedUser) throw new customError('User could not be updated', 500);
 
@@ -2032,7 +2041,7 @@ export async function syncManabeIds(
           },
         });
 
-        const manabeLogs = response.data;
+        const manabeLogs = response.data as manabeLogs[];
 
         if (!manabeLogs || manabeLogs.length === 0) {
           results.processedUsers++;
@@ -2682,6 +2691,7 @@ export async function getRecentMediaLogs(
           user: '$user',
           type: 1,
           mediaId: 1,
+          manabeId: 1,
           xp: 1,
           description: 1,
           episodes: 1,

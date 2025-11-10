@@ -120,8 +120,18 @@ function extractTagIds(tags?: ILog['tags']): string[] {
 }
 
 function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
-  const { description, xp, date, type, episodes, pages, time, chars, media } =
-    log;
+  const {
+    description,
+    xp,
+    date,
+    type,
+    episodes,
+    pages,
+    time,
+    chars,
+    media,
+    manabeId,
+  } = log;
   const { user } = useUserDataStore();
   const { formatRelativeDate, formatDateTime } = useDateFormatting();
   const deleteModalRef = useRef<HTMLDialogElement>(null);
@@ -947,12 +957,19 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     </span>
                   </div>
 
-                  {logUser && (
+                  {logUser ? (
                     <div className="flex justify-between">
                       <span className="label-text font-medium">User:</span>
                       <span>{logUser}</span>
                     </div>
-                  )}
+                  ) : null}
+
+                  {manabeId ? (
+                    <div className="flex justify-between">
+                      <span className="label-text font-medium">Manabe id:</span>
+                      <span>{manabeId}</span>
+                    </div>
+                  ) : null}
 
                   <div className="flex justify-between">
                     <span className="label-text font-medium">

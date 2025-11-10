@@ -1,33 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import { customError } from './errorMiddleware.js';
-import { IUser, ILog, TMWLog, ManabeTSVLog, VNCRLog } from '../types.js';
+import {
+  IUser,
+  ILog,
+  TMWLog,
+  ManabeTSVLog,
+  VNCRLog,
+  manabeLogs,
+} from '../types.js';
 import { Types } from 'mongoose';
 import User from '../models/user.model.js';
+import Log from '../models/log.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { getYouTubeVideoInfo } from '../services/searchYoutube.js';
-
-type manabeLogs = {
-  _id: string;
-  descripcion: string;
-  medio:
-    | 'ANIME'
-    | 'MANGA'
-    | 'LECTURA'
-    | 'TIEMPOLECTURA'
-    | 'VN'
-    | 'VIDEO'
-    | 'AUDIO'
-    | 'OUTPUT'
-    | 'JUEGO'
-    | 'LIBRO'
-    | 'JUEGOLECTURA';
-  tiempo?: number;
-  caracteres?: number;
-  parametro: number;
-  createdAt: string;
-  officialId?: string;
-};
 
 interface ILogManabeTypeMap {
   [key: string]: {
@@ -46,7 +32,7 @@ interface ManabeWebhookBody {
 }
 
 interface ILogNT {
-  manabeId?: String;
+  manabeId?: string;
   user: Types.ObjectId;
   description?: string;
   type: ILog['type'];
@@ -129,7 +115,6 @@ export async function getLogsFromAPI(
     const response = await axios.get(apiUrl, {
       params: {
         user: user.discordId,
-        startDate: user.lastImport,
         limit: 0,
         page: 1,
       },
@@ -137,8 +122,19 @@ export async function getLogsFromAPI(
 
     const rawLogs: manabeLogs[] = response.data;
 
-    if (user.lastImport) {
-      for (const logInfo of rawLogs) {
+    const alreadyImportedLogs = await Log.find({
+      user: user._id,
+      manabeId: { $exists: true },
+    }).select('manabeId');
+
+    const newLogs = rawLogs.filter((log) => {
+      return !alreadyImportedLogs.some(
+        (importedLog) => importedLog.manabeId === log._id
+      );
+    });
+
+    if (!user.firstImport) {
+      for (const logInfo of newLogs) {
         if (logInfo.medio === 'VIDEO' && logInfo.descripcion) {
           try {
             const extractVideoId = (url: string): string | null => {
@@ -172,8 +168,8 @@ export async function getLogsFromAPI(
       }
     }
 
-    const logs = transformManabeLogsList(rawLogs, user);
-    req.body.logs = logs;
+    const NTLogs = transformManabeLogsList(newLogs, user);
+    req.body.logs = NTLogs;
     return next();
   } catch (error) {
     return next(error as customError);

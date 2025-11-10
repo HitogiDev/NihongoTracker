@@ -233,7 +233,7 @@ export interface IUser extends Document {
   stats: IStats;
   titles: string[];
   roles: userRoles[];
-  lastImport?: Date;
+  firstImport?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   settings?: IUserSettings;
@@ -735,4 +735,26 @@ export interface IChangelog extends Document {
   published: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface manabeLogs {
+  _id: string;
+  descripcion: string;
+  medio:
+    | 'ANIME'
+    | 'MANGA'
+    | 'LECTURA'
+    | 'TIEMPOLECTURA'
+    | 'VN'
+    | 'VIDEO'
+    | 'AUDIO'
+    | 'OUTPUT'
+    | 'JUEGO'
+    | 'LIBRO'
+    | 'JUEGOLECTURA';
+  tiempo?: number;
+  caracteres?: number;
+  parametro: number;
+  createdAt: string;
+  officialId?: string;
 }

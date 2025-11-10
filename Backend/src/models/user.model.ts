@@ -131,7 +131,7 @@ const UserSchema = new Schema<IUser>(
         required: true,
       },
     ],
-    lastImport: { type: Date, default: null },
+    firstImport: { type: Boolean, default: true },
     settings: {
       type: SettingsSchema,
       default: { blurAdultContent: true, timezone: 'UTC' },

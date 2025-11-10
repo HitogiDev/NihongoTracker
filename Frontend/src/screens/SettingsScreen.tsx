@@ -390,7 +390,7 @@ function SettingsScreen() {
     mutationFn: importLogFileFn,
     onSuccess: (data) => {
       const logImportInput = document.getElementById(
-        'logImport'
+        'logFileImport'
       ) as HTMLInputElement;
       if (logImportInput) {
         logImportInput.value = '';
@@ -562,7 +562,7 @@ function SettingsScreen() {
   async function handleFileImport(e: React.FormEvent) {
     e.preventDefault();
     const logImportInput = document.getElementById(
-      'logImport'
+      'logFileImport'
     ) as HTMLInputElement;
     if (!logImportInput.files || logImportInput.files.length === 0) {
       toast.error('Please select a file');
@@ -570,7 +570,7 @@ function SettingsScreen() {
     }
     const file = logImportInput.files[0];
     const formData = new FormData();
-    formData.append('logImport', file);
+    formData.append('logFileImport', file);
     formData.append('logImportType', importType ?? '');
     importFileLogs(formData);
   }
@@ -2172,7 +2172,7 @@ function SettingsScreen() {
                     <form onSubmit={handleFileImport} className="space-y-3">
                       <input
                         type="file"
-                        id="logImport"
+                        id="logFileImport"
                         className="file-input file-input-bordered file-input-info w-full"
                         accept=".csv,.tsv,.jsonl"
                       />

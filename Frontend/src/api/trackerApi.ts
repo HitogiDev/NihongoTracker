@@ -1,4 +1,4 @@
-import axiosInstance from './axiosConfig';
+import axiosInstance from "./axiosConfig";
 import {
   ILoginResponse,
   IRegisterInput,
@@ -20,19 +20,19 @@ import {
   ILongTermGoalsResponse,
   IJitenResponse,
   ITag,
-} from '../types';
+} from "../types";
 
 const api = axiosInstance;
 
 export async function registerUserFn(
-  user: IRegisterInput
+  user: IRegisterInput,
 ): Promise<ILoginResponse> {
   const userParams = Object.entries(user).reduce((params, [key, value]) => {
     params.append(key, value);
     return params;
   }, new URLSearchParams());
 
-  const { data } = await api.post<ILoginResponse>('auth/register', userParams);
+  const { data } = await api.post<ILoginResponse>("auth/register", userParams);
   return data;
 }
 
@@ -42,24 +42,24 @@ export async function loginUserFn(user: ILoginInput): Promise<ILoginResponse> {
     return params;
   }, new URLSearchParams());
 
-  const { data } = await api.post<ILoginResponse>('auth/login', userParams);
+  const { data } = await api.post<ILoginResponse>("auth/login", userParams);
   return data;
 }
 
 export async function logoutUserFn() {
-  const { data } = await api.post('auth/logout');
+  const { data } = await api.post("auth/logout");
   return data;
 }
 
 export async function forgotPasswordFn(email: string) {
-  const { data } = await api.post('auth/forgot-password', { email });
+  const { data } = await api.post("auth/forgot-password", { email });
   return data;
 }
 
 export async function resetPasswordFn(
   token: string,
   password: string,
-  passwordConfirmation: string
+  passwordConfirmation: string,
 ) {
   const { data } = await api.post(`auth/reset-password/${token}`, {
     password,
@@ -69,7 +69,7 @@ export async function resetPasswordFn(
 }
 
 export async function resendVerificationEmailFn() {
-  const { data } = await api.post('auth/resend-verification');
+  const { data } = await api.post("auth/resend-verification");
   return data;
 }
 
@@ -78,7 +78,7 @@ export async function getPublicStatsFn(): Promise<{
   totalLogs: number;
   totalXp: number;
 }> {
-  const { data } = await api.get('auth/stats');
+  const { data } = await api.get("auth/stats");
   return data;
 }
 
@@ -90,7 +90,7 @@ export async function getUserFn(username: string): Promise<IUser> {
 export async function updateUserFn(updateValues: FormData) {
   const { data } = await api.put<IUser>(`/users`, updateValues, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
   return data;
@@ -112,15 +112,15 @@ export async function getMediumRankingFn(params: {
   page?: number;
   limit?: number;
   type:
-    | 'anime'
-    | 'manga'
-    | 'reading'
-    | 'vn'
-    | 'video'
-    | 'movie'
-    | 'tv show'
-    | 'audio';
-  metric: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+    | "anime"
+    | "manga"
+    | "reading"
+    | "vn"
+    | "video"
+    | "movie"
+    | "tv show"
+    | "audio";
+  metric: "xp" | "time" | "episodes" | "chars" | "pages";
   timeFilter?: string;
   timezone?: string;
   start?: string;
@@ -138,7 +138,7 @@ export async function getMediumRankingFn(params: {
       pages?: number;
       patreon?: {
         isActive: boolean;
-        tier: 'donator' | 'enthusiast' | 'consumer' | null;
+        tier: "donator" | "enthusiast" | "consumer" | null;
         customBadgeText?: string;
         badgeColor?: string;
         badgeTextColor?: string;
@@ -173,13 +173,13 @@ export async function searchMediaFn(params: {
 
 export async function getMediaFn(
   mediaId: string,
-  mediaType: string
+  mediaType: string,
 ): Promise<IMediaDocument & { jiten?: IJitenResponse }> {
   if (!mediaId || !mediaType) {
-    throw new Error('Both mediaId and mediaType are required');
+    throw new Error("Both mediaId and mediaType are required");
   }
   const { data } = await api.get<IMediaDocument & { jiten?: IJitenResponse }>(
-    `media/${mediaType}/${mediaId}`
+    `media/${mediaType}/${mediaId}`,
   );
   return data;
 }
@@ -225,7 +225,7 @@ export async function importLogsFn() {
 
 export async function getImmersionListFn(username: string) {
   const { data } = await api.get<IImmersionList>(
-    `users/${username}/immersionlist`
+    `users/${username}/immersionlist`,
   );
   return data;
 }
@@ -244,9 +244,9 @@ export async function getUntrackedLogsFn() {
 }
 
 export async function importLogFileFn(file: FormData) {
-  const { data } = await api.post(`logs/logimport`, file, {
+  const { data } = await api.post(`logs/logfileimport`, file, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
   return data;
@@ -267,17 +267,17 @@ interface IDashboardHours {
 
 export async function getDashboardHoursFn(username: string | undefined) {
   if (!username) {
-    throw new Error('Username is required to fetch dashboard hours');
+    throw new Error("Username is required to fetch dashboard hours");
   }
   const { data } = await api.get<IDashboardHours>(
-    `users/${username}/dashboard`
+    `users/${username}/dashboard`,
   );
   return data;
 }
 
 export async function getRecentLogsFn(username: string | undefined) {
   if (!username) {
-    throw new Error('Username is required to fetch recent logs');
+    throw new Error("Username is required to fetch recent logs");
   }
   const { data } = await api.get<ILog[]>(`users/${username}/recentlogs`);
   return data;
@@ -293,10 +293,10 @@ export async function getUserStatsFn(
     timezone?: string;
     includedTags?: string;
     excludedTags?: string;
-  }
+  },
 ) {
   if (!username) {
-    throw new Error('Username is required to fetch user stats');
+    throw new Error("Username is required to fetch user stats");
   }
   const { data } = await api.get<IUserStats>(`users/${username}/stats`, {
     params,
@@ -308,9 +308,9 @@ export const compareUserStatsFn = async (
   user1: string,
   user2: string,
   mediaId: string,
-  type: string
+  type: string,
 ): Promise<IComparisonResult> => {
-  const { data } = await api.get<IComparisonResult>('/users/compare', {
+  const { data } = await api.get<IComparisonResult>("/users/compare", {
     params: { user1, user2, mediaId, type },
   });
   return data;
@@ -329,21 +329,21 @@ export async function searchYouTubeVideoFn(url: string) {
 export async function getDailyGoalsFn(username: string | undefined) {
   if (!username) return null;
   const { data } = await api.get<IDailyGoalsResponse>(
-    `goals/daily/${username}`
+    `goals/daily/${username}`,
   );
   return data;
 }
 
 export async function createDailyGoalFn(
-  goal: Omit<IDailyGoal, '_id' | 'createdAt' | 'updatedAt'>
+  goal: Omit<IDailyGoal, "_id" | "createdAt" | "updatedAt">,
 ) {
-  const { data } = await api.post<IDailyGoal>('goals/daily', goal);
+  const { data } = await api.post<IDailyGoal>("goals/daily", goal);
   return data;
 }
 
 export async function updateDailyGoalFn(
   goalId: string,
-  goal: Partial<IDailyGoal>
+  goal: Partial<IDailyGoal>,
 ) {
   const { data } = await api.patch<IDailyGoal>(`goals/daily/${goalId}`, goal);
   return data;
@@ -358,25 +358,25 @@ export async function deleteDailyGoalFn(goalId: string) {
 export async function getLongTermGoalsFn(username: string | undefined) {
   if (!username) return null;
   const { data } = await api.get<ILongTermGoalsResponse>(
-    `goals/long-term/${username}`
+    `goals/long-term/${username}`,
   );
   return data;
 }
 
 export async function createLongTermGoalFn(
-  goal: Omit<ILongTermGoal, '_id' | 'createdAt' | 'updatedAt' | 'progress'>
+  goal: Omit<ILongTermGoal, "_id" | "createdAt" | "updatedAt" | "progress">,
 ) {
-  const { data } = await api.post<ILongTermGoal>('goals/long-term', goal);
+  const { data } = await api.post<ILongTermGoal>("goals/long-term", goal);
   return data;
 }
 
 export async function updateLongTermGoalFn(
   goalId: string,
-  goal: Partial<ILongTermGoal>
+  goal: Partial<ILongTermGoal>,
 ) {
   const { data } = await api.patch<ILongTermGoal>(
     `goals/long-term/${goalId}`,
-    goal
+    goal,
   );
   return data;
 }
@@ -394,7 +394,7 @@ export const getLogDetailsFn = async (logId: string) => {
 export async function getRecentMediaLogsFn(
   mediaId: string,
   type: string,
-  limit = 50
+  limit = 50,
 ) {
   const { data } = await api.get<ILog[]>(`logs/media/recent`, {
     params: { mediaId, type, limit },
@@ -471,9 +471,9 @@ export interface ILogScreenStats {
 }
 
 export async function getLogScreenStatsFn(
-  type?: string
+  type?: string,
 ): Promise<ILogScreenStats> {
-  const { data } = await api.get<ILogScreenStats>('logs/stats/logscreen', {
+  const { data } = await api.get<ILogScreenStats>("logs/stats/logscreen", {
     params: type ? { type } : undefined,
   });
   return data;
@@ -525,9 +525,9 @@ export interface IMediaStats {
 
 export async function getUserMediaStatsFn(
   mediaId: string,
-  type: string
+  type: string,
 ): Promise<IMediaStats> {
-  const { data } = await api.get<IMediaStats>('logs/stats/media', {
+  const { data } = await api.get<IMediaStats>("logs/stats/media", {
     params: { mediaId, type },
   });
   return data;
@@ -535,9 +535,9 @@ export async function getUserMediaStatsFn(
 
 export async function getGlobalMediaStatsFn(
   mediaId: string,
-  type: string
+  type: string,
 ): Promise<IMediaStats> {
-  const { data } = await api.get<IMediaStats>('logs/stats/media/global', {
+  const { data } = await api.get<IMediaStats>("logs/stats/media/global", {
     params: { mediaId, type },
   });
   return data;
@@ -545,7 +545,7 @@ export async function getGlobalMediaStatsFn(
 
 // Admin API functions
 export async function getAdminStatsFn() {
-  const { data } = await api.get('admin/stats');
+  const { data } = await api.get("admin/stats");
   return data;
 }
 
@@ -554,7 +554,7 @@ export async function getAdminUsersFn(params: {
   limit?: number;
   search?: string;
 }) {
-  const { data } = await api.get('admin/users', { params });
+  const { data } = await api.get("admin/users", { params });
   return data;
 }
 
@@ -563,15 +563,15 @@ export async function deleteUserFn(userId: string) {
   return data;
 }
 
-export async function recalculateStatsFn(type: 'streaks' | 'xp') {
+export async function recalculateStatsFn(type: "streaks" | "xp") {
   const endpoint =
-    type === 'streaks' ? 'recalculateStreaks' : 'recalculateStats';
+    type === "streaks" ? "recalculateStreaks" : "recalculateStats";
   const { data } = await api.get(`admin/${endpoint}`);
   return data;
 }
 
 export async function syncManabeIdsFn() {
-  const { data } = await api.post('logs/sync-manabe-ids');
+  const { data } = await api.post("logs/sync-manabe-ids");
   return data;
 }
 
@@ -609,7 +609,7 @@ export async function searchAdminLogsFn(params: {
 
 export async function adminUpdateLogFn(
   logId: string,
-  payload: Partial<updateLogRequest>
+  payload: Partial<updateLogRequest>,
 ) {
   const { data } = await api.put(`admin/logs/${logId}`, payload);
   return data;
@@ -622,7 +622,7 @@ export async function adminDeleteLogFn(logId: string) {
 
 export async function adminUpdateUserFn(
   userId: string,
-  payload: Partial<Omit<IUser, 'roles'>> & { roles?: string[] }
+  payload: Partial<Omit<IUser, "roles">> & { roles?: string[] },
 ) {
   const { data } = await api.put(`admin/users/${userId}`, payload);
   return data;
@@ -630,7 +630,7 @@ export async function adminUpdateUserFn(
 
 export async function adminResetPasswordFn(
   userId: string,
-  newPassword: string
+  newPassword: string,
 ) {
   const { data } = await api.post(`admin/users/${userId}/reset-password`, {
     newPassword,
@@ -642,14 +642,14 @@ export async function adminResetPasswordFn(
 export async function getPatreonStatusFn(): Promise<{
   patreonEmail?: string;
   patreonId?: string;
-  tier?: 'donator' | 'enthusiast' | 'consumer' | null;
+  tier?: "donator" | "enthusiast" | "consumer" | null;
   isActive: boolean;
   lastChecked?: Date;
   customBadgeText?: string;
   badgeColor?: string;
   badgeTextColor?: string;
 }> {
-  const { data } = await api.get('patreon/status');
+  const { data } = await api.get("patreon/status");
   return data;
 }
 
@@ -657,30 +657,30 @@ export async function initiatePatreonOAuthFn(): Promise<{
   authUrl: string;
   message: string;
 }> {
-  const { data } = await api.get('patreon/oauth/init');
+  const { data } = await api.get("patreon/oauth/init");
   return data;
 }
 
 export async function linkPatreonAccountFn(patreonEmail: string) {
-  const { data } = await api.post('patreon/link', { patreonEmail });
+  const { data } = await api.post("patreon/link", { patreonEmail });
   return data;
 }
 
 export async function unlinkPatreonAccountFn() {
-  const { data } = await api.post('patreon/unlink');
+  const { data } = await api.post("patreon/unlink");
   return data;
 }
 
 export async function updateCustomBadgeTextFn(customBadgeText: string) {
-  const { data } = await api.patch('patreon/badge', { customBadgeText });
+  const { data } = await api.patch("patreon/badge", { customBadgeText });
   return data;
 }
 
 export async function updateBadgeColorsFn(
   badgeColor: string,
-  badgeTextColor: string
+  badgeTextColor: string,
 ) {
-  const { data } = await api.patch('patreon/badge-colors', {
+  const { data } = await api.patch("patreon/badge-colors", {
     badgeColor,
     badgeTextColor,
   });
@@ -688,13 +688,13 @@ export async function updateBadgeColorsFn(
 }
 
 export async function getPatronStatsFn() {
-  const { data } = await api.get('admin/stats/patrons');
+  const { data } = await api.get("admin/stats/patrons");
   return data;
 }
 
 // Tags API
 export async function getUserTagsFn(): Promise<ITag[]> {
-  const { data } = await api.get('tags');
+  const { data } = await api.get("tags");
   return data;
 }
 
@@ -702,13 +702,13 @@ export async function createTagFn(tag: {
   name: string;
   color: string;
 }): Promise<ITag> {
-  const { data } = await api.post('tags', tag);
+  const { data } = await api.post("tags", tag);
   return data;
 }
 
 export async function updateTagFn(
   id: string,
-  tag: { name?: string; color?: string }
+  tag: { name?: string; color?: string },
 ): Promise<ITag> {
   const { data } = await api.patch(`tags/${id}`, tag);
   return data;
@@ -721,7 +721,7 @@ export async function deleteTagFn(id: string): Promise<{ message: string }> {
 
 // Changelog API
 export interface IChangelogChange {
-  type: 'feature' | 'improvement' | 'bugfix' | 'breaking';
+  type: "feature" | "improvement" | "bugfix" | "breaking";
   description: string;
 }
 
@@ -742,12 +742,12 @@ export interface IChangelog {
 }
 
 export async function getChangelogsFn(): Promise<IChangelog[]> {
-  const { data } = await api.get('changelogs');
+  const { data } = await api.get("changelogs");
   return data.data;
 }
 
 export async function getAdminChangelogsFn(): Promise<IChangelog[]> {
-  const { data } = await api.get('changelogs/admin/all');
+  const { data } = await api.get("changelogs/admin/all");
   return data.data;
 }
 
@@ -764,7 +764,7 @@ export async function createChangelogFn(payload: {
   date?: Date;
   published?: boolean;
 }): Promise<IChangelog> {
-  const { data } = await api.post('changelogs', payload);
+  const { data } = await api.post("changelogs", payload);
   return data.data;
 }
 
@@ -777,14 +777,14 @@ export async function updateChangelogFn(
     changes: IChangelogChange[];
     date: Date;
     published: boolean;
-  }>
+  }>,
 ): Promise<IChangelog> {
   const { data } = await api.patch(`changelogs/${id}`, payload);
   return data.data;
 }
 
 export async function deleteChangelogFn(
-  id: string
+  id: string,
 ): Promise<{ message: string }> {
   const { data } = await api.delete(`changelogs/${id}`);
   return data;

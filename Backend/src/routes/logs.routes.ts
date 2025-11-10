@@ -34,9 +34,9 @@ const upload = multer({
 router.post('/import', protect, getLogsFromAPI, calculateXp, importLogs);
 
 router.post(
-  '/logimport',
+  '/logfileimport',
   protect,
-  upload.single('logImport'),
+  upload.single('logFileImport'),
   csvToArray,
   getLogsFromCSV,
   calculateXp,
@@ -56,7 +56,6 @@ router.get('/untrackedlogs', protect, getUntrackedLogs);
 
 router.get('/stats/logscreen', protect, getLogScreenStats);
 
-// User-scoped media stats (uses user timezone)
 router.get('/stats/media', protect, getUserMediaStats);
 
 router.get('/stats/media/global', getGlobalMediaStats);

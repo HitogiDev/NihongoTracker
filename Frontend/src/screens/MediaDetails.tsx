@@ -164,7 +164,6 @@ function MediaDetails() {
   // Use cached data if available, otherwise use fetched data
   const finalMyLogs = cachedCurrentUserLogs || myLogs;
 
-  // Use efficient comparison endpoint when viewing another user
   const { data: comparisonData, isLoading: comparisonLoading } = useQuery({
     queryKey: [
       'comparison',

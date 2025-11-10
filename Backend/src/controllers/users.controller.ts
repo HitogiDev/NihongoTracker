@@ -866,11 +866,12 @@ export async function clearUserData(
       roles: ['user'],
       $unset: {
         stats: '',
-        lastImport: '',
+        firstImport: '',
         discordId: '',
         avatar: '',
         banner: '',
         settings: '',
+        patreon: '',
       },
     });
 
