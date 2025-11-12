@@ -9,9 +9,8 @@ import {
 import { customError } from '../middlewares/errorMiddleware.js';
 import fac from 'fast-average-color-node';
 import { searchAnilist } from '../services/searchAnilist.js';
-import { PipelineStage } from 'mongoose';
-import { IMediaDocument } from '../types.js';
 import axios from 'axios';
+import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
 
 export async function getAverageColor(
   req: Request,
@@ -115,7 +114,7 @@ export async function getMedia(
     if (jitenURL) {
       try {
         const LinkType: number | null = mediaType
-          ? LinkTypeObject[mediaType as keyof typeof LinkTypeObject] ?? null
+          ? (LinkTypeObject[mediaType as keyof typeof LinkTypeObject] ?? null)
           : null;
 
         if (LinkType) {
@@ -217,40 +216,14 @@ export async function searchMedia(
     const type = req.query.type as string;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.perPage as string) || 10;
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
     if (!title || !type)
       return res.status(400).json({ message: 'Invalid query parameters' });
 
-    const searchAggregation: PipelineStage[] = [
-      {
-        $match: {
-          $text: { $search: title },
-          type: type,
-        },
-      },
-      {
-        $addFields: {
-          score: { $meta: 'textScore' },
-        },
-      },
-      {
-        $sort: {
-          score: -1,
-        },
-      },
-      {
-        $skip: skip,
-      },
-      {
-        $limit: limit,
-      },
-    ];
+    const media = await searchDocuments(type, title, { limit, offset });
 
-    const media: IMediaDocument[] =
-      await MediaBase.aggregate(searchAggregation);
-
-    return res.status(200).json(media);
+    return res.status(200).json(media.hits);
   } catch (error) {
     return next(error as customError);
   }

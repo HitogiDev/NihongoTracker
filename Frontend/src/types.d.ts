@@ -10,7 +10,7 @@ export interface IUser {
   patreon?: {
     patreonId?: string;
     patreonEmail?: string;
-    tier: "donator" | "enthusiast" | "consumer" | null;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
     customBadgeText?: string;
     badgeColor?: string;
     badgeTextColor?: string;
@@ -31,9 +31,9 @@ export interface IUser {
 }
 
 enum userRoles {
-  admin = "admin",
-  user = "user",
-  mod = "mod",
+  admin = 'admin',
+  user = 'user',
+  mod = 'mod',
 }
 
 export type OutletProfileContextType = {
@@ -81,18 +81,18 @@ export interface IStats {
 
 export type ILoginResponse = Pick<
   IUser,
-  | "_id"
-  | "username"
-  | "email"
-  | "verified"
-  | "stats"
-  | "avatar"
-  | "banner"
-  | "titles"
-  | "roles"
-  | "discordId"
-  | "patreon"
-  | "settings"
+  | '_id'
+  | 'username'
+  | 'email'
+  | 'verified'
+  | 'stats'
+  | 'avatar'
+  | 'banner'
+  | 'titles'
+  | 'roles'
+  | 'discordId'
+  | 'patreon'
+  | 'settings'
 >;
 
 export interface IRegisterInput {
@@ -155,34 +155,34 @@ export type logoutResponseType = {
   message: string;
 };
 
-export type sortTypes = "asc" | "desc";
+export type sortTypes = 'asc' | 'desc';
 
 export type filterTypes =
-  | "userLevel"
-  | "userXp"
-  | "userChars"
-  | "readingXp"
-  | "readingLevel"
-  | "listeningXp"
-  | "listeningLevel"
-  | "charCountVn"
-  | "charCountLn"
-  | "readingTimeVn"
-  | "charCountReading"
-  | "pageCountLn"
-  | "readingTimeLn"
-  | "pageCountManga"
-  | "charCountManga"
-  | "readingTimeManga"
-  | "mangaPages"
-  | "listeningTime"
-  | "readingTime"
-  | "animeEpisodes"
-  | "animeWatchingTime"
-  | "videoWatchingTime"
-  | "userHours"
-  | "readingHours"
-  | "listeningHours";
+  | 'userLevel'
+  | 'userXp'
+  | 'userChars'
+  | 'readingXp'
+  | 'readingLevel'
+  | 'listeningXp'
+  | 'listeningLevel'
+  | 'charCountVn'
+  | 'charCountLn'
+  | 'readingTimeVn'
+  | 'charCountReading'
+  | 'pageCountLn'
+  | 'readingTimeLn'
+  | 'pageCountManga'
+  | 'charCountManga'
+  | 'readingTimeManga'
+  | 'mangaPages'
+  | 'listeningTime'
+  | 'readingTime'
+  | 'animeEpisodes'
+  | 'animeWatchingTime'
+  | 'videoWatchingTime'
+  | 'userHours'
+  | 'readingHours'
+  | 'listeningHours';
 
 export interface IRankingParams {
   page?: number;
@@ -195,29 +195,29 @@ export interface IRankingParams {
   end?: string; // YYYY-MM-DD
 }
 
-export interface ILogsParams extends Pick<IRankingParams, "page" | "limit"> {
+export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
   mediaId?: string;
   search?: string;
   start?: string;
   end?: string;
-  type?: ILog["type"] | ILog["type"][];
-  sortBy?: "date" | "xp" | "episodes" | "chars" | "pages" | "time";
-  sortDirection?: "asc" | "desc";
+  type?: ILog['type'] | ILog['type'][];
+  sortBy?: 'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time';
+  sortDirection?: 'asc' | 'desc';
 }
 
 // Add interface for MatchMedia logs (minimal required fields)
 export interface IMatchMediaLog {
   _id: string;
   type:
-    | "anime"
-    | "manga"
-    | "reading"
-    | "vn"
-    | "video"
-    | "movie"
-    | "tv show"
-    | "audio"
-    | "other";
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'audio'
+    | 'other';
   description: string;
   mediaId?: string;
   date: Date;
@@ -251,7 +251,7 @@ export interface updateLogRequest {
   description?: string;
   time?: number;
   date?: Date;
-  type?: ILog["type"];
+  type?: ILog['type'];
   contentId?: number;
   episodes?: number;
   pages?: number;
@@ -283,7 +283,7 @@ export interface IContentMedia {
 }
 
 export interface ICreateLog
-  extends Omit<ILog, "_id" | "user" | "createdAt" | "updatedAt" | "xp"> {
+  extends Omit<ILog, '_id' | 'user' | 'createdAt' | 'updatedAt' | 'xp'> {
   mediaData?: IContentMedia & {
     // YouTube specific fields
     channelId?: string;
@@ -315,15 +315,15 @@ export interface ILog {
     avatar?: string;
   };
   type:
-    | "anime"
-    | "manga"
-    | "reading"
-    | "vn"
-    | "video"
-    | "movie"
-    | "tv show"
-    | "audio"
-    | "other";
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'tv show'
+    | 'audio'
+    | 'other';
   description: string;
   episodes?: number;
   pages?: number;
@@ -354,7 +354,7 @@ export interface IRankingResponse {
   stats: Pick<IStats, filterTypes>;
   patreon?: {
     isActive: boolean;
-    tier: "donator" | "enthusiast" | "consumer" | null;
+    tier: 'donator' | 'enthusiast' | 'consumer' | null;
     customBadgeText?: string;
     badgeColor?: string;
     badgeTextColor?: string;
@@ -377,8 +377,8 @@ export interface AnilistSearchResult {
         english: string;
         native: string;
       };
-      format: "NOVEL" | "MANGA" | "ONE_SHOT";
-      type: "ANIME" | "MANGA";
+      format: 'NOVEL' | 'MANGA' | 'ONE_SHOT';
+      type: 'ANIME' | 'MANGA';
       coverImage: {
         extraLarge: string;
         medium: string;
@@ -402,18 +402,18 @@ export interface IAnimeDocument {
   _id: string;
   sources?: string[];
   title: string;
-  type: "TV" | "MOVIE" | "OVA" | "ONA" | "SPECIAL" | "UNKNOWN";
+  type: 'TV' | 'MOVIE' | 'OVA' | 'ONA' | 'SPECIAL' | 'UNKNOWN';
   episodes?: number;
-  status: "FINISHED" | "ONGOING" | "UPCOMING" | "UNKNOWN";
+  status: 'FINISHED' | 'ONGOING' | 'UPCOMING' | 'UNKNOWN';
   animeSeason: {
-    season?: "SPRING" | "SUMMER" | "FALL" | "WINTER" | "UNDEFINED";
+    season?: 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER' | 'UNDEFINED';
     year: number | null;
   };
   picture?: string;
   thumbnail?: string;
   duration?: {
     value?: number;
-    unit?: "SECONDS";
+    unit?: 'SECONDS';
   } | null;
   synonyms?: string[];
   relatedAnime?: string[];
@@ -433,26 +433,27 @@ export interface IImmersionList {
   vn: IMediaDocument[];
   video: IMediaDocument[];
   movie: IMediaDocument[];
-  "tv show": IMediaDocument[];
+  'tv show': IMediaDocument[];
 }
 
-interface MediaDescription {
+interface IMediaDescription {
   description: string;
-  language: "eng" | "jpn" | "spa";
+  language: 'eng' | 'jpn' | 'spa';
 }
 
-interface MediaDescription {
+interface IMediaDescription {
   description: string;
-  language: "eng" | "jpn" | "spa";
+  language: 'eng' | 'jpn' | 'spa';
 }
 
 export interface IMediaDocument {
+  _id?: string;
   contentId: string;
   title: IMediaTitle;
   contentImage?: string;
   coverImage?: string;
-  description?: Array<MediaDescription>;
-  type: "anime" | "manga" | "reading" | "vn" | "video" | "movie" | "tv show";
+  description?: Array<IMediaDescription>;
+  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'tv show';
   episodes?: number;
   episodeDuration?: number;
   runtime?: number;
@@ -556,7 +557,7 @@ interface IUserStats {
       utcMillis: number;
     };
   }>;
-  timeRange: "today" | "week" | "month" | "year" | "total" | "custom";
+  timeRange: 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
   selectedType: string;
   timezone: string;
 }
@@ -570,7 +571,7 @@ export interface youtubeChannelInfo {
 
 export interface IDailyGoal {
   _id?: string;
-  type: "time" | "chars" | "episodes" | "pages";
+  type: 'time' | 'chars' | 'episodes' | 'pages';
   target: number;
   isActive: boolean;
   createdAt?: Date;
@@ -598,10 +599,10 @@ export interface IDailyGoalsResponse {
 
 export interface ILongTermGoal {
   _id?: string;
-  type: "time" | "chars" | "episodes" | "pages";
+  type: 'time' | 'chars' | 'episodes' | 'pages';
   totalTarget: number; // Total amount to achieve by target date
   targetDate: Date | string; // Deadline for achieving the goal
-  displayTimeframe: "daily" | "weekly" | "monthly"; // How to display progress
+  displayTimeframe: 'daily' | 'weekly' | 'monthly'; // How to display progress
   startDate: Date | string; // When the goal period started
   isActive: boolean;
   createdAt?: Date;
@@ -664,15 +665,15 @@ export interface IJitenResponse {
 // Club-related interfaces
 export interface IClubMember {
   user: IUser;
-  role: "leader" | "moderator" | "member";
+  role: 'leader' | 'moderator' | 'member';
   joinedAt: Date;
-  status: "active" | "pending" | "banned";
+  status: 'active' | 'pending' | 'banned';
 }
 
 export interface IClubMedia {
   _id?: string;
   mediaId: string;
-  mediaType: "anime" | "manga" | "reading" | "vn" | "video" | "movie";
+  mediaType: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie';
   title: string;
   description?: string;
   startDate: Date;
@@ -718,17 +719,17 @@ export interface IClubMediaVoting {
   title: string;
   description?: string;
   mediaType:
-    | "anime"
-    | "manga"
-    | "reading"
-    | "vn"
-    | "video"
-    | "movie"
-    | "custom";
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'custom';
   customMediaType?: string;
 
   // Voting configuration
-  candidateSubmissionType: "manual" | "member_suggestions";
+  candidateSubmissionType: 'manual' | 'member_suggestions';
 
   // Date periods
   suggestionStartDate?: Date;
@@ -740,12 +741,12 @@ export interface IClubMediaVoting {
 
   // Status and management
   status:
-    | "setup"
-    | "suggestions_open"
-    | "suggestions_closed"
-    | "voting_open"
-    | "voting_closed"
-    | "completed";
+    | 'setup'
+    | 'suggestions_open'
+    | 'suggestions_closed'
+    | 'voting_open'
+    | 'voting_closed'
+    | 'completed';
   isActive: boolean;
   createdBy: IUser;
 
@@ -784,8 +785,8 @@ export interface IClub {
 export interface IClubResponse extends IClub {
   memberCount: number;
   isUserMember: boolean;
-  userRole?: "leader" | "moderator" | "member";
-  userStatus?: "active" | "pending" | "banned";
+  userRole?: 'leader' | 'moderator' | 'member';
+  userStatus?: 'active' | 'pending' | 'banned';
 }
 
 export interface IClubListResponse {
@@ -803,3 +804,11 @@ export interface ICreateClubRequest {
   rules?: string;
   memberLimit?: number;
 }
+
+type OptionalExceptFor<T, TRequired extends keyof T> = Partial<T> &
+  Pick<T, TRequired>;
+
+export type SearchResultType = OptionalExceptFor<
+  IMediaDocument,
+  '_id' | 'contentId' | 'title' | 'contentImage' | 'isAdult'
+>;

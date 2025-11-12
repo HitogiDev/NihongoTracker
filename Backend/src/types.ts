@@ -247,7 +247,7 @@ export interface IMediaTitle {
   contentTitleEnglish?: string;
 }
 
-interface MediaDescription {
+interface IMediaDescription {
   description: string;
   language: 'eng' | 'jpn' | 'spa';
 }
@@ -258,7 +258,7 @@ export interface IMediaDocument {
   title: IMediaTitle;
   contentImage?: string;
   coverImage?: string;
-  description?: MediaDescription[];
+  description?: IMediaDescription[];
   type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'tv show';
   episodes?: number;
   episodeDuration?: number;

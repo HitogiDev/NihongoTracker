@@ -19,6 +19,11 @@ import {
 import { protect } from '../middlewares/authMiddleware.js';
 import { checkPermission } from '../middlewares/checkPermission.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
+import {
+  deleteMeiliSearchIndex,
+  getMeiliSearchIndexes,
+  updateMeiliSearchIndexSettings,
+} from '../controllers/meilisearch.controller.js';
 
 const router = Router();
 
@@ -33,7 +38,7 @@ router.get(
 
 router.get('/users', protect, checkPermission(userRoles.admin), getAdminUsers);
 
-//Log routes
+// Log routes
 router.delete(
   '/logs/:id',
   protect,
@@ -48,7 +53,9 @@ router.put<ParamsDictionary, any, ILog>(
   adminUpdateLog
 );
 
-//User routes
+router.get('/logs', protect, checkPermission(userRoles.admin), searchAdminLogs);
+
+// User routes
 router.put(
   '/users/:id',
   protect,
@@ -82,6 +89,26 @@ router.get(
   recalculateXp
 );
 
-router.get('/logs', protect, checkPermission(userRoles.admin), searchAdminLogs);
+// Meilisearch routes
 
+router.get(
+  '/meilisearch/indexes',
+  protect,
+  checkPermission(userRoles.admin),
+  getMeiliSearchIndexes
+);
+
+router.delete(
+  '/meilisearch/indexes/:indexName',
+  protect,
+  checkPermission(userRoles.admin),
+  deleteMeiliSearchIndex
+);
+
+router.patch(
+  '/meilisearch/indexes/:indexName/settings',
+  protect,
+  checkPermission(userRoles.admin),
+  updateMeiliSearchIndexSettings
+);
 export default router;

@@ -3,7 +3,11 @@ import debounce from 'lodash/debounce';
 import { useState, useEffect } from 'react';
 import { searchAnilist } from '../api/anilistApi';
 import { searchMediaFn, searchYouTubeVideoFn } from '../api/trackerApi';
-import { IMediaDocument, MediaDescription, youtubeChannelInfo } from '../types';
+import {
+  SearchResultType,
+  IMediaDescription,
+  youtubeChannelInfo,
+} from '../types';
 
 export default function useSearch(
   type: string,
@@ -27,7 +31,7 @@ export default function useSearch(
   }, [search]);
 
   const getDescription = (
-    descriptions: MediaDescription[] | undefined
+    descriptions: IMediaDescription[] | undefined
   ): string => {
     if (!descriptions || descriptions.length === 0) return '';
 
@@ -41,7 +45,7 @@ export default function useSearch(
     return descriptions[0].description;
   };
 
-  return useQuery<IMediaDocument[] | undefined, Error>({
+  return useQuery<SearchResultType[] | undefined, Error>({
     queryKey: ['searchMedia', debouncedSearch, type, page, perPage, ids],
     queryFn: async () => {
       if (!debouncedSearch.trim() || !type) return [];
@@ -55,7 +59,7 @@ export default function useSearch(
           try {
             const youtubeResult = await searchYouTubeVideoFn(debouncedSearch);
             // Convert YouTube result to match IMediaDocument format
-            const videoItem: IMediaDocument & {
+            const videoItem: SearchResultType & {
               __youtubeChannelInfo?: youtubeChannelInfo;
             } = {
               contentId: youtubeResult.video.contentId,
@@ -99,12 +103,12 @@ export default function useSearch(
           });
 
           // If we have results in the database, return them
-          if (dbResults && dbResults.length > 0) {
+          if (dbResults && dbResults.length >= 10) {
             return dbResults;
           }
 
           if (type === 'anime') {
-            return searchAnilist(
+            const animeResults = await searchAnilist(
               debouncedSearch,
               'ANIME',
               page,
@@ -112,8 +116,9 @@ export default function useSearch(
               undefined,
               ids
             );
+            return [...dbResults, ...animeResults];
           } else if (type === 'manga') {
-            return searchAnilist(
+            const mangaResults = await searchAnilist(
               debouncedSearch,
               'MANGA',
               page,
@@ -121,8 +126,9 @@ export default function useSearch(
               'MANGA',
               ids
             );
+            return [...dbResults, ...mangaResults];
           } else if (type === 'reading') {
-            return searchAnilist(
+            const readingResults = await searchAnilist(
               debouncedSearch,
               'MANGA',
               page,
@@ -130,6 +136,7 @@ export default function useSearch(
               'NOVEL',
               ids
             );
+            return [...dbResults, ...readingResults];
           }
         } catch (error) {
           console.error(`Search error for ${type}:`, error);

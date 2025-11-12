@@ -26,6 +26,7 @@ import {
   XP_FACTOR_EPISODES,
   XP_FACTOR_PAGES,
 } from '../middlewares/calculateXp.js';
+import { addDocuments } from '../services/meilisearch/meiliSearch.js';
 
 export async function getUntrackedLogs(
   _req: Request,
@@ -925,7 +926,16 @@ export async function createLog(
         type,
         description: mediaData.description ? mediaData.description : undefined,
       });
-
+      await addDocuments(type, [
+        {
+          _id: createdMedia._id,
+          contentId: createdMedia.contentId,
+          title: createdMedia.title,
+          contentImage: createdMedia.contentImage,
+          isAdult: createdMedia.isAdult,
+          synonyms: mediaData.synonyms,
+        },
+      ]);
       logMedia = createdMedia;
     }
 
