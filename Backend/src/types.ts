@@ -377,7 +377,8 @@ export interface ILog extends Document {
     | 'manga'
     | 'audio'
     | 'movie'
-    | 'other';
+    | 'other'
+    | 'tv show';
   mediaId?: string;
   manabeId?: string;
   mediaTitle?: string;

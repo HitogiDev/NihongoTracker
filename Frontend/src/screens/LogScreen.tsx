@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ICreateLog,
   ILog,
@@ -341,13 +341,13 @@ function LogScreen() {
           : [{ description: '', language: 'eng' }]
       );
 
-      // For anime, store additional episode information
-      if (logData.type === 'anime') {
+      // For anime and series, store additional episode information
+      if (logData.type === 'anime' || logData.type === 'tv show') {
         if (group.episodes) {
           handleInputChange('episodes', group.episodes);
         }
         if (group.episodeDuration) {
-          handleInputChange('duration', group.episodeDuration);
+          handleInputChange('duration', group.episodeDuration ?? undefined);
         }
         // Reset custom duration when selecting new media
         handleInputChange('customDuration', undefined);
@@ -383,7 +383,7 @@ function LogScreen() {
     const allTouched = {
       type: true,
       mediaName: true,
-      episodes: logData.type === 'anime',
+      episodes: ['anime', 'tv show'].includes(logData.type ?? ''),
       hours: true,
       minutes: true,
       chars: true,
@@ -477,12 +477,15 @@ function LogScreen() {
     { value: 'manga', label: 'Manga' },
     { value: 'vn', label: 'Visual Novel' },
     { value: 'video', label: 'Video' },
+    { value: 'tv show', label: 'TV Show' },
     { value: 'movie', label: 'Movie' },
     { value: 'reading', label: 'Reading' },
     { value: 'audio', label: 'Audio' },
   ];
 
-  const showEpisodesInMain = logData.type === 'anime';
+  const isSeriesType = logData.type === 'anime' || logData.type === 'tv show';
+
+  const showEpisodesInMain = isSeriesType;
   const showTimeInMain = [
     'vn',
     'video',
@@ -495,6 +498,45 @@ function LogScreen() {
     logData.type ?? ''
   );
   const showPagesInMain = logData.type === 'manga';
+
+  const autoCalculatedTime = useMemo(() => {
+    if (!isSeriesType) return null;
+    const durationPerEpisode =
+      logData.customDuration && logData.customDuration > 0
+        ? logData.customDuration
+        : logData.duration && logData.duration > 0
+          ? logData.duration
+          : null;
+    if (!durationPerEpisode || !logData.watchedEpisodes) return null;
+    const totalMinutes = logData.watchedEpisodes * durationPerEpisode;
+    return {
+      totalMinutes,
+      hours: Math.floor(totalMinutes / 60),
+      minutes: totalMinutes % 60,
+    };
+  }, [
+    isSeriesType,
+    logData.customDuration,
+    logData.duration,
+    logData.watchedEpisodes,
+  ]);
+
+  useEffect(() => {
+    if (!autoCalculatedTime) return;
+    setLogData((prev) => {
+      if (
+        prev.hours === autoCalculatedTime.hours &&
+        prev.minutes === autoCalculatedTime.minutes
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        hours: autoCalculatedTime.hours,
+        minutes: autoCalculatedTime.minutes,
+      };
+    });
+  }, [autoCalculatedTime]);
 
   return (
     <div className="pt-24 pb-16 px-4 flex justify-center items-start bg-base-200 min-h-screen">
@@ -719,7 +761,7 @@ function LogScreen() {
 
                     {/* Dynamic Inputs based on Log Type */}
                     <div className="space-y-4">
-                      {logData.type === 'anime' && (
+                      {isSeriesType && (
                         <div className="form-control">
                           <label className="label">
                             <span className="label-text font-medium">
@@ -758,6 +800,9 @@ function LogScreen() {
                                 const minutes = totalMinutes % 60;
                                 handleFieldChange('hours', hours);
                                 handleFieldChange('minutes', minutes);
+                              } else if (episodes === 0) {
+                                handleFieldChange('hours', 0);
+                                handleFieldChange('minutes', 0);
                               }
                             }}
                             value={logData.watchedEpisodes || ''}
@@ -769,24 +814,15 @@ function LogScreen() {
                               </span>
                             </label>
                           )}
-                          {logData.watchedEpisodes > 0 &&
-                          (logData.customDuration || logData.duration) ? (
+                          {autoCalculatedTime ? (
                             <div className="alert alert-success mt-2">
                               <MdCheckCircle />
                               <span>
-                                Auto-calculated time:{' '}
-                                {Math.floor(
-                                  (logData.watchedEpisodes *
-                                    (logData.customDuration ||
-                                      logData.duration)) /
-                                    60
-                                )}
-                                h{' '}
-                                {(logData.watchedEpisodes *
-                                  (logData.customDuration ||
-                                    logData.duration)) %
-                                  60}
-                                m
+                                Auto-calculated time: {autoCalculatedTime.hours}
+                                h {autoCalculatedTime.minutes}m (
+                                {logData.watchedEpisodes} ×{' '}
+                                {logData.customDuration || logData.duration}{' '}
+                                min)
                               </span>
                             </div>
                           ) : null}
@@ -968,7 +1004,7 @@ function LogScreen() {
                         Advanced Options
                       </div>
                       <div className="collapse-content space-y-4">
-                        {isAdvancedOptions && logData.type === 'anime' && (
+                        {isAdvancedOptions && isSeriesType && (
                           <div className="form-control">
                             <label className="label flex flex-col items-start gap-1">
                               <span className="label-text">
@@ -1257,7 +1293,8 @@ function LogScreen() {
               handleInputChange('date', date || undefined);
               datePickerRef.current?.close();
             }}
-            toDate={new Date()}
+            endMonth={new Date()}
+            hidden={[{ after: new Date() }]}
           />
           <div className="modal-action">
             <form method="dialog">

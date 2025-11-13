@@ -47,6 +47,13 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
         log.xp = 0;
       }
       break;
+    case 'tv show':
+      if (timeXp) {
+        log.xp = timeXp;
+      } else {
+        log.xp = 0;
+      }
+      break;
     case 'vn':
     case 'video':
     case 'movie':

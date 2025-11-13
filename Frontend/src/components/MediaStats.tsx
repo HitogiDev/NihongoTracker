@@ -40,7 +40,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
     return (
       <div className="mt-4 p-3 bg-info/10 border border-info/20 rounded-lg">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-info-content">
+          <span className="text-sm text-base-content">
             This will be your first log for "{mediaName}"
           </span>
         </div>

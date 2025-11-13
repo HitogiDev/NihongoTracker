@@ -27,6 +27,7 @@ const LogSchema = new Schema<ILog>(
         'manga',
         'audio',
         'movie',
+        'tv show',
         'other',
       ],
     },
