@@ -50,6 +50,7 @@ const LogSchema = new Schema<ILog>(
       required: function (this: ILog) {
         return this.type === 'anime';
       },
+      default: 1,
     },
     pages: {
       type: Number,
