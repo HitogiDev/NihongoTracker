@@ -37,12 +37,20 @@ export const useUserDataStore = create(
         set({ user: null });
         useUserDataStore.persist.clearStorage();
 
-        // Redirigir a login si no estamos ya ahí
-        if (
-          typeof window !== 'undefined' &&
-          window.location.pathname !== '/login'
-        ) {
-          window.location.href = '/login';
+        // Only redirect to login if we're on a protected route
+        if (typeof window !== 'undefined') {
+          const protectedRoutes = ['/createlog', '/matchmedia', '/settings'];
+          const currentPath = window.location.pathname;
+
+          // Check if current path is a protected route
+          const isProtectedRoute = protectedRoutes.some(
+            (route) =>
+              currentPath === route || currentPath.startsWith(route + '/')
+          );
+
+          if (isProtectedRoute && currentPath !== '/login') {
+            window.location.href = '/login';
+          }
         }
       },
     }),

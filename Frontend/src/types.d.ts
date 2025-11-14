@@ -38,7 +38,7 @@ enum userRoles {
 
 export type OutletProfileContextType = {
   user: IUser | undefined;
-  username: string | undefined;
+  username: string;
 };
 
 export type OutletMediaContextType = {

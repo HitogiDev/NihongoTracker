@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getUserTagsFn } from '../api/trackerApi';
+import { getUserTagsByUsernameFn } from '../api/trackerApi';
 import { ITag } from '../types';
 
 interface TagFilterProps {
@@ -7,6 +7,7 @@ interface TagFilterProps {
   excludedTags: string[];
   onIncludeChange: (tagIds: string[]) => void;
   onExcludeChange: (tagIds: string[]) => void;
+  username: string; // Username to fetch tags for
 }
 
 export default function TagFilter({
@@ -14,10 +15,11 @@ export default function TagFilter({
   excludedTags,
   onIncludeChange,
   onExcludeChange,
+  username,
 }: TagFilterProps) {
   const { data: tags = [], isLoading } = useQuery({
-    queryKey: ['tags'],
-    queryFn: getUserTagsFn,
+    queryKey: ['tags', username],
+    queryFn: () => getUserTagsByUsernameFn(username),
   });
 
   const toggleInclude = (tagId: string) => {

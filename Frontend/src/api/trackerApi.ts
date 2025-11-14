@@ -694,8 +694,10 @@ export async function getPatronStatsFn() {
 }
 
 // Tags API
-export async function getUserTagsFn(): Promise<ITag[]> {
-  const { data } = await api.get('tags');
+export async function getUserTagsByUsernameFn(
+  username: string
+): Promise<ITag[]> {
+  const { data } = await api.get(`tags/user/${username}`);
   return data;
 }
 

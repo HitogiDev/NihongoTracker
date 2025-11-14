@@ -812,7 +812,7 @@ function RankingScreen() {
                               {secondGlobalUser?.username}
                               {secondGlobalBadge && (
                                 <div
-                                  className={`badge badge-sm gap-1 ${secondGlobalBadge.colorClass}`}
+                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondGlobalBadge.colorClass}`}
                                   style={secondGlobalBadge.style}
                                 >
                                   <svg
@@ -827,7 +827,7 @@ function RankingScreen() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <span className="font-bold">
+                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                     {secondGlobalBadge.text}
                                   </span>
                                 </div>
@@ -885,7 +885,7 @@ function RankingScreen() {
                               {firstGlobalUser?.username}
                               {firstGlobalBadge && (
                                 <div
-                                  className={`badge badge-sm gap-1 ${firstGlobalBadge.colorClass}`}
+                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstGlobalBadge.colorClass}`}
                                   style={firstGlobalBadge.style}
                                 >
                                   <svg
@@ -900,7 +900,7 @@ function RankingScreen() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <span className="font-bold">
+                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                     {firstGlobalBadge.text}
                                   </span>
                                 </div>
@@ -955,7 +955,7 @@ function RankingScreen() {
                               {thirdGlobalUser?.username}
                               {thirdGlobalBadge && (
                                 <div
-                                  className={`badge badge-sm gap-1 ${thirdGlobalBadge.colorClass}`}
+                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdGlobalBadge.colorClass}`}
                                   style={thirdGlobalBadge.style}
                                 >
                                   <svg
@@ -970,7 +970,7 @@ function RankingScreen() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <span className="font-bold">
+                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                     {thirdGlobalBadge.text}
                                   </span>
                                 </div>
@@ -1033,7 +1033,7 @@ function RankingScreen() {
                               {secondMediumUser?.username}
                               {secondMediumBadge && (
                                 <div
-                                  className={`badge badge-sm gap-1 ${secondMediumBadge.colorClass}`}
+                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondMediumBadge.colorClass}`}
                                   style={secondMediumBadge.style}
                                 >
                                   <svg
@@ -1048,7 +1048,7 @@ function RankingScreen() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <span className="font-bold">
+                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                     {secondMediumBadge.text}
                                   </span>
                                 </div>
@@ -1106,7 +1106,7 @@ function RankingScreen() {
                               {firstMediumUser?.username}
                               {firstMediumBadge && (
                                 <div
-                                  className={`badge badge-sm gap-1 ${firstMediumBadge.colorClass}`}
+                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstMediumBadge.colorClass}`}
                                   style={firstMediumBadge.style}
                                 >
                                   <svg
@@ -1121,7 +1121,7 @@ function RankingScreen() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <span className="font-bold">
+                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                     {firstMediumBadge.text}
                                   </span>
                                 </div>
@@ -1176,7 +1176,7 @@ function RankingScreen() {
                               {thirdMediumUser?.username}
                               {thirdMediumBadge && (
                                 <div
-                                  className={`badge badge-sm gap-1 ${thirdMediumBadge.colorClass}`}
+                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdMediumBadge.colorClass}`}
                                   style={thirdMediumBadge.style}
                                 >
                                   <svg
@@ -1191,7 +1191,7 @@ function RankingScreen() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  <span className="font-bold">
+                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                     {thirdMediumBadge.text}
                                   </span>
                                 </div>
@@ -1314,17 +1314,23 @@ function RankingScreen() {
                                     )}
                                   </div>
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <Link
                                     to={`/user/${user.username}`}
-                                    className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-wrap"
+                                    className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-nowrap max-w-full"
                                     title={`View ${user.username}'s profile`}
                                   >
-                                    {user.username}
+                                    {/* Username: full on md+, truncated on small screens */}
+                                    <span className="hidden md:inline">
+                                      {user.username}
+                                    </span>
+                                    <span className="inline md:hidden truncate max-w-[8rem]">
+                                      {user.username}
+                                    </span>
                                     {/* Patreon Badge */}
                                     {patreonBadge && (
                                       <div
-                                        className={`badge badge-sm gap-1 ${patreonBadge.colorClass}`}
+                                        className={`badge badge-sm gap-1 ${patreonBadge.colorClass} md:max-w-none md:overflow-visible md:whitespace-normal max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap`}
                                         style={patreonBadge.style}
                                       >
                                         <svg
@@ -1339,7 +1345,7 @@ function RankingScreen() {
                                             clipRule="evenodd"
                                           />
                                         </svg>
-                                        <span className="font-bold">
+                                        <span className="font-bold md:max-w-none md:overflow-visible md:whitespace-normal max-w-[5.5rem] overflow-hidden text-ellipsis whitespace-nowrap">
                                           {patreonBadge.text}
                                         </span>
                                       </div>

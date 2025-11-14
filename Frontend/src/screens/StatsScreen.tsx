@@ -317,6 +317,7 @@ function StatsScreen() {
                 excludedTags={excludedTags}
                 onIncludeChange={setIncludedTags}
                 onExcludeChange={setExcludedTags}
+                username={username}
               />
 
               <div className="dropdown dropdown-end">

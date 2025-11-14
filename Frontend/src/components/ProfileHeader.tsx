@@ -8,7 +8,7 @@ import { OutletProfileContextType } from '../types';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 
 export default function ProfileHeader() {
-  const { username } = useParams<{ username: string }>();
+  const { username = '' } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
   const {

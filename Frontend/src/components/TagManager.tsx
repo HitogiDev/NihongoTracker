@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getUserTagsFn,
+  getUserTagsByUsernameFn,
   createTagFn,
   updateTagFn,
   deleteTagFn,
@@ -31,8 +31,9 @@ export default function TagManager() {
   const maxTags = getMaxTags();
 
   const { data: tags = [], isLoading } = useQuery({
-    queryKey: ['tags'],
-    queryFn: getUserTagsFn,
+    queryKey: ['tags', user?.username],
+    queryFn: () => getUserTagsByUsernameFn(user?.username || ''),
+    enabled: !!user?.username,
   });
 
   const createMutation = useMutation({

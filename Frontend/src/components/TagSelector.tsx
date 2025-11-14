@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUserTagsFn, createTagFn } from '../api/trackerApi';
+import { getUserTagsByUsernameFn, createTagFn } from '../api/trackerApi';
 import { ITag } from '../types';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -35,8 +35,9 @@ export default function TagSelector({
   const maxTags = getMaxTags();
 
   const { data: tags = [], isLoading } = useQuery({
-    queryKey: ['tags'],
-    queryFn: getUserTagsFn,
+    queryKey: ['tags', user?.username],
+    queryFn: () => getUserTagsByUsernameFn(user?.username || ''),
+    enabled: !!user?.username,
   });
 
   const createMutation = useMutation({

@@ -1,16 +1,22 @@
 import { Request, Response } from 'express';
 import { customError } from '../middlewares/errorMiddleware.js';
 import Tag from '../models/tag.model.js';
+import User from '../models/user.model.js';
 import { Types } from 'mongoose';
 
-// @desc    Get all tags for a user
-// @route   GET /api/tags
-// @access  Private
-export async function getUserTags(_req: Request, res: Response) {
+// @desc    Get all tags for a user by username
+// @route   GET /api/tags/user/:username
+// @access  Public
+export async function getUserTagsByUsername(req: Request, res: Response) {
   try {
-    const userId = res.locals.user._id;
+    const { username } = req.params;
 
-    const tags = await Tag.find({ user: userId }).sort({ name: 1 });
+    const user = await User.findOne({ username });
+    if (!user) {
+      throw new customError('User not found', 404);
+    }
+
+    const tags = await Tag.find({ user: user._id }).sort({ name: 1 });
 
     res.json(tags);
   } catch (error) {

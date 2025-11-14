@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
 import {
-  getUserTags,
+  getUserTagsByUsername,
   createTag,
   updateTag,
   deleteTag,
@@ -9,7 +9,9 @@ import {
 
 const router = Router();
 
-router.route('/').get(protect, getUserTags).post(protect, createTag);
+router.route('/').post(protect, createTag);
+
+router.route('/user/:username').get(getUserTagsByUsername);
 
 router.route('/:id').patch(protect, updateTag).delete(protect, deleteTag);
 

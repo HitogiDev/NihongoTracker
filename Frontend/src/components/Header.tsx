@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   MdLogout,
   MdPerson,
@@ -15,35 +15,35 @@ import {
   MdStar,
   MdMenu,
   MdFavorite,
-} from "react-icons/md";
-import { useUserDataStore } from "../store/userData";
-import { useMutation } from "@tanstack/react-query";
-import { logoutUserFn } from "../api/trackerApi";
-import { toast } from "react-toastify";
-import { AxiosError } from "axios";
-import { logoutResponseType } from "../types";
-import Loader from "./Loader";
-import { IconContext } from "react-icons";
+} from 'react-icons/md';
+import { useUserDataStore } from '../store/userData';
+import { useMutation } from '@tanstack/react-query';
+import { logoutUserFn } from '../api/trackerApi';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
+import { logoutResponseType } from '../types';
+import Loader from './Loader';
+import { IconContext } from 'react-icons';
 
 function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
   const isAdmin = Array.isArray(user?.roles)
-    ? (user?.roles as string[]).includes("admin")
-    : user?.roles === "admin";
+    ? (user?.roles as string[]).includes('admin')
+    : user?.roles === 'admin';
   const { mutate, isPending } = useMutation({
     mutationFn: logoutUserFn,
     onSuccess: (data: logoutResponseType) => {
       logout();
       useUserDataStore.persist.clearStorage();
       toast.success(data.message);
-      navigate("/");
+      navigate('/');
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : "An error occurred");
+        toast.error(error.message ? error.message : 'An error occurred');
       }
     },
   });
@@ -315,57 +315,62 @@ function Header() {
                 className="btn btn-primary btn-sm sm:btn-md"
                 to="/createlog"
               >
-                Create Log
+                <span className="hidden sm:inline">Create Log</span>
+                <span className="inline sm:hidden">Log</span>
               </Link>
               <div className="dropdown dropdown-hover dropdown-bottom dropdown-end">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="btn btn-sm sm:btn-md m-1 gap-2"
+                  className="btn btn-sm sm:btn-md m-1 gap-2 max-w-full"
                 >
-                  {user.username}
+                  {/* Username: full on md+, truncated on smaller screens to avoid overflow */}
+                  <span className="hidden md:inline">{user.username}</span>
+                  <span className="inline md:hidden truncate max-w-[5rem]">
+                    {user.username}
+                  </span>
                   {user?.patreon?.isActive &&
-                    user?.patreon?.tier === "consumer" && (
+                    user?.patreon?.tier === 'consumer' && (
                       <div
-                        className={`badge badge-sm gap-1 ${
-                          user.patreon.badgeColor === "rainbow"
-                            ? "badge-rainbow"
-                            : user.patreon.badgeColor === "primary"
-                              ? "badge-primary"
-                              : user.patreon.badgeColor === "secondary"
-                                ? "badge-secondary"
-                                : ""
+                        className={`badge badge-sm gap-1 max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap md:max-w-none md:overflow-visible md:whitespace-normal ${
+                          user.patreon.badgeColor === 'rainbow'
+                            ? 'badge-rainbow'
+                            : user.patreon.badgeColor === 'primary'
+                              ? 'badge-primary'
+                              : user.patreon.badgeColor === 'secondary'
+                                ? 'badge-secondary'
+                                : ''
                         }`}
                         style={
                           user.patreon.badgeColor &&
-                          user.patreon.badgeColor !== "rainbow" &&
-                          user.patreon.badgeColor !== "primary" &&
-                          user.patreon.badgeColor !== "secondary"
+                          user.patreon.badgeColor !== 'rainbow' &&
+                          user.patreon.badgeColor !== 'primary' &&
+                          user.patreon.badgeColor !== 'secondary'
                             ? {
                                 backgroundColor: user.patreon.badgeColor,
                                 color:
                                   user.patreon.badgeTextColor ===
-                                    "primary-content" ||
+                                    'primary-content' ||
                                   user.patreon.badgeTextColor ===
-                                    "secondary-content"
+                                    'secondary-content'
                                     ? undefined
-                                    : user.patreon.badgeTextColor || "#ffffff",
-                                border: "none",
+                                    : user.patreon.badgeTextColor || '#ffffff',
+                                border: 'none',
                               }
-                            : user.patreon.badgeColor === "rainbow" ||
+                            : user.patreon.badgeColor === 'rainbow' ||
                                 user.patreon.badgeTextColor
                               ? {
                                   color:
                                     user.patreon.badgeTextColor ===
-                                      "primary-content" ||
+                                      'primary-content' ||
                                     user.patreon.badgeTextColor ===
-                                      "secondary-content"
+                                      'secondary-content'
                                       ? undefined
                                       : user.patreon.badgeTextColor ||
                                         undefined,
                                   border:
-                                    user.patreon.badgeColor === "rainbow"
-                                      ? "none"
+                                    user.patreon.badgeColor === 'rainbow'
+                                      ? 'none'
                                       : undefined,
                                 }
                               : {}
@@ -383,8 +388,8 @@ function Header() {
                             clipRule="evenodd"
                           />
                         </svg>
-                        <span className="font-bold">
-                          {user.patreon.customBadgeText || "Consumer"}
+                        <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap md:max-w-none md:overflow-visible md:whitespace-normal">
+                          {user.patreon.customBadgeText || 'Consumer'}
                         </span>
                       </div>
                     )}
@@ -394,7 +399,7 @@ function Header() {
                   className="dropdown-content z-[50] menu p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-52 border border-base-300"
                 >
                   <IconContext.Provider
-                    value={{ className: "text-lg currentColor" }}
+                    value={{ className: 'text-lg currentColor' }}
                   >
                     {isAdmin && (
                       <li>

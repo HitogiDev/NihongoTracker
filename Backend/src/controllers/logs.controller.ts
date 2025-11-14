@@ -926,7 +926,7 @@ export async function createLog(
         type,
         description: mediaData.description ? mediaData.description : undefined,
       });
-      await addDocuments(type, [
+      await addDocuments(type.replace(' ', '_'), [
         {
           _id: createdMedia._id,
           contentId: createdMedia.contentId,
