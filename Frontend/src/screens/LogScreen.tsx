@@ -225,6 +225,7 @@ function LogScreen() {
             titles: updatedUser.titles,
             roles: updatedUser.roles,
             discordId: updatedUser.discordId,
+            settings: updatedUser.settings,
           };
           setUser(loginResponse);
         } catch (e) {

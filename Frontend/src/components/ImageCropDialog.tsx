@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import ReactCrop, {
+  PixelCrop,
+  PercentCrop,
+  convertToPixelCrop,
+} from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
 type ImageCropResult = {
@@ -15,7 +19,7 @@ type ImageCropDialogProps = {
   onClose: () => void;
   onApply: (result: ImageCropResult) => void | Promise<void>;
   onCancel?: () => void;
-  getInitialCrop?: (image: HTMLImageElement) => Crop;
+  getInitialCrop?: (image: HTMLImageElement) => PercentCrop;
   circular?: boolean;
   minWidth?: number;
   minHeight?: number;
@@ -40,7 +44,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
     ruleOfThirds,
   }) => {
     const imgRef = useRef<HTMLImageElement | null>(null);
-    const [crop, setCrop] = useState<Crop>();
+    const [crop, setCrop] = useState<PercentCrop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
     useEffect(() => {
@@ -62,11 +66,33 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
         const image = event.currentTarget;
         imgRef.current = image;
         if (getInitialCrop) {
-          setCrop(getInitialCrop(image));
+          const initialCrop = getInitialCrop(image);
+          setCrop(initialCrop);
+          if (initialCrop.width && initialCrop.height) {
+            setCompletedCrop(
+              convertToPixelCrop(
+                initialCrop,
+                image.naturalWidth,
+                image.naturalHeight
+              )
+            );
+          }
         }
       },
       [getInitialCrop]
     );
+
+    useEffect(() => {
+      if (imgRef.current && crop?.width && crop?.height) {
+        setCompletedCrop(
+          convertToPixelCrop(
+            crop,
+            imgRef.current.naturalWidth,
+            imgRef.current.naturalHeight
+          )
+        );
+      }
+    }, [crop]);
 
     const handleApply = useCallback(async () => {
       if (!imgRef.current || !completedCrop?.width || !completedCrop?.height) {
@@ -99,7 +125,6 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
               aspect={aspect}
               minWidth={minWidth}
               minHeight={minHeight}

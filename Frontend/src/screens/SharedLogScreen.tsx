@@ -65,16 +65,16 @@ const logTypeConfig = {
   movie: {
     label: 'Movie',
     icon: MdMovie,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
   },
   'tv show': {
     label: 'TV Show',
     icon: MdOutlineTv,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/30',
   },
   other: {
     label: 'Other',

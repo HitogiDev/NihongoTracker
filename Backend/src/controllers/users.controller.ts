@@ -256,6 +256,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     banner: userFound.banner,
     titles: userFound.titles,
     patreon: userFound.patreon,
+    settings: userFound.settings,
     createdAt: userFound.createdAt,
     updatedAt: userFound.updatedAt,
   });

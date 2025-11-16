@@ -111,7 +111,7 @@ const XpAnimation: React.FC<XpAnimationProps> = ({
             100
           }
           max="100"
-        ></progress>
+        />
       </div>
     </div>
   );

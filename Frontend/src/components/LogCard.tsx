@@ -37,6 +37,7 @@ const logTypeConfig = {
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
+    accentColor: 'bg-primary',
   },
   anime: {
     label: 'Anime',
@@ -44,6 +45,7 @@ const logTypeConfig = {
     color: 'text-secondary',
     bgColor: 'bg-secondary/10',
     borderColor: 'border-secondary/20',
+    accentColor: 'bg-secondary',
   },
   vn: {
     label: 'Visual Novel',
@@ -51,6 +53,7 @@ const logTypeConfig = {
     color: 'text-accent',
     bgColor: 'bg-accent/10',
     borderColor: 'border-accent/20',
+    accentColor: 'bg-accent',
   },
   video: {
     label: 'Video',
@@ -58,6 +61,7 @@ const logTypeConfig = {
     color: 'text-info',
     bgColor: 'bg-info/10',
     borderColor: 'border-info/20',
+    accentColor: 'bg-info',
   },
   manga: {
     label: 'Manga',
@@ -65,6 +69,7 @@ const logTypeConfig = {
     color: 'text-warning',
     bgColor: 'bg-warning/10',
     borderColor: 'border-warning/20',
+    accentColor: 'bg-warning',
   },
   audio: {
     label: 'Audio',
@@ -72,20 +77,23 @@ const logTypeConfig = {
     color: 'text-success',
     bgColor: 'bg-success/10',
     borderColor: 'border-success/20',
+    accentColor: 'bg-success',
   },
   movie: {
     label: 'Movie',
     icon: MdMovie,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/30',
+    accentColor: 'bg-purple-500',
   },
   'tv show': {
     label: 'TV Show',
     icon: MdOutlineTv,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/30',
+    accentColor: 'bg-emerald-500',
   },
   other: {
     label: 'Other',
@@ -93,6 +101,7 @@ const logTypeConfig = {
     color: 'text-neutral',
     bgColor: 'bg-neutral/10',
     borderColor: 'border-neutral/20',
+    accentColor: 'bg-neutral',
   },
 };
 
@@ -434,9 +443,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         aria-label={`Log entry: ${logTitle}`}
       >
         {/* Header with type indicator */}
-        <div
-          className={`h-1 w-full ${typeConfig.bgColor.replace('/10', '')}`}
-        ></div>
+        <div className={`h-1 w-full ${typeConfig.accentColor}`}></div>
 
         <div className="card-body p-4 space-y-3">
           {/* Header Section */}

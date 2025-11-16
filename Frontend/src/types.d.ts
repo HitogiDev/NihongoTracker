@@ -810,5 +810,5 @@ type OptionalExceptFor<T, TRequired extends keyof T> = Partial<T> &
 
 export type SearchResultType = OptionalExceptFor<
   IMediaDocument,
-  '_id' | 'contentId' | 'title' | 'contentImage' | 'isAdult'
+  '_id' | 'contentId' | 'title' | 'contentImage' | 'isAdult' | 'type'
 >;

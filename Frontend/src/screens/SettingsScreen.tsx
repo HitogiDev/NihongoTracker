@@ -26,7 +26,7 @@ import { useUserDataStore } from '../store/userData';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
-import { Crop } from 'react-image-crop';
+import { PercentCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
 import ImageCropDialog, {
   ImageCropResult,
@@ -708,63 +708,71 @@ function SettingsScreen() {
     updateUser(formData);
   }
 
-  const getDefaultAvatarCrop = useCallback((image: HTMLImageElement): Crop => {
-    const sizePx = Math.min(image.naturalWidth, image.naturalHeight) * 0.9;
-    const widthPercent = (sizePx / image.naturalWidth) * 100;
-    const heightPercent = (sizePx / image.naturalHeight) * 100;
+  const getDefaultAvatarCrop = useCallback(
+    (image: HTMLImageElement): PercentCrop => {
+      const sizePx = Math.min(image.naturalWidth, image.naturalHeight) * 0.9;
+      const widthPercent = (sizePx / image.naturalWidth) * 100;
+      const heightPercent = (sizePx / image.naturalHeight) * 100;
 
-    return {
-      unit: '%',
-      width: widthPercent,
-      height: heightPercent,
-      x: (100 - widthPercent) / 2,
-      y: (100 - heightPercent) / 2,
-    };
-  }, []);
+      return {
+        unit: '%',
+        width: widthPercent,
+        height: heightPercent,
+        x: (100 - widthPercent) / 2,
+        y: (100 - heightPercent) / 2,
+      };
+    },
+    []
+  );
 
-  const getInitialBannerCrop = useCallback((image: HTMLImageElement): Crop => {
-    const { naturalWidth, naturalHeight } = image;
-    const targetAspectRatio = 21 / 9;
-    const imageAspectRatio = naturalWidth / naturalHeight;
+  const getInitialBannerCrop = useCallback(
+    (image: HTMLImageElement): PercentCrop => {
+      const { naturalWidth, naturalHeight } = image;
+      const targetAspectRatio = 21 / 9;
+      const imageAspectRatio = naturalWidth / naturalHeight;
 
-    let cropWidthPercent: number;
-    let cropHeightPercent: number;
+      let cropWidthPercent: number;
+      let cropHeightPercent: number;
 
-    if (imageAspectRatio > targetAspectRatio) {
-      cropHeightPercent = 80;
-      cropWidthPercent =
-        (cropHeightPercent * targetAspectRatio * naturalHeight) / naturalWidth;
-
-      if (cropWidthPercent > 95) {
-        cropWidthPercent = 80;
-        cropHeightPercent =
-          (cropWidthPercent * naturalWidth) /
-          (targetAspectRatio * naturalHeight);
-      }
-    } else {
-      cropWidthPercent = 80;
-      cropHeightPercent =
-        (cropWidthPercent * naturalWidth) / (targetAspectRatio * naturalHeight);
-
-      if (cropHeightPercent > 95) {
+      if (imageAspectRatio > targetAspectRatio) {
         cropHeightPercent = 80;
         cropWidthPercent =
           (cropHeightPercent * targetAspectRatio * naturalHeight) /
           naturalWidth;
+
+        if (cropWidthPercent > 95) {
+          cropWidthPercent = 80;
+          cropHeightPercent =
+            (cropWidthPercent * naturalWidth) /
+            (targetAspectRatio * naturalHeight);
+        }
+      } else {
+        cropWidthPercent = 80;
+        cropHeightPercent =
+          (cropWidthPercent * naturalWidth) /
+          (targetAspectRatio * naturalHeight);
+
+        if (cropHeightPercent > 95) {
+          cropHeightPercent = 80;
+          cropWidthPercent =
+            (cropHeightPercent * targetAspectRatio * naturalHeight) /
+            naturalWidth;
+        }
       }
-    }
 
-    const cropX = (100 - cropWidthPercent) / 2;
-    const cropY = (100 - cropHeightPercent) / 2;
+      const cropX = (100 - cropWidthPercent) / 2;
+      const cropY = (100 - cropHeightPercent) / 2;
 
-    return {
-      unit: '%',
-      width: cropWidthPercent,
-      height: cropHeightPercent,
-      x: cropX,
-      y: cropY,
-    };
-  }, []);
+      return {
+        unit: '%',
+        width: cropWidthPercent,
+        height: cropHeightPercent,
+        x: cropX,
+        y: cropY,
+      };
+    },
+    []
+  );
 
   const handleAvatarCropApply = useCallback(
     async ({ crop, image }: ImageCropResult) => {
