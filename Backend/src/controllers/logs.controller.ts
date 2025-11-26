@@ -1296,6 +1296,12 @@ interface IUserStats {
     untrackedCount: number;
     totalChars: number;
     dailyAverageHours: number;
+    dailyAverageChars: number;
+    dayCount: number;
+  };
+  streaks: {
+    currentStreak: number;
+    longestStreak: number;
   };
   readingSpeedData?: Array<{
     date: Date;
@@ -1711,11 +1717,17 @@ export async function getUserStats(
         untrackedCount: 0,
         totalChars: 0,
         dailyAverageHours: 0,
+        dailyAverageChars: 0,
+        dayCount: daysPeriod,
       }
     );
 
     totals.dailyAverageHours =
       daysPeriod > 0 ? totals.totalTimeHours / daysPeriod : 0;
+    totals.dailyAverageChars =
+      daysPeriod > 0 ? totals.totalChars / daysPeriod : 0;
+
+    totals.dayCount = daysPeriod;
 
     const completeStats: IStatByType[] = logTypes.map((type) => {
       const typeStat = statsByType.find((stat) => stat.type === type);
@@ -1734,9 +1746,6 @@ export async function getUserStats(
         }
       );
     });
-
-    // Sort by count descending (most logs first)
-    completeStats.sort((a, b) => b.count - a.count);
 
     const statsWithLocalDates = completeStats.map((stat) => ({
       ...stat,
@@ -1812,6 +1821,11 @@ export async function getUserStats(
       localDate: createLocalDateInfo(entry.date),
     }));
 
+    const streaks = {
+      currentStreak: user.stats?.currentStreak ?? 0,
+      longestStreak: user.stats?.longestStreak ?? 0,
+    };
+
     return res.json({
       totals,
       statsByType: statsWithLocalDates,
@@ -1819,6 +1833,7 @@ export async function getUserStats(
       timeRange,
       selectedType: Array.isArray(type) ? type.join(',') : type,
       timezone: userTimezone,
+      streaks,
     });
   } catch (error) {
     return next(error);

@@ -395,7 +395,7 @@ function ProfileScreen() {
                     </div>
 
                     {/* Combined Sort Filter Dropdown */}
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                    <div className="dropdown dropdown-end flex-1 sm:flex-none">
                       <div
                         tabIndex={0}
                         role="button"

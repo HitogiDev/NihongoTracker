@@ -507,6 +507,12 @@ interface IUserStats {
     untrackedCount: number;
     totalChars: number;
     dailyAverageHours: number;
+    dailyAverageChars: number;
+    dayCount: number;
+  };
+  streaks: {
+    currentStreak: number;
+    longestStreak: number;
   };
   statsByType: Array<{
     type: string;
