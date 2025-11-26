@@ -88,7 +88,8 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
       logType !== 'audio' &&
       logType !== 'manga' &&
       logType !== 'reading' &&
-      logType !== 'movie'
+      logType !== 'movie' &&
+      logType !== 'vn'
     ) {
       // Reset manual time for types that don't typically use it
       setHours(0);
@@ -98,7 +99,13 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
 
   const { data: searchResult, isLoading: isSearching } = useSearch(
     logType ?? '',
-    logDescription
+    logDescription,
+    undefined,
+    1,
+    10,
+    {
+      enabled: open,
+    }
   );
 
   const { mutate, isPending } = useMutation({
@@ -259,8 +266,18 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-base-100/75 p-4">
-          <div className="card w-full max-w-lg bg-base-100 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 bg-base-100/75 p-4"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              onClose();
+            }
+          }}
+        >
+          <div
+            className="card w-full max-w-lg bg-base-100 shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="card-body">
               <div className="flex justify-between items-center">
                 <h2 className="card-title">Quick Log</h2>
@@ -525,11 +542,12 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                           </div>
                         )}
 
-                        {/* Time fields for Video, Audio, Manga, Reading, and when not auto-calculated */}
+                        {/* Time fields for Video, Audio, Manga, Reading, VN, and when not auto-calculated */}
                         {(logType === 'video' ||
                           logType === 'audio' ||
                           logType === 'manga' ||
                           logType === 'reading' ||
+                          logType === 'vn' ||
                           (logType === 'movie' && !episodes)) && (
                           <div>
                             <label className="label">
@@ -619,7 +637,14 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                 {logType && (
                   <div className="card-actions justify-end mt-4">
                     <button
-                      className="btn btn-neutral text-neutral-content"
+                      className="btn btn-outline"
+                      type="button"
+                      onClick={onClose}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn btn-primary"
                       type="submit"
                       disabled={isPending}
                     >
@@ -628,13 +653,6 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                       ) : (
                         'Log'
                       )}
-                    </button>
-                    <button
-                      className="btn btn-outline"
-                      type="button"
-                      onClick={onClose}
-                    >
-                      Cancel
                     </button>
                   </div>
                 )}

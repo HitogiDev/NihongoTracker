@@ -14,7 +14,10 @@ export default function useSearch(
   search: string = '',
   ids?: number[],
   page: number = 1,
-  perPage: number = 10
+  perPage: number = 10,
+  options?: {
+    enabled?: boolean;
+  }
 ) {
   const [debouncedSearch, setDebouncedSearch] = useState(search);
 
@@ -44,6 +47,9 @@ export default function useSearch(
 
     return descriptions[0].description;
   };
+
+  const baseEnabled = debouncedSearch.trim().length > 0 && type !== '';
+  const isEnabled = baseEnabled && (options?.enabled ?? true);
 
   return useQuery<SearchResultType[] | undefined, Error>({
     queryKey: ['searchMedia', debouncedSearch, type, page, perPage, ids],
@@ -185,7 +191,7 @@ export default function useSearch(
 
       return [];
     },
-    enabled: debouncedSearch.trim().length > 0 && type !== '', // Always enable when we have search and type
+    enabled: isEnabled, // Allow callers to control enabling alongside local checks
     staleTime: type === 'video' ? 5 * 60 * 1000 : 0, // Cache YouTube results for 5 minutes
   });
 }

@@ -9,8 +9,19 @@ import {
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useUserDataStore } from '../store/userData';
+import { DayPicker } from 'react-day-picker';
+import {
+  MdSearch,
+  MdFilterList,
+  MdSchedule,
+  MdExpandMore,
+  MdSort,
+  MdArrowUpward,
+  MdArrowDownward,
+} from 'react-icons/md';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -26,8 +37,41 @@ function MediaDetails() {
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
   const queryClient = useQueryClient();
+  const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<
+    'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
+  >('all');
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [sortBy, setSortBy] = useState<
+    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
+  >('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    if (dateFilter !== 'custom') {
+      setCustomStartDate(undefined);
+      setCustomEndDate(undefined);
+    }
+  }, [dateFilter]);
+
+  useEffect(() => {
+    setVisibleLogsCount(10);
+  }, [
+    searchTerm,
+    dateFilter,
+    customStartDate,
+    customEndDate,
+    sortBy,
+    sortDirection,
+  ]);
 
   // Try to get logs from existing cache first (from ProfileScreen)
   const existingLogsData = queryClient.getQueryData([
@@ -164,6 +208,63 @@ function MediaDetails() {
   // Use cached data if available, otherwise use fetched data
   const finalMyLogs = cachedCurrentUserLogs || myLogs;
 
+  const dateRange = useMemo(() => {
+    switch (dateFilter) {
+      case 'today': {
+        const now = getCurrentTime();
+        const bounds = getDayBounds(now);
+        return { startDate: bounds.start, endDate: bounds.end };
+      }
+      case 'week': {
+        const now = getCurrentTime();
+        const todayBounds = getDayBounds(now);
+        const weekStart = new Date(todayBounds.start);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        return { startDate: weekStart, endDate: weekEnd };
+      }
+      case 'month': {
+        const now = getCurrentTime();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999
+        );
+        return { startDate: monthStart, endDate: monthEnd };
+      }
+      case 'year': {
+        const now = getCurrentTime();
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        const yearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        return { startDate: yearStart, endDate: yearEnd };
+      }
+      case 'custom': {
+        if (customStartDate && customEndDate) {
+          const startBounds = getDayBounds(customStartDate);
+          const endBounds = getDayBounds(customEndDate);
+          return { startDate: startBounds.start, endDate: endBounds.end };
+        }
+        return null;
+      }
+      default:
+        return null;
+    }
+  }, [
+    dateFilter,
+    customStartDate,
+    customEndDate,
+    getCurrentTime,
+    getDayBounds,
+  ]);
+
   const { data: comparisonData, isLoading: comparisonLoading } = useQuery({
     queryKey: [
       'comparison',
@@ -209,6 +310,76 @@ function MediaDetails() {
   );
   const isLoading =
     logsLoading || (isViewingOtherUser && (myLogsLoading || comparisonLoading));
+
+  const startTimestamp = dateRange?.startDate
+    ? dateRange.startDate.getTime()
+    : undefined;
+  const endTimestamp = dateRange?.endDate
+    ? dateRange.endDate.getTime()
+    : undefined;
+
+  const filteredLogs = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const getSortValue = (log: ILog) => {
+      switch (sortBy) {
+        case 'xp':
+          return log.xp ?? 0;
+        case 'episodes':
+          return log.episodes ?? 0;
+        case 'chars':
+          return log.chars ?? 0;
+        case 'pages':
+          return log.pages ?? 0;
+        case 'time':
+          return log.time ?? 0;
+        case 'date':
+        default:
+          return new Date(log.date).getTime();
+      }
+    };
+
+    return [...logsArray]
+      .filter((log) => {
+        if (normalizedSearch) {
+          const tagsText = Array.isArray(log.tags)
+            ? (log.tags as Array<string | { name?: string }>)
+                .map((tag) =>
+                  typeof tag === 'string' ? tag : (tag?.name ?? '')
+                )
+                .join(' ')
+            : '';
+
+          const haystack =
+            `${log.description || ''} ${tagsText} ${log.episodes ?? ''} ${log.pages ?? ''} ${log.chars ?? ''} ${log.time ?? ''} ${new Date(log.date).toLocaleDateString()}`.toLowerCase();
+
+          if (!haystack.includes(normalizedSearch)) {
+            return false;
+          }
+        }
+
+        if (startTimestamp || endTimestamp) {
+          const logTime = new Date(log.date).getTime();
+          if (startTimestamp && logTime < startTimestamp) return false;
+          if (endTimestamp && logTime > endTimestamp) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        const valueA = getSortValue(a);
+        const valueB = getSortValue(b);
+        if (valueA === valueB) return 0;
+        return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
+      });
+  }, [
+    logsArray,
+    searchTerm,
+    startTimestamp,
+    endTimestamp,
+    sortBy,
+    sortDirection,
+  ]);
 
   // Memoize heavy calculations to prevent re-computation on every render
   const calculations = useMemo(() => {
@@ -290,12 +461,12 @@ function MediaDetails() {
       myTotalCharsRead,
       myReadingPercentage,
       myReadingSpeed,
+      remainingChars,
     };
   }, [logsArray, myLogsArray, mediaDocument?.jiten?.mainDeck.characterCount]);
 
   // Destructure calculations for easier access
   const {
-    sortedLogs,
     totalXp,
     totalTime,
     totalCharsRead,
@@ -310,7 +481,11 @@ function MediaDetails() {
     myTotalCharsRead,
     myReadingPercentage,
     myReadingSpeed,
+    remainingChars,
   } = calculations;
+
+  const percentRemaining =
+    totalCharCount > 0 ? Math.max(0, 100 - readingPercentage) : 0;
 
   // Get difficulty info
   const difficultyLevel = mediaDocument?.jiten?.mainDeck.difficulty;
@@ -321,12 +496,67 @@ function MediaDetails() {
       ? difficultyLevels[Math.floor(difficultyLevel)]
       : null;
 
-  const visibleLogs = sortedLogs.slice(0, visibleLogsCount);
-  const hasMoreLogs = sortedLogs.length > visibleLogsCount;
+  const visibleLogs = filteredLogs.slice(0, visibleLogsCount);
+  const hasMoreLogs = filteredLogs.length > visibleLogsCount;
 
   const handleShowMore = () => {
-    setVisibleLogsCount((prev) => Math.min(prev + 10, sortedLogs.length));
+    setVisibleLogsCount((prev) => Math.min(prev + 10, filteredLogs.length));
   };
+
+  const dateFilterOptions: Array<{
+    value: typeof dateFilter;
+    label: string;
+  }> = [
+    { value: 'all', label: 'All time' },
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'This week' },
+    { value: 'month', label: 'This month' },
+    { value: 'year', label: 'This year' },
+    { value: 'custom', label: 'Custom range' },
+  ];
+
+  const sortOptions: Array<{
+    value: typeof sortBy;
+    label: string;
+  }> = [
+    { value: 'date', label: 'Date' },
+    { value: 'xp', label: 'XP' },
+    { value: 'episodes', label: 'Episodes' },
+    { value: 'chars', label: 'Characters' },
+    { value: 'pages', label: 'Pages' },
+    { value: 'time', label: 'Time' },
+  ];
+
+  const getDateFilterLabel = () =>
+    dateFilterOptions.find((option) => option.value === dateFilter)?.label ||
+    'All time';
+
+  const getSortLabel = () =>
+    sortOptions.find((option) => option.value === sortBy)?.label || 'Date';
+
+  const getCustomRangeLabel = () => {
+    if (!customStartDate && !customEndDate) return 'Select range';
+    const startLabel = customStartDate
+      ? formatDateOnly(customStartDate)
+      : 'Start';
+    const endLabel = customEndDate ? formatDateOnly(customEndDate) : 'End';
+    return `${startLabel} → ${endLabel}`;
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setDateFilter('all');
+    setCustomStartDate(undefined);
+    setCustomEndDate(undefined);
+    setSortBy('date');
+    setSortDirection('desc');
+  };
+
+  const hasActiveFilters =
+    !!searchTerm ||
+    dateFilter !== 'all' ||
+    sortBy !== 'date' ||
+    sortDirection !== 'desc';
 
   // Show loading state while data is being fetched
   if (isLoading) {
@@ -1050,6 +1280,48 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
+                    totalCharCount > 0 && (
+                      <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                        <div className="card-body">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
+                                Characters Remaining
+                              </h3>
+                              <p className="text-3xl font-bold text-info mt-1">
+                                {remainingChars > 0
+                                  ? numberWithCommas(remainingChars)
+                                  : 'Completed'}
+                              </p>
+                              <p className="text-xs text-base-content/60">
+                                {remainingChars > 0
+                                  ? `${percentRemaining.toFixed(1)}% left`
+                                  : 'All caught up'}
+                              </p>
+                            </div>
+                            <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center">
+                              <svg
+                                className="w-6 h-6 text-info"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M12 6v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                ></path>
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  {(mediaDocument?.type === 'vn' ||
+                    mediaDocument?.type === 'manga' ||
+                    mediaDocument?.type === 'reading') &&
                     readingSpeed > 0 && (
                       <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
                         <div className="card-body">
@@ -1114,27 +1386,30 @@ function MediaDetails() {
                         </div>
                       </div>
 
-                      {readingSpeed > 0 && (
+                      {totalCharCount > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {recentReadingSpeed > 0 && recentLogs.length > 0 && (
-                            <div className="card bg-base-100 shadow-md">
-                              <div className="card-body">
-                                <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                  Recent Speed
-                                </h3>
-                                <p className="text-2xl font-bold mt-1">
-                                  {numberWithCommas(
-                                    Math.round(recentReadingSpeed)
-                                  )}
-                                </p>
-                                <p className="text-xs text-base-content/60">
-                                  chars/hour (last {recentLogs.length} logs)
-                                </p>
+                          {readingSpeed > 0 &&
+                            recentReadingSpeed > 0 &&
+                            recentLogs.length > 0 && (
+                              <div className="card bg-base-100 shadow-md">
+                                <div className="card-body">
+                                  <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
+                                    Recent Speed
+                                  </h3>
+                                  <p className="text-2xl font-bold mt-1">
+                                    {numberWithCommas(
+                                      Math.round(recentReadingSpeed)
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-base-content/60">
+                                    chars/hour (last {recentLogs.length} logs)
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {recentEstimatedTimeToFinish > 0 &&
+                          {readingSpeed > 0 &&
+                            recentEstimatedTimeToFinish > 0 &&
                             readingPercentage < 100 && (
                               <div className="card bg-base-100 shadow-md">
                                 <div className="card-body">
@@ -1209,43 +1484,336 @@ function MediaDetails() {
                     </svg>
                     Recent Activity
                   </h2>
-                  {finalLogs && finalLogs.length > 0 && (
+                  {logsArray.length > 0 && (
                     <div className="badge badge-neutral">
-                      {sortedLogs.length} total
+                      {filteredLogs.length} / {logsArray.length} logs
                     </div>
                   )}
                 </div>
 
-                {finalLogs && finalLogs.length > 0 ? (
-                  <div className="space-y-3">
-                    {visibleLogs.map((log) => (
-                      <LogCard key={log._id} log={log} user={username} />
-                    ))}
-                    {hasMoreLogs && (
-                      <div className="text-center pt-6">
+                <div className="space-y-4 mb-6">
+                  <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+                    <label className="input input-bordered flex items-center gap-2 w-full xl:max-w-md">
+                      <MdSearch className="w-4 h-4 opacity-70" />
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search descriptions, tags, or values"
+                        className="grow"
+                      />
+                      {searchTerm && (
                         <button
-                          className="btn btn-outline gap-2"
-                          onClick={handleShowMore}
+                          type="button"
+                          aria-label="Clear search"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => setSearchTerm('')}
                         >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                            />
-                          </svg>
-                          Show More ({sortedLogs.length - visibleLogsCount}{' '}
-                          remaining)
+                          ✕
                         </button>
+                      )}
+                    </label>
+
+                    <div className="flex flex-col sm:flex-row gap-3 w-full xl:justify-end">
+                      <div className="dropdown dropdown-bottom w-full sm:w-auto">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline w-full sm:w-56 justify-between"
+                        >
+                          <span className="flex items-center gap-2">
+                            <MdFilterList className="w-4 h-4" />
+                            Date: {getDateFilterLabel()}
+                          </span>
+                          <MdExpandMore className="w-4 h-4 opacity-70" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow"
+                        >
+                          {dateFilterOptions.map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  dateFilter === option.value ? 'active' : ''
+                                }
+                                onClick={() => setDateFilter(option.value)}
+                              >
+                                {option.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    )}
+
+                      <div className="dropdown dropdown-bottom w-full sm:w-auto">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline w-full sm:w-56 justify-between"
+                        >
+                          <span className="flex items-center gap-2">
+                            <MdSort className="w-4 h-4" />
+                            Sort: {getSortLabel()}
+                          </span>
+                          {sortDirection === 'desc' ? (
+                            <MdArrowDownward className="w-3 h-3 opacity-70" />
+                          ) : (
+                            <MdArrowUpward className="w-3 h-3 opacity-70" />
+                          )}
+                          <MdExpandMore className="w-4 h-4 opacity-70" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-64 p-2 shadow"
+                        >
+                          <li className="menu-title">
+                            <span>Sort field</span>
+                          </li>
+                          {sortOptions.map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  sortBy === option.value ? 'active' : ''
+                                }
+                                onClick={() => setSortBy(option.value)}
+                              >
+                                {option.label}
+                              </a>
+                            </li>
+                          ))}
+                          <div className="divider my-1"></div>
+                          <li className="menu-title">
+                            <span>Direction</span>
+                          </li>
+                          <li>
+                            <a
+                              className={
+                                sortDirection === 'desc' ? 'active' : ''
+                              }
+                              onClick={() => setSortDirection('desc')}
+                            >
+                              <MdArrowDownward className="w-3 h-3" />
+                              Highest to lowest
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              className={
+                                sortDirection === 'asc' ? 'active' : ''
+                              }
+                              onClick={() => setSortDirection('asc')}
+                            >
+                              <MdArrowUpward className="w-3 h-3" />
+                              Lowest to highest
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
+
+                  {dateFilter === 'custom' && (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="dropdown dropdown-bottom flex-1 sm:flex-initial">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline w-full sm:w-auto justify-between"
+                        >
+                          {customStartDate
+                            ? formatDateOnly(customStartDate)
+                            : 'Start date'}
+                          <MdSchedule className="w-4 h-4 opacity-70" />
+                        </div>
+                        <div
+                          tabIndex={0}
+                          className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-xl bg-base-100 border border-base-300"
+                        >
+                          <DayPicker
+                            className="react-day-picker mx-auto"
+                            mode="single"
+                            selected={customStartDate}
+                            onSelect={(date) => {
+                              setCustomStartDate(date ?? undefined);
+                              (document.activeElement as HTMLElement)?.blur?.();
+                              if (
+                                customEndDate &&
+                                date &&
+                                customEndDate < date
+                              ) {
+                                setCustomEndDate(undefined);
+                              }
+                            }}
+                            disabled={(date) => date > new Date()}
+                          />
+                        </div>
+                      </div>
+                      <span className="hidden sm:flex items-center text-base-content/50">
+                        to
+                      </span>
+                      <div className="dropdown dropdown-bottom flex-1 sm:flex-initial">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className={`btn btn-outline w-full sm:w-auto justify-between ${!customStartDate ? 'btn-disabled' : ''}`}
+                        >
+                          {customEndDate
+                            ? formatDateOnly(customEndDate)
+                            : 'End date'}
+                          <MdSchedule className="w-4 h-4 opacity-70" />
+                        </div>
+                        {customStartDate && (
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-xl bg-base-100 border border-base-300"
+                          >
+                            <DayPicker
+                              className="react-day-picker mx-auto"
+                              mode="single"
+                              selected={customEndDate}
+                              onSelect={(date) => {
+                                setCustomEndDate(date ?? undefined);
+                                (
+                                  document.activeElement as HTMLElement
+                                )?.blur?.();
+                              }}
+                              disabled={(date) => {
+                                const today = new Date();
+                                return (
+                                  date > today ||
+                                  (customStartDate && date < customStartDate)
+                                );
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasActiveFilters && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="text-base-content/60">
+                        Active filters:
+                      </span>
+
+                      {searchTerm && (
+                        <div className="badge badge-primary badge-sm gap-1">
+                          Search: "{searchTerm}"
+                          <button
+                            type="button"
+                            className="ml-1 hover:bg-primary-focus rounded-full"
+                            aria-label="Clear search"
+                            onClick={() => setSearchTerm('')}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      {dateFilter !== 'all' && (
+                        <div className="badge badge-secondary badge-sm gap-1">
+                          {dateFilter === 'custom'
+                            ? getCustomRangeLabel()
+                            : getDateFilterLabel()}
+                          <button
+                            type="button"
+                            className="ml-1 hover:bg-secondary-focus rounded-full"
+                            aria-label="Clear date filter"
+                            onClick={() => setDateFilter('all')}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      {(sortBy !== 'date' || sortDirection !== 'desc') && (
+                        <div className="badge badge-info badge-sm gap-1">
+                          Sort: {getSortLabel()} (
+                          {sortDirection === 'asc' ? 'Asc' : 'Desc'})
+                          <button
+                            type="button"
+                            className="ml-1 hover:bg-info-focus rounded-full"
+                            aria-label="Reset sort"
+                            onClick={() => {
+                              setSortBy('date');
+                              setSortDirection('desc');
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
+                        onClick={handleClearFilters}
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {logsArray.length > 0 ? (
+                  filteredLogs.length > 0 ? (
+                    <div className="space-y-3">
+                      {visibleLogs.map((log) => (
+                        <LogCard key={log._id} log={log} user={username} />
+                      ))}
+                      {hasMoreLogs && (
+                        <div className="text-center pt-6">
+                          <button
+                            className="btn btn-outline gap-2"
+                            onClick={handleShowMore}
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                              />
+                            </svg>
+                            Show More ({filteredLogs.length - visibleLogsCount}{' '}
+                            remaining)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-base-content/30 mb-6">
+                        <svg
+                          className="w-20 h-20 mx-auto"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-base-content/70 mb-2">
+                        No logs match your filters
+                      </h3>
+                      <p className="text-base-content/50 max-w-md mx-auto">
+                        Try adjusting your search, date range, or sorting to see
+                        more entries for this media.
+                      </p>
+                    </div>
+                  )
                 ) : (
                   <div className="text-center py-12">
                     <div className="text-base-content/30 mb-6">

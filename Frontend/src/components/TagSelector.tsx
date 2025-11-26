@@ -23,6 +23,15 @@ export default function TagSelector({
   const queryClient = useQueryClient();
   const { user } = useUserDataStore();
 
+  const getQuickCreateModal = () =>
+    document.getElementById(
+      'quick_create_tag_modal'
+    ) as HTMLDialogElement | null;
+
+  const closeQuickCreateModal = () => {
+    getQuickCreateModal()?.close();
+  };
+
   // Determine max tags based on Patreon tier
   const getMaxTags = () => {
     const tier = user?.patreon?.tier;
@@ -47,9 +56,7 @@ export default function TagSelector({
       toast.success('Tag created successfully');
       // Auto-select the newly created tag
       onChange([...selectedTags, newTag._id]);
-      (
-        document.getElementById('quick_create_tag_modal') as HTMLDialogElement
-      )?.close();
+      closeQuickCreateModal();
       setNewTagName('');
       setNewTagColor('#3b82f6');
     },
@@ -77,9 +84,7 @@ export default function TagSelector({
   const openQuickCreateModal = () => {
     setNewTagName('');
     setNewTagColor('#3b82f6');
-    (
-      document.getElementById('quick_create_tag_modal') as HTMLDialogElement
-    )?.showModal();
+    getQuickCreateModal()?.showModal();
   };
 
   if (isLoading) {
@@ -245,13 +250,7 @@ export default function TagSelector({
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() =>
-                  (
-                    document.getElementById(
-                      'quick_create_tag_modal'
-                    ) as HTMLDialogElement
-                  )?.close()
-                }
+                onClick={closeQuickCreateModal}
               >
                 Cancel
               </button>
@@ -270,9 +269,14 @@ export default function TagSelector({
             </div>
           </div>
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
+        <button
+          type="button"
+          className="modal-backdrop"
+          onClick={closeQuickCreateModal}
+          aria-label="Close"
+        >
+          close
+        </button>
       </dialog>
     </>
   );
