@@ -1359,11 +1359,12 @@ export async function assignMedia(
           media = await MediaBase.create(logsData.contentMedia);
         }
 
-        const shouldConvertToMovie = media.type === 'movie';
+        const shouldConvertType =
+          media.type === 'movie' || media.type === 'tv show';
         const updateData: any = { mediaId: media.contentId };
 
-        if (shouldConvertToMovie) {
-          updateData.type = 'movie';
+        if (shouldConvertType) {
+          updateData.type = media.type;
         }
 
         const updatedLogs = await Log.updateMany(

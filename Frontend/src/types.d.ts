@@ -472,6 +472,7 @@ export interface IMediaDocument {
   episodes?: number;
   episodeDuration?: number;
   runtime?: number;
+  seasons?: number;
   chapters?: number;
   volumes?: number;
   synonyms?: string[] | null;
