@@ -361,6 +361,21 @@ export interface IRankingResponse {
   };
 }
 
+export interface IRankingSummaryDetails {
+  position: number;
+  totalUsers: number;
+  userXp: number;
+  nextUser: {
+    username: string;
+    xp: number;
+    gap: number;
+  } | null;
+}
+
+export interface IRankingSummary extends IRankingSummaryDetails {
+  monthly: IRankingSummaryDetails;
+}
+
 export interface AnilistSearchResult {
   Page: {
     pageInfo: {

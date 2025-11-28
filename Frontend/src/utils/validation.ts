@@ -186,6 +186,11 @@ export const validateQuickLogData = (logData: {
   }
 
   const totalMinutes = logData.hours * 60 + logData.minutes;
+  const hasActivity =
+    logData.episodes > 0 ||
+    logData.chars > 0 ||
+    logData.pages > 0 ||
+    totalMinutes > 0;
 
   if (logData.type === 'anime' && logData.episodes <= 0) {
     errors.episodes = 'Please enter the number of episodes watched';
@@ -214,6 +219,14 @@ export const validateQuickLogData = (logData: {
     totalMinutes <= 0
   ) {
     errors.activity = 'Please enter pages read, characters read, or time spent';
+  }
+
+  if (logData.type === 'vn' && logData.chars <= 0 && totalMinutes <= 0) {
+    errors.activity = 'Please enter characters read or time spent';
+  }
+
+  if (logData.type && !hasActivity) {
+    errors.activity = 'Please log some progress before submitting';
   }
 
   return {

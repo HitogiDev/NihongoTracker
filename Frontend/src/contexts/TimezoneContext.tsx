@@ -1,13 +1,6 @@
-import { createContext, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { useUserDataStore } from '../store/userData';
-
-interface TimezoneContextType {
-  timezone: string;
-}
-
-export const TimezoneContext = createContext<TimezoneContextType>({
-  timezone: 'UTC',
-});
+import { TimezoneContext } from './timezoneContext';
 
 interface TimezoneProviderProps {
   children: ReactNode;

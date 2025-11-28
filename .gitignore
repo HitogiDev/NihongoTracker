@@ -8,6 +8,7 @@ Planning.md
 Changelog.md
 .github
 migrateClubMediaVotings.mongo.js
+vite.config.ts.timestamp-*
 
 # Logs
 logs

@@ -57,13 +57,30 @@ export async function getRecentLogs(
   next: NextFunction
 ) {
   const { user } = res.locals;
-  const limit = req.query.limit ? parseInt(req.query.limit as string) : 3;
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : 4;
 
   try {
     const recentLogs = await Log.aggregate([
       {
         $match: {
           user: user._id,
+          mediaId: { $exists: true, $nin: [null, ''] },
+        },
+      },
+      {
+        $sort: {
+          date: -1,
+        },
+      },
+      {
+        $group: {
+          _id: '$mediaId',
+          log: { $first: '$$ROOT' },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: '$log',
         },
       },
       {
@@ -119,6 +136,131 @@ export async function getRecentLogs(
     ]);
 
     return res.status(200).json(recentLogs);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getGlobalFeed(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { user } = res.locals;
+  const limitParam = parseInt(req.query.limit as string) || 20;
+  const limit = Math.min(limitParam, 100);
+  const typeFilter = (req.query.type as string) || 'all';
+  const timeRange = (req.query.timeRange as string) || 'day';
+  const includeSelf = req.query.includeSelf === 'true';
+
+  try {
+    const matchStage: PipelineStage.Match['$match'] = {
+      private: { $ne: true },
+    };
+
+    if (!includeSelf && user?._id) {
+      matchStage.user = { $ne: user._id };
+    }
+
+    if (typeFilter !== 'all') {
+      matchStage.type = typeFilter;
+    }
+
+    const now = new Date();
+    const matchDateRange = (date: Date) => {
+      matchStage.date = { $gte: date };
+    };
+
+    switch (timeRange) {
+      case 'day': {
+        const threshold = new Date(now);
+        threshold.setDate(threshold.getDate() - 1);
+        matchDateRange(threshold);
+        break;
+      }
+      case 'week': {
+        const threshold = new Date(now);
+        threshold.setDate(threshold.getDate() - 7);
+        matchDateRange(threshold);
+        break;
+      }
+      case 'month': {
+        const threshold = new Date(now);
+        threshold.setMonth(threshold.getMonth() - 1);
+        matchDateRange(threshold);
+        break;
+      }
+      case 'year': {
+        const threshold = new Date(now);
+        threshold.setFullYear(threshold.getFullYear() - 1);
+        matchDateRange(threshold);
+        break;
+      }
+      default:
+        break;
+    }
+
+    const feedLogs = await Log.aggregate([
+      { $match: matchStage },
+      { $sort: { date: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $lookup: {
+          from: 'media',
+          localField: 'mediaId',
+          foreignField: 'contentId',
+          as: 'media',
+        },
+      },
+      {
+        $unwind: {
+          path: '$media',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          date: 1,
+          description: 1,
+          type: 1,
+          xp: 1,
+          episodes: 1,
+          pages: 1,
+          chars: 1,
+          time: 1,
+          mediaTitle: 1,
+          user: {
+            username: '$user.username',
+            avatar: '$user.avatar',
+          },
+          media: {
+            contentId: '$media.contentId',
+            title: '$media.title',
+            contentImage: '$media.contentImage',
+            coverImage: '$media.coverImage',
+            type: '$media.type',
+            isAdult: '$media.isAdult',
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json(feedLogs);
   } catch (error) {
     return next(error as customError);
   }

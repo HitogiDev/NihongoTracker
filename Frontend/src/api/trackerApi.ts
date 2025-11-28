@@ -21,6 +21,7 @@ import {
   IJitenResponse,
   ITag,
   SearchResultType,
+  IRankingSummary,
 } from '../types';
 
 const api = axiosInstance;
@@ -281,6 +282,27 @@ export async function getRecentLogsFn(username: string | undefined) {
     throw new Error('Username is required to fetch recent logs');
   }
   const { data } = await api.get<ILog[]>(`users/${username}/recentlogs`);
+  return data;
+}
+
+export async function getRankingSummaryFn(username: string, timezone?: string) {
+  const params = timezone ? { timezone } : undefined;
+  const { data } = await api.get<IRankingSummary>(
+    `users/${username}/ranking-summary`,
+    { params }
+  );
+  return data;
+}
+
+export async function getGlobalFeedFn(params?: {
+  type?: ILog['type'] | 'all';
+  timeRange?: 'day' | 'week' | 'month' | 'year' | 'all';
+  limit?: number;
+  includeSelf?: boolean;
+}) {
+  const { data } = await api.get<ILog[]>('logs/feed', {
+    params,
+  });
   return data;
 }
 

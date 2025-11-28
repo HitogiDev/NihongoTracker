@@ -8,6 +8,7 @@ import {
   clearUserData,
   getImmersionList,
   compareUserStats,
+  getRankingSummary,
 } from '../controllers/users.controller.js';
 import {
   getDashboardHours,
@@ -29,6 +30,7 @@ router.get('/compare', compareUserStats);
 
 router.get('/ranking', getRanking);
 router.get('/ranking/media', getMediumRanking);
+router.get('/:username/ranking-summary', getRankingSummary);
 
 router.get('/:username', getUser);
 

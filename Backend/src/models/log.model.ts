@@ -1,6 +1,9 @@
 import { Schema, model } from 'mongoose';
 import { ILog, IEditedFields } from '../types.js';
 
+const hasPositiveValue = (value?: number | null) =>
+  typeof value === 'number' && value > 0;
+
 const editedFieldsSchema = new Schema<IEditedFields>(
   {
     episodes: { type: Number },
@@ -55,18 +58,22 @@ const LogSchema = new Schema<ILog>(
     pages: {
       type: Number,
       required: function (this: ILog) {
+        const hasChars = hasPositiveValue(this.chars);
+        const hasTime = hasPositiveValue(this.time);
         return (
-          (!this.chars && this.type === 'manga') ||
-          (!this.chars && !this.time && this.type === 'reading')
+          (!hasChars && this.type === 'manga') ||
+          (!hasChars && !hasTime && this.type === 'reading')
         );
       },
     },
     time: {
       type: Number,
       required: function (this: ILog) {
+        const hasChars = hasPositiveValue(this.chars);
+        const hasPages = hasPositiveValue(this.pages);
         return (
-          (!this.chars &&
-            ((this.type === 'reading' && !this.pages) || this.type === 'vn')) ||
+          (!hasChars &&
+            ((this.type === 'reading' && !hasPages) || this.type === 'vn')) ||
           this.type === 'video' ||
           this.type === 'movie' ||
           this.type === 'audio' ||
@@ -77,10 +84,12 @@ const LogSchema = new Schema<ILog>(
     chars: {
       type: Number,
       required: function (this: ILog) {
+        const hasTime = hasPositiveValue(this.time);
+        const hasPages = hasPositiveValue(this.pages);
         return (
-          (!this.time && this.type === 'vn') ||
-          (!this.time && !this.pages && this.type === 'reading') ||
-          (!this.pages && this.type === 'manga')
+          (!hasTime && this.type === 'vn') ||
+          (!hasTime && !hasPages && this.type === 'reading') ||
+          (!hasPages && this.type === 'manga')
         );
       },
     },

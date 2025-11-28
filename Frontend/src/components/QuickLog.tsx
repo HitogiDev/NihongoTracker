@@ -7,14 +7,16 @@ import { AxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { validateQuickLogData } from '../utils/validation';
+import { Link } from 'react-router-dom';
 
 interface QuickLogProps {
   open: boolean;
   onClose: () => void;
   media?: IMediaDocument; // Add optional media prop
+  onLogged?: () => void | Promise<void>;
 }
 
-function QuickLog({ open, onClose, media }: QuickLogProps) {
+function QuickLog({ open, onClose, media, onLogged }: QuickLogProps) {
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
   const [logDescription, setLogDescription] = useState<string>('');
   const [episodes, setEpisodes] = useState<number>(0);
@@ -34,6 +36,9 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
+  const totalMinutes = hours * 60 + minutes;
+  const hasActivity =
+    totalMinutes > 0 || episodes > 0 || chars > 0 || pages > 0;
 
   useEffect(() => {
     // When media data is provided, auto-populate the form fields
@@ -127,7 +132,24 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
       void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey.includes('comparison'),
       });
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes('recentLogs'),
+      });
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) && query.queryKey[0] === 'globalFeed',
+      });
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'rankingSummary',
+      });
       toast.success('Log created successfully!');
+      if (onLogged) {
+        void onLogged();
+      }
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
@@ -137,6 +159,8 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
       }
     },
   });
+
+  const isSubmitDisabled = isPending || !hasActivity;
 
   function resetForm() {
     setLogType(null);
@@ -188,8 +212,6 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
       toast.error('Please fix validation errors');
       return;
     }
-
-    const totalMinutes = hours * 60 + minutes;
 
     mutate({
       type: logType,
@@ -399,7 +421,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                                   }
                                 }
                               }}
-                              value={episodes}
+                              value={episodes || ''}
                             />
 
                             {/* Custom Episode/Movie Duration for anime and movies */}
@@ -519,7 +541,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                               placeholder="Number of characters"
                               className="input input-bordered w-full"
                               onChange={(e) => setChars(Number(e.target.value))}
-                              value={chars}
+                              value={chars || ''}
                             />
                           </div>
                         )}
@@ -537,7 +559,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                               placeholder="Number of pages"
                               className="input input-bordered w-full"
                               onChange={(e) => setPages(Number(e.target.value))}
-                              value={pages}
+                              value={pages || ''}
                             />
                           </div>
                         )}
@@ -565,7 +587,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                                   onChange={(e) =>
                                     setHours(Number(e.target.value))
                                   }
-                                  value={hours}
+                                  value={hours || ''}
                                 />
                                 <label className="label">
                                   <span className="label-text-alt">Hours</span>
@@ -582,7 +604,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                                   onChange={(e) =>
                                     setMinutes(Number(e.target.value))
                                   }
-                                  value={minutes}
+                                  value={minutes || ''}
                                 />
                                 <label className="label">
                                   <span className="label-text-alt">
@@ -599,11 +621,19 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
 
                   {coverImage && (
                     <div className="flex-shrink-0 self-start lg:self-auto">
-                      <img
-                        src={coverImage}
-                        alt="Cover"
-                        className="rounded-lg w-20 h-28 lg:w-24 lg:h-32 object-cover mx-auto lg:mx-0"
-                      />
+                      <Link
+                        to={
+                          logType && contentId
+                            ? `/${logType}/${contentId}`
+                            : '#'
+                        }
+                      >
+                        <img
+                          src={coverImage}
+                          alt="Cover"
+                          className="rounded-lg w-20 h-28 lg:w-24 lg:h-32 object-cover mx-auto lg:mx-0"
+                        />
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -646,7 +676,7 @@ function QuickLog({ open, onClose, media }: QuickLogProps) {
                     <button
                       className="btn btn-primary"
                       type="submit"
-                      disabled={isPending}
+                      disabled={isSubmitDisabled}
                     >
                       {isPending ? (
                         <span className="loading loading-spinner"></span>

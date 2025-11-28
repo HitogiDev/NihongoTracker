@@ -13,6 +13,7 @@ import {
   getUserMediaStats,
   getGlobalMediaStats,
   getRecentMediaLogs,
+  getGlobalFeed,
   syncManabeIds,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
@@ -61,6 +62,8 @@ router.get('/stats/media', protect, getUserMediaStats);
 router.get('/stats/media/global', getGlobalMediaStats);
 
 router.get('/media/recent', getRecentMediaLogs);
+
+router.get('/feed', protect, getGlobalFeed);
 
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 

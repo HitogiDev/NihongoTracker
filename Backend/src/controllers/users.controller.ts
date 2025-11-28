@@ -643,6 +643,182 @@ export async function getRanking(
   }
 }
 
+export async function getRankingSummary(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const getMonthBoundaries = (timezone: string) => {
+    const now = new Date();
+    let userNow: Date;
+    try {
+      userNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    } catch (error) {
+      userNow = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+    }
+
+    const offset = now.getTime() - userNow.getTime();
+    const monthStartLocal = new Date(
+      userNow.getFullYear(),
+      userNow.getMonth(),
+      1
+    );
+    const nextMonthLocal = new Date(
+      userNow.getFullYear(),
+      userNow.getMonth() + 1,
+      1
+    );
+
+    return {
+      monthStart: new Date(monthStartLocal.getTime() + offset),
+      monthEnd: new Date(nextMonthLocal.getTime() + offset),
+    };
+  };
+
+  try {
+    const { username } = req.params;
+    const timezoneParam = (req.query.timezone as string) || undefined;
+
+    const userDoc = await User.findOne({ username })
+      .select('username stats settings.timezone')
+      .lean();
+
+    if (!userDoc || !userDoc.stats) {
+      throw new customError('User not found', 404);
+    }
+
+    const timezone = timezoneParam || userDoc.settings?.timezone || 'UTC';
+
+    const userXp = userDoc.stats.userXp ?? 0;
+
+    const higherCount = await User.countDocuments({
+      'stats.userXp': { $gt: userXp },
+    });
+
+    const nextUser = await User.findOne({
+      'stats.userXp': { $gt: userXp },
+    })
+      .sort({ 'stats.userXp': 1 })
+      .select('username stats.userXp')
+      .lean();
+
+    const totalUsers = await User.countDocuments({});
+
+    const { monthStart, monthEnd } = getMonthBoundaries(timezone);
+
+    const monthlyUserResult = await Log.aggregate([
+      {
+        $match: {
+          user: userDoc._id,
+          date: {
+            $gte: monthStart,
+            $lt: monthEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+    ]);
+
+    const userMonthlyXp = monthlyUserResult[0]?.xp ?? 0;
+
+    const [monthlyAggregate] = await Log.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: monthStart,
+            $lt: monthEnd,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+      {
+        $facet: {
+          ahead: [
+            { $match: { xp: { $gt: userMonthlyXp } } },
+            { $count: 'count' },
+          ],
+          total: [{ $match: { xp: { $gt: 0 } } }, { $count: 'count' }],
+          nextUser: [
+            { $match: { xp: { $gt: userMonthlyXp } } },
+            { $sort: { xp: 1 } },
+            { $limit: 1 },
+            {
+              $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'user',
+              },
+            },
+            {
+              $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: false,
+              },
+            },
+            {
+              $project: {
+                username: '$user.username',
+                xp: 1,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const aheadCount = monthlyAggregate?.ahead?.[0]?.count ?? 0;
+    const participantCount = monthlyAggregate?.total?.[0]?.count ?? 0;
+    const nextMonthlyUser = monthlyAggregate?.nextUser?.[0] ?? null;
+
+    let monthlyTotalUsers = participantCount;
+    if (monthlyTotalUsers === 0) {
+      monthlyTotalUsers = 1;
+    } else if (userMonthlyXp === 0) {
+      monthlyTotalUsers += 1;
+    }
+
+    const monthlyNextUser = nextMonthlyUser
+      ? {
+          username: nextMonthlyUser.username,
+          xp: nextMonthlyUser.xp,
+          gap: nextMonthlyUser.xp - userMonthlyXp,
+        }
+      : null;
+
+    return res.status(200).json({
+      position: higherCount + 1,
+      totalUsers,
+      userXp,
+      nextUser: nextUser
+        ? {
+            username: nextUser.username,
+            xp: nextUser.stats?.userXp ?? 0,
+            gap: (nextUser.stats?.userXp ?? 0) - userXp,
+          }
+        : null,
+      monthly: {
+        position: aheadCount + 1,
+        totalUsers: monthlyTotalUsers,
+        userXp: userMonthlyXp,
+        nextUser: monthlyNextUser,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 // Medium-based ranking with metric selection
 export async function getMediumRanking(
   req: Request,

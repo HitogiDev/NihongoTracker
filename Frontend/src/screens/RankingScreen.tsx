@@ -39,7 +39,7 @@ type RankedUser = {
 function RankingScreen() {
   const [limit] = useState(10);
   const [xpFilter, setXpFilter] = useState<filterTypes>('userXp');
-  const [timeFilter, setTimeFilter] = useState<string>('all-time');
+  const [timeFilter, setTimeFilter] = useState<string>('month');
   const [displayMode, setDisplayMode] = useState<'xp' | 'hours' | 'chars'>(
     'xp'
   );
