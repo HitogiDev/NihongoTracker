@@ -2,6 +2,8 @@ import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import { Types } from 'mongoose';
 
+const FALLBACK_TIMEZONE = 'UTC';
+
 export function getUserDayKey(date: Date, timezone: string): string {
   // Use Intl parts to avoid locale formatting surprises
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -36,7 +38,7 @@ export async function recalculateStreaksForUser(
   const user = await User.findById(userId);
   if (!user || !user.stats) return;
 
-  const timezone = user.settings?.timezone || 'UTC';
+  const timezone = user.settings?.timezone || FALLBACK_TIMEZONE;
   const logs = await Log.find({ user: user._id }).sort({ date: 1 });
   if (!logs.length) {
     user.stats.currentStreak = 0;
@@ -89,7 +91,7 @@ export async function updateStreakWithLog(
 ): Promise<void> {
   const user = await User.findById(userId);
   if (!user || !user.stats) return;
-  const timezone = user.settings?.timezone || 'UTC';
+  const timezone = user.settings?.timezone || FALLBACK_TIMEZONE;
   const newKey = getUserDayKey(new Date(logDate), timezone);
 
   const lastDate = user.stats.lastStreakDate;

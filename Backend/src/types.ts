@@ -443,6 +443,7 @@ export interface IRegister {
   email?: string;
   password: string;
   passwordConfirmation: string;
+  timezone?: string;
 }
 
 export interface ILogin {

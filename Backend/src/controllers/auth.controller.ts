@@ -1,7 +1,8 @@
 import User from '../models/user.model.js';
 import { Request, Response, NextFunction } from 'express';
 import generateToken from '../libs/jwt.js';
-import { ILogin, IRegister } from '../types.js';
+import { FilterQuery } from 'mongoose';
+import { ILogin, IRegister, IUser } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import {
   sendPasswordResetEmail,
@@ -9,17 +10,51 @@ import {
   sendVerificationEmail,
 } from '../mailtrap/emails.js';
 
+const isValidTimezone = (timezone?: string): boolean => {
+  if (!timezone) {
+    return false;
+  }
+
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch (_error) {
+    return false;
+  }
+};
+
 export async function register(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const { username, email, password, passwordConfirmation }: IRegister =
-    req.body;
+  const {
+    username,
+    email,
+    password,
+    passwordConfirmation,
+    timezone,
+  }: IRegister = req.body;
+  const trimmedEmail = email?.trim();
+  const normalizedEmail = trimmedEmail?.length
+    ? trimmedEmail.toLowerCase()
+    : undefined;
+  const trimmedTimezone = timezone?.trim();
+  const normalizedTimezone = isValidTimezone(trimmedTimezone)
+    ? trimmedTimezone
+    : undefined;
   try {
-    const userExists = await User.findOne({
-      $or: [{ username: username }, { email: { $exists: true, $eq: email } }],
-    }).collation({
+    const uniqueConditions: FilterQuery<IUser>[] = [{ username }];
+    if (normalizedEmail) {
+      uniqueConditions.push({ email: { $exists: true, $eq: normalizedEmail } });
+    }
+
+    const queryConditions: FilterQuery<IUser> =
+      uniqueConditions.length > 1
+        ? { $or: uniqueConditions }
+        : uniqueConditions[0];
+
+    const userExists = await User.findOne(queryConditions).collation({
       locale: 'en',
       strength: 2,
     });
@@ -35,25 +70,30 @@ export async function register(
       throw new customError('Passwords do not match!', 400);
     }
 
+    const verificationToken = normalizedEmail
+      ? Math.floor(100000 + Math.random() * 900000).toString()
+      : undefined;
+
     const user = await User.create({
       username,
       password,
-      email,
+      ...(normalizedEmail && { email: normalizedEmail }),
       verified: false,
-      verificationToken: email
-        ? Math.floor(100000 + Math.random() * 900000).toString()
-        : undefined,
-      verificationTokenExpiry: email
+      verificationToken,
+      verificationTokenExpiry: normalizedEmail
         ? new Date(Date.now() + 15 * 60 * 1000)
         : undefined,
+      ...(normalizedTimezone && {
+        settings: { timezone: normalizedTimezone },
+      }),
     });
 
     if (!user) throw new customError('Invalid user data', 400);
 
     generateToken(res, user._id.toString());
 
-    if (email && user.verificationToken)
-      await sendVerificationEmail(email, user.verificationToken);
+    if (normalizedEmail && user.verificationToken)
+      await sendVerificationEmail(normalizedEmail, user.verificationToken);
 
     return res.status(201).json({
       _id: user._id,
@@ -65,6 +105,7 @@ export async function register(
       titles: user.titles,
       roles: user.roles,
       patreon: user.patreon,
+      settings: user.settings,
     });
   } catch (error) {
     return next(error as customError);

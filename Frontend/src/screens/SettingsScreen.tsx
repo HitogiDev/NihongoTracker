@@ -32,6 +32,7 @@ import ImageCropDialog, {
   ImageCropResult,
 } from '../components/ImageCropDialog';
 import Wheel from '@uiw/react-color-wheel';
+import { getUserTimezone } from '../utils/timezone';
 
 const PRESET_BADGE_BACKGROUND_COLORS = ['rainbow', 'primary', 'secondary'];
 const PRESET_BADGE_TEXT_COLORS = ['primary-content', 'secondary-content'];
@@ -106,7 +107,10 @@ function SettingsScreen() {
   const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
     user?.settings?.hideUnmatchedLogsAlert || false
   );
-  const [timezone, setTimezone] = useState(user?.settings?.timezone || 'UTC');
+  const detectedTimezone = useMemo(() => getUserTimezone(), []);
+  const [timezone, setTimezone] = useState(
+    user?.settings?.timezone || detectedTimezone
+  );
   const [isInitialized, setIsInitialized] = useState(false);
 
   const [avatarSrc, setAvatarSrc] = useState<string>('');
@@ -278,17 +282,17 @@ function SettingsScreen() {
       setDiscordId(user.discordId || '');
       setBlurAdult(user.settings?.blurAdultContent || false);
       setHideUnmatchedAlert(user.settings?.hideUnmatchedLogsAlert || false);
-      setTimezone(user.settings?.timezone || 'UTC');
+      setTimezone(user.settings?.timezone || detectedTimezone);
       setIsInitialized(true);
     }
-  }, [user, isInitialized]);
+  }, [user, isInitialized, detectedTimezone]);
 
   // Auto-save preferences when they change (only after initialization)
   useEffect(() => {
     if (
       isInitialized &&
       user?.settings?.timezone !== timezone &&
-      timezone !== (user?.settings?.timezone || 'UTC')
+      timezone !== (user?.settings?.timezone || detectedTimezone)
     ) {
       if (timezoneTimeoutRef.current) {
         clearTimeout(timezoneTimeoutRef.current);
@@ -308,6 +312,7 @@ function SettingsScreen() {
     user?.settings?.timezone,
     debouncedUpdatePreferences,
     isInitialized,
+    detectedTimezone,
   ]);
 
   useEffect(() => {

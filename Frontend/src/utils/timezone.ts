@@ -2,6 +2,8 @@
  * Timezone utility functions for handling user timezone preferences
  */
 
+const FALLBACK_TIMEZONE = 'UTC';
+
 // Get list of common timezones
 export const getTimezones = (): { label: string; value: string }[] => {
   // Get common timezones manually since Intl.supportedValuesOf may not be available
@@ -312,9 +314,11 @@ export const formatRelativeDateInTimezone = (
 // Get user's detected timezone
 export const getUserTimezone = (): string => {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return (
+      Intl.DateTimeFormat().resolvedOptions().timeZone || FALLBACK_TIMEZONE
+    );
   } catch (error) {
-    return 'UTC';
+    return FALLBACK_TIMEZONE;
   }
 };
 

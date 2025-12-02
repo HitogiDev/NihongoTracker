@@ -100,6 +100,7 @@ export interface IRegisterInput {
   email?: string;
   password: string;
   passwordConfirmation: string;
+  timezone?: string;
 }
 
 export interface ILoginInput {

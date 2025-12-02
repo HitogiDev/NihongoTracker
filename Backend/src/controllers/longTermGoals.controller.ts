@@ -11,6 +11,8 @@ import {
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 
+const FALLBACK_TIMEZONE = 'UTC';
+
 export async function getLongTermGoals(
   req: Request,
   res: Response,
@@ -237,7 +239,7 @@ async function calculateLongTermGoalProgress(
   goal: ILongTermGoal,
   user: any
 ): Promise<ILongTermGoalProgress> {
-  const userTimezone = user.settings?.timezone || 'UTC';
+  const userTimezone = user.settings?.timezone || FALLBACK_TIMEZONE;
   const now = new Date();
 
   // Calculate remaining days

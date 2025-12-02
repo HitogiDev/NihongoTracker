@@ -6,6 +6,7 @@ import User from '../models/user.model.js';
 import { Anime } from '../models/media.model.js';
 import { IDailyGoal, IDailyGoalProgress, IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+const FALLBACK_TIMEZONE = 'UTC';
 
 export async function getDailyGoals(
   req: Request,
@@ -30,7 +31,7 @@ export async function getDailyGoals(
     });
 
     // Calculate today's progress using user's timezone
-    const userTimezone = foundUser.settings?.timezone || 'UTC';
+    const userTimezone = foundUser.settings?.timezone || FALLBACK_TIMEZONE;
 
     // Get the current date in the user's timezone
     const now = new Date();

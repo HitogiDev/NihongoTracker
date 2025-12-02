@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUserFn, getPublicStatsFn } from '../api/trackerApi';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -18,6 +18,7 @@ import {
   validateUsername,
 } from '../utils/validation';
 import { gsap } from 'gsap';
+import { getUserTimezone } from '../utils/timezone';
 
 function RegisterScreen() {
   const { user, setUser } = useUserDataStore();
@@ -87,6 +88,7 @@ function RegisterScreen() {
       hasNumber: false,
       hasSpecialChar: false,
     });
+  const recommendedTimezone = useMemo(() => getUserTimezone(), []);
 
   // GSAP entrance animation
   useEffect(() => {
@@ -224,7 +226,13 @@ function RegisterScreen() {
       return;
     }
 
-    mutate({ username, email, password, passwordConfirmation });
+    mutate({
+      username,
+      email,
+      password,
+      passwordConfirmation,
+      timezone: recommendedTimezone,
+    });
   }
 
   useEffect(() => {

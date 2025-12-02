@@ -27,7 +27,7 @@ function TimezonePicker({
   const allTimezones = getTimezones();
 
   // Get the current timezone display
-  const currentTimezone = value || 'UTC';
+  const currentTimezone = value || detectedTimezone;
   const currentTimezoneDisplay =
     [...commonTimezones, ...allTimezones].find(
       (tz) => tz.value === currentTimezone
