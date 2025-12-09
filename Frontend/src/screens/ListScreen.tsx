@@ -4,8 +4,9 @@ import {
   getImmersionListFn,
   getUntrackedLogsFn,
   updateUserFn,
+  updateMediaCompletionStatusFn,
 } from '../api/trackerApi';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, MouseEvent } from 'react';
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
 import DOMPurify from 'dompurify';
@@ -27,6 +28,8 @@ import {
   MdMovie,
   MdOutlineTv,
   MdClose,
+  MdCheckCircle,
+  MdRadioButtonUnchecked,
 } from 'react-icons/md';
 import { convertBBCodeToHtml } from '../utils/utils';
 
@@ -42,6 +45,14 @@ type FilterOption =
   | 'movie'
   | 'tv show';
 
+type CompletionFilter = 'all' | 'completed' | 'incomplete';
+
+type MediaCompletionPayload = {
+  mediaId: string;
+  type: IMediaDocument['type'];
+  completed: boolean;
+};
+
 function ListScreen() {
   const { username } = useParams<{ username: string }>();
   const { user, setUser } = useUserDataStore();
@@ -51,15 +62,22 @@ function ListScreen() {
   const [selectedFilter, setSelectedFilter] = useState<FilterOption>('all');
   const [sortBy, setSortBy] = useState<SortOption>('title');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [completionFilter, setCompletionFilter] =
+    useState<CompletionFilter>('all');
   const [showHideAlertModal, setShowHideAlertModal] = useState(false);
+  const [pendingToggleId, setPendingToggleId] = useState<string | null>(null);
+
+  const isOwnProfile = user?.username === username;
+  const completionParams =
+    completionFilter === 'all' ? undefined : { completed: completionFilter };
 
   const {
     data: immersionList,
     isLoading,
     error,
   } = useQuery<IImmersionList>({
-    queryKey: ['ImmersionList', username],
-    queryFn: () => getImmersionListFn(username!),
+    queryKey: ['ImmersionList', username, completionFilter],
+    queryFn: () => getImmersionListFn(username!, completionParams),
     enabled: !!username,
     staleTime: 30 * 1000, // 30 seconds
   });
@@ -82,6 +100,31 @@ function ListScreen() {
       console.error('Failed to update settings:', error);
     },
   });
+
+  const toggleCompletionMutation = useMutation({
+    mutationFn: updateMediaCompletionStatusFn,
+    onMutate: ({ mediaId, type }: MediaCompletionPayload) => {
+      setPendingToggleId(`${type}:${mediaId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ImmersionList'] });
+    },
+    onError: (mutationError) => {
+      console.error('Failed to update media completion status:', mutationError);
+    },
+    onSettled: () => {
+      setPendingToggleId(null);
+    },
+  });
+
+  const handleToggleCompletion = (media: IMediaDocument) => {
+    if (!isOwnProfile) return;
+    toggleCompletionMutation.mutate({
+      mediaId: media.contentId,
+      type: media.type,
+      completed: !media.isCompleted,
+    });
+  };
 
   const allMedia = useMemo(() => {
     if (!immersionList) return [];
@@ -421,6 +464,49 @@ function ListScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
+                        <MdCheckCircle className="w-4 h-4" />
+                        Progress:{' '}
+                        {completionFilter === 'completed'
+                          ? 'Completed'
+                          : completionFilter === 'incomplete'
+                            ? 'In Progress'
+                            : 'All'}
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-60"
+                      >
+                        {[
+                          { value: 'all', label: 'All progress' },
+                          { value: 'completed', label: 'Completed only' },
+                          { value: 'incomplete', label: 'In progress' },
+                        ].map((option) => (
+                          <li key={option.value}>
+                            <button
+                              className={
+                                completionFilter === option.value
+                                  ? 'active'
+                                  : ''
+                              }
+                              onClick={() =>
+                                setCompletionFilter(
+                                  option.value as CompletionFilter
+                                )
+                              }
+                            >
+                              {option.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
                         <MdSort className="w-4 h-4" />
                         Sort:{' '}
                         {sortBy === 'title'
@@ -537,13 +623,25 @@ function ListScreen() {
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                 {groupedMedia.ungrouped?.map((item) => (
-                  <MediaCard key={item.contentId} media={item} />
+                  <MediaCard
+                    key={item.contentId}
+                    media={item}
+                    isOwnProfile={!!isOwnProfile}
+                    onToggleCompletion={handleToggleCompletion}
+                    pendingToggleId={pendingToggleId}
+                  />
                 ))}
               </div>
             ) : (
               <div className="space-y-3">
                 {groupedMedia.ungrouped?.map((item) => (
-                  <MediaListItem key={item.contentId} media={item} />
+                  <MediaListItem
+                    key={item.contentId}
+                    media={item}
+                    isOwnProfile={!!isOwnProfile}
+                    onToggleCompletion={handleToggleCompletion}
+                    pendingToggleId={pendingToggleId}
+                  />
                 ))}
               </div>
             )
@@ -570,6 +668,9 @@ function ListScreen() {
                   mediaList={mediaList}
                   viewMode={viewMode}
                   count={mediaList.length}
+                  isOwnProfile={!!isOwnProfile}
+                  onToggleCompletion={handleToggleCompletion}
+                  pendingToggleId={pendingToggleId}
                 />
               ))}
             </div>
@@ -585,11 +686,17 @@ function MediaGroup({
   mediaList,
   viewMode,
   count,
+  isOwnProfile,
+  onToggleCompletion,
+  pendingToggleId,
 }: {
   type: string;
   mediaList: (IMediaDocument & { category: string })[];
   viewMode: ViewMode;
   count: number;
+  isOwnProfile: boolean;
+  onToggleCompletion: (media: IMediaDocument) => void;
+  pendingToggleId: string | null;
 }) {
   const typeConfig = {
     anime: {
@@ -651,13 +758,25 @@ function MediaGroup({
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
           {mediaList.map((item) => (
-            <MediaCard key={item.contentId} media={item} />
+            <MediaCard
+              key={item.contentId}
+              media={item}
+              isOwnProfile={isOwnProfile}
+              onToggleCompletion={onToggleCompletion}
+              pendingToggleId={pendingToggleId}
+            />
           ))}
         </div>
       ) : (
         <div className="space-y-3">
           {mediaList.map((item) => (
-            <MediaListItem key={item.contentId} media={item} />
+            <MediaListItem
+              key={item.contentId}
+              media={item}
+              isOwnProfile={isOwnProfile}
+              onToggleCompletion={onToggleCompletion}
+              pendingToggleId={pendingToggleId}
+            />
           ))}
         </div>
       )}
@@ -667,8 +786,14 @@ function MediaGroup({
 
 function MediaCard({
   media,
+  isOwnProfile,
+  onToggleCompletion,
+  pendingToggleId,
 }: {
   media: IMediaDocument & { category: string };
+  isOwnProfile: boolean;
+  onToggleCompletion: (media: IMediaDocument) => void;
+  pendingToggleId: string | null;
 }) {
   const { user } = useUserDataStore();
   const { username } = useParams<{ username: string }>();
@@ -676,6 +801,14 @@ function MediaCard({
 
   const handleCardClick = () => {
     navigate(`/${media.type}/${media.contentId}/${username}`);
+  };
+
+  const toggleKey = `${media.type}:${media.contentId}`;
+  const isToggling = pendingToggleId === toggleKey;
+
+  const handleToggleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onToggleCompletion(media);
   };
 
   const typeConfig = {
@@ -732,6 +865,26 @@ function MediaCard({
       onClick={handleCardClick}
     >
       <figure className="relative aspect-[3/4] overflow-hidden">
+        {isOwnProfile && (
+          <button
+            type="button"
+            className={`btn btn-circle btn-xs absolute top-2 right-2 z-20 ${media.isCompleted ? 'btn-success text-white' : 'btn-ghost bg-base-100/80 border-base-300'}`}
+            onClick={handleToggleClick}
+            disabled={isToggling}
+            aria-label={
+              media.isCompleted ? 'Mark as in progress' : 'Mark as completed'
+            }
+          >
+            {isToggling ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : media.isCompleted ? (
+              <MdCheckCircle className="w-4 h-4" />
+            ) : (
+              <MdRadioButtonUnchecked className="w-4 h-4" />
+            )}
+          </button>
+        )}
+
         {media.contentImage || media.coverImage ? (
           <img
             src={media.contentImage || media.coverImage}
@@ -747,13 +900,21 @@ function MediaCard({
           </div>
         )}
 
+        {media.isCompleted && (
+          <div className="absolute bottom-2 left-2">
+            <div className="badge badge-success badge-sm gap-1">
+              <MdCheckCircle className="w-3 h-3" /> Completed
+            </div>
+          </div>
+        )}
+
         {media.isAdult && (
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 left-2">
             <div className="badge badge-error badge-sm">18+</div>
           </div>
         )}
 
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10 pointer-events-none">
           <div className="text-white text-center p-4">
             <MdTrendingUp className="w-6 h-6 mx-auto mb-2" />
             <p className="text-sm font-medium">View Details</p>
@@ -801,11 +962,19 @@ function MediaCard({
 
 function MediaListItem({
   media,
+  isOwnProfile,
+  onToggleCompletion,
+  pendingToggleId,
 }: {
   media: IMediaDocument & { category: string };
+  isOwnProfile: boolean;
+  onToggleCompletion: (media: IMediaDocument) => void;
+  pendingToggleId: string | null;
 }) {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const toggleKey = `${media.type}:${media.contentId}`;
+  const isToggling = pendingToggleId === toggleKey;
 
   const descriptionText = useMemo(() => {
     if (!media.description || media.description.length === 0) {
@@ -869,6 +1038,11 @@ function MediaListItem({
 
   const handleCardClick = () => {
     navigate(`/${media.type}/${media.contentId}/${username}`);
+  };
+
+  const handleToggleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onToggleCompletion(media);
   };
 
   const typeConfig = {
@@ -967,6 +1141,29 @@ function MediaListItem({
                 )}
 
                 <div className="flex flex-wrap gap-1 justify-end">
+                  {media.isCompleted && (
+                    <span className="badge badge-success badge-sm gap-1">
+                      <MdCheckCircle className="w-3 h-3" /> Completed
+                    </span>
+                  )}
+
+                  {isOwnProfile && (
+                    <button
+                      type="button"
+                      className={`btn btn-xs ${media.isCompleted ? 'btn-success text-white' : 'btn-outline'}`}
+                      onClick={handleToggleClick}
+                      disabled={isToggling}
+                    >
+                      {isToggling ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : media.isCompleted ? (
+                        'Mark in progress'
+                      ) : (
+                        'Mark completed'
+                      )}
+                    </button>
+                  )}
+
                   {media.episodes ? (
                     <span className="badge badge-ghost badge-sm">
                       {media.episodes} episodes

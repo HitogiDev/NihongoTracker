@@ -40,6 +40,16 @@ export interface IPatreonData {
   isActive?: boolean;
 }
 
+export interface IUserMediaStatus extends Document {
+  user: Types.ObjectId;
+  mediaId: string;
+  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'tv show';
+  completed: boolean;
+  completedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface IPatreonEvent {
   data: {
     attributes: {
@@ -270,6 +280,8 @@ export interface IMediaDocument {
   synonyms?: string[];
   isAdult: boolean;
   lastLogDate?: Date;
+  isCompleted?: boolean;
+  completedAt?: Date | null;
 }
 
 export interface IImportLogs {

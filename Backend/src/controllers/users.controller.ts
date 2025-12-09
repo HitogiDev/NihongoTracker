@@ -1,6 +1,8 @@
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import Tag from '../models/tag.model.js';
+import UserMediaStatus from '../models/userMediaStatus.model.js';
+import { MediaBase } from '../models/media.model.js';
 import { Request, Response, NextFunction } from 'express';
 import { IMediaDocument, IUpdateRequest } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
@@ -8,6 +10,15 @@ import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import axios from 'axios';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../mailtrap/emails.js';
+
+type ImmersionMediaType =
+  | 'anime'
+  | 'manga'
+  | 'reading'
+  | 'vn'
+  | 'video'
+  | 'movie'
+  | 'tv show';
 
 export async function updateUser(
   req: Request,
@@ -1097,64 +1108,72 @@ export async function getImmersionList(
     const user = await User.findOne({ username: req.params.username });
     if (!user) throw new customError('User not found', 404);
 
-    // Define valid media types
-    type MediaType =
-      | 'anime'
-      | 'manga'
-      | 'reading'
-      | 'vn'
-      | 'video'
-      | 'movie'
-      | 'tv show';
+    type CompletionFilter = 'all' | 'completed' | 'incomplete';
+    const completionQuery = (
+      req.query.completed as string | undefined
+    )?.toLowerCase();
+    let completionFilter: CompletionFilter = 'all';
+
+    if (completionQuery === 'true' || completionQuery === 'completed') {
+      completionFilter = 'completed';
+    } else if (
+      completionQuery === 'false' ||
+      completionQuery === 'incomplete'
+    ) {
+      completionFilter = 'incomplete';
+    }
 
     // Update your interface definition
     interface ImmersionGroup {
-      _id: MediaType;
+      _id: ImmersionMediaType;
       media: Array<IMediaDocument>;
     }
 
-    const immersionList: ImmersionGroup[] = await Log.aggregate([
-      { $match: { user: user._id } },
-      {
-        $group: {
-          _id: { mediaId: '$mediaId', type: '$type' },
-          lastLogDate: { $max: '$date' },
+    const [immersionList, mediaStatuses] = await Promise.all([
+      Log.aggregate<ImmersionGroup>([
+        { $match: { user: user._id } },
+        {
+          $group: {
+            _id: { mediaId: '$mediaId', type: '$type' },
+            lastLogDate: { $max: '$date' },
+          },
         },
-      },
-      {
-        $lookup: {
-          from: 'media',
-          let: { mediaId: '$_id.mediaId', logType: '$_id.type' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$contentId', '$$mediaId'] },
-                    { $eq: ['$type', '$$logType'] },
-                  ],
+        {
+          $lookup: {
+            from: 'media',
+            let: { mediaId: '$_id.mediaId', logType: '$_id.type' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$contentId', '$$mediaId'] },
+                      { $eq: ['$type', '$$logType'] },
+                    ],
+                  },
                 },
               },
-            },
-          ],
-          as: 'mediaDetails',
+            ],
+            as: 'mediaDetails',
+          },
         },
-      },
-      { $unwind: '$mediaDetails' },
-      {
-        $addFields: {
-          'mediaDetails.lastLogDate': '$lastLogDate',
+        { $unwind: '$mediaDetails' },
+        {
+          $addFields: {
+            'mediaDetails.lastLogDate': '$lastLogDate',
+          },
         },
-      },
-      {
-        $replaceRoot: { newRoot: '$mediaDetails' },
-      },
-      {
-        $group: {
-          _id: '$type',
-          media: { $push: '$$ROOT' },
+        {
+          $replaceRoot: { newRoot: '$mediaDetails' },
         },
-      },
+        {
+          $group: {
+            _id: '$type',
+            media: { $push: '$$ROOT' },
+          },
+        },
+      ]),
+      UserMediaStatus.find({ user: user._id }),
     ]);
 
     if (immersionList.length === 0) {
@@ -1169,7 +1188,7 @@ export async function getImmersionList(
       });
     }
 
-    const result: Record<MediaType, IMediaDocument[]> = {
+    const result: Record<ImmersionMediaType, IMediaDocument[]> = {
       anime: [],
       manga: [],
       reading: [],
@@ -1179,13 +1198,45 @@ export async function getImmersionList(
       'tv show': [],
     };
 
+    const statusMap = new Map<
+      string,
+      { completed: boolean; completedAt?: Date | null }
+    >();
+    mediaStatuses.forEach((status) => {
+      const key = `${status.type}:${status.mediaId}`;
+      statusMap.set(key, {
+        completed: status.completed,
+        completedAt: status.completedAt ?? null,
+      });
+    });
+
     immersionList.forEach((group) => {
-      const mediaType = group._id as MediaType;
-      result[mediaType] = group.media;
+      const mediaType = group._id as ImmersionMediaType;
+      const mediaWithStatus = group.media
+        .map((media) => {
+          const key = `${mediaType}:${media.contentId}`;
+          const status = statusMap.get(key);
+          return {
+            ...media,
+            isCompleted: status?.completed ?? false,
+            completedAt: status?.completedAt ?? null,
+          };
+        })
+        .filter((media) => {
+          if (completionFilter === 'completed') {
+            return media.isCompleted;
+          }
+          if (completionFilter === 'incomplete') {
+            return !media.isCompleted;
+          }
+          return true;
+        });
+
+      result[mediaType] = mediaWithStatus;
     });
 
     // Sort each media type alphabetically
-    (Object.keys(result) as MediaType[]).forEach((key) => {
+    (Object.keys(result) as ImmersionMediaType[]).forEach((key) => {
       result[key].sort(
         (a, b) =>
           a.title?.contentTitleNative?.localeCompare(
@@ -1195,6 +1246,102 @@ export async function getImmersionList(
     });
 
     return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateMediaCompletionStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!res.locals.user?._id) {
+      throw new customError('Not authorized', 401);
+    }
+
+    const { mediaId, type, completed, completedAt } = req.body as {
+      mediaId?: string | number;
+      type?: string;
+      completed?: boolean;
+      completedAt?: string | Date;
+    };
+
+    if (!mediaId || !type) {
+      throw new customError('Media ID and type are required', 400);
+    }
+
+    const normalizedMediaId = String(mediaId);
+    const normalizedType = type.toLowerCase() as ImmersionMediaType;
+    const validTypes: ImmersionMediaType[] = [
+      'anime',
+      'manga',
+      'reading',
+      'vn',
+      'video',
+      'movie',
+      'tv show',
+    ];
+
+    if (!validTypes.includes(normalizedType)) {
+      throw new customError('Invalid media type', 400);
+    }
+
+    const mediaExists = await MediaBase.findOne({
+      contentId: normalizedMediaId,
+      type: normalizedType,
+    }).lean();
+
+    if (!mediaExists) {
+      throw new customError('Media not found', 404);
+    }
+
+    const shouldComplete = completed ?? true;
+
+    if (!shouldComplete) {
+      await UserMediaStatus.findOneAndDelete({
+        user: res.locals.user._id,
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+      });
+
+      return res.status(200).json({
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+        isCompleted: false,
+        completedAt: null,
+      });
+    }
+
+    const completionDate = completedAt ? new Date(completedAt) : new Date();
+
+    const status = await UserMediaStatus.findOneAndUpdate(
+      {
+        user: res.locals.user._id,
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+      },
+      {
+        user: res.locals.user._id,
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+        completed: true,
+        completedAt: completionDate,
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    return res.status(200).json({
+      mediaId: normalizedMediaId,
+      type: normalizedType,
+      isCompleted: status?.completed ?? true,
+      completedAt: status?.completedAt ?? completionDate,
+    });
   } catch (error) {
     return next(error as customError);
   }

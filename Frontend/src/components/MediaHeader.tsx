@@ -1,8 +1,18 @@
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
-import { getAverageColorFn, getMediaFn } from '../api/trackerApi';
+import {
+  getAverageColorFn,
+  getMediaFn,
+  updateMediaCompletionStatusFn,
+} from '../api/trackerApi';
 import { AxiosError } from 'axios';
-import { useQuery } from '@tanstack/react-query';
-import { MdPlayArrow, MdBook, MdMovie } from 'react-icons/md';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import {
+  MdPlayArrow,
+  MdBook,
+  MdMovie,
+  MdCheckCircle,
+  MdRadioButtonUnchecked,
+} from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
 import { useEffect, useState } from 'react';
@@ -11,6 +21,7 @@ import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
 import { useUserDataStore } from '../store/userData';
 import MediaNavbar from './MediaNavbar';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -37,10 +48,19 @@ export default function MediaHeader() {
   }>();
 
   const { user } = useUserDataStore();
+  const { formatDateOnly } = useDateFormatting();
+  const queryClient = useQueryClient();
+  const targetUsername = username || user?.username;
+  const isOwnProfile =
+    !!user?.username && !!targetUsername && user.username === targetUsername;
 
   const navigate = useNavigate();
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState({
+    isCompleted: false,
+    completedAt: null as string | null,
+  });
 
   // Reset scroll when navigating to a new media
   useEffect(() => {
@@ -87,6 +107,63 @@ export default function MediaHeader() {
     enabled: !!mediaId && !!mediaType,
     refetchOnMount: 'always',
   });
+
+  useEffect(() => {
+    setCompletionStatus({
+      isCompleted: media?.isCompleted ?? false,
+      completedAt: media?.completedAt ?? null,
+    });
+  }, [media?.isCompleted, media?.completedAt]);
+
+  const { mutate: toggleCompletionStatus, isPending: isUpdatingCompletion } =
+    useMutation({
+      mutationFn: (completed: boolean) => {
+        if (!media?.contentId || !media?.type) {
+          throw new Error('Missing media information');
+        }
+        return updateMediaCompletionStatusFn({
+          mediaId: media.contentId,
+          type: media.type,
+          completed,
+        });
+      },
+      onSuccess: (data) => {
+        setCompletionStatus({
+          isCompleted: data.isCompleted,
+          completedAt: data.completedAt,
+        });
+        queryClient.setQueryData<IMediaDocument | undefined>(
+          ['media', mediaId, mediaType],
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  isCompleted: data.isCompleted,
+                  completedAt: data.completedAt,
+                }
+              : prev
+        );
+        queryClient.invalidateQueries({ queryKey: ['ImmersionList'] });
+        if (targetUsername) {
+          queryClient.invalidateQueries({
+            queryKey: ['ImmersionList', targetUsername],
+          });
+        }
+        toast.success(
+          data.isCompleted
+            ? 'Se marcó como completado.'
+            : 'Se cambió a en progreso.'
+        );
+      },
+      onError: (error) => {
+        const message =
+          (error as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ||
+          (error as Error)?.message ||
+          'No se pudo actualizar el estado.';
+        toast.error(message);
+      },
+    });
 
   // Additional scroll reset when MediaHeader loading completes
   useEffect(() => {
@@ -257,12 +334,51 @@ export default function MediaHeader() {
               {isLoadingMedia ? (
                 <div className="skeleton h-12 w-full max-w-[200px] mt-4 rounded-lg"></div>
               ) : (
-                <button
-                  className="btn btn-primary w-full max-w-[200px] mt-4"
-                  onClick={() => setLogModalOpen(true)}
-                >
-                  Log
-                </button>
+                <div className="w-full max-w-[200px] mt-4 flex flex-col gap-2">
+                  <button
+                    className="btn btn-primary w-full"
+                    onClick={() => setLogModalOpen(true)}
+                  >
+                    Log
+                  </button>
+                  {isOwnProfile && media?.contentId && media?.type && (
+                    <div className="flex flex-col gap-1">
+                      <button
+                        type="button"
+                        className={`btn gap-2 w-full ${
+                          completionStatus.isCompleted
+                            ? 'btn-success text-white'
+                            : 'btn-outline'
+                        }`}
+                        onClick={() =>
+                          toggleCompletionStatus(!completionStatus.isCompleted)
+                        }
+                        disabled={isUpdatingCompletion}
+                      >
+                        {isUpdatingCompletion ? (
+                          <span className="loading loading-spinner loading-sm" />
+                        ) : completionStatus.isCompleted ? (
+                          <>
+                            <MdCheckCircle className="w-4 h-4" />
+                            <span>Marcar como en progreso</span>
+                          </>
+                        ) : (
+                          <>
+                            <MdRadioButtonUnchecked className="w-4 h-4" />
+                            <span>Marcar como completado</span>
+                          </>
+                        )}
+                      </button>
+                      {completionStatus.completedAt && (
+                        <span className="text-xs text-base-content/60 text-center md:text-left">
+                          {`Completado el ${formatDateOnly(
+                            new Date(completionStatus.completedAt)
+                          )}`}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             <div className="py-4 px-0 md:py-5 md:px-4">

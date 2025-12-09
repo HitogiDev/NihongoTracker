@@ -479,6 +479,8 @@ export interface IMediaDocument {
   synonyms?: string[] | null;
   isAdult: boolean;
   lastLogDate?: string;
+  isCompleted?: boolean;
+  completedAt?: string | Date | null;
 }
 
 export interface IAverageColor {

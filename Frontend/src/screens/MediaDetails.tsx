@@ -873,22 +873,48 @@ function MediaDetails() {
           <div className="space-y-6 min-w-0">
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
-                <h2 className="card-title text-xl mb-4 flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Media Details
-                </h2>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                  <h2 className="card-title text-xl flex items-center gap-2 mb-0">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Media Details
+                  </h2>
+
+                  {mediaDocument && (
+                    <div className="flex flex-col gap-1 sm:items-end">
+                      <span
+                        className={`badge ${
+                          mediaDocument.isCompleted
+                            ? 'badge-success text-white'
+                            : 'badge-outline'
+                        }`}
+                      >
+                        {mediaDocument.isCompleted
+                          ? 'Completado'
+                          : 'En progreso'}
+                      </span>
+                      {mediaDocument.isCompleted &&
+                        mediaDocument.completedAt && (
+                          <span className="text-xs text-base-content/60">
+                            {`Completado el ${formatDateOnly(
+                              new Date(mediaDocument.completedAt)
+                            )}`}
+                          </span>
+                        )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">

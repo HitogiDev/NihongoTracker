@@ -9,6 +9,7 @@ import {
   getImmersionList,
   compareUserStats,
   getRankingSummary,
+  updateMediaCompletionStatus,
 } from '../controllers/users.controller.js';
 import {
   getDashboardHours,
@@ -33,6 +34,8 @@ router.get('/ranking/media', getMediumRanking);
 router.get('/:username/ranking-summary', getRankingSummary);
 
 router.get('/:username', getUser);
+
+router.post('/media/status', protect, updateMediaCompletionStatus);
 
 router.get('/:username/logs', getUserLogs);
 

@@ -225,11 +225,29 @@ export async function importLogsFn() {
   return data;
 }
 
-export async function getImmersionListFn(username: string) {
+export async function getImmersionListFn(
+  username: string,
+  params?: { completed?: 'completed' | 'incomplete' }
+) {
   const { data } = await api.get<IImmersionList>(
-    `users/${username}/immersionlist`
+    `users/${username}/immersionlist`,
+    { params }
   );
   return data;
+}
+
+export async function updateMediaCompletionStatusFn(payload: {
+  mediaId: string;
+  type: IMediaDocument['type'];
+  completed: boolean;
+}) {
+  const { data } = await api.post(`users/media/status`, payload);
+  return data as {
+    mediaId: string;
+    type: IMediaDocument['type'];
+    isCompleted: boolean;
+    completedAt: string | null;
+  };
 }
 
 export async function getAverageColorFn(imageUrl?: string) {
