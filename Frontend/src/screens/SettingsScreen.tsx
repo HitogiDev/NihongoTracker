@@ -33,58 +33,117 @@ import ImageCropDialog, {
 } from '../components/ImageCropDialog';
 import Wheel from '@uiw/react-color-wheel';
 import { getUserTimezone } from '../utils/timezone';
+import {
+  Bold,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Image as ImageIcon,
+  Italic,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Quote,
+  Type,
+} from 'lucide-react';
 
-const PRESET_BADGE_BACKGROUND_COLORS = ['rainbow', 'primary', 'secondary'];
-const PRESET_BADGE_TEXT_COLORS = ['primary-content', 'secondary-content'];
+const ABOUT_MAX_LENGTH = 2000;
+const DEFAULT_BADGE_COLOR = '#ff69b4';
+const DEFAULT_BADGE_TEXT_COLOR = '#ffffff';
+const PRESET_BADGE_BACKGROUNDS = ['primary', 'secondary', 'rainbow'] as const;
+const PRESET_BADGE_TEXT_COLORS = [
+  'primary-content',
+  'secondary-content',
+] as const;
+const IMPORT_TYPE_LABELS: Record<'tmw' | 'manabe' | 'vncr', string> = {
+  tmw: 'TheMoeWay (.csv)',
+  manabe: 'Manabe (.tsv)',
+  vncr: 'VN-CSV (.csv)',
+};
 
-function isPresetBackground(color: string | null): boolean {
-  return color ? PRESET_BADGE_BACKGROUND_COLORS.includes(color) : false;
-}
+type PatreonStatus = {
+  patreonEmail?: string;
+  patreonId?: string;
+  tier?: 'donator' | 'enthusiast' | 'consumer' | null;
+  customBadgeText?: string;
+  badgeColor?: string;
+  badgeTextColor?: string;
+  isActive: boolean;
+};
 
-function isPresetTextColor(color: string | null): boolean {
-  return color ? PRESET_BADGE_TEXT_COLORS.includes(color) : false;
-}
-
-function sanitizeHex(color: string | null): string | null {
-  if (!color) return null;
-  const normalized = color.trim().toLowerCase();
-  const hexMatch = /^#?[0-9a-f]{6}$/.test(normalized);
-  if (!hexMatch) return null;
-  return normalized.startsWith('#') ? normalized : `#${normalized}`;
-}
-
-function getContrastColor(hexColor: string | null): string | undefined {
-  const sanitized = sanitizeHex(hexColor);
-  if (!sanitized) return undefined;
-  const hex = sanitized.replace('#', '');
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  if ([r, g, b].some((value) => Number.isNaN(value))) {
-    return undefined;
+const sanitizeHex = (value: string): string | null => {
+  if (!value) {
+    return null;
   }
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#000000' : '#ffffff';
-}
+  const trimmed = value.trim();
+  const normalized = trimmed.startsWith('#')
+    ? trimmed.toLowerCase()
+    : `#${trimmed.toLowerCase()}`;
+  const hexRegex = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/;
+  return hexRegex.test(normalized) ? normalized : null;
+};
 
-const importTypeString = {
-  tmw: 'TheMoeWay',
-  manabe: 'Manabe',
-  vncr: 'VN Club Resurrection',
+const expandHex = (hex: string): string => {
+  if (hex.length === 4) {
+    const [, r, g, b] = hex;
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return hex;
+};
+
+const getContrastColor = (value: string | null): string => {
+  if (!value) {
+    return '#1f2937';
+  }
+  const sanitized = sanitizeHex(value);
+  if (!sanitized) {
+    return '#1f2937';
+  }
+  const hex = expandHex(sanitized);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#1f2937' : '#ffffff';
+};
+
+const isPresetBackground = (value: string | null | undefined): boolean => {
+  return value
+    ? PRESET_BADGE_BACKGROUNDS.includes(
+        value as (typeof PRESET_BADGE_BACKGROUNDS)[number]
+      )
+    : false;
+};
+
+const isPresetTextColor = (value: string | null | undefined): boolean => {
+  return value
+    ? PRESET_BADGE_TEXT_COLORS.includes(
+        value as (typeof PRESET_BADGE_TEXT_COLORS)[number]
+      )
+    : false;
 };
 
 function SettingsScreen() {
-  const { setUser, user } = useUserDataStore();
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const newPasswordRef = useRef<HTMLInputElement>(null);
-  const newPasswordConfirmRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const { user, setUser } = useUserDataStore();
+  const detectedTimezone = useMemo(() => getUserTimezone(), []);
+  const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
+    isActive: false,
+  });
+  const [username, setUsername] = useState(user?.username || '');
   const [discordId, setDiscordId] = useState(user?.discordId || '');
-  const [customBadgeText, setCustomBadgeText] = useState('');
-  const [badgeColor, setBadgeColor] = useState('#ff69b4');
-  const [badgeTextColor, setBadgeTextColor] = useState('#ffffff');
+  const [about, setAbout] = useState(user?.about || '');
+  const [customBadgeText, setCustomBadgeText] = useState(
+    user?.patreon?.customBadgeText || ''
+  );
+  const [badgeColor, setBadgeColor] = useState<string>(
+    user?.patreon?.badgeColor || DEFAULT_BADGE_COLOR
+  );
+  const [badgeTextColor, setBadgeTextColor] = useState<string>(
+    user?.patreon?.badgeTextColor || DEFAULT_BADGE_TEXT_COLOR
+  );
   const [pendingBadgeColor, setPendingBadgeColor] = useState<string | null>(
     null
   );
@@ -92,32 +151,20 @@ function SettingsScreen() {
     string | null
   >(null);
   const [isInitiatingOAuth, setIsInitiatingOAuth] = useState(false);
-  const [patreonStatus, setPatreonStatus] = useState<{
-    patreonEmail?: string;
-    patreonId?: string;
-    tier?: 'donator' | 'enthusiast' | 'consumer' | null;
-    customBadgeText?: string;
-    badgeColor?: string;
-    badgeTextColor?: string;
-    isActive: boolean;
-  }>({ isActive: false });
   const [blurAdult, setBlurAdult] = useState(
     user?.settings?.blurAdultContent || false
   );
   const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
     user?.settings?.hideUnmatchedLogsAlert || false
   );
-  const detectedTimezone = useMemo(() => getUserTimezone(), []);
   const [timezone, setTimezone] = useState(
     user?.settings?.timezone || detectedTimezone
   );
   const [isInitialized, setIsInitialized] = useState(false);
-
   const [avatarSrc, setAvatarSrc] = useState<string>('');
   const [bannerSrc, setBannerSrc] = useState<string>('');
   const [showAvatarCrop, setShowAvatarCrop] = useState(false);
   const [showBannerCrop, setShowBannerCrop] = useState(false);
-
   const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
   const [croppedBannerFile, setCroppedBannerFile] = useState<File | null>(null);
   const [avatarFileName, setAvatarFileName] = useState<string | null>(null);
@@ -128,11 +175,9 @@ function SettingsScreen() {
   const [bannerOriginalFileName, setBannerOriginalFileName] = useState<
     string | null
   >(null);
-
   const [importType, setImportType] = useState<
     'tmw' | 'manabe' | 'vncr' | null
   >(null);
-
   const confirmUsernameRef = useRef<HTMLInputElement>(null);
   const [isUsernameMatch, setIsUsernameMatch] = useState(false);
   const [isEmailChanged, setIsEmailChanged] = useState(false);
@@ -142,13 +187,31 @@ function SettingsScreen() {
   const [showEmailSentModal, setShowEmailSentModal] = useState(false);
   const [emailSentTo, setEmailSentTo] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
-
   const avatarPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const aboutTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
+  const [aboutSelection, setAboutSelection] = useState<{
+    start: number;
+    end: number;
+  } | null>(null);
+  const imageUrlInputRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const newPasswordRef = useRef<HTMLInputElement>(null);
+  const newPasswordConfirmRef = useRef<HTMLInputElement>(null);
 
-  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (isImageModalOpen) {
+      requestAnimationFrame(() => {
+        imageUrlInputRef.current?.focus();
+      });
+    }
+  }, [isImageModalOpen]);
 
   const { mutate: updateUser, isPending } = useMutation({
     mutationFn: updateUserFn,
@@ -167,6 +230,7 @@ function SettingsScreen() {
       }
 
       setUser(data);
+      setAbout(data.about || '');
       if (avatarInputRef.current) {
         avatarInputRef.current.value = '';
       }
@@ -280,12 +344,17 @@ function SettingsScreen() {
   useEffect(() => {
     if (user && !isInitialized) {
       setDiscordId(user.discordId || '');
+      setUsername(user.username || '');
       setBlurAdult(user.settings?.blurAdultContent || false);
       setHideUnmatchedAlert(user.settings?.hideUnmatchedLogsAlert || false);
       setTimezone(user.settings?.timezone || detectedTimezone);
       setIsInitialized(true);
     }
   }, [user, isInitialized, detectedTimezone]);
+
+  useEffect(() => {
+    setAbout(user?.about || '');
+  }, [user?.about]);
 
   // Auto-save preferences when they change (only after initialization)
   useEffect(() => {
@@ -672,6 +741,94 @@ function SettingsScreen() {
     setPendingBadgeTextColor(null);
   }, [pendingBadgeTextColor, badgeTextColor]);
 
+  const needsLineBreak = useCallback(() => {
+    const textarea = aboutTextareaRef.current;
+    const selectionStart = textarea?.selectionStart ?? about.length;
+    if (selectionStart === 0) return false;
+    return about[selectionStart - 1] !== '\n';
+  }, [about]);
+
+  const insertMarkdownSnippet = useCallback(
+    (prefix: string, suffix = '', placeholder = 'text') => {
+      const textarea = aboutTextareaRef.current;
+      if (!textarea) return;
+
+      const selectionStart = textarea.selectionStart ?? about.length;
+      const selectionEnd = textarea.selectionEnd ?? about.length;
+      const selectedText =
+        selectionStart !== selectionEnd
+          ? about.slice(selectionStart, selectionEnd)
+          : placeholder;
+
+      const newValue =
+        about.slice(0, selectionStart) +
+        prefix +
+        selectedText +
+        suffix +
+        about.slice(selectionEnd);
+
+      if (newValue.length > ABOUT_MAX_LENGTH) {
+        toast.error('About Me text is at the maximum length.');
+        return;
+      }
+
+      setAbout(newValue);
+
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const startPos = selectionStart + prefix.length;
+        const endPos = startPos + selectedText.length;
+        textarea.setSelectionRange(startPos, endPos);
+      });
+    },
+    [about]
+  );
+
+  const insertHeading = useCallback(
+    (level: 1 | 2 | 3) => {
+      const hashes = '#'.repeat(level);
+      const prefix = `${needsLineBreak() ? '\n' : ''}${hashes} `;
+      insertMarkdownSnippet(prefix, '', `Heading ${level}`);
+    },
+    [insertMarkdownSnippet, needsLineBreak]
+  );
+
+  const insertListItem = useCallback(
+    (ordered: boolean) => {
+      const bullet = ordered ? '1. ' : '- ';
+      const prefix = `${needsLineBreak() ? '\n' : ''}${bullet}`;
+      insertMarkdownSnippet(prefix, '', 'List item');
+    },
+    [insertMarkdownSnippet, needsLineBreak]
+  );
+
+  const insertQuote = useCallback(() => {
+    const prefix = `${needsLineBreak() ? '\n' : ''}> `;
+    insertMarkdownSnippet(prefix, '', 'Quote text');
+  }, [insertMarkdownSnippet, needsLineBreak]);
+
+  const insertCodeBlock = useCallback(() => {
+    const lineBreak = needsLineBreak() ? '\n' : '';
+    const prefix = `${lineBreak}\`\`\`\n`;
+    insertMarkdownSnippet(prefix, '\n```\n', 'code sample');
+  }, [insertMarkdownSnippet, needsLineBreak]);
+
+  const insertBold = useCallback(() => {
+    insertMarkdownSnippet('**', '**', 'bold text');
+  }, [insertMarkdownSnippet]);
+
+  const insertItalic = useCallback(() => {
+    insertMarkdownSnippet('*', '*', 'italic text');
+  }, [insertMarkdownSnippet]);
+
+  const insertInlineCode = useCallback(() => {
+    insertMarkdownSnippet('`', '`', 'code');
+  }, [insertMarkdownSnippet]);
+
+  const insertLink = useCallback(() => {
+    insertMarkdownSnippet('[', '](https://example.com)', 'link text');
+  }, [insertMarkdownSnippet]);
+
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
     const formData = new FormData();
@@ -681,7 +838,10 @@ function SettingsScreen() {
     const currentNewPasswordConfirm =
       newPasswordConfirmRef.current?.value || '';
 
-    if (username.trim()) formData.append('username', username);
+    const trimmedUsername = username.trim();
+    if (trimmedUsername && trimmedUsername !== (user?.username || '')) {
+      formData.append('username', trimmedUsername);
+    }
     if (currentEmail !== (user?.email || ''))
       formData.append('email', currentEmail);
     if (currentPassword.trim()) formData.append('password', currentPassword);
@@ -691,6 +851,11 @@ function SettingsScreen() {
       formData.append('newPasswordConfirm', currentNewPasswordConfirm);
 
     formData.append('discordId', discordId);
+
+    const storedAbout = user?.about ?? '';
+    if (about !== storedAbout) {
+      formData.append('about', about);
+    }
 
     if (croppedAvatarFile) {
       formData.append('avatar', croppedAvatarFile);
@@ -1173,6 +1338,174 @@ function SettingsScreen() {
                           {user?.discordId
                             ? `Current: ${user.discordId}`
                             : 'Required for syncing external logs (Anilist, etc.)'}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="form-control md:col-span-2">
+                      <label className="label">
+                        <span className="label-text font-medium">About Me</span>
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => insertHeading(1)}
+                          title="Heading 1"
+                          aria-label="Insert heading level 1"
+                        >
+                          <Heading1 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => insertHeading(2)}
+                          title="Heading 2"
+                          aria-label="Insert heading level 2"
+                        >
+                          <Heading2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => insertHeading(3)}
+                          title="Heading 3"
+                          aria-label="Insert heading level 3"
+                        >
+                          <Heading3 className="w-4 h-4" />
+                        </button>
+                        <div
+                          className="w-px bg-base-300/60 self-stretch"
+                          aria-hidden="true"
+                        ></div>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertBold}
+                          title="Bold"
+                          aria-label="Insert bold text"
+                        >
+                          <Bold className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertItalic}
+                          title="Italic"
+                          aria-label="Insert italic text"
+                        >
+                          <Italic className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertInlineCode}
+                          title="Inline code"
+                          aria-label="Insert inline code"
+                        >
+                          <Type className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertCodeBlock}
+                          title="Code block"
+                          aria-label="Insert code block"
+                        >
+                          <Code className="w-4 h-4" />
+                        </button>
+                        <div
+                          className="w-px bg-base-300/60 self-stretch"
+                          aria-hidden="true"
+                        ></div>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => insertListItem(false)}
+                          title="Bulleted list"
+                          aria-label="Insert bulleted list"
+                        >
+                          <List className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => insertListItem(true)}
+                          title="Numbered list"
+                          aria-label="Insert numbered list"
+                        >
+                          <ListOrdered className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertQuote}
+                          title="Quote"
+                          aria-label="Insert quote"
+                        >
+                          <Quote className="w-4 h-4" />
+                        </button>
+                        <div
+                          className="w-px bg-base-300/60 self-stretch"
+                          aria-hidden="true"
+                        ></div>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertLink}
+                          title="Link"
+                          aria-label="Insert link"
+                        >
+                          <LinkIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={() => {
+                            const textarea = aboutTextareaRef.current;
+                            if (textarea) {
+                              setAboutSelection({
+                                start: textarea.selectionStart,
+                                end: textarea.selectionEnd,
+                              });
+                            }
+                            setImageUrl('');
+                            setImageAlt('');
+                            setIsImageModalOpen(true);
+                          }}
+                          title="Image"
+                          aria-label="Insert image"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <textarea
+                        className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-32"
+                        placeholder="Share a bit about your immersion journey (Markdown supported)"
+                        value={about}
+                        maxLength={ABOUT_MAX_LENGTH}
+                        ref={aboutTextareaRef}
+                        onChange={(e) => setAbout(e.target.value)}
+                        onFocus={(e) => {
+                          setAboutSelection({
+                            start: e.currentTarget.selectionStart,
+                            end: e.currentTarget.selectionEnd,
+                          });
+                        }}
+                        onSelect={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          setAboutSelection({
+                            start: target.selectionStart,
+                            end: target.selectionEnd,
+                          });
+                        }}
+                      ></textarea>
+                      <label className="label flex justify-between">
+                        <span className="label-text-alt text-base-content/60">
+                          Supports Markdown.
+                        </span>
+                        <span className="label-text-alt text-base-content/60">
+                          {about.length}/{ABOUT_MAX_LENGTH}
                         </span>
                       </label>
                     </div>
@@ -2196,7 +2529,7 @@ function SettingsScreen() {
                           className="btn btn-outline w-full gap-2"
                         >
                           {importType
-                            ? importTypeString[importType]
+                            ? IMPORT_TYPE_LABELS[importType]
                             : 'Choose the file format'}
                         </div>
                         <ul
@@ -2476,6 +2809,73 @@ function SettingsScreen() {
           </div>
         </div>
       </div>
+
+      {/* Insert Image Modal */}
+      <dialog
+        id="insert-image-modal"
+        className={`modal ${isImageModalOpen ? 'modal-open' : ''}`}
+        onClose={() => setIsImageModalOpen(false)}
+      >
+        <div className="modal-box space-y-4">
+          <h3 className="font-bold text-lg">Insert Image</h3>
+          <fieldset className="fieldset">
+            <legend className="fieldset-legend">Image URL</legend>
+            <input
+              type="url"
+              className="input input-bordered"
+              placeholder="https://example.com/image.png"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              ref={imageUrlInputRef}
+            />
+          </fieldset>
+          <fieldset className="fieldset">
+            <legend className="fieldset-legend">Alt text</legend>
+            <input
+              type="text"
+              className="input input-bordered"
+              placeholder="Describe the image"
+              value={imageAlt}
+              onChange={(e) => setImageAlt(e.target.value)}
+            />
+          </fieldset>
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setIsImageModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                if (!imageUrl.trim()) {
+                  toast.error('Please provide an image URL');
+                  return;
+                }
+                const url = imageUrl.trim();
+                const alt = imageAlt.trim() || 'Image';
+                if (aboutSelection) {
+                  const { start, end } = aboutSelection;
+                  const textarea = aboutTextareaRef.current;
+                  if (textarea) {
+                    textarea.setSelectionRange(start, end);
+                  }
+                }
+                insertMarkdownSnippet('![', `](${url})`, alt);
+                setIsImageModalOpen(false);
+              }}
+            >
+              Insert
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
 
       {/* Background Color Picker Modal */}
       <dialog

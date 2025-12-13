@@ -3,6 +3,7 @@
 @plugin "daisyui" {
   themes: dark --default, light, cupcake, bumblebee, emerald, corporate, synthwave, retro, valentine, halloween, garden, forest, dracula, cmyk, night, winter, dim, sunset, abyss;
 }
+@plugin "@tailwindcss/typography";
 
 @theme {
   --padding-22px: 22px;

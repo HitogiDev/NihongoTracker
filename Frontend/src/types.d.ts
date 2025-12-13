@@ -2,6 +2,7 @@ export interface IUser {
   _id: string;
   avatar?: string;
   banner?: string;
+  about?: string;
   username: string;
   email?: string;
   verified?: boolean;
@@ -85,6 +86,7 @@ export type ILoginResponse = Pick<
   | 'username'
   | 'email'
   | 'verified'
+  | 'about'
   | 'stats'
   | 'avatar'
   | 'banner'
@@ -238,6 +240,7 @@ export interface updateUserRequest {
   newPassword?: string;
   newPasswordConfirm?: string;
   blurAdultContent?: boolean;
+  about?: string;
 }
 
 export interface IEditedFields {

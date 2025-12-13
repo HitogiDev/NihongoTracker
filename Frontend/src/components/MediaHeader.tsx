@@ -109,9 +109,15 @@ export default function MediaHeader() {
   });
 
   useEffect(() => {
+    const completedAtValue = media?.completedAt ?? null;
+    const completedAtString = completedAtValue
+      ? completedAtValue instanceof Date
+        ? completedAtValue.toISOString()
+        : completedAtValue
+      : null;
     setCompletionStatus({
       isCompleted: media?.isCompleted ?? false,
-      completedAt: media?.completedAt ?? null,
+      completedAt: completedAtString,
     });
   }, [media?.isCompleted, media?.completedAt]);
 

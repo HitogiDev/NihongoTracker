@@ -35,6 +35,7 @@ export async function updateUser(
     blurAdultContent,
     hideUnmatchedLogsAlert,
     timezone,
+    about,
   } = req.body as IUpdateRequest;
 
   try {
@@ -213,6 +214,14 @@ export async function updateUser(
       user.settings = updatedSettings;
     }
 
+    if (about !== undefined) {
+      const aboutText = typeof about === 'string' ? about : '';
+      if (aboutText.length > 2000) {
+        throw new customError('About me must be 2000 characters or less', 400);
+      }
+      user.about = aboutText;
+    }
+
     const updatedUser = await user.save();
 
     // Send verification email if email was changed
@@ -246,6 +255,7 @@ export async function updateUser(
       titles: updatedUser.titles,
       roles: updatedUser.roles,
       settings: updatedUser.settings,
+      about: updatedUser.about,
     });
   } catch (error) {
     return next(error as customError);
@@ -268,6 +278,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     titles: userFound.titles,
     patreon: userFound.patreon,
     settings: userFound.settings,
+    about: userFound.about,
     createdAt: userFound.createdAt,
     updatedAt: userFound.updatedAt,
   });

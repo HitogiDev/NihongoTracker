@@ -122,6 +122,7 @@ const UserSchema = new Schema<IUser>(
     resetPasswordTokenExpiry: { type: Date, default: null },
     avatar: { type: String, default: '' },
     banner: { type: String, default: '' },
+    about: { type: String, default: '', maxlength: 2000 },
     titles: { type: [String], default: [], required: true },
     roles: [
       {

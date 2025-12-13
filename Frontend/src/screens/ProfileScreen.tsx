@@ -1,15 +1,22 @@
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
 import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
+
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
 import {
   MdSearch,
   MdFilterList,
@@ -50,6 +57,13 @@ function ProfileScreen() {
     'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const aboutHtml = useMemo(() => {
+    if (!user?.about || !user.about.trim()) {
+      return '';
+    }
+    const rawHtml = marked.parse(user.about, { async: false }) as string;
+    return DOMPurify.sanitize(rawHtml);
+  }, [user?.about]);
 
   // Type guard to validate log type
   const isValidLogType = (
@@ -207,6 +221,33 @@ function ProfileScreen() {
       <div className="w-full max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-10">
           <div className="flex flex-col shrink gap-4 md:gap-5">
+            <div className="card w-full bg-base-100 shadow-sm">
+              <div className="card-body w-full p-4 sm:p-6">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <h2 className="card-title">About</h2>
+                  {username === loggedUser?.username && (
+                    <Link
+                      to="/settings"
+                      className="btn btn-ghost btn-xs text-primary"
+                    >
+                      Edit profile
+                    </Link>
+                  )}
+                </div>
+                {aboutHtml ? (
+                  <div
+                    className="prose prose-sm max-w-none text-base-content/90"
+                    dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                  />
+                ) : (
+                  <p className="text-base-content/70 text-sm">
+                    {username === loggedUser?.username
+                      ? 'Add a short introduction from Settings → Profile Information.'
+                      : 'This user has not added an about section yet.'}
+                  </p>
+                )}
+              </div>
+            </div>
             <div className="card w-full bg-base-100 shadow-sm">
               <div className="card-body w-full p-4 sm:p-6">
                 <h2 className="card-title mb-4">Progress Stats</h2>

@@ -229,6 +229,7 @@ export interface IUser extends Document {
   _id: Types.ObjectId;
   avatar?: string;
   banner?: string;
+  about?: string;
   username: string;
   email?: string;
   verified?: boolean;
@@ -448,6 +449,7 @@ export interface IUpdateRequest {
   blurAdultContent?: string;
   hideUnmatchedLogsAlert?: string;
   timezone?: string;
+  about?: string;
 }
 
 export interface IRegister {
