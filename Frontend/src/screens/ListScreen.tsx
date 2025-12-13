@@ -393,8 +393,8 @@ function ListScreen() {
             </div>
           )}
 
-        <div className="container mx-auto px-4 mt-4 relative z-10">
-          <div className="card bg-base-100 shadow-xl">
+        <div className="container mx-auto px-4 mt-4 relative z-50">
+          <div className="card bg-base-100 shadow-xl relative z-50">
             <div className="card-body p-6">
               <div className="flex flex-col gap-4">
                 {/* Search Bar */}
@@ -415,7 +415,7 @@ function ListScreen() {
                 <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                   {/* Filter and Sort Dropdowns */}
                   <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
                       <div
                         tabIndex={0}
                         role="button"
@@ -430,7 +430,7 @@ function ListScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
+                        className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
                       >
                         {[
                           { value: 'all', label: 'All Types' },
@@ -458,7 +458,7 @@ function ListScreen() {
                       </ul>
                     </div>
 
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
                       <div
                         tabIndex={0}
                         role="button"
@@ -474,7 +474,7 @@ function ListScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-60"
+                        className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-60"
                       >
                         {[
                           { value: 'all', label: 'All progress' },
@@ -501,7 +501,7 @@ function ListScreen() {
                       </ul>
                     </div>
 
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
                       <div
                         tabIndex={0}
                         role="button"
@@ -517,7 +517,7 @@ function ListScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
+                        className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
                       >
                         {[
                           { value: 'title', label: 'By Title (A-Z)' },
@@ -914,7 +914,7 @@ function MediaCard({
           </div>
         )}
 
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10 pointer-events-none">
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none">
           <div className="text-white text-center p-4">
             <MdTrendingUp className="w-6 h-6 mx-auto mb-2" />
             <p className="text-sm font-medium">View Details</p>
