@@ -1,6 +1,6 @@
 services:
   app:
-    image: elaxdev/nihongo-tracker:latest
+    image: elaxdev/nihongotracker:latest
     ports:
       - "3000:3000"
     env_file:
