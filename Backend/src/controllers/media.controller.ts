@@ -213,7 +213,8 @@ export async function searchMedia(
 ) {
   try {
     const title = req.query.search as string;
-    const type = req.query.type as string;
+    const type =
+      req.query.type !== 'tv show' ? (req.query.type as string) : 'tv_show';
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.perPage as string) || 10;
     const offset = (page - 1) * limit;
