@@ -187,8 +187,12 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     mutationFn: (id: string) => deleteLogFn(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['logs', 'user'].includes(query.queryKey[0] as string),
+        predicate: (query) => {
+          const key = query.queryKey;
+          if (!Array.isArray(key)) return false;
+          // Invalidate any logs-related queries (profile lists, media details, heatmap) and user summaries
+          return key.includes('logs') || key[0] === 'user';
+        },
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       toast.success('Log deleted successfully!');
