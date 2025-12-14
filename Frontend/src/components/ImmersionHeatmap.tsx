@@ -18,6 +18,7 @@ interface LogData {
   _id: string;
   date: string | Date;
   time?: number;
+  xp?: number;
 }
 
 const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
@@ -33,7 +34,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
   const heatmapData = useMemo(() => {
     if (!logs || !Array.isArray(logs)) return [];
 
-    // Create a map to store daily totals
+    // Create a map to store daily XP totals
     const dailyData = new Map<string, number>();
 
     // Get date 24 weeks ago (168 days) in user's timezone
@@ -51,10 +52,14 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
       if (logDateInUserTz >= twentyFourWeeksAgo) {
         const dateKey = logDateInUserTz.toISOString().split('T')[0];
         const currentTotal = dailyData.get(dateKey) || 0;
-        const timeValue = log.time || 0;
-        dailyData.set(dateKey, currentTotal + timeValue);
+        const xpValue = Math.max(0, Number(log.xp) || 0);
+        dailyData.set(dateKey, currentTotal + xpValue);
       }
     });
+
+    const maxDailyXp = dailyData.size
+      ? Math.max(...Array.from(dailyData.values()))
+      : 0;
 
     // Generate heatmap data for 24 weeks (168 days) in user's timezone
     const heatmapData: HeatmapData[] = [];
@@ -65,12 +70,19 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
       const dateKey = date.toISOString().split('T')[0];
       const value = dailyData.get(dateKey) || 0;
 
-      // Determine intensity level (0-4)
+      // Determine intensity level (0-4) based on relative XP for the window
       let level = 0;
-      if (value > 0) level = 1;
-      if (value >= 30) level = 2;
-      if (value >= 60) level = 3;
-      if (value >= 120) level = 4;
+      if (value > 0) {
+        if (maxDailyXp <= 0) {
+          level = 1;
+        } else {
+          const ratio = value / maxDailyXp;
+          if (ratio >= 0.8) level = 4;
+          else if (ratio >= 0.55) level = 3;
+          else if (ratio >= 0.3) level = 2;
+          else level = 1;
+        }
+      }
 
       heatmapData.push({
         date: dateKey,
@@ -108,7 +120,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
       year: 'numeric',
       timeZone: timezone, // Use user's timezone for display
     });
-    return `${formattedDate}: ${data.value} minutes`;
+    return `${formattedDate}: ${data.value} XP`;
   };
 
   // Group data by weeks for GitHub-style layout
