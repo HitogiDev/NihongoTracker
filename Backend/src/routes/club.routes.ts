@@ -10,6 +10,7 @@ import {
   updateClub,
   getUserClubs,
   manageJoinRequests,
+  kickClubMember,
   getPendingJoinRequests,
   addClubMedia,
   editClubMedia,
@@ -71,6 +72,7 @@ router.put(
   updateClub
 ); // Update club (leaders only)
 router.post('/:clubId/members/:memberId', manageJoinRequests); // Approve/reject join requests (leaders only)
+router.post('/:clubId/members/:memberId/kick', kickClubMember); // Kick an active member (leader/moderator)
 router.get('/:clubId/members/pending', getPendingJoinRequests); // Get pending join requests
 router.post('/:clubId/transfer-leadership', transferLeadership); // Transfer club leadership (leaders only)
 

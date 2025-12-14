@@ -30,6 +30,7 @@ import {
   addClubMediaFn,
   getPendingMembershipRequestsFn,
   manageMembershipRequestFn,
+  kickClubMemberFn,
   transferLeadershipFn,
   updateClubWithFilesFn,
 } from '../api/clubApi';
@@ -144,6 +145,10 @@ function ClubDetailScreen() {
   const [isLeaveConfirmModalOpen, setIsLeaveConfirmModalOpen] = useState(false);
   const [isTransferLeadershipModalOpen, setIsTransferLeadershipModalOpen] =
     useState(false);
+  const [kickTarget, setKickTarget] = useState<{
+    userId: string;
+    username: string;
+  } | null>(null);
   const [selectedNewLeader, setSelectedNewLeader] = useState<{
     userId: string;
     username: string;
@@ -186,6 +191,13 @@ function ClubDetailScreen() {
     1,
     10
   );
+
+  const handleConfirmKick = () => {
+    if (!kickTarget) return;
+    kickMemberMutation.mutate(kickTarget.userId, {
+      onSettled: () => setKickTarget(null),
+    });
+  };
 
   // Add media mutation
   const addMediaMutation = useMutation({
@@ -253,6 +265,30 @@ function ClubDetailScreen() {
     onError: (error: unknown) => {
       let errorMessage = 'Failed to update membership';
       if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
+
+  const kickMemberMutation = useMutation({
+    mutationFn: (memberId: string) => kickClubMemberFn(clubId!, memberId),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Member removed');
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+    },
+    onError: (error: unknown) => {
+      let errorMessage = 'Failed to remove member';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object' && 'response' in error) {
+        const response = (
+          error as { response?: { data?: { message?: string } } }
+        ).response;
+        if (response?.data?.message) {
+          errorMessage = response.data.message;
+        }
+      }
+
       toast.error(errorMessage);
     },
   });
@@ -1193,25 +1229,47 @@ function ClubDetailScreen() {
                             </div>
                           </div>
 
-                          {club?.userRole === 'leader' &&
-                            member.role !== 'leader' &&
+                          {(club?.userRole === 'leader' ||
+                            club?.userRole === 'moderator') &&
                             member.user._id !== user?._id && (
-                              <div className="mt-3 pt-3 border-t border-base-300">
-                                <button
-                                  className="btn btn-outline btn-xs w-full"
-                                  onClick={() => {
-                                    setSelectedNewLeader({
-                                      userId: member.user._id,
-                                      username: member.user.username,
-                                    });
-                                    setIsTransferLeadershipModalOpen(true);
-                                  }}
-                                  disabled={
-                                    transferLeadershipMutation.isPending
-                                  }
-                                >
-                                  Transfer Leadership
-                                </button>
+                              <div className="mt-3 pt-3 pb-3 border-t border-base-300 space-y-2 px-3">
+                                {club?.userRole === 'leader' &&
+                                  member.role !== 'leader' && (
+                                    <button
+                                      className="btn btn-outline btn-xs w-full"
+                                      onClick={() => {
+                                        setSelectedNewLeader({
+                                          userId: member.user._id,
+                                          username: member.user.username,
+                                        });
+                                        setIsTransferLeadershipModalOpen(true);
+                                      }}
+                                      disabled={
+                                        transferLeadershipMutation.isPending
+                                      }
+                                    >
+                                      Transfer Leadership
+                                    </button>
+                                  )}
+                                {((club?.userRole === 'leader' &&
+                                  member.role !== 'leader') ||
+                                  (club?.userRole === 'moderator' &&
+                                    member.role === 'member')) && (
+                                  <button
+                                    className="btn btn-error btn-outline btn-xs w-full"
+                                    onClick={() =>
+                                      setKickTarget({
+                                        userId: member.user._id,
+                                        username: member.user.username,
+                                      })
+                                    }
+                                    disabled={kickMemberMutation.isPending}
+                                  >
+                                    {kickMemberMutation.isPending
+                                      ? 'Removing...'
+                                      : 'Kick Member'}
+                                  </button>
+                                )}
                               </div>
                             )}
                         </div>
@@ -1893,6 +1951,36 @@ function ClubDetailScreen() {
                 {transferLeadershipMutation.isPending
                   ? 'Transferring...'
                   : 'Transfer Leadership'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Kick Member Confirmation Modal */}
+      {kickTarget && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error">Remove Member</h3>
+            <p className="py-4">
+              Remove{' '}
+              <span className="font-semibold">{kickTarget.username}</span> from
+              the club?
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setKickTarget(null)}
+                disabled={kickMemberMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={handleConfirmKick}
+                disabled={kickMemberMutation.isPending}
+              >
+                {kickMemberMutation.isPending ? 'Removing...' : 'Confirm'}
               </button>
             </div>
           </div>

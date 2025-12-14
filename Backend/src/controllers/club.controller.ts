@@ -21,6 +21,13 @@ import {
   updateVotingStatusesForClub,
 } from '../services/clubMediaVoting.js';
 
+// Roles ordering helper for permission checks
+const rolePriority: Record<'leader' | 'moderator' | 'member', number> = {
+  leader: 0,
+  moderator: 1,
+  member: 2,
+};
+
 export async function getClubs(
   req: Request,
   res: Response,
@@ -654,6 +661,82 @@ export async function manageJoinRequests(
     } else {
       return res.status(400).json({ message: 'Invalid action' });
     }
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function kickClubMember(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { clubId, memberId } = req.params;
+    const actorId = res.locals.user._id;
+
+    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    const actor = club.members.find(
+      (member) => member.user.toString() === actorId.toString()
+    );
+
+    if (!actor || actor.status !== 'active') {
+      return res
+        .status(403)
+        .json({ message: 'You must be an active member to manage members' });
+    }
+
+    if (actor.role !== 'leader' && actor.role !== 'moderator') {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    const targetIndex = club.members.findIndex(
+      (member) => member.user.toString() === memberId
+    );
+
+    if (targetIndex === -1) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+
+    const target = club.members[targetIndex];
+
+    if (target.status !== 'active') {
+      return res.status(400).json({ message: 'User is not an active member' });
+    }
+
+    // Prevent self-kick
+    if (target.user.toString() === actorId.toString()) {
+      return res.status(400).json({ message: 'Use leave club to exit' });
+    }
+
+    // Permission rules: leader can kick anyone except other leaders; moderators can kick members only
+    if (actor.role === 'moderator' && target.role !== 'member') {
+      return res
+        .status(403)
+        .json({ message: 'Moderators can only remove members' });
+    }
+
+    if (actor.role === 'leader' && target.role === 'leader') {
+      return res.status(400).json({ message: 'Cannot remove another leader' });
+    }
+
+    // Remove member
+    club.members.splice(targetIndex, 1);
+    await club.save();
+
+    await User.findByIdAndUpdate(memberId, {
+      $pull: { clubs: clubId },
+    });
+
+    return res.status(200).json({ message: 'Member removed from club' });
   } catch (error) {
     return next(error as customError);
   }

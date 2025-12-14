@@ -158,6 +158,17 @@ export async function manageMembershipRequestFn(
   return data;
 }
 
+// Kick an active member (leader/moderator only)
+export async function kickClubMemberFn(
+  clubId: string,
+  memberId: string
+): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>(
+    `/clubs/${clubId}/members/${memberId}/kick`
+  );
+  return data;
+}
+
 // Get pending membership requests (leaders only)
 export async function getPendingMembershipRequestsFn(
   clubId: string
