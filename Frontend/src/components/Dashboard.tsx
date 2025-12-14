@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -689,37 +689,61 @@ type RecentMediaRailProps = {
 };
 
 const RecentMediaRail = ({ logs, onQuickLog }: RecentMediaRailProps) => (
-  <div className="card bg-base-100 shadow-xl border border-base-200/60">
-    <div className="card-body space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-base-content/60">
-            Recent Media
-          </p>
-          <h2 className="card-title text-lg">Jump back in</h2>
-        </div>
-        <span className="text-xs text-base-content/60">Swipe</span>
-      </div>
-      {logs.length === 0 ? (
-        <p className="text-base-content/70 text-sm">
-          Log something to unlock quick actions here.
-        </p>
-      ) : (
-        <div className="overflow-x-auto -mx-2 px-2 pb-2">
-          <div className="flex gap-3 snap-x snap-mandatory">
-            {logs.map((log) => (
-              <RecentMediaRailTile
-                key={`${log._id}-rail`}
-                log={log}
-                onQuickLog={onQuickLog}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
+  <RecentMediaRailInner logs={logs} onQuickLog={onQuickLog} />
 );
+
+const RecentMediaRailInner = ({ logs, onQuickLog }: RecentMediaRailProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const needsScroll = el.scrollWidth > el.clientWidth + 4;
+      setShowSwipeHint(needsScroll);
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [logs]);
+
+  return (
+    <div className="card bg-base-100 shadow-xl border border-base-200/60">
+      <div className="card-body space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-base-content/60">
+              Recent Media
+            </p>
+            <h2 className="card-title text-lg">Jump back in</h2>
+          </div>
+          {showSwipeHint && (
+            <span className="text-xs text-base-content/60">Swipe</span>
+          )}
+        </div>
+        {logs.length === 0 ? (
+          <p className="text-base-content/70 text-sm">
+            Log something to unlock quick actions here.
+          </p>
+        ) : (
+          <div className="overflow-x-auto -mx-2 px-2 pb-2" ref={scrollRef}>
+            <div className="flex gap-3 snap-x snap-mandatory">
+              {logs.map((log) => (
+                <RecentMediaRailTile
+                  key={`${log._id}-rail`}
+                  log={log}
+                  onQuickLog={onQuickLog}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 type RecentMediaRailTileProps = {
   log: RecentMediaLog;
