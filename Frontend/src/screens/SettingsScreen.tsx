@@ -124,6 +124,76 @@ const isPresetTextColor = (value: string | null | undefined): boolean => {
     : false;
 };
 
+type AboutEditorProps = {
+  aboutRef: React.MutableRefObject<string>;
+  aboutTextareaRef: React.RefObject<HTMLTextAreaElement>;
+  aboutSelectionRef: React.MutableRefObject<{
+    start: number;
+    end: number;
+  } | null>;
+  maxLength: number;
+  onSelectionChange?: (
+    selection: { start: number; end: number } | null
+  ) => void;
+};
+
+function AboutEditor({
+  aboutRef,
+  aboutTextareaRef,
+  aboutSelectionRef,
+  maxLength,
+  onSelectionChange,
+}: AboutEditorProps) {
+  const [length, setLength] = useState(aboutRef.current.length);
+  const lengthTimeoutRef = useRef<number | null>(null);
+
+  return (
+    <>
+      <textarea
+        className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-32"
+        placeholder="Share a bit about your immersion journey (Markdown supported)"
+        defaultValue={aboutRef.current}
+        maxLength={maxLength}
+        ref={aboutTextareaRef}
+        onChange={(e) => {
+          aboutRef.current = e.target.value;
+          if (lengthTimeoutRef.current === null) {
+            lengthTimeoutRef.current = window.setTimeout(() => {
+              setLength(aboutRef.current.length);
+              lengthTimeoutRef.current = null;
+            }, 120);
+          }
+        }}
+        onFocus={(e) => {
+          const selection = {
+            start: e.currentTarget.selectionStart,
+            end: e.currentTarget.selectionEnd,
+          };
+          aboutSelectionRef.current = selection;
+          onSelectionChange?.(selection);
+        }}
+        onSelect={(e) => {
+          const target = e.target as HTMLTextAreaElement;
+          const selection = {
+            start: target.selectionStart,
+            end: target.selectionEnd,
+          };
+          aboutSelectionRef.current = selection;
+          onSelectionChange?.(selection);
+        }}
+      ></textarea>
+      <label className="label flex justify-between">
+        <span className="label-text-alt text-base-content/60">
+          Supports Markdown.
+        </span>
+        <span className="label-text-alt text-base-content/60">
+          {length}/{maxLength}
+        </span>
+      </label>
+    </>
+  );
+}
+
 function SettingsScreen() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -134,7 +204,7 @@ function SettingsScreen() {
   });
   const [username, setUsername] = useState(user?.username || '');
   const [discordId, setDiscordId] = useState(user?.discordId || '');
-  const [about, setAbout] = useState(user?.about || '');
+  const aboutRef = useRef(user?.about || '');
   const [customBadgeText, setCustomBadgeText] = useState(
     user?.patreon?.customBadgeText || ''
   );
@@ -195,10 +265,7 @@ function SettingsScreen() {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
-  const [aboutSelection, setAboutSelection] = useState<{
-    start: number;
-    end: number;
-  } | null>(null);
+  const aboutSelectionRef = useRef<{ start: number; end: number } | null>(null);
   const imageUrlInputRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -230,7 +297,10 @@ function SettingsScreen() {
       }
 
       setUser(data);
-      setAbout(data.about || '');
+      aboutRef.current = data.about || '';
+      if (aboutTextareaRef.current) {
+        aboutTextareaRef.current.value = aboutRef.current;
+      }
       if (avatarInputRef.current) {
         avatarInputRef.current.value = '';
       }
@@ -353,7 +423,10 @@ function SettingsScreen() {
   }, [user, isInitialized, detectedTimezone]);
 
   useEffect(() => {
-    setAbout(user?.about || '');
+    aboutRef.current = user?.about || '';
+    if (aboutTextareaRef.current) {
+      aboutTextareaRef.current.value = aboutRef.current;
+    }
   }, [user?.about]);
 
   // Auto-save preferences when they change (only after initialization)
@@ -743,36 +816,36 @@ function SettingsScreen() {
 
   const needsLineBreak = useCallback(() => {
     const textarea = aboutTextareaRef.current;
-    const selectionStart = textarea?.selectionStart ?? about.length;
+    const selectionStart = textarea?.selectionStart ?? aboutRef.current.length;
     if (selectionStart === 0) return false;
-    return about[selectionStart - 1] !== '\n';
-  }, [about]);
+    return aboutRef.current[selectionStart - 1] !== '\n';
+  }, []);
 
   const insertMarkdownSnippet = useCallback(
     (prefix: string, suffix = '', placeholder = 'text') => {
       const textarea = aboutTextareaRef.current;
       if (!textarea) return;
 
-      const selectionStart = textarea.selectionStart ?? about.length;
-      const selectionEnd = textarea.selectionEnd ?? about.length;
+      const selectionStart = textarea.selectionStart ?? aboutRef.current.length;
+      const selectionEnd = textarea.selectionEnd ?? aboutRef.current.length;
       const selectedText =
         selectionStart !== selectionEnd
-          ? about.slice(selectionStart, selectionEnd)
+          ? aboutRef.current.slice(selectionStart, selectionEnd)
           : placeholder;
 
       const newValue =
-        about.slice(0, selectionStart) +
+        aboutRef.current.slice(0, selectionStart) +
         prefix +
         selectedText +
         suffix +
-        about.slice(selectionEnd);
+        aboutRef.current.slice(selectionEnd);
 
       if (newValue.length > ABOUT_MAX_LENGTH) {
         toast.error('About Me text is at the maximum length.');
         return;
       }
 
-      setAbout(newValue);
+      aboutRef.current = newValue;
 
       requestAnimationFrame(() => {
         textarea.focus();
@@ -781,7 +854,7 @@ function SettingsScreen() {
         textarea.setSelectionRange(startPos, endPos);
       });
     },
-    [about]
+    []
   );
 
   const insertHeading = useCallback(
@@ -853,8 +926,8 @@ function SettingsScreen() {
     formData.append('discordId', discordId);
 
     const storedAbout = user?.about ?? '';
-    if (about !== storedAbout) {
-      formData.append('about', about);
+    if (aboutRef.current !== storedAbout) {
+      formData.append('about', aboutRef.current);
     }
 
     if (croppedAvatarFile) {
@@ -1157,6 +1230,7 @@ function SettingsScreen() {
     }
     return sanitizeHex(candidate) ?? '#ffffff';
   }, [pendingBadgeTextColor, badgeTextColor]);
+  console.log('render');
   return (
     <div className="min-h-screen bg-base-200 mt-16">
       <dialog
@@ -1464,10 +1538,10 @@ function SettingsScreen() {
                           onClick={() => {
                             const textarea = aboutTextareaRef.current;
                             if (textarea) {
-                              setAboutSelection({
+                              aboutSelectionRef.current = {
                                 start: textarea.selectionStart,
                                 end: textarea.selectionEnd,
-                              });
+                              };
                             }
                             setImageUrl('');
                             setImageAlt('');
@@ -1479,35 +1553,15 @@ function SettingsScreen() {
                           <ImageIcon className="w-4 h-4" />
                         </button>
                       </div>
-                      <textarea
-                        className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-32"
-                        placeholder="Share a bit about your immersion journey (Markdown supported)"
-                        value={about}
+                      <AboutEditor
+                        aboutRef={aboutRef}
+                        aboutTextareaRef={aboutTextareaRef}
+                        aboutSelectionRef={aboutSelectionRef}
                         maxLength={ABOUT_MAX_LENGTH}
-                        ref={aboutTextareaRef}
-                        onChange={(e) => setAbout(e.target.value)}
-                        onFocus={(e) => {
-                          setAboutSelection({
-                            start: e.currentTarget.selectionStart,
-                            end: e.currentTarget.selectionEnd,
-                          });
+                        onSelectionChange={(selection) => {
+                          aboutSelectionRef.current = selection;
                         }}
-                        onSelect={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          setAboutSelection({
-                            start: target.selectionStart,
-                            end: target.selectionEnd,
-                          });
-                        }}
-                      ></textarea>
-                      <label className="label flex justify-between">
-                        <span className="label-text-alt text-base-content/60">
-                          Supports Markdown.
-                        </span>
-                        <span className="label-text-alt text-base-content/60">
-                          {about.length}/{ABOUT_MAX_LENGTH}
-                        </span>
-                      </label>
+                      />
                     </div>
 
                     <div className="form-control">
@@ -2857,8 +2911,8 @@ function SettingsScreen() {
                 }
                 const url = imageUrl.trim();
                 const alt = imageAlt.trim() || 'Image';
-                if (aboutSelection) {
-                  const { start, end } = aboutSelection;
+                if (aboutSelectionRef.current) {
+                  const { start, end } = aboutSelectionRef.current;
                   const textarea = aboutTextareaRef.current;
                   if (textarea) {
                     textarea.setSelectionRange(start, end);
