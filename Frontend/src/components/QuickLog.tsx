@@ -14,9 +14,28 @@ interface QuickLogProps {
   onClose: () => void;
   media?: IMediaDocument; // Add optional media prop
   onLogged?: () => void | Promise<void>;
+  initialValues?: QuickLogInitialValues;
+  allowedTypes?: ILog['type'][];
 }
 
-function QuickLog({ open, onClose, media, onLogged }: QuickLogProps) {
+export interface QuickLogInitialValues {
+  type?: ILog['type'];
+  description?: string;
+  episodes?: number;
+  chars?: number;
+  pages?: number;
+  hours?: number;
+  minutes?: number;
+}
+
+function QuickLog({
+  open,
+  onClose,
+  media,
+  onLogged,
+  initialValues,
+  allowedTypes,
+}: QuickLogProps) {
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
   const [logDescription, setLogDescription] = useState<string>('');
   const [episodes, setEpisodes] = useState<number>(0);
@@ -34,6 +53,7 @@ function QuickLog({ open, onClose, media, onLogged }: QuickLogProps) {
     undefined
   );
   const suggestionRef = useRef<HTMLDivElement>(null);
+  const lastSeedRef = useRef<string | null>(null);
 
   const queryClient = useQueryClient();
   const totalMinutes = hours * 60 + minutes;
@@ -113,6 +133,41 @@ function QuickLog({ open, onClose, media, onLogged }: QuickLogProps) {
     }
   );
 
+  useEffect(() => {
+    if (!open) {
+      lastSeedRef.current = null;
+      return;
+    }
+
+    if (!initialValues) return;
+
+    const serialized = JSON.stringify(initialValues);
+    if (lastSeedRef.current === serialized) return;
+    lastSeedRef.current = serialized;
+
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'type')) {
+      setLogType(initialValues.type ?? null);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'description')) {
+      setLogDescription(initialValues.description ?? '');
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'episodes')) {
+      setEpisodes(initialValues.episodes ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'chars')) {
+      setChars(initialValues.chars ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'pages')) {
+      setPages(initialValues.pages ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'hours')) {
+      setHours(initialValues.hours ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'minutes')) {
+      setMinutes(initialValues.minutes ?? 0);
+    }
+  }, [open, initialValues]);
+
   const { mutate, isPending } = useMutation({
     mutationFn: createLogFn,
     onSuccess: () => {
@@ -175,6 +230,7 @@ function QuickLog({ open, onClose, media, onLogged }: QuickLogProps) {
     setDefaultDuration(0);
     setCustomDuration(undefined);
     setShowTime(false);
+    lastSeedRef.current = null;
     onClose();
   }
 
@@ -328,13 +384,23 @@ function QuickLog({ open, onClose, media, onLogged }: QuickLogProps) {
                         <option disabled value="Log type">
                           Log type
                         </option>
-                        <option value="anime">Anime</option>
-                        <option value="manga">Manga</option>
-                        <option value="vn">Visual Novel</option>
-                        <option value="video">Video</option>
-                        <option value="movie">Movie</option>
-                        <option value="reading">Reading</option>
-                        <option value="audio">Audio</option>
+                        {(
+                          allowedTypes ?? [
+                            'anime',
+                            'manga',
+                            'vn',
+                            'video',
+                            'movie',
+                            'reading',
+                            'audio',
+                          ]
+                        ).map((type) => (
+                          <option key={type} value={type}>
+                            {type === 'vn'
+                              ? 'Visual Novel'
+                              : type.charAt(0).toUpperCase() + type.slice(1)}
+                          </option>
+                        ))}
                       </select>
                     </div>
 

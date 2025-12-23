@@ -840,3 +840,21 @@ export type SearchResultType = OptionalExceptFor<
   IMediaDocument,
   '_id' | 'contentId' | 'title' | 'contentImage' | 'isAdult' | 'type'
 >;
+
+export interface ITextLine {
+  id: string;
+  text: string;
+  charsCount: number;
+  createdAt: string;
+}
+
+export interface ITextSession {
+  _id: string;
+  roomId?: string;
+  userId?: string;
+  mediaId?: string | IMediaDocument;
+  lines: ITextLine[];
+  createdAt: string;
+  updatedAt?: string;
+}
+

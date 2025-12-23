@@ -20,6 +20,7 @@ import ogImageRoutes from './routes/ogImage.routes.js';
 import patreonRoutes from './routes/patreon.routes.js';
 import tagRoutes from './routes/tag.routes.js';
 import changelogRoutes from './routes/changelog.routes.js';
+import textSessionRoutes from './routes/textSession.routes.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/texthooker', textSessionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api/clubs', clubRoutes);

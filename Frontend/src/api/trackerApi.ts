@@ -22,6 +22,8 @@ import {
   ITag,
   SearchResultType,
   IRankingSummary,
+  ITextSession,
+  ITextLine,
 } from '../types';
 
 const api = axiosInstance;
@@ -830,5 +832,49 @@ export async function deleteChangelogFn(
   id: string
 ): Promise<{ message: string }> {
   const { data } = await api.delete(`changelogs/${id}`);
+  return data;
+}
+
+export async function getRecentTextSessionsFn(): Promise<{
+  sessions: ITextSession[];
+  stats: {
+    totalSessions: number;
+    totalLines: number;
+    totalChars: number;
+  };
+}> {
+  const { data } = await api.get('texthooker/recent');
+  return data;
+}
+
+export async function getTextSessionFn(
+  contentId: string
+): Promise<ITextSession> {
+  const { data } = await api.get<ITextSession>(`texthooker/${contentId}`);
+  return data;
+}
+
+export async function addLinesToSessionFn(
+  contentId: string,
+  lines: Partial<ITextLine>[]
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>(
+    `texthooker/${contentId}/lines`,
+    { lines }
+  );
+  return data;
+}
+
+export async function checkRoomExistsFn(
+  roomId: string
+): Promise<{ exists: boolean }> {
+  const { data } = await api.get<{ exists: boolean }>(
+    `texthooker/room/${roomId}/exists`
+  );
+  return data;
+}
+
+export async function deleteTextSessionFn(contentId: string) {
+  const { data } = await api.delete(`texthooker/${contentId}`);
   return data;
 }

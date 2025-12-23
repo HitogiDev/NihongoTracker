@@ -347,6 +347,17 @@ export default function MediaHeader() {
                   >
                     Log
                   </button>
+                  {isOwnProfile &&
+                    (media?.type === 'reading' || media?.type === 'vn') && (
+                      <button
+                        className="btn btn-secondary w-full"
+                        onClick={() =>
+                          navigate(`/texthooker/${media.contentId}`)
+                        }
+                      >
+                        TextHooker
+                      </button>
+                    )}
                   {isOwnProfile && media?.contentId && media?.type && (
                     <div className="flex flex-col gap-1">
                       <button

@@ -35,6 +35,7 @@ import RegisterScreen from './screens/RegisterScreen.tsx';
 import SettingsScreen from './screens/SettingsScreen.tsx';
 import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
+import TextHooker from './screens/HookerScreen.tsx';
 import MediaSocial from './screens/MediaSocial.tsx';
 import AdminScreen from './screens/AdminScreen.tsx';
 import ClubsScreen from './screens/ClubsScreen.tsx';
@@ -53,52 +54,69 @@ import ChangelogScreen from './screens/ChangelogScreen.tsx';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen.tsx';
 import ResetPasswordScreen from './screens/ResetPasswordScreen.tsx';
 import VerifyEmailScreen from './screens/VerifyEmailScreen.tsx';
+import TextHookerDashboard from './screens/TextHookerDashboard.tsx';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<App />}>
-      <Route index={true} path="/" element={<HomeScreen />} />
-      <Route path="login" element={<LoginScreen />} />
-      <Route path="register" element={<RegisterScreen />} />
-      <Route path="forgot-password" element={<ForgotPasswordScreen />} />
-      <Route path="reset-password/:token" element={<ResetPasswordScreen />} />
-      <Route path="verify-email/:token" element={<VerifyEmailScreen />} />
-      <Route path="settings" element={<SettingsScreen />} />
-      <Route path="ranking" element={<RankingScreen />} />
-      <Route path="clubs" element={<ClubsScreen />} />
-      <Route path="clubs/create" element={<CreateClubScreen />} />
-      <Route path="clubs/:clubId" element={<ClubDetailScreen />} />
-      <Route path="clubs/:clubId/media/:mediaId" element={<ClubMediaHeader />}>
-        <Route index element={<ClubMediaInfo />} />
-        <Route path="activity" element={<ClubMediaActivity />} />
-        <Route path="reviews" element={<ClubMediaReviews />} />
-        <Route path="rankings" element={<ClubMediaRankings />} />
-      </Route>
-      <Route path="calculator" element={<CalculatorScreen />} />
-      <Route path="features" element={<FeaturesScreen />} />
-      <Route path="about" element={<AboutScreen />} />
-      <Route path="support" element={<SupportScreen />} />
-      <Route path="privacy" element={<PrivacyPolicyScreen />} />
-      <Route path="terms" element={<TermsOfServiceScreen />} />
-      <Route path="changelog" element={<ChangelogScreen />} />
-      <Route path="admin" element={<AdminScreen />} />
-      <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
-      <Route path="user/:username" element={<ProfileHeader />}>
-        <Route index element={<ProfileScreen />} />
-        <Route path="stats" element={<StatsScreen />} />
-        <Route path="list" element={<ListScreen />} />
-        <Route path="goals" element={<GoalsScreen />} />
-      </Route>
+    <Route path="/">
       <Route element={<ProtectedRoutes />}>
-        <Route index path="createlog" element={<LogScreen />} />
-        <Route path="matchmedia" element={<MatchMedia />} />
+        <Route path=":mediaType/:mediaId/texthooker" element={<TextHooker />} />
+        <Route path="texthooker/:contentId" element={<TextHooker />} />
+        <Route path="texthooker/session" element={<TextHooker />} />
       </Route>
-      <Route path=":mediaType/:mediaId/:username?" element={<MediaHeader />}>
-        <Route index element={<MediaDetails />} />
-        <Route path="social" element={<MediaSocial />} />
+      <Route path="/" element={<App />}>
+        <Route index={true} path="/" element={<HomeScreen />} />
+        <Route path="login" element={<LoginScreen />} />
+        <Route path="register" element={<RegisterScreen />} />
+        <Route path="forgot-password" element={<ForgotPasswordScreen />} />
+        <Route path="reset-password/:token" element={<ResetPasswordScreen />} />
+        <Route path="verify-email/:token" element={<VerifyEmailScreen />} />
+        <Route path="settings" element={<SettingsScreen />} />
+        <Route path="ranking" element={<RankingScreen />} />
+        <Route path="clubs" element={<ClubsScreen />} />
+        <Route path="clubs/create" element={<CreateClubScreen />} />
+        <Route path="clubs/:clubId" element={<ClubDetailScreen />} />
+        <Route
+          path="clubs/:clubId/media/:mediaId"
+          element={<ClubMediaHeader />}
+        >
+          <Route index element={<ClubMediaInfo />} />
+          <Route path="activity" element={<ClubMediaActivity />} />
+          <Route path="reviews" element={<ClubMediaReviews />} />
+          <Route path="rankings" element={<ClubMediaRankings />} />
+        </Route>
+        <Route path="calculator" element={<CalculatorScreen />} />
+        <Route path="features" element={<FeaturesScreen />} />
+        <Route path="about" element={<AboutScreen />} />
+        <Route path="support" element={<SupportScreen />} />
+        <Route path="privacy" element={<PrivacyPolicyScreen />} />
+        <Route path="terms" element={<TermsOfServiceScreen />} />
+        <Route path="changelog" element={<ChangelogScreen />} />
+        <Route path="texthooker" element={<TextHookerDashboard />} />
+        <Route path="admin" element={<AdminScreen />} />
+        <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
+        <Route path="user/:username" element={<ProfileHeader />}>
+          <Route index element={<ProfileScreen />} />
+          <Route path="stats" element={<StatsScreen />} />
+          <Route path="list" element={<ListScreen />} />
+          <Route path="goals" element={<GoalsScreen />} />
+        </Route>
+        <Route element={<ProtectedRoutes />}>
+          <Route index path="createlog" element={<LogScreen />} />
+          <Route path="matchmedia" element={<MatchMedia />} />
+          <Route
+            path=":mediaType/:mediaId/texthooker"
+            element={<TextHooker />}
+          />
+          <Route path="texthooker/session" element={<TextHooker />} />
+        </Route>
+        <Route path=":mediaType/:mediaId/:username?" element={<MediaHeader />}>
+          <Route index element={<MediaDetails />} />
+          <Route path="social" element={<MediaSocial />} />
+        </Route>
+        <Route path="404" element={<NotFound />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
-      <Route path="404" element={<NotFound />} />
-      <Route path="*" element={<NotFound />} />
     </Route>
   )
 );

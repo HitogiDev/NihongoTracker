@@ -7,7 +7,7 @@ export interface ValidationResult {
 
 export const validateUsername = (username: string): string => {
   if (!username.trim()) return 'Username is required';
-  if (username.length < 3) return 'Username must be at least 3 characters';
+  if (username.length < 1) return 'Username must be at least 1 character';
   if (username.length > 20) return 'Username must be less than 20 characters';
   if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
     return 'Username can only contain letters, numbers, hyphens, and underscores';

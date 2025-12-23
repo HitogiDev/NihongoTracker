@@ -774,3 +774,21 @@ export interface manabeLogs {
   createdAt: string;
   officialId?: string;
 }
+
+export interface ITextLine {
+  id: string;
+  text: string;
+  charsCount: number;
+  createdAt: Date;
+}
+
+export interface ITextSession extends Document {
+  roomId: string;
+  hostToken?: string;
+  userId?: Types.ObjectId;
+  mediaId?: Types.ObjectId;
+  lines: ITextLine[];
+  createdAt: Date;
+  updatedAt?: Date;
+  expireAt?: Date;
+}
