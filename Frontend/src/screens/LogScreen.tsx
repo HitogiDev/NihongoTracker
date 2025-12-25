@@ -871,17 +871,12 @@ function LogScreen() {
                                 value={logData.hours || ''}
                                 onInput={preventNegativeValues}
                               />
-                              <label className="label">
-                                <span className="label-text-alt">
-                                  Hours (0-24)
-                                </span>
-                              </label>
                             </div>
                             <div className="form-control w-1/2">
                               <input
                                 type="number"
                                 min="0"
-                                max="59"
+                                max="1440"
                                 placeholder="Minutes"
                                 className={`input input-bordered w-full ${
                                   errors.minutes || errors.time
@@ -897,11 +892,6 @@ function LogScreen() {
                                 value={logData.minutes || ''}
                                 onInput={preventNegativeValues}
                               />
-                              <label className="label">
-                                <span className="label-text-alt">
-                                  Minutes (0-59)
-                                </span>
-                              </label>
                             </div>
                           </div>
                           {(errors.time || errors.hours || errors.minutes) && (

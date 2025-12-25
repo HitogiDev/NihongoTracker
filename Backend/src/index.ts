@@ -11,9 +11,32 @@ connectDB();
 
 const httpServer = createServer(app);
 
+// In production, allow same-origin (when frontend is served from same server)
+// plus any explicitly configured FRONTEND_URL or PROD_DOMAIN
+const corsOrigins: (string | boolean)[] = [];
+if (process.env.FRONTEND_URL) {
+  corsOrigins.push(process.env.FRONTEND_URL);
+}
+if (
+  process.env.PROD_DOMAIN &&
+  process.env.PROD_DOMAIN !== process.env.FRONTEND_URL
+) {
+  corsOrigins.push(process.env.PROD_DOMAIN);
+}
+// In production, also allow same-origin connections
+if (process.env.NODE_ENV === 'production') {
+  corsOrigins.push(true); // Allow same-origin
+}
+// Default for development
+if (corsOrigins.length === 0) {
+  corsOrigins.push('http://localhost:5173');
+}
+
+console.log('Socket.IO CORS origins:', corsOrigins);
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },

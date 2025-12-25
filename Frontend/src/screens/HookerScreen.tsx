@@ -247,16 +247,23 @@ function TextHooker() {
     }
 
     console.log('Connecting socket for user:', user?.username || 'Anonymous');
-    const newSocket = io(
-      import.meta.env.VITE_API_URL || 'http://localhost:3000',
-      {
-        withCredentials: true, // This ensures cookies are sent
-      }
-    );
+    // In production (same origin), use undefined to let socket.io auto-detect
+    // In development, use VITE_API_URL or fallback
+    const socketUrl =
+      import.meta.env.VITE_API_URL ||
+      (window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : undefined);
+    console.log('Socket.IO connecting to:', socketUrl || 'same origin');
+    const newSocket = io(socketUrl, {
+      withCredentials: true, // This ensures cookies are sent
+    });
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
+      console.log('Socket.IO connected successfully, socket id:', newSocket.id);
       if (roomId) {
+        console.log('Emitting join_room for room:', roomId, 'as', mode);
         newSocket.emit('join_room', {
           roomId,
           role: mode,
@@ -267,9 +274,19 @@ function TextHooker() {
       }
     });
 
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket.IO connection error:', error.message);
+      toast.error(`Connection failed: ${error.message}`);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('Socket.IO disconnected:', reason);
+    });
+
     newSocket.on(
       'room_created',
       (data: { roomId: string; hostToken: string }) => {
+        console.log('Room created:', data);
         if (data.roomId === roomId) {
           setHostToken(data.hostToken);
           localStorage.setItem(`hostToken_${roomId}`, data.hostToken);

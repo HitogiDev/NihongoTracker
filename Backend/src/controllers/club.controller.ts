@@ -21,13 +21,6 @@ import {
   updateVotingStatusesForClub,
 } from '../services/clubMediaVoting.js';
 
-// Roles ordering helper for permission checks
-const rolePriority: Record<'leader' | 'moderator' | 'member', number> = {
-  leader: 0,
-  moderator: 1,
-  member: 2,
-};
-
 export async function getClubs(
   req: Request,
   res: Response,

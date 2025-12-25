@@ -4,6 +4,8 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  forwardRef,
+  useImperativeHandle,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -126,73 +128,173 @@ const isPresetTextColor = (value: string | null | undefined): boolean => {
 
 type AboutEditorProps = {
   aboutRef: React.MutableRefObject<string>;
-  aboutTextareaRef: React.RefObject<HTMLTextAreaElement>;
-  aboutSelectionRef: React.MutableRefObject<{
-    start: number;
-    end: number;
-  } | null>;
   maxLength: number;
   onSelectionChange?: (
     selection: { start: number; end: number } | null
   ) => void;
+  initialValue?: string; // Used to trigger re-sync when user data changes
+  onSave?: () => void;
+  isSaving?: boolean;
 };
 
-function AboutEditor({
-  aboutRef,
-  aboutTextareaRef,
-  aboutSelectionRef,
-  maxLength,
-  onSelectionChange,
-}: AboutEditorProps) {
-  const [length, setLength] = useState(aboutRef.current.length);
-  const lengthTimeoutRef = useRef<number | null>(null);
+export type AboutEditorHandle = {
+  insertSnippet: (prefix: string, suffix: string, placeholder: string) => void;
+  getTextarea: () => HTMLTextAreaElement | null;
+  needsLineBreak: () => boolean;
+};
 
-  return (
-    <>
-      <textarea
-        className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-32"
-        placeholder="Share a bit about your immersion journey (Markdown supported)"
-        defaultValue={aboutRef.current}
-        maxLength={maxLength}
-        ref={aboutTextareaRef}
-        onChange={(e) => {
-          aboutRef.current = e.target.value;
-          if (lengthTimeoutRef.current === null) {
-            lengthTimeoutRef.current = window.setTimeout(() => {
-              setLength(aboutRef.current.length);
-              lengthTimeoutRef.current = null;
-            }, 120);
-          }
-        }}
-        onFocus={(e) => {
-          const selection = {
-            start: e.currentTarget.selectionStart,
-            end: e.currentTarget.selectionEnd,
-          };
-          aboutSelectionRef.current = selection;
-          onSelectionChange?.(selection);
-        }}
-        onSelect={(e) => {
-          const target = e.target as HTMLTextAreaElement;
-          const selection = {
-            start: target.selectionStart,
-            end: target.selectionEnd,
-          };
-          aboutSelectionRef.current = selection;
-          onSelectionChange?.(selection);
-        }}
-      ></textarea>
-      <label className="label flex justify-between">
-        <span className="label-text-alt text-base-content/60">
-          Supports Markdown.
-        </span>
-        <span className="label-text-alt text-base-content/60">
-          {length}/{maxLength}
-        </span>
-      </label>
-    </>
-  );
-}
+const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
+  function AboutEditor(
+    { aboutRef, maxLength, onSelectionChange, initialValue, onSave, isSaving },
+    ref
+  ) {
+    const [length, setLength] = useState(aboutRef.current.length);
+    const [value, setValue] = useState(aboutRef.current);
+    const [isDirty, setIsDirty] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const lengthTimeoutRef = useRef<number | null>(null);
+
+    // Sync when initialValue changes (e.g., on user data load)
+    useEffect(() => {
+      if (initialValue !== undefined && initialValue !== value) {
+        setValue(initialValue);
+        setLength(initialValue.length);
+        aboutRef.current = initialValue;
+        setIsDirty(false);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialValue, aboutRef]);
+
+    // Reset dirty state after save completes
+    useEffect(() => {
+      if (!isSaving && isDirty && initialValue === value) {
+        setIsDirty(false);
+      }
+    }, [isSaving, isDirty, initialValue, value]);
+
+    const needsLineBreak = useCallback(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return false;
+      const selectionStart = textarea.selectionStart ?? value.length;
+      if (selectionStart === 0) return false;
+      return value[selectionStart - 1] !== '\n';
+    }, [value]);
+
+    const insertSnippet = useCallback(
+      (prefix: string, suffix: string, placeholder: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const selectionStart = textarea.selectionStart ?? value.length;
+        const selectionEnd = textarea.selectionEnd ?? value.length;
+        const selectedText =
+          selectionStart !== selectionEnd
+            ? value.slice(selectionStart, selectionEnd)
+            : placeholder;
+
+        const newValue =
+          value.slice(0, selectionStart) +
+          prefix +
+          selectedText +
+          suffix +
+          value.slice(selectionEnd);
+
+        if (newValue.length > maxLength) {
+          toast.error('About Me text is at the maximum length.');
+          return;
+        }
+
+        setValue(newValue);
+        aboutRef.current = newValue;
+        setLength(newValue.length);
+
+        // Set cursor position after React re-renders
+        requestAnimationFrame(() => {
+          textarea.focus();
+          const startPos = selectionStart + prefix.length;
+          const endPos = startPos + selectedText.length;
+          textarea.setSelectionRange(startPos, endPos);
+        });
+      },
+      [value, maxLength, aboutRef]
+    );
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        insertSnippet,
+        getTextarea: () => textareaRef.current,
+        needsLineBreak,
+      }),
+      [insertSnippet, needsLineBreak]
+    );
+
+    return (
+      <>
+        <textarea
+          className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-32"
+          placeholder="Share a bit about your immersion journey (Markdown supported)"
+          value={value}
+          maxLength={maxLength}
+          ref={textareaRef}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            aboutRef.current = newValue;
+            setIsDirty(newValue !== (initialValue || ''));
+            if (lengthTimeoutRef.current === null) {
+              lengthTimeoutRef.current = window.setTimeout(() => {
+                setLength(newValue.length);
+                lengthTimeoutRef.current = null;
+              }, 120);
+            }
+          }}
+          onFocus={(e) => {
+            const selection = {
+              start: e.currentTarget.selectionStart,
+              end: e.currentTarget.selectionEnd,
+            };
+            onSelectionChange?.(selection);
+          }}
+          onSelect={(e) => {
+            const target = e.target as HTMLTextAreaElement;
+            const selection = {
+              start: target.selectionStart,
+              end: target.selectionEnd,
+            };
+            onSelectionChange?.(selection);
+          }}
+        ></textarea>
+        <div className="flex justify-between items-center">
+          <label className="label py-1">
+            <span className="label-text-alt text-base-content/60">
+              Supports Markdown.
+            </span>
+          </label>
+          <span className="label-text-alt text-base-content/60">
+            {length}/{maxLength}
+          </span>
+        </div>
+        {onSave && isDirty && (
+          <div className="flex justify-end mt-2">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={onSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                'Save About'
+              )}
+            </button>
+          </div>
+        )}
+      </>
+    );
+  }
+);
 
 function SettingsScreen() {
   const navigate = useNavigate();
@@ -261,11 +363,10 @@ function SettingsScreen() {
   const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
-  const aboutTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const aboutEditorRef = useRef<AboutEditorHandle>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
-  const aboutSelectionRef = useRef<{ start: number; end: number } | null>(null);
   const imageUrlInputRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -298,9 +399,7 @@ function SettingsScreen() {
 
       setUser(data);
       aboutRef.current = data.about || '';
-      if (aboutTextareaRef.current) {
-        aboutTextareaRef.current.value = aboutRef.current;
-      }
+      // AboutEditor will sync automatically via useEffect
       if (avatarInputRef.current) {
         avatarInputRef.current.value = '';
       }
@@ -329,6 +428,34 @@ function SettingsScreen() {
       }
     },
   });
+
+  // Mutation for saving just the about section
+  const { mutate: saveAbout, isPending: isSavingAbout } = useMutation({
+    mutationFn: updateUserFn,
+    onSuccess: (data: ILoginResponse) => {
+      toast.success('About updated');
+      setUser(data);
+      aboutRef.current = data.about || '';
+      void queryClient.invalidateQueries({
+        predicate: (query) => {
+          return ['user', 'ranking'].includes(query.queryKey[0] as string);
+        },
+      });
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message);
+      } else {
+        toast.error(error.message ? error.message : 'An error occurred');
+      }
+    },
+  });
+
+  const handleSaveAbout = useCallback(() => {
+    const formData = new FormData();
+    formData.append('about', aboutRef.current);
+    saveAbout(formData);
+  }, [saveAbout]);
 
   // Separate mutation for auto-saving preferences
   const { mutate: updatePreferences, isPending: isPreferencesPending } =
@@ -424,9 +551,7 @@ function SettingsScreen() {
 
   useEffect(() => {
     aboutRef.current = user?.about || '';
-    if (aboutTextareaRef.current) {
-      aboutTextareaRef.current.value = aboutRef.current;
-    }
+    // AboutEditor will sync automatically via useEffect watching aboutRef.current
   }, [user?.about]);
 
   // Auto-save preferences when they change (only after initialization)
@@ -814,93 +939,56 @@ function SettingsScreen() {
     setPendingBadgeTextColor(null);
   }, [pendingBadgeTextColor, badgeTextColor]);
 
-  const needsLineBreak = useCallback(() => {
-    const textarea = aboutTextareaRef.current;
-    const selectionStart = textarea?.selectionStart ?? aboutRef.current.length;
-    if (selectionStart === 0) return false;
-    return aboutRef.current[selectionStart - 1] !== '\n';
+  const insertHeading = useCallback((level: 1 | 2 | 3) => {
+    const editor = aboutEditorRef.current;
+    if (!editor) return;
+    const hashes = '#'.repeat(level);
+    const prefix = `${editor.needsLineBreak() ? '\n' : ''}${hashes} `;
+    editor.insertSnippet(prefix, '', `Heading ${level}`);
   }, []);
 
-  const insertMarkdownSnippet = useCallback(
-    (prefix: string, suffix = '', placeholder = 'text') => {
-      const textarea = aboutTextareaRef.current;
-      if (!textarea) return;
-
-      const selectionStart = textarea.selectionStart ?? aboutRef.current.length;
-      const selectionEnd = textarea.selectionEnd ?? aboutRef.current.length;
-      const selectedText =
-        selectionStart !== selectionEnd
-          ? aboutRef.current.slice(selectionStart, selectionEnd)
-          : placeholder;
-
-      const newValue =
-        aboutRef.current.slice(0, selectionStart) +
-        prefix +
-        selectedText +
-        suffix +
-        aboutRef.current.slice(selectionEnd);
-
-      if (newValue.length > ABOUT_MAX_LENGTH) {
-        toast.error('About Me text is at the maximum length.');
-        return;
-      }
-
-      aboutRef.current = newValue;
-
-      requestAnimationFrame(() => {
-        textarea.focus();
-        const startPos = selectionStart + prefix.length;
-        const endPos = startPos + selectedText.length;
-        textarea.setSelectionRange(startPos, endPos);
-      });
-    },
-    []
-  );
-
-  const insertHeading = useCallback(
-    (level: 1 | 2 | 3) => {
-      const hashes = '#'.repeat(level);
-      const prefix = `${needsLineBreak() ? '\n' : ''}${hashes} `;
-      insertMarkdownSnippet(prefix, '', `Heading ${level}`);
-    },
-    [insertMarkdownSnippet, needsLineBreak]
-  );
-
-  const insertListItem = useCallback(
-    (ordered: boolean) => {
-      const bullet = ordered ? '1. ' : '- ';
-      const prefix = `${needsLineBreak() ? '\n' : ''}${bullet}`;
-      insertMarkdownSnippet(prefix, '', 'List item');
-    },
-    [insertMarkdownSnippet, needsLineBreak]
-  );
+  const insertListItem = useCallback((ordered: boolean) => {
+    const editor = aboutEditorRef.current;
+    if (!editor) return;
+    const bullet = ordered ? '1. ' : '- ';
+    const prefix = `${editor.needsLineBreak() ? '\n' : ''}${bullet}`;
+    editor.insertSnippet(prefix, '', 'List item');
+  }, []);
 
   const insertQuote = useCallback(() => {
-    const prefix = `${needsLineBreak() ? '\n' : ''}> `;
-    insertMarkdownSnippet(prefix, '', 'Quote text');
-  }, [insertMarkdownSnippet, needsLineBreak]);
+    const editor = aboutEditorRef.current;
+    if (!editor) return;
+    const prefix = `${editor.needsLineBreak() ? '\n' : ''}> `;
+    editor.insertSnippet(prefix, '', 'Quote text');
+  }, []);
 
   const insertCodeBlock = useCallback(() => {
-    const lineBreak = needsLineBreak() ? '\n' : '';
+    const editor = aboutEditorRef.current;
+    if (!editor) return;
+    const lineBreak = editor.needsLineBreak() ? '\n' : '';
     const prefix = `${lineBreak}\`\`\`\n`;
-    insertMarkdownSnippet(prefix, '\n```\n', 'code sample');
-  }, [insertMarkdownSnippet, needsLineBreak]);
+    editor.insertSnippet(prefix, '\n```\n', 'code sample');
+  }, []);
 
   const insertBold = useCallback(() => {
-    insertMarkdownSnippet('**', '**', 'bold text');
-  }, [insertMarkdownSnippet]);
+    aboutEditorRef.current?.insertSnippet('**', '**', 'bold text');
+  }, []);
 
   const insertItalic = useCallback(() => {
-    insertMarkdownSnippet('*', '*', 'italic text');
-  }, [insertMarkdownSnippet]);
+    aboutEditorRef.current?.insertSnippet('*', '*', 'italic text');
+  }, []);
 
   const insertInlineCode = useCallback(() => {
-    insertMarkdownSnippet('`', '`', 'code');
-  }, [insertMarkdownSnippet]);
+    aboutEditorRef.current?.insertSnippet('`', '`', 'code');
+  }, []);
 
   const insertLink = useCallback(() => {
-    insertMarkdownSnippet('[', '](https://example.com)', 'link text');
-  }, [insertMarkdownSnippet]);
+    aboutEditorRef.current?.insertSnippet(
+      '[',
+      '](https://example.com)',
+      'link text'
+    );
+  }, []);
 
   async function handleUpdateUser(e: React.FormEvent) {
     e.preventDefault();
@@ -1230,7 +1318,7 @@ function SettingsScreen() {
     }
     return sanitizeHex(candidate) ?? '#ffffff';
   }, [pendingBadgeTextColor, badgeTextColor]);
-  console.log('render');
+
   return (
     <div className="min-h-screen bg-base-200 mt-16">
       <dialog
@@ -1536,13 +1624,6 @@ function SettingsScreen() {
                           type="button"
                           className="btn btn-ghost btn-xs"
                           onClick={() => {
-                            const textarea = aboutTextareaRef.current;
-                            if (textarea) {
-                              aboutSelectionRef.current = {
-                                start: textarea.selectionStart,
-                                end: textarea.selectionEnd,
-                              };
-                            }
                             setImageUrl('');
                             setImageAlt('');
                             setIsImageModalOpen(true);
@@ -1554,13 +1635,12 @@ function SettingsScreen() {
                         </button>
                       </div>
                       <AboutEditor
+                        ref={aboutEditorRef}
                         aboutRef={aboutRef}
-                        aboutTextareaRef={aboutTextareaRef}
-                        aboutSelectionRef={aboutSelectionRef}
                         maxLength={ABOUT_MAX_LENGTH}
-                        onSelectionChange={(selection) => {
-                          aboutSelectionRef.current = selection;
-                        }}
+                        initialValue={user?.about || ''}
+                        onSave={handleSaveAbout}
+                        isSaving={isSavingAbout}
                       />
                     </div>
 
@@ -2911,14 +2991,7 @@ function SettingsScreen() {
                 }
                 const url = imageUrl.trim();
                 const alt = imageAlt.trim() || 'Image';
-                if (aboutSelectionRef.current) {
-                  const { start, end } = aboutSelectionRef.current;
-                  const textarea = aboutTextareaRef.current;
-                  if (textarea) {
-                    textarea.setSelectionRange(start, end);
-                  }
-                }
-                insertMarkdownSnippet('![', `](${url})`, alt);
+                aboutEditorRef.current?.insertSnippet('![', `](${url})`, alt);
                 setIsImageModalOpen(false);
               }}
             >

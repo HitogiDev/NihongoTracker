@@ -22,6 +22,8 @@ COPY Frontend ./Frontend
 
 # 6. Build frontend and copy to backend
 WORKDIR /app/Frontend
+# Remove .env.local to ensure production build uses .env.production
+RUN rm -f .env.local
 RUN npm run build
 RUN cp -r dist ../Backend/dist
 

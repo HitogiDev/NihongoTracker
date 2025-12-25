@@ -15,7 +15,7 @@ import {
   MdStar,
   MdMenu,
   MdFavorite,
-  // MdMenuBook,
+  MdMenuBook,
 } from 'react-icons/md';
 import { useUserDataStore } from '../store/userData';
 import { useMutation } from '@tanstack/react-query';
@@ -135,7 +135,7 @@ function Header() {
                     Immersion List
                   </Link>
                 </li>
-                {/* <li>
+                <li>
                   <Link
                     to="/texthooker"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
@@ -143,7 +143,7 @@ function Header() {
                     <MdMenuBook className="text-lg" />
                     Texthooker
                   </Link>
-                </li> */}
+                </li>
 
                 {/* Account Section */}
                 <li>
@@ -277,14 +277,14 @@ function Header() {
                   Immersion List
                 </Link>
               </li>
-              {/* <li>
+              <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/texthooker"
                 >
                   Texthooker
                 </Link>
-              </li> */}
+              </li>
             </ul>
           </div>
         ) : (

@@ -4,43 +4,173 @@ import {
   getRecentTextSessionsFn,
   deleteTextSessionFn,
   checkRoomExistsFn,
+  searchMediaFn,
 } from '../api/trackerApi';
 import Loader from '../components/Loader';
-import { IMediaDocument } from '../types';
-import { BookOpen, Type, List, Trash2, Users, Crown } from 'lucide-react';
+import { IMediaDocument, SearchResultType } from '../types';
+import {
+  BookOpen,
+  Type,
+  List,
+  Trash2,
+  Users,
+  Crown,
+  ChevronDown,
+  Search,
+  Gamepad2,
+  BookText,
+} from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 function TextHookerDashboard() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<{
+    contentId: string;
+    title: string;
+  } | null>(null);
   const [roomMode, setRoomMode] = useState<'host' | 'guest'>('guest');
   const [roomId, setRoomId] = useState('');
   const [isCheckingRoom, setIsCheckingRoom] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
+
+  // Media search state
+  const [mediaType, setMediaType] = useState<'vn' | 'reading'>('vn');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResultType[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<SearchResultType | null>(
+    null
+  );
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ['textSessions', 'recent'],
     queryFn: getRecentTextSessionsFn,
   });
+
+  // Debounced search
+  const handleSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await searchMediaFn({
+          type: mediaType,
+          search: query,
+          perPage: 10,
+        });
+        setSearchResults(results);
+      } catch (error) {
+        toast.error('Failed to search media');
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [mediaType]
+  );
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(searchQuery);
+      }, 300);
+    } else {
+      setSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, handleSearch]);
+
+  // Reset search when media type changes
+  useEffect(() => {
+    setSearchResults([]);
+    setSelectedMedia(null);
+    // Re-search if there's a query when type changes
+    if (searchQuery.trim()) {
+      const search = async () => {
+        setIsSearching(true);
+        try {
+          const results = await searchMediaFn({
+            type: mediaType,
+            search: searchQuery,
+            perPage: 10,
+          });
+          setSearchResults(results);
+        } catch (error) {
+          toast.error('Failed to search media');
+        } finally {
+          setIsSearching(false);
+        }
+      };
+      search();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaType]);
+
+  const handleMediaTypeChange = (type: 'vn' | 'reading') => {
+    setMediaType(type);
+  };
+
+  const handleStartMediaSession = () => {
+    if (selectedMedia) {
+      navigate(`/texthooker/${selectedMedia.contentId}`);
+    }
+  };
+
+  const resetMediaModal = () => {
+    setIsMediaModalOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSelectedMedia(null);
+    setMediaType('vn');
+  };
 
   const deleteMutation = useMutation({
     mutationFn: deleteTextSessionFn,
     onSuccess: () => {
       toast.success('Session deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['textSessions', 'recent'] });
+      setIsDeleteModalOpen(false);
+      setSessionToDelete(null);
     },
     onError: () => {
       toast.error('Failed to delete session');
+      setIsDeleteModalOpen(false);
     },
   });
 
-  const handleDelete = (e: React.MouseEvent, contentId: string) => {
+  const handleDelete = (
+    e: React.MouseEvent,
+    contentId: string,
+    title: string
+  ) => {
     e.preventDefault();
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this session?')) {
-      deleteMutation.mutate(contentId);
+    setSessionToDelete({ contentId, title });
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (sessionToDelete) {
+      deleteMutation.mutate(sessionToDelete.contentId);
     }
   };
 
@@ -114,9 +244,26 @@ function TextHookerDashboard() {
               <Users size={16} />
               Join Room
             </button>
-            <Link to="/texthooker/session" className="btn btn-primary btn-sm">
-              Start Blank Session
-            </Link>
+            <details className="dropdown dropdown-end">
+              <summary className="btn btn-primary btn-sm">
+                Start Session
+                <ChevronDown size={16} />
+              </summary>
+              <ul className="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow-lg mt-1">
+                <li>
+                  <Link to="/texthooker/session">
+                    <Type size={16} />
+                    Blank Session
+                  </Link>
+                </li>
+                <li>
+                  <button onClick={() => setIsMediaModalOpen(true)}>
+                    <BookOpen size={16} />
+                    Media Session
+                  </button>
+                </li>
+              </ul>
+            </details>
           </div>
         </div>
 
@@ -153,7 +300,13 @@ function TextHookerDashboard() {
                       }}
                     />
                     <button
-                      onClick={(e) => handleDelete(e, media.contentId)}
+                      onClick={(e) =>
+                        handleDelete(
+                          e,
+                          media.contentId,
+                          media.title.contentTitleNative
+                        )
+                      }
                       className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
                       title="Delete Session"
                     >
@@ -359,6 +512,255 @@ function TextHookerDashboard() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button onClick={() => setIsJoinRoomOpen(false)}>close</button>
+        </form>
+      </dialog>
+
+      {/* Media Session Modal */}
+      <dialog className={`modal ${isMediaModalOpen ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              Start Media Session
+            </h3>
+            <button
+              onClick={resetMediaModal}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Media Type Selector */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Media Type</span>
+              </label>
+              <div className="flex gap-2">
+                <label
+                  className={`label cursor-pointer border rounded-lg p-3 flex-1 transition-colors ${
+                    mediaType === 'vn'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-300 hover:border-primary'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Gamepad2 size={18} />
+                    <span className="label-text font-medium">Visual Novel</span>
+                  </div>
+                  <input
+                    type="radio"
+                    name="media-type"
+                    className="radio radio-primary radio-sm"
+                    value="vn"
+                    checked={mediaType === 'vn'}
+                    onChange={() => handleMediaTypeChange('vn')}
+                  />
+                </label>
+                <label
+                  className={`label cursor-pointer border rounded-lg p-3 flex-1 transition-colors ${
+                    mediaType === 'reading'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-300 hover:border-primary'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <BookText size={18} />
+                    <span className="label-text font-medium">Reading</span>
+                  </div>
+                  <input
+                    type="radio"
+                    name="media-type"
+                    className="radio radio-primary radio-sm"
+                    value="reading"
+                    checked={mediaType === 'reading'}
+                    onChange={() => handleMediaTypeChange('reading')}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Search Input */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">
+                  Search {mediaType === 'vn' ? 'Visual Novel' : 'Book'}
+                </span>
+              </label>
+              <label className="input w-full flex items-center gap-2">
+                <Search size={16} className="opacity-50" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="grow"
+                  placeholder={`Search for a ${mediaType === 'vn' ? 'visual novel' : 'book'}...`}
+                />
+                {isSearching && (
+                  <span className="loading loading-spinner loading-sm"></span>
+                )}
+              </label>
+            </div>
+
+            {/* Search Results */}
+            <div className="max-h-64 overflow-y-auto">
+              {searchResults.length > 0 ? (
+                <div className="space-y-2">
+                  {searchResults.map((media) => (
+                    <button
+                      key={media._id}
+                      onClick={() => setSelectedMedia(media)}
+                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${
+                        selectedMedia?._id === media._id
+                          ? 'bg-primary/20 border border-primary'
+                          : 'bg-base-200 hover:bg-base-300 border border-transparent'
+                      }`}
+                    >
+                      <img
+                        src={media.contentImage || media.coverImage}
+                        alt={media.title?.contentTitleNative || 'Cover'}
+                        className="w-12 h-16 object-cover rounded"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm line-clamp-2">
+                          {media.title?.contentTitleNative ||
+                            media.title?.contentTitleEnglish ||
+                            'Unknown Title'}
+                        </p>
+                        {media.title?.contentTitleEnglish &&
+                          media.title?.contentTitleNative && (
+                            <p className="text-xs text-base-content/60 line-clamp-1">
+                              {media.title.contentTitleEnglish}
+                            </p>
+                          )}
+                      </div>
+                      {selectedMedia?._id === media._id && (
+                        <div className="badge badge-primary badge-sm">
+                          Selected
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : searchQuery.trim() && !isSearching ? (
+                <div className="text-center py-8 text-base-content/50">
+                  <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p>No results found</p>
+                </div>
+              ) : !searchQuery.trim() ? (
+                <div className="text-center py-8 text-base-content/50">
+                  <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p>
+                    Search for a {mediaType === 'vn' ? 'visual novel' : 'book'}{' '}
+                    to start
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-base-300">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={resetMediaModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!selectedMedia}
+                onClick={handleStartMediaSession}
+              >
+                Start Session
+              </button>
+            </div>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={resetMediaModal}>close</button>
+        </form>
+      </dialog>
+
+      {/* Delete Confirmation Modal */}
+      <dialog className={`modal ${isDeleteModalOpen ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg flex items-center gap-2 text-error">
+              <Trash2 className="w-5 h-5" />
+              Delete Session
+            </h3>
+            <button
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setSessionToDelete(null);
+              }}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-base-content/80">
+              Are you sure you want to delete this session?
+            </p>
+            {sessionToDelete && (
+              <div className="bg-base-200 p-3 rounded-lg">
+                <p className="font-semibold text-sm line-clamp-2">
+                  {sessionToDelete.title}
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-base-content/60">
+              This action cannot be undone. All lines and progress will be
+              permanently deleted.
+            </p>
+
+            <div className="flex gap-2 justify-end mt-6">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSessionToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-error"
+                disabled={deleteMutation.isPending}
+                onClick={confirmDelete}
+              >
+                {deleteMutation.isPending ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button
+            onClick={() => {
+              setIsDeleteModalOpen(false);
+              setSessionToDelete(null);
+            }}
+          >
+            close
+          </button>
         </form>
       </dialog>
     </div>
