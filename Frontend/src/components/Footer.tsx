@@ -25,13 +25,19 @@ function Footer() {
           Terms of Service
         </Link>
         <Link
+          to="/refund-policy"
+          className="text-sm hover:text-primary transition-colors"
+        >
+          Refund Policy
+        </Link>
+        <Link
           to="/changelog"
           className="text-sm hover:text-primary transition-colors"
         >
           Changelog
         </Link>
         <Link
-          to="/support"
+          to="/pricing"
           className="flex items-center gap-2 text-base-content hover:text-primary transition-colors duration-200"
         >
           <MdFavorite className="text-xl" />

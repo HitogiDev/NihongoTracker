@@ -50,6 +50,7 @@ import GoalsScreen from './screens/GoalsScreen.tsx';
 import SupportScreen from './screens/SupportScreen.tsx';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen.tsx';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen.tsx';
+import RefundPolicyScreen from './screens/RefundPolicyScreen.tsx';
 import ChangelogScreen from './screens/ChangelogScreen.tsx';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen.tsx';
 import ResetPasswordScreen from './screens/ResetPasswordScreen.tsx';
@@ -88,9 +89,10 @@ const router = createBrowserRouter(
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
         <Route path="about" element={<AboutScreen />} />
-        <Route path="support" element={<SupportScreen />} />
+        <Route path="pricing" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />
         <Route path="terms" element={<TermsOfServiceScreen />} />
+        <Route path="refund-policy" element={<RefundPolicyScreen />} />
         <Route path="changelog" element={<ChangelogScreen />} />
         <Route path="texthooker" element={<TextHookerDashboard />} />
         <Route path="admin" element={<AdminScreen />} />

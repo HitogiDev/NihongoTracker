@@ -450,7 +450,7 @@ function Header() {
                     </li>
                     <li>
                       <Link
-                        to="/support"
+                        to="/pricing"
                         className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                       >
                         <MdFavorite />

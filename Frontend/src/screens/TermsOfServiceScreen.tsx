@@ -3,7 +3,7 @@ function TermsOfServiceScreen() {
     <div className="container mx-auto px-4 py-8 pt-32 max-w-4xl">
       <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
       <p className="text-base-content/70 mb-8">
-        Last Updated: October 18, 2025
+        Last Updated: December 25, 2025
       </p>
 
       <div className="prose prose-lg max-w-none">
@@ -238,9 +238,13 @@ function TermsOfServiceScreen() {
 
           <h3 className="text-xl font-semibold mb-3 mt-6">7.5 Refunds</h3>
           <p>
-            Refunds for Patreon subscriptions are handled directly by Patreon
-            according to their refund policy. NihongoTracker does not process
-            refunds for Patreon subscriptions.
+            We offer refunds within 7 days of purchase for subscription
+            payments. For complete details about our refund process,
+            eligibility, and how to request a refund, please see our{' '}
+            <a href="/refund-policy" className="text-primary hover:underline">
+              Refund Policy
+            </a>
+            .
           </p>
         </section>
 
@@ -424,6 +428,20 @@ function TermsOfServiceScreen() {
         <div className="text-center text-base-content/60">
           <p className="font-semibold">NihongoTracker</p>
           <p className="text-sm">A Japanese immersion tracker</p>
+          <p className="text-sm mt-2">
+            See also:{' '}
+            <a href="/privacy" className="text-primary hover:underline">
+              Privacy Policy
+            </a>{' '}
+            |{' '}
+            <a href="/refund-policy" className="text-primary hover:underline">
+              Refund Policy
+            </a>{' '}
+            |{' '}
+            <a href="/pricing" className="text-primary hover:underline">
+              Support
+            </a>
+          </p>
         </div>
       </div>
     </div>

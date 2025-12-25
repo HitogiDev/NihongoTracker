@@ -187,7 +187,7 @@ export default function TagManager() {
               {!user?.patreon?.tier && (
                 <span className="ml-1">
                   -{' '}
-                  <a href="/support" className="link">
+                  <a href="/pricing" className="link">
                     Upgrade to Patreon
                   </a>{' '}
                   for more tags
