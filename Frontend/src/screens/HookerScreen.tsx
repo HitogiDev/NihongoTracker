@@ -85,9 +85,17 @@ function TextHooker() {
     useState<QuickLogInitialValues | null>(null);
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
   const [lines, setLines] = useState<LineEntry[]>([]);
-  const [vertical, setVertical] = useState(false);
-  const [lineSpacing, setLineSpacing] = useState(1.5);
-  const [lineGap, setLineGap] = useState(16);
+  const [vertical, setVertical] = useState(() => {
+    return localStorage.getItem('texthooker_vertical') === 'true';
+  });
+  const [lineSpacing, setLineSpacing] = useState(() => {
+    const saved = localStorage.getItem('texthooker_lineSpacing');
+    return saved ? Number(saved) : 1.5;
+  });
+  const [lineGap, setLineGap] = useState(() => {
+    const saved = localStorage.getItem('texthooker_lineGap');
+    return saved ? Number(saved) : 16;
+  });
   const [lineMarginBlock] = useState(0);
   const [lineMarginInline] = useState(0);
   const [mode, setMode] = useState<'local' | 'host' | 'guest'>('local');
@@ -197,13 +205,43 @@ function TextHooker() {
     }
   }, [roomId]);
 
-  // Settings state
-  const [fontSize, setFontSize] = useState(24);
-  const [fontFamily, setFontFamily] = useState('Noto Sans JP');
-  const [autoPauseTimeout, setAutoPauseTimeout] = useState(120);
+  // Settings state (persisted to localStorage)
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('texthooker_fontSize');
+    return saved ? Number(saved) : 24;
+  });
+  const [fontFamily, setFontFamily] = useState(() => {
+    return localStorage.getItem('texthooker_fontFamily') || 'Noto Sans JP';
+  });
+  const [autoPauseTimeout, setAutoPauseTimeout] = useState(() => {
+    const saved = localStorage.getItem('texthooker_autoPauseTimeout');
+    return saved ? Number(saved) : 120;
+  });
+  const [autostartTimerByPaste, setAutostartTimerByPaste] = useState(() => {
+    return localStorage.getItem('texthooker_autostartTimerByPaste') === 'true';
+  });
+  const [autostartTimerByLine, setAutostartTimerByLine] = useState(() => {
+    return localStorage.getItem('texthooker_autostartTimerByLine') === 'true';
+  });
+  const [allowNewLineDuringPause, setAllowNewLineDuringPause] = useState(() => {
+    const saved = localStorage.getItem('texthooker_allowNewLineDuringPause');
+    return saved === null ? true : saved === 'true';
+  });
+  const [allowPasteDuringPause, setAllowPasteDuringPause] = useState(() => {
+    const saved = localStorage.getItem('texthooker_allowPasteDuringPause');
+    return saved === null ? true : saved === 'true';
+  });
+  const [continuousReconnect, setContinuousReconnect] = useState(() => {
+    return localStorage.getItem('texthooker_continuousReconnect') === 'true';
+  });
 
   // WebSocket State
-  const [websocketUrl, setWebsocketUrl] = useState('ws://localhost:6677');
+  const [websocketUrl, setWebsocketUrl] = useState(() => {
+    return (
+      localStorage.getItem('texthooker_websocketUrl') || 'ws://localhost:6677'
+    );
+  });
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<
     'disconnected' | 'connecting' | 'connected' | 'error'
   >('disconnected');
@@ -214,6 +252,62 @@ function TextHooker() {
   // Timer state
   const [seconds, setSeconds] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(true);
+
+  // Persist settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('texthooker_fontSize', String(fontSize));
+  }, [fontSize]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_fontFamily', fontFamily);
+  }, [fontFamily]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_autoPauseTimeout',
+      String(autoPauseTimeout)
+    );
+  }, [autoPauseTimeout]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_vertical', String(vertical));
+  }, [vertical]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_lineSpacing', String(lineSpacing));
+  }, [lineSpacing]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_lineGap', String(lineGap));
+  }, [lineGap]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_websocketUrl', websocketUrl);
+  }, [websocketUrl]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_autostartTimerByPaste',
+      String(autostartTimerByPaste)
+    );
+  }, [autostartTimerByPaste]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_autostartTimerByLine',
+      String(autostartTimerByLine)
+    );
+  }, [autostartTimerByLine]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_allowNewLineDuringPause',
+      String(allowNewLineDuringPause)
+    );
+  }, [allowNewLineDuringPause]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_allowPasteDuringPause',
+      String(allowPasteDuringPause)
+    );
+  }, [allowPasteDuringPause]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_continuousReconnect',
+      String(continuousReconnect)
+    );
+  }, [continuousReconnect]);
 
   // Update last activity when lines change
   useEffect(() => {
@@ -329,6 +423,9 @@ function TextHooker() {
   // WebSocket Logic
   const handleSocketMessage = useCallback(
     (event: MessageEvent) => {
+      // Check if new lines are allowed during pause
+      if (!isTimerActive && !allowNewLineDuringPause) return;
+
       let text = event.data;
       try {
         // Intentamos parsear como JSON (formato estándar de extensiones de Textractor)
@@ -342,6 +439,11 @@ function TextHooker() {
 
       // Evitar líneas vacías
       if (!text || text.trim().length === 0) return;
+
+      // Autostart timer if paused and option is enabled
+      if (!isTimerActive && autostartTimerByLine) {
+        setIsTimerActive(true);
+      }
 
       const japaneseCount = countJapaneseCharacters(text);
       const newLine = { id: createLineId(), text, japaneseCount };
@@ -357,13 +459,23 @@ function TextHooker() {
         socket.emit('send_line', { roomId, lineData: newLine });
       }
     },
-    [mode, socket, roomId, contentId, saveLines]
+    [
+      mode,
+      socket,
+      roomId,
+      contentId,
+      saveLines,
+      isTimerActive,
+      allowNewLineDuringPause,
+      autostartTimerByLine,
+    ]
   );
 
-  const toggleSocket = useCallback(() => {
-    if (connectionStatus === 'connected' || connectionStatus === 'connecting') {
-      socketRef.current?.close();
-      // El estado cambiará a 'disconnected' en el evento onclose
+  const attemptConnect = useCallback(() => {
+    if (
+      socketRef.current?.readyState === WebSocket.OPEN ||
+      socketRef.current?.readyState === WebSocket.CONNECTING
+    ) {
       return;
     }
 
@@ -374,6 +486,11 @@ function TextHooker() {
 
       socket.onopen = () => {
         setConnectionStatus('connected');
+        // Clear reconnect interval on successful connection
+        if (reconnectIntervalRef.current) {
+          clearInterval(reconnectIntervalRef.current);
+          reconnectIntervalRef.current = null;
+        }
       };
 
       socket.onclose = () => {
@@ -383,6 +500,7 @@ function TextHooker() {
 
       socket.onerror = () => {
         setConnectionStatus('error');
+        socketRef.current = null;
       };
 
       socket.onmessage = handleSocketMessage;
@@ -390,12 +508,68 @@ function TextHooker() {
       console.error('WebSocket error:', error);
       setConnectionStatus('error');
     }
-  }, [connectionStatus, websocketUrl, handleSocketMessage]);
+  }, [websocketUrl, handleSocketMessage]);
 
-  // Cleanup socket on unmount
+  const toggleSocket = useCallback(() => {
+    // Clear any existing reconnect interval
+    if (reconnectIntervalRef.current) {
+      clearInterval(reconnectIntervalRef.current);
+      reconnectIntervalRef.current = null;
+    }
+
+    if (connectionStatus === 'connected' || connectionStatus === 'connecting') {
+      socketRef.current?.close();
+      // El estado cambiará a 'disconnected' en el evento onclose
+      return;
+    }
+
+    attemptConnect();
+
+    // Start continuous reconnect if enabled
+    if (continuousReconnect) {
+      reconnectIntervalRef.current = setInterval(() => {
+        if (
+          !socketRef.current ||
+          socketRef.current.readyState === WebSocket.CLOSED
+        ) {
+          attemptConnect();
+        }
+      }, 3000);
+    }
+  }, [connectionStatus, attemptConnect, continuousReconnect]);
+
+  // Effect to handle continuous reconnect state changes
+  useEffect(() => {
+    if (
+      continuousReconnect &&
+      connectionStatus !== 'connected' &&
+      connectionStatus !== 'connecting'
+    ) {
+      // Start reconnect interval if not already running
+      if (!reconnectIntervalRef.current) {
+        reconnectIntervalRef.current = setInterval(() => {
+          if (
+            !socketRef.current ||
+            socketRef.current.readyState === WebSocket.CLOSED
+          ) {
+            attemptConnect();
+          }
+        }, 3000);
+      }
+    } else if (!continuousReconnect && reconnectIntervalRef.current) {
+      // Clear interval if continuous reconnect is disabled
+      clearInterval(reconnectIntervalRef.current);
+      reconnectIntervalRef.current = null;
+    }
+  }, [continuousReconnect, connectionStatus, attemptConnect]);
+
+  // Cleanup socket and reconnect interval on unmount
   useEffect(() => {
     return () => {
       socketRef.current?.close();
+      if (reconnectIntervalRef.current) {
+        clearInterval(reconnectIntervalRef.current);
+      }
     };
   }, []);
 
@@ -590,6 +764,9 @@ function TextHooker() {
           mutation.type === 'childList' &&
           mutation.addedNodes.length >= 1
         ) {
+          // Check if pasting is allowed during pause
+          if (!isTimerActive && !allowPasteDuringPause) continue;
+
           let ptag: Node | null = null;
           for (const node of mutation.addedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE) {
@@ -612,6 +789,11 @@ function TextHooker() {
             (ptag as ChildNode).remove?.();
           }
 
+          // Autostart timer if paused and option is enabled
+          if (!isTimerActive && autostartTimerByPaste) {
+            setIsTimerActive(true);
+          }
+
           const japaneseCount = countJapaneseCharacters(text);
           const newLine = { id: createLineId(), text, japaneseCount };
 
@@ -628,7 +810,16 @@ function TextHooker() {
         }
       }
     },
-    [socket, mode, roomId, contentId, saveLines]
+    [
+      socket,
+      mode,
+      roomId,
+      contentId,
+      saveLines,
+      isTimerActive,
+      allowPasteDuringPause,
+      autostartTimerByPaste,
+    ]
   );
 
   const handleDelete = useCallback((id: string) => {
@@ -1116,7 +1307,7 @@ function TextHooker() {
                   <span className="label-text">Vertical Text</span>
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary toggle-sm"
+                    className="checkbox checkbox-primary checkbox-sm"
                     checked={vertical}
                     onChange={toggleVertical}
                   />
@@ -1204,6 +1395,77 @@ function TextHooker() {
                   onChange={handleAutoPauseTimeoutChange}
                   className="input input-bordered input-sm w-full"
                 />
+              </div>
+
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <span className="label-text">Allow Paste during Pause</span>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary checkbox-sm"
+                    checked={allowPasteDuringPause}
+                    onChange={(e) => setAllowPasteDuringPause(e.target.checked)}
+                  />
+                </label>
+              </div>
+
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <span className="label-text">
+                    Allow new Line during Pause
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary checkbox-sm"
+                    checked={allowNewLineDuringPause}
+                    onChange={(e) =>
+                      setAllowNewLineDuringPause(e.target.checked)
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <span className="label-text">
+                    Autostart Timer by Paste during Pause
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary checkbox-sm"
+                    checked={autostartTimerByPaste}
+                    onChange={(e) => setAutostartTimerByPaste(e.target.checked)}
+                  />
+                </label>
+              </div>
+
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <span className="label-text">
+                    Autostart Timer by Line during Pause
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary checkbox-sm"
+                    checked={autostartTimerByLine}
+                    onChange={(e) => setAutostartTimerByLine(e.target.checked)}
+                  />
+                </label>
+              </div>
+
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <span className="label-text">Continuous Reconnect</span>
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary checkbox-sm"
+                    checked={continuousReconnect}
+                    onChange={(e) => setContinuousReconnect(e.target.checked)}
+                  />
+                </label>
+                <span className="text-xs opacity-60 ml-1">
+                  Keep trying to connect until successful
+                </span>
               </div>
 
               <div className="form-control">
