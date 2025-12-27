@@ -783,10 +783,14 @@ function TextHooker() {
 
           const text = ptag.textContent || '';
 
-          if (ptag.parentNode) {
-            ptag.parentNode.removeChild(ptag);
-          } else {
-            (ptag as ChildNode).remove?.();
+          try {
+            if (ptag.parentNode) {
+              ptag.parentNode.removeChild(ptag);
+            } else {
+              (ptag as ChildNode).remove?.();
+            }
+          } catch (e) {
+            continue;
           }
 
           // Autostart timer if paused and option is enabled
