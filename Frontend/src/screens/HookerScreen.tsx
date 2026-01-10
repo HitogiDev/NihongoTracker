@@ -12,6 +12,7 @@ import {
   addLinesToSessionFn,
   createLogFn,
   getMediaFn,
+  getUserMediaStatsFn,
 } from '../api/trackerApi';
 import {
   Settings,
@@ -31,6 +32,10 @@ import {
   Save,
   Share2,
   Home,
+  Type,
+  FileText,
+  RotateCcw,
+  Edit3,
 } from 'lucide-react';
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
@@ -116,6 +121,10 @@ function TextHooker() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
+  const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
+  const [timerEditHours, setTimerEditHours] = useState(0);
+  const [timerEditMinutes, setTimerEditMinutes] = useState(0);
+  const [timerEditSeconds, setTimerEditSeconds] = useState(0);
   const initialStatsRef = useRef({ lines: 0, chars: 0 });
   const inviteAppliedRef = useRef(false);
   const [hasInitializedStats, setHasInitializedStats] = useState(false);
@@ -160,6 +169,16 @@ function TextHooker() {
     queryFn: () => getMediaFn(media!.contentId, media!.type),
     enabled: !!media && isStatsOpen,
   });
+
+  // Fetch user's total logged characters for this media
+  const { data: userMediaStats } = useQuery({
+    queryKey: ['userMediaStats', media?.contentId, media?.type],
+    queryFn: () => getUserMediaStatsFn(media!.contentId, media!.type),
+    enabled: !!media && isStatsOpen,
+  });
+
+  // Total characters logged by user for this media (from all previous logs)
+  const previouslyLoggedChars = userMediaStats?.total?.characters || 0;
 
   useEffect(() => {
     if (sessionData?.lines) {
@@ -249,8 +268,14 @@ function TextHooker() {
 
   const lastActivityRef = useRef(Date.now());
 
-  // Timer state
-  const [seconds, setSeconds] = useState(0);
+  // Timer state - load from localStorage if contentId exists
+  const [seconds, setSeconds] = useState(() => {
+    if (contentId) {
+      const saved = localStorage.getItem(`texthooker_timer_${contentId}`);
+      return saved ? Number(saved) : 0;
+    }
+    return 0;
+  });
   const [isTimerActive, setIsTimerActive] = useState(true);
 
   // Persist settings to localStorage
@@ -309,6 +334,13 @@ function TextHooker() {
     );
   }, [continuousReconnect]);
 
+  // Persist timer to localStorage when it changes
+  useEffect(() => {
+    if (contentId) {
+      localStorage.setItem(`texthooker_timer_${contentId}`, String(seconds));
+    }
+  }, [seconds, contentId]);
+
   // Update last activity when lines change
   useEffect(() => {
     lastActivityRef.current = Date.now();
@@ -321,7 +353,7 @@ function TextHooker() {
         const now = Date.now();
         if (
           autoPauseTimeout > 0 &&
-          now - lastActivityRef.current > autoPauseTimeout * 1000
+          now - lastActivityRef.current >= autoPauseTimeout * 1000
         ) {
           setIsTimerActive(false);
         } else {
@@ -616,8 +648,38 @@ function TextHooker() {
   };
 
   const toggleTimer = useCallback(() => {
-    setIsTimerActive((prev) => !prev);
+    setIsTimerActive((prev) => {
+      // When resuming the timer, reset the activity timestamp
+      // so it doesn't immediately pause again due to old inactivity
+      if (!prev) {
+        lastActivityRef.current = Date.now();
+      }
+      return !prev;
+    });
   }, []);
+
+  const handleResetTimer = useCallback(() => {
+    setSeconds(0);
+    lastActivityRef.current = Date.now();
+  }, []);
+
+  const handleOpenTimerEdit = useCallback(() => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    setTimerEditHours(h);
+    setTimerEditMinutes(m);
+    setTimerEditSeconds(s);
+    setIsTimerEditOpen(true);
+  }, [seconds]);
+
+  const handleSaveTimerEdit = useCallback(() => {
+    const totalSeconds =
+      timerEditHours * 3600 + timerEditMinutes * 60 + timerEditSeconds;
+    setSeconds(totalSeconds);
+    lastActivityRef.current = Date.now();
+    setIsTimerEditOpen(false);
+  }, [timerEditHours, timerEditMinutes, timerEditSeconds]);
 
   const handleDeleteLast = useCallback(() => {
     setLines((prev) => {
@@ -938,6 +1000,26 @@ function TextHooker() {
           {formatTime(seconds)}
         </div>
 
+        <div className="w-px h-4 bg-base-content/20"></div>
+
+        <div
+          className="font-mono text-base flex items-center gap-2"
+          title="Characters"
+        >
+          <Type size={16} className="opacity-70" />
+          {numberWithCommas(charsNumber)}
+        </div>
+
+        <div className="w-px h-4 bg-base-content/20"></div>
+
+        <div
+          className="font-mono text-base flex items-center gap-2"
+          title="Lines"
+        >
+          <FileText size={16} className="opacity-70" />
+          {numberWithCommas(linesNumber)}
+        </div>
+
         <div className="w-px h-4 bg-base-content/20 mx-1"></div>
 
         {/* WebSocket Toggle */}
@@ -970,6 +1052,26 @@ function TextHooker() {
           title={isTimerActive ? 'Pause Timer' : 'Resume Timer'}
         >
           {isTimerActive ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+
+        {/* Reset Timer */}
+        <button
+          type="button"
+          onClick={handleResetTimer}
+          className="btn btn-xs btn-ghost btn-square"
+          title="Reset Timer"
+        >
+          <RotateCcw size={16} />
+        </button>
+
+        {/* Edit Timer */}
+        <button
+          type="button"
+          onClick={handleOpenTimerEdit}
+          className="btn btn-xs btn-ghost btn-square"
+          title="Set Timer"
+        >
+          <Edit3 size={16} />
         </button>
 
         {/* Delete Last Line */}
@@ -1083,6 +1185,93 @@ function TextHooker() {
         )}
       </div>
 
+      {/* Timer Edit Modal */}
+      <dialog className={`modal ${isTimerEditOpen ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              Set Timer
+            </h3>
+            <button
+              onClick={() => setIsTimerEditOpen(false)}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-xs">Hours</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="99"
+                value={timerEditHours}
+                onChange={(e) =>
+                  setTimerEditHours(Math.max(0, parseInt(e.target.value) || 0))
+                }
+                className="input input-bordered w-20 text-center font-mono text-lg"
+              />
+            </div>
+            <span className="text-2xl font-bold mt-6">:</span>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-xs">Minutes</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={timerEditMinutes}
+                onChange={(e) =>
+                  setTimerEditMinutes(
+                    Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
+                  )
+                }
+                className="input input-bordered w-20 text-center font-mono text-lg"
+              />
+            </div>
+            <span className="text-2xl font-bold mt-6">:</span>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text text-xs">Seconds</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={timerEditSeconds}
+                onChange={(e) =>
+                  setTimerEditSeconds(
+                    Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
+                  )
+                }
+                className="input input-bordered w-20 text-center font-mono text-lg"
+              />
+            </div>
+          </div>
+
+          <div className="modal-action">
+            <button
+              onClick={() => setIsTimerEditOpen(false)}
+              className="btn btn-ghost"
+            >
+              Cancel
+            </button>
+            <button onClick={handleSaveTimerEdit} className="btn btn-primary">
+              Save
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setIsTimerEditOpen(false)}>close</button>
+        </form>
+      </dialog>
+
       {/* Stats Modal */}
       <dialog className={`modal ${isStatsOpen ? 'modal-open' : ''}`}>
         <div className="modal-box max-w-4xl">
@@ -1129,58 +1318,60 @@ function TextHooker() {
                       Reading Progress
                     </div>
                     {fullMediaData?.jiten?.mainDeck?.characterCount ? (
-                      <>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="opacity-70">Progress</span>
-                          <span
-                            className={`font-bold transition-all duration-700 ${isLogAnimating ? 'scale-150 text-success drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]' : ''}`}
-                          >
-                            {Math.min(
-                              (animatedChars /
-                                fullMediaData.jiten.mainDeck.characterCount) *
-                                100,
-                              100
-                            ).toFixed(1)}
-                            %
-                          </span>
-                        </div>
-                        <div className="w-full bg-base-300 rounded-full h-3 overflow-hidden relative">
-                          <div
-                            className={`h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700 ease-out ${isLogAnimating ? 'shadow-lg shadow-primary/50' : ''}`}
-                            style={{
-                              width: `${Math.min(
-                                (animatedChars /
-                                  fullMediaData.jiten.mainDeck.characterCount) *
-                                  100,
-                                100
-                              )}%`,
-                            }}
-                          />
-                          {isLogAnimating && (
-                            <div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
-                              style={{ animation: 'shimmer 1s ease-in-out' }}
-                            />
-                          )}
-                        </div>
-                        <div className="flex justify-between text-xs opacity-60">
-                          <span
-                            className={
-                              isLogAnimating
-                                ? 'text-success font-semibold transition-all duration-500'
-                                : ''
-                            }
-                          >
-                            {numberWithCommas(Math.round(animatedChars))} chars
-                          </span>
-                          <span>
-                            {numberWithCommas(
-                              fullMediaData.jiten.mainDeck.characterCount
-                            )}{' '}
-                            total
-                          </span>
-                        </div>
-                      </>
+                      (() => {
+                        const totalCharCount =
+                          fullMediaData.jiten.mainDeck.characterCount;
+                        // Total progress = previously logged + current session chars in texthooker
+                        const totalProgress =
+                          previouslyLoggedChars + animatedChars;
+                        const progressPercent = Math.min(
+                          (totalProgress / totalCharCount) * 100,
+                          100
+                        );
+                        return (
+                          <>
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="opacity-70">Progress</span>
+                              <span
+                                className={`font-bold transition-all duration-700 ${isLogAnimating ? 'scale-150 text-success drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]' : ''}`}
+                              >
+                                {progressPercent.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-base-300 rounded-full h-3 overflow-hidden relative">
+                              <div
+                                className={`h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700 ease-out ${isLogAnimating ? 'shadow-lg shadow-primary/50' : ''}`}
+                                style={{
+                                  width: `${progressPercent}%`,
+                                }}
+                              />
+                              {isLogAnimating && (
+                                <div
+                                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
+                                  style={{
+                                    animation: 'shimmer 1s ease-in-out',
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <div className="flex justify-between text-xs opacity-60">
+                              <span
+                                className={
+                                  isLogAnimating
+                                    ? 'text-success font-semibold transition-all duration-500'
+                                    : ''
+                                }
+                              >
+                                {numberWithCommas(Math.round(totalProgress))}{' '}
+                                chars
+                              </span>
+                              <span>
+                                {numberWithCommas(totalCharCount)} total
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()
                     ) : (
                       <div className="text-sm opacity-50">
                         Character count not available
