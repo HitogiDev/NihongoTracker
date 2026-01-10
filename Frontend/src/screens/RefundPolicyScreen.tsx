@@ -57,15 +57,15 @@ function RefundPolicyScreen() {
           <h2 className="text-2xl font-bold mb-4">3. Refund Eligibility</h2>
 
           <h3 className="text-xl font-semibold mb-3 mt-6">
-            3.1 Within 7 Days of Purchase
+            3.1 Within 14 Days of Purchase
           </h3>
           <p className="mb-4">
             If you are not satisfied with your subscription, you may request a
-            full refund within 7 days of your initial purchase or renewal. To be
-            eligible for a refund:
+            full refund within 14 days of your initial purchase or renewal. To
+            be eligible for a refund:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-4 mb-4">
-            <li>The request must be made within 7 days of the charge</li>
+            <li>The request must be made within 14 days of the charge</li>
             <li>
               You must not have previously received a refund for the same
               subscription
@@ -75,7 +75,7 @@ function RefundPolicyScreen() {
             </li>
           </ul>
 
-          <h3 className="text-xl font-semibold mb-3 mt-6">3.2 After 7 Days</h3>
+          <h3 className="text-xl font-semibold mb-3 mt-6">3.2 After 14 Days</h3>
           <p className="mb-4">
             After the 7-day period, refunds are generally not provided. However,
             we may consider refund requests on a case-by-case basis for
@@ -157,7 +157,7 @@ function RefundPolicyScreen() {
               </a>
             </li>
             <li>
-              Requests made more than 7 days after purchase (except in
+              Requests made more than 14 days after purchase (except in
               exceptional circumstances)
             </li>
           </ul>

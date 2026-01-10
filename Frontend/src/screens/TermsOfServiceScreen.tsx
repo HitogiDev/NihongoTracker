@@ -238,7 +238,7 @@ function TermsOfServiceScreen() {
 
           <h3 className="text-xl font-semibold mb-3 mt-6">7.5 Refunds</h3>
           <p>
-            We offer refunds within 7 days of purchase for subscription
+            We offer refunds within 14 days of purchase for subscription
             payments. For complete details about our refund process,
             eligibility, and how to request a refund, please see our{' '}
             <a href="/refund-policy" className="text-primary hover:underline">
