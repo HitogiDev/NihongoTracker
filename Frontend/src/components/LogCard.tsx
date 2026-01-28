@@ -258,10 +258,20 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
 
     const totalMinutes = editData.hours * 60 + editData.minutes;
 
+    // Check if the date was actually changed (compare date-only strings)
+    const originalDateString = date
+      ? typeof date === 'string'
+        ? date.split('T')[0]
+        : new Date(date).toISOString().split('T')[0]
+      : '';
+    const hasDateChanged = editData.date !== originalDateString;
+
     const updateData: updateLogRequest = {
       description: editData.description,
       type: editData.type,
-      date: editData.date ? new Date(editData.date) : undefined,
+      // Only include date if it was changed, and preserve original time by using the original date object
+      date:
+        hasDateChanged && editData.date ? new Date(editData.date) : undefined,
       time: totalMinutes || undefined,
       episodes: editData.episodes || undefined,
       pages: editData.pages || undefined,
