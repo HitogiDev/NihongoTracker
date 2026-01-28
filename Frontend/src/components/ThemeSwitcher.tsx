@@ -50,9 +50,10 @@ if (typeof document !== 'undefined') {
 
 export default function ThemeSwitcher() {
   const { user } = useUserDataStore();
-  const hasPatreonAccess = user?.patreon?.isActive && user?.patreon?.tier;
+  const hasPatreonAccess =
+    (user?.patreon?.isActive && user?.patreon?.tier) ||
+    user?.roles?.includes('admin');
 
-  // Always use the current theme from localStorage, not the initial value
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') || 'dark';
