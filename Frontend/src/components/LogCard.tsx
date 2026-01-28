@@ -190,7 +190,6 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         predicate: (query) => {
           const key = query.queryKey;
           if (!Array.isArray(key)) return false;
-          // Invalidate any logs-related queries (profile lists, media details, heatmap) and user summaries
           return key.includes('logs') || key[0] === 'user';
         },
       });
@@ -294,7 +293,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
       tooltip?: string;
     }[] = [];
 
-    if (type === 'anime' && episodes) {
+    if ((type === 'anime' || type === 'tv show') && episodes) {
       info.push({
         label: 'Episodes',
         value: episodes,
@@ -304,7 +303,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           : `${episodes} episodes watched`,
       });
     } else if (type === 'manga') {
-      if (pages)
+      if (pages) {
         info.push({
           label: 'Pages',
           value: pages,
@@ -313,22 +312,46 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             ? `${pages} pages • ${chars.toLocaleString()} characters`
             : `${pages} pages read`,
         });
-      if (chars)
+      }
+      if (chars) {
+        const readingSpeed =
+          time && chars ? Math.round((chars / time) * 60) : null;
         info.push({
           label: 'Characters',
           value: chars.toLocaleString(),
           icon: MdBook,
-          tooltip: `${chars.toLocaleString()} characters read`,
+          tooltip: readingSpeed
+            ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
+            : `${chars.toLocaleString()} characters read`,
         });
-      // Add time for manga logs when present
-      if (time) {
+
+        if (readingSpeed && time) {
+          info.push({
+            label: 'Speed',
+            value: `${readingSpeed}/hr`,
+            icon: MdSpeed,
+            tooltip: `Reading speed: ${readingSpeed} characters per hour`,
+          });
+        }
+
+        if (time) {
+          const timeStr =
+            time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+          info.push({
+            label: 'Time',
+            value: timeStr,
+            icon: MdTimer,
+            tooltip: `${time} minutes spent reading manga`,
+          });
+        }
+      } else if (time && !chars) {
         const timeStr =
           time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
         info.push({
           label: 'Time',
           value: timeStr,
           icon: MdSchedule,
-          tooltip: `${time} minutes spent reading manga`,
+          tooltip: `${time} minutes spent reading`,
         });
       }
     } else if (type === 'vn' || type === 'reading') {
@@ -344,7 +367,6 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             : `${chars.toLocaleString()} characters read`,
         });
 
-        // Add reading speed as separate badge
         if (readingSpeed && time) {
           info.push({
             label: 'Speed',
@@ -354,7 +376,6 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           });
         }
 
-        // Add time as separate badge
         if (time) {
           const timeStr =
             time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
@@ -375,7 +396,10 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           tooltip: `${time} minutes spent reading`,
         });
       }
-    } else if ((type === 'video' || type === 'audio') && time) {
+    } else if (
+      (type === 'video' || type === 'audio' || type === 'movie') &&
+      time
+    ) {
       const timeStr =
         time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
       info.push({

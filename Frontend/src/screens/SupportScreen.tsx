@@ -62,7 +62,7 @@ function SupportScreen() {
         'Custom donator badge color (rainbow included)',
         'Site-wide donator badge',
         'Increase the maximum log tags to 25',
-        'Increase maximum club members to 250',
+        'Increase maximum club members to 1000',
       ],
     },
   ];
