@@ -277,8 +277,43 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     )
                   : 0;
 
-                // Calculate daily requirement with fallback
-                const dailyRequirement = progress
+                // Get progress based on displayTimeframe
+                const getTimeframeProgress = () => {
+                  if (!progress) return 0;
+                  switch (goal.displayTimeframe) {
+                    case 'weekly':
+                      return progress.progressThisWeek || 0;
+                    case 'monthly':
+                      return progress.progressThisMonth || 0;
+                    default:
+                      return progress.progressToday || 0;
+                  }
+                };
+
+                const getTimeframeLabel = () => {
+                  switch (goal.displayTimeframe) {
+                    case 'weekly':
+                      return 'This Week';
+                    case 'monthly':
+                      return 'This Month';
+                    default:
+                      return 'Today';
+                  }
+                };
+
+                const getTimeframePeriod = () => {
+                  switch (goal.displayTimeframe) {
+                    case 'weekly':
+                      return 'this week';
+                    case 'monthly':
+                      return 'this month';
+                    default:
+                      return 'today';
+                  }
+                };
+
+                // Calculate timeframe requirement with fallback
+                const timeframeRequirement = progress
                   ? progress.requiredPerTimeframe > 0
                     ? progress.requiredPerTimeframe
                     : progress.remainingDays > 0
@@ -287,22 +322,25 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   : 0;
 
                 // Fallback calculation if all else fails
-                const finalDailyRequirement =
-                  dailyRequirement > 0
-                    ? dailyRequirement
+                const finalTimeframeRequirement =
+                  timeframeRequirement > 0
+                    ? timeframeRequirement
                     : progress && progress.remainingDays > 0
                       ? goal.totalTarget / progress.remainingDays
                       : 0;
 
-                // Calculate daily progress percentage
-                const dailyProgress = progress?.progressToday || 0;
-                const dailyProgressPercentage =
-                  finalDailyRequirement > 0
+                // Calculate timeframe progress percentage
+                const timeframeProgress = getTimeframeProgress();
+                const timeframeProgressPercentage =
+                  finalTimeframeRequirement > 0
                     ? Math.min(
-                        (dailyProgress / finalDailyRequirement) * 100,
+                        (timeframeProgress / finalTimeframeRequirement) * 100,
                         100
                       )
                     : 0;
+
+                const timeframeLabel = getTimeframeLabel();
+                const timeframePeriod = getTimeframePeriod();
 
                 return (
                   <div key={goal._id} className="space-y-3">
@@ -401,24 +439,25 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           ></div>
                         </div>
 
-                        {/* Daily Progress Section */}
+                        {/* Timeframe Progress Section */}
                         <div className="bg-base-200 rounded-lg p-3 space-y-2">
                           <div className="flex justify-between items-center">
                             <h4 className="font-semibold text-sm">
-                              Today's Progress
+                              {timeframeLabel}'s Progress
                             </h4>
                             <div className="badge badge-sm badge-outline">
-                              {Math.round(dailyProgressPercentage)}% of daily
+                              {Math.round(timeframeProgressPercentage)}% of{' '}
+                              {goal.displayTimeframe}
                               goal
                             </div>
                           </div>
 
-                          {/* Daily Progress Bar - More Prominent */}
+                          {/* Timeframe Progress Bar - More Prominent */}
                           <div className="space-y-2">
                             <div className="flex justify-between text-xs">
                               <span className="font-medium">
                                 {formatLongTermProgress(
-                                  dailyProgress,
+                                  timeframeProgress,
                                   goal.type
                                 )}
                                 {goal.type !== 'time' && ` ${config.unit}`}
@@ -426,7 +465,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                               <span className="text-base-content/60">
                                 /{' '}
                                 {formatLongTermProgress(
-                                  finalDailyRequirement,
+                                  finalTimeframeRequirement,
                                   goal.type
                                 )}
                                 {goal.type !== 'time' && ` ${config.unit}`}{' '}
@@ -436,17 +475,17 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             <div className="w-full bg-base-300 rounded-full h-3 relative">
                               <div
                                 className={`h-3 rounded-full transition-all duration-500 ${
-                                  dailyProgressPercentage >= 100
+                                  timeframeProgressPercentage >= 100
                                     ? 'bg-gradient-to-r from-success to-success'
-                                    : dailyProgressPercentage >= 75
+                                    : timeframeProgressPercentage >= 75
                                       ? 'bg-gradient-to-r from-warning to-warning'
                                       : 'bg-gradient-to-r from-error to-warning'
                                 }`}
                                 style={{
-                                  width: `${Math.min(dailyProgressPercentage, 100)}%`,
+                                  width: `${Math.min(timeframeProgressPercentage, 100)}%`,
                                 }}
                               >
-                                {dailyProgressPercentage >= 100 && (
+                                {timeframeProgressPercentage >= 100 && (
                                   <div className="absolute inset-0 rounded-full bg-success/20 animate-pulse"></div>
                                 )}
                               </div>
@@ -454,19 +493,23 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                               <div className="absolute right-0 top-0 h-3 w-0.5 bg-base-content/40 rounded-full"></div>
                             </div>
 
-                            {/* Remaining for today */}
+                            {/* Remaining for timeframe */}
                             <div className="flex items-center justify-between text-xs">
                               <div
                                 className={`flex items-center gap-1 ${
-                                  dailyProgressPercentage >= 100
+                                  timeframeProgressPercentage >= 100
                                     ? 'text-success'
                                     : 'text-warning'
                                 }`}
                               >
-                                {dailyProgressPercentage >= 100 ? (
+                                {timeframeProgressPercentage >= 100 ? (
                                   <>
                                     <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-                                    Daily goal completed!
+                                    {goal.displayTimeframe
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      goal.displayTimeframe.slice(1)}{' '}
+                                    goal completed!
                                   </>
                                 ) : (
                                   <>
@@ -474,12 +517,13 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                     {formatLongTermProgress(
                                       Math.max(
                                         0,
-                                        finalDailyRequirement - dailyProgress
+                                        finalTimeframeRequirement -
+                                          timeframeProgress
                                       ),
                                       goal.type
                                     )}
                                     {goal.type !== 'time' && ` ${config.unit}`}{' '}
-                                    remaining today
+                                    remaining {timeframePeriod}
                                   </>
                                 )}
                               </div>
