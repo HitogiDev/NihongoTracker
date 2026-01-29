@@ -145,9 +145,6 @@ function LogScreen() {
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
     onSuccess: async () => {
-      if (user?.stats?.userLevel) {
-        setInitialLevel(user.stats.userLevel);
-      }
       const currentType = logData.type;
       setLogData({
         type: currentType,
@@ -211,7 +208,7 @@ function LogScreen() {
           // Determine if user leveled up
           const newLevel = updatedUser.stats?.userLevel ?? initialLevel;
           setFinalLevel(newLevel);
-          if (newLevel > (user?.stats?.userLevel ?? 0)) {
+          if (newLevel > initialLevel) {
             setShowLevelUpAnimation(true);
           } else if (updatedUser.stats?.userXp) {
             setShowXpAnimation(true);
@@ -449,9 +446,13 @@ function LogScreen() {
       try {
         const baseline = await getUserFn(user.username);
         if (baseline.stats?.userXp != null) setInitialXp(baseline.stats.userXp);
+        if (baseline.stats?.userLevel != null)
+          setInitialLevel(baseline.stats.userLevel);
       } catch (err) {
         // fallback to store if fetch fails; no-op
         if (user?.stats?.userXp != null) setInitialXp(user.stats.userXp);
+        if (user?.stats?.userLevel != null)
+          setInitialLevel(user.stats.userLevel);
       }
     }
 
