@@ -190,7 +190,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         predicate: (query) => {
           const key = query.queryKey;
           if (!Array.isArray(key)) return false;
-          return key.includes('logs') || key[0] === 'user';
+          return key.some((k) => k === 'logs' || k === 'user');
         },
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
@@ -210,10 +210,13 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     mutationFn: (data: updateLogRequest) => updateLogFn(log._id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        predicate: (query) =>
-          ['logs', 'user'].includes(query.queryKey[0] as string),
+        predicate: (query) => {
+          const key = query.queryKey;
+          if (!Array.isArray(key)) return false;
+          return key.some((k) => k === 'logs' || k === 'user');
+        },
       });
-      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       toast.success('Log updated successfully!');
       editModalRef.current?.close();
     },
