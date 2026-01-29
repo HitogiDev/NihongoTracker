@@ -113,7 +113,6 @@ Track your anime, manga, visual novels, books, videos, and audio immersion. Earn
 - **Public Profiles** — Showcase your immersion journey
 - **Privacy Controls** — Choose what others can see
 - **Clubs** — Create or join communities with shared goals
-- **Friends System** — Follow other learners and compare progress
 
 ---
 
