@@ -6,13 +6,18 @@ import { Server } from 'socket.io';
 import TextSession from './models/textSession.model.js';
 import jwt from 'jsonwebtoken';
 import User from './models/user.model.js';
+import {
+  IServerToClientEvents,
+  IClientToServerEvents,
+  ISocketData,
+  ISocketJoinRoomData,
+  ISocketSendLineData,
+} from './types.js';
 
 connectDB();
 
 const httpServer = createServer(app);
 
-// In production, allow same-origin (when frontend is served from same server)
-// plus any explicitly configured FRONTEND_URL or PROD_DOMAIN
 const corsOrigins: (string | boolean)[] = [];
 if (process.env.FRONTEND_URL) {
   corsOrigins.push(process.env.FRONTEND_URL);
@@ -23,18 +28,23 @@ if (
 ) {
   corsOrigins.push(process.env.PROD_DOMAIN);
 }
-// In production, also allow same-origin connections
+
 if (process.env.NODE_ENV === 'production') {
-  corsOrigins.push(true); // Allow same-origin
+  corsOrigins.push(true);
 }
-// Default for development
+
 if (corsOrigins.length === 0) {
   corsOrigins.push('http://localhost:5173');
 }
 
 console.log('Socket.IO CORS origins:', corsOrigins);
 
-const io = new Server(httpServer, {
+const io = new Server<
+  IClientToServerEvents,
+  IServerToClientEvents,
+  {},
+  ISocketData
+>(httpServer, {
   cors: {
     origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     methods: ['GET', 'POST'],
@@ -42,12 +52,9 @@ const io = new Server(httpServer, {
   },
 });
 
-// Socket.io authentication middleware
 io.use(async (socket, next) => {
   try {
-    // Try to get token from cookies (HTTP-only cookie)
     const cookies = socket.handshake.headers.cookie;
-    console.log('Socket cookies:', cookies ? 'Present' : 'Missing');
 
     let token = null;
     if (cookies) {
@@ -58,78 +65,53 @@ io.use(async (socket, next) => {
       }
     }
 
-    console.log('Socket auth token:', token ? 'Present' : 'Missing');
     if (token) {
-      console.log('Attempting to verify token...');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-        userId: string;
+      const decoded = jwt.verify(token, process.env.TOKEN_SECRET!) as {
+        id: string;
       };
-      console.log('Token decoded, userId:', decoded.userId);
-      const user = await User.findById(decoded.userId).select('username _id');
-      console.log('User found:', user ? user.username : 'Not found');
+      const user = await User.findById(decoded.id).select('username _id');
       if (user) {
         socket.data.user = {
           userId: user._id.toString(),
           username: user.username,
         };
-        console.log('User authenticated successfully:', user.username);
-      } else {
-        console.log('User not found in database');
       }
-    } else {
-      console.log('No token found in cookies');
     }
     next();
   } catch (error) {
-    console.log(
-      'Socket auth error:',
-      error instanceof Error ? error.message : error
-    );
     // Allow connection even without valid token, but without user data
     next();
   }
 });
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-  if (socket.data.user) {
-    console.log(`Authenticated user: ${socket.data.user.username}`);
-  }
-
   socket.on('join_room', async (data) => {
     const roomId = typeof data === 'string' ? data : data.roomId;
     const role = typeof data === 'object' ? data.role : 'guest';
     const token = typeof data === 'object' ? data.hostToken : null;
 
-    // Get user info from join_room event if not already set by cookie auth
     if (!socket.data.user && typeof data === 'object' && data.username) {
       socket.data.user = {
         username: data.username,
         userId: data.userId,
       };
-      console.log('User info set from join_room:', data.username);
     }
-
-    console.log(
-      `User ${socket.id} (${socket.data.user?.username || 'Anonymous'}) attempting to join room ${roomId} as ${role}`
-    );
 
     try {
       let session = await TextSession.findOne({ roomId });
 
       if (role === 'host') {
         if (session) {
-          // Room exists, check token
           if (session.hostToken === token) {
             socket.join(roomId);
             socket.data.role = 'host';
             socket.emit('room_joined', { role: 'host', roomId });
             if (session.lines.length > 0) {
-              const history = session.lines.map((l) => ({
-                id: l.id,
-                text: l.text,
-                japaneseCount: l.charsCount,
-                createdAt: l.createdAt,
+              const history = session.lines.map((line) => ({
+                id: line.id,
+                text: line.text,
+                japaneseCount: line.charsCount,
+                createdAt: line.createdAt,
               }));
               socket.emit('load_history', history);
             }
@@ -197,8 +179,12 @@ io.on('connection', (socket) => {
     const { roomId, lineData } = data;
 
     try {
-      const dbLine = { ...lineData, charsCount: lineData.japaneseCount };
-      delete dbLine.japaneseCount;
+      const dbLine = {
+        id: lineData.id,
+        text: lineData.text,
+        charsCount: lineData.japaneseCount,
+        createdAt: lineData.createdAt,
+      };
 
       await TextSession.findOneAndUpdate(
         { roomId },
@@ -207,9 +193,7 @@ io.on('connection', (socket) => {
       );
 
       socket.to(roomId).emit('receive_line', lineData);
-    } catch (error) {
-      console.error('Error saving line:', error);
-    }
+    } catch (error) {}
   });
 
   socket.on('disconnecting', async () => {
@@ -218,7 +202,6 @@ io.on('connection', (socket) => {
         const sockets = await io.in(roomId).fetchSockets();
         const remainingMembers = sockets.filter((s) => s.id !== socket.id);
 
-        // If no one remains in the room, delete it from the database
         if (remainingMembers.length === 0) {
           try {
             await TextSession.deleteOne({ roomId });

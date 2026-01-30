@@ -607,19 +607,13 @@ export interface IClubMediaVoting {
     | 'movie'
     | 'custom';
   customMediaType?: string;
-
-  // Voting configuration
   candidateSubmissionType: 'manual' | 'member_suggestions';
-
-  // Date periods
   suggestionStartDate?: Date;
   suggestionEndDate?: Date;
   votingStartDate: Date;
   votingEndDate: Date;
   consumptionStartDate: Date;
   consumptionEndDate: Date;
-
-  // Status and management
   status:
     | 'setup'
     | 'suggestions_open'
@@ -629,7 +623,6 @@ export interface IClubMediaVoting {
     | 'completed';
   isActive: boolean;
   createdBy: Types.ObjectId;
-
   candidates: IClubMediaCandidate[];
   winnerCandidate?: {
     mediaId: string;
@@ -652,7 +645,7 @@ export interface IClubMedia {
   endDate: Date;
   isActive: boolean;
   addedBy: Types.ObjectId;
-  votingId?: Types.ObjectId; // Links to the voting that created this media
+  votingId?: Types.ObjectId;
   votes: Array<{
     user: Types.ObjectId;
     vote: number;
@@ -753,7 +746,7 @@ export interface IChangelog extends Document {
   updatedAt?: Date;
 }
 
-export interface manabeLogs {
+export interface IManabeLogs {
   _id: string;
   descripcion: string;
   medio:
@@ -791,4 +784,53 @@ export interface ITextSession extends Document {
   createdAt: Date;
   updatedAt?: Date;
   expireAt?: Date;
+}
+
+export interface ISocketJoinRoomData {
+  roomId: string;
+  role: 'host' | 'guest';
+  hostToken?: string;
+  username?: string;
+  userId?: string;
+}
+
+export interface ISocketLineData {
+  id: string;
+  text: string;
+  japaneseCount: number;
+  createdAt: Date;
+}
+
+export interface ISocketSendLineData {
+  roomId: string;
+  lineData: ISocketLineData;
+}
+
+export interface IServerToClientEvents {
+  room_created: (data: { roomId: string; hostToken: string }) => void;
+  room_joined: (data: { role: 'host' | 'guest'; roomId: string }) => void;
+  load_history: (history: ISocketLineData[]) => void;
+  error_message: (message: string) => void;
+  room_users_update: (
+    members: Array<{
+      id: string;
+      role: 'host' | 'guest';
+      username?: string;
+      userId?: string;
+    }>
+  ) => void;
+  receive_line: (lineData: ISocketLineData) => void;
+}
+
+export interface IClientToServerEvents {
+  join_room: (data: string | ISocketJoinRoomData) => void;
+  send_line: (data: ISocketSendLineData) => void;
+}
+
+export interface ISocketData {
+  user?: {
+    userId?: string;
+    username: string;
+  };
+  role?: 'host' | 'guest';
 }

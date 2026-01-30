@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MdClose, MdStar, MdStarBorder } from 'react-icons/md';
+import { X, Star } from 'lucide-react';
 import { IClubReview } from '../types';
 
 interface EditReviewModalProps {
@@ -27,7 +27,6 @@ export default function EditReviewModal({
     hasSpoilers: review.hasSpoilers,
   });
 
-  // Reset form when review changes
   useEffect(() => {
     setEditForm({
       content: review.content,
@@ -55,7 +54,7 @@ export default function EditReviewModal({
             onClick={onClose}
             disabled={isLoading}
           >
-            <MdClose />
+            <X />
           </button>
         </div>
 
@@ -80,9 +79,9 @@ export default function EditReviewModal({
                     }
                   >
                     {editForm.rating && star <= editForm.rating ? (
-                      <MdStar className="text-yellow-500" />
+                      <Star fill="yellow" strokeWidth={0} />
                     ) : (
-                      <MdStarBorder className="text-base-content/40" />
+                      <Star className="text-base-content/40" />
                     )}
                   </button>
                 ))}

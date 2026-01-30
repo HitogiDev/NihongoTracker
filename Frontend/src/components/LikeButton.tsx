@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { MdThumbUp, MdThumbUpOffAlt } from 'react-icons/md';
+import { ThumbsUp } from 'lucide-react';
 
 interface LikeButtonProps {
   isLiked: boolean;
@@ -14,7 +14,7 @@ export default function LikeButton({
   likesCount,
   onToggleLike,
   disabled = false,
-  size = 'xs',
+  size = 'sm',
 }: LikeButtonProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -22,21 +22,20 @@ export default function LikeButton({
   const handleClick = () => {
     if (disabled || isAnimating) return;
 
-    // Trigger animation
     setIsAnimating(true);
 
-    // Create particles if being liked
     if (!isLiked) {
       createParticles();
     }
 
     onToggleLike();
 
-    // Reset animation state
     setTimeout(() => setIsAnimating(false), 300);
   };
 
-  const createParticles = () => {
+  function createParticles({
+    particleCount = 8,
+  }: { particleCount?: number } = {}) {
     if (!buttonRef.current) return;
 
     const button = buttonRef.current;
@@ -44,8 +43,7 @@ export default function LikeButton({
     const buttonCenterX = rect.left + rect.width / 2;
     const buttonCenterY = rect.top + rect.height / 2;
 
-    // Create multiple particles
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < particleCount; i++) {
       const particle = document.createElement('div');
 
       // Create colored dot particles
@@ -108,7 +106,7 @@ export default function LikeButton({
         }
       });
     }
-  };
+  }
 
   return (
     <button
@@ -130,9 +128,9 @@ export default function LikeButton({
           }`}
         >
           {isLiked ? (
-            <MdThumbUp className="mr-1 text-white" />
+            <ThumbsUp className="mr-1 text-white" />
           ) : (
-            <MdThumbUpOffAlt className="mr-1" />
+            <ThumbsUp className="mr-1" />
           )}
         </div>
         <span

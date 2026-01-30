@@ -6,7 +6,7 @@ import {
   IEditedFields,
   ICreateLog,
   IMediaDocument,
-  manabeLogs,
+  IManabeLogs,
 } from '../types.js';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
@@ -2209,7 +2209,7 @@ export async function syncManabeIds(
           },
         });
 
-        const manabeLogs = response.data as manabeLogs[];
+        const manabeLogs = response.data as IManabeLogs[];
 
         if (!manabeLogs || manabeLogs.length === 0) {
           results.processedUsers++;

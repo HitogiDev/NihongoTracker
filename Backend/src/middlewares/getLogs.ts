@@ -7,7 +7,7 @@ import {
   TMWLog,
   ManabeTSVLog,
   VNCRLog,
-  manabeLogs,
+  IManabeLogs,
 } from '../types.js';
 import { Types } from 'mongoose';
 import User from '../models/user.model.js';
@@ -27,7 +27,7 @@ interface ILogManabeTypeMap {
 
 interface ManabeWebhookBody {
   userDiscordId: string;
-  logInfo: manabeLogs;
+  logInfo: IManabeLogs;
   token: string;
 }
 
@@ -45,7 +45,7 @@ interface ILogNT {
 }
 
 function transformManabeLogsList(
-  list: manabeLogs[],
+  list: IManabeLogs[],
   user: Omit<IUser, 'password'>
 ) {
   const logTypeMap: ILogManabeTypeMap = {
@@ -120,7 +120,7 @@ export async function getLogsFromAPI(
       },
     });
 
-    const rawLogs: manabeLogs[] = response.data;
+    const rawLogs: IManabeLogs[] = response.data;
 
     const alreadyImportedLogs = await Log.find({
       user: user._id,

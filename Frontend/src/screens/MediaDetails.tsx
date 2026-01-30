@@ -1,7 +1,7 @@
 import { useOutletContext } from 'react-router-dom';
 import { OutletMediaContextType, ILog } from '../types';
 import ProgressChart from '../components/ProgressChart';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   getUserLogsFn,
   compareUserStatsFn,
@@ -36,7 +36,6 @@ function MediaDetails() {
   const { mediaDocument, mediaType, username } =
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
-  const queryClient = useQueryClient();
   const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
 
   const [visibleLogsCount, setVisibleLogsCount] = useState(10);
@@ -73,34 +72,7 @@ function MediaDetails() {
     sortDirection,
   ]);
 
-  // Try to get logs from existing cache first (from ProfileScreen)
-  const existingLogsData = queryClient.getQueryData([
-    'logs',
-    username,
-    '', // empty search
-    'all', // all types
-  ]);
-
-  // Extract logs for this specific media from cached data
-  const cachedMediaLogs = useMemo(() => {
-    if (!existingLogsData || !mediaDocument?.contentId) return null;
-
-    // Handle both infinite query pages and regular arrays
-    const allPages = Array.isArray(existingLogsData)
-      ? [existingLogsData]
-      : (existingLogsData as { pages?: ILog[][] })?.pages || [];
-
-    const allLogs = allPages.flat().filter((log: ILog) => {
-      return (
-        log?.mediaId === mediaDocument.contentId &&
-        log?.type === mediaDocument.type
-      );
-    });
-
-    return allLogs.length > 0 ? allLogs : null;
-  }, [existingLogsData, mediaDocument?.contentId, mediaDocument?.type]);
-
-  // Only fetch from server if we don't have the data in cache
+  // Get user's logs for this media
   const { data: logs, isLoading: logsLoading } = useQuery({
     queryKey: [
       username,
@@ -120,57 +92,12 @@ function MediaDetails() {
         page: 1,
       });
     },
-    enabled:
-      !!username &&
-      !!mediaDocument?.contentId &&
-      !!mediaDocument?.type &&
-      !cachedMediaLogs,
-    staleTime: 10 * 60 * 1000, // 10 minutes cache
-    gcTime: 15 * 60 * 1000, // 15 minutes garbage collection
+    enabled: !!username && !!mediaDocument?.contentId && !!mediaDocument?.type,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
-  // Use cached data if available, otherwise use fetched data
-  const finalLogs = cachedMediaLogs || logs;
-
-  // Get current user's logs for comparison (only if viewing another user's profile)
   const isViewingOtherUser = currentUser?.username !== username;
-
-  // Try to get current user's logs from cache
-  const currentUserCachedData = isViewingOtherUser
-    ? queryClient.getQueryData([
-        'logs',
-        currentUser?.username,
-        '', // empty search
-        'all', // all types
-      ])
-    : null;
-
-  const cachedCurrentUserLogs = useMemo(() => {
-    if (
-      !currentUserCachedData ||
-      !mediaDocument?.contentId ||
-      !isViewingOtherUser
-    )
-      return null;
-
-    const allPages = Array.isArray(currentUserCachedData)
-      ? [currentUserCachedData]
-      : (currentUserCachedData as { pages?: ILog[][] })?.pages || [];
-
-    const allLogs = allPages.flat().filter((log: ILog) => {
-      return (
-        log?.mediaId === mediaDocument.contentId &&
-        log?.type === mediaDocument.type
-      );
-    });
-
-    return allLogs.length > 0 ? allLogs : null;
-  }, [
-    currentUserCachedData,
-    mediaDocument?.contentId,
-    mediaDocument?.type,
-    isViewingOtherUser,
-  ]);
 
   const { data: myLogs, isLoading: myLogsLoading } = useQuery({
     queryKey: [
@@ -199,14 +126,10 @@ function MediaDetails() {
       isViewingOtherUser &&
       !!currentUser?.username &&
       !!mediaDocument?.contentId &&
-      !!mediaDocument?.type &&
-      !cachedCurrentUserLogs,
-    staleTime: 10 * 60 * 1000, // 10 minutes cache
-    gcTime: 15 * 60 * 1000, // 15 minutes garbage collection
+      !!mediaDocument?.type,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
-
-  // Use cached data if available, otherwise use fetched data
-  const finalMyLogs = cachedCurrentUserLogs || myLogs;
 
   const dateRange = useMemo(() => {
     switch (dateFilter) {
@@ -301,12 +224,12 @@ function MediaDetails() {
 
   // Memoize arrays to prevent recalculation
   const logsArray = useMemo(
-    () => (Array.isArray(finalLogs) ? (finalLogs as ILog[]) : []),
-    [finalLogs]
+    () => (Array.isArray(logs) ? (logs as ILog[]) : []),
+    [logs]
   );
   const myLogsArray = useMemo(
-    () => (Array.isArray(finalMyLogs) ? (finalMyLogs as ILog[]) : []),
-    [finalMyLogs]
+    () => (Array.isArray(myLogs) ? (myLogs as ILog[]) : []),
+    [myLogs]
   );
   const isLoading =
     logsLoading || (isViewingOtherUser && (myLogsLoading || comparisonLoading));
@@ -1485,7 +1408,7 @@ function MediaDetails() {
                   </svg>
                   Progress Chart
                 </h2>
-                <ProgressChart logs={finalLogs as ILog[]} />
+                <ProgressChart logs={logs as ILog[]} />
               </div>
             </div>
 
