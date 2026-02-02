@@ -65,7 +65,13 @@ const feedTimeOptions: Array<{ label: string; value: FeedTimeRange }> = [
   { label: 'All time', value: 'all' },
 ];
 
-const RECENT_MEDIA_LIMIT = 4;
+const RECENT_MEDIA_PANEL_LIMIT = 4;
+
+const getRecentMediaRailLimit = (width: number) => {
+  if (width >= 1024) return 7;
+  if (width >= 640) return 6;
+  return 4;
+};
 
 function Dashboard() {
   const { user, setUser } = useUserDataStore();
@@ -194,11 +200,15 @@ function Dashboard() {
         formattedDate: formatRelativeDate(log.date),
         formattedTime: formatTime(log.time, log.episodes),
       });
-      if (uniqueLogs.length === RECENT_MEDIA_LIMIT) break;
     }
 
     return uniqueLogs;
   }, [logs, formatRelativeDate]);
+
+  const recentMediaPanelHighlights = useMemo(
+    () => recentMediaHighlights.slice(0, RECENT_MEDIA_PANEL_LIMIT),
+    [recentMediaHighlights]
+  );
 
   const randomGreeting = useMemo(() => {
     const greetings = [
@@ -339,7 +349,7 @@ function Dashboard() {
 
       <div className="xl:hidden">
         <RecentMediaRail
-          logs={recentMediaHighlights}
+          allLogs={recentMediaHighlights}
           onQuickLog={handleQuickLogOpen}
         />
       </div>
@@ -621,7 +631,7 @@ function Dashboard() {
         <div className="space-y-8">
           <div className="hidden xl:block">
             <RecentMediaPanel
-              logs={recentMediaHighlights}
+              logs={recentMediaPanelHighlights}
               onQuickLog={handleQuickLogOpen}
             />
           </div>
@@ -684,30 +694,33 @@ const RecentMediaPanel = ({ logs, onQuickLog }: RecentMediaPanelProps) => (
 );
 
 type RecentMediaRailProps = {
-  logs: RecentMediaLog[];
+  allLogs: RecentMediaLog[];
   onQuickLog: (media?: ILog['media']) => void;
 };
 
-const RecentMediaRail = ({ logs, onQuickLog }: RecentMediaRailProps) => (
-  <RecentMediaRailInner logs={logs} onQuickLog={onQuickLog} />
-);
-
-const RecentMediaRailInner = ({ logs, onQuickLog }: RecentMediaRailProps) => {
+const RecentMediaRail = ({ allLogs, onQuickLog }: RecentMediaRailProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [limit, setLimit] = useState(() =>
+    getRecentMediaRailLimit(window.innerWidth)
+  );
 
   useEffect(() => {
-    const checkOverflow = () => {
+    const handleResize = () => {
       const el = scrollRef.current;
-      if (!el) return;
-      const needsScroll = el.scrollWidth > el.clientWidth + 4;
-      setShowSwipeHint(needsScroll);
+      if (el) {
+        const needsScroll = el.scrollWidth > el.clientWidth + 4;
+        setShowSwipeHint(needsScroll);
+      }
+      setLimit(getRecentMediaRailLimit(window.innerWidth));
     };
 
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, [logs]);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [allLogs]);
+
+  const logs = useMemo(() => allLogs.slice(0, limit), [allLogs, limit]);
 
   return (
     <div className="card bg-base-100 shadow-xl border border-base-200/60">
@@ -750,7 +763,7 @@ type RecentMediaRailTileProps = {
   onQuickLog: (media?: ILog['media']) => void;
 };
 
-const RecentMediaRailTile = ({ log, onQuickLog }: RecentMediaRailTileProps) => {
+function RecentMediaRailTile({ log, onQuickLog }: RecentMediaRailTileProps) {
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -782,7 +795,7 @@ const RecentMediaRailTile = ({ log, onQuickLog }: RecentMediaRailTileProps) => {
       </div>
     </button>
   );
-};
+}
 
 type RecentMediaTileProps = {
   log: RecentMediaLog;
