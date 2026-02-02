@@ -96,86 +96,84 @@ export default function useSearch(
         }
       }
 
-      // Database-first search for anime, manga, and reading
       if (type === 'anime' || type === 'manga' || type === 'reading') {
-        try {
-          // First, search in database
-          const dbResults = await searchMediaFn({
-            type,
-            search: debouncedSearch,
-            ids,
+        // try {
+
+        // const dbResults = await searchMediaFn({
+        //   type,
+        //   search: debouncedSearch,
+        //   ids,
+        //   page,
+        //   perPage,
+        // });
+
+        // if (dbResults && dbResults.length >= 10) {
+        //   return dbResults;
+        // }
+
+        //   if (type === 'anime') {
+        //     const animeResults = await searchAnilist(
+        //       debouncedSearch,
+        //       'ANIME',
+        //       page,
+        //       perPage,
+        //       undefined,
+        //       ids
+        //     );
+        //     return [...dbResults, ...animeResults];
+        //   } else if (type === 'manga') {
+        //     const mangaResults = await searchAnilist(
+        //       debouncedSearch,
+        //       'MANGA',
+        //       page,
+        //       perPage,
+        //       'MANGA',
+        //       ids
+        //     );
+        //     return [...dbResults, ...mangaResults];
+        //   } else if (type === 'reading') {
+        //     const readingResults = await searchAnilist(
+        //       debouncedSearch,
+        //       'MANGA',
+        //       page,
+        //       perPage,
+        //       'NOVEL',
+        //       ids
+        //     );
+        //     return [...dbResults, ...readingResults];
+        //   }
+        // } catch (error) {
+        //   console.error(`Search error for ${type}:`, error);
+        //   // On error, try AniList as fallback
+        if (type === 'anime') {
+          return searchAnilist(
+            debouncedSearch,
+            'ANIME',
             page,
             perPage,
-          });
-
-          // If we have results in the database, return them
-          if (dbResults && dbResults.length >= 10) {
-            return dbResults;
-          }
-
-          if (type === 'anime') {
-            const animeResults = await searchAnilist(
-              debouncedSearch,
-              'ANIME',
-              page,
-              perPage,
-              undefined,
-              ids
-            );
-            return [...dbResults, ...animeResults];
-          } else if (type === 'manga') {
-            const mangaResults = await searchAnilist(
-              debouncedSearch,
-              'MANGA',
-              page,
-              perPage,
-              'MANGA',
-              ids
-            );
-            return [...dbResults, ...mangaResults];
-          } else if (type === 'reading') {
-            const readingResults = await searchAnilist(
-              debouncedSearch,
-              'MANGA',
-              page,
-              perPage,
-              'NOVEL',
-              ids
-            );
-            return [...dbResults, ...readingResults];
-          }
-        } catch (error) {
-          console.error(`Search error for ${type}:`, error);
-          // On error, try AniList as fallback
-          if (type === 'anime') {
-            return searchAnilist(
-              debouncedSearch,
-              'ANIME',
-              page,
-              perPage,
-              undefined,
-              ids
-            );
-          } else if (type === 'manga') {
-            return searchAnilist(
-              debouncedSearch,
-              'MANGA',
-              page,
-              perPage,
-              'MANGA',
-              ids
-            );
-          } else if (type === 'reading') {
-            return searchAnilist(
-              debouncedSearch,
-              'MANGA',
-              page,
-              perPage,
-              'NOVEL',
-              ids
-            );
-          }
+            undefined,
+            ids
+          );
+        } else if (type === 'manga') {
+          return searchAnilist(
+            debouncedSearch,
+            'MANGA',
+            page,
+            perPage,
+            'MANGA',
+            ids
+          );
+        } else if (type === 'reading') {
+          return searchAnilist(
+            debouncedSearch,
+            'MANGA',
+            page,
+            perPage,
+            'NOVEL',
+            ids
+          );
         }
+        // }
       }
 
       // VN, movie, and TV show only search in database
@@ -191,7 +189,7 @@ export default function useSearch(
 
       return [];
     },
-    enabled: isEnabled, // Allow callers to control enabling alongside local checks
+    enabled: isEnabled,
     staleTime: type === 'video' ? 5 * 60 * 1000 : 0, // Cache YouTube results for 5 minutes
   });
 }

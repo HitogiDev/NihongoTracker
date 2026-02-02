@@ -18,6 +18,7 @@ import {
 import { OutletClubMediaContextType, IClubReview } from '../types';
 import LikeButton from '../components/LikeButton';
 import EditReviewModal from '../components/EditReviewModal';
+import { AxiosError } from 'axios';
 
 export default function ClubMediaReviews() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
@@ -56,7 +57,7 @@ export default function ClubMediaReviews() {
     },
     onError: (error: unknown) => {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to add review';
+        error instanceof AxiosError ? error.message : 'Failed to add review';
       toast.error(errorMessage);
     },
   });
