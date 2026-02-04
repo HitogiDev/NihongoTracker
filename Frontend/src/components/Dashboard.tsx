@@ -11,20 +11,22 @@ import {
   getAverageColorFn,
 } from '../api/trackerApi';
 import {
-  MdAdd,
-  MdArrowDownward,
-  MdArrowUpward,
-  MdBook,
-  MdGamepad,
-  MdLeaderboard,
-  MdMovie,
-  MdOutlineTv,
-  MdPerson,
-  MdPlayArrow,
-  MdVideoLibrary,
-  MdVolumeUp,
-} from 'react-icons/md';
-import { Flame, Sparkles, Trophy } from 'lucide-react';
+  Flame,
+  Sparkles,
+  Trophy,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  Book,
+  GamepadDirectional,
+  ChartNoAxesColumn,
+  Clapperboard,
+  MonitorPlay,
+  User,
+  Video,
+  Play,
+  Volume2,
+} from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import ClubRanking from './club/ClubRanking';
@@ -33,14 +35,14 @@ import XpAnimation from './XpAnimation';
 import { IMediaDocument, ILog, ILoginResponse } from '../types';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
-  reading: MdBook,
-  anime: MdPlayArrow,
-  vn: MdGamepad,
-  video: MdVideoLibrary,
-  manga: MdBook,
-  audio: MdVolumeUp,
-  movie: MdMovie,
-  'tv show': MdOutlineTv,
+  reading: Book,
+  anime: Play,
+  vn: GamepadDirectional,
+  video: Video,
+  manga: Book,
+  audio: Volume2,
+  movie: Clapperboard,
+  'tv show': MonitorPlay,
 };
 
 type FeedType = ILog['type'] | 'all';
@@ -67,16 +69,17 @@ const feedTimeOptions: Array<{ label: string; value: FeedTimeRange }> = [
 
 const RECENT_MEDIA_PANEL_LIMIT = 4;
 
-const getRecentMediaRailLimit = (width: number) => {
+function getRecentMediaRailLimit(width: number) {
   if (width >= 1024) return 7;
   if (width >= 640) return 6;
   return 4;
-};
+}
 
 function Dashboard() {
   const { user, setUser } = useUserDataStore();
   const username = user?.username;
   const userTimezone = user?.settings?.timezone ?? 'UTC';
+
   const { formatRelativeDate } = useDateFormatting();
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<
@@ -118,7 +121,7 @@ function Dashboard() {
         type: feedFilters.type,
         timeRange: feedFilters.timeRange,
         limit: 20,
-        includeSelf: false,
+        includeSelf: true,
       }).catch(() => []),
     enabled: !!username,
     staleTime: 1000 * 60 * 2,
@@ -238,9 +241,9 @@ function Dashboard() {
     return 'N/A';
   }
 
-  const transformMediaToDocument = (
+  function transformMediaToDocument(
     media?: ILog['media']
-  ): IMediaDocument | undefined => {
+  ): IMediaDocument | undefined {
     if (!media) return undefined;
     return {
       contentId: media.contentId,
@@ -254,14 +257,14 @@ function Dashboard() {
       type: (media.type as IMediaDocument['type']) ?? 'anime',
       isAdult: (media as IMediaDocument)?.isAdult ?? false,
     };
-  };
+  }
 
-  const handleQuickLogOpen = (media?: ILog['media']) => {
+  function handleQuickLogOpen(media?: ILog['media']) {
     setSelectedMedia(transformMediaToDocument(media));
     setQuickLogOpen(true);
-  };
+  }
 
-  const handleQuickLogSuccess = async () => {
+  async function handleQuickLogSuccess() {
     if (!user?.username) return;
     const previousXp = user.stats?.userXp ?? 0;
     setInitialXp(previousXp);
@@ -294,7 +297,7 @@ function Dashboard() {
     } catch (error) {
       console.error('Failed to refresh user data after quick log', error);
     }
-  };
+  }
 
   const streak = user.stats?.currentStreak ?? 0;
   const monthlyRanking = rankingSummary?.monthly;
@@ -330,18 +333,18 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
           <Link to="/createlog" className="btn btn-primary btn-lg">
-            <MdAdd className="w-5 h-5" />
+            <Plus className="w-5 h-5" />
             Create Log
           </Link>
           <Link
             to={`/user/${user.username}`}
             className="btn btn-secondary btn-lg"
           >
-            <MdPerson className="w-5 h-5" />
+            <User className="w-5 h-5" />
             Profile
           </Link>
           <Link to="/ranking" className="btn btn-accent btn-lg">
-            <MdLeaderboard className="w-5 h-5" />
+            <ChartNoAxesColumn className="w-5 h-5" />
             Rankings
           </Link>
         </div>
@@ -444,8 +447,8 @@ function Dashboard() {
                             : 'text-base-content/60'
                       }`}
                     >
-                      {stat.change > 0 && <MdArrowUpward />}
-                      {stat.change < 0 && <MdArrowDownward />}
+                      {stat.change > 0 && <ChevronUp />}
+                      {stat.change < 0 && <ChevronDown />}
                       {stat.change !== 0
                         ? `${Math.abs(stat.change)}% vs. last month`
                         : 'No change'}
@@ -511,7 +514,7 @@ function Dashboard() {
                   ))
                 ) : globalFeed && globalFeed.length > 0 ? (
                   globalFeed.map((log) => {
-                    const Icon = logTypeIcons[log.type] || MdBook;
+                    const Icon = logTypeIcons[log.type] || Book;
                     const mediaCover = (log.media as IMediaDocument | undefined)
                       ?.coverImage;
                     const image = log.media?.contentImage || mediaCover;
@@ -574,7 +577,7 @@ function Dashboard() {
                             <span className="text-base-content/60">
                               tracked
                             </span>
-                            <Icon className="text-primary" />
+                            <Icon className="text-primary w-4 h-4" />
                             {mediaLink ? (
                               <Link
                                 to={mediaLink}
@@ -661,44 +664,50 @@ type RecentMediaPanelProps = {
   onQuickLog: (media?: ILog['media']) => void;
 };
 
-const RecentMediaPanel = ({ logs, onQuickLog }: RecentMediaPanelProps) => (
-  <div className="card bg-base-100 shadow-xl border border-base-200/60">
-    <div className="card-body space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-base-content/60">
-            Recent Media
+function RecentMediaPanel({ logs, onQuickLog }: RecentMediaPanelProps) {
+  return (
+    <div className="card bg-base-100 shadow-xl border border-base-200/60">
+      <div className="card-body space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-base-content/60">
+              Recent Media
+            </p>
+            <h2 className="card-title flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Jump back in instantly
+            </h2>
+          </div>
+          <span className="text-xs text-base-content/60">
+            Quick log shortcuts
+          </span>
+        </div>
+        {logs.length === 0 ? (
+          <p className="text-base-content/70 text-sm">
+            Log something to unlock quick actions here.
           </p>
-          <h2 className="card-title flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Jump back in instantly
-          </h2>
-        </div>
-        <span className="text-xs text-base-content/60">
-          Quick log shortcuts
-        </span>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {logs.map((log) => (
+              <RecentMediaTile
+                key={log._id}
+                log={log}
+                onQuickLog={onQuickLog}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      {logs.length === 0 ? (
-        <p className="text-base-content/70 text-sm">
-          Log something to unlock quick actions here.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {logs.map((log) => (
-            <RecentMediaTile key={log._id} log={log} onQuickLog={onQuickLog} />
-          ))}
-        </div>
-      )}
     </div>
-  </div>
-);
+  );
+}
 
 type RecentMediaRailProps = {
   allLogs: RecentMediaLog[];
   onQuickLog: (media?: ILog['media']) => void;
 };
 
-const RecentMediaRail = ({ allLogs, onQuickLog }: RecentMediaRailProps) => {
+function RecentMediaRail({ allLogs, onQuickLog }: RecentMediaRailProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(false);
   const [limit, setLimit] = useState(() =>
@@ -756,7 +765,7 @@ const RecentMediaRail = ({ allLogs, onQuickLog }: RecentMediaRailProps) => {
       </div>
     </div>
   );
-};
+}
 
 type RecentMediaRailTileProps = {
   log: RecentMediaLog;
@@ -778,7 +787,7 @@ function RecentMediaRailTile({ log, onQuickLog }: RecentMediaRailTileProps) {
         <img src={image} alt={title} className="w-full h-full object-cover" />
       ) : (
         <div className="w-full h-full bg-base-300 flex items-center justify-center">
-          <MdPlayArrow className="w-8 h-8 text-base-content/40" />
+          <Play className="w-8 h-8 text-base-content/40" />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
@@ -802,7 +811,7 @@ type RecentMediaTileProps = {
   onQuickLog: (media?: ILog['media']) => void;
 };
 
-const RecentMediaTile = ({ log, onQuickLog }: RecentMediaTileProps) => {
+function RecentMediaTile({ log, onQuickLog }: RecentMediaTileProps) {
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -828,7 +837,7 @@ const RecentMediaTile = ({ log, onQuickLog }: RecentMediaTileProps) => {
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-base-300">
-          <MdPlayArrow className="w-10 h-10 text-base-content/40" />
+          <Play className="w-10 h-10 text-base-content/40" />
         </div>
       )}
       <div
@@ -857,4 +866,4 @@ const RecentMediaTile = ({ log, onQuickLog }: RecentMediaTileProps) => {
       </div>
     </button>
   );
-};
+}

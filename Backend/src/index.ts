@@ -10,8 +10,6 @@ import {
   IServerToClientEvents,
   IClientToServerEvents,
   ISocketData,
-  ISocketJoinRoomData,
-  ISocketSendLineData,
 } from './types.js';
 
 connectDB();

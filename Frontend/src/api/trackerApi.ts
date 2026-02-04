@@ -301,7 +301,9 @@ export async function getRecentLogsFn(username: string | undefined) {
   if (!username) {
     throw new Error('Username is required to fetch recent logs');
   }
-  const { data } = await api.get<ILog[]>(`users/${username}/recentlogs`);
+  const { data } = await api.get<ILog[]>(`users/${username}/recentlogs`, {
+    params: { limit: 10 },
+  });
   return data;
 }
 

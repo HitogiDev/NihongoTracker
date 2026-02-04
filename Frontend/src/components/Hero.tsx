@@ -124,7 +124,7 @@ function Hero() {
               ref={ctaRef}
               className="flex flex-col sm:flex-row gap-6 justify-center items-center"
             >
-              <Link to="/register">
+              <Link to="/register" className="pointer-events-none">
                 <button
                   disabled
                   className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
@@ -349,12 +349,12 @@ function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Link to="/register">
+              <Link to="/register" className="pointer-events-none">
                 <button
                   disabled
                   className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
-                  Start Free Today
+                  Coming Soon!
                   {/*<HiArrowRight className="ml-2" />*/}
                 </button>
               </Link>

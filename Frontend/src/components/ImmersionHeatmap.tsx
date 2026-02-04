@@ -50,7 +50,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
         timezone
       );
       if (logDateInUserTz >= twentyFourWeeksAgo) {
-        const dateKey = logDateInUserTz.toISOString().split('T')[0];
+        const dateKey = `${logDateInUserTz.getFullYear()}-${String(logDateInUserTz.getMonth() + 1).padStart(2, '0')}-${String(logDateInUserTz.getDate()).padStart(2, '0')}`;
         const currentTotal = dailyData.get(dateKey) || 0;
         const xpValue = Math.max(0, Number(log.xp) || 0);
         dailyData.set(dateKey, currentTotal + xpValue);
@@ -67,7 +67,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     for (let i = 24 * 7 - 1; i >= 0; i--) {
       const date = new Date(todayInUserTz);
       date.setDate(date.getDate() - i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       const value = dailyData.get(dateKey) || 0;
 
       // Determine intensity level (0-4) based on relative XP for the window

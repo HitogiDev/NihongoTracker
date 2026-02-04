@@ -7,6 +7,7 @@ import {
   ICreateLog,
   IMediaDocument,
   IManabeLogs,
+  IUser,
 } from '../types.js';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
@@ -56,7 +57,7 @@ export async function getRecentLogs(
   res: Response,
   next: NextFunction
 ) {
-  const { user } = res.locals;
+  const { user } = res.locals as { user: Omit<IUser, 'password'> };
   const limit = req.query.limit ? parseInt(req.query.limit as string) : 4;
 
   try {

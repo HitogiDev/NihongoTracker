@@ -24,6 +24,7 @@ export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
   timezone?: string;
+  hiddenRecentMedia?: string[]
 }
 
 export interface IPatreonData {

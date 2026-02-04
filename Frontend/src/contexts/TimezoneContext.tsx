@@ -10,9 +10,5 @@ export function TimezoneProvider({ children }: TimezoneProviderProps) {
   const { user } = useUserDataStore();
   const timezone = user?.settings?.timezone || 'UTC';
 
-  return (
-    <TimezoneContext.Provider value={{ timezone }}>
-      {children}
-    </TimezoneContext.Provider>
-  );
+  return <TimezoneContext value={{ timezone }}>{children}</TimezoneContext>;
 }

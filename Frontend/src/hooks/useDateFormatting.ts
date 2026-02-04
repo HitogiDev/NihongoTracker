@@ -8,7 +8,7 @@ import {
   getDayBoundsInTimezone,
 } from '../utils/timezone';
 
-export const useDateFormatting = () => {
+export function useDateFormatting() {
   const { timezone } = useTimezone();
 
   const formatDate = (
@@ -64,4 +64,4 @@ export const useDateFormatting = () => {
     formatDateTime,
     formatTime,
   };
-};
+}

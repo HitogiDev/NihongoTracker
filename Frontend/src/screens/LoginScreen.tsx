@@ -488,7 +488,7 @@ function LoginScreen() {
                 </div>
 
                 {/* Register Link */}
-                <div ref={addToRefs} className="text-center">
+                {/* <div ref={addToRefs} className="text-center">
                   <p className="text-sm text-base-content/70">
                     Don't have an account?{' '}
                     <Link
@@ -498,7 +498,7 @@ function LoginScreen() {
                       Create one here
                     </Link>
                   </p>
-                </div>
+                </div> */}
               </form>
               {isPending && <Loader />}
             </div>
