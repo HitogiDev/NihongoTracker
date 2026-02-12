@@ -45,12 +45,12 @@ function ForgotPasswordScreen() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (isFormValid) {
       mutate(email);
     }
-  };
+  }
 
   if (isSuccess) {
     return (

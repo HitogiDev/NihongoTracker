@@ -251,7 +251,7 @@ export interface IEditedFields {
   xp?: number;
 }
 
-export interface updateLogRequest {
+export interface IUpdateLogRequest {
   description?: string;
   time?: number;
   date?: Date;
@@ -701,7 +701,14 @@ export interface IClubMember {
 export interface IClubMedia {
   _id?: string;
   mediaId: string;
-  mediaType: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie';
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'tv show';
   title: string;
   description?: string;
   startDate: Date;
@@ -857,4 +864,3 @@ export interface ITextSession {
   createdAt: string;
   updatedAt?: string;
 }
-

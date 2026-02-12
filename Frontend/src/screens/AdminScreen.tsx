@@ -20,8 +20,8 @@ import {
   updateChangelogFn,
   deleteChangelogFn,
 } from '../api/trackerApi';
-import { FiUsers } from 'react-icons/fi';
-import type { updateLogRequest } from '../types';
+import { Users } from 'lucide-react';
+import type { IUpdateLogRequest } from '../types';
 
 type AdminUserRow = {
   _id: string;
@@ -228,7 +228,7 @@ function AdminScreen() {
       payload,
     }: {
       logId: string;
-      payload: Partial<updateLogRequest>;
+      payload: Partial<IUpdateLogRequest>;
     }) => adminUpdateLogFn(logId, payload),
     onSuccess: () => {
       toast.success('Log updated');
@@ -358,7 +358,7 @@ function AdminScreen() {
             className={`tab tab-lg ${selectedTab === 'users' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('users')}
           >
-            <FiUsers className="w-5 h-5 mr-2" />
+            <Users className="w-5 h-5 mr-2" />
             Users
           </button>
           <button
@@ -1355,7 +1355,7 @@ function AdminScreen() {
                       className="btn btn-primary"
                       onClick={() => {
                         if (!selectedLog) return;
-                        const payload: Partial<updateLogRequest> = {
+                        const payload: Partial<IUpdateLogRequest> = {
                           description: selectedLog.description,
                           time: selectedLog.time,
                           episodes: selectedLog.episodes,

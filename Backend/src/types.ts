@@ -24,7 +24,7 @@ export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
   timezone?: string;
-  hiddenRecentMedia?: string[]
+  hiddenRecentMedia?: string[];
 }
 
 export interface IPatreonData {
@@ -449,6 +449,7 @@ export interface IUpdateRequest {
   discordId?: string;
   blurAdultContent?: string;
   hideUnmatchedLogsAlert?: string;
+  hiddenRecentMedia?: string;
   timezone?: string;
   about?: string;
 }

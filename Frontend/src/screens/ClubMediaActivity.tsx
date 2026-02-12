@@ -1,6 +1,6 @@
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdHistory } from 'react-icons/md';
+import { History } from 'lucide-react';
 import { getClubMediaLogsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 
@@ -110,7 +110,7 @@ export default function ClubMediaActivity() {
               </div>
             ) : (
               <div className="text-center py-12 text-base-content/60">
-                <MdHistory className="mx-auto text-4xl mb-4 opacity-50" />
+                <History className="mx-auto text-4xl mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
                 <p>
                   No club members have logged this media since the consumption

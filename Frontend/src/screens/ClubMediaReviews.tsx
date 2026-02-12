@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import {
-  MdComment,
-  MdStar,
-  MdStarBorder,
-  MdWarning,
-  MdEdit,
-} from 'react-icons/md';
+import { MessageSquareText, Star, TriangleAlert, Pencil } from 'lucide-react';
 import {
   getClubReviewsFn,
   addClubReviewFn,
@@ -147,9 +141,9 @@ export default function ClubMediaReviews() {
                         className="btn btn-ghost btn-sm p-1"
                       >
                         {reviewForm.rating && star <= reviewForm.rating ? (
-                          <MdStar className="text-yellow-500" />
+                          <Star className="text-yellow-500" />
                         ) : (
-                          <MdStarBorder className="text-base-content/40" />
+                          <Star className="text-base-content/40" />
                         )}
                       </button>
                     ))}
@@ -243,7 +237,7 @@ export default function ClubMediaReviews() {
                       <div className="flex items-center gap-1">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <MdStar
+                            <Star
                               key={star}
                               className={
                                 star <= review.rating!
@@ -261,7 +255,7 @@ export default function ClubMediaReviews() {
                   {review.hasSpoilers && !showSpoilers ? (
                     <div className="mt-4 p-4 border border-warning rounded-lg bg-warning/10">
                       <div className="flex items-center gap-2 text-warning mb-2">
-                        <MdWarning />
+                        <TriangleAlert />
                         <span className="font-medium">Spoiler Warning</span>
                       </div>
                       <p className="text-sm mb-3">
@@ -278,7 +272,7 @@ export default function ClubMediaReviews() {
                     <div className="mt-4">
                       {review.hasSpoilers && (
                         <div className="flex items-center gap-2 text-warning mb-2">
-                          <MdWarning className="text-sm" />
+                          <TriangleAlert className="text-sm" />
                           <span className="text-xs">Contains spoilers</span>
                         </div>
                       )}
@@ -304,7 +298,7 @@ export default function ClubMediaReviews() {
                         onClick={() => setEditingReview(review)}
                         title="Edit review"
                       >
-                        <MdEdit />
+                        <Pencil />
                       </button>
                     )}
                   </div>
@@ -314,7 +308,7 @@ export default function ClubMediaReviews() {
           </div>
         ) : (
           <div className="text-center py-12 text-base-content/60">
-            <MdComment className="mx-auto text-4xl mb-4 opacity-50" />
+            <MessageSquareText className="mx-auto text-4xl mb-4 opacity-50" />
             <h3 className="text-lg font-semibold mb-2">No Reviews Yet</h3>
             <p>Be the first to share your thoughts about this media!</p>
           </div>

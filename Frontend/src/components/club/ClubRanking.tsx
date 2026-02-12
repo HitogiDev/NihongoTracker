@@ -1,13 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import {
-  MdGroup,
-  MdLeaderboard,
-  MdTrendingUp,
-  MdExpandMore,
-} from 'react-icons/md';
-import { PiCrownSimpleFill } from 'react-icons/pi';
+
+import { Users, BarChart, TrendingUp, ChevronDown, Crown } from 'lucide-react';
+
 import { getUserClubsFn, getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
 
@@ -66,8 +62,7 @@ function ClubRanking({ username }: ClubRankingProps) {
   }
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1)
-      return <PiCrownSimpleFill className="text-warning text-xl" />;
+    if (rank === 1) return <Crown className="text-warning text-xl w-4 h-4" />;
     if (rank <= 3) return <span className="text-lg">🏆</span>;
     if (rank <= 10) return <span className="text-lg">🥇</span>;
     return null;
@@ -85,7 +80,7 @@ function ClubRanking({ username }: ClubRankingProps) {
       <div className="card bg-base-100 shadow-lg">
         <div className="card-body">
           <h3 className="card-title text-lg flex items-center gap-2">
-            <MdLeaderboard className="text-primary" />
+            <BarChart className="text-primary w-4 h-4" />
             Club Ranking
           </h3>
           <div className="text-center py-4 text-error">
@@ -101,7 +96,7 @@ function ClubRanking({ username }: ClubRankingProps) {
       <div className="card-body">
         <div className="flex items-center justify-between mb-4">
           <h3 className="card-title text-lg flex items-center gap-2">
-            <MdLeaderboard className="text-primary" />
+            <BarChart className="text-primary w-4 h-4" />
             Club Ranking
           </h3>
           {/* Club Selection Dropdown (only show if user has multiple clubs) */}
@@ -109,7 +104,7 @@ function ClubRanking({ username }: ClubRankingProps) {
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-sm btn-ghost">
                 {selectedClub?.name || 'Select Club'}
-                <MdExpandMore className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" />
               </div>
               <ul
                 tabIndex={0}
@@ -149,7 +144,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                       />
                     ) : (
                       <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                        <MdGroup className="text-primary" />
+                        <Users className="text-primary w-4 h-4" />
                       </div>
                     )}
                   </div>
@@ -190,7 +185,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-2 text-primary">
-                      <MdTrendingUp />
+                      <TrendingUp className="w-4 h-4" />
                       <span className="font-bold text-lg">
                         {numberWithCommas(userRanking.totalXp)}
                       </span>

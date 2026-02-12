@@ -1,16 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import {
-  MdFavorite,
-  MdPeople,
-  MdLightbulb,
-  MdSecurity,
-  MdMonetizationOn,
-  MdTrendingUp,
-  MdGamepad,
-  MdBook,
-  MdMovie,
-  MdPlayArrow,
-} from "react-icons/md";
+  Heart,
+  Users,
+  Lightbulb,
+  ShieldCheck,
+  HandCoins,
+  TrendingUp,
+  GamepadDirectional,
+  Book,
+  Clapperboard,
+  Volume2,
+  CircleCheck,
+  CircleX,
+} from 'lucide-react';
 
 function AboutScreen() {
   return (
@@ -24,8 +26,8 @@ function AboutScreen() {
             </h1>
             <p className="text-xl md:text-2xl text-base-content/80 max-w-3xl mx-auto leading-relaxed">
               I'm a solo developer and Japanese learner who got tired of using
-              spreadsheets and Discord bots and built something{" "}
-              <span className="font-semibold text-primary">actually fun</span>{" "}
+              spreadsheets and Discord bots and built something{' '}
+              <span className="font-semibold text-primary">actually fun</span>{' '}
               for tracking immersion.
             </p>
           </div>
@@ -35,7 +37,7 @@ function AboutScreen() {
             <div className="card bg-base-100 shadow-2xl">
               <div className="card-body p-8 md:p-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-primary">
-                  <MdFavorite className="inline w-8 h-8 mr-2" />
+                  <Heart className="inline w-8 h-8 mr-2" />
                   My Story
                 </h2>
                 <div className="prose prose-lg max-w-none text-center">
@@ -74,7 +76,7 @@ function AboutScreen() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="card-body text-center">
                   <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MdMonetizationOn className="w-8 h-8 text-success" />
+                    <HandCoins className="w-8 h-8 text-success" />
                   </div>
                   <h3 className="text-xl font-bold mb-3">
                     Core Features Free Forever
@@ -91,7 +93,7 @@ function AboutScreen() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="card-body text-center">
                   <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MdSecurity className="w-8 h-8 text-primary" />
+                    <ShieldCheck className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-xl font-bold mb-3">
                     No Ads, No Distractions
@@ -106,7 +108,7 @@ function AboutScreen() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="card-body text-center">
                   <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MdPeople className="w-8 h-8 text-secondary" />
+                    <Users className="w-8 h-8 text-secondary" />
                   </div>
                   <h3 className="text-xl font-bold mb-3">Learner First</h3>
                   <p className="text-base-content/80">
@@ -120,7 +122,7 @@ function AboutScreen() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="card-body text-center">
                   <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MdLightbulb className="w-8 h-8 text-accent" />
+                    <Lightbulb className="w-8 h-8 text-accent" />
                   </div>
                   <h3 className="text-xl font-bold mb-3">Keep It Simple</h3>
                   <p className="text-base-content/80">
@@ -133,7 +135,7 @@ function AboutScreen() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="card-body text-center">
                   <div className="w-16 h-16 bg-warning/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MdGamepad className="w-8 h-8 text-warning" />
+                    <GamepadDirectional className="w-8 h-8 text-warning" />
                   </div>
                   <h3 className="text-xl font-bold mb-3">Make It Fun</h3>
                   <p className="text-base-content/80">
@@ -146,7 +148,7 @@ function AboutScreen() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                 <div className="card-body text-center">
                   <div className="w-16 h-16 bg-info/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <MdTrendingUp className="w-8 h-8 text-info" />
+                    <TrendingUp className="w-8 h-8 text-info" />
                   </div>
                   <h3 className="text-xl font-bold mb-3">Actually Helpful</h3>
                   <p className="text-base-content/80">
@@ -166,11 +168,7 @@ function AboutScreen() {
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-error/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-error font-bold text-sm leading-none">
-                      ×
-                    </span>
-                  </div>
+                  <CircleX className="w-8 h-8 text-error flex-shrink-0" />
                   <div>
                     <h4 className="font-bold text-lg text-base-content">
                       Other Tools
@@ -182,11 +180,7 @@ function AboutScreen() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-error/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-error font-bold text-sm leading-none">
-                      ×
-                    </span>
-                  </div>
+                  <CircleX className="w-8 h-8 text-error flex-shrink-0" />
                   <div>
                     <h4 className="font-bold text-lg text-base-content">
                       Spreadsheets
@@ -197,11 +191,7 @@ function AboutScreen() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-error/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-error font-bold text-sm leading-none">
-                      ×
-                    </span>
-                  </div>
+                  <CircleX className="w-8 h-8 text-error flex-shrink-0" />
                   <div>
                     <h4 className="font-bold text-lg text-base-content">
                       Premium Apps
@@ -215,11 +205,7 @@ function AboutScreen() {
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-success font-bold text-sm leading-none">
-                      ✓
-                    </span>
-                  </div>
+                  <CircleCheck className="w-8 h-8 text-success flex-shrink-0" />
                   <div>
                     <h4 className="font-bold text-lg text-primary">
                       NihongoTracker
@@ -231,11 +217,7 @@ function AboutScreen() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-success font-bold text-sm leading-none">
-                      ✓
-                    </span>
-                  </div>
+                  <CircleCheck className="w-8 h-8 text-success flex-shrink-0" />
                   <div>
                     <h4 className="font-bold text-lg text-primary">
                       Gamified & Fun
@@ -247,11 +229,7 @@ function AboutScreen() {
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-success font-bold text-sm leading-none">
-                      ✓
-                    </span>
-                  </div>
+                  <CircleCheck className="w-8 h-8 text-success flex-shrink-0" />
                   <div>
                     <h4 className="font-bold text-lg text-primary">
                       Core Features Free
@@ -274,7 +252,7 @@ function AboutScreen() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="card-body text-center p-6">
-                  <MdMovie className="w-12 h-12 text-primary mx-auto mb-3" />
+                  <Clapperboard className="w-12 h-12 text-primary mx-auto mb-3" />
                   <h3 className="font-bold text-lg mb-2">Anime & Dramas</h3>
                   <p className="text-sm text-base-content/70">
                     Episodes, seasons, movies - all your visual immersion
@@ -283,7 +261,7 @@ function AboutScreen() {
               </div>
               <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="card-body text-center p-6">
-                  <MdBook className="w-12 h-12 text-secondary mx-auto mb-3" />
+                  <Book className="w-12 h-12 text-secondary mx-auto mb-3" />
                   <h3 className="font-bold text-lg mb-2">Reading</h3>
                   <p className="text-sm text-base-content/70">
                     Manga, light novels, books, and web novels
@@ -292,7 +270,7 @@ function AboutScreen() {
               </div>
               <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="card-body text-center p-6">
-                  <MdGamepad className="w-12 h-12 text-accent mx-auto mb-3" />
+                  <GamepadDirectional className="w-12 h-12 text-accent mx-auto mb-3" />
                   <h3 className="font-bold text-lg mb-2">Visual Novels</h3>
                   <p className="text-sm text-base-content/70">
                     Characters read, routes completed, hours played
@@ -301,7 +279,7 @@ function AboutScreen() {
               </div>
               <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="card-body text-center p-6">
-                  <MdPlayArrow className="w-12 h-12 text-info mx-auto mb-3" />
+                  <Volume2 className="w-12 h-12 text-info mx-auto mb-3" />
                   <h3 className="font-bold text-lg mb-2">Audio Content</h3>
                   <p className="text-sm text-base-content/70">
                     Podcasts, audiobooks, and listening practice
@@ -326,7 +304,7 @@ function AboutScreen() {
                 to="/register"
                 className="btn btn-disabled btn-primary btn-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
-                {/*<MdPlayArrow className="w-6 h-6" />*/}
+                {/*<Volume2 className="w-6 h-6" />*/}
                 Coming Soon!
               </Link>
               <Link

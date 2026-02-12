@@ -9,18 +9,18 @@ import ImageCropDialog, {
   ImageCropResult,
 } from '../components/ImageCropDialog';
 import {
-  MdAdd,
-  MdArrowBack,
-  MdGroup,
-  MdInfo,
-  MdLock,
-  MdPublic,
-  MdRemove,
-  MdImage,
-  MdWarning,
-  MdUpload,
-  MdDelete,
-} from 'react-icons/md';
+  Plus,
+  ArrowLeft,
+  Users,
+  Info,
+  Lock,
+  Earth,
+  Minus,
+  Image,
+  TriangleAlert,
+  Upload,
+  Trash,
+} from 'lucide-react';
 import { createClubFn } from '../api/clubApi';
 import { ICreateClubRequest } from '../types';
 
@@ -113,7 +113,7 @@ function CreateClubScreen() {
   };
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -127,7 +127,7 @@ function CreateClubScreen() {
     };
 
     createClubMutation.mutate(submissionData);
-  };
+  }
 
   // Handle input changes
   const handleInputChange = (
@@ -376,7 +376,7 @@ function CreateClubScreen() {
               className="btn btn-ghost btn-circle"
               onClick={() => navigate('/clubs')}
             >
-              <MdArrowBack className="text-xl" />
+              <ArrowLeft className="text-xl" />
             </button>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-base-content">
@@ -398,7 +398,7 @@ function CreateClubScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-                  <MdInfo className="text-primary" />
+                  <Info className="text-primary" />
                   Basic Information
                 </h2>
 
@@ -467,7 +467,7 @@ function CreateClubScreen() {
                   <div className="flex gap-4">
                     <label className="label cursor-pointer flex-1 bg-base-200 rounded-lg p-4">
                       <div className="flex items-center gap-3">
-                        <MdPublic className="text-xl text-success" />
+                        <Earth className="text-xl text-success" />
                         <div>
                           <span className="label-text font-medium">Public</span>
                           <div className="text-xs text-base-content/60">
@@ -486,7 +486,7 @@ function CreateClubScreen() {
 
                     <label className="label cursor-pointer flex-1 bg-base-200 rounded-lg p-4">
                       <div className="flex items-center gap-3">
-                        <MdLock className="text-xl text-warning" />
+                        <Lock className="text-xl text-warning" />
                         <div>
                           <span className="label-text font-medium">
                             Private
@@ -513,7 +513,7 @@ function CreateClubScreen() {
                     <span className="label-text font-medium">Member Limit</span>
                   </label>
                   <div className="flex items-center gap-4">
-                    <MdGroup className="text-xl text-base-content/60" />
+                    <Users className="text-xl text-base-content/60" />
                     <input
                       type="number"
                       className={`input input-bordered flex-1 ${errors.memberLimit ? 'input-error' : ''}`}
@@ -576,7 +576,7 @@ function CreateClubScreen() {
                       !currentTag.trim() || (formData.tags?.length || 0) >= 10
                     }
                   >
-                    <MdAdd className="text-lg" />
+                    <Plus className="text-lg" />
                   </button>
                 </div>
 
@@ -593,7 +593,7 @@ function CreateClubScreen() {
                             className="btn btn-ghost btn-xs btn-circle"
                             onClick={() => removeTag(tag)}
                           >
-                            <MdRemove className="text-xs" />
+                            <Minus className="text-xs" />
                           </button>
                         </div>
                       ))}
@@ -627,7 +627,7 @@ function CreateClubScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-                  <MdImage className="text-primary" />
+                  <Image className="text-primary" />
                   Club Media
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
@@ -652,14 +652,14 @@ function CreateClubScreen() {
                             />
                           ) : (
                             <div className="flex items-center justify-center w-full h-full">
-                              <MdGroup className="text-4xl text-base-content/40" />
+                              <Users className="text-4xl text-base-content/40" />
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <label className="btn btn-sm btn-primary">
-                          <MdUpload />
+                          <Upload />
                           Upload
                           <input
                             type="file"
@@ -674,7 +674,7 @@ function CreateClubScreen() {
                             className="btn btn-sm btn-ghost"
                             onClick={() => clearFile('avatar')}
                           >
-                            <MdDelete />
+                            <Trash />
                             Remove
                           </button>
                         )}
@@ -699,12 +699,12 @@ function CreateClubScreen() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <MdImage className="text-4xl text-base-content/40" />
+                          <Image className="text-4xl text-base-content/40" />
                         )}
                       </div>
                       <div className="flex gap-2">
                         <label className="btn btn-sm btn-primary">
-                          <MdUpload />
+                          <Upload />
                           Upload
                           <input
                             type="file"
@@ -719,7 +719,7 @@ function CreateClubScreen() {
                             className="btn btn-sm btn-ghost"
                             onClick={() => clearFile('banner')}
                           >
-                            <MdDelete />
+                            <Trash />
                             Remove
                           </button>
                         )}
@@ -737,7 +737,7 @@ function CreateClubScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-                  <MdInfo className="text-primary" />
+                  <Info className="text-primary" />
                   Club Rules
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
@@ -745,7 +745,7 @@ function CreateClubScreen() {
                 </p>
 
                 <div className="alert alert-warning mb-4 text-sm">
-                  <MdWarning className="text-lg" />
+                  <TriangleAlert className="text-lg" />
                   <span>
                     <strong>Important:</strong> Club names, profile pictures,
                     and banners must not contain offensive content. Violation of
@@ -801,7 +801,7 @@ function CreateClubScreen() {
                 {createClubMutation.isPending ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : (
-                  <MdGroup className="text-lg" />
+                  <Users className="text-lg" />
                 )}
                 Create Club
               </button>

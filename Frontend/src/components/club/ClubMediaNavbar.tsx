@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MdInfo, MdComment, MdLeaderboard, MdHistory } from 'react-icons/md';
+import { Info, MessageSquareText, BarChart, History } from 'lucide-react';
 
 function ClubMediaNavbar({
   clubId,
@@ -14,25 +14,25 @@ function ClubMediaNavbar({
         <ul className="menu menu-horizontal gap-5">
           <li>
             <Link to={`/clubs/${clubId}/media/${mediaId}`}>
-              <MdInfo className="mr-2" />
+              <Info className="mr-1 w-4 h-4" />
               Information
             </Link>
           </li>
           <li>
             <Link to={`/clubs/${clubId}/media/${mediaId}/activity`}>
-              <MdHistory className="mr-2" />
+              <History className="mr-1 w-4 h-4" />
               Member Activity
             </Link>
           </li>
           <li>
             <Link to={`/clubs/${clubId}/media/${mediaId}/reviews`}>
-              <MdComment className="mr-2" />
+              <MessageSquareText className="mr-1 w-4 h-4" />
               Reviews
             </Link>
           </li>
           <li>
             <Link to={`/clubs/${clubId}/media/${mediaId}/rankings`}>
-              <MdLeaderboard className="mr-2" />
+              <BarChart className="mr-1 w-4 h-4" />
               Club Rankings
             </Link>
           </li>

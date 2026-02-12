@@ -6,13 +6,7 @@ import {
 } from '../api/trackerApi';
 import { AxiosError } from 'axios';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import {
-  MdPlayArrow,
-  MdBook,
-  MdMovie,
-  MdCheckCircle,
-  MdRadioButtonUnchecked,
-} from 'react-icons/md';
+import { Play, Book, Clapperboard, CircleCheck, Circle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
 import { useEffect, useState } from 'react';
@@ -26,17 +20,17 @@ import { useDateFormatting } from '../hooks/useDateFormatting';
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
     case 'anime':
-      return <MdPlayArrow className="text-lg" />;
+      return <Play className="text-lg" />;
     case 'manga':
     case 'reading':
-      return <MdBook className="text-lg" />;
+      return <Book className="text-lg" />;
     case 'movie':
     case 'video':
-      return <MdMovie className="text-lg" />;
+      return <Clapperboard className="text-lg" />;
     case 'vn':
-      return <MdPlayArrow className="text-lg" />;
+      return <Play className="text-lg" />;
     default:
-      return <MdPlayArrow className="text-lg" />;
+      return <Play className="text-lg" />;
   }
 };
 
@@ -376,12 +370,12 @@ export default function MediaHeader() {
                           <span className="loading loading-spinner loading-sm" />
                         ) : completionStatus.isCompleted ? (
                           <>
-                            <MdCheckCircle className="w-4 h-4" />
+                            <CircleCheck className="w-4 h-4" />
                             <span>Marcar como en progreso</span>
                           </>
                         ) : (
                           <>
-                            <MdRadioButtonUnchecked className="w-4 h-4" />
+                            <Circle className="w-4 h-4" />
                             <span>Marcar como completado</span>
                           </>
                         )}

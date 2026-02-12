@@ -10,27 +10,29 @@ import { useState, useMemo, MouseEvent } from 'react';
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
 import DOMPurify from 'dompurify';
+
 import {
-  MdSearch,
-  MdFilterList,
-  MdSort,
-  MdViewModule,
-  MdViewList,
-  MdAutoAwesome,
-  MdTrendingUp,
-  MdBookmark,
-  MdPlayArrow,
-  MdBook,
-  MdGamepad,
-  MdVideoLibrary,
-  MdWarning,
-  MdLink,
-  MdMovie,
-  MdOutlineTv,
-  MdClose,
-  MdCheckCircle,
-  MdRadioButtonUnchecked,
-} from 'react-icons/md';
+  Search,
+  Funnel,
+  ListFilter,
+  LayoutGrid,
+  LayoutList,
+  Sparkles,
+  TrendingUp,
+  Bookmark,
+  Play,
+  Book,
+  Gamepad,
+  Video,
+  TriangleAlert,
+  Link2,
+  Clapperboard,
+  MonitorPlay,
+  X,
+  CircleCheck,
+  Circle,
+} from 'lucide-react';
+
 import { convertBBCodeToHtml } from '../utils/utils';
 
 type ViewMode = 'grid' | 'list';
@@ -363,7 +365,7 @@ function ListScreen() {
                 role="alert"
                 className="alert alert-warning shadow-lg alert-vertical sm:alert-horizontal"
               >
-                <MdWarning className="h-6 w-6 flex-shrink-0" />
+                <TriangleAlert className="h-6 w-6 flex-shrink-0" />
                 <div>
                   <h3 className="font-bold">Unmatched Logs Found</h3>
                   <div className="text-sm">
@@ -377,7 +379,7 @@ function ListScreen() {
                     className="btn btn-sm btn-outline gap-2"
                     onClick={() => navigate('/matchmedia')}
                   >
-                    <MdLink className="h-4 w-4" />
+                    <Link2 className="h-4 w-4" />
                     <span>Match Logs</span>
                   </button>
                   <button
@@ -385,7 +387,7 @@ function ListScreen() {
                     onClick={() => setShowHideAlertModal(true)}
                     title="Don't show this alert again"
                   >
-                    <MdClose className="h-4 w-4" />
+                    <X className="h-4 w-4" />
                     <span>Don't show again</span>
                   </button>
                 </div>
@@ -400,7 +402,7 @@ function ListScreen() {
                 {/* Search Bar */}
                 <div className="w-full">
                   <label className="input input-bordered flex items-center gap-2">
-                    <MdSearch className="w-5 h-5 opacity-70" />
+                    <Search className="w-5 h-5 opacity-70" />
                     <input
                       type="text"
                       className="grow"
@@ -421,7 +423,7 @@ function ListScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <MdFilterList className="w-4 h-4" />
+                        <Funnel className="w-4 h-4" />
                         Filter:{' '}
                         {selectedFilter === 'all'
                           ? 'All Types'
@@ -464,7 +466,7 @@ function ListScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <MdCheckCircle className="w-4 h-4" />
+                        <CircleCheck className="w-4 h-4" />
                         Progress:{' '}
                         {completionFilter === 'completed'
                           ? 'Completed'
@@ -507,7 +509,7 @@ function ListScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <MdSort className="w-4 h-4" />
+                        <ListFilter className="w-4 h-4" />
                         Sort:{' '}
                         {sortBy === 'title'
                           ? 'Title'
@@ -547,14 +549,14 @@ function ListScreen() {
                       className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
                       onClick={() => setViewMode('grid')}
                     >
-                      <MdViewModule className="w-4 h-4" />
+                      <LayoutGrid className="w-4 h-4" />
                       <span className="sm:hidden ml-2">Grid</span>
                     </button>
                     <button
                       className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
                       onClick={() => setViewMode('list')}
                     >
-                      <MdViewList className="w-4 h-4" />
+                      <LayoutList className="w-4 h-4" />
                       <span className="sm:hidden ml-2">List</span>
                     </button>
                   </div>
@@ -579,7 +581,7 @@ function ListScreen() {
                       (group) => group.length > 0
                     )) && (
                   <div className="flex items-center gap-2 text-sm text-base-content/70">
-                    <MdAutoAwesome className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                     <span>
                       {username !== user?.username ? username + "'s" : 'Your'}{' '}
                       immersion journey
@@ -597,7 +599,7 @@ function ListScreen() {
               <div className="text-center py-20">
                 <div className="max-w-md mx-auto space-y-4">
                   <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
-                    <MdBookmark className="w-12 h-12 text-base-content/40" />
+                    <Bookmark className="w-12 h-12 text-base-content/40" />
                   </div>
                   <h3 className="text-2xl font-bold">No media found</h3>
                   <p className="text-base-content/70">
@@ -650,7 +652,7 @@ function ListScreen() {
             <div className="text-center py-20">
               <div className="max-w-md mx-auto space-y-4">
                 <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
-                  <MdBookmark className="w-12 h-12 text-base-content/40" />
+                  <Bookmark className="w-12 h-12 text-base-content/40" />
                 </div>
                 <h3 className="text-2xl font-bold">No media found</h3>
                 <p className="text-base-content/70">
@@ -700,44 +702,44 @@ function MediaGroup({
 }) {
   const typeConfig = {
     anime: {
-      icon: MdPlayArrow,
+      icon: Play,
       color: 'text-secondary',
       label: 'Anime',
     },
     manga: {
-      icon: MdBook,
+      icon: Book,
       color: 'text-warning',
       label: 'Manga',
     },
     reading: {
-      icon: MdBook,
+      icon: Book,
       color: 'text-primary',
       label: 'Reading',
     },
     vn: {
-      icon: MdGamepad,
+      icon: Gamepad,
       color: 'text-accent',
       label: 'Visual Novels',
     },
     video: {
-      icon: MdVideoLibrary,
+      icon: Video,
       color: 'text-info',
       label: 'Video',
     },
     movie: {
-      icon: MdMovie,
+      icon: Clapperboard,
       color: 'text-error',
       label: 'Movies',
     },
     'tv show': {
-      icon: MdOutlineTv,
+      icon: MonitorPlay,
       color: 'text-success',
       label: 'TV Shows',
     },
   };
 
   const config = typeConfig[type as keyof typeof typeConfig];
-  const TypeIcon = config?.icon || MdBookmark;
+  const TypeIcon = config?.icon || Bookmark;
 
   if (!config) return null;
 
@@ -813,43 +815,43 @@ function MediaCard({
 
   const typeConfig = {
     anime: {
-      icon: MdPlayArrow,
+      icon: Play,
       color: 'text-secondary',
       bg: 'bg-secondary/10',
       border: 'border-secondary/20',
     },
     manga: {
-      icon: MdBook,
+      icon: Book,
       color: 'text-warning',
       bg: 'bg-warning/10',
       border: 'border-warning/20',
     },
     reading: {
-      icon: MdBook,
+      icon: Book,
       color: 'text-primary',
       bg: 'bg-primary/10',
       border: 'border-primary/20',
     },
     vn: {
-      icon: MdGamepad,
+      icon: Gamepad,
       color: 'text-accent',
       bg: 'bg-accent/10',
       border: 'border-accent/20',
     },
     video: {
-      icon: MdVideoLibrary,
+      icon: Video,
       color: 'text-info',
       bg: 'bg-info/10',
       border: 'border-info/20',
     },
     movie: {
-      icon: MdMovie,
+      icon: Clapperboard,
       color: 'text-error',
       bg: 'bg-error/10',
       border: 'border-error/20',
     },
     'tv show': {
-      icon: MdOutlineTv,
+      icon: MonitorPlay,
       color: 'text-success',
       bg: 'bg-success/10',
       border: 'border-success/20',
@@ -878,9 +880,9 @@ function MediaCard({
             {isToggling ? (
               <span className="loading loading-spinner loading-xs" />
             ) : media.isCompleted ? (
-              <MdCheckCircle className="w-4 h-4" />
+              <CircleCheck className="w-4 h-4" />
             ) : (
-              <MdRadioButtonUnchecked className="w-4 h-4" />
+              <Circle className="w-4 h-4" />
             )}
           </button>
         )}
@@ -903,7 +905,7 @@ function MediaCard({
         {media.isCompleted && (
           <div className="absolute bottom-2 left-2">
             <div className="badge badge-success badge-sm gap-1">
-              <MdCheckCircle className="w-3 h-3" /> Completed
+              <CircleCheck className="w-3 h-3" /> Completed
             </div>
           </div>
         )}
@@ -916,7 +918,7 @@ function MediaCard({
 
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none">
           <div className="text-white text-center p-4">
-            <MdTrendingUp className="w-6 h-6 mx-auto mb-2" />
+            <TrendingUp className="w-6 h-6 mx-auto mb-2" />
             <p className="text-sm font-medium">View Details</p>
           </div>
         </div>
@@ -1047,17 +1049,17 @@ function MediaListItem({
 
   const typeConfig = {
     anime: {
-      icon: MdPlayArrow,
+      icon: Play,
       color: 'text-secondary',
       bg: 'bg-secondary/10',
     },
-    manga: { icon: MdBook, color: 'text-warning', bg: 'bg-warning/10' },
-    reading: { icon: MdBook, color: 'text-primary', bg: 'bg-primary/10' },
-    vn: { icon: MdGamepad, color: 'text-accent', bg: 'bg-accent/10' },
-    video: { icon: MdVideoLibrary, color: 'text-info', bg: 'bg-info/10' },
-    movie: { icon: MdMovie, color: 'text-error', bg: 'bg-error/10' },
+    manga: { icon: Book, color: 'text-warning', bg: 'bg-warning/10' },
+    reading: { icon: Book, color: 'text-primary', bg: 'bg-primary/10' },
+    vn: { icon: Gamepad, color: 'text-accent', bg: 'bg-accent/10' },
+    video: { icon: Video, color: 'text-info', bg: 'bg-info/10' },
+    movie: { icon: Clapperboard, color: 'text-error', bg: 'bg-error/10' },
     'tv show': {
-      icon: MdOutlineTv,
+      icon: MonitorPlay,
       color: 'text-success',
       bg: 'bg-success/10',
     },
@@ -1143,7 +1145,7 @@ function MediaListItem({
                 <div className="flex flex-wrap gap-1 justify-end">
                   {media.isCompleted && (
                     <span className="badge badge-success badge-sm gap-1">
-                      <MdCheckCircle className="w-3 h-3" /> Completed
+                      <CircleCheck className="w-3 h-3" /> Completed
                     </span>
                   )}
 

@@ -1,25 +1,27 @@
 import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ILog, updateLogRequest } from '../types';
+import { ILog, IUpdateLogRequest } from '../types';
+
 import {
-  MdDelete,
-  MdSchedule,
-  MdTrendingUp,
-  MdBook,
-  MdPlayArrow,
-  MdGamepad,
-  MdVideoLibrary,
-  MdVolumeUp,
-  MdMovie,
-  MdOutlineTv,
-  MdMoreHoriz,
-  MdSpeed,
-  MdCalendarToday,
-  MdTimer,
-  MdEdit,
-  MdShare,
-  MdLabel,
-} from 'react-icons/md';
+  Trash,
+  Clock,
+  TrendingUp,
+  Book,
+  Play,
+  GamepadDirectional,
+  Video,
+  Volume2,
+  Clapperboard,
+  MonitorPlay,
+  Ellipsis,
+  Gauge,
+  Calendar,
+  Timer,
+  Pencil,
+  Share2,
+  Tag,
+} from 'lucide-react';
+
 import { deleteLogFn, updateLogFn } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import queryClient from '../queryClient';
@@ -33,7 +35,7 @@ import TagSelector from './TagSelector';
 const logTypeConfig = {
   reading: {
     label: 'Reading',
-    icon: MdBook,
+    icon: Book,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
@@ -41,7 +43,7 @@ const logTypeConfig = {
   },
   anime: {
     label: 'Anime',
-    icon: MdPlayArrow,
+    icon: Play,
     color: 'text-secondary',
     bgColor: 'bg-secondary/10',
     borderColor: 'border-secondary/20',
@@ -49,7 +51,7 @@ const logTypeConfig = {
   },
   vn: {
     label: 'Visual Novel',
-    icon: MdGamepad,
+    icon: GamepadDirectional,
     color: 'text-accent',
     bgColor: 'bg-accent/10',
     borderColor: 'border-accent/20',
@@ -57,7 +59,7 @@ const logTypeConfig = {
   },
   video: {
     label: 'Video',
-    icon: MdVideoLibrary,
+    icon: Video,
     color: 'text-info',
     bgColor: 'bg-info/10',
     borderColor: 'border-info/20',
@@ -65,7 +67,7 @@ const logTypeConfig = {
   },
   manga: {
     label: 'Manga',
-    icon: MdBook,
+    icon: Book,
     color: 'text-warning',
     bgColor: 'bg-warning/10',
     borderColor: 'border-warning/20',
@@ -73,7 +75,7 @@ const logTypeConfig = {
   },
   audio: {
     label: 'Audio',
-    icon: MdVolumeUp,
+    icon: Volume2,
     color: 'text-success',
     bgColor: 'bg-success/10',
     borderColor: 'border-success/20',
@@ -81,7 +83,7 @@ const logTypeConfig = {
   },
   movie: {
     label: 'Movie',
-    icon: MdMovie,
+    icon: Clapperboard,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/30',
@@ -89,7 +91,7 @@ const logTypeConfig = {
   },
   'tv show': {
     label: 'TV Show',
-    icon: MdOutlineTv,
+    icon: MonitorPlay,
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/30',
@@ -97,7 +99,7 @@ const logTypeConfig = {
   },
   other: {
     label: 'Other',
-    icon: MdMoreHoriz,
+    icon: Ellipsis,
     color: 'text-neutral',
     bgColor: 'bg-neutral/10',
     borderColor: 'border-neutral/20',
@@ -207,7 +209,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   });
 
   const { mutate: updateLog, isPending: loadingUpdateLog } = useMutation({
-    mutationFn: (data: updateLogRequest) => updateLogFn(log._id, data),
+    mutationFn: (data: IUpdateLogRequest) => updateLogFn(log._id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         predicate: (query) => {
@@ -239,7 +241,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     detailsModalRef.current?.showModal();
   }
 
-  function handleEditSubmit(e: React.FormEvent) {
+  function handleEditSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const validation = validateUpdateLogData({
@@ -269,7 +271,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
       : '';
     const hasDateChanged = editData.date !== originalDateString;
 
-    const updateData: updateLogRequest = {
+    const updateData: IUpdateLogRequest = {
       description: editData.description,
       type: editData.type,
       // Only include date if it was changed, and preserve original time by using the original date object
@@ -284,17 +286,18 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
 
     // Remove undefined values
     Object.keys(updateData).forEach((key) => {
-      if (updateData[key as keyof updateLogRequest] === undefined) {
-        delete updateData[key as keyof updateLogRequest];
+      if (updateData[key as keyof IUpdateLogRequest] === undefined) {
+        delete updateData[key as keyof IUpdateLogRequest];
       }
     });
 
     updateLog(updateData);
   }
 
-  function preventNegativeValues(e: React.ChangeEvent<HTMLInputElement>) {
-    if ((e.target as HTMLInputElement).valueAsNumber < 0) {
-      (e.target as HTMLInputElement).value = '0';
+  function preventNegativeValues(e: React.InputEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    if (input.valueAsNumber < 0) {
+      input.value = '0';
     }
   }
 
@@ -310,7 +313,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
       info.push({
         label: 'Episodes',
         value: episodes,
-        icon: MdPlayArrow,
+        icon: Play,
         tooltip: time
           ? `${episodes} episodes • ${time} minutes total`
           : `${episodes} episodes watched`,
@@ -320,7 +323,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         info.push({
           label: 'Pages',
           value: pages,
-          icon: MdBook,
+          icon: Book,
           tooltip: chars
             ? `${pages} pages • ${chars.toLocaleString()} characters`
             : `${pages} pages read`,
@@ -332,7 +335,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         info.push({
           label: 'Characters',
           value: chars.toLocaleString(),
-          icon: MdBook,
+          icon: Book,
           tooltip: readingSpeed
             ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
             : `${chars.toLocaleString()} characters read`,
@@ -342,7 +345,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           info.push({
             label: 'Speed',
             value: `${readingSpeed}/hr`,
-            icon: MdSpeed,
+            icon: Gauge,
             tooltip: `Reading speed: ${readingSpeed} characters per hour`,
           });
         }
@@ -353,7 +356,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           info.push({
             label: 'Time',
             value: timeStr,
-            icon: MdTimer,
+            icon: Timer,
             tooltip: `${time} minutes spent reading manga`,
           });
         }
@@ -363,7 +366,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         info.push({
           label: 'Time',
           value: timeStr,
-          icon: MdSchedule,
+          icon: Clock,
           tooltip: `${time} minutes spent reading`,
         });
       }
@@ -374,7 +377,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         info.push({
           label: 'Characters',
           value: chars.toLocaleString(),
-          icon: MdBook,
+          icon: Book,
           tooltip: readingSpeed
             ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
             : `${chars.toLocaleString()} characters read`,
@@ -384,7 +387,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           info.push({
             label: 'Speed',
             value: `${readingSpeed}/hr`,
-            icon: MdSpeed,
+            icon: Gauge,
             tooltip: `Reading speed: ${readingSpeed} characters per hour`,
           });
         }
@@ -395,7 +398,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           info.push({
             label: 'Time',
             value: timeStr,
-            icon: MdTimer,
+            icon: Timer,
             tooltip: `${time} minutes spent reading`,
           });
         }
@@ -405,7 +408,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         info.push({
           label: 'Time',
           value: timeStr,
-          icon: MdSchedule,
+          icon: Clock,
           tooltip: `${time} minutes spent reading`,
         });
       }
@@ -418,7 +421,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
       info.push({
         label: 'Time',
         value: timeStr,
-        icon: MdSchedule,
+        icon: Clock,
         tooltip: `${time} minutes of ${type} content`,
       });
     }
@@ -555,7 +558,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                   className="btn btn-ghost btn-sm btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
                   aria-label="Log options"
                 >
-                  <MdMoreHoriz className="w-4 h-4" />
+                  <Ellipsis className="w-4 h-4" />
                 </button>
                 <ul className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-32 border border-base-300 z-50">
                   <li>
@@ -563,7 +566,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       onClick={handleShare}
                       className="text-success hover:bg-success/10 gap-2"
                     >
-                      <MdShare className="w-4 h-4" />
+                      <Share2 className="w-4 h-4" />
                       Share
                     </button>
                   </li>
@@ -572,7 +575,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       onClick={openDetailsModal}
                       className="text-info hover:bg-info/10 gap-2"
                     >
-                      <MdBook className="w-4 h-4" />
+                      <Book className="w-4 h-4" />
                       Details
                     </button>
                   </li>
@@ -581,7 +584,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       onClick={openEditModal}
                       className="text-warning hover:bg-warning/10 gap-2"
                     >
-                      <MdEdit className="w-4 h-4" />
+                      <Pencil className="w-4 h-4" />
                       Edit
                     </button>
                   </li>
@@ -590,7 +593,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       onClick={() => deleteModalRef.current?.showModal()}
                       className="text-error hover:bg-error/10 gap-2"
                     >
-                      <MdDelete className="w-4 h-4" />
+                      <Trash className="w-4 h-4" />
                       Delete
                     </button>
                   </li>
@@ -656,7 +659,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                 <div
                   className={`badge badge-outline ${typeConfig.color} gap-1`}
                 >
-                  <MdTrendingUp className="w-3 h-3" />
+                  <TrendingUp className="w-3 h-3" />
                   <span className="text-xs font-bold">{xp} XP</span>
                 </div>
               </div>
@@ -673,7 +676,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     : undefined
                 }
               >
-                <MdCalendarToday className="w-3 h-3" />
+                <Calendar className="w-3 h-3" />
                 {relativeDate}
               </time>
             </div>
@@ -713,7 +716,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <MdBook className="w-5 h-5" />
+                  <Book className="w-5 h-5" />
                   Content Information
                 </h4>
 
@@ -787,7 +790,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <MdTrendingUp className="w-5 h-5" />
+                  <TrendingUp className="w-5 h-5" />
                   Activity Statistics
                 </h4>
 
@@ -904,7 +907,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <MdCalendarToday className="w-5 h-5" />
+                  <Calendar className="w-5 h-5" />
                   Date & Time
                 </h4>
 
@@ -936,7 +939,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               <div className="card bg-base-200 shadow-sm">
                 <div className="card-body p-4">
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <MdVideoLibrary className="w-5 h-5" />
+                    <Video className="w-5 h-5" />
                     Media Details
                   </h4>
 
@@ -993,7 +996,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <MdSpeed className="w-5 h-5" />
+                  <Gauge className="w-5 h-5" />
                   Technical Details
                 </h4>
 
@@ -1051,7 +1054,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         <div className="modal-box border border-error/20">
           <div className="flex gap-3 mb-4">
             <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center">
-              <MdDelete className="text-error" />
+              <Trash className="text-error" />
             </div>
             <div>
               <h3
@@ -1109,7 +1112,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                 </>
               ) : (
                 <>
-                  <MdDelete className="w-4 h-4" />
+                  <Trash className="w-4 h-4" />
                   Delete Log
                 </>
               )}
@@ -1135,7 +1138,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <div className={`p-3 ${typeConfig.bgColor} rounded-lg`}>
-                <MdEdit className={`w-6 h-6 ${typeConfig.color}`} />
+                <Pencil className={`w-6 h-6 ${typeConfig.color}`} />
               </div>
               <div>
                 <h3 id="edit-modal-title" className="font-bold text-xl">
@@ -1390,7 +1393,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                  <MdLabel className="w-5 h-5" />
+                  <Tag className="w-5 h-5" />
                   Tags
                 </h4>
                 <TagSelector
@@ -1422,7 +1425,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                   </>
                 ) : (
                   <>
-                    <MdEdit className="w-4 h-4" />
+                    <Pencil className="w-4 h-4" />
                     Update Log
                   </>
                 )}

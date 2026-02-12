@@ -4,7 +4,7 @@ import { resetPasswordFn } from '../api/trackerApi';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { Eye, EyeOff } from 'lucide-react';
 
 function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
@@ -82,12 +82,12 @@ function ResetPasswordScreen() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (isFormValid && token) {
       mutate({ token, password, passwordConfirmation });
     }
-  };
+  }
 
   if (!token) {
     return (
@@ -172,9 +172,9 @@ function ResetPasswordScreen() {
                   disabled={isPending}
                 >
                   {showPassword ? (
-                    <MdVisibilityOff className="w-5 h-5" />
+                    <EyeOff className="w-5 h-5" />
                   ) : (
-                    <MdVisibility className="w-5 h-5" />
+                    <Eye className="w-5 h-5" />
                   )}
                 </button>
               </div>
@@ -213,9 +213,9 @@ function ResetPasswordScreen() {
                   disabled={isPending}
                 >
                   {showPasswordConfirmation ? (
-                    <MdVisibilityOff className="w-5 h-5" />
+                    <EyeOff className="w-5 h-5" />
                   ) : (
-                    <MdVisibility className="w-5 h-5" />
+                    <Eye className="w-5 h-5" />
                   )}
                 </button>
               </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { MdClose, MdCalendarToday, MdSave } from 'react-icons/md';
+import { X, Calendar, Save } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { editMediaVotingFn } from '../../api/clubApi';
 import { IClub, IClubMediaVoting } from '../../types.d';
@@ -214,7 +214,7 @@ export default function EditVotingModal({
               className="btn btn-sm btn-circle btn-ghost"
               onClick={onClose}
             >
-              <MdClose className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
           <div className="alert alert-warning">
@@ -244,7 +244,7 @@ export default function EditVotingModal({
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl">Edit Voting</h3>
           <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
-            <MdClose className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -444,7 +444,7 @@ export default function EditVotingModal({
                         >
                           {formatDateForDisplay(votingData.suggestionStartDate)}
                         </span>
-                        <MdCalendarToday className="text-lg" />
+                        <Calendar className="text-lg" />
                       </div>
                       <div
                         tabIndex={0}
@@ -504,7 +504,7 @@ export default function EditVotingModal({
                         >
                           {formatDateForDisplay(votingData.suggestionEndDate)}
                         </span>
-                        <MdCalendarToday className="text-lg" />
+                        <Calendar className="text-lg" />
                       </div>
                       <div
                         tabIndex={0}
@@ -565,7 +565,7 @@ export default function EditVotingModal({
                       >
                         {formatDateForDisplay(votingData.votingStartDate)}
                       </span>
-                      <MdCalendarToday className="text-lg" />
+                      <Calendar className="text-lg" />
                     </div>
                     <div
                       tabIndex={0}
@@ -644,7 +644,7 @@ export default function EditVotingModal({
                       >
                         {formatDateForDisplay(votingData.votingEndDate)}
                       </span>
-                      <MdCalendarToday className="text-lg" />
+                      <Calendar className="text-lg" />
                     </div>
                     <div
                       tabIndex={0}
@@ -709,7 +709,7 @@ export default function EditVotingModal({
                   >
                     {formatDateForDisplay(votingData.consumptionStartDate)}
                   </span>
-                  <MdCalendarToday className="text-lg" />
+                  <Calendar className="text-lg" />
                 </div>
                 <div
                   tabIndex={0}
@@ -775,7 +775,7 @@ export default function EditVotingModal({
                   >
                     {formatDateForDisplay(votingData.consumptionEndDate)}
                   </span>
-                  <MdCalendarToday className="text-lg" />
+                  <Calendar className="text-lg" />
                 </div>
                 <div
                   tabIndex={0}
@@ -834,7 +834,7 @@ export default function EditVotingModal({
               'Saving...'
             ) : (
               <>
-                <MdSave className="w-4 h-4" />
+                <Save className="w-4 h-4" />
                 Save Changes
               </>
             )}

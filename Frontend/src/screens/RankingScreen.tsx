@@ -1,14 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
-  PiCrownSimpleFill,
-  PiTrophyFill,
-  PiBookOpenFill,
-  PiHeadphonesFill,
-  PiLightningFill,
-  PiCalendarFill,
-  PiChartBarFill,
-  PiCalendarBlankFill,
-} from 'react-icons/pi';
+  Trophy,
+  BookOpen,
+  Headphones,
+  Zap,
+  Calendar1,
+  BarChart,
+  Calendar,
+} from 'lucide-react';
+
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
 import { useEffect, useRef, useState } from 'react';
 import { filterTypes, IStats } from '../types';
@@ -217,17 +217,17 @@ function RankingScreen() {
     {
       label: 'Total',
       value: 'userXp',
-      icon: <PiLightningFill className="w-4 h-4" />,
+      icon: <Zap className="w-4 h-4" />,
     },
     {
       label: 'Reading',
       value: 'readingXp',
-      icon: <PiBookOpenFill className="w-4 h-4" />,
+      icon: <BookOpen className="w-4 h-4" />,
     },
     {
       label: 'Listening',
       value: 'listeningXp',
-      icon: <PiHeadphonesFill className="w-4 h-4" />,
+      icon: <Headphones className="w-4 h-4" />,
     },
   ] as const;
   const metricOptions = [
@@ -252,27 +252,27 @@ function RankingScreen() {
     {
       label: 'All Time',
       value: 'all-time',
-      icon: <PiTrophyFill className="w-4 h-4" />,
+      icon: <Trophy className="w-4 h-4" />,
     },
     {
       label: 'Today',
       value: 'today',
-      icon: <PiCalendarFill className="w-4 h-4" />,
+      icon: <Calendar1 className="w-4 h-4" />,
     },
     {
       label: 'This Week',
       value: 'week',
-      icon: <PiCalendarFill className="w-4 h-4" />,
+      icon: <Calendar1 className="w-4 h-4" />,
     },
     {
       label: 'This Month',
       value: 'month',
-      icon: <PiChartBarFill className="w-4 h-4" />,
+      icon: <BarChart className="w-4 h-4" />,
     },
     {
       label: 'This Year',
       value: 'year',
-      icon: <PiCalendarBlankFill className="w-4 h-4" />,
+      icon: <Calendar className="w-4 h-4" />,
     },
   ];
 
@@ -372,7 +372,7 @@ function RankingScreen() {
 
   const getFilterIcon = () => {
     const option = scopeOptions.find((option) => option.value === xpFilter);
-    return option?.icon || <PiLightningFill className="w-4 h-4" />;
+    return option?.icon || <Zap className="w-4 h-4" />;
   };
 
   // Get the correct label for the selected time filter
@@ -388,20 +388,7 @@ function RankingScreen() {
     const option = timeFilterOptions.find(
       (option) => option.value === timeFilter
     );
-    return option?.icon || <PiTrophyFill className="w-4 h-4" />;
-  };
-
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <span className="text-warning text-xl">🥇</span>;
-      case 2:
-        return <span className="text-base-content text-xl">🥈</span>;
-      case 3:
-        return <span className="text-accent text-xl">🥉</span>;
-      default:
-        return null;
-    }
+    return option?.icon || <Trophy className="w-4 h-4" />;
   };
 
   const getRankColor = (rank: number) => {
@@ -422,7 +409,7 @@ function RankingScreen() {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <PiTrophyFill className="w-10 h-10 text-warning" />
+            <Trophy className="w-10 h-10 text-warning" />
             <h1 className="text-4xl font-bold text-base-content">
               Leaderboard
             </h1>
@@ -773,12 +760,12 @@ function RankingScreen() {
               {mode === 'global' &&
                 rankedUsers?.pages[0] &&
                 rankedUsers.pages[0].length >= 3 && (
-                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-8 rounded-t-md">
-                    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-3 sm:p-8 rounded-t-md">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto items-end">
                       <div className="text-center order-1">
-                        <div className="relative mb-4">
+                        <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-16 h-16 rounded-full ring ring-base-content/40">
+                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40">
                               {secondGlobalUser?.avatar ? (
                                 <img
                                   src={secondGlobalUser.avatar}
@@ -786,7 +773,7 @@ function RankingScreen() {
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-xl font-bold">
+                                  <span className="text-sm sm:text-xl font-bold">
                                     {secondGlobalUser?.username
                                       ? secondGlobalUser.username
                                           .charAt(0)
@@ -798,47 +785,45 @@ function RankingScreen() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-center mb-1">
-                          <div className="relative">
-                            <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
-                              <div className="badge badge-sm bg-base-content text-base-100 font-bold">
-                                2nd
-                              </div>
-                            </div>
-                            <Link
-                              to={`/user/${secondGlobalUser?.username ?? ''}`}
-                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
-                            >
-                              {secondGlobalUser?.username}
-                              {secondGlobalBadge && (
-                                <div
-                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondGlobalBadge.colorClass}`}
-                                  style={secondGlobalBadge.style}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3 w-3"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {secondGlobalBadge.text}
-                                  </span>
-                                </div>
-                              )}
-                            </Link>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-base-content text-base-100 font-bold">
+                            2nd
                           </div>
+                          <Link
+                            to={`/user/${secondGlobalUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {secondGlobalUser?.username}
+                            </span>
+                            {secondGlobalBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondGlobalBadge.colorClass}`}
+                                style={secondGlobalBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {secondGlobalBadge.text}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="text-xs sm:text-sm text-base-content/70">
                           Lv.{secondGlobalUser?.stats?.userLevel ?? 1}
                         </div>
-                        <div className="text-lg font-bold text-base-content mt-1">
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
                           {secondGlobalUser
                             ? getTopDisplayValue(secondGlobalUser)
                             : null}
@@ -846,9 +831,9 @@ function RankingScreen() {
                       </div>
 
                       <div className="text-center order-2">
-                        <div className="relative mb-4">
+                        <div className="relative mb-2 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-20 h-20 rounded-full ring ring-warning ring-offset-2">
+                            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2">
                               {firstGlobalUser?.avatar ? (
                                 <img
                                   src={firstGlobalUser.avatar}
@@ -856,7 +841,7 @@ function RankingScreen() {
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-2xl font-bold">
+                                  <span className="text-lg sm:text-2xl font-bold">
                                     {firstGlobalUser?.username
                                       ? firstGlobalUser.username
                                           .charAt(0)
@@ -867,51 +852,57 @@ function RankingScreen() {
                               )}
                             </div>
                           </div>
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-                            <PiCrownSimpleFill className="text-4xl text-warning" />
-                          </div>
-                        </div>
-                        <div className="flex justify-center mb-1">
-                          <div className="relative">
-                            <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
-                              <div className="badge badge-sm bg-warning text-warning-content font-bold">
-                                1st
-                              </div>
-                            </div>
-                            <Link
-                              to={`/user/${firstGlobalUser?.username ?? ''}`}
-                              className="font-bold hover:underline text-lg flex items-center justify-center gap-2 flex-wrap"
+                          <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                              className="w-7 h-7 sm:w-9 sm:h-9 text-warning"
                             >
-                              {firstGlobalUser?.username}
-                              {firstGlobalBadge && (
-                                <div
-                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstGlobalBadge.colorClass}`}
-                                  style={firstGlobalBadge.style}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3 w-3"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {firstGlobalBadge.text}
-                                  </span>
-                                </div>
-                              )}
-                            </Link>
+                              <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                            </svg>
                           </div>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-warning text-warning-content font-bold">
+                            1st
+                          </div>
+                          <Link
+                            to={`/user/${firstGlobalUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-base flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {firstGlobalUser?.username}
+                            </span>
+                            {firstGlobalBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstGlobalBadge.colorClass}`}
+                                style={firstGlobalBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {firstGlobalBadge.text}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
                           Lv.{firstGlobalUser?.stats?.userLevel ?? 1}
                         </div>
-                        <div className="text-xl font-bold text-warning mt-1">
+                        <div className="text-base sm:text-xl font-bold text-warning mt-1">
                           {firstGlobalUser
                             ? getTopDisplayValue(firstGlobalUser)
                             : null}
@@ -919,9 +910,9 @@ function RankingScreen() {
                       </div>
 
                       <div className="text-center order-3">
-                        <div className="relative mb-4">
+                        <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-16 h-16 rounded-full ring ring-accent/50">
+                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50">
                               {thirdGlobalUser?.avatar ? (
                                 <img
                                   src={thirdGlobalUser.avatar}
@@ -929,7 +920,7 @@ function RankingScreen() {
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-xl font-bold">
+                                  <span className="text-sm sm:text-xl font-bold">
                                     {thirdGlobalUser?.username
                                       ? thirdGlobalUser.username
                                           .charAt(0)
@@ -941,47 +932,45 @@ function RankingScreen() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-center mb-1">
-                          <div className="relative">
-                            <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
-                              <div className="badge badge-sm bg-accent text-accent-content font-bold">
-                                3rd
-                              </div>
-                            </div>
-                            <Link
-                              to={`/user/${thirdGlobalUser?.username ?? ''}`}
-                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
-                            >
-                              {thirdGlobalUser?.username}
-                              {thirdGlobalBadge && (
-                                <div
-                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdGlobalBadge.colorClass}`}
-                                  style={thirdGlobalBadge.style}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3 w-3"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {thirdGlobalBadge.text}
-                                  </span>
-                                </div>
-                              )}
-                            </Link>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-accent text-accent-content font-bold">
+                            3rd
                           </div>
+                          <Link
+                            to={`/user/${thirdGlobalUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {thirdGlobalUser?.username}
+                            </span>
+                            {thirdGlobalBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdGlobalBadge.colorClass}`}
+                                style={thirdGlobalBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {thirdGlobalBadge.text}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="text-xs sm:text-sm text-base-content/70">
                           Lv.{thirdGlobalUser?.stats?.userLevel ?? 1}
                         </div>
-                        <div className="text-lg font-bold text-base-content mt-1">
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
                           {thirdGlobalUser
                             ? getTopDisplayValue(thirdGlobalUser)
                             : null}
@@ -994,12 +983,12 @@ function RankingScreen() {
               {mode === 'medium' &&
                 mediumUsers?.pages[0] &&
                 mediumUsers.pages[0].length >= 3 && (
-                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-8 rounded-t-md">
-                    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-3 sm:p-8 rounded-t-md">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto items-end">
                       <div className="text-center order-1">
-                        <div className="relative mb-4">
+                        <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-16 h-16 rounded-full ring ring-base-content/40">
+                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40">
                               {secondMediumUser?.avatar ? (
                                 <img
                                   src={secondMediumUser.avatar}
@@ -1007,7 +996,7 @@ function RankingScreen() {
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-xl font-bold">
+                                  <span className="text-sm sm:text-xl font-bold">
                                     {secondMediumUser?.username
                                       ? secondMediumUser.username
                                           .charAt(0)
@@ -1019,47 +1008,45 @@ function RankingScreen() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-center mb-1">
-                          <div className="relative">
-                            <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
-                              <div className="badge badge-sm bg-base-content text-base-100 font-bold">
-                                2nd
-                              </div>
-                            </div>
-                            <Link
-                              to={`/user/${secondMediumUser?.username ?? ''}`}
-                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
-                            >
-                              {secondMediumUser?.username}
-                              {secondMediumBadge && (
-                                <div
-                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondMediumBadge.colorClass}`}
-                                  style={secondMediumBadge.style}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3 w-3"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {secondMediumBadge.text}
-                                  </span>
-                                </div>
-                              )}
-                            </Link>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-base-content text-base-100 font-bold">
+                            2nd
                           </div>
+                          <Link
+                            to={`/user/${secondMediumUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {secondMediumUser?.username}
+                            </span>
+                            {secondMediumBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${secondMediumBadge.colorClass}`}
+                                style={secondMediumBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {secondMediumBadge.text}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="text-xs sm:text-sm text-base-content/70">
                           Lv.{secondMediumUser?.stats?.userLevel ?? 1}
                         </div>
-                        <div className="text-lg font-bold text-base-content mt-1">
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
                           {secondMediumUser
                             ? getTopDisplayValueMedium(secondMediumUser)
                             : null}
@@ -1067,9 +1054,9 @@ function RankingScreen() {
                       </div>
 
                       <div className="text-center order-2">
-                        <div className="relative mb-4">
+                        <div className="relative mb-2 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-20 h-20 rounded-full ring ring-warning ring-offset-2">
+                            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2">
                               {firstMediumUser?.avatar ? (
                                 <img
                                   src={firstMediumUser.avatar}
@@ -1077,7 +1064,7 @@ function RankingScreen() {
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-2xl font-bold">
+                                  <span className="text-lg sm:text-2xl font-bold">
                                     {firstMediumUser?.username
                                       ? firstMediumUser.username
                                           .charAt(0)
@@ -1088,51 +1075,57 @@ function RankingScreen() {
                               )}
                             </div>
                           </div>
-                          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-                            <PiCrownSimpleFill className="text-4xl text-warning" />
-                          </div>
-                        </div>
-                        <div className="flex justify-center mb-1">
-                          <div className="relative">
-                            <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
-                              <div className="badge badge-sm bg-warning text-warning-content font-bold">
-                                1st
-                              </div>
-                            </div>
-                            <Link
-                              to={`/user/${firstMediumUser?.username ?? ''}`}
-                              className="font-bold hover:underline text-lg flex items-center justify-center gap-2 flex-wrap"
+                          <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="none"
+                              className="w-7 h-7 sm:w-9 sm:h-9 text-warning"
                             >
-                              {firstMediumUser?.username}
-                              {firstMediumBadge && (
-                                <div
-                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstMediumBadge.colorClass}`}
-                                  style={firstMediumBadge.style}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3 w-3"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {firstMediumBadge.text}
-                                  </span>
-                                </div>
-                              )}
-                            </Link>
+                              <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                            </svg>
                           </div>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-warning text-warning-content font-bold">
+                            1st
+                          </div>
+                          <Link
+                            to={`/user/${firstMediumUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-base flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {firstMediumUser?.username}
+                            </span>
+                            {firstMediumBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${firstMediumBadge.colorClass}`}
+                                style={firstMediumBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {firstMediumBadge.text}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
+                        </div>
+                        <div className="text-xs sm:text-sm text-base-content/70">
                           Lv.{firstMediumUser?.stats?.userLevel ?? 1}
                         </div>
-                        <div className="text-xl font-bold text-warning mt-1">
+                        <div className="text-base sm:text-xl font-bold text-warning mt-1">
                           {firstMediumUser
                             ? getTopDisplayValueMedium(firstMediumUser)
                             : null}
@@ -1140,9 +1133,9 @@ function RankingScreen() {
                       </div>
 
                       <div className="text-center order-3">
-                        <div className="relative mb-4">
+                        <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-16 h-16 rounded-full ring ring-accent/50">
+                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50">
                               {thirdMediumUser?.avatar ? (
                                 <img
                                   src={thirdMediumUser.avatar}
@@ -1150,7 +1143,7 @@ function RankingScreen() {
                                 />
                               ) : (
                                 <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-xl font-bold">
+                                  <span className="text-sm sm:text-xl font-bold">
                                     {thirdMediumUser?.username
                                       ? thirdMediumUser.username
                                           .charAt(0)
@@ -1162,47 +1155,45 @@ function RankingScreen() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-center mb-1">
-                          <div className="relative">
-                            <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-1">
-                              <div className="badge badge-sm bg-accent text-accent-content font-bold">
-                                3rd
-                              </div>
-                            </div>
-                            <Link
-                              to={`/user/${thirdMediumUser?.username ?? ''}`}
-                              className="font-bold hover:underline flex items-center justify-center gap-2 flex-wrap"
-                            >
-                              {thirdMediumUser?.username}
-                              {thirdMediumBadge && (
-                                <div
-                                  className={`badge badge-sm gap-1 max-w-[10rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdMediumBadge.colorClass}`}
-                                  style={thirdMediumBadge.style}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-3 w-3"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span className="font-bold max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {thirdMediumBadge.text}
-                                  </span>
-                                </div>
-                              )}
-                            </Link>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="badge badge-xs sm:badge-sm bg-accent text-accent-content font-bold">
+                            3rd
                           </div>
+                          <Link
+                            to={`/user/${thirdMediumUser?.username ?? ''}`}
+                            className="font-bold hover:underline text-xs sm:text-sm flex items-center justify-center gap-1 flex-wrap max-w-full"
+                          >
+                            <span className="truncate max-w-[4.5rem] sm:max-w-none">
+                              {thirdMediumUser?.username}
+                            </span>
+                            {thirdMediumBadge && (
+                              <div
+                                className={`badge badge-xs gap-1 hidden sm:inline-flex max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap ${thirdMediumBadge.colorClass}`}
+                                style={thirdMediumBadge.style}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {thirdMediumBadge.text}
+                                </span>
+                              </div>
+                            )}
+                          </Link>
                         </div>
-                        <div className="text-sm text-base-content/70">
+                        <div className="text-xs sm:text-sm text-base-content/70">
                           Lv.{thirdMediumUser?.stats?.userLevel ?? 1}
                         </div>
-                        <div className="text-lg font-bold text-base-content mt-1">
+                        <div className="text-sm sm:text-lg font-bold text-base-content mt-1">
                           {thirdMediumUser
                             ? getTopDisplayValueMedium(thirdMediumUser)
                             : null}
@@ -1216,9 +1207,11 @@ function RankingScreen() {
                 <table className="table w-full">
                   <thead>
                     <tr className="border-b border-base-300">
-                      <th className="text-center w-16">Rank</th>
+                      <th className="text-center w-10 sm:w-16">Rank</th>
                       <th>User</th>
-                      <th className="text-center">Level</th>
+                      <th className="text-center hidden sm:table-cell">
+                        Level
+                      </th>
                       <th className="text-end">
                         {mode === 'global'
                           ? displayMode === 'chars'
@@ -1286,18 +1279,17 @@ function RankingScreen() {
                           <tr key={`${user.username}-${rank}`}>
                             <td className="text-center">
                               <div
-                                className={`flex items-center justify-center gap-2 ${getRankColor(rank)}`}
+                                className={`flex items-center justify-center gap-1 sm:gap-2 ${getRankColor(rank)}`}
                               >
-                                {getRankIcon(rank)}
-                                <span className="font-bold text-lg">
+                                <span className="font-bold text-sm sm:text-lg">
                                   {rank}
                                 </span>
                               </div>
                             </td>
                             <td>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="avatar">
-                                  <div className="w-12 h-12 rounded-full ring ring-base-content/10">
+                                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10">
                                     {user.avatar ? (
                                       <img
                                         src={user.avatar}
@@ -1305,7 +1297,7 @@ function RankingScreen() {
                                       />
                                     ) : (
                                       <div className="bg-neutral-content flex items-center justify-center h-full">
-                                        <span className="text-lg font-bold">
+                                        <span className="text-xs sm:text-lg font-bold">
                                           {user.username
                                             .charAt(0)
                                             .toUpperCase()}
@@ -1324,13 +1316,13 @@ function RankingScreen() {
                                     <span className="hidden md:inline">
                                       {user.username}
                                     </span>
-                                    <span className="inline md:hidden truncate max-w-[8rem]">
+                                    <span className="inline md:hidden truncate max-w-[6rem] sm:max-w-[8rem]">
                                       {user.username}
                                     </span>
                                     {/* Patreon Badge */}
                                     {patreonBadge && (
                                       <div
-                                        className={`badge badge-sm gap-1 ${patreonBadge.colorClass} md:max-w-none md:overflow-visible md:whitespace-normal max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap`}
+                                        className={`badge badge-sm gap-1 hidden sm:inline-flex ${patreonBadge.colorClass} md:max-w-none md:overflow-visible md:whitespace-normal max-w-[8rem] overflow-hidden text-ellipsis whitespace-nowrap`}
                                         style={patreonBadge.style}
                                       >
                                         <svg
@@ -1354,13 +1346,13 @@ function RankingScreen() {
                                 </div>
                               </div>
                             </td>
-                            <td className="text-center">
+                            <td className="text-center hidden sm:table-cell">
                               <div className="badge badge-outline">
                                 Lv.{user.stats?.userLevel ?? 1}
                               </div>
                             </td>
                             <td className="text-end">
-                              <div className="font-bold text-lg">
+                              <div className="font-bold text-sm sm:text-lg">
                                 {numberWithCommas(displayValue as number)}
                               </div>
                               <div className="text-xs text-base-content/60">

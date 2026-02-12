@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
-  MdSearch,
-  MdAdd,
-  MdGroup,
-  MdPublic,
-  MdLock,
-  MdSort,
-  MdFilterList,
-  MdExpandMore,
-} from 'react-icons/md';
+  Search,
+  Plus,
+  Users,
+  Earth,
+  Lock,
+  ListFilter,
+  Funnel,
+  ChevronDown,
+} from 'lucide-react';
 import { getClubsFn } from '../api/clubApi';
 import { IClubResponse } from '../types';
 import { useUserDataStore } from '../store/userData';
@@ -119,7 +119,7 @@ function ClubsScreen() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <MdGroup className="w-10 h-10 text-primary" />
+            <Users className="w-10 h-10 text-primary" />
             <h1 className="text-4xl font-bold text-base-content">
               Immersion Clubs
             </h1>
@@ -134,7 +134,7 @@ function ClubsScreen() {
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-center mb-8 max-w-4xl mx-auto">
           {/* Search Bar */}
           <div className="relative flex-1 w-full">
-            <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
             <input
               type="text"
               placeholder="Search clubs..."
@@ -152,7 +152,7 @@ function ClubsScreen() {
               className="btn btn-primary gap-2 whitespace-nowrap"
               onClick={() => navigate('/clubs/create')}
             >
-              <MdAdd className="text-lg" />
+              <Plus className="text-lg" />
               Create Club
             </button>
           )}
@@ -165,7 +165,7 @@ function ClubsScreen() {
               {/* Sort Options */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
-                  <MdSort className="text-lg" />
+                  <ListFilter className="text-lg" />
                   Sort By
                 </h3>
                 <div className="dropdown w-full">
@@ -178,7 +178,7 @@ function ClubsScreen() {
                       {sortOptions.find((opt) => opt.value === sortBy)?.label ||
                         'Members'}
                     </span>
-                    <MdExpandMore className="text-lg" />
+                    <ChevronDown className="text-lg" />
                   </div>
                   <ul
                     tabIndex={0}
@@ -221,7 +221,7 @@ function ClubsScreen() {
               {/* Visibility Filter */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
-                  <MdFilterList className="text-lg" />
+                  <Funnel className="text-lg" />
                   Visibility
                 </h3>
                 <label className="label cursor-pointer">
@@ -303,7 +303,7 @@ function ClubsScreen() {
               </>
             ) : (
               <div className="text-center py-16">
-                <MdGroup className="text-6xl text-base-content/30 mx-auto mb-4" />
+                <Users className="text-6xl text-base-content/30 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-base-content mb-2">
                   No clubs found
                 </h3>
@@ -317,7 +317,7 @@ function ClubsScreen() {
                     className="btn btn-primary gap-2"
                     onClick={() => navigate('/clubs/create')}
                   >
-                    <MdAdd className="text-lg" />
+                    <Plus className="text-lg" />
                     Create First Club
                   </button>
                 )}
@@ -355,9 +355,9 @@ function ClubCard({ club }: { club: IClubResponse }) {
             className={`badge gap-1 ${club.isPublic ? 'badge-success' : 'badge-warning'}`}
           >
             {club.isPublic ? (
-              <MdPublic className="text-xs" />
+              <Earth className="text-xs" />
             ) : (
-              <MdLock className="text-xs" />
+              <Lock className="text-xs" />
             )}
             {club.isPublic ? 'Public' : 'Private'}
           </div>
@@ -377,7 +377,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                  <MdGroup className="text-2xl text-primary" />
+                  <Users className="text-2xl text-primary" />
                 </div>
               )}
             </div>
@@ -398,7 +398,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
         {/* Stats */}
         <div className="flex items-center text-sm text-base-content/70 mb-4">
           <div className="flex items-center gap-1">
-            <MdGroup className="text-base" />
+            <Users className="text-base" />
             <span>
               {club.memberCount}/{club.memberLimit} members
             </span>
@@ -425,7 +425,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
         <div className="card-actions justify-end">
           {club.isUserMember && club.userStatus === 'active' ? (
             <div className="badge badge-primary gap-1">
-              <MdGroup className="text-xs" />
+              <Users className="text-xs" />
               {club.userRole === 'leader'
                 ? 'Leader'
                 : club.userRole === 'moderator'
@@ -434,7 +434,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
             </div>
           ) : club.isUserMember && club.userStatus === 'pending' ? (
             <div className="badge badge-warning gap-1">
-              <MdGroup className="text-xs" />
+              <Users className="text-xs" />
               Pending
             </div>
           ) : (

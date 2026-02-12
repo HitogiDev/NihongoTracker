@@ -533,9 +533,13 @@ function SettingsScreen() {
   );
 
   // Use refs to track timeouts for debouncing
-  const timezoneTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const blurAdultTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const hideUnmatchedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timezoneTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurAdultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const hideUnmatchedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   // Initialize state from user data once
   useEffect(() => {
@@ -811,7 +815,7 @@ function SettingsScreen() {
     try {
       const status = await getPatreonStatusFn();
       setPatreonStatus(status);
-      // patreonEmail no longer needed - OAuth2 manages email
+
       if (status.customBadgeText) {
         setCustomBadgeText(status.customBadgeText);
       }
@@ -826,12 +830,12 @@ function SettingsScreen() {
     }
   }
 
-  async function handleSyncLogs(e: React.FormEvent) {
+  async function handleSyncLogs(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     syncLogs();
   }
 
-  async function handleFileImport(e: React.FormEvent) {
+  async function handleFileImport(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const logImportInput = document.getElementById(
       'logFileImport'
@@ -990,7 +994,7 @@ function SettingsScreen() {
     );
   }, []);
 
-  async function handleUpdateUser(e: React.FormEvent) {
+  async function handleUpdateUser(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData();
     const currentEmail = emailRef.current?.value || '';

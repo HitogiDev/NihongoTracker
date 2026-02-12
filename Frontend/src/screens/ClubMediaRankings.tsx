@@ -1,6 +1,6 @@
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdTrendingUp, MdCalendarToday, MdHistory } from 'react-icons/md';
+import { TrendingUp, Calendar, History } from 'lucide-react';
 import { getClubMediaRankingsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
@@ -51,7 +51,7 @@ export default function ClubMediaRankings() {
                   }`}
                   onClick={() => setPeriod('consumption')}
                 >
-                  <MdCalendarToday className="w-4 h-4 mr-1" />
+                  <Calendar className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">Consumption Period</span>
                   <span className="sm:hidden">Period</span>
                 </button>
@@ -63,7 +63,7 @@ export default function ClubMediaRankings() {
                   }`}
                   onClick={() => setPeriod('alltime')}
                 >
-                  <MdHistory className="w-4 h-4 mr-1" />
+                  <History className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">All Time</span>
                   <span className="sm:hidden">All Time</span>
                 </button>
@@ -170,7 +170,7 @@ export default function ClubMediaRankings() {
               </div>
             ) : (
               <div className="text-center py-12 text-base-content/60">
-                <MdTrendingUp className="mx-auto text-4xl mb-4 opacity-50" />
+                <TrendingUp className="mx-auto text-4xl mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
                 <p>
                   No club members have logged this media since the consumption

@@ -1,22 +1,24 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+
 import {
-  MdLogout,
-  MdPerson,
-  MdSettings,
-  MdBarChart,
-  MdLeaderboard,
-  MdGroup,
-  MdCalculate,
-  MdList,
-  MdAdminPanelSettings,
-  MdHome,
-  MdInfo,
-  MdStar,
-  MdMenu,
-  MdFavorite,
-  MdMenuBook,
-} from 'react-icons/md';
+  LogOut,
+  User,
+  Settings,
+  BarChart,
+  ChartLine,
+  Users,
+  Calculator,
+  List,
+  ShieldUser,
+  House,
+  Info,
+  Star,
+  Menu,
+  Heart,
+  FileText,
+} from 'lucide-react';
+
 import { useUserDataStore } from '../store/userData';
 import { useMutation } from '@tanstack/react-query';
 import { logoutUserFn } from '../api/trackerApi';
@@ -24,7 +26,6 @@ import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { logoutResponseType } from '../types';
 import Loader from './Loader';
-import { IconContext } from 'react-icons';
 
 function Header() {
   const { user, logout } = useUserDataStore();
@@ -60,7 +61,7 @@ function Header() {
         <div className="navbar-start">
           <div className="dropdown">
             <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-              <MdMenu className="h-6 w-6" />
+              <Menu className="h-6 w-6" />
             </div>
             {user ? (
               <ul
@@ -74,7 +75,7 @@ function Header() {
                         to="/admin"
                         className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                       >
-                        <MdAdminPanelSettings className="text-lg" />
+                        <ShieldUser className="w-4 h-4" />
                         Admin
                       </Link>
                     </li>
@@ -95,7 +96,7 @@ function Header() {
                     to={`/user/${user.username}/stats`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdBarChart className="text-lg" />
+                    <ChartLine className="w-4 h-4" />
                     Stats
                   </Link>
                 </li>
@@ -104,7 +105,7 @@ function Header() {
                     to="/ranking"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdLeaderboard className="text-lg" />
+                    <BarChart className="w-4 h-4" />
                     Ranking
                   </Link>
                 </li>
@@ -113,7 +114,7 @@ function Header() {
                     to="/clubs"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdGroup className="text-lg" />
+                    <Users className="w-4 h-4" />
                     Clubs
                   </Link>
                 </li>
@@ -122,7 +123,7 @@ function Header() {
                     to="/calculator"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdCalculate className="text-lg" />
+                    <Calculator className="w-4 h-4" />
                     Calculator
                   </Link>
                 </li>
@@ -131,7 +132,7 @@ function Header() {
                     to={`/user/${user.username}/list`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdList className="text-lg" />
+                    <List className="w-4 h-4" />
                     Immersion List
                   </Link>
                 </li>
@@ -140,7 +141,7 @@ function Header() {
                     to="/texthooker"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdMenuBook className="text-lg" />
+                    <FileText className="w-4 h-4" />
                     Texthooker
                   </Link>
                 </li>
@@ -159,7 +160,7 @@ function Header() {
                     to={`/user/${user.username}`}
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdPerson className="text-lg" />
+                    <User className="w-4 h-4" />
                     Profile
                   </Link>
                 </li>
@@ -168,7 +169,7 @@ function Header() {
                     to="/settings"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdSettings className="text-lg" />
+                    <Settings className="w-4 h-4" />
                     Settings
                   </Link>
                 </li>
@@ -177,7 +178,7 @@ function Header() {
                     onClick={logoutHandler}
                     className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdLogout className="text-lg" />
+                    <LogOut className="text-lg w-4 h-4" />
                     Logout
                   </a>
                 </li>
@@ -192,7 +193,7 @@ function Header() {
                     to="/"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdHome className="text-lg" />
+                    <House className="text-lg" />
                     Home
                   </Link>
                 </li>
@@ -201,7 +202,7 @@ function Header() {
                     to="/features"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdStar className="text-lg" />
+                    <Star className="text-lg" />
                     Features
                   </Link>
                 </li>
@@ -210,7 +211,7 @@ function Header() {
                     to="/ranking"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdLeaderboard className="text-lg" />
+                    <BarChart className="w-4 h-4" />
                     Ranking
                   </Link>
                 </li>
@@ -219,7 +220,7 @@ function Header() {
                     to="/about"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
-                    <MdInfo className="text-lg" />
+                    <Info className="text-lg" />
                     About
                   </Link>
                 </li>
@@ -416,57 +417,53 @@ function Header() {
                   tabIndex={0}
                   className="dropdown-content z-[50] menu p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-52 border border-base-300"
                 >
-                  <IconContext.Provider
-                    value={{ className: 'text-lg currentColor' }}
-                  >
-                    {isAdmin && (
-                      <li>
-                        <Link
-                          to="/admin"
-                          className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                        >
-                          <MdAdminPanelSettings />
-                          Admin
-                        </Link>
-                      </li>
-                    )}
+                  {isAdmin && (
                     <li>
                       <Link
-                        to={`/user/${user.username}`}
+                        to="/admin"
                         className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                       >
-                        <MdPerson />
-                        Profile
+                        <ShieldUser className="w-4 h-4" />
+                        Admin
                       </Link>
                     </li>
-                    <li>
-                      <Link
-                        to={`/settings`}
-                        className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                      >
-                        <MdSettings />
-                        Settings
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/pricing"
-                        className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                      >
-                        <MdFavorite />
-                        Donate
-                      </Link>
-                    </li>
-                    <li>
-                      <a
-                        onClick={logoutHandler}
-                        className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
-                      >
-                        <MdLogout />
-                        Logout
-                      </a>
-                    </li>
-                  </IconContext.Provider>
+                  )}
+                  <li>
+                    <Link
+                      to={`/user/${user.username}`}
+                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                    >
+                      <User className="w-4 h-4" />
+                      Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to={`/settings`}
+                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/pricing"
+                      className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Donate
+                    </Link>
+                  </li>
+                  <li>
+                    <a
+                      onClick={logoutHandler}
+                      className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </a>
+                  </li>
                 </ul>
               </div>
             </>

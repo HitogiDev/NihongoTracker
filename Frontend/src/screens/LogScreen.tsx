@@ -16,13 +16,7 @@ import { useUserDataStore } from '../store/userData';
 import { validateLogData } from '../utils/validation';
 import MediaStats from '../components/MediaStats';
 import TagSelector from '../components/TagSelector';
-import {
-  MdCalendarToday,
-  MdCheckCircle,
-  MdError,
-  MdInfo,
-  MdSearch,
-} from 'react-icons/md';
+import { Calendar, CircleCheck, CircleX, Info, Search } from 'lucide-react';
 import XpAnimation from '../components/XpAnimation';
 import LevelUpAnimation from '../components/LevelUpAnimation';
 
@@ -186,7 +180,7 @@ function LogScreen() {
       setTouched({});
       void queryClient.invalidateQueries({
         predicate: (query) =>
-          ['logs', user?.username, 'user'].includes(
+          ['logs', user?.username, 'user', 'recentLogs'].includes(
             query.queryKey[0] as string
           ),
       });
@@ -276,9 +270,10 @@ function LogScreen() {
     setLogData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const preventNegativeValues = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.valueAsNumber < 0) e.target.value = '0';
-  };
+  function preventNegativeValues(e: React.InputEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    if (input.valueAsNumber < 0) input.value = '0';
+  }
 
   // Enhanced field change handler with proper types
   const handleFieldChange = (
@@ -374,7 +369,7 @@ function LogScreen() {
     setIsSuggestionsOpen(false);
   };
 
-  const logSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const logSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Mark all relevant fields as touched for final validation
@@ -587,7 +582,7 @@ function LogScreen() {
               </div>
               {errors.type && (
                 <div className="text-error text-sm mt-2 flex items-center gap-1">
-                  <MdError /> {errors.type}
+                  <CircleX /> {errors.type}
                 </div>
               )}
             </div>
@@ -639,14 +634,14 @@ function LogScreen() {
                           {isSearching ? (
                             <span className="loading loading-spinner loading-sm"></span>
                           ) : (
-                            <MdSearch className="w-6 h-6" />
+                            <Search className="w-6 h-6" />
                           )}
                         </div>
                       </div>
                       {errors.mediaName && (
                         <label className="label">
                           <span className="label-text-alt text-error flex items-center gap-1">
-                            <MdError /> {errors.mediaName}
+                            <CircleX /> {errors.mediaName}
                           </span>
                         </label>
                       )}
@@ -750,7 +745,7 @@ function LogScreen() {
                           searchResult?.length === 0 &&
                           logData.mediaName && (
                             <div className="alert alert-info mt-1">
-                              <MdInfo />
+                              <Info />
                               <span>
                                 {logData.type === 'video'
                                   ? 'No YouTube video found. Make sure you entered a valid YouTube URL.'
@@ -812,13 +807,13 @@ function LogScreen() {
                           {errors.episodes && (
                             <label className="label">
                               <span className="label-text-alt text-error flex items-center gap-1">
-                                <MdError /> {errors.episodes}
+                                <CircleX /> {errors.episodes}
                               </span>
                             </label>
                           )}
                           {autoCalculatedTime ? (
                             <div className="alert alert-success mt-2">
-                              <MdCheckCircle />
+                              <CircleCheck />
                               <span>
                                 Auto-calculated time: {autoCalculatedTime.hours}
                                 h {autoCalculatedTime.minutes}m (
@@ -830,7 +825,7 @@ function LogScreen() {
                           ) : null}
                           {logData.episodes > 0 && (
                             <div className="alert alert-info mt-2">
-                              <MdInfo />
+                              <Info />
                               <span>Total episodes: {logData.episodes}</span>
                             </div>
                           )}
@@ -898,7 +893,7 @@ function LogScreen() {
                           {(errors.time || errors.hours || errors.minutes) && (
                             <label className="label">
                               <span className="label-text-alt text-error flex items-center gap-1">
-                                <MdError />
+                                <CircleX />
                                 {errors.time || errors.hours || errors.minutes}
                               </span>
                             </label>
@@ -937,7 +932,7 @@ function LogScreen() {
                           {errors.chars && (
                             <label className="label">
                               <span className="label-text-alt text-error flex items-center gap-1">
-                                <MdError /> {errors.chars}
+                                <CircleX /> {errors.chars}
                               </span>
                             </label>
                           )}
@@ -975,7 +970,7 @@ function LogScreen() {
                           {errors.pages && (
                             <label className="label">
                               <span className="label-text-alt text-error flex items-center gap-1">
-                                <MdError /> {errors.pages}
+                                <CircleX /> {errors.pages}
                               </span>
                             </label>
                           )}
@@ -1152,7 +1147,7 @@ function LogScreen() {
                             onClick={openDatePicker}
                             className="btn btn-outline w-full justify-start"
                           >
-                            <MdCalendarToday />
+                            <Calendar />
                             {logData.date instanceof Date
                               ? logData.date.toLocaleDateString()
                               : 'Select date (defaults to today)'}
@@ -1217,7 +1212,7 @@ function LogScreen() {
                         </div>
                       ) : (
                         <div className="text-center text-base-content/60">
-                          <MdInfo className="w-12 h-12 mx-auto mb-4" />
+                          <Info className="w-12 h-12 mx-auto mb-4" />
                           <p>
                             {logData.type
                               ? 'Search for media to see a preview'
@@ -1260,7 +1255,7 @@ function LogScreen() {
                     {isLogCreating ? (
                       <span className="loading loading-spinner"></span>
                     ) : (
-                      <MdCheckCircle className="w-6 h-6" />
+                      <CircleCheck className="w-6 h-6" />
                     )}
                     {isLogCreating ? 'Logging...' : 'Create Log'}
                   </button>

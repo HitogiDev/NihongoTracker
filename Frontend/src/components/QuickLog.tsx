@@ -178,7 +178,8 @@ function QuickLog({
           return (
             key.includes('logs') ||
             key[0] === 'logs' ||
-            (Array.isArray(key) && key.some((k) => k === 'logs'))
+            (Array.isArray(key) && key.some((k) => k === 'logs')) ||
+            key.includes('recentLogs')
           );
         },
       });
@@ -234,9 +235,10 @@ function QuickLog({
     onClose();
   }
 
-  function preventNegativeValues(e: React.ChangeEvent<HTMLInputElement>) {
-    if ((e.target as HTMLInputElement).valueAsNumber < 0) {
-      (e.target as HTMLInputElement).value = '0';
+  function preventNegativeValues(e: React.InputEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    if (input.valueAsNumber < 0) {
+      input.value = '0';
     }
   }
 
@@ -261,7 +263,7 @@ function QuickLog({
     return validation.isValid;
   };
 
-  async function logSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function logSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (!isFormValid()) {
@@ -354,7 +356,7 @@ function QuickLog({
         >
           <div
             className="card w-full max-w-lg bg-base-100 shadow-xl max-h-[90vh] overflow-y-auto"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="card-body">
               <div className="flex justify-between items-center">

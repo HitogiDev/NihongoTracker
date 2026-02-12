@@ -91,7 +91,6 @@ export async function updateUser(
     }
 
     if (email !== undefined) {
-      // Allow empty string to remove email
       if (email === '') {
         user.email = undefined;
         user.verified = false;
@@ -135,42 +134,24 @@ export async function updateUser(
     }
 
     if (req.files && Object.keys(req.files).length > 0) {
-      try {
-        const files = req.files as {
-          [fieldname: string]: Express.Multer.File[];
-        };
+      const files = req.files as {
+        [fieldname: string]: Express.Multer.File[];
+      };
 
-        if (files.avatar?.[0]) {
-          const file = await uploadFileWithCleanup(
-            files.avatar[0],
-            user.avatar
-          );
-          user.avatar = file.downloadURL;
-        }
+      if (files.avatar?.[0]) {
+        const file = await uploadFileWithCleanup(files.avatar[0], user.avatar);
+        user.avatar = file.downloadURL;
+      }
 
-        if (files.banner?.[0]) {
-          const file = await uploadFileWithCleanup(
-            files.banner[0],
-            user.banner
-          );
-          user.banner = file.downloadURL;
-        }
+      if (files.banner?.[0]) {
+        const file = await uploadFileWithCleanup(files.banner[0], user.banner);
+        user.banner = file.downloadURL;
+      }
 
-        if (!files.avatar && !files.banner) {
-          throw new customError(
-            'Invalid field name. Only avatar and banner uploads are allowed.',
-            400
-          );
-        }
-      } catch (error) {
-        if (error instanceof customError) {
-          return next(error);
-        }
-        return next(
-          new customError(
-            'File upload failed: ' + (error as Error).message,
-            400
-          )
+      if (!files.avatar && !files.banner) {
+        throw new customError(
+          'Invalid field name. Only avatar and banner uploads are allowed.',
+          400
         );
       }
     }
@@ -256,6 +237,62 @@ export async function updateUser(
       roles: updatedUser.roles,
       settings: updatedUser.settings,
       about: updatedUser.about,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateHiddenRecentMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { action, mediaId } = req.body as {
+    action: 'add' | 'remove';
+    mediaId: string;
+  };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) {
+      throw new customError('User not found', 404);
+    }
+
+    if (!mediaId || typeof mediaId !== 'string') {
+      throw new customError('Valid mediaId is required', 400);
+    }
+
+    if (!['add', 'remove'].includes(action)) {
+      throw new customError('Action must be "add" or "remove"', 400);
+    }
+
+    if (!user.settings) {
+      user.settings = {
+        blurAdultContent: true,
+        hideUnmatchedLogsAlert: false,
+        timezone: 'UTC',
+        hiddenRecentMedia: [],
+      };
+    }
+
+    const hiddenMedia = user.settings.hiddenRecentMedia || [];
+
+    if (action === 'add') {
+      if (!hiddenMedia.includes(mediaId)) {
+        user.settings.hiddenRecentMedia = [...hiddenMedia, mediaId];
+      }
+    } else if (action === 'remove') {
+      user.settings.hiddenRecentMedia = hiddenMedia.filter(
+        (id) => id !== mediaId
+      );
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: `Media ${action === 'add' ? 'hidden' : 'restored'} successfully`,
+      hiddenRecentMedia: user.settings.hiddenRecentMedia,
     });
   } catch (error) {
     return next(error as customError);

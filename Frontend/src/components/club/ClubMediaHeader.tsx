@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  MdCreate,
-  MdPlayArrow,
-  MdBook,
-  MdMovie,
-  MdCalendarToday,
-} from 'react-icons/md';
+import { Pencil, Play, Book, Clapperboard, Calendar } from 'lucide-react';
 import { getClubFn, getClubMediaFn } from '../../api/clubApi';
 import Loader from '../Loader';
 import QuickLog from '../QuickLog';
@@ -19,17 +13,17 @@ import { useUserDataStore } from '../../store/userData';
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
     case 'anime':
-      return <MdPlayArrow className="text-lg" />;
+      return <Play className="text-lg" />;
     case 'manga':
     case 'reading':
-      return <MdBook className="text-lg" />;
+      return <Book className="text-lg" />;
     case 'movie':
     case 'video':
-      return <MdMovie className="text-lg" />;
+      return <Clapperboard className="text-lg" />;
     case 'vn':
-      return <MdPlayArrow className="text-lg" />;
+      return <Play className="text-lg" />;
     default:
-      return <MdPlayArrow className="text-lg" />;
+      return <Play className="text-lg" />;
   }
 };
 
@@ -177,7 +171,7 @@ export default function ClubMediaHeader() {
               {/* Quick Actions */}
               {canAddReview && (
                 <button
-                  className="btn btn-primary w-full max-w-[200px] mt-4"
+                  className="btn btn-primary w-full max-w-[200px] mt-4 items-center"
                   onClick={() => {
                     setSelectedMedia({
                       mediaId: media.mediaId || '',
@@ -187,7 +181,7 @@ export default function ClubMediaHeader() {
                     setLogModalOpen(true);
                   }}
                 >
-                  <MdCreate className="mr-2" />
+                  <Pencil className="mr-1 w-4 h-4" />
                   Quick Log
                 </button>
               )}
@@ -197,7 +191,7 @@ export default function ClubMediaHeader() {
             <div className="py-4 md:py-5 md:px-4">
               <div className="flex items-center gap-2 mb-4">
                 <span className="badge badge-primary badge-lg capitalize">
-                  {media.mediaType}
+                  {media.mediaType === 'vn' ? 'Visual Novel' : media.mediaType}
                 </span>
                 <span
                   className={`badge badge-lg ${media.isActive ? 'badge-success' : 'badge-outline'}`}
@@ -224,13 +218,13 @@ export default function ClubMediaHeader() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-base-content/70">
                 <div className="flex items-center gap-2">
-                  <MdCalendarToday className="text-base" />
+                  <Calendar className="text-base w-4 h-4" />
                   <span>
                     Start: {new Date(media.startDate).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MdCalendarToday className="text-base" />
+                  <Calendar className="text-base w-4 h-4" />
                   <span>
                     End: {new Date(media.endDate).toLocaleDateString()}
                   </span>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { MdClose, MdCalendarToday, MdSave } from 'react-icons/md';
+import { X, Calendar, Save } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { editClubMediaFn } from '../../api/clubApi';
 import { IClub, IClubMedia } from '../../types.d';
@@ -117,7 +117,7 @@ export default function EditClubMediaModal({
             onClick={onClose}
             disabled={editMediaMutation.isPending}
           >
-            <MdClose className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -180,7 +180,7 @@ export default function EditClubMediaModal({
                   >
                     {formatDateForDisplay(mediaData.startDate)}
                   </span>
-                  <MdCalendarToday className="text-lg" />
+                  <Calendar className="text-lg" />
                 </div>
                 <div
                   tabIndex={0}
@@ -238,7 +238,7 @@ export default function EditClubMediaModal({
                   >
                     {formatDateForDisplay(mediaData.endDate)}
                   </span>
-                  <MdCalendarToday className="text-lg" />
+                  <Calendar className="text-lg" />
                 </div>
                 <div
                   tabIndex={0}
@@ -286,7 +286,7 @@ export default function EditClubMediaModal({
               className="btn btn-primary"
               disabled={editMediaMutation.isPending}
             >
-              <MdSave className="w-4 h-4" />
+              <Save className="w-4 h-4" />
               {editMediaMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>

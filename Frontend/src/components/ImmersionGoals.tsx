@@ -7,41 +7,48 @@ import {
   deleteLongTermGoalFn,
 } from '../api/trackerApi';
 import { ILongTermGoal } from '../types';
+
 import {
-  MdSchedule,
-  MdBook,
-  MdPlayArrow,
-  MdPages,
-  MdCheckCircle,
-  MdSettings,
-  MdEdit,
-  MdDelete,
-  MdMoreVert,
-} from 'react-icons/md';
+  Trash,
+  Pencil,
+  Clock5,
+  BookOpen,
+  Play,
+  FileText,
+  CircleCheck,
+  Settings,
+  EllipsisVertical,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  CalendarClock,
+  Trophy,
+} from 'lucide-react';
+
 import GoalsModal from './GoalsModal';
 
 const goalTypeConfig = {
   time: {
     label: 'Time',
-    icon: MdSchedule,
+    icon: Clock5,
     color: 'text-primary',
     unit: 'min',
   },
   chars: {
     label: 'Characters',
-    icon: MdBook,
+    icon: BookOpen,
     color: 'text-secondary',
     unit: 'chars',
   },
   episodes: {
     label: 'Episodes',
-    icon: MdPlayArrow,
+    icon: Play,
     color: 'text-accent',
     unit: 'ep',
   },
   pages: {
     label: 'Pages',
-    icon: MdPages,
+    icon: FileText,
     color: 'text-info',
     unit: 'pages',
   },
@@ -57,7 +64,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   const { data: goalsData, isLoading } = useQuery({
     queryKey: [username, 'dailyGoals'],
     queryFn: () => getDailyGoalsFn(username),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: longTermGoalsData, isLoading: isLoadingLongTerm } = useQuery({
@@ -187,7 +194,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               className="btn btn-ghost btn-sm"
               title="Manage Goals"
             >
-              <MdSettings className="w-5 h-5" />
+              <Settings className="w-5 h-5" />
             </button>
           </div>
 
@@ -227,7 +234,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                       >
                         <div className="stat-figure absolute right-4 top-4">
                           {isCompleted ? (
-                            <MdCheckCircle className="w-8 h-8 text-success" />
+                            <CircleCheck className="w-8 h-8 text-success" />
                           ) : (
                             <Icon className={`w-8 h-8 ${config.color}`} />
                           )}
@@ -262,313 +269,364 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
       {/* Long-term Goals Section */}
       {activeLongTermGoals.length > 0 && (
-        <div className="card bg-base-100 shadow-xl mt-6">
-          <div className="card-body">
-            <h3 className="text-xl font-semibold mb-4">Long-term Goals</h3>
-            <div className="space-y-4">
-              {activeLongTermGoals.slice(0, 3).map((goal) => {
-                const progress = goal.progress;
-                const config = goalTypeConfig[goal.type];
-                const Icon = config.icon;
-                const progressPercentage = progress
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <Target className="w-5 h-5 text-primary" />
+            <h3 className="text-xl font-bold">Long-term Goals</h3>
+            <span className="badge badge-primary badge-sm">
+              {activeLongTermGoals.length}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {activeLongTermGoals.slice(0, 3).map((goal) => {
+              const progress = goal.progress;
+              const config = goalTypeConfig[goal.type];
+              const Icon = config.icon;
+              const progressPercentage = progress
+                ? Math.min(
+                    (progress.totalProgress / goal.totalTarget) * 100,
+                    100
+                  )
+                : 0;
+
+              // Get progress based on displayTimeframe
+              const getTimeframeProgress = () => {
+                if (!progress) return 0;
+                switch (goal.displayTimeframe) {
+                  case 'weekly':
+                    return progress.progressThisWeek || 0;
+                  case 'monthly':
+                    return progress.progressThisMonth || 0;
+                  default:
+                    return progress.progressToday || 0;
+                }
+              };
+
+              const getTimeframeLabel = () => {
+                switch (goal.displayTimeframe) {
+                  case 'weekly':
+                    return 'This Week';
+                  case 'monthly':
+                    return 'This Month';
+                  default:
+                    return 'Today';
+                }
+              };
+
+              // Calculate timeframe requirement with fallback
+              const timeframeRequirement = progress
+                ? progress.requiredPerTimeframe > 0
+                  ? progress.requiredPerTimeframe
+                  : progress.remainingDays > 0
+                    ? progress.remainingTarget / progress.remainingDays
+                    : 0
+                : 0;
+
+              const finalTimeframeRequirement =
+                timeframeRequirement > 0
+                  ? timeframeRequirement
+                  : progress && progress.remainingDays > 0
+                    ? goal.totalTarget / progress.remainingDays
+                    : 0;
+
+              const timeframeProgress = getTimeframeProgress();
+              const timeframeProgressPercentage =
+                finalTimeframeRequirement > 0
                   ? Math.min(
-                      (progress.totalProgress / goal.totalTarget) * 100,
+                      (timeframeProgress / finalTimeframeRequirement) * 100,
                       100
                     )
                   : 0;
 
-                // Get progress based on displayTimeframe
-                const getTimeframeProgress = () => {
-                  if (!progress) return 0;
-                  switch (goal.displayTimeframe) {
-                    case 'weekly':
-                      return progress.progressThisWeek || 0;
-                    case 'monthly':
-                      return progress.progressThisMonth || 0;
-                    default:
-                      return progress.progressToday || 0;
-                  }
-                };
+              const timeframeLabel = getTimeframeLabel();
 
-                const getTimeframeLabel = () => {
-                  switch (goal.displayTimeframe) {
-                    case 'weekly':
-                      return 'This Week';
-                    case 'monthly':
-                      return 'This Month';
-                    default:
-                      return 'Today';
-                  }
-                };
+              const isCompleted = progressPercentage >= 100;
+              const statusColor = isCompleted
+                ? 'success'
+                : progress?.isOnTrack
+                  ? 'success'
+                  : 'warning';
 
-                const getTimeframePeriod = () => {
-                  switch (goal.displayTimeframe) {
-                    case 'weekly':
-                      return 'this week';
-                    case 'monthly':
-                      return 'this month';
-                    default:
-                      return 'today';
-                  }
-                };
+              return (
+                <div
+                  key={goal._id}
+                  className={`card bg-base-100 shadow-lg overflow-hidden transition-all duration-200 hover:shadow-xl ${
+                    isCompleted ? 'border-2 border-success/30' : ''
+                  }`}
+                >
+                  {/* Top accent bar */}
+                  <div
+                    className={`h-1 ${
+                      isCompleted
+                        ? 'bg-success'
+                        : progress?.isOnTrack
+                          ? 'bg-primary'
+                          : 'bg-warning'
+                    }`}
+                  />
 
-                // Calculate timeframe requirement with fallback
-                const timeframeRequirement = progress
-                  ? progress.requiredPerTimeframe > 0
-                    ? progress.requiredPerTimeframe
-                    : progress.remainingDays > 0
-                      ? progress.remainingTarget / progress.remainingDays
-                      : 0
-                  : 0;
-
-                // Fallback calculation if all else fails
-                const finalTimeframeRequirement =
-                  timeframeRequirement > 0
-                    ? timeframeRequirement
-                    : progress && progress.remainingDays > 0
-                      ? goal.totalTarget / progress.remainingDays
-                      : 0;
-
-                // Calculate timeframe progress percentage
-                const timeframeProgress = getTimeframeProgress();
-                const timeframeProgressPercentage =
-                  finalTimeframeRequirement > 0
-                    ? Math.min(
-                        (timeframeProgress / finalTimeframeRequirement) * 100,
-                        100
-                      )
-                    : 0;
-
-                const timeframeLabel = getTimeframeLabel();
-                const timeframePeriod = getTimeframePeriod();
-
-                return (
-                  <div key={goal._id} className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-5 h-5 ${config.color}`} />
-                        <div>
-                          <span className="font-medium text-sm">
+                  <div className="card-body p-4 sm:p-5 gap-4">
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-xl ${
+                            isCompleted
+                              ? 'bg-success/15'
+                              : `bg-${statusColor === 'success' ? 'primary' : 'warning'}/15`
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <Trophy className="w-5 h-5 text-success" />
+                          ) : (
+                            <Icon className={`w-5 h-5 ${config.color}`} />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm sm:text-base leading-tight truncate">
                             {formatLongTermProgress(
                               goal.totalTarget,
                               goal.type
                             )}
-                            {goal.type !== 'time' ? ` ${config.unit}` : ''} Goal
-                          </span>
-                          <div className="text-xs text-base-content/60 flex items-center gap-1">
-                            {new Date(goal.targetDate).toLocaleDateString()}
+                            {goal.type !== 'time' ? ` ${config.unit}` : ''}{' '}
+                            {config.label} Goal
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-base-content/60 mt-0.5">
+                            <CalendarClock className="w-3 h-3 flex-shrink-0" />
+                            <span>
+                              Due{' '}
+                              {new Date(goal.targetDate).toLocaleDateString(
+                                undefined,
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                }
+                              )}
+                            </span>
                             {progress && (
-                              <span className="ml-2 text-warning">
-                                ({getRemainingTimeText(goal)})
-                              </span>
+                              <>
+                                <span className="text-base-content/30">·</span>
+                                <span className={`text-${statusColor}`}>
+                                  {getRemainingTimeText(goal)}
+                                </span>
+                              </>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {progress && (
-                          <div className="text-right text-xs">
-                            <div className="font-medium">
-                              {formatLongTermProgress(
-                                progress.totalProgress,
-                                goal.type
-                              )}{' '}
-                              /{' '}
-                              {formatLongTermProgress(
-                                goal.totalTarget,
-                                goal.type
-                              )}
-                            </div>
-                            <div
-                              className={
-                                progress.isOnTrack
-                                  ? 'text-success'
-                                  : 'text-warning'
-                              }
-                            >
-                              {Math.round(progressPercentage)}% complete
-                            </div>
-                          </div>
-                        )}
 
-                        {/* Edit/Delete Dropdown */}
-                        <div className="dropdown dropdown-end">
-                          <div
-                            tabIndex={0}
-                            role="button"
-                            className="btn btn-ghost btn-sm btn-square"
-                          >
-                            <MdMoreVert className="w-4 h-4" />
-                          </div>
-                          <ul
-                            tabIndex={0}
-                            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-1 shadow"
-                          >
-                            <li>
-                              <button
-                                onClick={() => handleEditGoal(goal)}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                <MdEdit className="w-4 h-4" />
-                                Edit
-                              </button>
-                            </li>
-                            <li>
-                              <button
-                                onClick={() => handleDeleteGoal(goal._id)}
-                                className="flex items-center gap-2 text-sm text-error"
-                              >
-                                <MdDelete className="w-4 h-4" />
-                                Delete
-                              </button>
-                            </li>
-                          </ul>
+                      {/* Actions dropdown */}
+                      <div className="dropdown dropdown-end">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-ghost btn-xs btn-square"
+                        >
+                          <EllipsisVertical className="w-4 h-4" />
                         </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-36 p-1 shadow-lg"
+                        >
+                          <li>
+                            <button
+                              onClick={() => handleEditGoal(goal)}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              Edit
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              onClick={() => handleDeleteGoal(goal._id)}
+                              className="flex items-center gap-2 text-sm text-error"
+                            >
+                              <Trash className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </li>
+                        </ul>
                       </div>
                     </div>
 
                     {progress && (
                       <>
-                        {/* Overall Progress Bar */}
-                        <div className="w-full bg-base-300 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              progress.isOnTrack ? 'bg-success' : 'bg-warning'
-                            }`}
-                            style={{ width: `${progressPercentage}%` }}
-                          ></div>
-                        </div>
-
-                        {/* Timeframe Progress Section */}
-                        <div className="bg-base-200 rounded-lg p-3 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <h4 className="font-semibold text-sm">
-                              {timeframeLabel}'s Progress
-                            </h4>
-                            <div className="badge badge-sm badge-outline">
-                              {Math.round(timeframeProgressPercentage)}% of{' '}
-                              {goal.displayTimeframe}
-                              goal
+                        {/* Overall Progress */}
+                        <div className="space-y-2">
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <span className="text-2xl font-bold tabular-nums">
+                                {formatLongTermProgress(
+                                  progress.totalProgress,
+                                  goal.type
+                                )}
+                              </span>
+                              <span className="text-sm text-base-content/50 ml-1">
+                                /{' '}
+                                {formatLongTermProgress(
+                                  goal.totalTarget,
+                                  goal.type
+                                )}{' '}
+                                {goal.type !== 'time' ? config.unit : ''}
+                              </span>
+                            </div>
+                            <div
+                              className={`flex items-center gap-1 text-sm font-semibold ${
+                                isCompleted
+                                  ? 'text-success'
+                                  : progress.isOnTrack
+                                    ? 'text-success'
+                                    : 'text-warning'
+                              }`}
+                            >
+                              {isCompleted ? (
+                                <CircleCheck className="w-4 h-4" />
+                              ) : progress.isOnTrack ? (
+                                <TrendingUp className="w-4 h-4" />
+                              ) : (
+                                <TrendingDown className="w-4 h-4" />
+                              )}
+                              {Math.round(progressPercentage)}%
                             </div>
                           </div>
 
-                          {/* Timeframe Progress Bar - More Prominent */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs">
-                              <span className="font-medium">
-                                {formatLongTermProgress(
-                                  timeframeProgress,
-                                  goal.type
-                                )}
-                                {goal.type !== 'time' && ` ${config.unit}`}
-                              </span>
-                              <span className="text-base-content/60">
-                                /{' '}
-                                {formatLongTermProgress(
-                                  finalTimeframeRequirement,
-                                  goal.type
-                                )}
-                                {goal.type !== 'time' && ` ${config.unit}`}{' '}
-                                needed
-                              </span>
-                            </div>
-                            <div className="w-full bg-base-300 rounded-full h-3 relative">
-                              <div
-                                className={`h-3 rounded-full transition-all duration-500 ${
+                          {/* Overall progress bar */}
+                          <div className="w-full bg-base-200 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                isCompleted
+                                  ? 'bg-success'
+                                  : progress.isOnTrack
+                                    ? 'bg-primary'
+                                    : 'bg-warning'
+                              }`}
+                              style={{ width: `${progressPercentage}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Timeframe card */}
+                        <div className="bg-base-200/60 rounded-xl p-3 sm:p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h5 className="text-sm font-semibold flex items-center gap-1.5">
+                              <span
+                                className={`w-2 h-2 rounded-full ${
                                   timeframeProgressPercentage >= 100
-                                    ? 'bg-gradient-to-r from-success to-success'
+                                    ? 'bg-success animate-pulse'
+                                    : timeframeProgressPercentage >= 50
+                                      ? 'bg-primary'
+                                      : 'bg-warning'
+                                }`}
+                              />
+                              {timeframeLabel}
+                            </h5>
+                            {timeframeProgressPercentage >= 100 ? (
+                              <span className="badge badge-success badge-sm gap-1">
+                                <CircleCheck className="w-3 h-3" />
+                                Done
+                              </span>
+                            ) : (
+                              <span className="text-xs text-base-content/50">
+                                {formatLongTermProgress(
+                                  Math.max(
+                                    0,
+                                    finalTimeframeRequirement -
+                                      timeframeProgress
+                                  ),
+                                  goal.type
+                                )}{' '}
+                                {goal.type !== 'time' ? config.unit : ''}{' '}
+                                remaining
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Timeframe progress bar */}
+                          <div className="relative">
+                            <div className="w-full bg-base-300 rounded-full h-3 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                  timeframeProgressPercentage >= 100
+                                    ? 'bg-success'
                                     : timeframeProgressPercentage >= 75
-                                      ? 'bg-gradient-to-r from-warning to-warning'
-                                      : 'bg-gradient-to-r from-error to-warning'
+                                      ? 'bg-primary'
+                                      : timeframeProgressPercentage >= 40
+                                        ? 'bg-warning'
+                                        : 'bg-error/70'
                                 }`}
                                 style={{
                                   width: `${Math.min(timeframeProgressPercentage, 100)}%`,
                                 }}
-                              >
-                                {timeframeProgressPercentage >= 100 && (
-                                  <div className="absolute inset-0 rounded-full bg-success/20 animate-pulse"></div>
-                                )}
-                              </div>
-                              {/* Goal marker at 100% */}
-                              <div className="absolute right-0 top-0 h-3 w-0.5 bg-base-content/40 rounded-full"></div>
+                              />
                             </div>
+                          </div>
 
-                            {/* Remaining for timeframe */}
-                            <div className="flex items-center justify-between text-xs">
-                              <div
-                                className={`flex items-center gap-1 ${
-                                  timeframeProgressPercentage >= 100
-                                    ? 'text-success'
-                                    : 'text-warning'
-                                }`}
-                              >
-                                {timeframeProgressPercentage >= 100 ? (
-                                  <>
-                                    <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-                                    {goal.displayTimeframe
-                                      .charAt(0)
-                                      .toUpperCase() +
-                                      goal.displayTimeframe.slice(1)}{' '}
-                                    goal completed!
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="w-2 h-2 rounded-full bg-warning"></div>
-                                    {formatLongTermProgress(
-                                      Math.max(
-                                        0,
-                                        finalTimeframeRequirement -
-                                          timeframeProgress
-                                      ),
-                                      goal.type
-                                    )}
-                                    {goal.type !== 'time' && ` ${config.unit}`}{' '}
-                                    remaining {timeframePeriod}
-                                  </>
-                                )}
-                              </div>
-                              <div className="text-base-content/60">
-                                {progress.remainingDays} days left
-                              </div>
-                            </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium tabular-nums">
+                              {formatLongTermProgress(
+                                timeframeProgress,
+                                goal.type
+                              )}
+                              {goal.type !== 'time' && ` ${config.unit}`}
+                            </span>
+                            <span className="text-base-content/50 tabular-nums">
+                              {formatLongTermProgress(
+                                finalTimeframeRequirement,
+                                goal.type
+                              )}
+                              {goal.type !== 'time' && ` ${config.unit}`} needed
+                            </span>
                           </div>
                         </div>
 
-                        {/* Overall Goal Summary */}
-                        <div
-                          className={`alert alert-sm ${
-                            progress.isOnTrack
-                              ? 'alert-success'
-                              : 'alert-warning'
-                          }`}
-                        >
-                          <div className="text-xs opacity-80">
-                            <strong>Total remaining:</strong>{' '}
+                        {/* Footer stats row */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-base-content/50">
+                          <span className="tabular-nums">
+                            <span className="font-medium text-base-content/70">
+                              Remaining:
+                            </span>{' '}
                             {formatLongTermProgress(
                               progress.remainingTarget,
                               goal.type
                             )}
                             {goal.type !== 'time' && ` ${config.unit}`}
-                          </div>
+                          </span>
+                          <span className="text-base-content/20">·</span>
+                          <span className="tabular-nums">
+                            {progress.remainingDays} days left
+                          </span>
+                          <span className="text-base-content/20">·</span>
+                          <span
+                            className={`font-medium ${
+                              progress.isOnTrack
+                                ? 'text-success'
+                                : 'text-warning'
+                            }`}
+                          >
+                            {progress.isOnTrack ? 'On track' : 'Behind pace'}
+                          </span>
                         </div>
                       </>
                     )}
                   </div>
-                );
-              })}
-
-              {activeLongTermGoals.length > 3 && (
-                <div className="text-center">
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn btn-ghost btn-sm"
-                  >
-                    View All ({activeLongTermGoals.length}) Long-term Goals
-                  </button>
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
+
+          {activeLongTermGoals.length > 3 && (
+            <div className="text-center pt-2">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="btn btn-ghost btn-sm gap-2"
+              >
+                View all {activeLongTermGoals.length} goals
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -581,9 +639,27 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
       {/* Edit Long-term Goal Modal */}
       {isEditModalOpen && editingGoal && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Edit Long-term Goal</h3>
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15">
+                {(() => {
+                  const EditIcon =
+                    goalTypeConfig[editingGoal.type]?.icon || Target;
+                  return (
+                    <EditIcon
+                      className={`w-5 h-5 ${goalTypeConfig[editingGoal.type]?.color || 'text-primary'}`}
+                    />
+                  );
+                })()}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Edit Goal</h3>
+                <p className="text-xs text-base-content/60">
+                  Adjust your {goalTypeConfig[editingGoal.type]?.label} target
+                </p>
+              </div>
+            </div>
 
             <form
               onSubmit={(e) => {
@@ -606,10 +682,8 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               }}
               className="space-y-4"
             >
-              <div>
-                <label className="label">
-                  <span className="label-text">Goal Type</span>
-                </label>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Goal Type</legend>
                 <select
                   name="type"
                   className="select select-bordered w-full"
@@ -621,12 +695,10 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   <option value="episodes">Episodes</option>
                   <option value="pages">Pages</option>
                 </select>
-              </div>
+              </fieldset>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">Total Target</span>
-                </label>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Total Target</legend>
                 <input
                   type="number"
                   name="totalTarget"
@@ -635,47 +707,49 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   required
                   min="1"
                 />
-              </div>
+              </fieldset>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">Target Date</span>
-                </label>
-                <input
-                  type="date"
-                  name="targetDate"
-                  className="input input-bordered w-full"
-                  defaultValue={
-                    new Date(editingGoal.targetDate).toISOString().split('T')[0]
-                  }
-                  required
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend">Target Date</legend>
+                  <input
+                    type="date"
+                    name="targetDate"
+                    className="input input-bordered w-full"
+                    defaultValue={
+                      new Date(editingGoal.targetDate)
+                        .toISOString()
+                        .split('T')[0]
+                    }
+                    required
+                  />
+                </fieldset>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">Display Timeframe</span>
-                </label>
-                <select
-                  name="displayTimeframe"
-                  className="select select-bordered w-full"
-                  defaultValue={editingGoal.displayTimeframe}
-                >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
+                <fieldset className="fieldset">
+                  <legend className="fieldset-legend">
+                    Display Progress As
+                  </legend>
+                  <select
+                    name="displayTimeframe"
+                    className="select select-bordered w-full"
+                    defaultValue={editingGoal.displayTimeframe}
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </fieldset>
               </div>
 
               <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">Active Goal</span>
+                <label className="label cursor-pointer justify-start gap-3">
                   <input
                     type="checkbox"
                     name="isActive"
-                    className="checkbox"
+                    className="toggle toggle-primary toggle-sm"
                     defaultChecked={editingGoal.isActive}
                   />
+                  <span className="label-text">Active Goal</span>
                 </label>
               </div>
 
@@ -695,12 +769,29 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   className="btn btn-primary"
                   disabled={updateMutation.isPending}
                 >
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  {updateMutation.isPending ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingGoal(null);
+              }}
+            >
+              close
+            </button>
+          </form>
+        </dialog>
       )}
     </>
   );

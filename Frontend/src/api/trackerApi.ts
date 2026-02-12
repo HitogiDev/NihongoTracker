@@ -13,7 +13,7 @@ import {
   IImmersionList,
   IAverageColor,
   IUserStats,
-  updateLogRequest,
+  IUpdateLogRequest,
   IDailyGoal,
   IDailyGoalsResponse,
   ILongTermGoal,
@@ -157,7 +157,7 @@ export async function getLogFn(id: string): Promise<ILog> {
   return data;
 }
 
-export const updateLogFn = async (id: string, data: updateLogRequest) => {
+export const updateLogFn = async (id: string, data: IUpdateLogRequest) => {
   const response = await api.patch(`/logs/${id}`, data);
   return response.data;
 };
@@ -654,7 +654,7 @@ export async function searchAdminLogsFn(params: {
 
 export async function adminUpdateLogFn(
   logId: string,
-  payload: Partial<updateLogRequest>
+  payload: Partial<IUpdateLogRequest>
 ) {
   const { data } = await api.put(`admin/logs/${logId}`, payload);
   return data;
@@ -878,5 +878,16 @@ export async function checkRoomExistsFn(
 
 export async function deleteTextSessionFn(contentId: string) {
   const { data } = await api.delete(`texthooker/${contentId}`);
+  return data;
+}
+
+export async function hideRecentMediaFn(
+  action: 'add' | 'remove',
+  mediaId: string
+) {
+  const { data } = await api.patch(`users/settings/hidden-media`, {
+    action,
+    mediaId,
+  });
   return data;
 }

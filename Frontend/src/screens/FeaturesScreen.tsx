@@ -1,33 +1,32 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import {
-  MdBook,
-  MdStars,
-  MdTrendingUp,
-  MdLeaderboard,
-  MdPeople,
-  MdTimer,
-  MdCalendarToday,
-  MdBarChart,
-  MdSpeed,
-  MdCompareArrows,
-  MdGroup,
-  MdLibraryBooks,
-  MdAnalytics,
-  MdShowChart,
-  MdAssignment,
-  MdSettings,
-  MdTimeline,
-  MdVisibility,
-  MdShare,
-  MdSearch,
-  MdCloudUpload,
-  MdDevices,
-  MdFavorite,
-  // MdKeyboardArrowRight,
-  MdExpandMore,
-  MdExpandLess,
-} from 'react-icons/md';
+  Book,
+  CircleStar,
+  TrendingUp,
+  Users,
+  Timer,
+  Calendar,
+  BarChart,
+  Trophy,
+  Gauge,
+  GitCompare,
+  Layers,
+  ChartArea,
+  ChartLine,
+  ClipboardList,
+  Settings,
+  Newspaper,
+  Eye,
+  Share2,
+  Search,
+  CloudUpload,
+  MonitorSmartphone,
+  Heart,
+  // ArrowRight,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 
 interface FeatureCategory {
   id: string;
@@ -54,42 +53,42 @@ function FeaturesScreen() {
       id: 'tracking',
       title: 'Smart Immersion Tracking',
       description: 'Comprehensive logging system for all your Japanese content',
-      icon: MdLibraryBooks,
+      icon: Layers,
       color: 'text-primary',
       features: [
         {
           title: 'Multi-Media Support',
           description:
             'Track anime, manga, visual novels, books, audiobooks, movies, TV shows, and more',
-          icon: MdBook,
+          icon: Book,
         },
         {
           title: 'Automatic Duration Estimates',
           description:
             'Smart time calculation for episodes and reading sessions',
-          icon: MdTimer,
+          icon: Timer,
         },
         {
           title: 'Character Count Tracking',
           description:
             'Monitor characters read for visual novels, books, and manga',
-          icon: MdShowChart,
+          icon: ChartLine,
         },
         {
           title: 'Episode & Page Progress',
           description: 'Keep track of episodes watched and pages read',
-          icon: MdAssignment,
+          icon: ClipboardList,
         },
         {
           title: 'Media Database Integration',
           description:
             'Automatic matching with AniList, VNDB and our extensive database for easy logging',
-          icon: MdSearch,
+          icon: Search,
         },
         {
           title: 'Import/Export Logs',
           description: 'Import from other trackers and export your data',
-          icon: MdCloudUpload,
+          icon: CloudUpload,
         },
       ],
     },
@@ -97,39 +96,39 @@ function FeaturesScreen() {
       id: 'analytics',
       title: 'Advanced Analytics & Statistics',
       description: 'Detailed insights into your learning progress and patterns',
-      icon: MdAnalytics,
+      icon: ChartArea,
       color: 'text-secondary',
       features: [
         {
           title: 'Reading Speed Analysis',
           description: 'Track your characters-per-hour improvement over time',
-          icon: MdSpeed,
+          icon: Gauge,
           highlight: true,
         },
         {
           title: 'Progress Charts & Graphs',
           description: 'Beautiful visualizations of your immersion journey',
-          icon: MdBarChart,
+          icon: BarChart,
         },
         {
           title: 'Time-Based Statistics',
           description: 'Daily, weekly, monthly, and yearly progress breakdowns',
-          icon: MdTimeline,
+          icon: Newspaper,
         },
         {
           title: 'Media-Specific Stats',
           description: 'Detailed statistics for each anime, manga, or book',
-          icon: MdLibraryBooks,
+          icon: Layers,
         },
         {
           title: 'Type-Based Analysis',
           description: 'Compare your progress across different media types',
-          icon: MdCompareArrows,
+          icon: GitCompare,
         },
         {
           title: 'Completion Percentages',
           description: "See how much of each media you've completed",
-          icon: MdShowChart,
+          icon: ChartLine,
         },
       ],
     },
@@ -137,41 +136,41 @@ function FeaturesScreen() {
       id: 'gamification',
       title: 'Gamification & Motivation',
       description: 'RPG-style progression system to keep you engaged',
-      icon: MdStars,
+      icon: CircleStar,
       color: 'text-accent',
       features: [
         {
           title: 'XP & Leveling System',
           description:
             'Earn experience points and level up your Japanese skills',
-          icon: MdStars,
+          icon: CircleStar,
           highlight: true,
         },
         {
           title: 'Daily Streak Tracking',
           description: 'Build and maintain consistent immersion habits',
-          icon: MdCalendarToday,
+          icon: Calendar,
         },
         {
           title: 'Achievement System',
           description: 'Unlock milestones and celebrate your progress',
-          icon: MdStars,
+          icon: CircleStar,
           planned: true,
         },
         {
           title: 'Daily & Long-term Goals',
           description: 'Set targets for different media types and time periods',
-          icon: MdCalendarToday,
+          icon: Calendar,
         },
         {
           title: 'Progress Indicators',
           description: 'Visual feedback on your daily and monthly targets',
-          icon: MdTrendingUp,
+          icon: TrendingUp,
         },
         {
           title: 'Motivation Dashboard',
           description: 'See your achievements, streaks, and upcoming goals',
-          icon: MdFavorite,
+          icon: Heart,
         },
       ],
     },
@@ -179,42 +178,42 @@ function FeaturesScreen() {
       id: 'social',
       title: 'Social Features & Competition',
       description: 'Connect with fellow learners and compare progress',
-      icon: MdPeople,
+      icon: Users,
       color: 'text-info',
       features: [
         {
           title: 'Global Rankings',
           description:
             'Compete on leaderboards by XP, time, and different metrics',
-          icon: MdLeaderboard,
+          icon: Trophy,
           highlight: true,
         },
         {
           title: 'User Comparison',
           description:
             'Compare your stats with other learners on specific media',
-          icon: MdCompareArrows,
+          icon: GitCompare,
         },
         {
           title: 'Profile Pages',
           description: 'Showcase your immersion journey and statistics',
-          icon: MdPeople,
+          icon: Users,
         },
         {
           title: 'Shared Media Pages',
           description: 'See community stats and recent activity for any media',
-          icon: MdVisibility,
+          icon: Eye,
         },
         {
           title: 'Log Sharing',
           description:
             'Share interesting logs and discoveries with the community',
-          icon: MdShare,
+          icon: Share2,
         },
         {
           title: 'Recent Activity Feed',
           description: 'See what other learners are reading and watching',
-          icon: MdTimeline,
+          icon: Newspaper,
         },
       ],
     },
@@ -222,38 +221,38 @@ function FeaturesScreen() {
       id: 'clubs',
       title: 'Immersion Clubs',
       description: 'Join or create communities around specific content',
-      icon: MdGroup,
+      icon: Users,
       color: 'text-warning',
       features: [
         {
           title: 'Create & Join Clubs',
           description: 'Form groups around anime, manga, or book clubs',
-          icon: MdGroup,
+          icon: Users,
         },
         {
           title: 'Club Media Tracking',
           description: 'Collectively track progress on club-selected content',
-          icon: MdLibraryBooks,
+          icon: Layers,
         },
         {
           title: 'Member Rankings',
           description: 'See how you rank against other club members',
-          icon: MdLeaderboard,
+          icon: Trophy,
         },
         {
           title: 'Club Statistics',
           description: 'View aggregated stats for all club members',
-          icon: MdBarChart,
+          icon: BarChart,
         },
         {
           title: 'Media Voting',
           description: 'Vote on what content the club should read/watch next',
-          icon: MdFavorite,
+          icon: Heart,
         },
         {
           title: 'Activity Tracking',
           description: 'Monitor club engagement and progress over time',
-          icon: MdTrendingUp,
+          icon: TrendingUp,
         },
       ],
     },
@@ -261,40 +260,40 @@ function FeaturesScreen() {
       id: 'tools',
       title: 'Productivity Tools',
       description: 'Additional features to enhance your learning experience',
-      icon: MdSettings,
+      icon: Settings,
       color: 'text-success',
       features: [
         {
           title: 'Time Calculator',
           description:
             'Convert between different time units and estimate reading times',
-          icon: MdTimer,
+          icon: Timer,
         },
         {
           title: 'Media Discovery',
           description:
             'Find new content based on your preferences and difficulty',
-          icon: MdSearch,
+          icon: Search,
         },
         {
           title: 'Personal Lists',
           description: 'Create custom lists of media to track and organize',
-          icon: MdAssignment,
+          icon: ClipboardList,
         },
         {
           title: 'Goal Management',
           description: 'Set up and track both daily and long-term objectives',
-          icon: MdAssignment,
+          icon: ClipboardList,
         },
         {
           title: 'Data Export',
           description: 'Export your logs and statistics for external analysis',
-          icon: MdCloudUpload,
+          icon: CloudUpload,
         },
         {
           title: 'Multi-Device Sync',
           description: 'Access your data seamlessly across all devices',
-          icon: MdDevices,
+          icon: MonitorSmartphone,
         },
       ],
     },
@@ -382,34 +381,36 @@ function FeaturesScreen() {
                 <div className="card-body p-0">
                   {/* Category Header */}
                   <div
-                    className="p-8 cursor-pointer hover:bg-base-200/50 transition-colors duration-300"
+                    className="p-4 sm:p-8 cursor-pointer hover:bg-base-200/50 transition-colors duration-300"
                     onClick={() => toggleCategory(category.id)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 sm:gap-6 min-w-0">
                         <div
-                          className={`p-4 rounded-xl bg-base-200/50 ${category.color}`}
+                          className={`p-3 sm:p-4 rounded-xl bg-base-200/50 ${category.color} flex-shrink-0`}
                         >
-                          <category.icon className="w-8 h-8" />
+                          <category.icon className="w-6 h-6 sm:w-8 sm:h-8" />
                         </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-base-content mb-2">
+                        <div className="min-w-0">
+                          <h3 className="text-lg sm:text-2xl font-bold text-base-content mb-1 sm:mb-2">
                             {category.title}
                           </h3>
-                          <p className="text-base-content/70 text-lg">
+                          <p className="text-base-content/70 text-sm sm:text-lg">
                             {category.description}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="badge badge-outline badge-lg">
-                          {category.features.length} features
+                      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 self-end sm:self-auto">
+                        <div className="badge badge-outline badge-sm sm:badge-lg whitespace-nowrap">
+                          <span className="tabular-nums">
+                            {category.features.length} features
+                          </span>
                         </div>
-                        <div className="btn btn-circle btn-ghost">
+                        <div className="btn btn-circle btn-ghost btn-sm sm:btn-md">
                           {expandedCategory === category.id ? (
-                            <MdExpandLess className="w-6 h-6" />
+                            <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" />
                           ) : (
-                            <MdExpandMore className="w-6 h-6" />
+                            <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />
                           )}
                         </div>
                       </div>
@@ -418,12 +419,12 @@ function FeaturesScreen() {
 
                   {/* Expanded Feature List */}
                   {expandedCategory === category.id && (
-                    <div className="px-8 pb-8 animate-slide-down">
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
+                    <div className="px-4 sm:px-8 pb-4 sm:pb-8 animate-slide-down">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 stagger-children">
                         {category.features.map((feature, featureIndex) => (
                           <div
                             key={featureIndex}
-                            className={`p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover-lift animate-fade-in-up ${
+                            className={`p-4 sm:p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover-lift animate-fade-in-up ${
                               feature.highlight
                                 ? 'border-primary/30 bg-primary/5 hover:border-primary/50'
                                 : 'border-base-300 bg-base-50 hover:border-base-400'
@@ -432,27 +433,29 @@ function FeaturesScreen() {
                               animationDelay: `${featureIndex * 0.05}s`,
                             }}
                           >
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-start gap-3 sm:gap-4">
                               <div
-                                className={`p-3 rounded-lg hover-scale ${feature.highlight ? 'bg-primary/20 text-primary' : 'bg-base-200/50 text-base-content/70'}`}
+                                className={`p-2 sm:p-3 rounded-lg flex-shrink-0 hover-scale ${feature.highlight ? 'bg-primary/20 text-primary' : 'bg-base-200/50 text-base-content/70'}`}
                               >
-                                <feature.icon className="w-6 h-6" />
+                                <feature.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                               </div>
-                              <div className="flex-1">
-                                <h4 className="font-bold text-base-content mb-2 flex items-center gap-2">
-                                  {feature.title}
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-base-content mb-2 flex flex-wrap items-center gap-2">
+                                  <span className="break-words">
+                                    {feature.title}
+                                  </span>
                                   {feature.highlight && (
-                                    <span className="badge badge-primary badge-xs">
+                                    <span className="badge badge-primary badge-xs flex-shrink-0">
                                       Popular
                                     </span>
                                   )}
                                   {feature.planned && (
-                                    <span className="badge badge-warning badge-xs">
+                                    <span className="badge badge-warning badge-xs flex-shrink-0">
                                       Planned
                                     </span>
                                   )}
                                 </h4>
-                                <p className="text-sm text-base-content/70 leading-relaxed">
+                                <p className="text-sm text-base-content/70 leading-relaxed break-words">
                                   {feature.description}
                                 </p>
                               </div>
@@ -488,7 +491,7 @@ function FeaturesScreen() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 stagger-children">
             <div className="text-center animate-fade-in-up delay-600 hover-lift">
               <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <MdLibraryBooks className="w-10 h-10 text-primary" />
+                <Layers className="w-10 h-10 text-primary" />
               </div>
               <h3 className="text-xl font-bold mb-3">1. Track Everything</h3>
               <p className="text-base-content/70">
@@ -499,7 +502,7 @@ function FeaturesScreen() {
 
             <div className="text-center animate-fade-in-up delay-800 hover-lift">
               <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <MdAnalytics className="w-10 h-10 text-secondary" />
+                <ChartArea className="w-10 h-10 text-secondary" />
               </div>
               <h3 className="text-xl font-bold mb-3">2. Analyze Progress</h3>
               <p className="text-base-content/70">
@@ -510,7 +513,7 @@ function FeaturesScreen() {
 
             <div className="text-center animate-fade-in-up delay-1000 hover-lift">
               <div className="w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <MdStars className="w-10 h-10 text-accent" />
+                <CircleStar className="w-10 h-10 text-accent" />
               </div>
               <h3 className="text-xl font-bold mb-3">3. Stay Motivated</h3>
               <p className="text-base-content/70">
@@ -521,7 +524,7 @@ function FeaturesScreen() {
 
             <div className="text-center animate-fade-in-up delay-1200 hover-lift">
               <div className="w-20 h-20 bg-info/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <MdPeople className="w-10 h-10 text-info" />
+                <Users className="w-10 h-10 text-info" />
               </div>
               <h3 className="text-xl font-bold mb-3">4. Connect & Compete</h3>
               <p className="text-base-content/70">
@@ -554,7 +557,7 @@ function FeaturesScreen() {
                 className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover-glow animate-pulse-glow"
               >
                 Coming Soon!
-                {/*<MdKeyboardArrowRight className="ml-2 w-6 h-6" />*/}
+                {/*<ArrowRight className="ml-2 w-6 h-6" />*/}
               </button>
             </Link>
 

@@ -4,15 +4,15 @@ import { getClubMediaStatsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
 import {
-  MdPeople,
-  MdLibraryBooks,
-  MdTimer,
-  MdStars,
-  MdTrendingUp,
-  MdCalendarToday,
-  MdBarChart,
-  MdShowChart,
-} from 'react-icons/md';
+  Users,
+  Files,
+  Timer,
+  Star,
+  TrendingUp,
+  Calendar,
+  ChartNoAxesColumn,
+  ChartLine,
+} from 'lucide-react';
 import BarChart from '../components/BarChart';
 import ProgressChart from '../components/ProgressChart';
 
@@ -63,21 +63,21 @@ export default function ClubMediaInfo() {
           primary: {
             label: 'Episodes',
             value: stats.episodes,
-            icon: MdLibraryBooks,
+            icon: Files,
           },
-          secondary: { label: 'Hours', value: stats.hours, icon: MdTimer },
+          secondary: { label: 'Hours', value: stats.hours, icon: Timer },
         };
       case 'manga':
         return {
           primary: {
             label: 'Chapters',
             value: stats.pages,
-            icon: MdLibraryBooks,
+            icon: Files,
           },
           secondary: {
             label: 'Pages',
             value: stats.pages,
-            icon: MdLibraryBooks,
+            icon: Files,
           },
         };
       case 'reading':
@@ -86,27 +86,27 @@ export default function ClubMediaInfo() {
           primary: {
             label: 'Characters',
             value: stats.characters.toLocaleString(),
-            icon: MdLibraryBooks,
+            icon: Files,
           },
-          secondary: { label: 'Hours', value: stats.hours, icon: MdTimer },
+          secondary: { label: 'Hours', value: stats.hours, icon: Timer },
         };
       case 'video':
       case 'movie':
         return {
-          primary: { label: 'Hours', value: stats.hours, icon: MdTimer },
+          primary: { label: 'Hours', value: stats.hours, icon: Timer },
           secondary: {
             label: 'Minutes',
             value: stats.minutes.toLocaleString(),
-            icon: MdTimer,
+            icon: Timer,
           },
         };
       default:
         return {
-          primary: { label: 'Hours', value: stats.hours, icon: MdTimer },
+          primary: { label: 'Hours', value: stats.hours, icon: Timer },
           secondary: {
             label: 'XP',
             value: stats.xp.toLocaleString(),
-            icon: MdStars,
+            icon: Star,
           },
         };
     }
@@ -149,7 +149,7 @@ export default function ClubMediaInfo() {
                   }`}
                   onClick={() => setPeriod('consumption')}
                 >
-                  <MdCalendarToday className="w-4 h-4 mr-1" />
+                  <Calendar className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">Consumption Period</span>
                   <span className="sm:hidden">Period</span>
                 </button>
@@ -161,7 +161,7 @@ export default function ClubMediaInfo() {
                   }`}
                   onClick={() => setPeriod('alltime')}
                 >
-                  <MdTrendingUp className="w-4 h-4 mr-1" />
+                  <TrendingUp className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">All Time</span>
                   <span className="sm:hidden">All</span>
                 </button>
@@ -176,7 +176,7 @@ export default function ClubMediaInfo() {
             {/* Total Logs */}
             <div className="stat bg-base-100 shadow-sm rounded-lg">
               <div className="stat-figure text-primary">
-                <MdLibraryBooks className="w-8 h-8" />
+                <Files className="w-8 h-8" />
               </div>
               <div className="stat-title">Total Logs</div>
               <div className="stat-value text-primary">
@@ -190,7 +190,7 @@ export default function ClubMediaInfo() {
             {/* Active Members */}
             <div className="stat bg-base-100 shadow-sm rounded-lg">
               <div className="stat-figure text-secondary">
-                <MdPeople className="w-8 h-8" />
+                <Users className="w-8 h-8" />
               </div>
               <div className="stat-title">Active Members</div>
               <div className="stat-value text-secondary">
@@ -222,7 +222,7 @@ export default function ClubMediaInfo() {
             {/* Total XP */}
             <div className="stat bg-base-100 shadow-sm rounded-lg">
               <div className="stat-figure text-warning">
-                <MdStars className="w-8 h-8" />
+                <Star className="w-8 h-8" />
               </div>
               <div className="stat-title">Total XP</div>
               <div className="stat-value text-warning">
@@ -247,7 +247,7 @@ export default function ClubMediaInfo() {
                 <div className="stats stats-horizontal shadow w-full">
                   <div className="stat">
                     <div className="stat-figure text-primary">
-                      <MdLibraryBooks className="w-6 h-6" />
+                      <Files className="w-6 h-6" />
                     </div>
                     <div className="stat-title">Logs</div>
                     <div className="stat-value text-primary">
@@ -258,7 +258,7 @@ export default function ClubMediaInfo() {
 
                   <div className="stat">
                     <div className="stat-figure text-secondary">
-                      <MdPeople className="w-6 h-6" />
+                      <Users className="w-6 h-6" />
                     </div>
                     <div className="stat-title">Active Members</div>
                     <div className="stat-value text-secondary">
@@ -269,7 +269,7 @@ export default function ClubMediaInfo() {
 
                   <div className="stat">
                     <div className="stat-figure text-accent">
-                      <MdStars className="w-6 h-6" />
+                      <Star className="w-6 h-6" />
                     </div>
                     <div className="stat-title">XP Earned</div>
                     <div className="stat-value text-accent">
@@ -313,7 +313,7 @@ export default function ClubMediaInfo() {
                   <div className="stats stats-horizontal shadow w-full">
                     <div className="stat">
                       <div className="stat-figure text-primary">
-                        <MdLibraryBooks className="w-6 h-6" />
+                        <Files className="w-6 h-6" />
                       </div>
                       <div className="stat-title">Logs</div>
                       <div className="stat-value text-primary">
@@ -324,7 +324,7 @@ export default function ClubMediaInfo() {
 
                     <div className="stat">
                       <div className="stat-figure text-secondary">
-                        <MdPeople className="w-6 h-6" />
+                        <Users className="w-6 h-6" />
                       </div>
                       <div className="stat-title">Active Members</div>
                       <div className="stat-value text-secondary">
@@ -335,7 +335,7 @@ export default function ClubMediaInfo() {
 
                     <div className="stat">
                       <div className="stat-figure text-accent">
-                        <MdStars className="w-6 h-6" />
+                        <Star className="w-6 h-6" />
                       </div>
                       <div className="stat-title">XP Earned</div>
                       <div className="stat-value text-accent">
@@ -389,7 +389,7 @@ export default function ClubMediaInfo() {
                     }`}
                     onClick={() => setChartView('progress')}
                   >
-                    <MdShowChart className="w-4 h-4 mr-1" />
+                    <ChartLine className="w-4 h-4 mr-1" />
                     Progress
                   </button>
                   <button
@@ -400,7 +400,7 @@ export default function ClubMediaInfo() {
                     }`}
                     onClick={() => setChartView('bar')}
                   >
-                    <MdBarChart className="w-4 h-4 mr-1" />
+                    <ChartNoAxesColumn className="w-4 h-4 mr-1" />
                     Bar Chart
                   </button>
                 </div>

@@ -13,14 +13,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import {
-  MdSearch,
-  MdFilterList,
-  MdSchedule,
-  MdExpandMore,
-  MdSort,
-  MdArrowUpward,
-  MdArrowDownward,
-} from 'react-icons/md';
+  Search,
+  Funnel,
+  Clock4,
+  ChevronDown,
+  ListFilter,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 
 const difficultyLevels = [
@@ -844,10 +844,12 @@ function MediaDetails() {
                     <span className="font-medium text-base-content/70 min-w-20">
                       Type:
                     </span>
-                    <div className="badge badge-primary badge-lg uppercase font-medium">
+                    <div className="badge badge-primary badge-lg capitalize font-medium">
                       {mediaDocument?.type === 'reading'
                         ? 'Light Novel'
-                        : mediaDocument?.type || mediaType}
+                        : mediaDocument?.type === 'vn'
+                          ? 'Visual Novel'
+                          : mediaDocument?.type || mediaType}
                     </div>
                   </div>
 
@@ -1443,7 +1445,7 @@ function MediaDetails() {
                 <div className="space-y-4 mb-6">
                   <div className="flex flex-col xl:flex-row xl:items-center gap-3">
                     <label className="input input-bordered flex items-center gap-2 w-full xl:max-w-md">
-                      <MdSearch className="w-4 h-4 opacity-70" />
+                      <Search className="w-4 h-4 opacity-70" />
                       <input
                         type="text"
                         value={searchTerm}
@@ -1471,10 +1473,10 @@ function MediaDetails() {
                           className="btn btn-outline w-full sm:w-56 justify-between"
                         >
                           <span className="flex items-center gap-2">
-                            <MdFilterList className="w-4 h-4" />
+                            <Funnel className="w-4 h-4" />
                             Date: {getDateFilterLabel()}
                           </span>
-                          <MdExpandMore className="w-4 h-4 opacity-70" />
+                          <ChevronDown className="w-4 h-4 opacity-70" />
                         </div>
                         <ul
                           tabIndex={0}
@@ -1502,15 +1504,15 @@ function MediaDetails() {
                           className="btn btn-outline w-full sm:w-56 justify-between"
                         >
                           <span className="flex items-center gap-2">
-                            <MdSort className="w-4 h-4" />
+                            <ListFilter className="w-4 h-4" />
                             Sort: {getSortLabel()}
                           </span>
                           {sortDirection === 'desc' ? (
-                            <MdArrowDownward className="w-3 h-3 opacity-70" />
+                            <ArrowDown className="w-3 h-3 opacity-70" />
                           ) : (
-                            <MdArrowUpward className="w-3 h-3 opacity-70" />
+                            <ArrowUp className="w-3 h-3 opacity-70" />
                           )}
-                          <MdExpandMore className="w-4 h-4 opacity-70" />
+                          <ChevronDown className="w-4 h-4 opacity-70" />
                         </div>
                         <ul
                           tabIndex={0}
@@ -1542,7 +1544,7 @@ function MediaDetails() {
                               }
                               onClick={() => setSortDirection('desc')}
                             >
-                              <MdArrowDownward className="w-3 h-3" />
+                              <ArrowDown className="w-3 h-3" />
                               Highest to lowest
                             </a>
                           </li>
@@ -1553,7 +1555,7 @@ function MediaDetails() {
                               }
                               onClick={() => setSortDirection('asc')}
                             >
-                              <MdArrowUpward className="w-3 h-3" />
+                              <ArrowUp className="w-3 h-3" />
                               Lowest to highest
                             </a>
                           </li>
@@ -1573,7 +1575,7 @@ function MediaDetails() {
                           {customStartDate
                             ? formatDateOnly(customStartDate)
                             : 'Start date'}
-                          <MdSchedule className="w-4 h-4 opacity-70" />
+                          <Clock4 className="w-4 h-4 opacity-70" />
                         </div>
                         <div
                           tabIndex={0}
@@ -1610,7 +1612,7 @@ function MediaDetails() {
                           {customEndDate
                             ? formatDateOnly(customEndDate)
                             : 'End date'}
-                          <MdSchedule className="w-4 h-4 opacity-70" />
+                          <Clock4 className="w-4 h-4 opacity-70" />
                         </div>
                         {customStartDate && (
                           <div

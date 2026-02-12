@@ -4,24 +4,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
-  MdGroup,
-  MdEdit,
-  MdPersonAdd,
-  MdExitToApp,
-  MdShield,
-  MdVerified,
-  MdPlayArrow,
-  MdBook,
-  MdMovie,
-  MdMusicNote,
-  MdAdd,
-  MdClose,
-  MdHowToVote,
-  MdLeaderboard,
-  MdInfo,
-  MdPeople,
-  MdSettings,
-} from 'react-icons/md';
+  Users,
+  Pencil,
+  UserPlus,
+  DoorOpen,
+  Shield,
+  BadgeCheck,
+  Play,
+  Book,
+  Clapperboard,
+  MonitorPlay,
+  Plus,
+  X,
+  Vote,
+  BarChart,
+  Info,
+  Settings,
+} from 'lucide-react';
 import {
   getClubFn,
   joinClubFn,
@@ -538,28 +537,28 @@ function ClubDetailScreen() {
   const getMediaTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'anime':
-        return <MdPlayArrow className="text-lg" />;
+        return <Play className="text-lg" />;
       case 'manga':
       case 'reading':
-        return <MdBook className="text-lg" />;
+        return <Book className="text-lg" />;
       case 'movie':
       case 'video':
-        return <MdMovie className="text-lg" />;
-      case 'music':
-        return <MdMusicNote className="text-lg" />;
+        return <Clapperboard className="text-lg" />;
+      case 'tv show':
+        return <MonitorPlay className="text-lg" />;
       case 'vn':
-        return <MdPlayArrow className="text-lg" />;
+        return <Play className="text-lg" />;
       default:
-        return <MdPlayArrow className="text-lg" />;
+        return <Play className="text-lg" />;
     }
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'leader':
-        return <MdShield className="text-yellow-500" />;
+        return <Shield className="text-yellow-500" />;
       case 'moderator':
-        return <MdVerified className="text-blue-500" />;
+        return <BadgeCheck className="text-blue-500" />;
       default:
         return null;
     }
@@ -639,7 +638,7 @@ function ClubDetailScreen() {
                     />
                   ) : (
                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                      <MdGroup className="text-3xl text-primary" />
+                      <Users className="text-3xl text-primary" />
                     </div>
                   )}
                 </div>
@@ -657,7 +656,7 @@ function ClubDetailScreen() {
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-sm text-base-content/70">
                   <div className="flex items-center gap-1">
-                    <MdGroup className="text-base" />
+                    <Users className="text-base" />
                     <span>
                       {club.memberCount}/{club.memberLimit} members
                     </span>
@@ -674,7 +673,7 @@ function ClubDetailScreen() {
                         className="btn btn-secondary btn-sm"
                         onClick={() => setIsEditClubModalOpen(true)}
                       >
-                        <MdEdit className="text-lg" />
+                        <Pencil className="text-lg" />
                         <span className="hidden sm:inline">Edit</span>
                       </button>
                     )}
@@ -694,7 +693,7 @@ function ClubDetailScreen() {
                           : undefined
                       }
                     >
-                      <MdExitToApp className="text-lg" />
+                      <DoorOpen className="text-lg" />
                       <span className="hidden sm:inline">
                         {leaveMutation.isPending
                           ? 'Processing...'
@@ -710,7 +709,7 @@ function ClubDetailScreen() {
                     onClick={handleLeaveClick}
                     disabled={leaveMutation.isPending}
                   >
-                    <MdExitToApp className="text-lg" />
+                    <DoorOpen className="text-lg" />
                     <span className="hidden sm:inline">
                       {leaveMutation.isPending
                         ? 'Canceling...'
@@ -726,7 +725,7 @@ function ClubDetailScreen() {
                       club.memberCount >= club.memberLimit
                     }
                   >
-                    <MdPersonAdd className="text-lg" />
+                    <UserPlus className="text-lg" />
                     <span className="hidden sm:inline">
                       {joinMutation.isPending
                         ? club.isPublic
@@ -742,7 +741,7 @@ function ClubDetailScreen() {
                     className="btn btn-primary btn-sm"
                     onClick={() => navigate('/login')}
                   >
-                    <MdPersonAdd className="text-lg" />
+                    <UserPlus className="text-lg" />
                     <span className="hidden sm:inline">Login to Join</span>
                   </button>
                 )}
@@ -760,21 +759,21 @@ function ClubDetailScreen() {
             className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
-            <MdInfo className="mr-2" />
+            <Info className="mr-2" />
             Overview
           </button>
           <button
             className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('media')}
           >
-            <MdPlayArrow className="mr-2" />
+            <Play className="mr-2" />
             Media
           </button>
           <button
             className={`tab ${activeTab === 'members' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('members')}
           >
-            <MdPeople className="mr-2" />
+            <Users className="mr-2" />
             Members
             {club?.userRole === 'leader' &&
               pendingRequests?.pending &&
@@ -788,7 +787,7 @@ function ClubDetailScreen() {
             className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('rankings')}
           >
-            <MdLeaderboard className="mr-2" />
+            <BarChart className="mr-2" />
             Rankings
           </button>
         </div>
@@ -827,7 +826,7 @@ function ClubDetailScreen() {
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="card-title text-lg flex items-center gap-2">
-                      <MdHowToVote className="text-xl" />
+                      <Vote className="text-xl" />
                       Media Voting
                     </h2>
                     {canManageClub && (
@@ -838,7 +837,7 @@ function ClubDetailScreen() {
                             setShowVotingManagement(!showVotingManagement)
                           }
                         >
-                          <MdSettings className="text-lg" />
+                          <Settings className="text-lg" />
                           <span className="hidden sm:inline">
                             {showVotingManagement ? 'Hide' : 'Manage'}
                           </span>
@@ -847,7 +846,7 @@ function ClubDetailScreen() {
                           className="btn btn-primary btn-sm"
                           onClick={() => setIsCreateVotingWizardOpen(true)}
                         >
-                          <MdAdd className="text-lg" />
+                          <Plus className="text-lg" />
                           <span className="hidden sm:inline">
                             Create Voting
                           </span>
@@ -903,7 +902,7 @@ function ClubDetailScreen() {
                       className="btn btn-primary btn-sm"
                       onClick={() => setIsAddMediaModalOpen(true)}
                     >
-                      <MdAdd className="text-lg" />
+                      <Plus className="text-lg" />
                       <span className="hidden sm:inline">Add Media</span>
                     </button>
                   )}
@@ -1019,7 +1018,7 @@ function ClubDetailScreen() {
                                       }}
                                       title="Edit consumption period"
                                     >
-                                      <MdEdit className="w-4 h-4" />
+                                      <Pencil className="w-4 h-4" />
                                     </button>
                                   )}
 
@@ -1047,7 +1046,7 @@ function ClubDetailScreen() {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-base-content/60">
-                    <MdBook className="mx-auto text-4xl mb-2 opacity-50" />
+                    <Book className="mx-auto text-4xl mb-2 opacity-50" />
                     <p>No media added yet</p>
                     {canManageClub && (
                       <p className="text-sm mt-1">
@@ -1297,7 +1296,7 @@ function ClubDetailScreen() {
                 className="btn btn-ghost btn-sm btn-circle"
                 onClick={handleCloseAddMediaModal}
               >
-                <MdClose className="text-lg" />
+                <X className="text-lg" />
               </button>
             </div>
 
@@ -1552,7 +1551,7 @@ function ClubDetailScreen() {
                 className="btn btn-ghost btn-sm btn-circle"
                 onClick={handleCloseEditModal}
               >
-                <MdClose className="text-lg" />
+                <X className="text-lg" />
               </button>
             </div>
 
@@ -1604,7 +1603,7 @@ function ClubDetailScreen() {
                         />
                       ) : (
                         <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                          <MdGroup className="text-3xl text-primary" />
+                          <Users className="text-3xl text-primary" />
                         </div>
                       )}
                     </div>
@@ -1614,7 +1613,7 @@ function ClubDetailScreen() {
                 {/* Upload/Remove buttons - Centered */}
                 <div className="flex flex-col items-center gap-2">
                   <label className="btn btn-outline btn-sm">
-                    <MdEdit className="text-base mr-1" />
+                    <Pencil className="text-base mr-1" />
                     {editPreviews.avatar || club?.avatar
                       ? 'Change Avatar'
                       : 'Upload Avatar'}
@@ -1676,7 +1675,7 @@ function ClubDetailScreen() {
                 {/* Upload/Remove buttons - Centered */}
                 <div className="flex flex-col items-center gap-2">
                   <label className="btn btn-outline btn-sm">
-                    <MdEdit className="text-base mr-1" />
+                    <Pencil className="text-base mr-1" />
                     {editPreviews.banner || club?.banner
                       ? 'Change Banner'
                       : 'Upload Banner'}
@@ -1919,7 +1918,7 @@ function ClubDetailScreen() {
               ?
             </p>
             <div className="alert alert-warning mb-4">
-              <MdInfo className="text-lg" />
+              <Info className="text-lg" />
               <div className="text-sm">
                 <div className="font-semibold">
                   This action cannot be undone!

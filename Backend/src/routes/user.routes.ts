@@ -10,6 +10,7 @@ import {
   compareUserStats,
   getRankingSummary,
   updateMediaCompletionStatus,
+  updateHiddenRecentMedia,
 } from '../controllers/users.controller.js';
 import {
   getDashboardHours,
@@ -56,6 +57,8 @@ router.put(
   ]),
   updateUser
 );
+
+router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
 
 router.post('/cleardata', protect, clearUserData);
 

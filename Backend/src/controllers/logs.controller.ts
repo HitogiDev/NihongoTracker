@@ -65,7 +65,10 @@ export async function getRecentLogs(
       {
         $match: {
           user: user._id,
-          mediaId: { $exists: true, $nin: [null, ''] },
+          mediaId: {
+            $exists: true,
+            $nin: [null, '', ...(user.settings?.hiddenRecentMedia || [])],
+          },
         },
       },
       {
@@ -1113,6 +1116,21 @@ export async function createLog(
 
     // Update streaks using user timezone and log date (incremental)
     await updateStreakWithLog(res.locals.user._id, savedLog.date);
+
+    // If this media was hidden from recent media, unhide it since user is actively logging it
+    const finalMediaId = logMedia ? logMedia.contentId : mediaId;
+    if (finalMediaId) {
+      const userDoc = await User.findById(res.locals.user._id);
+      if (
+        userDoc?.settings?.hiddenRecentMedia?.includes(finalMediaId)
+      ) {
+        userDoc.settings.hiddenRecentMedia =
+          userDoc.settings.hiddenRecentMedia.filter(
+            (id) => id !== finalMediaId
+          );
+        await userDoc.save();
+      }
+    }
 
     return res.status(200).json(savedLog);
   } catch (error) {

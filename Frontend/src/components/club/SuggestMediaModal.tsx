@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { MdClose, MdSearch, MdAdd, MdImage } from 'react-icons/md';
+import { X, Search, Plus, Image } from 'lucide-react';
 import { addVotingCandidateFn } from '../../api/clubApi';
 import useSearch from '../../hooks/useSearch';
 import { IClub, IClubMediaVoting, IMediaDocument } from '../../types.d';
@@ -90,7 +90,7 @@ export default function SuggestMediaModal({
     suggestMediaMutation.mutate(candidateData);
   };
 
-  const handleCustomSubmit = (e: React.FormEvent) => {
+  function handleCustomSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!customForm.title.trim()) {
       toast.error('Title is required');
@@ -105,7 +105,7 @@ export default function SuggestMediaModal({
     };
 
     suggestMediaMutation.mutate(candidateData);
-  };
+  }
 
   const formatDate = (date: Date | string | undefined): string => {
     if (!date) return 'Unknown';
@@ -132,7 +132,7 @@ export default function SuggestMediaModal({
             className="btn btn-ghost btn-sm btn-circle"
             disabled={suggestMediaMutation.isPending}
           >
-            <MdClose className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -261,7 +261,7 @@ export default function SuggestMediaModal({
                       </>
                     ) : (
                       <>
-                        <MdAdd className="w-4 h-4" />
+                        <Plus className="w-4 h-4" />
                         Submit Suggestion
                       </>
                     )}
@@ -288,7 +288,7 @@ export default function SuggestMediaModal({
                   <span className="label-text">Search for Media</span>
                 </label>
                 <div className="relative">
-                  <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40" />
                   <input
                     type="text"
                     className="input input-bordered w-full pl-10"
@@ -333,7 +333,7 @@ export default function SuggestMediaModal({
                                 />
                               ) : (
                                 <div className="w-16 h-20 bg-base-300 rounded flex items-center justify-center">
-                                  <MdImage className="w-6 h-6 text-base-content/40" />
+                                  <Image className="w-6 h-6 text-base-content/40" />
                                 </div>
                               )}
                               <div className="flex-1">
@@ -352,7 +352,7 @@ export default function SuggestMediaModal({
                                     className="btn btn-primary btn-xs"
                                     disabled={suggestMediaMutation.isPending}
                                   >
-                                    <MdAdd className="w-3 h-3" />
+                                    <Plus className="w-3 h-3" />
                                     Suggest
                                   </button>
                                 </div>
@@ -364,7 +364,7 @@ export default function SuggestMediaModal({
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <MdSearch className="w-12 h-12 mx-auto text-base-content/20 mb-2" />
+                      <Search className="w-12 h-12 mx-auto text-base-content/20 mb-2" />
                       <p className="text-base-content/60">No results found</p>
                     </div>
                   )}

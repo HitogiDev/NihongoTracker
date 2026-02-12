@@ -9,41 +9,43 @@ import {
   createLongTermGoalFn,
 } from '../api/trackerApi';
 import { IDailyGoal, ILongTermGoal } from '../types';
+
 import {
-  MdAdd,
-  MdDelete,
-  MdEdit,
-  MdSave,
-  MdCancel,
-  MdSchedule,
-  MdBook,
-  MdPlayArrow,
-  MdPages,
-  MdClose,
-} from 'react-icons/md';
+  Plus,
+  Trash,
+  Pencil,
+  Save,
+  CircleX,
+  Clock5,
+  BookOpen,
+  Play,
+  FileText,
+  X,
+  Clock12,
+} from 'lucide-react';
 
 const goalTypeConfig = {
   time: {
     label: 'Time (minutes)',
-    icon: MdSchedule,
+    icon: Clock5,
     color: 'text-primary',
     unit: 'min',
   },
   chars: {
     label: 'Characters',
-    icon: MdBook,
+    icon: BookOpen,
     color: 'text-secondary',
     unit: 'chars',
   },
   episodes: {
     label: 'Episodes',
-    icon: MdPlayArrow,
+    icon: Play,
     color: 'text-accent',
     unit: 'ep',
   },
   pages: {
     label: 'Pages',
-    icon: MdPages,
+    icon: FileText,
     color: 'text-info',
     unit: 'pages',
   },
@@ -328,7 +330,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Manage Daily Goals</h2>
           <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
-            <MdClose className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -340,7 +342,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
               onClick={() => setIsCreating(!isCreating)}
               className="btn btn-primary btn-sm"
             >
-              <MdAdd className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
               {isCreating ? 'Cancel' : 'Add Goal'}
             </button>
           </div>
@@ -441,17 +443,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       (goalDuration === 'long-term' && errors.totalTarget)) && (
                       <label className="label">
                         <span className="label-text-alt text-error flex items-center gap-1">
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                          <Clock12 className="w-4 h-4" />
                           {goalDuration === 'daily'
                             ? errors.target
                             : errors.totalTarget}
@@ -574,7 +566,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         </>
                       ) : (
                         <>
-                          <MdSave className="w-4 h-4" />
+                          <Save className="w-4 h-4" />
                           Create{' '}
                           {goalDuration === 'daily'
                             ? 'Daily'
@@ -595,7 +587,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           <h3 className="text-lg font-semibold">Your Goals</h3>
           {goals.length === 0 ? (
             <div className="alert alert-info">
-              <MdBook className="w-6 h-6" />
+              <BookOpen className="w-6 h-6" />
               <span>
                 No daily goals set. Create your first goal to start tracking
                 your progress!
@@ -657,17 +649,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                             />
                             {errors.target && (
                               <div className="text-xs text-error mt-1 flex items-center gap-1">
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
+                                <Clock12 className="w-4 h-4" />
                                 {errors.target}
                               </div>
                             )}
@@ -696,14 +678,14 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               }
                               className="btn btn-primary btn-sm"
                             >
-                              <MdSave className="w-4 h-4" />
+                              <Save className="w-4 h-4" />
                             </button>
                             <button
                               onClick={cancelEdit}
                               className="btn btn-ghost btn-sm"
                               disabled={isUpdatingGoal}
                             >
-                              <MdCancel className="w-4 h-4" />
+                              <CircleX className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -725,14 +707,14 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               onClick={() => startEdit(goal)}
                               className="btn btn-ghost btn-sm"
                             >
-                              <MdEdit className="w-4 h-4" />
+                              <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => deleteGoal(goal._id!)}
                               disabled={isDeletingGoal}
                               className="btn btn-ghost btn-sm text-error hover:bg-error/10"
                             >
-                              <MdDelete className="w-4 h-4" />
+                              <Trash className="w-4 h-4" />
                             </button>
                           </div>
                         </div>

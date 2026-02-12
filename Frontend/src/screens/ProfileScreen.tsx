@@ -18,14 +18,14 @@ marked.setOptions({
   breaks: true,
 });
 import {
-  MdSearch,
-  MdFilterList,
-  MdSchedule,
-  MdExpandMore,
-  MdSort,
-  MdArrowUpward,
-  MdArrowDownward,
-} from 'react-icons/md';
+  Search,
+  Funnel,
+  Clock,
+  ChevronDown,
+  ListFilter,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
 
 function ProfileScreen() {
   const limit = 10;
@@ -319,7 +319,7 @@ function ProfileScreen() {
                   {/* Search Bar */}
                   <div className="flex-1 lg:max-w-md">
                     <label className="input input-bordered flex items-center gap-2">
-                      <MdSearch className="w-5 h-5 opacity-70" />
+                      <Search className="w-5 h-5 opacity-70" />
                       <input
                         type="text"
                         className="grow"
@@ -339,12 +339,12 @@ function ProfileScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <MdFilterList className="w-4 h-4" />
+                        <Funnel className="w-4 h-4" />
                         {filterType === 'all'
                           ? 'All Types'
                           : filterType.charAt(0).toUpperCase() +
                             filterType.slice(1)}
-                        <MdExpandMore className="w-4 h-4 ml-auto" />
+                        <ChevronDown className="w-4 h-4 ml-auto" />
                       </div>
                       <ul
                         tabIndex={0}
@@ -387,7 +387,7 @@ function ProfileScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <MdSchedule className="w-4 h-4" />
+                        <Clock className="w-4 h-4" />
                         {dateFilter === 'all'
                           ? 'All Time'
                           : dateFilter === 'today'
@@ -399,7 +399,7 @@ function ProfileScreen() {
                                 : dateFilter === 'year'
                                   ? 'This Year'
                                   : 'Custom Range'}
-                        <MdExpandMore className="w-4 h-4 ml-auto" />
+                        <ChevronDown className="w-4 h-4 ml-auto" />
                       </div>
                       <ul
                         tabIndex={0}
@@ -442,7 +442,7 @@ function ProfileScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <MdSort className="w-4 h-4" />
+                        <ListFilter className="w-4 h-4" />
                         Sort:{' '}
                         {sortBy === 'date'
                           ? 'Date'
@@ -456,11 +456,11 @@ function ProfileScreen() {
                                   ? 'Pages'
                                   : 'Time'}{' '}
                         {sortDirection === 'desc' ? (
-                          <MdArrowDownward className="w-3 h-3" />
+                          <ArrowDown className="w-3 h-3" />
                         ) : (
-                          <MdArrowUpward className="w-3 h-3" />
+                          <ArrowUp className="w-3 h-3" />
                         )}
-                        <MdExpandMore className="w-4 h-4 ml-auto" />
+                        <ChevronDown className="w-4 h-4 ml-auto" />
                       </div>
                       <ul
                         tabIndex={0}
@@ -499,7 +499,7 @@ function ProfileScreen() {
                             className={sortDirection === 'desc' ? 'active' : ''}
                             onClick={() => setSortDirection('desc')}
                           >
-                            <MdArrowDownward className="w-4 h-4" />
+                            <ArrowDown className="w-4 h-4" />
                             Highest to Lowest
                           </a>
                         </li>
@@ -508,7 +508,7 @@ function ProfileScreen() {
                             className={sortDirection === 'asc' ? 'active' : ''}
                             onClick={() => setSortDirection('asc')}
                           >
-                            <MdArrowUpward className="w-4 h-4" />
+                            <ArrowUp className="w-4 h-4" />
                             Lowest to Highest
                           </a>
                         </li>

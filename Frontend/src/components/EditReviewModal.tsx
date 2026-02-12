@@ -35,12 +35,12 @@ export default function EditReviewModal({
     });
   }, [review]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (editForm.content.trim()) {
       onSubmit(editForm);
     }
-  };
+  }
 
   if (!isOpen) return null;
 

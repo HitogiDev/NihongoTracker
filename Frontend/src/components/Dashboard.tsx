@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDashboardHoursFn,
   getRecentLogsFn,
@@ -9,6 +9,7 @@ import {
   getRankingSummaryFn,
   getUserFn,
   getAverageColorFn,
+  hideRecentMediaFn,
 } from '../api/trackerApi';
 import {
   Flame,
@@ -26,6 +27,7 @@ import {
   Video,
   Play,
   Volume2,
+  Minus,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -80,6 +82,17 @@ function Dashboard() {
   const username = user?.username;
   const userTimezone = user?.settings?.timezone ?? 'UTC';
 
+  const [randomGreeting] = useState(() => {
+    const greetings = [
+      "Let's get some immersion done!",
+      'Time to track your progress!',
+      'Another day, another step towards fluency!',
+      'Keep up the great work!',
+      'The journey of a thousand miles begins with a single step.',
+    ];
+    return greetings[Math.floor(Math.random() * greetings.length)];
+  });
+
   const { formatRelativeDate } = useDateFormatting();
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<
@@ -92,6 +105,20 @@ function Dashboard() {
     type: FeedType;
     timeRange: FeedTimeRange;
   }>({ type: 'all', timeRange: 'day' });
+  const [mediaToRemove, setMediaToRemove] = useState<{
+    mediaId: string;
+    title: string;
+  } | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const hideMediaMutation = useMutation({
+    mutationFn: (mediaId: string) => hideRecentMediaFn('add', mediaId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recentLogs', username] });
+      setMediaToRemove(null);
+    },
+  });
 
   const { data: hours } = useQuery({
     queryKey: ['logsHero', username],
@@ -127,7 +154,7 @@ function Dashboard() {
     staleTime: 1000 * 60 * 2,
   });
 
-  const immersionStats = useMemo(() => {
+  const immersionStats = (() => {
     if (!hours) {
       return {
         currentMonth: { reading: 0, listening: 0, total: 0 },
@@ -176,9 +203,9 @@ function Dashboard() {
         total: totalChange,
       },
     };
-  }, [hours]);
+  })();
 
-  const recentMediaHighlights = useMemo(() => {
+  const recentMediaHighlights = (() => {
     if (!logs || !Array.isArray(logs)) return [];
 
     const sortedLogs = [...logs].sort(
@@ -206,23 +233,12 @@ function Dashboard() {
     }
 
     return uniqueLogs;
-  }, [logs, formatRelativeDate]);
+  })();
 
-  const recentMediaPanelHighlights = useMemo(
-    () => recentMediaHighlights.slice(0, RECENT_MEDIA_PANEL_LIMIT),
-    [recentMediaHighlights]
+  const recentMediaPanelHighlights = recentMediaHighlights.slice(
+    0,
+    RECENT_MEDIA_PANEL_LIMIT
   );
-
-  const randomGreeting = useMemo(() => {
-    const greetings = [
-      "Let's get some immersion done!",
-      'Time to track your progress!',
-      'Another day, another step towards fluency!',
-      'Keep up the great work!',
-      'The journey of a thousand miles begins with a single step.',
-    ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
-  }, []);
 
   if (!user) {
     return null;
@@ -312,6 +328,16 @@ function Dashboard() {
     setSelectedMedia(undefined);
   };
 
+  function handleRemoveMedia(mediaId: string, title: string) {
+    setMediaToRemove({ mediaId, title });
+  }
+
+  function confirmRemoveMedia() {
+    if (mediaToRemove) {
+      hideMediaMutation.mutate(mediaToRemove.mediaId);
+    }
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 space-y-8">
       <QuickLog
@@ -354,6 +380,7 @@ function Dashboard() {
         <RecentMediaRail
           allLogs={recentMediaHighlights}
           onQuickLog={handleQuickLogOpen}
+          onRemove={handleRemoveMedia}
         />
       </div>
 
@@ -636,6 +663,7 @@ function Dashboard() {
             <RecentMediaPanel
               logs={recentMediaPanelHighlights}
               onQuickLog={handleQuickLogOpen}
+              onRemove={handleRemoveMedia}
             />
           </div>
 
@@ -651,6 +679,46 @@ function Dashboard() {
           <XpAnimation initialXp={initialXp} finalXp={finalXp} />
         </div>
       )}
+
+      <dialog
+        className="modal modal-bottom sm:modal-middle"
+        open={mediaToRemove !== null}
+      >
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Hide from Recent Media?</h3>
+          <p className="py-4">
+            Are you sure you want to hide{' '}
+            <span className="font-semibold">{mediaToRemove?.title}</span> from
+            your recent media? It will no longer appear in quick actions.
+          </p>
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setMediaToRemove(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={confirmRemoveMedia}
+              disabled={hideMediaMutation.isPending}
+            >
+              {hideMediaMutation.isPending ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                'Hide'
+              )}
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button type="button" onClick={() => setMediaToRemove(null)}>
+            close
+          </button>
+        </form>
+      </dialog>
     </div>
   );
 }
@@ -662,9 +730,14 @@ type RecentMediaLog = ILog & { formattedDate: string; formattedTime: string };
 type RecentMediaPanelProps = {
   logs: RecentMediaLog[];
   onQuickLog: (media?: ILog['media']) => void;
+  onRemove: (mediaId: string, title: string) => void;
 };
 
-function RecentMediaPanel({ logs, onQuickLog }: RecentMediaPanelProps) {
+function RecentMediaPanel({
+  logs,
+  onQuickLog,
+  onRemove,
+}: RecentMediaPanelProps) {
   return (
     <div className="card bg-base-100 shadow-xl border border-base-200/60">
       <div className="card-body space-y-4">
@@ -693,6 +766,7 @@ function RecentMediaPanel({ logs, onQuickLog }: RecentMediaPanelProps) {
                 key={log._id}
                 log={log}
                 onQuickLog={onQuickLog}
+                onRemove={onRemove}
               />
             ))}
           </div>
@@ -705,9 +779,14 @@ function RecentMediaPanel({ logs, onQuickLog }: RecentMediaPanelProps) {
 type RecentMediaRailProps = {
   allLogs: RecentMediaLog[];
   onQuickLog: (media?: ILog['media']) => void;
+  onRemove: (mediaId: string, title: string) => void;
 };
 
-function RecentMediaRail({ allLogs, onQuickLog }: RecentMediaRailProps) {
+function RecentMediaRail({
+  allLogs,
+  onQuickLog,
+  onRemove,
+}: RecentMediaRailProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(false);
   const [limit, setLimit] = useState(() =>
@@ -757,6 +836,7 @@ function RecentMediaRail({ allLogs, onQuickLog }: RecentMediaRailProps) {
                   key={`${log._id}-rail`}
                   log={log}
                   onQuickLog={onQuickLog}
+                  onRemove={onRemove}
                 />
               ))}
             </div>
@@ -770,19 +850,44 @@ function RecentMediaRail({ allLogs, onQuickLog }: RecentMediaRailProps) {
 type RecentMediaRailTileProps = {
   log: RecentMediaLog;
   onQuickLog: (media?: ILog['media']) => void;
+  onRemove: (mediaId: string, title: string) => void;
 };
 
-function RecentMediaRailTile({ log, onQuickLog }: RecentMediaRailTileProps) {
+function RecentMediaRailTile({
+  log,
+  onQuickLog,
+  onRemove,
+}: RecentMediaRailTileProps) {
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
+  const mediaId = log.media?.contentId;
+
+  function handleRemoveClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (mediaId) {
+      onRemove(mediaId, title || 'this media');
+    }
+  }
 
   return (
-    <button
-      type="button"
+    <div
+      className="group/tile relative shrink-0 w-28 h-44 rounded-2xl overflow-hidden border border-base-300 snap-start focus-visible:outline-2 focus-visible:outline-primary cursor-pointer"
       onClick={() => onQuickLog(log.media)}
-      className="relative shrink-0 w-28 h-44 rounded-2xl overflow-hidden border border-base-300 snap-start focus-visible:outline-2 focus-visible:outline-primary cursor-pointer"
+      onKeyDown={(e) => e.key === 'Enter' && onQuickLog(log.media)}
+      tabIndex={0}
+      role="button"
     >
+      {mediaId && (
+        <button
+          type="button"
+          onClick={handleRemoveClick}
+          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover/tile:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
+          aria-label="Hide from recent media"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+      )}
       {image ? (
         <img src={image} alt={title} className="w-full h-full object-cover" />
       ) : (
@@ -802,19 +907,21 @@ function RecentMediaRailTile({ log, onQuickLog }: RecentMediaRailTileProps) {
           {log.formattedTime} · {log.formattedDate}
         </p>
       </div>
-    </button>
+    </div>
   );
 }
 
 type RecentMediaTileProps = {
   log: RecentMediaLog;
   onQuickLog: (media?: ILog['media']) => void;
+  onRemove: (mediaId: string, title: string) => void;
 };
 
-function RecentMediaTile({ log, onQuickLog }: RecentMediaTileProps) {
+function RecentMediaTile({ log, onQuickLog, onRemove }: RecentMediaTileProps) {
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
+  const mediaId = log.media?.contentId;
 
   const { data: averageColorData } = useQuery({
     queryKey: ['recentMediaAverageColor', image],
@@ -823,12 +930,31 @@ function RecentMediaTile({ log, onQuickLog }: RecentMediaTileProps) {
     staleTime: Infinity,
   });
 
+  function handleRemoveClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (mediaId) {
+      onRemove(mediaId, title || 'this media');
+    }
+  }
+
   return (
-    <button
-      type="button"
-      onClick={() => onQuickLog(log.media)}
+    <div
       className="group relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-base-300 bg-base-200/80 focus-visible:outline-2 focus-visible:outline-primary cursor-pointer"
+      onClick={() => onQuickLog(log.media)}
+      onKeyDown={(e) => e.key === 'Enter' && onQuickLog(log.media)}
+      tabIndex={0}
+      role="button"
     >
+      {mediaId && (
+        <button
+          type="button"
+          onClick={handleRemoveClick}
+          className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
+          aria-label="Hide from recent media"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+      )}
       {image ? (
         <img
           src={image}
@@ -864,6 +990,6 @@ function RecentMediaTile({ log, onQuickLog }: RecentMediaTileProps) {
           {log.formattedTime} · {log.formattedDate}
         </p>
       </div>
-    </button>
+    </div>
   );
 }

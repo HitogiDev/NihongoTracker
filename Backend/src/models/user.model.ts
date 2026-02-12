@@ -10,6 +10,7 @@ const SettingsSchema = new Schema<IUserSettings>(
     blurAdultContent: { type: Boolean, default: true },
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },
+    hiddenRecentMedia: { type: [String], default: [] },
   },
   { _id: false }
 );

@@ -6,79 +6,79 @@ import { getLogFn, createLogFn } from '../api/trackerApi';
 import { ICreateLog } from '../types';
 import { useUserDataStore } from '../store/userData';
 import {
-  MdBook,
-  MdPlayArrow,
-  MdGamepad,
-  MdVideoLibrary,
-  MdVolumeUp,
-  MdMoreHoriz,
-  MdShare,
-  MdAdd,
-  MdMovie,
-  MdOutlineTv,
-} from 'react-icons/md';
+  Book,
+  Play,
+  GamepadDirectional,
+  Video,
+  Volume2,
+  Ellipsis,
+  Share2,
+  Plus,
+  Clapperboard,
+  MonitorPlay,
+} from 'lucide-react';
 import { validateSharedLogData } from '../utils/validation';
 
 const logTypeConfig = {
   reading: {
     label: 'Reading',
-    icon: MdBook,
+    icon: Book,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
   },
   anime: {
     label: 'Anime',
-    icon: MdPlayArrow,
+    icon: Play,
     color: 'text-secondary',
     bgColor: 'bg-secondary/10',
     borderColor: 'border-secondary/20',
   },
   vn: {
     label: 'Visual Novel',
-    icon: MdGamepad,
+    icon: GamepadDirectional,
     color: 'text-accent',
     bgColor: 'bg-accent/10',
     borderColor: 'border-accent/20',
   },
   video: {
     label: 'Video',
-    icon: MdVideoLibrary,
+    icon: Video,
     color: 'text-info',
     bgColor: 'bg-info/10',
     borderColor: 'border-info/20',
   },
   manga: {
     label: 'Manga',
-    icon: MdBook,
+    icon: Book,
     color: 'text-warning',
     bgColor: 'bg-warning/10',
     borderColor: 'border-warning/20',
   },
   audio: {
     label: 'Audio',
-    icon: MdVolumeUp,
+    icon: Volume2,
     color: 'text-success',
     bgColor: 'bg-success/10',
     borderColor: 'border-success/20',
   },
   movie: {
     label: 'Movie',
-    icon: MdMovie,
+    icon: Clapperboard,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/30',
   },
   'tv show': {
     label: 'TV Show',
-    icon: MdOutlineTv,
+    icon: MonitorPlay,
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/30',
   },
   other: {
     label: 'Other',
-    icon: MdMoreHoriz,
+    icon: Ellipsis,
     color: 'text-neutral',
     bgColor: 'bg-neutral/10',
     borderColor: 'border-neutral/20',
@@ -197,7 +197,7 @@ function SharedLogScreen() {
           <div className="card-body text-center p-8">
             <div className="mb-6">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MdShare className="w-10 h-10 text-primary" />
+                <Share2 className="w-10 h-10 text-primary" />
               </div>
               <h2 className="text-3xl font-bold text-base-content mb-2">
                 Check Out This Log!
@@ -211,7 +211,7 @@ function SharedLogScreen() {
             <div className="bg-primary/5 rounded-xl p-6 mb-6">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <div className="badge badge-primary badge-outline">
-                  <MdBook className="w-3 h-3 mr-1" />
+                  <Book className="w-3 h-3 mr-1" />
                   Shared Progress
                 </div>
               </div>
@@ -226,7 +226,7 @@ function SharedLogScreen() {
                 className="btn btn-primary btn-lg w-full"
                 onClick={() => navigate('/login')}
               >
-                <MdPlayArrow className="w-5 h-5" />
+                <Play className="w-5 h-5" />
                 Sign In to Continue
               </button>
               <div className="divider text-xs">or</div>
@@ -323,7 +323,7 @@ function SharedLogScreen() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 bg-base-100 rounded-full px-6 py-3 shadow-lg mb-4">
-            <MdShare className="w-6 h-6 text-primary" />
+            <Share2 className="w-6 h-6 text-primary" />
             <span className="font-semibold text-lg">Shared Log</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-base-content mb-2">
@@ -443,7 +443,7 @@ function SharedLogScreen() {
               <div className="card-body p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-success/10 rounded-xl">
-                    <MdAdd className="w-6 h-6 text-success" />
+                    <Plus className="w-6 h-6 text-success" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">Add to Your Progress</h2>
@@ -639,7 +639,7 @@ function SharedLogScreen() {
                       </>
                     ) : (
                       <>
-                        <MdAdd className="w-5 h-5" />
+                        <Plus className="w-5 h-5" />
                         Add to My Progress
                       </>
                     )}

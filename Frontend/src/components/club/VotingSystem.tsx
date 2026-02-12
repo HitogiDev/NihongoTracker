@@ -2,19 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
-  MdCalendarToday,
-  MdSchedule,
-  MdHowToVote,
-  MdCheckCircle,
-  MdEdit,
-  MdDelete,
-  MdChevronLeft,
-  MdChevronRight,
-  MdSettings,
-  MdAdd,
-  MdHourglassBottom,
-  MdEmojiEvents,
-} from 'react-icons/md';
+  Calendar,
+  Clock,
+  Vote,
+  CircleCheck,
+  Pencil,
+  Trash,
+  ChevronLeft,
+  ChevronRight,
+  Settings,
+  Plus,
+  Hourglass,
+  Trophy,
+} from 'lucide-react';
 import {
   getMediaVotingsFn,
   voteForCandidateFn,
@@ -289,7 +289,7 @@ export default function VotingSystem({
         {openVotings.length === 0 ? (
           <div className="card bg-base-100 shadow-sm border border-base-300">
             <div className="card-body text-center py-12">
-              <MdHowToVote className="w-16 h-16 text-base-content/20 mx-auto mb-4" />
+              <Vote className="w-16 h-16 text-base-content/20 mx-auto mb-4" />
               <h3 className="text-xl font-medium mb-2">No Active Votings</h3>
               <p className="text-base-content/60">
                 There are no votings open for voting right now.
@@ -305,7 +305,7 @@ export default function VotingSystem({
                   onClick={prevVoting}
                   className="btn btn-circle btn-outline"
                 >
-                  <MdChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
 
                 <div className="flex items-center gap-4">
@@ -331,7 +331,7 @@ export default function VotingSystem({
                   onClick={nextVoting}
                   className="btn btn-circle btn-outline"
                 >
-                  <MdChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             )}
@@ -347,7 +347,7 @@ export default function VotingSystem({
           <div className="card bg-base-100 shadow-sm border border-warning/30">
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
-                <MdHourglassBottom className="w-5 h-5" />
+                <Hourglass className="w-5 h-5" />
                 Voting Closed
               </h3>
 
@@ -385,7 +385,7 @@ export default function VotingSystem({
             <div className="card-body">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <h3 className="card-title flex items-center gap-2">
-                  <MdEmojiEvents className="w-5 h-5" />
+                  <Trophy className="w-5 h-5" />
                   Recent Results
                 </h3>
                 <label className="form-control w-full md:w-auto">
@@ -435,7 +435,7 @@ export default function VotingSystem({
           <div className="card bg-base-100 shadow-sm border border-base-300">
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
-                <MdAdd className="w-5 h-5" />
+                <Plus className="w-5 h-5" />
                 Media Suggestions Open
               </h3>
 
@@ -457,7 +457,7 @@ export default function VotingSystem({
           <div className="card bg-base-100 shadow-sm border border-base-300">
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
-                <MdSettings className="w-5 h-5" />
+                <Settings className="w-5 h-5" />
                 Voting Management
               </h3>
 
@@ -580,14 +580,14 @@ export default function VotingSystem({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="flex items-center gap-2 text-sm">
-              <MdSchedule className="w-4 h-4 text-primary" />
+              <Clock className="w-4 h-4 text-primary" />
               <span>
                 Voting: {formatDate(voting.votingStartDate)} -{' '}
                 {formatDate(voting.votingEndDate)}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <MdCalendarToday className="w-4 h-4 text-secondary" />
+              <Calendar className="w-4 h-4 text-secondary" />
               <span>
                 Consumption: {formatDate(voting.consumptionStartDate)} -{' '}
                 {formatDate(voting.consumptionEndDate)}
@@ -597,14 +597,14 @@ export default function VotingSystem({
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
-              <MdHowToVote className="w-4 h-4" />
+              <Vote className="w-4 h-4" />
               <span className="text-sm">{totalVotes} votes cast</span>
             </div>
           </div>
 
           {userVoted && (
             <div className="alert alert-success mb-6">
-              <MdCheckCircle className="w-5 h-5" />
+              <CircleCheck className="w-5 h-5" />
               <div>
                 <h4 className="font-medium">Vote submitted!</h4>
                 <p className="text-sm mt-1">
@@ -621,7 +621,7 @@ export default function VotingSystem({
 
           {!isUserMember && status.status === 'voting_open' && (
             <div className="alert alert-warning mb-6">
-              <MdHowToVote className="w-5 h-5" />
+              <Vote className="w-5 h-5" />
               <div>
                 <h4 className="font-medium">Join the club to vote!</h4>
                 <p className="text-sm mt-1">
@@ -728,7 +728,7 @@ export default function VotingSystem({
                 disabled={voteMutation.isPending}
                 className="btn btn-primary btn-lg"
               >
-                <MdHowToVote className="w-5 h-5" />
+                <Vote className="w-5 h-5" />
                 {voteMutation.isPending ? 'Submitting Vote...' : 'Submit Vote'}
               </button>
             </div>
@@ -765,7 +765,7 @@ export default function VotingSystem({
                 starts.
               </p>
             </div>
-            <MdHourglassBottom className="w-6 h-6 text-warning flex-shrink-0" />
+            <Hourglass className="w-6 h-6 text-warning flex-shrink-0" />
           </div>
 
           {sortedCandidates.length > 0 && (
@@ -868,7 +868,7 @@ export default function VotingSystem({
                 {totalVotes} total vote{totalVotes === 1 ? '' : 's'} cast.
               </p>
             </div>
-            <MdEmojiEvents className="w-6 h-6 text-success flex-shrink-0" />
+            <Trophy className="w-6 h-6 text-success flex-shrink-0" />
           </div>
 
           {winner ? (
@@ -998,14 +998,14 @@ export default function VotingSystem({
                 className="btn btn-sm btn-outline btn-primary"
                 title="Edit voting"
               >
-                <MdEdit className="w-4 h-4" />
+                <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(voting)}
                 className="btn btn-sm btn-outline btn-error"
                 title="Delete voting"
               >
-                <MdDelete className="w-4 h-4" />
+                <Trash className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -1077,7 +1077,7 @@ export default function VotingSystem({
                     : 'Suggest media for this voting'
                 }
               >
-                <MdAdd className="w-4 h-4" />
+                <Plus className="w-4 h-4" />
                 Suggest Media
               </button>
               {voting.candidates.length > 0 && (

@@ -1,13 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import {
-  MdClose,
-  MdArrowBack,
-  MdArrowForward,
-  MdCheck,
-  MdCalendarToday,
-} from 'react-icons/md';
+import { X, ArrowLeft, ArrowRight, Check, Calendar } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import {
   createMediaVotingFn,
@@ -320,7 +314,7 @@ export default function CreateVotingWizard({
             Create Voting - Step {currentStep} of 3
           </h3>
           <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
-            <MdClose className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -514,7 +508,7 @@ export default function CreateVotingWizard({
                         >
                           {formatDateForDisplay(votingData.suggestionStartDate)}
                         </span>
-                        <MdCalendarToday className="text-lg" />
+                        <Calendar className="text-lg" />
                       </div>
                       <div
                         tabIndex={0}
@@ -574,7 +568,7 @@ export default function CreateVotingWizard({
                         >
                           {formatDateForDisplay(votingData.suggestionEndDate)}
                         </span>
-                        <MdCalendarToday className="text-lg" />
+                        <Calendar className="text-lg" />
                       </div>
                       <div
                         tabIndex={0}
@@ -632,7 +626,7 @@ export default function CreateVotingWizard({
                     >
                       {formatDateForDisplay(votingData.votingStartDate)}
                     </span>
-                    <MdCalendarToday className="text-lg" />
+                    <Calendar className="text-lg" />
                   </div>
                   <div
                     tabIndex={0}
@@ -708,7 +702,7 @@ export default function CreateVotingWizard({
                     >
                       {formatDateForDisplay(votingData.votingEndDate)}
                     </span>
-                    <MdCalendarToday className="text-lg" />
+                    <Calendar className="text-lg" />
                   </div>
                   <div
                     tabIndex={0}
@@ -769,7 +763,7 @@ export default function CreateVotingWizard({
                     >
                       {formatDateForDisplay(votingData.consumptionStartDate)}
                     </span>
-                    <MdCalendarToday className="text-lg" />
+                    <Calendar className="text-lg" />
                   </div>
                   <div
                     tabIndex={0}
@@ -835,7 +829,7 @@ export default function CreateVotingWizard({
                     >
                       {formatDateForDisplay(votingData.consumptionEndDate)}
                     </span>
-                    <MdCalendarToday className="text-lg" />
+                    <Calendar className="text-lg" />
                   </div>
                   <div
                     tabIndex={0}
@@ -1182,7 +1176,7 @@ export default function CreateVotingWizard({
               className="btn btn-outline"
               disabled={finalizeVotingMutation.isPending}
             >
-              <MdArrowBack className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
               Back
             </button>
           )}
@@ -1198,7 +1192,7 @@ export default function CreateVotingWizard({
           {currentStep === 1 && (
             <button onClick={handleStep1Submit} className="btn btn-primary">
               Next
-              <MdArrowForward className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           )}
 
@@ -1208,7 +1202,7 @@ export default function CreateVotingWizard({
               className="btn btn-primary"
             >
               Next
-              <MdArrowForward className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </button>
           )}
 
@@ -1222,7 +1216,7 @@ export default function CreateVotingWizard({
                 'Launching...'
               ) : (
                 <>
-                  <MdCheck className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   Launch Voting
                 </>
               )}

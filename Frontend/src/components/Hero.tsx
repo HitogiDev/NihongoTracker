@@ -1,21 +1,22 @@
 import { Link } from 'react-router-dom';
 import { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { MdTrendingUp } from 'react-icons/md';
+
 import {
-  // HiArrowRight,
-  HiInformationCircle,
-  HiCheck,
-  HiUsers,
-  HiXCircle,
-  HiCheckCircle,
-  HiClock,
-  HiFlag,
-  HiSearch,
-  HiLightningBolt,
-  HiHeart,
-  HiEyeOff,
-} from 'react-icons/hi';
+  Info,
+  Check,
+  Users,
+  XCircle,
+  CircleCheck,
+  Clock4,
+  FlagTriangleRight,
+  Search,
+  Zap,
+  Heart,
+  EyeOff,
+  TrendingUp,
+  // ArrowRight,
+} from 'lucide-react';
 
 function Hero() {
   // Animation refs for landing page
@@ -130,14 +131,14 @@ function Hero() {
                   className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
                   Coming Soon!
-                  {/*<HiArrowRight className="ml-2" />*/}
+                  {/* <ArrowRight className="ml-2" /> */}
                 </button>
               </Link>
 
               <Link to="/about">
                 <button className="btn btn-ghost btn-lg px-8 py-4 text-lg hover:bg-base-200 transition-all duration-300">
                   Learn More
-                  <HiInformationCircle className="ml-2" />
+                  <Info className="ml-2" />
                 </button>
               </Link>
             </div>
@@ -145,15 +146,15 @@ function Hero() {
             {/* Trust Indicators */}
             <div className="mt-16 flex flex-wrap justify-center items-center gap-8 text-base-content/60">
               <div className="flex items-center gap-2">
-                <HiCheck className="text-success text-xl" />
+                <Check className="text-success text-xl" />
                 <span>Basic Features Free Forever</span>
               </div>
               <div className="flex items-center gap-2">
-                <HiUsers className="text-primary text-xl" />
+                <Users className="text-primary text-xl" />
                 <span>Growing Community</span>
               </div>
               <div className="flex items-center gap-2">
-                <HiEyeOff className="text-accent text-xl" />
+                <EyeOff className="text-accent text-xl" />
                 <span>No Ads, No Distractions</span>
               </div>
             </div>
@@ -173,19 +174,19 @@ function Hero() {
                 </h2>
                 <ul className="space-y-4 text-lg text-base-content/80">
                   <li className="flex items-start gap-3">
-                    <HiXCircle className="text-error text-xl mt-1 flex-shrink-0" />
+                    <XCircle className="text-error text-xl mt-1 flex-shrink-0" />
                     <span>Endless grammar drills that don't stick</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <HiXCircle className="text-error text-xl mt-1 flex-shrink-0" />
+                    <XCircle className="text-error text-xl mt-1 flex-shrink-0" />
                     <span>Textbook phrases you'll never actually use</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <HiXCircle className="text-error text-xl mt-1 flex-shrink-0" />
+                    <XCircle className="text-error text-xl mt-1 flex-shrink-0" />
                     <span>No connection to real Japanese content</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <HiXCircle className="text-error text-xl mt-1 flex-shrink-0" />
+                    <XCircle className="text-error text-xl mt-1 flex-shrink-0" />
                     <span>Progress feels impossible to measure</span>
                   </li>
                 </ul>
@@ -200,19 +201,19 @@ function Hero() {
                 </h2>
                 <ul className="space-y-4 text-lg text-base-content/80">
                   <li className="flex items-start gap-3">
-                    <HiCheckCircle className="text-success text-xl mt-1 flex-shrink-0" />
+                    <CircleCheck className="text-success text-xl mt-1 flex-shrink-0" />
                     <span>Watch anime and read manga you actually enjoy</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <HiCheckCircle className="text-success text-xl mt-1 flex-shrink-0" />
+                    <CircleCheck className="text-success text-xl mt-1 flex-shrink-0" />
                     <span>Learn naturally through immersion</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <HiCheckCircle className="text-success text-xl mt-1 flex-shrink-0" />
+                    <CircleCheck className="text-success text-xl mt-1 flex-shrink-0" />
                     <span>Track every minute of progress</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <HiCheckCircle className="text-success text-xl mt-1 flex-shrink-0" />
+                    <CircleCheck className="text-success text-xl mt-1 flex-shrink-0" />
                     <span>Build real comprehension skills</span>
                   </li>
                 </ul>
@@ -241,7 +242,7 @@ function Hero() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up">
                 <div className="card-body text-center">
                   <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                    <HiClock className="text-3xl text-primary" />
+                    <Clock4 className="text-3xl text-primary" />
                   </div>
                   <h3 className="card-title justify-center text-xl mb-3">
                     Smart Time Tracking
@@ -257,7 +258,7 @@ function Hero() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up animation-delay-100">
                 <div className="card-body text-center">
                   <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
-                    <MdTrendingUp className="text-3xl text-secondary" />
+                    <TrendingUp className="text-3xl text-secondary" />
                   </div>
                   <h3 className="card-title justify-center text-xl mb-3">
                     Progress Analytics
@@ -273,7 +274,7 @@ function Hero() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up animation-delay-200">
                 <div className="card-body text-center">
                   <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-                    <HiFlag className="text-3xl text-accent" />
+                    <FlagTriangleRight className="text-3xl text-accent" />
                   </div>
                   <h3 className="card-title justify-center text-xl mb-3">
                     Goal Setting
@@ -289,7 +290,7 @@ function Hero() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up animation-delay-300">
                 <div className="card-body text-center">
                   <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                    <HiSearch className="text-3xl text-primary" />
+                    <Search className="text-3xl text-primary" />
                   </div>
                   <h3 className="card-title justify-center text-xl mb-3">
                     Media Discovery
@@ -305,7 +306,7 @@ function Hero() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up animation-delay-400">
                 <div className="card-body text-center">
                   <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
-                    <HiLightningBolt className="text-3xl text-secondary" />
+                    <Zap className="text-3xl text-secondary" />
                   </div>
                   <h3 className="card-title justify-center text-xl mb-3">
                     Streak Tracking
@@ -320,7 +321,7 @@ function Hero() {
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-fade-in-up animation-delay-500">
                 <div className="card-body text-center">
                   <div className="mx-auto w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-                    <HiHeart className="text-3xl text-accent" />
+                    <Heart className="text-3xl text-accent" />
                   </div>
                   <h3 className="card-title justify-center text-xl mb-3">
                     Community Support
@@ -355,7 +356,7 @@ function Hero() {
                   className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 >
                   Coming Soon!
-                  {/*<HiArrowRight className="ml-2" />*/}
+                  {/*<ArrowRight className="ml-2" />*/}
                 </button>
               </Link>
 

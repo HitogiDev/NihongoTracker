@@ -1,13 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
-  MdBookmark,
-  MdComment,
-  MdStar,
-  MdPlayArrow,
-  MdBook,
-  MdMovie,
-  MdHistory,
-} from 'react-icons/md';
+  Bookmark,
+  MessageSquareText,
+  Star,
+  Play,
+  Book,
+  Clapperboard,
+  History,
+} from 'lucide-react';
 import { getClubRecentActivityFn } from '../../api/clubApi';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -45,10 +45,9 @@ interface Activity {
 
 const getMediaTypeIcon = (metadata: ActivityMetadata) => {
   // Try to determine media type from metadata
-  if (metadata.episodes)
-    return <MdPlayArrow className="w-4 h-4 text-primary" />;
-  if (metadata.pages) return <MdBook className="w-4 h-4 text-secondary" />;
-  return <MdMovie className="w-4 h-4 text-accent" />;
+  if (metadata.episodes) return <Play className="w-4 h-4 text-primary" />;
+  if (metadata.pages) return <Book className="w-4 h-4 text-secondary" />;
+  return <Clapperboard className="w-4 h-4 text-accent" />;
 };
 
 const formatActivityContent = (activity: Activity) => {
@@ -107,7 +106,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-            <MdHistory className="text-xl" />
+            <History className="text-xl" />
             Recent Activity
           </h2>
           <div className="space-y-3">
@@ -133,11 +132,11 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
       <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-            <MdHistory className="text-xl" />
+            <History className="text-xl" />
             Recent Activity
           </h2>
           <div className="text-center py-6 text-base-content/60">
-            <MdHistory className="mx-auto text-2xl mb-2 opacity-50" />
+            <History className="mx-auto text-2xl mb-2 opacity-50" />
             <p className="text-sm">No recent activity</p>
             <p className="text-xs">
               Activity from the last 7 days will appear here
@@ -152,7 +151,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
     <div className="card bg-base-100 shadow-sm">
       <div className="card-body">
         <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-          <MdHistory className="text-xl" />
+          <History className="text-xl" />
           Recent Activity
         </h2>
 
@@ -196,9 +195,9 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
                 {/* Media Title as main line */}
                 <div className="flex items-center gap-1 mt-1">
                   {activity.type === 'log' ? (
-                    <MdBookmark className="w-3 h-3 text-primary flex-shrink-0" />
+                    <Bookmark className="w-3 h-3 text-primary flex-shrink-0" />
                   ) : (
-                    <MdComment className="w-3 h-3 text-secondary flex-shrink-0" />
+                    <MessageSquareText className="w-3 h-3 text-secondary flex-shrink-0" />
                   )}
                   <span className="text-xs text-base-content/60 truncate">
                     {activity.media.title}
@@ -226,7 +225,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
                   getMediaTypeIcon(activity.metadata)
                 ) : (
                   <div className="flex items-center gap-1">
-                    <MdStar className="w-3 h-3 text-warning" />
+                    <Star className="w-3 h-3 text-warning" />
                     {activity.metadata.rating && (
                       <span className="text-xs font-semibold">
                         {activity.metadata.rating}

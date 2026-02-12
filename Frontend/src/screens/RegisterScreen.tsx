@@ -215,7 +215,7 @@ function RegisterScreen() {
     },
   });
 
-  async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
     // Mark all fields as touched for final validation
@@ -433,7 +433,7 @@ function RegisterScreen() {
               ref={cardRef}
               className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300/50 backdrop-blur-sm"
             >
-              <form className="card-body p-8" onSubmit={submitHandler}>
+              <form className="card-body p-8" onSubmit={handleSubmit}>
                 <h2
                   ref={titleRef}
                   className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
