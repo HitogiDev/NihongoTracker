@@ -76,8 +76,8 @@ function QuickLog({
       }
 
       // For movies, auto-fill duration if available
-      if (media.type === 'movie' && media.episodeDuration) {
-        const totalMinutes = media.episodeDuration;
+      if (media.type === 'movie' && media.runtime) {
+        const totalMinutes = media.runtime;
         const newHours = Math.floor(totalMinutes / 60);
         const newMinutes = totalMinutes % 60;
         setHours(newHours);
@@ -99,7 +99,7 @@ function QuickLog({
     }
 
     // Reset type-specific fields when changing log type
-    if (logType !== 'anime' && logType !== 'movie') {
+    if (logType !== 'anime' && logType !== 'movie' && logType !== 'tv show') {
       setEpisodes(0);
     }
     if (logType !== 'vn' && logType !== 'manga' && logType !== 'reading') {
@@ -108,7 +108,7 @@ function QuickLog({
     if (logType !== 'manga' && logType !== 'reading') {
       setPages(0);
     }
-    if (logType === 'anime' && episodes > 0) {
+    if ((logType === 'anime' || logType === 'tv show') && episodes > 0) {
       // Don't reset time for anime as it's auto-calculated
     } else if (
       logType !== 'video' &&
@@ -326,10 +326,13 @@ function QuickLog({
       setCoverImage(group.coverImage || group.contentImage);
       setIsAdultMedia(group.isAdult);
 
-      // For anime, store episode duration
-      if (logType === 'anime' && group.episodeDuration) {
+      // For anime and tv show, store episode duration
+      if (
+        (logType === 'anime' || logType === 'tv show') &&
+        group.episodeDuration
+      ) {
         setDefaultDuration(group.episodeDuration);
-        setCustomDuration(undefined); // Reset custom duration when selecting new media
+        setCustomDuration(undefined);
       } else if (logType === 'anime') {
         // Set default to 24 minutes if no duration from API
         setDefaultDuration(24);
@@ -337,8 +340,8 @@ function QuickLog({
       }
 
       // For movies, auto-fill duration if available
-      if (logType === 'movie' && group.episodeDuration) {
-        const totalMinutes = group.episodeDuration;
+      if (logType === 'movie' && group.runtime) {
+        const totalMinutes = group.runtime;
         const newHours = Math.floor(totalMinutes / 60);
         const newMinutes = totalMinutes % 60;
         setHours(newHours);
@@ -398,6 +401,7 @@ function QuickLog({
                             'vn',
                             'video',
                             'movie',
+                            'tv show',
                             'reading',
                             'audio',
                           ]
@@ -405,7 +409,9 @@ function QuickLog({
                           <option key={type} value={type}>
                             {type === 'vn'
                               ? 'Visual Novel'
-                              : type.charAt(0).toUpperCase() + type.slice(1)}
+                              : type === 'tv show'
+                                ? 'TV Show'
+                                : type.charAt(0).toUpperCase() + type.slice(1)}
                           </option>
                         ))}
                       </select>
@@ -459,20 +465,18 @@ function QuickLog({
                         </div>
 
                         {/* Media-specific input fields */}
-                        {(logType === 'anime' || logType === 'movie') && (
+                        {(logType === 'anime' || logType === 'tv show') && (
                           <div>
                             <label className="label">
                               <span className="label-text">
-                                {logType === 'anime'
-                                  ? 'Episodes Watched'
-                                  : 'Movies Watched'}
+                                Episodes Watched
                               </span>
                             </label>
                             <input
                               type="number"
                               min="0"
                               onInput={preventNegativeValues}
-                              placeholder={`Number of ${logType === 'anime' ? 'episodes' : 'movies'}`}
+                              placeholder={`Number of episodes`}
                               className="input input-bordered w-full mb-3"
                               onChange={(e) => {
                                 const count = Number(e.target.value);
@@ -492,13 +496,26 @@ function QuickLog({
                                     setHours(newHours);
                                     setMinutes(newMinutes);
                                   }
+                                } else if (logType === 'tv show') {
+                                  const effectiveDuration =
+                                    customDuration || defaultDuration || 0;
+                                  if (count > 0) {
+                                    const totalMinutes =
+                                      count * effectiveDuration;
+                                    const newHours = Math.floor(
+                                      totalMinutes / 60
+                                    );
+                                    const newMinutes = totalMinutes % 60;
+                                    setHours(newHours);
+                                    setMinutes(newMinutes);
+                                  }
                                 }
                               }}
                               value={episodes || ''}
                             />
 
                             {/* Custom Episode/Movie Duration for anime and movies */}
-                            {logType === 'anime' && (
+                            {logType === 'anime' || logType === 'tv show' ? (
                               <>
                                 <div className="form-control">
                                   <label className="label cursor-pointer">
@@ -593,7 +610,7 @@ function QuickLog({
                                   </div>
                                 )}
                               </>
-                            )}
+                            ) : null}
                           </div>
                         )}
 
@@ -700,15 +717,13 @@ function QuickLog({
                             ? `/${logType}/${contentId}`
                             : '#'
                         }
-                        className="group/qlog"
+                        className="block rounded-lg w-20 h-28 lg:w-24 lg:h-32 overflow-hidden mx-auto lg:mx-0"
                       >
                         <img
                           src={coverImage}
                           alt="Cover"
-                          className={`rounded-lg w-20 h-28 lg:w-24 lg:h-32 object-cover mx-auto lg:mx-0 ${
-                            isAdultMedia
-                              ? 'blur-lg group-hover/qlog:blur-sm transition-all'
-                              : ''
+                          className={`w-full h-full object-cover ${
+                            isAdultMedia ? 'blur-sm scale-110' : ''
                           }`}
                         />
                       </Link>
