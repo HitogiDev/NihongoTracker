@@ -4,6 +4,8 @@ import {
   getRecentSessions,
   getSessionByContentId,
   addLinesToSession,
+  removeLinesFromSession,
+  clearSessionLines,
   deleteSession,
   checkRoomExists,
 } from '../controllers/textSession.controller.js';
@@ -14,6 +16,8 @@ router.get('/recent', protect, getRecentSessions);
 router.get('/room/:roomId/exists', protect, checkRoomExists);
 router.get('/:contentId', protect, getSessionByContentId);
 router.post('/:contentId/lines', protect, addLinesToSession);
+router.delete('/:contentId/lines', protect, removeLinesFromSession);
+router.delete('/:contentId/lines/all', protect, clearSessionLines);
 router.delete('/:contentId', protect, deleteSession);
 
 export default router;

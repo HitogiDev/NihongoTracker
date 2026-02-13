@@ -10,6 +10,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTextSessionFn,
   addLinesToSessionFn,
+  removeLinesFromSessionFn,
+  clearSessionLinesFn,
   createLogFn,
   getMediaFn,
   getUserMediaStatsFn,
@@ -684,9 +686,13 @@ function TextHooker() {
   const handleDeleteLast = useCallback(() => {
     setLines((prev) => {
       if (prev.length === 0) return prev;
+      const lastLine = prev[prev.length - 1];
+      if (contentId) {
+        removeLinesFromSessionFn(contentId, [lastLine.id]).catch(console.error);
+      }
       return prev.slice(0, -1);
     });
-  }, []);
+  }, [contentId]);
 
   const listContainerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLElement>(document.body);
@@ -888,13 +894,22 @@ function TextHooker() {
     ]
   );
 
-  const handleDelete = useCallback((id: string) => {
-    setLines((prev) => prev.filter((line) => line.id !== id));
-  }, []);
+  const handleDelete = useCallback(
+    (id: string) => {
+      setLines((prev) => prev.filter((line) => line.id !== id));
+      if (contentId) {
+        removeLinesFromSessionFn(contentId, [id]).catch(console.error);
+      }
+    },
+    [contentId]
+  );
 
   const handleClearAll = useCallback(() => {
     setLines([]);
-  }, []);
+    if (contentId) {
+      clearSessionLinesFn(contentId).catch(console.error);
+    }
+  }, [contentId]);
 
   const handleCopyAll = useCallback(async () => {
     const combined = lines.map((line) => line.text).join('\n');

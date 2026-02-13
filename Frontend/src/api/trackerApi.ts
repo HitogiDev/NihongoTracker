@@ -876,6 +876,26 @@ export async function checkRoomExistsFn(
   return data;
 }
 
+export async function removeLinesFromSessionFn(
+  contentId: string,
+  lineIds: string[]
+): Promise<ITextSession> {
+  const { data } = await api.delete<ITextSession>(
+    `texthooker/${contentId}/lines`,
+    { data: { lineIds } }
+  );
+  return data;
+}
+
+export async function clearSessionLinesFn(
+  contentId: string
+): Promise<ITextSession> {
+  const { data } = await api.delete<ITextSession>(
+    `texthooker/${contentId}/lines/all`
+  );
+  return data;
+}
+
 export async function deleteTextSessionFn(contentId: string) {
   const { data } = await api.delete(`texthooker/${contentId}`);
   return data;

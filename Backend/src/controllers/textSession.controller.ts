@@ -211,6 +211,76 @@ export const addLinesToSession = async (
   }
 };
 
+export const removeLinesFromSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const { lineIds } = req.body;
+
+    if (!lineIds || !Array.isArray(lineIds) || lineIds.length === 0) {
+      throw new customError('Invalid lineIds data', 400);
+    }
+
+    const media = await Media.findOne({ contentId });
+    if (!media) {
+      throw new customError('Media not found', 404);
+    }
+
+    const session = await TextSession.findOneAndUpdate(
+      { userId, mediaId: media._id },
+      {
+        $pull: { lines: { id: { $in: lineIds } } },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!session) {
+      throw new customError('Session not found', 404);
+    }
+
+    res.status(200).json(session);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const clearSessionLines = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+
+    const media = await Media.findOne({ contentId });
+    if (!media) {
+      throw new customError('Media not found', 404);
+    }
+
+    const session = await TextSession.findOneAndUpdate(
+      { userId, mediaId: media._id },
+      {
+        $set: { lines: [], updatedAt: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!session) {
+      throw new customError('Session not found', 404);
+    }
+
+    res.status(200).json(session);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteSession = async (
   req: Request,
   res: Response,
