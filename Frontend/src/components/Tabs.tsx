@@ -1,8 +1,8 @@
-import { useState, cloneElement, ReactElement } from 'react';
+import { useState } from 'react';
 
 interface Tab {
   label: string;
-  component: ReactElement;
+  component: (isActive: boolean) => React.ReactNode;
 }
 
 interface TabsProps {
@@ -29,17 +29,20 @@ function Tabs({ tabs }: TabsProps) {
         ))}
       </div>
 
-      {tabs.map((tab, i) => (
-        <div
-          key={i}
-          role="tabpanel"
-          className={`tab-content bg-base-100 border-base-300 rounded-box p-6 ${
-            activeTab === tab.label ? 'block' : 'hidden'
-          }`}
-        >
-          {cloneElement(tab.component, { isActive: activeTab === tab.label })}
-        </div>
-      ))}
+      {tabs.map((tab, i) => {
+        const isActive = activeTab === tab.label;
+        return (
+          <div
+            key={i}
+            role="tabpanel"
+            className={`tab-content bg-base-100 border-base-300 rounded-box p-6 ${
+              isActive ? 'block' : 'hidden'
+            }`}
+          >
+            {tab.component(isActive)}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -1,7 +1,7 @@
-import React from 'react';
+import { Calculator } from 'lucide-react';
 import ImmersionCalculator from '../components/ImmersionCalculator';
 
-const CalculatorScreen: React.FC = () => {
+function CalculatorScreen() {
   return (
     <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8">
@@ -9,19 +9,7 @@ const CalculatorScreen: React.FC = () => {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-2">
               <div className="inline-flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
-                <svg
-                  className="w-6 h-6 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
+                <Calculator />
               </div>
               <h1 className="text-4xl font-bold text-base-content">
                 Immersion Calculator
@@ -92,6 +80,6 @@ const CalculatorScreen: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default CalculatorScreen;

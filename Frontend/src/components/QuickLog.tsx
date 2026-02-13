@@ -47,6 +47,7 @@ function QuickLog({
   const [showTime, setShowTime] = useState<boolean>(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [coverImage, setCoverImage] = useState<string | undefined>(undefined);
+  const [isAdultMedia, setIsAdultMedia] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [defaultDuration, setDefaultDuration] = useState<number>(0);
   const [customDuration, setCustomDuration] = useState<number | undefined>(
@@ -67,6 +68,7 @@ function QuickLog({
       setLogDescription(media.title.contentTitleNative);
       setContentId(media.contentId);
       setCoverImage(media.contentImage);
+      setIsAdultMedia(media.isAdult);
 
       // If it's anime, set episode duration (from API or default to 24 minutes)
       if (media.type === 'anime') {
@@ -228,6 +230,7 @@ function QuickLog({
     setMinutes(0);
     setContentId(undefined);
     setCoverImage(undefined);
+    setIsAdultMedia(false);
     setDefaultDuration(0);
     setCustomDuration(undefined);
     setShowTime(false);
@@ -306,6 +309,7 @@ function QuickLog({
       setCoverImage(
         group.contentImage || group.__youtubeChannelInfo.channelImage
       );
+      setIsAdultMedia(group.isAdult);
 
       // Auto-fill duration if available
       if (group.episodeDuration) {
@@ -320,6 +324,7 @@ function QuickLog({
       setLogDescription(group.title.contentTitleNative);
       setContentId(group.contentId);
       setCoverImage(group.coverImage || group.contentImage);
+      setIsAdultMedia(group.isAdult);
 
       // For anime, store episode duration
       if (logType === 'anime' && group.episodeDuration) {
@@ -695,11 +700,16 @@ function QuickLog({
                             ? `/${logType}/${contentId}`
                             : '#'
                         }
+                        className="group/qlog"
                       >
                         <img
                           src={coverImage}
                           alt="Cover"
-                          className="rounded-lg w-20 h-28 lg:w-24 lg:h-32 object-cover mx-auto lg:mx-0"
+                          className={`rounded-lg w-20 h-28 lg:w-24 lg:h-32 object-cover mx-auto lg:mx-0 ${
+                            isAdultMedia
+                              ? 'blur-lg group-hover/qlog:blur-sm transition-all'
+                              : ''
+                          }`}
                         />
                       </Link>
                     </div>

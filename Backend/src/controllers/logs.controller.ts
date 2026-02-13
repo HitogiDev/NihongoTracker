@@ -135,6 +135,9 @@ export async function getRecentLogs(
           manabeId: 1,
           media: 1,
           xp: 1,
+          isAdult: {
+            $ifNull: ['$media.isAdult', false],
+          },
         },
       },
     ]);
@@ -247,6 +250,9 @@ export async function getGlobalFeed(
           pages: 1,
           chars: 1,
           time: 1,
+          isAdult: {
+            $ifNull: ['$media.isAdult', false],
+          },
           mediaTitle: 1,
           user: {
             username: '$user.username',
@@ -1102,6 +1108,7 @@ export async function createLog(
       xp,
       description,
       private: false,
+      isAdult: logMedia?.isAdult ?? false,
       time,
       date: logDate,
       chars,
@@ -1121,9 +1128,7 @@ export async function createLog(
     const finalMediaId = logMedia ? logMedia.contentId : mediaId;
     if (finalMediaId) {
       const userDoc = await User.findById(res.locals.user._id);
-      if (
-        userDoc?.settings?.hiddenRecentMedia?.includes(finalMediaId)
-      ) {
+      if (userDoc?.settings?.hiddenRecentMedia?.includes(finalMediaId)) {
         userDoc.settings.hiddenRecentMedia =
           userDoc.settings.hiddenRecentMedia.filter(
             (id) => id !== finalMediaId

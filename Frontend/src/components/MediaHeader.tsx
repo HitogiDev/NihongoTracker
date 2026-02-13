@@ -358,7 +358,7 @@ export default function MediaHeader() {
                         type="button"
                         className={`btn gap-2 w-full ${
                           completionStatus.isCompleted
-                            ? 'btn-success text-white'
+                            ? 'btn-success'
                             : 'btn-outline'
                         }`}
                         onClick={() =>

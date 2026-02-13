@@ -18,28 +18,45 @@ function AssignMedia() {
           tabs={[
             {
               label: 'Anime',
-              component: <AnimeLogs username={user?.username} />,
+              component: (isActive) => (
+                <AnimeLogs username={user?.username} isActive={isActive} />
+              ),
             },
             {
               label: 'Manga',
-              component: <MangaLogs username={user?.username} />,
+              component: (isActive) => (
+                <MangaLogs username={user?.username} isActive={isActive} />
+              ),
             },
-            { label: 'VN', component: <VNLogs username={user?.username} /> },
+            {
+              label: 'VN',
+              component: (isActive) => (
+                <VNLogs username={user?.username} isActive={isActive} />
+              ),
+            },
             {
               label: 'Reading',
-              component: <ReadingLogs username={user?.username} />,
+              component: (isActive) => (
+                <ReadingLogs username={user?.username} isActive={isActive} />
+              ),
             },
             {
               label: 'Video',
-              component: <VideoLogs username={user?.username} />,
+              component: (isActive) => (
+                <VideoLogs username={user?.username} isActive={isActive} />
+              ),
             },
             {
               label: 'Movie',
-              component: <MovieLogs username={user?.username} />,
+              component: (isActive) => (
+                <MovieLogs username={user?.username} isActive={isActive} />
+              ),
             },
             {
               label: 'TV Show',
-              component: <TVShowLogs username={user?.username} />,
+              component: (isActive) => (
+                <TVShowLogs username={user?.username} isActive={isActive} />
+              ),
             },
           ]}
         />

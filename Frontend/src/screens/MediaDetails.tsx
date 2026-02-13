@@ -819,7 +819,7 @@ function MediaDetails() {
                       <span
                         className={`badge ${
                           mediaDocument.isCompleted
-                            ? 'badge-success text-white'
+                            ? 'badge-success'
                             : 'badge-outline'
                         }`}
                       >

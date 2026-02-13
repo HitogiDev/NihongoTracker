@@ -2893,7 +2893,7 @@ function SettingsScreen() {
                   </div>
                 </div>
 
-                <div className="alert alert-error mb-4">
+                <div className="alert alert-error alert-soft mb-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="stroke-current shrink-0 h-6 w-6"

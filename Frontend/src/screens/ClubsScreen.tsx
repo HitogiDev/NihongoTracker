@@ -165,7 +165,7 @@ function ClubsScreen() {
               {/* Sort Options */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
-                  <ListFilter className="text-lg" />
+                  <ListFilter className="w-5 h-5" />
                   Sort By
                 </h3>
                 <div className="dropdown w-full">
@@ -221,7 +221,7 @@ function ClubsScreen() {
               {/* Visibility Filter */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
-                  <Funnel className="text-lg" />
+                  <Funnel className="w-5 h-5" />
                   Visibility
                 </h3>
                 <label className="label cursor-pointer">
@@ -355,9 +355,9 @@ function ClubCard({ club }: { club: IClubResponse }) {
             className={`badge gap-1 ${club.isPublic ? 'badge-success' : 'badge-warning'}`}
           >
             {club.isPublic ? (
-              <Earth className="text-xs" />
+              <Earth className="w-4 h-4" />
             ) : (
-              <Lock className="text-xs" />
+              <Lock className="w-4 h-4" />
             )}
             {club.isPublic ? 'Public' : 'Private'}
           </div>
@@ -398,7 +398,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
         {/* Stats */}
         <div className="flex items-center text-sm text-base-content/70 mb-4">
           <div className="flex items-center gap-1">
-            <Users className="text-base" />
+            <Users className="text-base w-4 h-4" />
             <span>
               {club.memberCount}/{club.memberLimit} members
             </span>
@@ -425,7 +425,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
         <div className="card-actions justify-end">
           {club.isUserMember && club.userStatus === 'active' ? (
             <div className="badge badge-primary gap-1">
-              <Users className="text-xs" />
+              <Users className="w-4 h-4" />
               {club.userRole === 'leader'
                 ? 'Leader'
                 : club.userRole === 'moderator'

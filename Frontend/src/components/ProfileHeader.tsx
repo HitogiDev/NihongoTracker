@@ -57,7 +57,7 @@ export default function ProfileHeader() {
             </div>
             <div className="py-22px px-25px w-full sm:w-auto text-center sm:text-left">
               <div className="flex flex-col items-center gap-2 flex-wrap sm:flex-row sm:items-center sm:gap-3">
-                <h1 className="text-xl font-bold inline-block text-slate-100">
+                <h1 className="text-xl font-bold inline-block text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
                   {user?.username}
                 </h1>
                 {patreonBadge && (

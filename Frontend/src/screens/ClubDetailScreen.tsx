@@ -656,7 +656,7 @@ function ClubDetailScreen() {
                 {/* Stats */}
                 <div className="flex items-center gap-4 text-sm text-base-content/70">
                   <div className="flex items-center gap-1">
-                    <Users className="text-base" />
+                    <Users className="text-base w-4 h-4" />
                     <span>
                       {club.memberCount}/{club.memberLimit} members
                     </span>
@@ -693,7 +693,7 @@ function ClubDetailScreen() {
                           : undefined
                       }
                     >
-                      <DoorOpen className="text-lg" />
+                      <DoorOpen className="w-4 h-4" />
                       <span className="hidden sm:inline">
                         {leaveMutation.isPending
                           ? 'Processing...'
@@ -759,21 +759,21 @@ function ClubDetailScreen() {
             className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
-            <Info className="mr-2" />
+            <Info className="mr-2 w-4 h-4" />
             Overview
           </button>
           <button
             className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('media')}
           >
-            <Play className="mr-2" />
+            <Play className="mr-2 w-4 h-4" />
             Media
           </button>
           <button
             className={`tab ${activeTab === 'members' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('members')}
           >
-            <Users className="mr-2" />
+            <Users className="mr-2 w-4 h-4" />
             Members
             {club?.userRole === 'leader' &&
               pendingRequests?.pending &&
@@ -787,7 +787,7 @@ function ClubDetailScreen() {
             className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('rankings')}
           >
-            <BarChart className="mr-2" />
+            <BarChart className="mr-2 w-4 h-4" />
             Rankings
           </button>
         </div>
@@ -960,7 +960,11 @@ function ClubDetailScreen() {
                           {/* Media Type Badge */}
                           <div className="absolute top-2 left-2">
                             <span className="badge badge-primary badge-sm capitalize">
-                              {media.mediaType}
+                              {media.mediaType
+                                ? media.mediaType === 'vn'
+                                  ? 'Visual Novel'
+                                  : media.mediaType
+                                : 'Unknown'}
                             </span>
                           </div>
                         </figure>

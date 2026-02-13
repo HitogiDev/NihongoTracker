@@ -466,7 +466,7 @@ function Dashboard() {
                       {stat.value}
                     </p>
                     <p
-                      className={`text-sm mt-1 flex items-center gap-1 ${
+                      className={`text-sm mt-1 inline-flex items-center gap-1 ${
                         stat.change > 0
                           ? 'text-success'
                           : stat.change < 0
@@ -474,8 +474,12 @@ function Dashboard() {
                             : 'text-base-content/60'
                       }`}
                     >
-                      {stat.change > 0 && <ChevronUp />}
-                      {stat.change < 0 && <ChevronDown />}
+                      {stat.change > 0 && (
+                        <ChevronUp className="w-4 h-4 shrink-0" />
+                      )}
+                      {stat.change < 0 && (
+                        <ChevronDown className="w-4 h-4 shrink-0" />
+                      )}
                       {stat.change !== 0
                         ? `${Math.abs(stat.change)}% vs. last month`
                         : 'No change'}
@@ -551,6 +555,10 @@ function Dashboard() {
                       (log.media as IMediaDocument | undefined)?.type ??
                       log.type;
                     const mediaContentId = log.media?.contentId;
+                    const feedIsAdult =
+                      log.isAdult ||
+                      (log.media as IMediaDocument | undefined)?.isAdult ||
+                      false;
                     const mediaLink =
                       mediaType && mediaContentId
                         ? `/${mediaType}/${mediaContentId}`
@@ -629,21 +637,27 @@ function Dashboard() {
                           (mediaLink ? (
                             <Link
                               to={mediaLink}
-                              className="shrink-0"
+                              className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden"
                               aria-label={`View ${log.media?.title?.contentTitleNative ?? 'media'}`}
                             >
                               <img
                                 src={image}
                                 alt={log.media?.title?.contentTitleNative}
-                                className="w-20 h-28 rounded-2xl object-cover"
+                                className={`w-full h-full object-cover ${
+                                  feedIsAdult ? 'blur-sm scale-110' : ''
+                                }`}
                               />
                             </Link>
                           ) : (
-                            <img
-                              src={image}
-                              alt={log.media?.title?.contentTitleNative}
-                              className="w-20 h-28 rounded-2xl object-cover"
-                            />
+                            <div className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden">
+                              <img
+                                src={image}
+                                alt={log.media?.title?.contentTitleNative}
+                                className={`w-full h-full object-cover ${
+                                  feedIsAdult ? 'blur-sm scale-110' : ''
+                                }`}
+                              />
+                            </div>
                           ))}
                       </div>
                     );
@@ -862,6 +876,8 @@ function RecentMediaRailTile({
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
   const mediaId = log.media?.contentId;
+  const isAdult =
+    log.isAdult || (log.media as IMediaDocument | undefined)?.isAdult || false;
 
   function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
@@ -889,7 +905,13 @@ function RecentMediaRailTile({
         </button>
       )}
       {image ? (
-        <img src={image} alt={title} className="w-full h-full object-cover" />
+        <img
+          src={image}
+          alt={title}
+          className={`w-full h-full object-cover ${
+            isAdult ? 'blur-sm scale-110' : ''
+          }`}
+        />
       ) : (
         <div className="w-full h-full bg-base-300 flex items-center justify-center">
           <Play className="w-8 h-8 text-base-content/40" />
@@ -922,6 +944,8 @@ function RecentMediaTile({ log, onQuickLog, onRemove }: RecentMediaTileProps) {
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
   const mediaId = log.media?.contentId;
+  const isAdult =
+    log.isAdult || (log.media as IMediaDocument | undefined)?.isAdult || false;
 
   const { data: averageColorData } = useQuery({
     queryKey: ['recentMediaAverageColor', image],
@@ -959,7 +983,9 @@ function RecentMediaTile({ log, onQuickLog, onRemove }: RecentMediaTileProps) {
         <img
           src={image}
           alt={title}
-          className="absolute inset-0 h-full w-full object-cover"
+          className={`absolute inset-0 h-full w-full object-cover ${
+            isAdult ? 'blur-sm scale-110' : ''
+          }`}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-base-300">

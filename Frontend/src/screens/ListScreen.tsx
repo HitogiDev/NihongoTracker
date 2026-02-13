@@ -870,7 +870,7 @@ function MediaCard({
         {isOwnProfile && (
           <button
             type="button"
-            className={`btn btn-circle btn-xs absolute top-2 right-2 z-20 ${media.isCompleted ? 'btn-success text-white' : 'btn-ghost bg-base-100/80 border-base-300'}`}
+            className={`btn btn-circle btn-xs absolute top-2 right-2 z-20 ${media.isCompleted ? 'btn-success' : 'btn-ghost bg-base-100/80 border-base-300'}`}
             onClick={handleToggleClick}
             disabled={isToggling}
             aria-label={
@@ -1152,7 +1152,7 @@ function MediaListItem({
                   {isOwnProfile && (
                     <button
                       type="button"
-                      className={`btn btn-xs ${media.isCompleted ? 'btn-success text-white' : 'btn-outline'}`}
+                      className={`btn btn-xs ${media.isCompleted ? 'btn-success' : 'btn-outline'}`}
                       onClick={handleToggleClick}
                       disabled={isToggling}
                     >
