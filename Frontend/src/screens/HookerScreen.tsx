@@ -15,6 +15,7 @@ import {
   createLogFn,
   getMediaFn,
   getUserMediaStatsFn,
+  updateSessionTimerFn,
 } from '../api/trackerApi';
 import {
   Settings,
@@ -269,16 +270,64 @@ function TextHooker() {
   const socketRef = useRef<WebSocket | null>(null);
 
   const lastActivityRef = useRef(Date.now());
+  const timerInitializedFromServerRef = useRef(false);
+  const lastSavedTimerRef = useRef<number>(0);
 
-  // Timer state - load from localStorage if contentId exists
+  // Timer state - load from localStorage initially, then override from server
+  const timerKey = contentId || 'session';
   const [seconds, setSeconds] = useState(() => {
-    if (contentId) {
-      const saved = localStorage.getItem(`texthooker_timer_${contentId}`);
-      return saved ? Number(saved) : 0;
-    }
-    return 0;
+    const saved = localStorage.getItem(`texthooker_timer_${timerKey}`);
+    return saved ? Number(saved) : 0;
   });
   const [isTimerActive, setIsTimerActive] = useState(true);
+
+  // Initialize timer from server session data (overrides localStorage)
+  useEffect(() => {
+    if (
+      sessionData &&
+      !timerInitializedFromServerRef.current &&
+      typeof sessionData.timerSeconds === 'number'
+    ) {
+      const serverTimer = sessionData.timerSeconds;
+      const localTimer = Number(
+        localStorage.getItem(`texthooker_timer_${timerKey}`) || 0
+      );
+      // Use whichever is higher (server or local) to avoid losing progress
+      const bestTimer = Math.max(serverTimer, localTimer);
+      setSeconds(bestTimer);
+      lastSavedTimerRef.current = bestTimer;
+      timerInitializedFromServerRef.current = true;
+    }
+  }, [sessionData, timerKey]);
+
+  // Debounce-save timer to backend every 30 seconds
+  useEffect(() => {
+    if (!contentId) return;
+    const interval = setInterval(() => {
+      const currentSeconds = Number(
+        localStorage.getItem(`texthooker_timer_${timerKey}`) || 0
+      );
+      if (currentSeconds !== lastSavedTimerRef.current) {
+        lastSavedTimerRef.current = currentSeconds;
+        updateSessionTimerFn(contentId, currentSeconds).catch(console.error);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [contentId, timerKey]);
+
+  // Save timer to backend on unmount
+  useEffect(() => {
+    return () => {
+      if (contentId) {
+        const currentSeconds = Number(
+          localStorage.getItem(`texthooker_timer_${timerKey}`) || 0
+        );
+        if (currentSeconds !== lastSavedTimerRef.current) {
+          updateSessionTimerFn(contentId, currentSeconds).catch(console.error);
+        }
+      }
+    };
+  }, [contentId, timerKey]);
 
   // Persist settings to localStorage
   useEffect(() => {
@@ -338,10 +387,8 @@ function TextHooker() {
 
   // Persist timer to localStorage when it changes
   useEffect(() => {
-    if (contentId) {
-      localStorage.setItem(`texthooker_timer_${contentId}`, String(seconds));
-    }
-  }, [seconds, contentId]);
+    localStorage.setItem(`texthooker_timer_${timerKey}`, String(seconds));
+  }, [seconds, timerKey]);
 
   // Update last activity when lines change
   useEffect(() => {
@@ -663,7 +710,11 @@ function TextHooker() {
   const handleResetTimer = useCallback(() => {
     setSeconds(0);
     lastActivityRef.current = Date.now();
-  }, []);
+    if (contentId) {
+      lastSavedTimerRef.current = 0;
+      updateSessionTimerFn(contentId, 0).catch(console.error);
+    }
+  }, [contentId]);
 
   const handleOpenTimerEdit = useCallback(() => {
     const h = Math.floor(seconds / 3600);
@@ -681,7 +732,11 @@ function TextHooker() {
     setSeconds(totalSeconds);
     lastActivityRef.current = Date.now();
     setIsTimerEditOpen(false);
-  }, [timerEditHours, timerEditMinutes, timerEditSeconds]);
+    if (contentId) {
+      lastSavedTimerRef.current = totalSeconds;
+      updateSessionTimerFn(contentId, totalSeconds).catch(console.error);
+    }
+  }, [timerEditHours, timerEditMinutes, timerEditSeconds, contentId]);
 
   const handleDeleteLast = useCallback(() => {
     setLines((prev) => {
@@ -735,9 +790,13 @@ function TextHooker() {
         chars: charsNumber,
       };
       setSeconds(0);
+      if (contentId) {
+        lastSavedTimerRef.current = 0;
+        updateSessionTimerFn(contentId, 0).catch(console.error);
+      }
       setIsLogAnimating(false);
     }, 1500);
-  }, [loggedChars, currentSessionChars, linesNumber, charsNumber]);
+  }, [loggedChars, currentSessionChars, linesNumber, charsNumber, contentId]);
 
   const { mutate: createLog, isPending: isLogging } = useMutation({
     mutationFn: createLogFn,

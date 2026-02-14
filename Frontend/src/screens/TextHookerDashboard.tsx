@@ -19,6 +19,7 @@ import {
   Search,
   Gamepad2,
   BookText,
+  Clock,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
@@ -178,7 +179,27 @@ function TextHookerDashboard() {
 
   const { sessions, stats } = data || {
     sessions: [],
-    stats: { totalSessions: 0, totalLines: 0, totalChars: 0 },
+    stats: {
+      totalSessions: 0,
+      totalLines: 0,
+      totalChars: 0,
+      totalTimerSeconds: 0,
+    },
+  };
+
+  const formatDuration = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  };
+
+  const formatDurationShort = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    if (h > 0) return `${h}h${m > 0 ? ` ${m}m` : ''}`;
+    if (m > 0) return `${m}m`;
+    return `${totalSeconds}s`;
   };
 
   return (
@@ -192,7 +213,7 @@ function TextHookerDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="stats shadow bg-base-200">
             <div className="stat">
               <div className="stat-figure text-primary">
@@ -229,6 +250,19 @@ function TextHookerDashboard() {
                 {numberWithCommas(stats.totalChars)}
               </div>
               <div className="stat-desc">Japanese characters read</div>
+            </div>
+          </div>
+
+          <div className="stats shadow bg-base-200">
+            <div className="stat">
+              <div className="stat-figure text-info">
+                <Clock className="w-8 h-8" />
+              </div>
+              <div className="stat-title">Total Time</div>
+              <div className="stat-value text-info">
+                {formatDuration(stats.totalTimerSeconds || 0)}
+              </div>
+              <div className="stat-desc">Time tracked reading</div>
             </div>
           </div>
         </div>
@@ -329,6 +363,14 @@ function TextHookerDashboard() {
                         <Type className="w-3 h-3" />
                         <span>{numberWithCommas(totalChars)} chars</span>
                       </div>
+                      {(session.timerSeconds ?? 0) > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>
+                            {formatDurationShort(session.timerSeconds!)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-xs text-base-content/50 mt-2">
                       {new Date(

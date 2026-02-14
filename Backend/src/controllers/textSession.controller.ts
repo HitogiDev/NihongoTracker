@@ -81,6 +81,10 @@ export const getRecentSessions = async (
         sum + s.lines.reduce((lineSum, l) => lineSum + (l.charsCount || 0), 0),
       0
     );
+    const totalTimerSeconds = allSessions.reduce(
+      (sum, s) => sum + (s.timerSeconds || 0),
+      0
+    );
 
     res.status(200).json({
       sessions,
@@ -88,6 +92,7 @@ export const getRecentSessions = async (
         totalSessions: allSessions.length,
         totalLines,
         totalChars,
+        totalTimerSeconds,
       },
     });
   } catch (error) {
@@ -172,6 +177,39 @@ export const getSessionByContentId = async (
     }
 
     res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateSessionTimer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const { timerSeconds } = req.body;
+
+    if (typeof timerSeconds !== 'number' || timerSeconds < 0) {
+      throw new customError('Invalid timerSeconds value', 400);
+    }
+
+    const media = await Media.findOne({ contentId });
+    if (!media) {
+      throw new customError('Media not found', 404);
+    }
+
+    const session = await TextSession.findOneAndUpdate(
+      { userId, mediaId: media._id },
+      {
+        $set: { timerSeconds, updatedAt: new Date() },
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({ timerSeconds: session.timerSeconds });
   } catch (error) {
     next(error);
   }

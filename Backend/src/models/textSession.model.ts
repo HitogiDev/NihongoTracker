@@ -6,6 +6,7 @@ const TextSessionSchema = new Schema<ITextSession>({
   hostToken: { type: String },
   userId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   mediaId: { type: Schema.Types.ObjectId, ref: 'Media', index: true },
+  timerSeconds: { type: Number, default: 0 },
   lines: [
     {
       id: String,

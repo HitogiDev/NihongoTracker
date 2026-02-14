@@ -782,6 +782,7 @@ export interface ITextSession extends Document {
   hostToken?: string;
   userId?: Types.ObjectId;
   mediaId?: Types.ObjectId;
+  timerSeconds: number;
   lines: ITextLine[];
   createdAt: Date;
   updatedAt?: Date;

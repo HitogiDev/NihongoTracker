@@ -860,6 +860,7 @@ export interface ITextSession {
   roomId?: string;
   userId?: string;
   mediaId?: string | IMediaDocument;
+  timerSeconds?: number;
   lines: ITextLine[];
   createdAt: string;
   updatedAt?: string;

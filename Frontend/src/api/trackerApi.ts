@@ -856,6 +856,17 @@ export async function getTextSessionFn(
   return data;
 }
 
+export async function updateSessionTimerFn(
+  contentId: string,
+  timerSeconds: number
+): Promise<{ timerSeconds: number }> {
+  const { data } = await api.patch<{ timerSeconds: number }>(
+    `texthooker/${contentId}/timer`,
+    { timerSeconds }
+  );
+  return data;
+}
+
 export async function addLinesToSessionFn(
   contentId: string,
   lines: Partial<ITextLine>[]
