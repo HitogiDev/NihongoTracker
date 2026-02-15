@@ -5,6 +5,14 @@ import {
   updateIndexSettings,
 } from '../services/meilisearch/meiliSearch.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import {
+  forceSyncAllUsers,
+  initUsersIndex,
+} from '../services/meilisearch/userIndex.js';
+import {
+  initMediaIndexes,
+  forceSyncAllMedia,
+} from '../services/meilisearch/mediaIndex.js';
 
 export async function getMeiliSearchIndexes(
   _req: Request,
@@ -53,6 +61,34 @@ export async function updateMeiliSearchIndexSettings(
     res.status(200).json({
       message: `Index ${indexName} settings updated successfully.`,
       response,
+    });
+  } catch (error) {
+    return next(
+      new customError(
+        error instanceof Error ? error.message : 'Unknown error',
+        500
+      )
+    );
+  }
+}
+
+export async function syncMeiliSearchIndexes(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    await Promise.all([initUsersIndex(), initMediaIndexes()]);
+
+    const [userCount, mediaCount] = await Promise.all([
+      forceSyncAllUsers(),
+      forceSyncAllMedia(),
+    ]);
+
+    return res.status(200).json({
+      message: 'Meilisearch sync started successfully',
+      users: userCount,
+      media: mediaCount,
     });
   } catch (error) {
     return next(

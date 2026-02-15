@@ -482,7 +482,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   return (
     <>
       <article
-        className={`card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 border ${typeConfig.borderColor} group`}
+        className={`card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 border ${typeConfig.borderColor} group rounded-t-none`}
         role="article"
         aria-label={`Log entry: ${logTitle}`}
       >

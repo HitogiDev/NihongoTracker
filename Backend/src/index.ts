@@ -11,8 +11,21 @@ import {
   IClientToServerEvents,
   ISocketData,
 } from './types.js';
+import {
+  initUsersIndex,
+  syncAllUsers,
+} from './services/meilisearch/userIndex.js';
+import {
+  initMediaIndexes,
+  syncAllMedia,
+} from './services/meilisearch/mediaIndex.js';
 
 connectDB();
+
+// Initialize Meilisearch indexes and sync if empty
+Promise.all([initUsersIndex(), initMediaIndexes()])
+  .then(() => Promise.all([syncAllUsers(), syncAllMedia()]))
+  .catch((err) => console.error('Meilisearch init error:', err));
 
 const httpServer = createServer(app);
 

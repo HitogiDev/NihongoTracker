@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import {
@@ -17,6 +17,7 @@ import {
   Menu,
   Heart,
   FileText,
+  Search,
 } from 'lucide-react';
 
 import { useUserDataStore } from '../store/userData';
@@ -26,10 +27,12 @@ import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { logoutResponseType } from '../types';
 import Loader from './Loader';
+import SearchModal from './SearchModal';
 
 function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const isAdmin = Array.isArray(user?.roles)
     ? (user?.roles as string[]).includes('admin')
     : user?.roles === 'admin';
@@ -54,6 +57,18 @@ function Header() {
     e.preventDefault();
     mutate();
   }
+
+  // Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className="relative">
@@ -328,6 +343,23 @@ function Header() {
         )}
 
         <div className="navbar-end gap-1 sm:gap-3 mx-1 sm:mx-3">
+          {/* Search Button */}
+          <button
+            className="btn btn-ghost btn-sm sm:btn-md gap-2"
+            onClick={() => setIsSearchOpen(true)}
+            aria-label="Search"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden lg:inline text-xs text-base-content/50">
+              <kbd className="kbd kbd-xs">
+                {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
+                  ? '⌘'
+                  : 'Ctrl'}
+              </kbd>{' '}
+              <kbd className="kbd kbd-xs">K</kbd>
+            </span>
+          </button>
+
           {user ? (
             <>
               <Link
@@ -483,6 +515,11 @@ function Header() {
         </div>
       </div>
       {isPending && <Loader />}
+
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </div>
   );
 }

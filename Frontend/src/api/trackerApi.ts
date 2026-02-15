@@ -91,6 +91,15 @@ export async function getUserFn(username: string): Promise<IUser> {
   return data;
 }
 
+export async function searchUsersFn(
+  query: string
+): Promise<
+  { _id: string; username: string; avatar?: string; stats?: { xp: number } }[]
+> {
+  const { data } = await api.get('users/search', { params: { q: query } });
+  return data;
+}
+
 export async function updateUserFn(updateValues: FormData) {
   const { data } = await api.put<IUser>(`/users`, updateValues, {
     headers: {
@@ -617,6 +626,11 @@ export async function recalculateStatsFn(type: 'streaks' | 'xp') {
 
 export async function syncManabeIdsFn() {
   const { data } = await api.post('logs/sync-manabe-ids');
+  return data;
+}
+
+export async function forceSyncMeilisearchFn() {
+  const { data } = await api.post('admin/meilisearch/sync');
   return data;
 }
 

@@ -354,18 +354,8 @@ function QuickLog({
   return (
     <>
       {open && (
-        <div
-          className="fixed inset-0 flex items-center justify-center z-50 bg-base-100/75 p-4"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              onClose();
-            }
-          }}
-        >
-          <div
-            className="card w-full max-w-lg bg-base-100 shadow-xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <dialog className="modal modal-open">
+          <div className="modal-box w-full max-w-lg max-h-[90vh] overflow-y-auto p-0">
             <div className="card-body">
               <div className="flex justify-between items-center">
                 <h2 className="card-title">Quick Log</h2>
@@ -782,7 +772,10 @@ function QuickLog({
               </form>
             </div>
           </div>
-        </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={onClose}>close</button>
+          </form>
+        </dialog>
       )}
     </>
   );

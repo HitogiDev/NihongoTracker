@@ -5,6 +5,7 @@ import {
   getUser,
   updateUser,
   getUsers,
+  searchUsers,
   clearUserData,
   getImmersionList,
   compareUserStats,
@@ -27,6 +28,7 @@ const upload = multer({
 });
 
 router.get('/', getUsers);
+router.get('/search', searchUsers);
 
 router.get('/compare', compareUserStats);
 

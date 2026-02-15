@@ -9,6 +9,7 @@ import {
   sendPasswordResetSuccessEmail,
   sendVerificationEmail,
 } from '../mailtrap/emails.js';
+import { indexUser } from '../services/meilisearch/userIndex.js';
 
 const isValidTimezone = (timezone?: string): boolean => {
   if (!timezone) {
@@ -89,6 +90,9 @@ export async function register(
     });
 
     if (!user) throw new customError('Invalid user data', 400);
+
+    // Index new user in Meilisearch
+    indexUser(user);
 
     generateToken(res, user._id.toString());
 

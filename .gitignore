@@ -8,6 +8,7 @@ Planning.md
 Changelog.md
 .github
 migrateClubMediaVotings.mongo.js
+fix-anilist-images.ts
 vite.config.ts.timestamp-*
 
 # Logs

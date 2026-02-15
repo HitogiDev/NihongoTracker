@@ -150,9 +150,7 @@ export default function MediaHeader() {
           });
         }
         toast.success(
-          data.isCompleted
-            ? 'Se marcó como completado.'
-            : 'Se cambió a en progreso.'
+          data.isCompleted ? 'Marked as completed.' : 'Marked as in progress.'
         );
       },
       onError: (error) => {
@@ -160,7 +158,7 @@ export default function MediaHeader() {
           (error as { response?: { data?: { message?: string } } })?.response
             ?.data?.message ||
           (error as Error)?.message ||
-          'No se pudo actualizar el estado.';
+          `The status couldn't be updated.`;
         toast.error(message);
       },
     });
@@ -371,18 +369,18 @@ export default function MediaHeader() {
                         ) : completionStatus.isCompleted ? (
                           <>
                             <CircleCheck className="w-4 h-4" />
-                            <span>Marcar como en progreso</span>
+                            <span>Mark as in progress</span>
                           </>
                         ) : (
                           <>
                             <Circle className="w-4 h-4" />
-                            <span>Marcar como completado</span>
+                            <span>Mark as completed</span>
                           </>
                         )}
                       </button>
                       {completionStatus.completedAt && (
                         <span className="text-xs text-base-content/60 text-center md:text-left">
-                          {`Completado el ${formatDateOnly(
+                          {`Completed at ${formatDateOnly(
                             new Date(completionStatus.completedAt)
                           )}`}
                         </span>

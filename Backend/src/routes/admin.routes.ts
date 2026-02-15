@@ -23,6 +23,7 @@ import {
   deleteMeiliSearchIndex,
   getMeiliSearchIndexes,
   updateMeiliSearchIndexSettings,
+  syncMeiliSearchIndexes,
 } from '../controllers/meilisearch.controller.js';
 
 const router = Router();
@@ -111,4 +112,12 @@ router.patch(
   checkPermission(userRoles.admin),
   updateMeiliSearchIndexSettings
 );
+
+router.post(
+  '/meilisearch/sync',
+  protect,
+  checkPermission(userRoles.admin),
+  syncMeiliSearchIndexes
+);
+
 export default router;

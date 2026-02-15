@@ -805,13 +805,13 @@ function MediaDetails() {
                         }`}
                       >
                         {mediaDocument.isCompleted
-                          ? 'Completado'
-                          : 'En progreso'}
+                          ? 'Completed'
+                          : 'In progress'}
                       </span>
                       {mediaDocument.isCompleted &&
                         mediaDocument.completedAt && (
                           <span className="text-xs text-base-content/60">
-                            {`Completado el ${formatDateOnly(
+                            {`Completed at ${formatDateOnly(
                               new Date(mediaDocument.completedAt)
                             )}`}
                           </span>

@@ -10,6 +10,8 @@ import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import axios from 'axios';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../mailtrap/emails.js';
+import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
+import { indexUser } from '../services/meilisearch/userIndex.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -204,6 +206,9 @@ export async function updateUser(
     }
 
     const updatedUser = await user.save();
+
+    // Sync updated user to Meilisearch
+    indexUser(updatedUser);
 
     // Send verification email if email was changed
     if (
@@ -1061,6 +1066,34 @@ export async function getUsers(
   try {
     const users = await User.find({}).select('-password');
     if (!users) throw new customError('No users found', 404);
+    return res.json(users);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function searchUsers(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const query = (req.query.q as string)?.trim();
+    if (!query || query.length < 2) {
+      return res.json([]);
+    }
+
+    const results = await searchDocuments('users', query, { limit: 10 });
+
+    // Transform Meilisearch results to match the existing API shape
+    const users = results.hits.map((hit) => ({
+      _id: hit.id as string,
+      username: hit.username as string,
+      avatar: hit.avatar as string | null,
+      banner: hit.banner as string | null,
+      stats: { xp: hit.xp as number },
+    }));
+
     return res.json(users);
   } catch (error) {
     return next(error as customError);
