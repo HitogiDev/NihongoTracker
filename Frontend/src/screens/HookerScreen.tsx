@@ -135,7 +135,6 @@ function TextHooker() {
   const [animatedChars, setAnimatedChars] = useState(0);
   const [targetChars, setTargetChars] = useState(0);
 
-  // Persistent Session Logic
   const { data: sessionData } = useQuery({
     queryKey: ['textSession', contentId],
     queryFn: () => getTextSessionFn(contentId!),
@@ -166,21 +165,18 @@ function TextHooker() {
     setIsRoomConnected,
   ]);
 
-  // Fetch full media data with Jiten info when modal opens
   const { data: fullMediaData } = useQuery({
     queryKey: ['media', media?.contentId, media?.type],
     queryFn: () => getMediaFn(media!.contentId, media!.type),
     enabled: !!media && isStatsOpen,
   });
 
-  // Fetch user's total logged characters for this media
   const { data: userMediaStats } = useQuery({
     queryKey: ['userMediaStats', media?.contentId, media?.type],
     queryFn: () => getUserMediaStatsFn(media!.contentId, media!.type),
     enabled: !!media && isStatsOpen,
   });
 
-  // Total characters logged by user for this media (from all previous logs)
   const previouslyLoggedChars = userMediaStats?.total?.characters || 0;
 
   useEffect(() => {
@@ -218,7 +214,6 @@ function TextHooker() {
     },
   });
 
-  // Load host token when roomId changes
   useEffect(() => {
     if (roomId) {
       const saved = localStorage.getItem(`hostToken_${roomId}`);
@@ -227,7 +222,6 @@ function TextHooker() {
     }
   }, [roomId]);
 
-  // Settings state (persisted to localStorage)
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('texthooker_fontSize');
     return saved ? Number(saved) : 24;
@@ -257,7 +251,6 @@ function TextHooker() {
     return localStorage.getItem('texthooker_continuousReconnect') === 'true';
   });
 
-  // WebSocket State
   const [websocketUrl, setWebsocketUrl] = useState(() => {
     return (
       localStorage.getItem('texthooker_websocketUrl') || 'ws://localhost:6677'
@@ -273,7 +266,6 @@ function TextHooker() {
   const timerInitializedFromServerRef = useRef(false);
   const lastSavedTimerRef = useRef<number>(0);
 
-  // Timer state - load from localStorage initially, then override from server
   const timerKey = contentId || 'session';
   const [seconds, setSeconds] = useState(() => {
     const saved = localStorage.getItem(`texthooker_timer_${timerKey}`);
@@ -281,7 +273,7 @@ function TextHooker() {
   });
   const [isTimerActive, setIsTimerActive] = useState(true);
 
-  // Initialize timer from server session data (overrides localStorage)
+  // Use whichever is higher to avoid losing timer progress
   useEffect(() => {
     if (
       sessionData &&
@@ -292,7 +284,6 @@ function TextHooker() {
       const localTimer = Number(
         localStorage.getItem(`texthooker_timer_${timerKey}`) || 0
       );
-      // Use whichever is higher (server or local) to avoid losing progress
       const bestTimer = Math.max(serverTimer, localTimer);
       setSeconds(bestTimer);
       lastSavedTimerRef.current = bestTimer;
@@ -300,7 +291,6 @@ function TextHooker() {
     }
   }, [sessionData, timerKey]);
 
-  // Debounce-save timer to backend every 30 seconds
   useEffect(() => {
     if (!contentId) return;
     const interval = setInterval(() => {
@@ -315,7 +305,6 @@ function TextHooker() {
     return () => clearInterval(interval);
   }, [contentId, timerKey]);
 
-  // Save timer to backend on unmount
   useEffect(() => {
     return () => {
       if (contentId) {
@@ -329,7 +318,6 @@ function TextHooker() {
     };
   }, [contentId, timerKey]);
 
-  // Persist settings to localStorage
   useEffect(() => {
     localStorage.setItem('texthooker_fontSize', String(fontSize));
   }, [fontSize]);
@@ -385,12 +373,10 @@ function TextHooker() {
     );
   }, [continuousReconnect]);
 
-  // Persist timer to localStorage when it changes
   useEffect(() => {
     localStorage.setItem(`texthooker_timer_${timerKey}`, String(seconds));
   }, [seconds, timerKey]);
 
-  // Update last activity when lines change
   useEffect(() => {
     lastActivityRef.current = Date.now();
   }, [lines]);
@@ -421,24 +407,16 @@ function TextHooker() {
       return;
     }
 
-    console.log('Connecting socket for user:', user?.username || 'Anonymous');
-    // In production (same origin), use undefined to let socket.io auto-detect
-    // In development, use VITE_API_URL or fallback
     const socketUrl =
       import.meta.env.VITE_API_URL ||
       (window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
         : undefined);
-    console.log('Socket.IO connecting to:', socketUrl || 'same origin');
-    const newSocket = io(socketUrl, {
-      withCredentials: true, // This ensures cookies are sent
-    });
+    const newSocket = io(socketUrl, { withCredentials: true });
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
-      console.log('Socket.IO connected successfully, socket id:', newSocket.id);
       if (roomId) {
-        console.log('Emitting join_room for room:', roomId, 'as', mode);
         newSocket.emit('join_room', {
           roomId,
           role: mode,
@@ -450,18 +428,12 @@ function TextHooker() {
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket.IO connection error:', error.message);
       toast.error(`Connection failed: ${error.message}`);
-    });
-
-    newSocket.on('disconnect', (reason) => {
-      console.log('Socket.IO disconnected:', reason);
     });
 
     newSocket.on(
       'room_created',
       (data: { roomId: string; hostToken: string }) => {
-        console.log('Room created:', data);
         if (data.roomId === roomId) {
           setHostToken(data.hostToken);
           localStorage.setItem(`hostToken_${roomId}`, data.hostToken);
@@ -477,51 +449,64 @@ function TextHooker() {
     });
 
     newSocket.on('room_users_update', (members: Member[]) => {
-      console.log('Received room_users_update:', members);
-      members.forEach((m) => {
-        console.log(
-          `Member ${m.id}: username=${m.username}, userId=${m.userId}, role=${m.role}`
-        );
-      });
       setConnectedMembers(members);
     });
 
     if (mode === 'guest' || mode === 'host') {
       newSocket.on('receive_line', (lineData: LineEntry) => {
         setLines((prev) => [...prev, lineData]);
+        lastActivityRef.current = Date.now();
+
+        if (!isTimerActive && autostartTimerByLine) {
+          setIsTimerActive(true);
+        }
+
+        if (contentId) {
+          saveLines([lineData]);
+        }
       });
 
+      // Persist room history so it survives disconnection
       newSocket.on('load_history', (history: LineEntry[]) => {
         setLines(history);
+
+        if (contentId) {
+          saveLines(history);
+        }
       });
     }
 
     return () => {
       newSocket.disconnect();
     };
-  }, [mode, roomId, isRoomConnected, hostToken, user]);
+  }, [
+    mode,
+    roomId,
+    isRoomConnected,
+    hostToken,
+    user,
+    contentId,
+    saveLines,
+    isTimerActive,
+    autostartTimerByLine,
+  ]);
 
-  // WebSocket Logic
   const handleSocketMessage = useCallback(
     (event: MessageEvent) => {
-      // Check if new lines are allowed during pause
       if (!isTimerActive && !allowNewLineDuringPause) return;
 
       let text = event.data;
       try {
-        // Intentamos parsear como JSON (formato estándar de extensiones de Textractor)
         const parsed = JSON.parse(event.data);
         if (parsed && typeof parsed.sentence === 'string') {
           text = parsed.sentence;
         }
       } catch (e) {
-        // Si falla, usamos el texto tal cual (raw text)
+        // Raw text fallback
       }
 
-      // Evitar líneas vacías
       if (!text || text.trim().length === 0) return;
 
-      // Autostart timer if paused and option is enabled
       if (!isTimerActive && autostartTimerByLine) {
         setIsTimerActive(true);
       }
@@ -535,7 +520,6 @@ function TextHooker() {
         saveLines([newLine]);
       }
 
-      // SI ES HOST: Enviar al servidor para que los invitados lo vean
       if (mode === 'host' && socket) {
         socket.emit('send_line', { roomId, lineData: newLine });
       }
@@ -567,7 +551,6 @@ function TextHooker() {
 
       socket.onopen = () => {
         setConnectionStatus('connected');
-        // Clear reconnect interval on successful connection
         if (reconnectIntervalRef.current) {
           clearInterval(reconnectIntervalRef.current);
           reconnectIntervalRef.current = null;
@@ -592,7 +575,6 @@ function TextHooker() {
   }, [websocketUrl, handleSocketMessage]);
 
   const toggleSocket = useCallback(() => {
-    // Clear any existing reconnect interval
     if (reconnectIntervalRef.current) {
       clearInterval(reconnectIntervalRef.current);
       reconnectIntervalRef.current = null;
@@ -600,13 +582,11 @@ function TextHooker() {
 
     if (connectionStatus === 'connected' || connectionStatus === 'connecting') {
       socketRef.current?.close();
-      // El estado cambiará a 'disconnected' en el evento onclose
       return;
     }
 
     attemptConnect();
 
-    // Start continuous reconnect if enabled
     if (continuousReconnect) {
       reconnectIntervalRef.current = setInterval(() => {
         if (
@@ -619,14 +599,12 @@ function TextHooker() {
     }
   }, [connectionStatus, attemptConnect, continuousReconnect]);
 
-  // Effect to handle continuous reconnect state changes
   useEffect(() => {
     if (
       continuousReconnect &&
       connectionStatus !== 'connected' &&
       connectionStatus !== 'connecting'
     ) {
-      // Start reconnect interval if not already running
       if (!reconnectIntervalRef.current) {
         reconnectIntervalRef.current = setInterval(() => {
           if (
@@ -638,13 +616,11 @@ function TextHooker() {
         }, 3000);
       }
     } else if (!continuousReconnect && reconnectIntervalRef.current) {
-      // Clear interval if continuous reconnect is disabled
       clearInterval(reconnectIntervalRef.current);
       reconnectIntervalRef.current = null;
     }
   }, [continuousReconnect, connectionStatus, attemptConnect]);
 
-  // Cleanup socket and reconnect interval on unmount
   useEffect(() => {
     return () => {
       socketRef.current?.close();
@@ -698,8 +674,7 @@ function TextHooker() {
 
   const toggleTimer = useCallback(() => {
     setIsTimerActive((prev) => {
-      // When resuming the timer, reset the activity timestamp
-      // so it doesn't immediately pause again due to old inactivity
+      // Reset activity timestamp to prevent immediate re-pause
       if (!prev) {
         lastActivityRef.current = Date.now();
       }
@@ -833,7 +808,6 @@ function TextHooker() {
     });
   };
 
-  // Initialize animated chars when logged chars change (but not during animation)
   useEffect(() => {
     if (!isLogAnimating) {
       setAnimatedChars(loggedChars);
@@ -841,7 +815,6 @@ function TextHooker() {
     }
   }, [loggedChars, isLogAnimating]);
 
-  // Animate character count
   useEffect(() => {
     if (isLogAnimating && animatedChars < targetChars) {
       const diff = targetChars - animatedChars;
@@ -864,7 +837,6 @@ function TextHooker() {
     }
   }, [lines, vertical]);
 
-  // Detectar si el usuario movió el scroll para desactivar el autoscroll temporalmente
   const handleScroll = useCallback(() => {
     const container = listContainerRef.current;
     if (!container) return;
@@ -888,7 +860,6 @@ function TextHooker() {
           mutation.type === 'childList' &&
           mutation.addedNodes.length >= 1
         ) {
-          // Check if pasting is allowed during pause
           if (!isTimerActive && !allowPasteDuringPause) continue;
 
           let ptag: Node | null = null;
@@ -917,7 +888,6 @@ function TextHooker() {
             continue;
           }
 
-          // Autostart timer if paused and option is enabled
           if (!isTimerActive && autostartTimerByPaste) {
             setIsTimerActive(true);
           }
@@ -931,7 +901,6 @@ function TextHooker() {
             saveLines([newLine]);
           }
 
-          // SI ES HOST: Enviar al servidor para que los invitados lo vean
           if (mode === 'host' && socket) {
             socket.emit('send_line', { roomId, lineData: newLine });
           }
@@ -1093,7 +1062,6 @@ function TextHooker() {
 
         <div className="w-px h-4 bg-base-content/20 mx-1"></div>
 
-        {/* WebSocket Toggle */}
         <button
           type="button"
           onClick={toggleSocket}
@@ -1115,7 +1083,6 @@ function TextHooker() {
           )}
         </button>
 
-        {/* Timer Toggle */}
         <button
           type="button"
           onClick={toggleTimer}
@@ -1125,7 +1092,6 @@ function TextHooker() {
           {isTimerActive ? <Pause size={16} /> : <Play size={16} />}
         </button>
 
-        {/* Reset Timer */}
         <button
           type="button"
           onClick={handleResetTimer}
@@ -1135,7 +1101,6 @@ function TextHooker() {
           <RotateCcw size={16} />
         </button>
 
-        {/* Edit Timer */}
         <button
           type="button"
           onClick={handleOpenTimerEdit}
@@ -1145,7 +1110,6 @@ function TextHooker() {
           <Edit3 size={16} />
         </button>
 
-        {/* Delete Last Line */}
         <button
           type="button"
           onClick={handleDeleteLast}
@@ -1155,7 +1119,6 @@ function TextHooker() {
           <Trash2 size={16} />
         </button>
 
-        {/* Stats Button */}
         <button
           type="button"
           onClick={() => setIsStatsOpen(true)}
@@ -1165,7 +1128,6 @@ function TextHooker() {
           <BarChart2 size={16} />
         </button>
 
-        {/* Settings Button */}
         <button
           type="button"
           onClick={() => setIsSettingsOpen(true)}
@@ -1177,7 +1139,6 @@ function TextHooker() {
 
         <div className="w-px h-4 bg-base-content/20 mx-1"></div>
 
-        {/* Back to Dashboard */}
         <RouterLink
           to="/texthooker"
           className="btn btn-xs btn-ghost btn-square"
@@ -1360,7 +1321,6 @@ function TextHooker() {
           </div>
 
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Left side - VN Info */}
             {media && (
               <div className="md:w-1/3 flex-shrink-0">
                 <div className="bg-base-200 p-4 rounded-lg space-y-4">
@@ -1383,7 +1343,7 @@ function TextHooker() {
                     </div>
                   </div>
 
-                  {/* Progress Section */}
+                  {/* Progress */}
                   <div className="space-y-2 mt-4">
                     <div className="text-sm font-semibold opacity-70 mb-2">
                       Reading Progress
@@ -1392,7 +1352,6 @@ function TextHooker() {
                       (() => {
                         const totalCharCount =
                           fullMediaData.jiten.mainDeck.characterCount;
-                        // Total progress = previously logged + current session chars in texthooker
                         const totalProgress =
                           previouslyLoggedChars + animatedChars;
                         const progressPercent = Math.min(
@@ -1453,9 +1412,7 @@ function TextHooker() {
               </div>
             )}
 
-            {/* Right side - Stats */}
             <div className="flex-1 space-y-6">
-              {/* Current Session Stats */}
               <div>
                 <h4 className="text-sm font-semibold uppercase tracking-wider opacity-70 mb-3">
                   Current Session
@@ -1493,7 +1450,6 @@ function TextHooker() {
 
               <div className="divider"></div>
 
-              {/* Total Stats */}
               <div>
                 <h4 className="text-sm font-semibold uppercase tracking-wider opacity-70 mb-3">
                   Total (All Time)
@@ -1562,7 +1518,6 @@ function TextHooker() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Display Settings */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
                 <Monitor size={16} /> Display
@@ -1643,7 +1598,6 @@ function TextHooker() {
               </div>
             </div>
 
-            {/* Behavior & Connection */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
                 <Activity size={16} /> Behavior & Connection

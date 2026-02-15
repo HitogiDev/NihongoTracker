@@ -843,6 +843,7 @@ export async function getRecentTextSessionsFn(): Promise<{
     totalSessions: number;
     totalLines: number;
     totalChars: number;
+    totalTimerSeconds: number;
   };
 }> {
   const { data } = await api.get('texthooker/recent');

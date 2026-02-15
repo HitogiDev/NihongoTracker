@@ -57,13 +57,13 @@ function ProfileScreen() {
     'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const aboutHtml = () => {
+  const aboutHtml = (() => {
     if (!user?.about || !user.about.trim()) {
       return '';
     }
     const rawHtml = marked.parse(user.about, { async: false }) as string;
     return DOMPurify.sanitize(rawHtml);
-  };
+  })();
 
   // Type guard to validate log type
   const isValidLogType = (
