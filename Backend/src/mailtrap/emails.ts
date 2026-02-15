@@ -5,10 +5,18 @@ import {
 } from './emailTemplates.js';
 import { sendEmail } from './mailtrap.config.js';
 
+function getBaseUrl() {
+  return (
+    process.env.FRONTEND_URL ||
+    process.env.PROD_DOMAIN ||
+    'http://localhost:5173'
+  );
+}
+
 export async function sendVerificationEmail(to: string, token: string) {
   try {
     const subject = 'Verify Your Email Address';
-    const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+    const verificationURL = `${getBaseUrl()}/verify-email/${token}`;
     const html = VERIFICATION_EMAIL_TEMPLATE.replace(
       /{verificationURL}/g,
       verificationURL

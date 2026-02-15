@@ -239,11 +239,13 @@ export async function forgotPassword(
     user.resetPasswordTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
     await user.save();
 
+    const baseUrl =
+      process.env.FRONTEND_URL ||
+      process.env.PROD_DOMAIN ||
+      'http://localhost:5173';
     await sendPasswordResetEmail(
       email,
-      process.env.NODE_ENV === 'production'
-        ? `https://tracker.manabe.es/reset-password/${user.resetPasswordToken}`
-        : `http://localhost:5173/reset-password/${user.resetPasswordToken}`
+      `${baseUrl}/reset-password/${user.resetPasswordToken}`
     );
 
     res.status(200).json({
