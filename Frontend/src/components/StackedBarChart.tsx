@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -87,7 +87,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     }
   }, [themeColors.baseContent]);
 
-  const { baseContent, gridColor } = useMemo(() => {
+  const { baseContent, gridColor } = (() => {
     const base = themeColors.baseContent || 'oklch(0.6 0 0)';
 
     let baseContent: string;
@@ -102,9 +102,9 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     }
 
     return { baseContent, gridColor };
-  }, [themeColors.baseContent]);
+  })();
 
-  const chartData = useMemo(() => {
+  const chartData = (() => {
     if (!statsData || statsData.length === 0) return null;
 
     // Filter data based on selected type
@@ -297,7 +297,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       labels,
       datasets,
     };
-  }, [statsData, selectedType, metric, timeframe, timezone]);
+  })();
 
   const options: ChartOptions<'bar'> = {
     responsive: true,

@@ -16,7 +16,7 @@ import {
 } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { useThemeColors } from '../hooks/useThemeColors';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
 ChartJS.register(
   CategoryScale,
@@ -47,7 +47,7 @@ function LineChart({
   }, [themeColors.baseContent]);
 
   // Create different opacity versions from the same base colors with fallbacks
-  const { baseContent, gridColor } = useMemo(() => {
+  const { baseContent, gridColor } = (() => {
     const base = themeColors.baseContent || 'oklch(0.6 0 0)'; // Fallback to neutral gray
 
     // Handle both oklch and other color formats
@@ -64,7 +64,7 @@ function LineChart({
     }
 
     return { baseContent, gridColor };
-  }, [themeColors.baseContent]);
+  })();
 
   // Don't render until colors are loaded to prevent flash
   if (!colorsReady) {

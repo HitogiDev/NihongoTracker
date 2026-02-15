@@ -1,5 +1,5 @@
 import { ILog, IMediaDocument } from '../types';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   assignMediaFn,
@@ -79,13 +79,13 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     assignedLogs
   );
 
-  const logsWithYouTubeUrls = useMemo(() => {
+  const logsWithYouTubeUrls = (() => {
     if (!logs) return [];
     return logs.filter((log) => {
       if (log.mediaId || !log.description) return false;
       return extractYouTubeUrl(log.description) !== null;
     });
-  }, [logs, extractYouTubeUrl]);
+  })();
 
   const { mutate: assignMedia, isPending: isAssigning } = useMutation({
     mutationFn: (

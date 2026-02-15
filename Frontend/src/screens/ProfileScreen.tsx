@@ -3,7 +3,7 @@ import LogCard from '../components/LogCard';
 import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
@@ -57,13 +57,13 @@ function ProfileScreen() {
     'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const aboutHtml = useMemo(() => {
+  const aboutHtml = () => {
     if (!user?.about || !user.about.trim()) {
       return '';
     }
     const rawHtml = marked.parse(user.about, { async: false }) as string;
     return DOMPurify.sanitize(rawHtml);
-  }, [user?.about]);
+  };
 
   // Type guard to validate log type
   const isValidLogType = (

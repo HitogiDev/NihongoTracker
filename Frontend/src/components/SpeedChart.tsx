@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -65,6 +65,13 @@ type FilteredData = {
   [type in ReadingType]?: ReadingDataItem[];
 };
 
+// Constants for reading types
+const READING_TYPES = [
+  'reading',
+  'vn',
+  'manga',
+] as const satisfies ReadingType[];
+
 function SpeedChart({
   timeframe: externalTimeframe,
   readingData,
@@ -73,10 +80,7 @@ function SpeedChart({
   // Use state to manage the timeframe
   const [timeframe, setTimeframe] = useState<TimeframeType>('total');
   const [filteredData, setFilteredData] = useState<FilteredData>({});
-  const readingTypes = useMemo<ReadingType[]>(
-    () => ['reading', 'vn', 'manga'],
-    []
-  );
+
   const { timezone } = useTimezone();
 
   useEffect(() => {
@@ -140,13 +144,13 @@ function SpeedChart({
     const nowWeekKey = getWeekStartKey(nowInfo);
 
     // Initialize empty arrays for each reading type
-    readingTypes.forEach((type) => {
+    READING_TYPES.forEach((type) => {
       filtered[type] = [];
     });
 
     if (readingSpeedData && readingSpeedData.length > 0) {
       readingSpeedData.forEach((item) => {
-        if (!readingTypes.includes(item.type as ReadingType)) return;
+        if (!READING_TYPES.includes(item.type as ReadingType)) return;
         if (!item.localDate) return;
 
         const monthStr = item.localDate.monthKey;
@@ -189,7 +193,7 @@ function SpeedChart({
       });
     } else if (readingData && readingData.length > 0) {
       readingData.forEach((log) => {
-        if (!readingTypes.includes(log.type as ReadingType)) return;
+        if (!READING_TYPES.includes(log.type as ReadingType)) return;
         if (!log.chars || !log.time || log.time <= 0) return;
 
         const speed = (log.chars / (log.time / 60)) * 60;
@@ -230,7 +234,7 @@ function SpeedChart({
     }
 
     // Group by date/month and calculate average speed
-    readingTypes.forEach((type) => {
+    READING_TYPES.forEach((type) => {
       const dateMap = new Map<string, { total: number; count: number }>();
 
       filtered[type]?.forEach((item) => {
@@ -257,13 +261,13 @@ function SpeedChart({
     });
 
     setFilteredData(filtered);
-  }, [timeframe, readingData, readingSpeedData, readingTypes, timezone]);
+  }, [timeframe, readingData, readingSpeedData, timezone]);
 
   // Get all unique dates across all reading types
   const getAllDates = () => {
     const allDatesSet = new Set<string>();
 
-    readingTypes.forEach((type) => {
+    READING_TYPES.forEach((type) => {
       if (filteredData[type]) {
         filteredData[type]?.forEach((item) => {
           allDatesSet.add(item.date);
@@ -304,7 +308,7 @@ function SpeedChart({
 
   const chartData = {
     labels: getAllDates(),
-    datasets: readingTypes.map((type, index) => {
+    datasets: READING_TYPES.map((type, index) => {
       const colors = [
         'rgba(255, 99, 132, 1)',
         'rgba(54, 162, 235, 1)',

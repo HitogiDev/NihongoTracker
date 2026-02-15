@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { ILog } from '../types';
 
 export function useFilteredGroupedLogs(
@@ -6,7 +5,7 @@ export function useFilteredGroupedLogs(
   groupedLogs: Record<string, ILog[]>,
   assignedLogs: ILog[]
 ) {
-  return useMemo(() => {
+  return (() => {
     if (!logs) return {};
     const filteredGroupedLogs: Record<string, ILog[]> = {};
     Object.entries(groupedLogs).forEach(([key, group]) => {
@@ -16,5 +15,5 @@ export function useFilteredGroupedLogs(
       }
     });
     return filteredGroupedLogs;
-  }, [groupedLogs, assignedLogs, logs]);
+  })();
 }

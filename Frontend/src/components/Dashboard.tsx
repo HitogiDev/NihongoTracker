@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -822,7 +822,7 @@ function RecentMediaRail({
     return () => window.removeEventListener('resize', handleResize);
   }, [allLogs]);
 
-  const logs = useMemo(() => allLogs.slice(0, limit), [allLogs, limit]);
+  const logs = allLogs.slice(0, limit);
 
   return (
     <div className="card bg-base-100 shadow-xl border border-base-200/60">

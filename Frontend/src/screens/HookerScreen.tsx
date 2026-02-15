@@ -1,5 +1,5 @@
 import type { ChangeEvent, CSSProperties } from 'react';
-import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import {
   useLocation,
   useParams,
@@ -113,13 +113,13 @@ function TextHooker() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connectedMembers, setConnectedMembers] = useState<Member[]>([]);
 
-  const sortedMembers = useMemo(() => {
+  const sortedMembers = (() => {
     if (!connectedMembers || connectedMembers.length === 0)
       return connectedMembers;
     const host = connectedMembers.find((m) => m.role === 'host');
     if (!host) return connectedMembers;
     return [host, ...connectedMembers.filter((m) => m.id !== host.id)];
-  }, [connectedMembers]);
+  })();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -755,16 +755,13 @@ function TextHooker() {
   const isAutoScrollEnabled = useRef(true);
 
   const linesNumber = lines.length;
-  const charsNumber = useMemo(
-    () =>
-      lines.reduce((sum, entry) => {
-        const count = Number.isFinite(entry.japaneseCount)
-          ? entry.japaneseCount
-          : countJapaneseCharacters(entry.text);
-        return sum + count;
-      }, 0),
-    [lines]
-  );
+  const charsNumber = (() =>
+    lines.reduce((sum, entry) => {
+      const count = Number.isFinite(entry.japaneseCount)
+        ? entry.japaneseCount
+        : countJapaneseCharacters(entry.text);
+      return sum + count;
+    }, 0))();
 
   const currentSessionLines = Math.max(
     0,
@@ -1044,13 +1041,13 @@ function TextHooker() {
     ? 'pt-16 px-4 flex flex-row overflow-x-auto overflow-y-hidden h-screen items-start pb-6'
     : 'pt-16 px-4 flex flex-col overflow-y-auto h-screen pb-6';
 
-  const inviteLink = useMemo(() => {
+  const inviteLink = (() => {
     if (typeof window === 'undefined' || !roomId) return '';
     const url = new URL(`${window.location.origin}${location.pathname}`);
     url.searchParams.set('mode', 'guest');
     url.searchParams.set('roomId', roomId);
     return url.toString();
-  }, [roomId, location.pathname]);
+  })();
 
   const handleCopyInviteLink = useCallback(async () => {
     if (!inviteLink) return;

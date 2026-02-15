@@ -3,7 +3,6 @@ import React, {
   useRef,
   useEffect,
   useCallback,
-  useMemo,
   forwardRef,
   useImperativeHandle,
 } from 'react';
@@ -300,7 +299,7 @@ function SettingsScreen() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
-  const detectedTimezone = useMemo(() => getUserTimezone(), []);
+  const detectedTimezone = getUserTimezone();
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
     isActive: false,
   });
@@ -1263,65 +1262,65 @@ function SettingsScreen() {
     }
   }
 
-  const badgeHexInputValue = useMemo(() => {
+  const badgeHexInputValue = (() => {
     if (pendingBadgeColor !== null) {
       return isPresetBackground(pendingBadgeColor) ? '' : pendingBadgeColor;
     }
     return isPresetBackground(badgeColor) ? '' : badgeColor;
-  }, [pendingBadgeColor, badgeColor]);
+  })();
 
-  const badgeInputBackgroundColor = useMemo(() => {
+  const badgeInputBackgroundColor = (() => {
     const candidate =
       pendingBadgeColor !== null ? pendingBadgeColor : badgeColor;
     if (!candidate || isPresetBackground(candidate)) {
       return undefined;
     }
     return sanitizeHex(candidate) ?? undefined;
-  }, [pendingBadgeColor, badgeColor]);
+  })();
 
-  const badgeInputTextColor = useMemo(() => {
+  const badgeInputTextColor = (() => {
     return getContrastColor(badgeInputBackgroundColor ?? null);
-  }, [badgeInputBackgroundColor]);
+  })();
 
-  const badgeWheelColor = useMemo(() => {
+  const badgeWheelColor = (() => {
     const candidate =
       pendingBadgeColor !== null ? pendingBadgeColor : badgeColor;
     if (!candidate || isPresetBackground(candidate)) {
       return '#ff69b4';
     }
     return sanitizeHex(candidate) ?? '#ff69b4';
-  }, [pendingBadgeColor, badgeColor]);
+  })();
 
-  const badgeTextHexInputValue = useMemo(() => {
+  const badgeTextHexInputValue = (() => {
     if (pendingBadgeTextColor !== null) {
       return isPresetTextColor(pendingBadgeTextColor)
         ? ''
         : pendingBadgeTextColor;
     }
     return isPresetTextColor(badgeTextColor) ? '' : badgeTextColor;
-  }, [pendingBadgeTextColor, badgeTextColor]);
+  })();
 
-  const badgeTextInputBackgroundColor = useMemo(() => {
+  const badgeTextInputBackgroundColor = (() => {
     const candidate =
       pendingBadgeTextColor !== null ? pendingBadgeTextColor : badgeTextColor;
     if (!candidate || isPresetTextColor(candidate)) {
       return undefined;
     }
     return sanitizeHex(candidate) ?? undefined;
-  }, [pendingBadgeTextColor, badgeTextColor]);
+  })();
 
-  const badgeTextInputTextColor = useMemo(() => {
+  const badgeTextInputTextColor = (() => {
     return getContrastColor(badgeTextInputBackgroundColor ?? null);
-  }, [badgeTextInputBackgroundColor]);
+  })();
 
-  const badgeTextWheelColor = useMemo(() => {
+  const badgeTextWheelColor = (() => {
     const candidate =
       pendingBadgeTextColor !== null ? pendingBadgeTextColor : badgeTextColor;
     if (!candidate || isPresetTextColor(candidate)) {
       return '#ffffff';
     }
     return sanitizeHex(candidate) ?? '#ffffff';
-  }, [pendingBadgeTextColor, badgeTextColor]);
+  })();
 
   return (
     <div className="min-h-screen bg-base-200 mt-16">

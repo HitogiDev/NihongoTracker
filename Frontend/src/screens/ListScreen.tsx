@@ -6,7 +6,7 @@ import {
   updateUserFn,
   updateMediaCompletionStatusFn,
 } from '../api/trackerApi';
-import { useState, useMemo, MouseEvent } from 'react';
+import { useState, MouseEvent } from 'react';
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
 import DOMPurify from 'dompurify';
@@ -128,7 +128,7 @@ function ListScreen() {
     });
   };
 
-  const allMedia = useMemo(() => {
+  const allMedia = (() => {
     if (!immersionList) return [];
 
     return [
@@ -158,9 +158,9 @@ function ListScreen() {
         category: 'tv show' as const,
       })),
     ];
-  }, [immersionList]);
+  })();
 
-  const filteredAndSortedMedia = useMemo(() => {
+  const filteredAndSortedMedia = (() => {
     let filtered = allMedia;
 
     if (searchQuery.trim()) {
@@ -200,9 +200,9 @@ function ListScreen() {
     });
 
     return filtered;
-  }, [allMedia, searchQuery, selectedFilter, sortBy]);
+  })();
 
-  const groupedMedia = useMemo(() => {
+  const groupedMedia = (() => {
     const shouldGroup = selectedFilter === 'all' && !searchQuery.trim();
 
     if (!shouldGroup) {
@@ -260,9 +260,9 @@ function ListScreen() {
     });
 
     return orderedGroups;
-  }, [filteredAndSortedMedia, selectedFilter, searchQuery, sortBy]);
+  })();
 
-  const stats = useMemo(() => {
+  const stats = (() => {
     const totalCount = allMedia.length;
     const typeCount = {
       anime: immersionList?.anime.length || 0,
@@ -274,7 +274,7 @@ function ListScreen() {
       'tv show': immersionList?.['tv show']?.length || 0,
     };
     return { totalCount, typeCount };
-  }, [allMedia, immersionList]);
+  })();
 
   const handleHideUnmatchedAlert = () => {
     const formData = new FormData();
@@ -978,7 +978,7 @@ function MediaListItem({
   const toggleKey = `${media.type}:${media.contentId}`;
   const isToggling = pendingToggleId === toggleKey;
 
-  const descriptionText = useMemo(() => {
+  const descriptionText = (() => {
     if (!media.description || media.description.length === 0) {
       return '';
     }
@@ -1036,7 +1036,7 @@ function MediaListItem({
       .replace(/\\n/g, ' ')
       .replace(/[\s\u00A0]+/g, ' ')
       .trim();
-  }, [media.description]);
+  })();
 
   const handleCardClick = () => {
     navigate(`/${media.type}/${media.contentId}/${username}`);

@@ -9,7 +9,7 @@ import {
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import {
@@ -131,7 +131,7 @@ function MediaDetails() {
     gcTime: 15 * 60 * 1000,
   });
 
-  const dateRange = useMemo(() => {
+  const dateRange = (() => {
     switch (dateFilter) {
       case 'today': {
         const now = getCurrentTime();
@@ -180,13 +180,7 @@ function MediaDetails() {
       default:
         return null;
     }
-  }, [
-    dateFilter,
-    customStartDate,
-    customEndDate,
-    getCurrentTime,
-    getDayBounds,
-  ]);
+  })();
 
   const { data: comparisonData, isLoading: comparisonLoading } = useQuery({
     queryKey: [
@@ -223,14 +217,8 @@ function MediaDetails() {
   });
 
   // Memoize arrays to prevent recalculation
-  const logsArray = useMemo(
-    () => (Array.isArray(logs) ? (logs as ILog[]) : []),
-    [logs]
-  );
-  const myLogsArray = useMemo(
-    () => (Array.isArray(myLogs) ? (myLogs as ILog[]) : []),
-    [myLogs]
-  );
+  const logsArray = Array.isArray(logs) ? (logs as ILog[]) : [];
+  const myLogsArray = Array.isArray(myLogs) ? (myLogs as ILog[]) : [];
   const isLoading =
     logsLoading || (isViewingOtherUser && (myLogsLoading || comparisonLoading));
 
@@ -241,7 +229,7 @@ function MediaDetails() {
     ? dateRange.endDate.getTime()
     : undefined;
 
-  const filteredLogs = useMemo(() => {
+  const filteredLogs = (() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     const getSortValue = (log: ILog) => {
@@ -295,17 +283,10 @@ function MediaDetails() {
         if (valueA === valueB) return 0;
         return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
       });
-  }, [
-    logsArray,
-    searchTerm,
-    startTimestamp,
-    endTimestamp,
-    sortBy,
-    sortDirection,
-  ]);
+  })();
 
   // Memoize heavy calculations to prevent re-computation on every render
-  const calculations = useMemo(() => {
+  const calculations = (() => {
     // Sort logs by date (most recent first) - moved up to be used in calculations
     const sortedLogs =
       logsArray.length > 0
@@ -386,7 +367,7 @@ function MediaDetails() {
       myReadingSpeed,
       remainingChars,
     };
-  }, [logsArray, myLogsArray, mediaDocument?.jiten?.mainDeck.characterCount]);
+  })();
 
   // Destructure calculations for easier access
   const {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ICreateLog,
   ILog,
@@ -496,7 +496,7 @@ function LogScreen() {
   );
   const showPagesInMain = logData.type === 'manga';
 
-  const autoCalculatedTime = useMemo(() => {
+  const autoCalculatedTime = (() => {
     if (!isSeriesType) return null;
     const durationPerEpisode =
       logData.customDuration && logData.customDuration > 0
@@ -511,12 +511,7 @@ function LogScreen() {
       hours: Math.floor(totalMinutes / 60),
       minutes: totalMinutes % 60,
     };
-  }, [
-    isSeriesType,
-    logData.customDuration,
-    logData.duration,
-    logData.watchedEpisodes,
-  ]);
+  })();
 
   useEffect(() => {
     if (!autoCalculatedTime) return;

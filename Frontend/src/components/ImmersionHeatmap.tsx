@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { useTimezone } from '../hooks/useTimezone';
@@ -31,7 +31,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     enabled: !!username,
   });
 
-  const heatmapData = useMemo(() => {
+  const heatmapData = (() => {
     if (!logs || !Array.isArray(logs)) return [];
 
     // Create a map to store daily XP totals
@@ -92,7 +92,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     }
 
     return heatmapData;
-  }, [logs, timezone]);
+  })();
 
   const getIntensityClass = (level: number) => {
     switch (level) {
@@ -124,13 +124,13 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
   };
 
   // Group data by weeks for GitHub-style layout
-  const weeks = useMemo(() => {
+  const weeks = (() => {
     const weeksData = [];
     for (let i = 0; i < heatmapData.length; i += 7) {
       weeksData.push(heatmapData.slice(i, i + 7));
     }
     return weeksData;
-  }, [heatmapData]);
+  })();
 
   if (isLoading) {
     return (

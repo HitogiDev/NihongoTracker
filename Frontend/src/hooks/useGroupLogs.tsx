@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { ILog } from '../types';
 import { fuzzy } from 'fast-fuzzy';
 
@@ -24,7 +23,7 @@ export function useGroupLogs(
     return result;
   };
 
-  return useMemo(() => {
+  return (() => {
     if (!logs) return {};
     const groupedLogs = new Map<string, ILog[]>();
     logs.forEach((log) => {
@@ -56,5 +55,5 @@ export function useGroupLogs(
     });
 
     return mergedGroups;
-  }, [logs, type]);
+  })();
 }

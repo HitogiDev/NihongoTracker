@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
@@ -184,32 +184,21 @@ export default function VotingSystem({
     }).format(dateObj);
   };
 
-  const votings = useMemo(() => votingsData?.votings ?? [], [votingsData]);
+  const votings = votingsData?.votings ?? [];
 
-  const openVotings = useMemo(
-    () => votings.filter((v) => v.status === 'voting_open'),
-    [votings]
+  const openVotings = votings.filter((v) => v.status === 'voting_open');
+
+  const suggestionVotings = votings.filter(
+    (v) => v.status === 'suggestions_open'
   );
 
-  const suggestionVotings = useMemo(
-    () => votings.filter((v) => v.status === 'suggestions_open'),
-    [votings]
+  const managementVotings = votings.filter(
+    (v) => v.status === 'setup' || v.status === 'suggestions_closed'
   );
 
-  const managementVotings = useMemo(
-    () =>
-      votings.filter(
-        (v) => v.status === 'setup' || v.status === 'suggestions_closed'
-      ),
-    [votings]
-  );
+  const closedVotings = votings.filter((v) => v.status === 'voting_closed');
 
-  const closedVotings = useMemo(
-    () => votings.filter((v) => v.status === 'voting_closed'),
-    [votings]
-  );
-
-  const completedVotings = useMemo(() => {
+  const completedVotings = (() => {
     const activeCompleted = votings.filter((v) => v.status === 'completed');
     const inactiveCompleted = (inactiveVotingsData?.votings ?? []).filter(
       (v) => v.status === 'completed'
@@ -229,9 +218,9 @@ export default function VotingSystem({
         new Date(b.votingEndDate).getTime() -
         new Date(a.votingEndDate).getTime()
     );
-  }, [inactiveVotingsData, votings]);
+  })();
 
-  const filteredCompletedVotings = useMemo(() => {
+  const filteredCompletedVotings = (() => {
     if (resultsTimespan === 'all') {
       return completedVotings;
     }
@@ -247,7 +236,7 @@ export default function VotingSystem({
       const votingEndTime = new Date(voting.votingEndDate).getTime();
       return votingEndTime >= cutoff;
     });
-  }, [completedVotings, resultsTimespan]);
+  })();
 
   // Reset carousel index if it's out of bounds
   useEffect(() => {

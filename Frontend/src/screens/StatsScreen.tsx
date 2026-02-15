@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DayPicker } from 'react-day-picker';
 import { useOutletContext } from 'react-router-dom';
@@ -142,8 +142,8 @@ function StatsScreen() {
   const endBtnRef = useRef<HTMLDivElement | null>(null);
   const { timezone } = useTimezone();
 
-  const readingTypeSet = useMemo(() => new Set<ReadingType>(READING_TYPES), []);
-  const episodeTypeSet = useMemo(() => new Set<EpisodeType>(EPISODE_TYPES), []);
+  const readingTypeSet = new Set<ReadingType>(READING_TYPES);
+  const episodeTypeSet = new Set<EpisodeType>(EPISODE_TYPES);
 
   const includedTagsParam = includedTags.join(',');
   const excludedTagsParam = excludedTags.join(',');
@@ -173,7 +173,7 @@ function StatsScreen() {
       }),
   });
 
-  const statsByType = useMemo(() => userStats?.statsByType ?? [], [userStats]);
+  const statsByType = userStats?.statsByType ?? [];
   const currentTypeStats =
     currentType === 'all'
       ? undefined
@@ -185,7 +185,7 @@ function StatsScreen() {
   const showEpisodeMetrics =
     currentType !== 'all' && episodeTypeSet.has(currentType as EpisodeType);
 
-  const immersedDaysCount = useMemo(() => {
+  const immersedDaysCount = (() => {
     if (!userStats) return 0;
 
     const relevantStats =
@@ -216,9 +216,9 @@ function StatsScreen() {
       if (value > 0) count += 1;
     });
     return count;
-  }, [currentType, statsByType, userStats]);
+  })();
 
-  const readingImmersedDaysCount = useMemo(() => {
+  const readingImmersedDaysCount = (() => {
     if (!userStats || !showReadingMetrics) return 0;
 
     const relevantStats =
@@ -251,9 +251,9 @@ function StatsScreen() {
       if (value > 0) count += 1;
     });
     return count;
-  }, [currentType, readingTypeSet, showReadingMetrics, statsByType, userStats]);
+  })();
 
-  const dailyAverageHoursDisplay = useMemo(() => {
+  const dailyAverageHoursDisplay = (() => {
     if (!userStats) return 0;
 
     if (!onlyImmersedDays) {
@@ -267,15 +267,9 @@ function StatsScreen() {
 
     if (!immersedDaysCount) return 0;
     return totalHours / immersedDaysCount;
-  }, [
-    currentType,
-    currentTypeStats,
-    immersedDaysCount,
-    onlyImmersedDays,
-    userStats,
-  ]);
+  })();
 
-  const dailyAverageCharsDisplay = useMemo(() => {
+  const dailyAverageCharsDisplay = (() => {
     if (!userStats || !showReadingMetrics) return 0;
 
     if (!onlyImmersedDays) {
@@ -289,16 +283,9 @@ function StatsScreen() {
 
     if (!readingImmersedDaysCount) return 0;
     return totalChars / readingImmersedDaysCount;
-  }, [
-    currentType,
-    currentTypeStats,
-    onlyImmersedDays,
-    readingImmersedDaysCount,
-    showReadingMetrics,
-    userStats,
-  ]);
+  })();
 
-  const avgReadingSpeed = useMemo(() => {
+  const avgReadingSpeed = (() => {
     if (!userStats || !userStats.totals.readingHours) return 0;
 
     const readingChars = statsByType
@@ -309,66 +296,66 @@ function StatsScreen() {
     if (!hours) return 0;
 
     return readingChars / hours;
-  }, [readingTypeSet, statsByType, userStats]);
+  })();
 
-  const logCountData = useMemo(() => {
+  const logCountData = (() => {
     return buildPieDataset(
       statsByType.map((stat) => ({
         label: capitalizeType(stat.type),
         value: stat.count || 0,
       }))
     );
-  }, [statsByType]);
+  })();
 
-  const logTimeData = useMemo(() => {
+  const logTimeData = (() => {
     return buildPieDataset(
       statsByType.map((stat) => ({
         label: capitalizeType(stat.type),
         value: stat.totalTimeHours || 0,
       }))
     );
-  }, [statsByType]);
+  })();
 
-  const logXpData = useMemo(() => {
+  const logXpData = (() => {
     return buildPieDataset(
       statsByType.map((stat) => ({
         label: capitalizeType(stat.type),
         value: stat.totalXp || 0,
       }))
     );
-  }, [statsByType]);
+  })();
 
-  const totalLogsValue = useMemo(() => {
+  const totalLogsValue = (() => {
     if (!userStats) return 0;
     if (currentType === 'all') return userStats.totals.totalLogs;
     return currentTypeStats?.count ?? 0;
-  }, [currentType, currentTypeStats, userStats]);
+  })();
 
-  const totalTimeHours = useMemo(() => {
+  const totalTimeHours = (() => {
     if (!userStats) return 0;
     if (currentType === 'all') return userStats.totals.totalTimeHours;
     return currentTypeStats?.totalTimeHours ?? 0;
-  }, [currentType, currentTypeStats, userStats]);
+  })();
 
-  const totalXp = useMemo(() => {
+  const totalXp = (() => {
     if (!userStats) return 0;
     if (currentType === 'all') return userStats.totals.totalXp;
     return currentTypeStats?.totalXp ?? 0;
-  }, [currentType, currentTypeStats, userStats]);
+  })();
 
-  const totalChars = useMemo(() => {
+  const totalChars = (() => {
     if (!userStats) return 0;
     if (currentType === 'all') return userStats.totals.totalChars;
     return currentTypeStats?.totalChars ?? 0;
-  }, [currentType, currentTypeStats, userStats]);
+  })();
 
-  const totalPages = useMemo(() => {
+  const totalPages = (() => {
     if (!userStats) return 0;
     if (currentType === 'all') {
       return statsByType.reduce((sum, stat) => sum + (stat.totalPages ?? 0), 0);
     }
     return currentTypeStats?.totalPages ?? 0;
-  }, [currentType, currentTypeStats, statsByType, userStats]);
+  })();
 
   const currentTypeDisplay = capitalizeType(currentType);
 

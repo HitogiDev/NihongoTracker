@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -238,9 +238,9 @@ function ClubDetailScreen() {
     },
   });
 
-  const canManageClub = useMemo(() => {
+  const canManageClub = (() => {
     return club?.userRole === 'leader' || club?.userRole === 'moderator';
-  }, [club?.userRole]);
+  })();
 
   // Pending membership requests (leaders only)
   const { data: pendingRequests, refetch: refetchPending } = useQuery({
@@ -368,16 +368,16 @@ function ClubDetailScreen() {
     }
   }, [club]);
 
-  const canLeaveClub = useMemo(() => {
+  const canLeaveClub = (() => {
     if (!club?.isUserMember) return false;
 
     // If user is leader and there are other members, they can't leave without transferring leadership
     if (club.userRole === 'leader' && club.memberCount > 1) return false;
 
     return true;
-  }, [club?.isUserMember, club?.userRole, club?.memberCount]);
+  })();
 
-  const getLeaveButtonText = useMemo(() => {
+  const getLeaveButtonText = (() => {
     if (!club) return 'Leave';
 
     if (club.userRole === 'leader') {
@@ -388,7 +388,7 @@ function ClubDetailScreen() {
     }
 
     return 'Leave Club';
-  }, [club]);
+  })();
 
   const handleLeaveClick = () => {
     if (!club) return;
