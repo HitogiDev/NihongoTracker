@@ -9,6 +9,8 @@ import {
   searchAdminLogs,
   resetUserPassword,
   getPatronStats,
+  adminSetPatreonStatus,
+  syncPatreonMembers,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -74,6 +76,18 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   resetUserPassword
+);
+router.post(
+  '/users/:id/patreon',
+  protect,
+  checkPermission(userRoles.admin),
+  adminSetPatreonStatus
+);
+router.post(
+  '/patreon/sync',
+  protect,
+  checkPermission(userRoles.admin),
+  syncPatreonMembers
 );
 
 router.get(

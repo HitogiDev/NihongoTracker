@@ -42,6 +42,7 @@ const PatreonSchema = new Schema<IPatreonData>(
     },
     lastChecked: { type: Date },
     isActive: { type: Boolean, default: false },
+    manualTierExpiry: { type: Date, default: null },
   },
   { _id: false }
 );

@@ -358,7 +358,7 @@ function Dashboard() {
           <p className="text-base-content/70 mt-1">{randomGreeting}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-          <Link to="/createlog" className="btn btn-primary btn-lg">
+          <Link to="/log" className="btn btn-primary btn-lg">
             <Plus className="w-5 h-5" />
             Create Log
           </Link>

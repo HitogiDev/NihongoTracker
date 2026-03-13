@@ -75,6 +75,15 @@ function QuickLog({
         setDefaultDuration(media.episodeDuration || 24);
       }
 
+      // For tv show, use episodeDuration if available, otherwise show custom duration field
+      if (media.type === 'tv show') {
+        if (media.episodeDuration) {
+          setDefaultDuration(media.episodeDuration);
+        } else {
+          setShowTime(true);
+        }
+      }
+
       // For movies, auto-fill duration if available
       if (media.type === 'movie' && media.runtime) {
         const totalMinutes = media.runtime;
@@ -337,6 +346,9 @@ function QuickLog({
         // Set default to 24 minutes if no duration from API
         setDefaultDuration(24);
         setCustomDuration(undefined);
+      } else if (logType === 'tv show') {
+        // No episodeDuration available — show the custom duration field
+        setShowTime(true);
       }
 
       // For movies, auto-fill duration if available
@@ -540,7 +552,9 @@ function QuickLog({
                                       placeholder={
                                         defaultDuration > 0
                                           ? `${defaultDuration}`
-                                          : '24'
+                                          : logType === 'anime'
+                                            ? '24'
+                                            : 'Duration in minutes'
                                       }
                                       className="input input-bordered input-sm"
                                       onChange={(e) => {
@@ -586,14 +600,14 @@ function QuickLog({
                                         (episodes *
                                           (customDuration ||
                                             defaultDuration ||
-                                            24)) /
+                                            (logType === 'anime' ? 24 : 0))) /
                                           60
                                       )}
                                       h{' '}
                                       {(episodes *
                                         (customDuration ||
                                           defaultDuration ||
-                                          24)) %
+                                          (logType === 'anime' ? 24 : 0))) %
                                         60}
                                       m
                                     </span>

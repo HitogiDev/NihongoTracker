@@ -12,6 +12,8 @@ import {
   forceSyncMeilisearchFn,
   adminUpdateUserFn,
   adminResetPasswordFn,
+  adminSetPatreonStatusFn,
+  syncPatreonMembersFn,
   searchAdminLogsFn,
   adminUpdateLogFn,
   adminDeleteLogFn,
@@ -92,6 +94,10 @@ function AdminScreen() {
     mod: false,
   });
   const [newPassword, setNewPassword] = useState('');
+  const [grantTier, setGrantTier] = useState<
+    'donator' | 'enthusiast' | 'consumer' | ''
+  >('');
+  const [grantDays, setGrantDays] = useState('');
 
   // Logs tab state
   const [logPage, setLogPage] = useState(1);
@@ -229,6 +235,34 @@ function AdminScreen() {
       setNewPassword('');
     },
     onError: () => toast.error('Failed to reset password'),
+  });
+
+  const setPatreonMutation = useMutation({
+    mutationFn: ({
+      userId,
+      tier,
+      days,
+    }: {
+      userId: string;
+      tier: 'donator' | 'enthusiast' | 'consumer' | null;
+      days?: number;
+    }) => adminSetPatreonStatusFn(userId, { tier, days }),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Patreon status updated');
+      setGrantTier('');
+      setGrantDays('');
+      queryClient.invalidateQueries({ queryKey: ['patronStats'] });
+    },
+    onError: () => toast.error('Failed to update patreon status'),
+  });
+
+  const syncPatreonMutation = useMutation({
+    mutationFn: syncPatreonMembersFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ['patronStats'] });
+    },
+    onError: () => toast.error('Failed to sync Patreon members'),
   });
 
   const updateLogMutation = useMutation({
@@ -632,6 +666,18 @@ function AdminScreen() {
                 <div className="card-body">
                   <h3 className="card-title mb-4">Paid Users Breakdown</h3>
                   <div className="space-y-3">
+                    <div className="flex justify-end">
+                      <button
+                        className="btn btn-sm btn-outline"
+                        onClick={() => syncPatreonMutation.mutate()}
+                        disabled={syncPatreonMutation.isPending}
+                      >
+                        {syncPatreonMutation.isPending ? (
+                          <span className="loading loading-spinner loading-xs"></span>
+                        ) : null}
+                        Sync Patreon Members
+                      </button>
+                    </div>
                     <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold">
@@ -1049,6 +1095,84 @@ function AdminScreen() {
                       </p>
                     </fieldset>
 
+                    <div className="divider">Patreon</div>
+
+                    <fieldset className="fieldset">
+                      <legend className="fieldset-legend">
+                        Patreon Status
+                      </legend>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="label">
+                            <span className="label-text">Tier</span>
+                          </label>
+                          <select
+                            className="select select-bordered w-full"
+                            value={grantTier}
+                            onChange={(e) =>
+                              setGrantTier(
+                                e.target.value as
+                                  | 'donator'
+                                  | 'enthusiast'
+                                  | 'consumer'
+                                  | ''
+                              )
+                            }
+                          >
+                            <option value="">Remove / None</option>
+                            <option value="donator">Donator</option>
+                            <option value="enthusiast">Enthusiast</option>
+                            <option value="consumer">Consumer</option>
+                          </select>
+                        </div>
+                        {grantTier && (
+                          <div>
+                            <label className="label">
+                              <span className="label-text">
+                                Duration (days)
+                              </span>
+                              <span className="label-text-alt text-base-content/60">
+                                Leave empty for indefinite
+                              </span>
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="input input-bordered w-full"
+                              placeholder="e.g. 30"
+                              value={grantDays}
+                              onChange={(e) => setGrantDays(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        <div className="flex justify-end">
+                          <button
+                            className={`btn btn-sm ${
+                              grantTier ? 'btn-warning' : 'btn-error'
+                            }`}
+                            type="button"
+                            onClick={() => {
+                              if (!selectedUser) return;
+                              setPatreonMutation.mutate({
+                                userId: selectedUser._id,
+                                tier: grantTier || null,
+                                days: grantDays ? Number(grantDays) : undefined,
+                              });
+                            }}
+                            disabled={setPatreonMutation.isPending}
+                          >
+                            {setPatreonMutation.isPending ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : grantTier ? (
+                              'Grant Tier'
+                            ) : (
+                              'Remove Status'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </fieldset>
+
                     <div className="modal-action">
                       <button
                         className="btn"
@@ -1056,6 +1180,8 @@ function AdminScreen() {
                           setEditUserOpen(false);
                           setSelectedUser(null);
                           setNewPassword('');
+                          setGrantTier('');
+                          setGrantDays('');
                         }}
                       >
                         Close

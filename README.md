@@ -49,7 +49,7 @@ Track your anime, manga, visual novels, books, videos, and audio immersion. Earn
 
 ### Stats
 
-![Stats](./screenshots/stats.png)
+![Stats](./screenshots/user-stats.png)
 
 *Detailed charts and statistics for your learning journey*
 

@@ -238,12 +238,10 @@ export async function handlePatreonWebhook(
     const webhookSecret = process.env.PATREON_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error('❌ PATREON_WEBHOOK_SECRET not configured');
       return res.status(500).json({ error: 'Webhook not configured' });
     }
 
     if (!signature) {
-      console.error('❌ Missing X-Patreon-Signature header');
       return res.status(403).json({ error: 'Missing signature' });
     }
 
@@ -255,27 +253,12 @@ export async function handlePatreonWebhook(
     const hmac = crypto.createHmac('md5', webhookSecret);
     const digest = hmac.update(rawBody).digest('hex');
 
-    console.log('🔐 Webhook signature verification:', {
-      received: signature,
-      computed: digest,
-      match: signature === digest,
-      bodyLength: rawBody.length,
-    });
-
     if (signature !== digest) {
-      console.error('❌ Invalid webhook signature', {
-        received: signature,
-        expected: digest,
-      });
       return res.status(403).json({ error: 'Invalid signature' });
     }
 
-    console.log('✅ Webhook signature valid');
-
     const event = req.body;
     const eventType = req.headers['x-patreon-event'] as string;
-
-    console.log(`📬 Patreon webhook received: ${eventType}`);
 
     // Handle different webhook events
     switch (eventType) {
@@ -289,7 +272,7 @@ export async function handlePatreonWebhook(
         break;
 
       default:
-        console.log(`ℹ️  Unhandled webhook event type: ${eventType}`);
+        break; // Ignore other events for now
     }
 
     return res.status(200).json({ received: true });
@@ -307,13 +290,7 @@ async function handlePledgeCreateOrUpdate(event: any) {
     const currentlyEntitledTiers =
       event.data?.relationships?.currently_entitled_tiers?.data || [];
 
-    console.log('📥 Webhook received:', {
-      eventType: 'pledge:create/update',
-      event: JSON.stringify(event),
-    });
-
     if (!patronId) {
-      console.error('❌ No patron ID found in webhook event');
       return;
     }
 
@@ -378,7 +355,6 @@ async function handlePledgeCreateOrUpdate(event: any) {
 
     return await user.save();
   } catch (error) {
-    console.error('Error handling pledge create/update:', error);
     return null;
   }
 }
@@ -386,10 +362,10 @@ async function handlePledgeCreateOrUpdate(event: any) {
 // Helper function to handle pledge deletion
 async function handlePledgeDelete(event: any) {
   try {
-    const patronId = event.data?.id;
+    const patronId =
+      event.data?.relationships?.user?.data?.id ?? event.data?.id;
 
     if (!patronId) {
-      console.error('No patron ID found in webhook data');
       return;
     }
 
@@ -405,7 +381,6 @@ async function handlePledgeDelete(event: any) {
       };
 
       await user.save();
-      console.log(`Removed benefits for user: ${user.username}`);
     }
   } catch (error) {
     console.error('Error handling pledge delete:', error);
@@ -436,14 +411,6 @@ export async function getPatreonStatus(
   }
 }
 
-// ============================================
-// OAUTH2 IMPLEMENTATION
-// ============================================
-
-/**
- * Initiate Patreon OAuth2 flow
- * Step 1: Generate authorization URL and redirect user to Patreon
- */
 export async function initiatePatreonOAuth(
   _req: Request,
   res: Response,
@@ -470,7 +437,6 @@ export async function initiatePatreonOAuth(
       );
     }
 
-    // Generate state token to prevent CSRF attacks
     const state = crypto.randomBytes(32).toString('hex');
 
     oauthStateStore.set(state, {
@@ -485,16 +451,12 @@ export async function initiatePatreonOAuth(
     authUrl.searchParams.append('response_type', 'code');
     authUrl.searchParams.append('client_id', clientId);
     authUrl.searchParams.append('redirect_uri', redirectUri);
-    // ✅ FIX: Agregar identity[email] explícitamente
+
     authUrl.searchParams.append(
       'scope',
       'identity identity[email] identity.memberships'
     );
     authUrl.searchParams.append('state', state);
-
-    console.log(
-      `🔗 OAuth initiated for user ${user.username}, redirect URI: ${redirectUri}`
-    );
 
     res.status(200).json({
       authUrl: authUrl.toString(),
@@ -505,10 +467,6 @@ export async function initiatePatreonOAuth(
   }
 }
 
-/**
- * Handle Patreon OAuth2 callback
- * Step 2: Exchange authorization code for access token and user data
- */
 export async function handlePatreonOAuthCallback(
   req: Request,
   res: Response,
@@ -518,13 +476,7 @@ export async function handlePatreonOAuthCallback(
     const { code, state } = req.query;
     const { backendUrl, frontendUrl } = getUrls();
 
-    console.log('📨 OAuth callback received:', {
-      code: !!code,
-      state: !!state,
-    });
-
     if (!code || !state) {
-      console.error('❌ Missing code or state parameters');
       return res.redirect(
         `${frontendUrl}/settings?patreon=error&message=missing_params`
       );
@@ -533,7 +485,6 @@ export async function handlePatreonOAuthCallback(
     // Verify state to prevent CSRF
     const stateData = oauthStateStore.get(state as string);
     if (!stateData) {
-      console.error('❌ Invalid or expired state token');
       return res.redirect(
         `${frontendUrl}/settings?patreon=error&message=invalid_state`
       );
@@ -546,13 +497,10 @@ export async function handlePatreonOAuthCallback(
     const redirectUri = `${backendUrl}/api/patreon/oauth/callback`;
 
     if (!clientId || !clientSecret) {
-      console.error('❌ OAuth credentials not configured');
       return res.redirect(
         `${frontendUrl}/settings?patreon=error&message=oauth_not_configured`
       );
     }
-
-    console.log('🔄 Exchanging code for access token...');
 
     // Exchange code for access token
     const tokenResponse = await axios.post(
@@ -572,9 +520,6 @@ export async function handlePatreonOAuthCallback(
     );
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
-    console.log('✅ Access token obtained');
-
-    console.log('🔄 Fetching user identity from Patreon...');
 
     const userFields = 'email,full_name,is_email_verified';
     const memberFields = 'patron_status,currently_entitled_amount_cents';
@@ -598,8 +543,6 @@ export async function handlePatreonOAuthCallback(
       }
     );
 
-    console.log('✅ Patreon identity response received.');
-
     console.log(JSON.stringify(identityResponse.data, null, 2));
 
     const patreonData = identityResponse.data.data;
@@ -611,8 +554,6 @@ export async function handlePatreonOAuthCallback(
       identityResponse.data.included?.filter(
         (item) => item.type === 'member'
       ) || [];
-
-    console.log(`👥 Found ${memberships.length} membership(s)`);
 
     // Find active membership (if any)
     const activeMembership = memberships.find(
@@ -658,19 +599,12 @@ export async function handlePatreonOAuthCallback(
 
     const isActive = !!activeMembership;
 
-    console.log(
-      `🎖️  User Patreon tier: ${tier || 'none'}, active: ${isActive}`
-    );
-
     const existingUser = await User.findOne({
       'patreon.patreonId': patreonId,
       _id: { $ne: stateData.userId },
     });
 
     if (existingUser) {
-      console.error(
-        `❌ Patreon account already linked to user: ${existingUser.username}`
-      );
       return res.redirect(
         `${frontendUrl}/settings?patreon=error&message=account_already_linked`
       );
@@ -679,7 +613,6 @@ export async function handlePatreonOAuthCallback(
     const user = await User.findById(stateData.userId);
 
     if (!user) {
-      console.error('❌ User not found:', stateData.userId);
       return res.redirect(
         `${frontendUrl}/settings?patreon=error&message=user_not_found`
       );
@@ -701,32 +634,14 @@ export async function handlePatreonOAuthCallback(
 
     await user.save();
 
-    console.log(
-      `✅ OAuth Success: User "${user.username}" linked to Patreon ID ${patreonId}`,
-      {
-        tier: tier || 'none',
-        isActive,
-        email: patreonEmail ? 'provided' : 'not provided (ok)',
-      }
-    );
-
     // Redirect to frontend with success
     res.redirect(`${frontendUrl}/settings?patreon=success`);
   } catch (error: any) {
-    console.error('❌ Patreon OAuth callback error:', {
-      message: error.message,
-      response: JSON.stringify(error.response?.data),
-      status: error.response?.status,
-    });
     const { frontendUrl } = getUrls();
     res.redirect(`${frontendUrl}/settings?patreon=error&message=oauth_failed`);
   }
 }
 
-/**
- * Refresh Patreon access token
- * Used when the access token expires
- */
 export async function refreshPatreonToken(
   userId: string
 ): Promise<string | null> {
@@ -736,7 +651,6 @@ export async function refreshPatreonToken(
     );
 
     if (!user?.patreon?.patreonRefreshToken) {
-      console.error('No refresh token available for user:', userId);
       return null;
     }
 
@@ -744,7 +658,6 @@ export async function refreshPatreonToken(
     const clientSecret = process.env.PATREON_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      console.error('Patreon OAuth not configured');
       return null;
     }
 
@@ -772,20 +685,12 @@ export async function refreshPatreonToken(
 
     await user.save();
 
-    console.log(`✅ Refreshed Patreon token for user: ${user.username}`);
-
     return access_token;
   } catch (error) {
-    console.error('Error refreshing Patreon token:', error);
     return null;
   }
 }
 
-// ============================================
-// OAUTH STATE MANAGEMENT
-// ============================================
-
-// In-memory store for OAuth states (use Redis in production)
 const oauthStateStore = new Map<
   string,
   { userId: string; createdAt: number }
@@ -798,5 +703,99 @@ function cleanupOAuthStates() {
     if (data.createdAt < tenMinutesAgo) {
       oauthStateStore.delete(state);
     }
+  }
+}
+
+export async function checkPatreonMembershipForUser(userId: string): Promise<{
+  tier: string | null;
+  isActive: boolean;
+  updated: boolean;
+} | null> {
+  try {
+    const user = await User.findById(userId).select(
+      '+patreon.patreonAccessToken +patreon.patreonRefreshToken'
+    );
+
+    if (!user?.patreon?.patreonId) return null;
+
+    let accessToken = user.patreon.patreonAccessToken;
+
+    // Refresh the token if it has expired or is missing
+    if (
+      !accessToken ||
+      (user.patreon.patreonTokenExpiry &&
+        new Date() >= user.patreon.patreonTokenExpiry)
+    ) {
+      accessToken = (await refreshPatreonToken(userId)) ?? undefined;
+      if (!accessToken) {
+        return null;
+      }
+    }
+
+    const identityResponse = await axios.get<IPatreonIdentityResponse>(
+      'https://www.patreon.com/api/oauth2/v2/identity',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: {
+          'fields[user]': 'email',
+          'fields[member]': 'patron_status,currently_entitled_amount_cents',
+          'fields[tier]': 'title,amount_cents',
+          include:
+            'memberships,memberships.currently_entitled_tiers,memberships.campaign',
+        },
+      }
+    );
+
+    const memberships =
+      identityResponse.data.included?.filter(
+        (item) => item.type === 'member'
+      ) || [];
+
+    const activeMembership = memberships.find(
+      (m) =>
+        m.attributes &&
+        m.relationships?.campaign?.data?.id ===
+          process.env.PATREON_CAMPAIGN_ID &&
+        m.attributes.patron_status === 'active_patron'
+    );
+
+    const tiers =
+      identityResponse.data.included?.filter((item) => item.type === 'tier') ||
+      [];
+
+    const campaignTier = tiers.find((t) =>
+      activeMembership?.relationships?.currently_entitled_tiers?.data.some(
+        (et) => et.id === t.id
+      )
+    );
+
+    const titleLower = campaignTier?.attributes.title.toLowerCase() ?? '';
+    let tier: 'donator' | 'enthusiast' | 'consumer' | null = null;
+    if (
+      titleLower.includes('consumer') ||
+      titleLower.includes('avid consumer')
+    ) {
+      tier = 'consumer';
+    } else if (
+      titleLower.includes('enthusiast') ||
+      titleLower.includes('immersion enthusiast')
+    ) {
+      tier = 'enthusiast';
+    } else if (titleLower.includes('donator')) {
+      tier = 'donator';
+    }
+
+    const isActive = !!activeMembership;
+    const changed =
+      user.patreon.tier !== tier || user.patreon.isActive !== isActive;
+
+    user.patreon.tier = tier;
+    user.patreon.isActive = isActive;
+    user.patreon.lastChecked = new Date();
+    await user.save();
+
+    return { tier, isActive, updated: changed };
+  } catch (error) {
+    return null;
   }
 }

@@ -23,9 +23,9 @@ import {
   CloudUpload,
   MonitorSmartphone,
   Heart,
-  // ArrowRight,
   ChevronDown,
   ChevronUp,
+  // ArrowRight,
 } from 'lucide-react';
 
 interface FeatureCategory {
@@ -89,6 +89,13 @@ function FeaturesScreen() {
           title: 'Import/Export Logs',
           description: 'Import from other trackers and export your data',
           icon: CloudUpload,
+        },
+        {
+          title: 'TextHooker Integration',
+          description:
+            'Track VN reading sessions in real time with character and line analytics synced to your logs',
+          icon: Book,
+          highlight: true,
         },
       ],
     },
@@ -304,286 +311,239 @@ function FeaturesScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-base-200 to-base-300">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        {/* Floating background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-xl animate-bounce-in delay-1000"></div>
-          <div className="absolute top-1/4 -left-8 w-32 h-32 bg-secondary/5 rounded-full blur-xl animate-bounce-in delay-1200"></div>
-          <div className="absolute bottom-1/3 right-1/4 w-20 h-20 bg-accent/5 rounded-full blur-xl animate-bounce-in delay-1400"></div>
-          <div className="absolute top-1/2 left-1/3 w-16 h-16 bg-info/5 rounded-full blur-xl animate-bounce-in delay-800"></div>
-          <div className="absolute bottom-1/4 left-1/5 w-28 h-28 bg-warning/5 rounded-full blur-xl animate-bounce-in delay-600"></div>
-        </div>
-
-        <div className="relative z-10 py-24 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <div className="badge badge-primary badge-lg mb-6 animate-fade-in-up">
-              Complete Feature Set
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-base-content mb-6 animate-fade-in-up delay-200">
-              Everything You Need to
-              <span className="text-primary"> Master Japanese</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-base-content/70 max-w-4xl mx-auto leading-relaxed mb-12 animate-fade-in-up delay-400">
-              Discover all the powerful features that make NihongoTracker the
-              ultimate companion for your Japanese immersion journey. From smart
-              tracking to social competition, we've got every aspect covered.
-            </p>
-
-            {/* Quick stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto animate-fade-in-up delay-600">
-              <div className="text-center hover-scale">
-                <div className="text-3xl font-bold text-primary">35+</div>
-                <div className="text-sm text-base-content/60">Features</div>
-              </div>
-              <div className="text-center hover-scale">
-                <div className="text-3xl font-bold text-secondary">6</div>
-                <div className="text-sm text-base-content/60">Media Types</div>
-              </div>
-              <div className="text-center hover-scale">
-                <div className="text-3xl font-bold text-accent">∞</div>
-                <div className="text-sm text-base-content/60">
-                  Progress Tracking
-                </div>
-              </div>
-              <div className="text-center hover-scale">
-                <div className="text-3xl font-bold text-info">100%</div>
-                <div className="text-sm text-base-content/60">
-                  Free Core Features
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Feature Categories */}
-      <div className="py-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-base-content mb-6 animate-fade-in-up">
-              Comprehensive Feature Set
-            </h2>
-            <p className="text-lg text-base-content/70 max-w-3xl mx-auto animate-fade-in-up delay-200">
-              Every feature is designed specifically for Japanese immersion
-              learning, built by a learner who understands the journey.
-            </p>
-          </div>
-
-          <div className="space-y-8 stagger-children">
-            {featureCategories.map((category, categoryIndex) => (
-              <div
-                key={category.id}
-                className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover-lift animate-fade-in-up"
-                style={{ animationDelay: `${0.4 + categoryIndex * 0.1}s` }}
+    <div className="pt-16 bg-base-100 min-h-screen">
+      {/* ─── Hero ─── */}
+      <section className="py-24 px-4 text-center">
+        <div className="max-w-3xl mx-auto">
+          <span className="badge badge-primary badge-outline mb-6">
+            Complete Feature Set
+          </span>
+          <h1 className="text-4xl md:text-6xl font-bold text-base-content mb-6 leading-tight">
+            Everything you need to{' '}
+            <span className="text-primary">master Japanese</span>
+          </h1>
+          <p className="text-xl text-base-content/60 mb-10 leading-relaxed">
+            Every feature is built specifically for Japanese immersion learners.
+            From graphs to gamification, and texthooker to clubs, we got you
+            covered.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/register" className="pointer-events-none">
+              <button
+                disabled
+                className="btn btn-primary btn-lg btn-disabled gap-2 px-10"
               >
-                <div className="card-body p-0">
-                  {/* Category Header */}
+                {/* Start for Free */}
+                {/* <ArrowRight size={18} /> */}
+                Coming Soon!
+              </button>
+            </Link>
+            <Link to="/ranking">
+              <button className="btn btn-ghost btn-lg px-8">
+                View Leaderboard
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Stats strip ─── */}
+      <section className="py-10 px-4 bg-base-200/50 border-y border-base-300/50">
+        <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div>
+            <div className="text-3xl font-bold text-primary">35+</div>
+            <div className="text-sm text-base-content/50 mt-1">Features</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-secondary">6</div>
+            <div className="text-sm text-base-content/50 mt-1">Media Types</div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-accent">&infin;</div>
+            <div className="text-sm text-base-content/50 mt-1">
+              Progress Tracking
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-success">100%</div>
+            <div className="text-sm text-base-content/50 mt-1">
+              Free Core Features
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Feature Categories ─── */}
+      <section className="py-20 px-4">
+        <div className="max-w-5xl mx-auto space-y-4">
+          {featureCategories.map((category) => (
+            <div
+              key={category.id}
+              className="rounded-2xl border border-base-300 overflow-hidden bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-300"
+            >
+              {/* Header */}
+              <button
+                className="w-full px-6 py-5 flex items-center justify-between gap-4 hover:bg-base-200/40 transition-colors duration-200 text-left"
+                onClick={() => toggleCategory(category.id)}
+              >
+                <div className="flex items-center gap-4 min-w-0">
                   <div
-                    className="p-4 sm:p-8 cursor-pointer hover:bg-base-200/50 transition-colors duration-300"
-                    onClick={() => toggleCategory(category.id)}
+                    className={`p-3 rounded-xl bg-base-200 ${category.color} shrink-0`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 sm:gap-6 min-w-0">
-                        <div
-                          className={`p-3 sm:p-4 rounded-xl bg-base-200/50 ${category.color} flex-shrink-0`}
-                        >
-                          <category.icon className="w-6 h-6 sm:w-8 sm:h-8" />
+                    <category.icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-bold text-base-content">
+                      {category.title}
+                    </h3>
+                    <p className="text-sm text-base-content/55">
+                      {category.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="badge badge-outline badge-sm hidden sm:flex">
+                    {category.features.length} features
+                  </span>
+                  {expandedCategory === category.id ? (
+                    <ChevronUp className="w-5 h-5 text-base-content/50" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-base-content/50" />
+                  )}
+                </div>
+              </button>
+
+              {/* Feature grid */}
+              {expandedCategory === category.id && (
+                <div className="px-6 pb-6 border-t border-base-300/60">
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-5">
+                    {category.features.map((feature, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-start gap-3 p-4 rounded-xl border ${
+                          feature.highlight
+                            ? 'border-primary/25 bg-primary/5'
+                            : 'border-base-300/60 bg-base-200/30'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-base-100 border border-base-300/60 flex items-center justify-center shrink-0 mt-0.5">
+                          <feature.icon size={15} className={category.color} />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-lg sm:text-2xl font-bold text-base-content mb-1 sm:mb-2">
-                            {category.title}
-                          </h3>
-                          <p className="text-base-content/70 text-sm sm:text-lg">
-                            {category.description}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-base-content">
+                              {feature.title}
+                            </span>
+                            {feature.planned && (
+                              <span className="badge badge-warning badge-xs">
+                                Planned
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-base-content/55 mt-0.5 leading-relaxed">
+                            {feature.description}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 self-end sm:self-auto">
-                        <div className="badge badge-outline badge-sm sm:badge-lg whitespace-nowrap">
-                          <span className="tabular-nums">
-                            {category.features.length} features
-                          </span>
-                        </div>
-                        <div className="btn btn-circle btn-ghost btn-sm sm:btn-md">
-                          {expandedCategory === category.id ? (
-                            <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Expanded Feature List */}
-                  {expandedCategory === category.id && (
-                    <div className="px-4 sm:px-8 pb-4 sm:pb-8 animate-slide-down">
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 stagger-children">
-                        {category.features.map((feature, featureIndex) => (
-                          <div
-                            key={featureIndex}
-                            className={`p-4 sm:p-6 rounded-xl border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover-lift animate-fade-in-up ${
-                              feature.highlight
-                                ? 'border-primary/30 bg-primary/5 hover:border-primary/50'
-                                : 'border-base-300 bg-base-50 hover:border-base-400'
-                            }`}
-                            style={{
-                              animationDelay: `${featureIndex * 0.05}s`,
-                            }}
-                          >
-                            <div className="flex items-start gap-3 sm:gap-4">
-                              <div
-                                className={`p-2 sm:p-3 rounded-lg flex-shrink-0 hover-scale ${feature.highlight ? 'bg-primary/20 text-primary' : 'bg-base-200/50 text-base-content/70'}`}
-                              >
-                                <feature.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-base-content mb-2 flex flex-wrap items-center gap-2">
-                                  <span className="break-words">
-                                    {feature.title}
-                                  </span>
-                                  {feature.highlight && (
-                                    <span className="badge badge-primary badge-xs flex-shrink-0">
-                                      Popular
-                                    </span>
-                                  )}
-                                  {feature.planned && (
-                                    <span className="badge badge-warning badge-xs flex-shrink-0">
-                                      Planned
-                                    </span>
-                                  )}
-                                </h4>
-                                <p className="text-sm text-base-content/70 leading-relaxed break-words">
-                                  {feature.description}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── How it works ─── */}
+      <section className="py-20 px-4 bg-base-200/30">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <span className="badge badge-accent badge-outline mb-4">
+              The Complete System
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-base-content">
+              How it all works together
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                Icon: Layers,
+                color: 'bg-primary/15 text-primary',
+                step: '1',
+                title: 'Track Everything',
+                desc: 'Log anime, manga, books, and any Japanese content with detailed metrics.',
+              },
+              {
+                Icon: ChartArea,
+                color: 'bg-secondary/15 text-secondary',
+                step: '2',
+                title: 'Analyze Progress',
+                desc: 'Get insights into your reading speed, time investment, and skill growth.',
+              },
+              {
+                Icon: CircleStar,
+                color: 'bg-accent/15 text-accent',
+                step: '3',
+                title: 'Stay Motivated',
+                desc: 'Earn XP, maintain streaks, and achieve goals while building habits.',
+              },
+              {
+                Icon: Users,
+                color: 'bg-info/15 text-info',
+                step: '4',
+                title: 'Connect & Compete',
+                desc: 'Join clubs, compare progress, and climb leaderboards.',
+              },
+            ].map(({ Icon, color, step, title, desc }) => (
+              <div key={step} className="text-center">
+                <div
+                  className={`w-16 h-16 ${color} rounded-full flex items-center justify-center mx-auto mb-4`}
+                >
+                  <Icon className="w-8 h-8" />
+                </div>
+                <p className="text-xs font-semibold text-base-content/35 uppercase tracking-widest mb-1">
+                  Step {step}
+                </p>
+                <h3 className="font-bold text-base-content mb-2">{title}</h3>
+                <p className="text-sm text-base-content/55 leading-relaxed">
+                  {desc}
+                </p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* How It All Works Together */}
-      <div className="py-24 px-4 bg-base-200/50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="badge badge-accent badge-lg mb-4 animate-fade-in-up">
-              The Complete System
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-base-content mb-6 animate-fade-in-up delay-200">
-              How It All Works Together
-            </h2>
-            <p className="text-lg text-base-content/70 max-w-3xl mx-auto animate-fade-in-up delay-400">
-              Every feature is designed to work in harmony, creating a
-              comprehensive ecosystem for your Japanese learning journey.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 stagger-children">
-            <div className="text-center animate-fade-in-up delay-600 hover-lift">
-              <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <Layers className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">1. Track Everything</h3>
-              <p className="text-base-content/70">
-                Log your anime, manga, books, and any Japanese content with
-                detailed metrics.
-              </p>
-            </div>
-
-            <div className="text-center animate-fade-in-up delay-800 hover-lift">
-              <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <ChartArea className="w-10 h-10 text-secondary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">2. Analyze Progress</h3>
-              <p className="text-base-content/70">
-                Get detailed insights into your reading speed, time investment,
-                and skill development.
-              </p>
-            </div>
-
-            <div className="text-center animate-fade-in-up delay-1000 hover-lift">
-              <div className="w-20 h-20 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <CircleStar className="w-10 h-10 text-accent" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">3. Stay Motivated</h3>
-              <p className="text-base-content/70">
-                Earn XP, maintain streaks, and achieve goals while building
-                consistent habits.
-              </p>
-            </div>
-
-            <div className="text-center animate-fade-in-up delay-1200 hover-lift">
-              <div className="w-20 h-20 bg-info/20 rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
-                <Users className="w-10 h-10 text-info" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">4. Connect & Compete</h3>
-              <p className="text-base-content/70">
-                Join clubs, compare progress, and climb leaderboards with fellow
-                learners.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="py-24 px-4 bg-gradient-to-r from-primary/10 to-secondary/10">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-base-content mb-6 animate-fade-in-up">
-            Ready to Experience
-            <span className="text-primary"> All These Features?</span>
+      {/* ─── CTA ─── */}
+      <section className="py-28 px-4 bg-gradient-to-b from-base-100 to-base-200/60">
+        <div className="max-w-xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
+            Ready to start?
           </h2>
-
-          <p className="text-xl text-base-content/70 mb-12 max-w-2xl mx-auto animate-fade-in-up delay-200">
-            Join hundreds of Japanese learners who are already using these
-            powerful features to accelerate their journey. Start tracking your
-            immersion today.
+          <p className="text-lg text-base-content/55 mb-10">
+            Free, start tracking your immersion.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center animate-fade-in-up delay-400">
-            <Link to="/register">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/register" className="pointer-events-none">
               <button
                 disabled
-                className="btn btn-disabled btn-primary btn-lg px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 hover-glow animate-pulse-glow"
+                className="btn btn-primary btn-lg btn-disabled px-12"
               >
                 Coming Soon!
-                {/*<ArrowRight className="ml-2 w-6 h-6" />*/}
               </button>
             </Link>
-
-            <Link to="/login">
-              <button className="btn btn-ghost btn-lg px-8 py-4 text-lg hover:bg-base-200 transition-all duration-300 hover-scale">
-                Already Have an Account?
+            <Link to="/ranking">
+              <button className="btn btn-ghost btn-lg">
+                Browse rankings →
               </button>
             </Link>
           </div>
-
-          <div className="flex flex-wrap justify-center items-center gap-6 mt-12 text-base-content/60 animate-fade-in-up delay-600 stagger-children">
-            <span className="flex items-center gap-2 hover-scale animate-fade-in">
-              <div className="w-2 h-2 bg-success rounded-full"></div>
-              Core Features Free Forever
-            </span>
-            <span className="flex items-center gap-2 hover-scale animate-fade-in">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              No Ads or Tracking
-            </span>
-            <span className="flex items-center gap-2 hover-scale animate-fade-in">
-              <div className="w-2 h-2 bg-secondary rounded-full"></div>
-              Built for Immersion Learners
-            </span>
-          </div>
+          <p className="mt-8 text-sm text-base-content/50">
+            Made with ❤️ by a fellow learner
+          </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

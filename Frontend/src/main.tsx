@@ -14,7 +14,6 @@ import {
 } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
-import AboutScreen from './screens/AboutScreen.tsx';
 import App from './App.tsx';
 import CalculatorScreen from './screens/CalculatorScreen.tsx';
 import FeaturesScreen from './screens/FeaturesScreen.tsx';
@@ -88,7 +87,6 @@ const router = createBrowserRouter(
         </Route>
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
-        <Route path="about" element={<AboutScreen />} />
         <Route path="pricing" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />
         <Route path="terms" element={<TermsOfServiceScreen />} />
@@ -104,7 +102,7 @@ const router = createBrowserRouter(
           <Route path="goals" element={<GoalsScreen />} />
         </Route>
         <Route element={<ProtectedRoutes />}>
-          <Route index path="createlog" element={<LogScreen />} />
+          <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route
             path=":mediaType/:mediaId/texthooker"

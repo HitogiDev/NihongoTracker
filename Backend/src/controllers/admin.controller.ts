@@ -5,6 +5,7 @@ import { IUser } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile } from '../services/uploadFile.js';
 import bcrypt from 'bcryptjs';
+import { checkPatreonMembershipForUser } from '../controllers/patreon.controller.js';
 
 export async function getAdminStats(
   _req: Request,
@@ -348,6 +349,102 @@ export async function searchAdminLogs(
       total,
       page,
       totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Admin: manually grant or revoke a patreon tier for a user
+export async function adminSetPatreonStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { tier, days } = req.body as {
+      tier: 'donator' | 'enthusiast' | 'consumer' | null;
+      days?: number;
+    };
+
+    const user = await User.findById(req.params.id);
+    if (!user) throw new customError('User not found', 404);
+
+    if (!tier) {
+      // Remove patreon status
+      user.patreon = {
+        ...user.patreon,
+        tier: null,
+        isActive: false,
+        manualTierExpiry: undefined,
+        lastChecked: new Date(),
+      };
+    } else {
+      const expiry =
+        days && days > 0
+          ? new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+          : undefined;
+      user.patreon = {
+        ...user.patreon,
+        tier,
+        isActive: true,
+        manualTierExpiry: expiry,
+        lastChecked: new Date(),
+      };
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: tier
+        ? `Patreon tier "${tier}" granted${
+            days ? ` for ${days} day(s)` : ' indefinitely'
+          }`
+        : 'Patreon status removed',
+      patreon: {
+        tier: user.patreon?.tier,
+        isActive: user.patreon?.isActive,
+        manualTierExpiry: user.patreon?.manualTierExpiry,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Admin: sync Patreon membership for all linked users
+export async function syncPatreonMembers(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Only users who completed OAuth (have a patreonId + tokens stored)
+    const users = await User.find({
+      'patreon.patreonId': { $exists: true, $ne: null },
+    })
+      .select('_id username')
+      .lean();
+
+    let checked = 0;
+    let updated = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      const result = await checkPatreonMembershipForUser(user._id.toString());
+      if (result === null) {
+        failed++;
+      } else {
+        checked++;
+        if (result.updated) updated++;
+      }
+    }
+
+    return res.status(200).json({
+      message: `Patreon sync complete: ${checked} checked, ${updated} updated, ${failed} skipped (no token)`,
+      checked,
+      updated,
+      failed,
     });
   } catch (error) {
     return next(error as customError);

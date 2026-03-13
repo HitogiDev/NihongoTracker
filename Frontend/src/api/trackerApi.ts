@@ -751,6 +751,24 @@ export async function getPatronStatsFn() {
   return data;
 }
 
+export async function adminSetPatreonStatusFn(
+  userId: string,
+  payload: { tier: 'donator' | 'enthusiast' | 'consumer' | null; days?: number }
+) {
+  const { data } = await api.post(`admin/users/${userId}/patreon`, payload);
+  return data;
+}
+
+export async function syncPatreonMembersFn(): Promise<{
+  message: string;
+  checked: number;
+  updated: number;
+  failed: number;
+}> {
+  const { data } = await api.post('admin/patreon/sync');
+  return data;
+}
+
 // Tags API
 export async function getUserTagsByUsernameFn(
   username: string

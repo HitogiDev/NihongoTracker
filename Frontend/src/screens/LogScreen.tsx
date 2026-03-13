@@ -827,6 +827,42 @@ function LogScreen() {
                         </div>
                       )}
 
+                      {logData.type === 'tv show' && !logData.duration && (
+                        <div className="form-control">
+                          <label className="label">
+                            <span className="label-text font-medium">
+                              Episode Duration (minutes)
+                            </span>
+                            <span className="label-text-alt text-warning">
+                              Needed to calculate time
+                            </span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="300"
+                            placeholder="Episode duration in minutes"
+                            className="input input-bordered w-full"
+                            onChange={(e) => {
+                              const customDuration = Number(e.target.value);
+                              handleFieldChange(
+                                'customDuration',
+                                customDuration
+                              );
+                              if (logData.watchedEpisodes > 0) {
+                                const totalMinutes =
+                                  logData.watchedEpisodes * customDuration;
+                                const hours = Math.floor(totalMinutes / 60);
+                                const minutes = totalMinutes % 60;
+                                handleFieldChange('hours', hours);
+                                handleFieldChange('minutes', minutes);
+                              }
+                            }}
+                            value={logData.customDuration || ''}
+                          />
+                        </div>
+                      )}
+
                       {showTimeInMain && (
                         <div className="form-control">
                           <label className="label">

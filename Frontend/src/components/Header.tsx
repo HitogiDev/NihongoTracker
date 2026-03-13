@@ -12,12 +12,13 @@ import {
   List,
   ShieldUser,
   House,
-  Info,
   Star,
   Menu,
   Heart,
   FileText,
   Search,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 import { useUserDataStore } from '../store/userData';
@@ -33,6 +34,12 @@ function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') || 'dark') !== 'light';
+    }
+    return true;
+  });
   const isAdmin = Array.isArray(user?.roles)
     ? (user?.roles as string[]).includes('admin')
     : user?.roles === 'admin';
@@ -59,6 +66,22 @@ function Header() {
   }
 
   // Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const onThemeChange = (e: CustomEvent) => {
+      setIsDark(e.detail !== 'light');
+    };
+    window.addEventListener('themeChange', onThemeChange as EventListener);
+    return () =>
+      window.removeEventListener('themeChange', onThemeChange as EventListener);
+  }, []);
+
+  function toggleTheme() {
+    const next = isDark ? 'light' : 'dark';
+    setIsDark(!isDark);
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: next }));
+  }
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -230,15 +253,6 @@ function Header() {
                     Ranking
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    to="/about"
-                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
-                  >
-                    <Info className="text-lg" />
-                    About
-                  </Link>
-                </li>
               </ul>
             )}
           </div>
@@ -330,14 +344,6 @@ function Header() {
                   Ranking
                 </Link>
               </li>
-              <li>
-                <Link
-                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
-                  to="/about"
-                >
-                  About
-                </Link>
-              </li>
             </ul>
           </div>
         )}
@@ -362,10 +368,7 @@ function Header() {
 
           {user ? (
             <>
-              <Link
-                className="btn btn-primary btn-sm sm:btn-md"
-                to="/createlog"
-              >
+              <Link className="btn btn-primary btn-sm sm:btn-md" to="/log">
                 <span className="hidden sm:inline">Create Log</span>
                 <span className="inline sm:hidden">Log</span>
               </Link>
@@ -375,7 +378,6 @@ function Header() {
                   role="button"
                   className="btn btn-sm sm:btn-md m-1 gap-2 max-w-full"
                 >
-                  {/* Username: full on md+, truncated on smaller screens to avoid overflow */}
                   <span className="hidden md:inline">{user.username}</span>
                   <span className="inline md:hidden truncate max-w-[5rem]">
                     {user.username}
@@ -501,6 +503,17 @@ function Header() {
             </>
           ) : (
             <>
+              <button
+                className="btn btn-ghost btn-sm sm:btn-md btn-circle"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                {isDark ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </button>
               <Link className="btn btn-primary btn-sm sm:btn-md" to="/login">
                 Sign In
               </Link>

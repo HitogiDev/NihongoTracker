@@ -39,6 +39,8 @@ export interface IPatreonData {
   badgeTextColor?: string;
   lastChecked?: Date;
   isActive?: boolean;
+  /** Set when tier was granted manually by an admin; auto-expires at this date */
+  manualTierExpiry?: Date;
 }
 
 export interface IUserMediaStatus extends Document {

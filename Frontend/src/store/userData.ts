@@ -29,20 +29,16 @@ export const useUserDataStore = create(
       },
       logout: () => {
         set({ user: null });
-        // Limpiar el store persistido
         useUserDataStore.persist.clearStorage();
       },
       handleTokenExpiration: () => {
-        // Función específica para manejar la expiración del token
         set({ user: null });
         useUserDataStore.persist.clearStorage();
 
-        // Only redirect to login if we're on a protected route
         if (typeof window !== 'undefined') {
-          const protectedRoutes = ['/createlog', '/matchmedia', '/settings'];
+          const protectedRoutes = ['/log', '/matchmedia', '/settings'];
           const currentPath = window.location.pathname;
 
-          // Check if current path is a protected route
           const isProtectedRoute = protectedRoutes.some(
             (route) =>
               currentPath === route || currentPath.startsWith(route + '/')

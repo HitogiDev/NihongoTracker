@@ -163,19 +163,6 @@ export default function MediaHeader() {
       },
     });
 
-  // Additional scroll reset when MediaHeader loading completes
-  useEffect(() => {
-    if (!isLoadingMedia && media) {
-      const timeoutId = setTimeout(() => {
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }, 100); // Slightly longer delay to ensure skeleton content is replaced
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isLoadingMedia, media]);
-
   if (mediaError) {
     if (mediaError instanceof AxiosError) {
       if (mediaError.status === 404) navigate('/404', { replace: true });
