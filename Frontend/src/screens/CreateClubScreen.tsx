@@ -37,7 +37,7 @@ function CreateClubScreen() {
     memberLimit: 50,
   });
 
-  // Media state (will be handled separately during form submission)
+  // Media state
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');

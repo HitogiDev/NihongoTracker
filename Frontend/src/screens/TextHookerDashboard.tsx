@@ -206,9 +206,9 @@ function TextHookerDashboard() {
     <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">TextHooker Dashboard</h1>
+          <h1 className="text-4xl font-bold mb-2">Texthooker Dashboard</h1>
           <p className="text-base-content/70">
-            Track your reading progress with the TextHooker
+            Track your reading progress with the texthooker
           </p>
         </div>
 
@@ -306,7 +306,7 @@ function TextHookerDashboard() {
             const media = session.mediaId as IMediaDocument;
             if (!media) return null;
             const totalChars = session.lines.reduce(
-              (sum, l) => sum + (l.charsCount || 0),
+              (sum, lines) => sum + (lines.charsCount || 0),
               0
             );
             return (

@@ -39,11 +39,12 @@ import {
   FileText,
   RotateCcw,
   Edit3,
+  HelpCircle,
 } from 'lucide-react';
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
 import { numberWithCommas } from '../utils/utils';
-import { IMediaDocument } from '../types';
+import { IMediaDocument, ITextSession } from '../types';
 import { toast, ToastContainer } from 'react-toastify';
 import QuickLog, { QuickLogInitialValues } from '../components/QuickLog';
 import { useUserDataStore } from '../store/userData';
@@ -125,6 +126,17 @@ function TextHooker() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
+  const [isResumePromptOpen, setIsResumePromptOpen] = useState(false);
+  const [resumePromptHandled, setResumePromptHandled] = useState(false);
+  const [activeSettingsTab, setActiveSettingsTab] = useState<
+    'display' | 'behavior'
+  >('display');
+  const [customCss, setCustomCss] = useState(() => {
+    return localStorage.getItem('texthooker_customCss') || '';
+  });
+  const [isClassHelpOpen, setIsClassHelpOpen] = useState(false);
+  const settingsPanelRef = useRef<HTMLDivElement | null>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const [timerEditHours, setTimerEditHours] = useState(0);
   const [timerEditMinutes, setTimerEditMinutes] = useState(0);
   const [timerEditSeconds, setTimerEditSeconds] = useState(0);
@@ -266,12 +278,97 @@ function TextHooker() {
   const timerInitializedFromServerRef = useRef(false);
   const lastSavedTimerRef = useRef<number>(0);
 
-  const timerKey = contentId || 'session';
+  const timerKey = contentId || inviteRoomFromParams || roomId || 'session';
   const [seconds, setSeconds] = useState(() => {
     const saved = localStorage.getItem(`texthooker_timer_${timerKey}`);
     return saved ? Number(saved) : 0;
   });
   const [isTimerActive, setIsTimerActive] = useState(true);
+
+  useEffect(() => {
+    const mediaTitle =
+      media?.title?.contentTitleEnglish ||
+      media?.title?.contentTitleRomaji ||
+      media?.title?.contentTitleNative;
+
+    if (mediaTitle) {
+      document.title = `${mediaTitle} • TextHooker • NihongoTracker`;
+      return;
+    }
+
+    document.title = 'TextHooker • NihongoTracker';
+  }, [
+    media?.title?.contentTitleEnglish,
+    media?.title?.contentTitleRomaji,
+    media?.title?.contentTitleNative,
+  ]);
+
+  useEffect(() => {
+    if (!contentId || !sessionData || resumePromptHandled) return;
+
+    const roomMode = searchParams.get('mode');
+    if (roomMode === 'host' || roomMode === 'guest') return;
+
+    const hasProgress =
+      (sessionData.lines?.length ?? 0) > 0 ||
+      (sessionData.timerSeconds ?? 0) > 0;
+
+    if (hasProgress) {
+      setIsTimerActive(false);
+      setIsResumePromptOpen(true);
+      return;
+    }
+
+    setResumePromptHandled(true);
+  }, [contentId, sessionData, resumePromptHandled, searchParams]);
+
+  const handleContinueCurrentSession = useCallback(() => {
+    setResumePromptHandled(true);
+    setIsResumePromptOpen(false);
+    lastActivityRef.current = Date.now();
+    setIsTimerActive(true);
+  }, []);
+
+  const handleStartNewMediaSession = useCallback(async () => {
+    if (!contentId) return;
+
+    try {
+      await Promise.all([
+        clearSessionLinesFn(contentId),
+        updateSessionTimerFn(contentId, 0),
+      ]);
+
+      initialStatsRef.current = { lines: 0, chars: 0 };
+      setHasInitializedStats(true);
+      setLines([]);
+      setSeconds(0);
+      lastSavedTimerRef.current = 0;
+      timerInitializedFromServerRef.current = true;
+
+      queryClient.setQueryData<ITextSession | undefined>(
+        ['textSession', contentId],
+        (previous) => {
+          if (!previous) return previous;
+          return {
+            ...previous,
+            lines: [],
+            timerSeconds: 0,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      );
+
+      toast.success('Started a new session');
+    } catch (error) {
+      toast.error('Failed to start a new session');
+      console.error(error);
+    } finally {
+      setResumePromptHandled(true);
+      setIsResumePromptOpen(false);
+      lastActivityRef.current = Date.now();
+      setIsTimerActive(true);
+    }
+  }, [contentId, queryClient]);
 
   // Use whichever is higher to avoid losing timer progress
   useEffect(() => {
@@ -372,6 +469,10 @@ function TextHooker() {
       String(continuousReconnect)
     );
   }, [continuousReconnect]);
+
+  useEffect(() => {
+    localStorage.setItem('texthooker_customCss', customCss);
+  }, [customCss]);
 
   useEffect(() => {
     localStorage.setItem(`texthooker_timer_${timerKey}`, String(seconds));
@@ -1030,11 +1131,41 @@ function TextHooker() {
     }
   }, [inviteLink]);
 
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (!settingsPanelRef.current) return;
+      const target = event.target as Node;
+      if (settingsButtonRef.current?.contains(target)) {
+        return;
+      }
+      if (!settingsPanelRef.current.contains(target)) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, [isSettingsOpen]);
+
   return (
-    <div className="bg-base-300 min-h-screen">
+    <div className="bg-base-300 min-h-screen th-root">
+      {customCss.trim() && <style>{customCss}</style>}
       <ToastContainer autoClose={2000} position="bottom-right" />
       {/* Top Bar */}
-      <div className="fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center gap-3">
+      <div className="fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center gap-3 th-topbar">
         <div className="font-mono text-base flex items-center gap-2">
           <Clock size={16} className="opacity-70" />
           {formatTime(seconds)}
@@ -1129,8 +1260,9 @@ function TextHooker() {
         </button>
 
         <button
+          ref={settingsButtonRef}
           type="button"
-          onClick={() => setIsSettingsOpen(true)}
+          onClick={() => setIsSettingsOpen((prev) => !prev)}
           className="btn btn-xs btn-ghost btn-square"
           title="Settings"
         >
@@ -1301,6 +1433,57 @@ function TextHooker() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button onClick={() => setIsTimerEditOpen(false)}>close</button>
+        </form>
+      </dialog>
+
+      {/* Resume Session Modal */}
+      <dialog className={`modal ${isResumePromptOpen ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-lg">
+          <h3 className="font-bold text-lg mb-2">Resume previous session?</h3>
+          <p className="text-base-content/70 mb-5">
+            We found saved progress for this media. Do you want to continue the
+            current session or start a new one?
+          </p>
+
+          <div className="bg-base-200 rounded-lg p-4 mb-5">
+            <div className="text-sm text-base-content/70 mb-1">
+              Current progress
+            </div>
+            <div className="text-sm font-medium">
+              {numberWithCommas(charsNumber)} characters
+            </div>
+            <div className="text-sm font-medium">
+              {formatTime(seconds)} tracked
+            </div>
+          </div>
+
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleContinueCurrentSession}
+            >
+              Continue current session
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                void handleStartNewMediaSession();
+              }}
+            >
+              Start new session
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button
+            onClick={() => {
+              handleContinueCurrentSession();
+            }}
+          >
+            close
+          </button>
         </form>
       </dialog>
 
@@ -1501,9 +1684,12 @@ function TextHooker() {
         </form>
       </dialog>
 
-      {/* Settings Modal */}
-      <dialog className={`modal ${isSettingsOpen ? 'modal-open' : ''}`}>
-        <div className="modal-box max-w-2xl">
+      {/* Settings Dropdown Panel */}
+      {isSettingsOpen && (
+        <div
+          ref={settingsPanelRef}
+          className="fixed top-16 right-3 z-[60] w-[min(92vw,52rem)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-xl border border-base-content/15 bg-base-100/95 backdrop-blur-md shadow-2xl p-5 th-settings-panel"
+        >
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Settings className="w-5 h-5 text-primary" />
@@ -1517,292 +1703,400 @@ function TextHooker() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div role="tablist" className="tabs tabs-border mb-5">
+            <button
+              role="tab"
+              className={`tab ${activeSettingsTab === 'display' ? 'tab-active' : ''}`}
+              onClick={() => setActiveSettingsTab('display')}
+            >
+              Display
+            </button>
+            <button
+              role="tab"
+              className={`tab ${activeSettingsTab === 'behavior' ? 'tab-active' : ''}`}
+              onClick={() => setActiveSettingsTab('behavior')}
+            >
+              Behavior & Connection
+            </button>
+          </div>
+
+          {activeSettingsTab === 'display' && (
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                <Monitor size={16} /> Display
-              </h4>
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
+                  <Monitor size={16} /> Display
+                </h4>
 
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">Vertical Text</span>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                    checked={vertical}
-                    onChange={toggleVertical}
-                  />
-                </label>
-              </div>
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">Vertical Text</span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={vertical}
+                      onChange={toggleVertical}
+                    />
+                  </label>
+                </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Font Size (px)</span>
-                </label>
-                <input
-                  type="number"
-                  min="12"
-                  max="72"
-                  value={fontSize}
-                  onChange={handleFontSizeChange}
-                  className="input input-bordered input-sm w-full"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Font Family</span>
-                </label>
-                <select
-                  value={fontFamily}
-                  onChange={handleFontFamilyChange}
-                  className="select select-bordered select-sm w-full"
-                >
-                  <option value="Noto Sans JP">Noto Sans JP</option>
-                  <option value="Meiryo">Meiryo</option>
-                  <option value="Yu Gothic">Yu Gothic</option>
-                  <option value="Hiragino Sans">Hiragino Sans</option>
-                  <option value="sans-serif">Sans Serif</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-xs">Line Height</span>
+                    <span className="label-text">Font Size (px)</span>
                   </label>
                   <input
                     type="number"
-                    min={0.5}
-                    max={4}
-                    step={0.1}
-                    value={lineSpacing}
-                    onChange={handleLineSpacingChange}
+                    min="12"
+                    max="72"
+                    value={fontSize}
+                    onChange={handleFontSizeChange}
                     className="input input-bordered input-sm w-full"
                   />
                 </div>
+
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text text-xs">Line Gap (px)</span>
+                    <span className="label-text">Font Family</span>
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={96}
-                    step={1}
-                    value={lineGap}
-                    onChange={handleLineGapChange}
-                    className="input input-bordered input-sm w-full"
-                  />
+                  <select
+                    value={fontFamily}
+                    onChange={handleFontFamilyChange}
+                    className="select select-bordered select-sm w-full"
+                  >
+                    <option value="Noto Sans JP">Noto Sans JP</option>
+                    <option value="Meiryo">Meiryo</option>
+                    <option value="Yu Gothic">Yu Gothic</option>
+                    <option value="Hiragino Sans">Hiragino Sans</option>
+                    <option value="sans-serif">Sans Serif</option>
+                  </select>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                <Activity size={16} /> Behavior & Connection
-              </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text text-xs">Line Height</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={0.5}
+                      max={4}
+                      step={0.1}
+                      value={lineSpacing}
+                      onChange={handleLineSpacingChange}
+                      className="input input-bordered input-sm w-full"
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text text-xs">Line Gap (px)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={96}
+                      step={1}
+                      value={lineGap}
+                      onChange={handleLineGapChange}
+                      className="input input-bordered input-sm w-full"
+                    />
+                  </div>
+                </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Auto-Pause Timeout (s)</span>
-                </label>
-                <input
-                  type="number"
-                  min={10}
-                  max={3600}
-                  value={autoPauseTimeout}
-                  onChange={handleAutoPauseTimeoutChange}
-                  className="input input-bordered input-sm w-full"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">Allow Paste during Pause</span>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                    checked={allowPasteDuringPause}
-                    onChange={(e) => setAllowPasteDuringPause(e.target.checked)}
-                  />
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    Allow new Line during Pause
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                    checked={allowNewLineDuringPause}
-                    onChange={(e) =>
-                      setAllowNewLineDuringPause(e.target.checked)
+                <div className="rounded-lg border border-base-300 bg-base-200/40 p-4 mt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold">Custom CSS</h4>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs"
+                      title="Show class name help"
+                      onClick={() => setIsClassHelpOpen(true)}
+                    >
+                      <HelpCircle size={16} />
+                    </button>
+                  </div>
+                  <p className="text-sm text-base-content/70 mb-3">
+                    Add CSS rules to customize the TextHooker layout. Saved
+                    locally in your browser.
+                  </p>
+                  <textarea
+                    className="textarea textarea-bordered w-full h-56 font-mono text-xs"
+                    value={customCss}
+                    onChange={(e) => setCustomCss(e.target.value)}
+                    placeholder={
+                      '.th-line-text {\n  letter-spacing: 0.02em;\n}\n\n.th-topbar {\n  border-radius: 12px;\n}'
                     }
                   />
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    Autostart Timer by Paste during Pause
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                    checked={autostartTimerByPaste}
-                    onChange={(e) => setAutostartTimerByPaste(e.target.checked)}
-                  />
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">
-                    Autostart Timer by Line during Pause
-                  </span>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                    checked={autostartTimerByLine}
-                    onChange={(e) => setAutostartTimerByLine(e.target.checked)}
-                  />
-                </label>
-              </div>
-
-              <div className="form-control">
-                <label className="label cursor-pointer">
-                  <span className="label-text">Continuous Reconnect</span>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary checkbox-sm"
-                    checked={continuousReconnect}
-                    onChange={(e) => setContinuousReconnect(e.target.checked)}
-                  />
-                </label>
-                <span className="text-xs opacity-60 ml-1">
-                  Keep trying to connect until successful
-                </span>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">WebSocket URL</span>
-                </label>
-                <input
-                  type="text"
-                  value={websocketUrl}
-                  onChange={(e) => setWebsocketUrl(e.target.value)}
-                  className="input input-bordered input-sm w-full"
-                  placeholder="ws://localhost:6677"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Collaboration Mode</span>
-                </label>
-                <select
-                  value={mode}
-                  onChange={(e) =>
-                    setMode(e.target.value as 'local' | 'host' | 'guest')
-                  }
-                  className="select select-bordered select-sm w-full"
-                >
-                  <option value="local">Local (Offline)</option>
-                  <option value="host">Host (Broadcast)</option>
-                  <option value="guest">Guest (Receive)</option>
-                </select>
-              </div>
-
-              {(mode === 'host' || mode === 'guest') && (
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Room ID</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={roomId}
-                      onChange={(e) => setRoomId(e.target.value)}
-                      className="input input-bordered input-sm w-full"
-                      placeholder="Enter Room Name"
-                      disabled={isRoomConnected}
-                    />
+                  <div className="flex justify-end mt-3">
                     <button
                       type="button"
-                      className={`btn btn-sm ${isRoomConnected ? 'btn-error' : 'btn-primary'}`}
-                      onClick={() => setIsRoomConnected(!isRoomConnected)}
-                      disabled={!roomId}
+                      className="btn btn-sm btn-outline"
+                      onClick={() => setCustomCss('')}
                     >
-                      {isRoomConnected
-                        ? 'Disconnect'
-                        : mode === 'host'
-                          ? 'Host'
-                          : 'Join'}
+                      Clear Custom CSS
                     </button>
                   </div>
                 </div>
-              )}
-
-              {mode === 'host' && roomId && inviteLink && (
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Invite Link</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={inviteLink}
-                      readOnly
-                      className="input input-bordered input-sm w-full"
-                    />
-                    <button
-                      type="button"
-                      className={`btn btn-sm ${inviteLinkCopied ? 'btn-success' : 'btn-outline'}`}
-                      onClick={handleCopyInviteLink}
-                    >
-                      {inviteLinkCopied ? (
-                        'Copied!'
-                      ) : (
-                        <span className="inline-flex items-center gap-1">
-                          <Share2 size={14} /> Copy
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                  <span className="text-xs opacity-60 mt-1">
-                    Share this URL so guests auto-join your room.
-                  </span>
-                </div>
-              )}
-
-              <div className="divider"></div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={handleCopyAll}
-                  className="btn btn-sm btn-outline"
-                >
-                  <Copy size={16} /> Copy All Lines
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="btn btn-sm btn-outline btn-error"
-                >
-                  <Trash2 size={16} /> Clear All Lines
-                </button>
               </div>
             </div>
+          )}
+
+          {activeSettingsTab === 'behavior' && (
+            <div className="space-y-4">
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
+                  <Activity size={16} /> Behavior & Connection
+                </h4>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Auto-Pause Timeout (s)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={10}
+                    max={3600}
+                    value={autoPauseTimeout}
+                    onChange={handleAutoPauseTimeoutChange}
+                    className="input input-bordered input-sm w-full"
+                  />
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">Allow Paste during Pause</span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={allowPasteDuringPause}
+                      onChange={(e) =>
+                        setAllowPasteDuringPause(e.target.checked)
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">
+                      Allow new Line during Pause
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={allowNewLineDuringPause}
+                      onChange={(e) =>
+                        setAllowNewLineDuringPause(e.target.checked)
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">
+                      Autostart Timer by Paste during Pause
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={autostartTimerByPaste}
+                      onChange={(e) =>
+                        setAutostartTimerByPaste(e.target.checked)
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">
+                      Autostart Timer by Line during Pause
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={autostartTimerByLine}
+                      onChange={(e) =>
+                        setAutostartTimerByLine(e.target.checked)
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span
+                      className="label-text"
+                      title="Keep trying to connect until successful"
+                    >
+                      Continuous Reconnect
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary checkbox-sm"
+                      checked={continuousReconnect}
+                      onChange={(e) => setContinuousReconnect(e.target.checked)}
+                    />
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">WebSocket URL</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={websocketUrl}
+                    onChange={(e) => setWebsocketUrl(e.target.value)}
+                    className="input input-bordered input-sm w-full"
+                    placeholder="ws://localhost:6677"
+                  />
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Collaboration Mode</span>
+                  </label>
+                  <select
+                    value={mode}
+                    onChange={(e) =>
+                      setMode(e.target.value as 'local' | 'host' | 'guest')
+                    }
+                    className="select select-bordered select-sm w-full"
+                  >
+                    <option value="local">Local (Offline)</option>
+                    <option value="host">Host (Broadcast)</option>
+                    <option value="guest">Guest (Receive)</option>
+                  </select>
+                </div>
+
+                {(mode === 'host' || mode === 'guest') && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Room ID</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={roomId}
+                        onChange={(e) => setRoomId(e.target.value)}
+                        className="input input-bordered input-sm w-full"
+                        placeholder="Enter Room Name"
+                        disabled={isRoomConnected}
+                      />
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${isRoomConnected ? 'btn-error' : 'btn-primary'}`}
+                        onClick={() => setIsRoomConnected(!isRoomConnected)}
+                        disabled={!roomId}
+                      >
+                        {isRoomConnected
+                          ? 'Disconnect'
+                          : mode === 'host'
+                            ? 'Host'
+                            : 'Join'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {mode === 'host' && roomId && inviteLink && (
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">Invite Link</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={inviteLink}
+                        readOnly
+                        className="input input-bordered input-sm w-full"
+                      />
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${inviteLinkCopied ? 'btn-success' : 'btn-outline'}`}
+                        onClick={handleCopyInviteLink}
+                      >
+                        {inviteLinkCopied ? (
+                          'Copied!'
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <Share2 size={14} /> Copy
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                    <span className="text-xs opacity-60 mt-1">
+                      Share this URL so guests auto-join your room.
+                    </span>
+                  </div>
+                )}
+
+                <div className="divider"></div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyAll}
+                    className="btn btn-sm btn-outline"
+                  >
+                    <Copy size={16} /> Copy All Lines
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="btn btn-sm btn-outline btn-error"
+                  >
+                    <Trash2 size={16} /> Clear All Lines
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <dialog className={`modal ${isClassHelpOpen ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-2xl">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg">Class Name Help</h3>
+            <button
+              onClick={() => setIsClassHelpOpen(false)}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <p className="text-sm text-base-content/70 mb-3">
+            Use these classes inside Custom CSS:
+          </p>
+          <div className="space-y-2 text-sm">
+            <div className="rounded bg-base-200 px-3 py-2">
+              <code>.th-root</code> - full TextHooker page
+            </div>
+            <div className="rounded bg-base-200 px-3 py-2">
+              <code>.th-topbar</code> - top control bar
+            </div>
+            <div className="rounded bg-base-200 px-3 py-2">
+              <code>.th-settings-panel</code> - settings dropdown panel
+            </div>
+            <div className="rounded bg-base-200 px-3 py-2">
+              <code>.th-line-list</code> - line list scroller
+            </div>
+            <div className="rounded bg-base-200 px-3 py-2">
+              <code>.th-line-item</code> - each captured line wrapper
+            </div>
+            <div className="rounded bg-base-200 px-3 py-2">
+              <code>.th-line-text</code> - line text content
+            </div>
+          </div>
+          <div className="modal-action">
+            <button className="btn" onClick={() => setIsClassHelpOpen(false)}>
+              Close
+            </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button onClick={() => setIsSettingsOpen(false)}>close</button>
+          <button onClick={() => setIsClassHelpOpen(false)}>close</button>
         </form>
       </dialog>
 
@@ -1926,7 +2220,7 @@ function TextHooker() {
 
       <div
         ref={listContainerRef}
-        className={listContainerClasses}
+        className={`${listContainerClasses} th-line-list`}
         style={listStyles}
         onScroll={handleScroll}
       >
@@ -1942,7 +2236,7 @@ function TextHooker() {
             return (
               <div
                 key={line.id}
-                className="group relative flex flex-col items-end justify-start px-2 pt-6 text-base-content shrink-0"
+                className="group relative flex flex-col items-end justify-start px-2 pt-6 text-base-content shrink-0 th-line-item"
                 style={{
                   minHeight: columnHeight,
                   height: columnHeight,
@@ -1951,7 +2245,7 @@ function TextHooker() {
               >
                 <span
                   lang="ja"
-                  className="block text-lg whitespace-pre-wrap wrap-break-word"
+                  className="block text-lg whitespace-pre-wrap wrap-break-word th-line-text"
                   style={verticalTextStyle}
                 >
                   {line.text}
@@ -1977,11 +2271,11 @@ function TextHooker() {
           return (
             <div
               key={line.id}
-              className="group relative px-2 py-2 text-base-content shrink-0"
+              className="group relative px-2 py-2 text-base-content shrink-0 th-line-item"
               style={marginStyles}
             >
               <p
-                className="whitespace-pre-wrap wrap-break-word"
+                className="whitespace-pre-wrap wrap-break-word th-line-text"
                 style={horizontalTextStyle}
               >
                 {line.text}
