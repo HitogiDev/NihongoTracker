@@ -1485,28 +1485,6 @@ function SettingsScreen() {
                       </label>
                     </div>
 
-                    <div className="form-control w-full">
-                      <label className="label">
-                        <span className="label-text font-medium">
-                          Discord ID
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        className="input input-bordered focus:input-primary transition-colors w-full"
-                        placeholder="Enter Discord ID (e.g., 123456789012345678)"
-                        value={discordId}
-                        onChange={(e) => setDiscordId(e.target.value)}
-                      />
-                      <label className="label">
-                        <span className="label-text-alt text-base-content/60">
-                          {user?.discordId
-                            ? `Current: ${user.discordId}`
-                            : 'Required for syncing external logs (Anilist, etc.)'}
-                        </span>
-                      </label>
-                    </div>
-
                     <div className="form-control md:col-span-2">
                       <label className="label">
                         <span className="label-text font-medium">About Me</span>
@@ -2099,7 +2077,9 @@ function SettingsScreen() {
                     </label>
                     <input
                       ref={emailRef}
+                      name="settings_email"
                       type="email"
+                      autoComplete="off"
                       className="input input-bordered focus:input-secondary transition-colors w-full"
                       placeholder="Enter your email address"
                       defaultValue={user?.email || ''}
@@ -2182,7 +2162,9 @@ function SettingsScreen() {
                     </label>
                     <input
                       ref={passwordRef}
+                      name="settings_current_password"
                       type="password"
+                      autoComplete="new-password"
                       className="input input-bordered focus:input-secondary transition-colors w-full"
                       placeholder="Enter current password"
                       onChange={(e) =>
@@ -2747,47 +2729,72 @@ function SettingsScreen() {
 
                   <div className="divider"></div>
 
-                  <div>
-                    <h3 className="font-semibold mb-3 text-base-content">
-                      Sync External Data
-                    </h3>
-                    <form onSubmit={handleSyncLogs} className="space-y-3">
-                      <p className="text-sm text-base-content/70">
-                        Sync logs from IniestaBot in the Manabe Discord server.
-                        Ensure your Discord ID is set for proper linking.
-                      </p>
-                      <button
-                        type="submit"
-                        className="btn btn-warning w-full"
-                        disabled={isSyncPending}
-                      >
-                        {isSyncPending ? (
-                          <>
-                            <span className="loading loading-spinner loading-sm"></span>
-                            Syncing...
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
-                            </svg>
-                            Sync Logs
-                          </>
-                        )}
-                      </button>
-                    </form>
-                  </div>
+                  <details className="collapse collapse-arrow bg-base-200 border border-base-300">
+                    <summary className="collapse-title font-semibold text-base-content">
+                      Advanced Options
+                    </summary>
+                    <div className="collapse-content space-y-4">
+                      <div className="form-control w-full">
+                        <label className="label">
+                          <span className="label-text font-medium">
+                            Discord ID
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          className="input input-bordered focus:input-primary transition-colors w-full"
+                          placeholder="Discord ID (e.g., 123456789012345678)"
+                          value={discordId}
+                          onChange={(e) => setDiscordId(e.target.value)}
+                        />
+                        <label className="label">
+                          <span className="label-text-alt text-base-content/60">
+                            {user?.discordId
+                              ? `Current: ${user.discordId}`
+                              : 'Needed for external sync'}
+                          </span>
+                        </label>
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold mb-3 text-base-content">
+                          Sync External Data
+                        </h3>
+                        <form onSubmit={handleSyncLogs}>
+                          <button
+                            type="submit"
+                            className="btn btn-warning w-full"
+                            disabled={isSyncPending}
+                          >
+                            {isSyncPending ? (
+                              <>
+                                <span className="loading loading-spinner loading-sm"></span>
+                                Syncing...
+                              </>
+                            ) : (
+                              <>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                  />
+                                </svg>
+                                Sync Logs
+                              </>
+                            )}
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>
@@ -2837,8 +2844,7 @@ function SettingsScreen() {
                     <div>
                       <h3 className="font-bold">Match Media</h3>
                       <div className="text-xs">
-                        Link your untracked logs to the correct anime, manga,
-                        books, visual novels, videos, movies, or TV shows.
+                        Link your untracked logs to the correct media type.
                       </div>
                     </div>
                   </div>
