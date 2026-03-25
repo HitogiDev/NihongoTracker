@@ -14,6 +14,7 @@ import { useUserDataStore } from '../store/userData';
 
 export default function TagManager() {
   const [editingTag, setEditingTag] = useState<ITag | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<ITag | null>(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('#3b82f6');
   const queryClient = useQueryClient();
@@ -77,6 +78,7 @@ export default function TagManager() {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       toast.success('Tag deleted successfully');
+      setTagToDelete(null);
     },
     onError: (error: AxiosError<{ message: string }>) => {
       toast.error(error.response?.data?.message || 'Failed to delete tag');
@@ -103,14 +105,13 @@ export default function TagManager() {
     });
   };
 
-  const handleDeleteTag = (id: string) => {
-    if (
-      window.confirm(
-        'Are you sure you want to delete this tag? This will remove it from all logs.'
-      )
-    ) {
-      deleteMutation.mutate(id);
-    }
+  const handleDeleteTag = (tag: ITag) => {
+    setTagToDelete(tag);
+  };
+
+  const handleConfirmDeleteTag = () => {
+    if (!tagToDelete?._id) return;
+    deleteMutation.mutate(tagToDelete._id);
   };
 
   const openCreateModal = () => {
@@ -243,7 +244,7 @@ export default function TagManager() {
                       </button>
                       <button
                         className="btn btn-ghost btn-sm btn-square text-error"
-                        onClick={() => handleDeleteTag(tag._id)}
+                        onClick={() => handleDeleteTag(tag)}
                         title="Delete tag"
                         disabled={deleteMutation.isPending}
                       >
@@ -444,6 +445,50 @@ export default function TagManager() {
           <button>close</button>
         </form>
       </dialog>
+
+      {tagToDelete && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-2">Delete tag?</h3>
+            <p className="text-base-content/70 mb-4">
+              This will remove the tag "{tagToDelete.name}" from all logs.
+            </p>
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setTagToDelete(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-error"
+                onClick={handleConfirmDeleteTag}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete tag'
+                )}
+              </button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => setTagToDelete(null)}
+              disabled={deleteMutation.isPending}
+            >
+              close
+            </button>
+          </form>
+        </dialog>
+      )}
     </>
   );
 }

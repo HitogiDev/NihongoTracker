@@ -58,6 +58,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<ILongTermGoal | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<ILongTermGoal | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -101,9 +102,18 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
   const handleDeleteGoal = (goalId: string | undefined) => {
     if (!goalId) return;
-    if (window.confirm('Are you sure you want to delete this goal?')) {
-      deleteMutation.mutate(goalId);
-    }
+    const goal =
+      activeLongTermGoals.find((item) => item._id === goalId) || null;
+    setGoalToDelete(goal);
+  };
+
+  const handleConfirmDeleteGoal = () => {
+    if (!goalToDelete?._id) return;
+    deleteMutation.mutate(goalToDelete._id, {
+      onSuccess: () => {
+        setGoalToDelete(null);
+      },
+    });
   };
 
   const handleEditGoal = (goal: ILongTermGoal) => {
@@ -170,6 +180,8 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   const activeGoals = goalsData?.goals.filter((goal) => goal.isActive) || [];
   const activeLongTermGoals =
     longTermGoalsData?.goals.filter((goal) => goal.isActive) || [];
+  const hasAnyActiveGoals =
+    activeGoals.length > 0 || activeLongTermGoals.length > 0;
 
   if (isLoading || isLoadingLongTerm) {
     return (
@@ -183,89 +195,80 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     );
   }
 
+  if (!hasAnyActiveGoals) {
+    return null;
+  }
+
   return (
     <>
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="card-title text-2xl">Immersion Goals</h2>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="btn btn-ghost btn-sm"
-              title="Manage Goals"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-          </div>
-
-          {activeGoals.length === 0 && activeLongTermGoals.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-base-content/70 mb-4">No active goals set</p>
+      {activeGoals.length > 0 && (
+        <div className="card bg-base-100 shadow-xl">
+          <div className="card-body">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="card-title text-2xl">Immersion Goals</h2>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="btn btn-primary"
+                className="btn btn-ghost btn-sm"
+                title="Manage Goals"
               >
-                Create Your First Goal
+                <Settings className="w-5 h-5" />
               </button>
             </div>
-          ) : (
-            <>
-              {/* Today's Progress */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Today's Progress</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {activeGoals.map((goal) => {
-                    const current = goalsData?.todayProgress[goal.type] || 0;
-                    const isCompleted =
-                      goalsData?.todayProgress.completed[goal.type];
-                    const percentage = getProgressPercentage(
-                      current,
-                      goal.target
-                    );
-                    const config = goalTypeConfig[goal.type];
-                    const Icon = config.icon;
 
-                    return (
-                      <div
-                        key={goal._id}
-                        className={`stat bg-base-200 rounded-lg p-4 relative ${
-                          isCompleted ? 'border-2 border-success' : ''
-                        }`}
-                      >
-                        <div className="stat-figure absolute right-4 top-4">
-                          {isCompleted ? (
-                            <CircleCheck className="w-8 h-8 text-success" />
-                          ) : (
-                            <Icon className={`w-8 h-8 ${config.color}`} />
-                          )}
-                        </div>
-                        <div className="stat-title text-xs">{config.label}</div>
-                        <div
-                          className={`stat-value text-lg ${isCompleted ? 'text-success' : config.color}`}
-                        >
-                          {formatProgress(current, goal.type)}
-                        </div>
-                        <div className="stat-desc">
-                          of {formatProgress(goal.target, goal.type)}{' '}
-                          {config.unit}
-                        </div>
-                        <div className="w-full bg-base-300 rounded-full h-2 mt-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              isCompleted ? 'bg-success' : 'bg-primary'
-                            }`}
-                            style={{ width: `${percentage}%` }}
-                          ></div>
-                        </div>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Today's Progress</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {activeGoals.map((goal) => {
+                  const current = goalsData?.todayProgress[goal.type] || 0;
+                  const isCompleted =
+                    goalsData?.todayProgress.completed[goal.type];
+                  const percentage = getProgressPercentage(
+                    current,
+                    goal.target
+                  );
+                  const config = goalTypeConfig[goal.type];
+                  const Icon = config.icon;
+
+                  return (
+                    <div
+                      key={goal._id}
+                      className={`stat bg-base-200 rounded-lg p-4 relative ${
+                        isCompleted ? 'border-2 border-success' : ''
+                      }`}
+                    >
+                      <div className="stat-figure absolute right-4 top-4">
+                        {isCompleted ? (
+                          <CircleCheck className="w-8 h-8 text-success" />
+                        ) : (
+                          <Icon className={`w-8 h-8 ${config.color}`} />
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="stat-title text-xs">{config.label}</div>
+                      <div
+                        className={`stat-value text-lg ${isCompleted ? 'text-success' : config.color}`}
+                      >
+                        {formatProgress(current, goal.type)}
+                      </div>
+                      <div className="stat-desc">
+                        of {formatProgress(goal.target, goal.type)}{' '}
+                        {config.unit}
+                      </div>
+                      <div className="w-full bg-base-300 rounded-full h-2 mt-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            isCompleted ? 'bg-success' : 'bg-primary'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Long-term Goals Section */}
       {activeLongTermGoals.length > 0 && (
@@ -787,6 +790,51 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 setIsEditModalOpen(false);
                 setEditingGoal(null);
               }}
+            >
+              close
+            </button>
+          </form>
+        </dialog>
+      )}
+
+      {goalToDelete && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-2">Delete long-term goal?</h3>
+            <p className="text-base-content/70 mb-4">
+              This will permanently delete your{' '}
+              {goalTypeConfig[goalToDelete.type]?.label.toLowerCase()} goal.
+            </p>
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setGoalToDelete(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-error"
+                onClick={handleConfirmDeleteGoal}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete goal'
+                )}
+              </button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => setGoalToDelete(null)}
+              disabled={deleteMutation.isPending}
             >
               close
             </button>

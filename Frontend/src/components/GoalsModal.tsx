@@ -85,6 +85,9 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   });
   const [editGoal, setEditGoal] = useState<Partial<IDailyGoal>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dailyGoalToDelete, setDailyGoalToDelete] = useState<IDailyGoal | null>(
+    null
+  );
 
   const queryClient = useQueryClient();
 
@@ -323,6 +326,16 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   };
 
   if (!isOpen) return null;
+
+  const handleRequestDeleteGoal = (goal: IDailyGoal) => {
+    setDailyGoalToDelete(goal);
+  };
+
+  const handleConfirmDeleteGoal = () => {
+    if (!dailyGoalToDelete?._id) return;
+    deleteGoal(dailyGoalToDelete._id);
+    setDailyGoalToDelete(null);
+  };
 
   return (
     <dialog className="modal modal-open">
@@ -710,7 +723,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => deleteGoal(goal._id!)}
+                              onClick={() => handleRequestDeleteGoal(goal)}
                               disabled={isDeletingGoal}
                               className="btn btn-ghost btn-sm text-error hover:bg-error/10"
                             >
@@ -736,6 +749,51 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       <form method="dialog" className="modal-backdrop">
         <button onClick={onClose}>close</button>
       </form>
+
+      {dailyGoalToDelete && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-2">Delete daily goal?</h3>
+            <p className="text-base-content/70 mb-4">
+              This will remove your daily{' '}
+              {goalTypeConfig[dailyGoalToDelete.type].label.toLowerCase()} goal.
+            </p>
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setDailyGoalToDelete(null)}
+                disabled={isDeletingGoal}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-error"
+                onClick={handleConfirmDeleteGoal}
+                disabled={isDeletingGoal}
+              >
+                {isDeletingGoal ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete goal'
+                )}
+              </button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button
+              onClick={() => setDailyGoalToDelete(null)}
+              disabled={isDeletingGoal}
+            >
+              close
+            </button>
+          </form>
+        </dialog>
+      )}
     </dialog>
   );
 }
