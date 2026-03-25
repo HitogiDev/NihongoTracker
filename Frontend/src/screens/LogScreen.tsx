@@ -537,7 +537,7 @@ function LogScreen() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-2">Log Your Immersion</h1>
             <p className="text-base-content/70">
-              Track your progress and stay motivated on your language learning
+              Track your progress and stay motivated on your language immersion
               journey.
             </p>
           </div>

@@ -71,7 +71,7 @@ async function generateMetaTags(
         return `
   <title>${title} - NihongoTracker</title>
   <meta property="og:title" content="${title} - NihongoTracker" />
-  <meta property="og:description" content="Track your ${typeLabel} progress • ${title}" />
+  <meta property="og:description" content="Track your ${typeLabel === 'Vn' ? 'Visual Novel' : typeLabel} progress • ${title}" />
   <meta property="og:image" content="${imageUrl}" />
   <meta property="og:url" content="${fullUrl}" />
   <meta property="og:type" content="website" />

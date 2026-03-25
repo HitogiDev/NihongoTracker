@@ -108,7 +108,7 @@ function FeaturesScreen() {
       features: [
         {
           title: 'Reading Speed Analysis',
-          description: 'Track your characters-per-hour improvement over time',
+          description: 'Track your characters per hour improvement over time',
           icon: Gauge,
           highlight: true,
         },

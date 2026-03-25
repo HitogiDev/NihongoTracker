@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 [![Patreon](https://img.shields.io/badge/Support-Patreon-FF424D?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/nihongotracker)
 
-Track your anime, manga, visual novels, books, videos, and audio immersion. Earn XP, level up, maintain streaks, and compete on leaderboards—all while mastering Japanese.
+Track your anime, manga, visual novels, books, videos, movies, tv shows and audio immersion. Earn XP, level up, maintain streaks, and compete on leaderboards—all while mastering Japanese.
 
 [**Live Demo**](https://nihongotracker.com) · [**Report Bug**](https://github.com/HitogiDev/NihongoTracker/issues) · [**Request Feature**](https://github.com/HitogiDev/NihongoTracker/issues)
 
