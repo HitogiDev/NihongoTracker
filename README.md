@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 [![Patreon](https://img.shields.io/badge/Support-Patreon-FF424D?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/nihongotracker)
 
-Track your anime, manga, visual novels, books, videos, movies, tv shows and audio immersion. Earn XP, level up, maintain streaks, and compete on leaderboards—all while mastering Japanese.
+Track your anime, manga, visual novels, books, videos, movies, TV shows, and audio immersion. Earn XP, level up, maintain streaks, and compete on leaderboards while mastering Japanese.
 
 [**Live Demo**](https://nihongotracker.com) · [**Report Bug**](https://github.com/HitogiDev/NihongoTracker/issues) · [**Request Feature**](https://github.com/HitogiDev/NihongoTracker/issues)
 
@@ -35,6 +35,8 @@ Track your anime, manga, visual novels, books, videos, movies, tv shows and audi
 
 ## 📸 Screenshots
 
+All screenshots below are the dark theme versions from the `screenshots` folder.
+
 ### Dashboard
 
 ![Dashboard](./screenshots/dashboard.png)
@@ -52,6 +54,18 @@ Track your anime, manga, visual novels, books, videos, movies, tv shows and audi
 ![Stats](./screenshots/user-stats.png)
 
 *Detailed charts and statistics for your learning journey*
+
+### Media Stats
+
+![Media Stats](./screenshots/media-stats.png)
+
+*Media-specific breakdowns and progress analytics*
+
+### TextHooker
+
+![TextHooker](./screenshots/texthooker.png)
+
+*Live text capture, timer, and session tools for reading immersion*
 
 ### Leaderboards
 
@@ -100,6 +114,14 @@ Track your anime, manga, visual novels, books, videos, movies, tv shows and audi
 - **Media Breakdown** — Understand your immersion distribution by type
 - **Goal Tracking** — Set daily and long-term goals with progress indicators
 
+### 📝 TextHooker Session Tools
+
+- **Live Text Capture** — Capture incoming lines from websocket and paste flows in real time
+- **Global Duplicate Prevention** — Optionally block identical lines from being added to the hooked text
+- **Apply-to-Current Deduping** — Enabling duplicate prevention can also clean existing duplicate lines in the active session
+- **Top Bar Display Toggles** — Show or hide timer, speed, characters, and lines independently
+- **Runtime Behavior Toggles** — Fine-tune pause behavior, autostart rules, and reconnect strategy
+
 ### 🌐 Platform Integrations
 
 | Platform    | Features                                        |
@@ -120,19 +142,22 @@ Track your anime, manga, visual novels, books, videos, movies, tv shows and audi
 
 ### Frontend
 
-- **Framework:** React 18 + TypeScript
+- **Framework:** React 19 + TypeScript 5
 - **Routing:** React Router v6
 - **State Management:** Zustand + TanStack Query
-- **Styling:** Tailwind CSS + DaisyUI
+- **Styling:** Tailwind CSS v4 + DaisyUI v5
 - **Charts:** Chart.js / Recharts
+- **Realtime:** Socket.IO client + WebSocket text capture
 - **Build Tool:** Vite
 
 ### Backend
 
-- **Runtime:** Node.js 20+
+- **Runtime:** Node.js 18+ (20+ recommended)
 - **Framework:** Express.js + TypeScript
 - **Database:** MongoDB + Mongoose
 - **Authentication:** JWT + bcrypt
+- **Realtime:** Socket.IO
+- **Search:** Meilisearch
 - **File Storage:** Firebase Storage
 - **External APIs:** GraphQL (AniList), REST (VNDB, YouTube)
 
@@ -142,7 +167,7 @@ Track your anime, manga, visual novels, books, videos, movies, tv shows and audi
 
 ### Prerequisites
 
-- **Node.js** 20 or higher
+- **Node.js** 18 or higher (20+ recommended)
 - **MongoDB** 6.0+ (local or Atlas)
 - **Firebase** account (for file storage)
 - **API Keys** (optional): AniList, VNDB, YouTube
@@ -218,18 +243,35 @@ In production, Express serves both the API and static frontend from a single ser
 
 Create a `Backend/.env` file with the following variables:
 
-| Variable                  | Required | Description                                     |
-| ------------------------- | -------- | ----------------------------------------------- |
-| `PORT`                    | No       | Server port (default: 3000)                     |
-| `NODE_ENV`                | No       | `development` or `production`                   |
-| `TOKEN_SECRET`            | **Yes**  | JWT signing secret (use a secure random string) |
-| `DATABASE_URL`            | **Yes**  | MongoDB connection string                       |
-| `FIREBASE_API_KEY`        | **Yes**  | Firebase API key                                |
-| `FIREBASE_PROJECT_ID`     | **Yes**  | Firebase project ID                             |
-| `FIREBASE_STORAGE_BUCKET` | **Yes**  | Firebase storage bucket                         |
-| `YOUTUBE_API_KEY`         | No       | YouTube Data API key (for video metadata)       |
-| `ANILIST_CLIENT_ID`       | No       | AniList OAuth client ID                         |
-| `ANILIST_CLIENT_SECRET`   | No       | AniList OAuth client secret                     |
+| Variable                        | Required | Description                                                           |
+| ------------------------------- | -------- | --------------------------------------------------------------------- |
+| `PORT`                          | No       | Server port (default: 3000)                                           |
+| `NODE_ENV`                      | No       | `development` or `production`                                         |
+| `TOKEN_SECRET`                  | **Yes**  | JWT signing secret (use a secure random string)                       |
+| `DATABASE_URL`                  | **Yes**  | MongoDB connection string                                             |
+| `PROD_DOMAIN`                   | No       | Production domain used for app links and metadata                     |
+| `BACKEND_URL`                   | No       | Backend base URL (default local: `http://localhost:3000`)             |
+| `FRONTEND_URL`                  | No       | Frontend base URL (default local: `http://localhost:5173`)            |
+| `FIREBASE_API_KEY`              | **Yes**  | Firebase API key                                                      |
+| `FIREBASE_AUTH_DOMAIN`          | **Yes**  | Firebase auth domain                                                  |
+| `FIREBASE_PROJECT_ID`           | **Yes**  | Firebase project ID                                                   |
+| `FIREBASE_STORAGE_BUCKET`       | **Yes**  | Firebase storage bucket                                               |
+| `FIREBASE_MESSAGING_SENDER_ID`  | **Yes**  | Firebase messaging sender ID                                          |
+| `FIREBASE_APP_ID`               | **Yes**  | Firebase app ID                                                       |
+| `FIREBASE_MEASUREMENT_ID`       | No       | Firebase analytics measurement ID                                     |
+| `YOUTUBE_API_KEY`               | No       | YouTube Data API key (for video metadata)                             |
+| `JITEN_API_URL`                 | No       | Dictionary API URL used by text tooling                               |
+| `MANABE_API_URL`                | No       | Manabe integration base URL                                           |
+| `MANABE_WEBHOOK_TOKEN`          | No       | Shared token for Manabe webhook imports                               |
+| `PATREON_CLIENT_ID`             | No       | Patreon OAuth client ID                                               |
+| `PATREON_CLIENT_SECRET`         | No       | Patreon OAuth client secret                                           |
+| `PATREON_WEBHOOK_SECRET`        | No       | Patreon webhook verification secret                                   |
+| `PATREON_CREATOR_ACCESS_TOKEN`  | No       | Patreon creator access token                                          |
+| `PATREON_CAMPAIGN_ID`           | No       | Patreon campaign ID                                                   |
+| `MAILTRAP_TOKEN`                | No       | Mailtrap API token for transactional email                            |
+| `MAILTRAP_INBOX_DOMAIN`         | No       | Mailtrap inbox domain                                                 |
+| `MEILISEARCH_HOST`              | No       | Meilisearch host URL                                                  |
+| `MEILISEARCH_API_KEY`           | No       | Meilisearch admin/search API key                                      |
 
 **Example `.env` file:**
 
@@ -238,14 +280,23 @@ PORT=3000
 NODE_ENV=development
 TOKEN_SECRET=your-super-secret-jwt-key-change-this
 DATABASE_URL=mongodb://localhost:27017/nihongotracker
+BACKEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 
 # Firebase Configuration
 FIREBASE_API_KEY=AIza...
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=123456789012
+FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 
 # Optional: External APIs
 YOUTUBE_API_KEY=your-youtube-api-key
+
+# Optional: Search
+MEILISEARCH_HOST=http://localhost:7700
+MEILISEARCH_API_KEY=your-meilisearch-key
 ```
 
 ---
