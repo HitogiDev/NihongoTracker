@@ -736,7 +736,7 @@ function StatsScreen() {
                           parseFloat((dailyAverageHoursDisplay || 0).toFixed(2))
                         )}
                         <span className="text-lg text-base-content/70 ml-1">
-                          days
+                          hours
                         </span>
                       </p>
                     </div>
