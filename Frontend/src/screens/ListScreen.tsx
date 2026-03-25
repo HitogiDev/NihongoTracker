@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   getImmersionListFn,
   getUntrackedLogsFn,
   updateUserFn,
   updateMediaCompletionStatusFn,
 } from '../api/trackerApi';
-import { useState, MouseEvent } from 'react';
+import { useState, MouseEvent, useEffect } from 'react';
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
 import DOMPurify from 'dompurify';
@@ -59,15 +59,85 @@ function ListScreen() {
   const { username } = useParams<{ username: string }>();
   const { user, setUser } = useUserDataStore();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<FilterOption>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('title');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [completionFilter, setCompletionFilter] =
-    useState<CompletionFilter>('all');
+
+  const filterOptions: FilterOption[] = [
+    'all',
+    'anime',
+    'manga',
+    'reading',
+    'vn',
+    'video',
+    'movie',
+    'tv show',
+  ];
+  const sortOptions: SortOption[] = ['title', 'type', 'recent'];
+  const viewOptions: ViewMode[] = ['grid', 'list'];
+  const completionOptions: CompletionFilter[] = [
+    'all',
+    'completed',
+    'incomplete',
+  ];
+
+  const initialQuery = searchParams.get('q') ?? '';
+  const initialFilter = searchParams.get('type');
+  const initialSort = searchParams.get('sort');
+  const initialView = searchParams.get('view');
+  const initialProgress = searchParams.get('progress');
+
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [selectedFilter, setSelectedFilter] = useState<FilterOption>(
+    filterOptions.includes(initialFilter as FilterOption)
+      ? (initialFilter as FilterOption)
+      : 'all'
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(
+    sortOptions.includes(initialSort as SortOption)
+      ? (initialSort as SortOption)
+      : 'title'
+  );
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    viewOptions.includes(initialView as ViewMode)
+      ? (initialView as ViewMode)
+      : 'grid'
+  );
+  const [completionFilter, setCompletionFilter] = useState<CompletionFilter>(
+    completionOptions.includes(initialProgress as CompletionFilter)
+      ? (initialProgress as CompletionFilter)
+      : 'all'
+  );
   const [showHideAlertModal, setShowHideAlertModal] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (searchQuery.trim()) {
+      params.set('q', searchQuery);
+    }
+    if (selectedFilter !== 'all') {
+      params.set('type', selectedFilter);
+    }
+    if (sortBy !== 'title') {
+      params.set('sort', sortBy);
+    }
+    if (viewMode !== 'grid') {
+      params.set('view', viewMode);
+    }
+    if (completionFilter !== 'all') {
+      params.set('progress', completionFilter);
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [
+    searchQuery,
+    selectedFilter,
+    sortBy,
+    viewMode,
+    completionFilter,
+    setSearchParams,
+  ]);
 
   const isOwnProfile = user?.username === username;
   const completionParams =

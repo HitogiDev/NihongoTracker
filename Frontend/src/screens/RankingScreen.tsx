@@ -12,7 +12,7 @@ import {
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
 import { useEffect, useRef, useState } from 'react';
 import { filterTypes, IStats } from '../types';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTimezone } from '../hooks/useTimezone';
 import { numberWithCommas } from '../utils/utils';
 import { DayPicker } from 'react-day-picker';
@@ -37,13 +37,55 @@ type RankedUser = {
 };
 
 function RankingScreen() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [limit] = useState(10);
-  const [xpFilter, setXpFilter] = useState<filterTypes>('userXp');
-  const [timeFilter, setTimeFilter] = useState<string>('month');
+  const modeParam = searchParams.get('mode');
+  const scopeParam = searchParams.get('scope');
+  const timeParam = searchParams.get('time');
+  const metricParam = searchParams.get('metric');
+  const mediumTypeParam = searchParams.get('mtype');
+  const mediumMetricParam = searchParams.get('mmetric');
+  const startParam = searchParams.get('start');
+  const endParam = searchParams.get('end');
+
+  const [xpFilter, setXpFilter] = useState<filterTypes>(() => {
+    if (
+      scopeParam === 'userXp' ||
+      scopeParam === 'readingXp' ||
+      scopeParam === 'listeningXp'
+    ) {
+      return scopeParam;
+    }
+    return 'userXp';
+  });
+  const [timeFilter, setTimeFilter] = useState<string>(() => {
+    if (
+      timeParam === 'all-time' ||
+      timeParam === 'today' ||
+      timeParam === 'week' ||
+      timeParam === 'month' ||
+      timeParam === 'year' ||
+      timeParam === 'custom'
+    ) {
+      return timeParam;
+    }
+    return 'month';
+  });
   const [displayMode, setDisplayMode] = useState<'xp' | 'hours' | 'chars'>(
-    'xp'
+    () => {
+      if (
+        metricParam === 'xp' ||
+        metricParam === 'hours' ||
+        metricParam === 'chars'
+      ) {
+        return metricParam;
+      }
+      return 'xp';
+    }
   );
-  const [mode, setMode] = useState<'global' | 'medium'>('global');
+  const [mode, setMode] = useState<'global' | 'medium'>(() =>
+    modeParam === 'medium' ? 'medium' : 'global'
+  );
   const [mediumType, setMediumType] = useState<
     | 'anime'
     | 'manga'
@@ -53,7 +95,21 @@ function RankingScreen() {
     | 'movie'
     | 'tv show'
     | 'audio'
-  >('anime');
+  >(() => {
+    if (
+      mediumTypeParam === 'anime' ||
+      mediumTypeParam === 'manga' ||
+      mediumTypeParam === 'reading' ||
+      mediumTypeParam === 'vn' ||
+      mediumTypeParam === 'video' ||
+      mediumTypeParam === 'movie' ||
+      mediumTypeParam === 'tv show' ||
+      mediumTypeParam === 'audio'
+    ) {
+      return mediumTypeParam;
+    }
+    return 'anime';
+  });
   const mediumMetricOptions: Record<
     | 'anime'
     | 'manga'
@@ -108,15 +164,57 @@ function RankingScreen() {
   };
   const [mediumMetric, setMediumMetric] = useState<
     'xp' | 'time' | 'episodes' | 'chars' | 'pages'
-  >(mediumMetricOptions[mediumType][0].value);
+  >(() => {
+    const allowed = mediumMetricOptions[
+      mediumTypeParam === 'anime' ||
+      mediumTypeParam === 'manga' ||
+      mediumTypeParam === 'reading' ||
+      mediumTypeParam === 'vn' ||
+      mediumTypeParam === 'video' ||
+      mediumTypeParam === 'movie' ||
+      mediumTypeParam === 'tv show' ||
+      mediumTypeParam === 'audio'
+        ? mediumTypeParam
+        : 'anime'
+    ].map((item) => item.value);
+
+    if (
+      mediumMetricParam &&
+      (
+        allowed as Array<'xp' | 'time' | 'episodes' | 'chars' | 'pages'>
+      ).includes(
+        mediumMetricParam as 'xp' | 'time' | 'episodes' | 'chars' | 'pages'
+      )
+    ) {
+      return mediumMetricParam as
+        | 'xp'
+        | 'time'
+        | 'episodes'
+        | 'chars'
+        | 'pages';
+    }
+
+    return mediumMetricOptions[
+      mediumTypeParam === 'anime' ||
+      mediumTypeParam === 'manga' ||
+      mediumTypeParam === 'reading' ||
+      mediumTypeParam === 'vn' ||
+      mediumTypeParam === 'video' ||
+      mediumTypeParam === 'movie' ||
+      mediumTypeParam === 'tv show' ||
+      mediumTypeParam === 'audio'
+        ? mediumTypeParam
+        : 'anime'
+    ][0].value;
+  });
   const { timezone } = useTimezone(); // Get user's timezone
-  const [startDate, setStartDate] = useState<string>(''); // YYYY-MM-DD
-  const [endDate, setEndDate] = useState<string>(''); // YYYY-MM-DD
+  const [startDate, setStartDate] = useState<string>(startParam || ''); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState<string>(endParam || ''); // YYYY-MM-DD
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
-    undefined
+    () => (startParam ? new Date(`${startParam}T00:00:00`) : undefined)
   );
-  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(
-    undefined
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(() =>
+    endParam ? new Date(`${endParam}T00:00:00`) : undefined
   );
   const startBtnRef = useRef<HTMLDivElement | null>(null);
   const endBtnRef = useRef<HTMLDivElement | null>(null);
@@ -246,6 +344,55 @@ function RankingScreen() {
       setDisplayMode('xp');
     }
   }, [xpFilter, displayMode]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (mode !== 'global') {
+      params.set('mode', mode);
+    }
+
+    if (timeFilter !== 'month') {
+      params.set('time', timeFilter);
+    }
+
+    if (startDate) {
+      params.set('start', startDate);
+    }
+
+    if (endDate) {
+      params.set('end', endDate);
+    }
+
+    if (mode === 'global') {
+      if (xpFilter !== 'userXp') {
+        params.set('scope', xpFilter);
+      }
+      if (displayMode !== 'xp') {
+        params.set('metric', displayMode);
+      }
+    } else {
+      if (mediumType !== 'anime') {
+        params.set('mtype', mediumType);
+      }
+
+      if (mediumMetric !== mediumMetricOptions[mediumType][0].value) {
+        params.set('mmetric', mediumMetric);
+      }
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [
+    mode,
+    timeFilter,
+    startDate,
+    endDate,
+    xpFilter,
+    displayMode,
+    mediumType,
+    mediumMetric,
+    setSearchParams,
+  ]);
 
   // Time filter options
   const timeFilterOptions = [
