@@ -10,6 +10,7 @@ Changelog.md
 migrateClubMediaVotings.mongo.js
 fix-anilist-images.ts
 vite.config.ts.timestamp-*
+./scripts
 
 # Logs
 logs

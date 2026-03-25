@@ -68,6 +68,17 @@ type PatronStatsResponse = {
   };
 };
 
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const exponent = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
+  const value = bytes / 1024 ** exponent;
+  return `${value.toFixed(exponent === 0 ? 0 : 2)} ${units[exponent]}`;
+}
+
 function AdminScreen() {
   const { user } = useUserDataStore();
   const isAdmin = Array.isArray(user?.roles)
@@ -726,7 +737,16 @@ function AdminScreen() {
                   <div className="space-y-4">
                     {(() => {
                       const mem = adminStats?.systemStats?.memoryUsage ?? 0;
-                      const disk = adminStats?.systemStats?.diskUsage ?? 0;
+                      const databaseTotal =
+                        adminStats?.systemStats?.databaseSizeBytes ??
+                        adminStats?.systemStats?.diskUsage ??
+                        0;
+                      const databaseData =
+                        adminStats?.systemStats?.databaseDataSizeBytes ?? 0;
+                      const databaseStorage =
+                        adminStats?.systemStats?.databaseStorageSizeBytes ?? 0;
+                      const databaseIndex =
+                        adminStats?.systemStats?.databaseIndexSizeBytes ?? 0;
                       const uptime = adminStats?.systemStats?.uptime ?? 0;
                       return (
                         <>
@@ -741,16 +761,31 @@ function AdminScreen() {
                               max={100}
                             ></progress>
                           </div>
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span>Disk Usage</span>
-                              <span>{disk.toFixed(1)}%</span>
+                          <div className="bg-base-200 p-3 rounded-lg space-y-2">
+                            <div className="flex justify-between">
+                              <span>Database Size</span>
+                              <span className="font-mono">
+                                {formatBytes(databaseTotal)}
+                              </span>
                             </div>
-                            <progress
-                              className="progress progress-success w-full"
-                              value={disk}
-                              max={100}
-                            ></progress>
+                            <div className="flex justify-between text-xs opacity-80">
+                              <span>Data</span>
+                              <span className="font-mono">
+                                {formatBytes(databaseData)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs opacity-80">
+                              <span>Storage</span>
+                              <span className="font-mono">
+                                {formatBytes(databaseStorage)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs opacity-80">
+                              <span>Indexes</span>
+                              <span className="font-mono">
+                                {formatBytes(databaseIndex)}
+                              </span>
+                            </div>
                           </div>
                           <div className="bg-base-200 p-3 rounded-lg">
                             <div className="flex justify-between">

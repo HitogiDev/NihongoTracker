@@ -15,6 +15,16 @@ const TextSessionSchema = new Schema<ITextSession>({
       createdAt: { type: Date, default: Date.now },
     },
   ],
+  sessionHistory: [
+    {
+      loggedAt: { type: Date, default: Date.now },
+      isShared: { type: Boolean, default: false },
+      connectedUsersCount: { type: Number, default: 0 },
+      charactersLogged: { type: Number, default: 0 },
+      readingSpeed: { type: Number, default: 0 },
+      sessionSeconds: { type: Number, default: 0 },
+    },
+  ],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   expireAt: { type: Date, index: { expires: 0 } },

@@ -98,7 +98,7 @@ function Header() {
       <div className="navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
         <div className="navbar-start">
           <div className="dropdown">
-            <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
+            <div tabIndex={0} role="button" className="btn btn-ghost xl:hidden">
               <Menu className="h-6 w-6" />
             </div>
             {user ? (
@@ -264,7 +264,7 @@ function Header() {
           </Link>
         </div>
         {user ? (
-          <div className="hidden lg:inline-flex">
+          <div className="hidden xl:inline-flex">
             {/* <QuickLog /> */}
             <ul className="inline-flex flex-row gap-6">
               <li>
@@ -318,7 +318,7 @@ function Header() {
             </ul>
           </div>
         ) : (
-          <div className="navbar-center hidden lg:flex">
+          <div className="navbar-center hidden xl:flex">
             <ul className="inline-flex flex-row gap-6">
               <li>
                 <Link
@@ -356,7 +356,7 @@ function Header() {
             aria-label="Search"
           >
             <Search className="w-4 h-4" />
-            <span className="hidden lg:inline text-xs text-base-content/50">
+            <span className="hidden xl:inline text-xs text-base-content/50">
               <kbd className="kbd kbd-xs">
                 {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
                   ? '⌘'

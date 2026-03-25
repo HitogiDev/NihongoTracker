@@ -17,8 +17,6 @@ import {
   Crown,
   ChevronDown,
   Search,
-  Gamepad2,
-  BookText,
   Clock,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
@@ -41,7 +39,6 @@ function TextHookerDashboard() {
   const [roomError, setRoomError] = useState<string | null>(null);
 
   // Media search state
-  const [mediaType, setMediaType] = useState<'vn' | 'reading'>('vn');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -56,29 +53,26 @@ function TextHookerDashboard() {
   });
 
   // Debounced search
-  const handleSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        return;
-      }
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-      setIsSearching(true);
-      try {
-        const results = await searchMediaFn({
-          type: mediaType,
-          search: query,
-          perPage: 10,
-        });
-        setSearchResults(results);
-      } catch (error) {
-        toast.error('Failed to search media');
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [mediaType]
-  );
+    setIsSearching(true);
+    try {
+      const results = await searchMediaFn({
+        type: 'vn',
+        search: query,
+        perPage: 10,
+      });
+      setSearchResults(results);
+    } catch (error) {
+      toast.error('Failed to search media');
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -100,36 +94,6 @@ function TextHookerDashboard() {
     };
   }, [searchQuery, handleSearch]);
 
-  // Reset search when media type changes
-  useEffect(() => {
-    setSearchResults([]);
-    setSelectedMedia(null);
-    // Re-search if there's a query when type changes
-    if (searchQuery.trim()) {
-      const search = async () => {
-        setIsSearching(true);
-        try {
-          const results = await searchMediaFn({
-            type: mediaType,
-            search: searchQuery,
-            perPage: 10,
-          });
-          setSearchResults(results);
-        } catch (error) {
-          toast.error('Failed to search media');
-        } finally {
-          setIsSearching(false);
-        }
-      };
-      search();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mediaType]);
-
-  const handleMediaTypeChange = (type: 'vn' | 'reading') => {
-    setMediaType(type);
-  };
-
   const handleStartMediaSession = () => {
     if (selectedMedia) {
       navigate(`/texthooker/${selectedMedia.contentId}`);
@@ -141,7 +105,6 @@ function TextHookerDashboard() {
     setSearchQuery('');
     setSearchResults([]);
     setSelectedMedia(null);
-    setMediaType('vn');
   };
 
   const deleteMutation = useMutation({
@@ -574,62 +537,8 @@ function TextHookerDashboard() {
           </div>
 
           <div className="space-y-4">
-            {/* Media Type Selector */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Media Type</span>
-              </label>
-              <div className="flex gap-2">
-                <label
-                  className={`label cursor-pointer border rounded-lg p-3 flex-1 transition-colors ${
-                    mediaType === 'vn'
-                      ? 'border-primary bg-primary/10'
-                      : 'border-base-300 hover:border-primary'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Gamepad2 size={18} />
-                    <span className="label-text font-medium">Visual Novel</span>
-                  </div>
-                  <input
-                    type="radio"
-                    name="media-type"
-                    className="radio radio-primary radio-sm"
-                    value="vn"
-                    checked={mediaType === 'vn'}
-                    onChange={() => handleMediaTypeChange('vn')}
-                  />
-                </label>
-                <label
-                  className={`label cursor-pointer border rounded-lg p-3 flex-1 transition-colors ${
-                    mediaType === 'reading'
-                      ? 'border-primary bg-primary/10'
-                      : 'border-base-300 hover:border-primary'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <BookText size={18} />
-                    <span className="label-text font-medium">Reading</span>
-                  </div>
-                  <input
-                    type="radio"
-                    name="media-type"
-                    className="radio radio-primary radio-sm"
-                    value="reading"
-                    checked={mediaType === 'reading'}
-                    onChange={() => handleMediaTypeChange('reading')}
-                  />
-                </label>
-              </div>
-            </div>
-
             {/* Search Input */}
             <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">
-                  Search {mediaType === 'vn' ? 'Visual Novel' : 'Book'}
-                </span>
-              </label>
               <label className="input w-full flex items-center gap-2">
                 <Search size={16} className="opacity-50" />
                 <input
@@ -637,7 +546,7 @@ function TextHookerDashboard() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="grow"
-                  placeholder={`Search for a ${mediaType === 'vn' ? 'visual novel' : 'book'}...`}
+                  placeholder="Search for a visual novel..."
                 />
                 {isSearching && (
                   <span className="loading loading-spinner loading-sm"></span>
@@ -697,10 +606,7 @@ function TextHookerDashboard() {
               ) : !searchQuery.trim() ? (
                 <div className="text-center py-8 text-base-content/50">
                   <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p>
-                    Search for a {mediaType === 'vn' ? 'visual novel' : 'book'}{' '}
-                    to start
-                  </p>
+                  <p>Search for a visual novel to start</p>
                 </div>
               ) : null}
             </div>

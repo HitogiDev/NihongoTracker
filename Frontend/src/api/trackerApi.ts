@@ -24,6 +24,7 @@ import {
   IRankingSummary,
   ITextSession,
   ITextLine,
+  ITextSessionHistoryEntry,
 } from '../types';
 
 const api = axiosInstance;
@@ -936,6 +937,17 @@ export async function clearSessionLinesFn(
 ): Promise<ITextSession> {
   const { data } = await api.delete<ITextSession>(
     `texthooker/${contentId}/lines/all`
+  );
+  return data;
+}
+
+export async function addSessionHistoryEntryFn(
+  contentId: string,
+  entry: Omit<ITextSessionHistoryEntry, 'loggedAt'> & { loggedAt?: string }
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>(
+    `texthooker/${contentId}/history`,
+    entry
   );
   return data;
 }

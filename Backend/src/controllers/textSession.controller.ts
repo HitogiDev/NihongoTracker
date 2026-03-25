@@ -61,6 +61,15 @@ interface IJitenResponse {
   };
 }
 
+interface IAddSessionHistoryBody {
+  loggedAt?: string;
+  isShared: boolean;
+  connectedUsersCount: number;
+  charactersLogged: number;
+  readingSpeed: number;
+  sessionSeconds: number;
+}
+
 export const getRecentSessions = async (
   _req: Request,
   res: Response,
@@ -312,6 +321,70 @@ export const clearSessionLines = async (
     if (!session) {
       throw new customError('Session not found', 404);
     }
+
+    res.status(200).json(session);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addSessionHistoryEntry = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { contentId } = req.params;
+    const {
+      loggedAt,
+      isShared,
+      connectedUsersCount,
+      charactersLogged,
+      readingSpeed,
+      sessionSeconds,
+    } = req.body as IAddSessionHistoryBody;
+
+    if (typeof isShared !== 'boolean') {
+      throw new customError('Invalid isShared value', 400);
+    }
+
+    const numericFields = [
+      connectedUsersCount,
+      charactersLogged,
+      readingSpeed,
+      sessionSeconds,
+    ];
+    if (
+      numericFields.some(
+        (value) => typeof value !== 'number' || Number.isNaN(value) || value < 0
+      )
+    ) {
+      throw new customError('Invalid session history metrics', 400);
+    }
+
+    const media = await Media.findOne({ contentId });
+    if (!media) {
+      throw new customError('Media not found', 404);
+    }
+
+    const historyEntry = {
+      loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
+      isShared,
+      connectedUsersCount: Math.floor(connectedUsersCount),
+      charactersLogged: Math.floor(charactersLogged),
+      readingSpeed: Math.round(readingSpeed),
+      sessionSeconds: Math.floor(sessionSeconds),
+    };
+
+    const session = await TextSession.findOneAndUpdate(
+      { userId, mediaId: media._id },
+      {
+        $push: { sessionHistory: historyEntry },
+        $set: { updatedAt: new Date() },
+      },
+      { new: true, upsert: true }
+    ).populate('mediaId', 'title coverImage contentImage contentId type');
 
     res.status(200).json(session);
   } catch (error) {

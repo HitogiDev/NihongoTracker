@@ -30,9 +30,7 @@ app.use(
   express.raw({ type: 'application/json' }),
   (req, res, next) => {
     if (req.body) {
-      // Guardar raw body para verificación de firma
       (req as any).rawBody = req.body.toString('utf8');
-      // Parsear JSON manualmente
       try {
         req.body = JSON.parse((req as any).rawBody);
       } catch (e) {

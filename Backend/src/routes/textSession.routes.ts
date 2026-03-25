@@ -6,6 +6,7 @@ import {
   addLinesToSession,
   removeLinesFromSession,
   clearSessionLines,
+  addSessionHistoryEntry,
   deleteSession,
   checkRoomExists,
   updateSessionTimer,
@@ -18,6 +19,7 @@ router.get('/room/:roomId/exists', protect, checkRoomExists);
 router.get('/:contentId', protect, getSessionByContentId);
 router.post('/:contentId/lines', protect, addLinesToSession);
 router.patch('/:contentId/timer', protect, updateSessionTimer);
+router.post('/:contentId/history', protect, addSessionHistoryEntry);
 router.delete('/:contentId/lines', protect, removeLinesFromSession);
 router.delete('/:contentId/lines/all', protect, clearSessionLines);
 router.delete('/:contentId', protect, deleteSession);

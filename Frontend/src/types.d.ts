@@ -855,6 +855,15 @@ export interface ITextLine {
   createdAt: string;
 }
 
+export interface ITextSessionHistoryEntry {
+  loggedAt: string;
+  isShared: boolean;
+  connectedUsersCount: number;
+  charactersLogged: number;
+  readingSpeed: number;
+  sessionSeconds: number;
+}
+
 export interface ITextSession {
   _id: string;
   roomId?: string;
@@ -862,6 +871,7 @@ export interface ITextSession {
   mediaId?: string | IMediaDocument;
   timerSeconds?: number;
   lines: ITextLine[];
+  sessionHistory?: ITextSessionHistoryEntry[];
   createdAt: string;
   updatedAt?: string;
 }

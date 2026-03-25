@@ -13,25 +13,21 @@ export async function getAdminStats(
   next: NextFunction
 ) {
   try {
-    // Get total counts
     const [totalUsers, totalLogs] = await Promise.all([
       User.countDocuments(),
       Log.countDocuments(),
     ]);
 
-    // Get active users (users with activity in last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const activeUsers = await Log.distinct('user', {
       createdAt: { $gte: thirtyDaysAgo },
     }).then((userIds) => userIds.length);
 
-    // Get new users this week
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const newUsersThisWeek = await User.countDocuments({
       createdAt: { $gte: oneWeekAgo },
     });
 
-    // Get total XP from users and total hours from logs
     const [totalUserXpAgg, totalMinutesAgg] = await Promise.all([
       User.aggregate([
         {
@@ -51,14 +47,18 @@ export async function getAdminStats(
       ]),
     ]);
 
-    // Get top users
+    const dbStats = await User.db.db?.stats();
+    const dbDataSizeBytes = dbStats?.dataSize || 0;
+    const dbStorageSizeBytes = dbStats?.storageSize || 0;
+    const dbIndexSizeBytes = dbStats?.indexSize || 0;
+    const dbTotalSizeBytes = dbStorageSizeBytes + dbIndexSizeBytes;
+
     const topUsers = await User.find()
       .sort({ 'stats.userXp': -1 })
       .limit(10)
       .select('username stats.userXp')
       .lean();
 
-    // Get logs count for top users
     const topUsersWithLogs = await Promise.all(
       topUsers.map(async (user) => {
         const [logsCount, minutesAgg] = await Promise.all([
@@ -96,7 +96,11 @@ export async function getAdminStats(
           ? (process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) *
             100
           : 0,
-        diskUsage: 42.8, // Placeholder - would need actual disk usage calculation
+        diskUsage: dbTotalSizeBytes,
+        databaseSizeBytes: dbTotalSizeBytes,
+        databaseDataSizeBytes: dbDataSizeBytes,
+        databaseStorageSizeBytes: dbStorageSizeBytes,
+        databaseIndexSizeBytes: dbIndexSizeBytes,
         uptime: process.uptime() / (24 * 60 * 60), // Convert seconds to days
       },
     };

@@ -779,6 +779,15 @@ export interface ITextLine {
   createdAt: Date;
 }
 
+export interface ITextSessionHistoryEntry {
+  loggedAt: Date;
+  isShared: boolean;
+  connectedUsersCount: number;
+  charactersLogged: number;
+  readingSpeed: number;
+  sessionSeconds: number;
+}
+
 export interface ITextSession extends Document {
   roomId: string;
   hostToken?: string;
@@ -786,6 +795,7 @@ export interface ITextSession extends Document {
   mediaId?: Types.ObjectId;
   timerSeconds: number;
   lines: ITextLine[];
+  sessionHistory: ITextSessionHistoryEntry[];
   createdAt: Date;
   updatedAt?: Date;
   expireAt?: Date;

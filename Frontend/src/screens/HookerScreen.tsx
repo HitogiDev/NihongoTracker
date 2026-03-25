@@ -12,6 +12,7 @@ import {
   addLinesToSessionFn,
   removeLinesFromSessionFn,
   clearSessionLinesFn,
+  addSessionHistoryEntryFn,
   createLogFn,
   getMediaFn,
   getUserMediaStatsFn,
@@ -65,6 +66,21 @@ type Member = {
 const JAPANESE_CHAR_REGEX =
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu;
 
+const HOOKER_THEME_OPTIONS = [
+  { value: '', label: 'Use app theme' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'cupcake', label: 'Cupcake' },
+  { value: 'bumblebee', label: 'Bumblebee' },
+  { value: 'emerald', label: 'Emerald' },
+  { value: 'corporate', label: 'Corporate' },
+  { value: 'retro', label: 'Retro' },
+  { value: 'garden', label: 'Garden' },
+  { value: 'forest', label: 'Forest' },
+  { value: 'winter', label: 'Winter' },
+  { value: 'sunset', label: 'Sunset' },
+] as const;
+
 function countJapaneseCharacters(value: string) {
   return (value.match(JAPANESE_CHAR_REGEX) ?? []).length;
 }
@@ -89,6 +105,15 @@ function TextHooker() {
   const contentId = paramContentId || mediaId;
   const queryClient = useQueryClient();
   const user = useUserDataStore((state) => state.user);
+  const hasPatreonAccess =
+    (user?.patreon?.isActive && user?.patreon?.tier) ||
+    user?.roles?.includes('admin');
+  const availableHookerThemes = hasPatreonAccess
+    ? HOOKER_THEME_OPTIONS
+    : HOOKER_THEME_OPTIONS.filter(
+        (themeOption) =>
+          themeOption.value === 'light' || themeOption.value === 'dark'
+      );
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [quickLogDefaults, setQuickLogDefaults] =
     useState<QuickLogInitialValues | null>(null);
@@ -105,6 +130,9 @@ function TextHooker() {
     const saved = localStorage.getItem('texthooker_lineGap');
     return saved ? Number(saved) : 16;
   });
+  const [hookerTheme, setHookerTheme] = useState(() => {
+    return localStorage.getItem('texthooker_theme') || '';
+  });
   const [lineMarginBlock] = useState(0);
   const [lineMarginInline] = useState(0);
   const [mode, setMode] = useState<'local' | 'host' | 'guest'>('local');
@@ -112,6 +140,7 @@ function TextHooker() {
   const [hostToken, setHostToken] = useState<string | null>(null);
   const [isRoomConnected, setIsRoomConnected] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const roomSocketRef = useRef<Socket | null>(null);
   const [connectedMembers, setConnectedMembers] = useState<Member[]>([]);
 
   const sortedMembers = (() => {
@@ -126,6 +155,7 @@ function TextHooker() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
+  const [isResetTimerConfirmOpen, setIsResetTimerConfirmOpen] = useState(false);
   const [isResumePromptOpen, setIsResumePromptOpen] = useState(false);
   const [resumePromptHandled, setResumePromptHandled] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<
@@ -142,7 +172,6 @@ function TextHooker() {
   const [timerEditSeconds, setTimerEditSeconds] = useState(0);
   const initialStatsRef = useRef({ lines: 0, chars: 0 });
   const inviteAppliedRef = useRef(false);
-  const [hasInitializedStats, setHasInitializedStats] = useState(false);
   const [isLogAnimating, setIsLogAnimating] = useState(false);
   const [animatedChars, setAnimatedChars] = useState(0);
   const [targetChars, setTargetChars] = useState(0);
@@ -199,20 +228,8 @@ function TextHooker() {
         japaneseCount: l.charsCount,
       }));
       setLines(mappedLines);
-
-      if (!hasInitializedStats) {
-        const totalChars = mappedLines.reduce(
-          (sum, l) => sum + (l.japaneseCount || 0),
-          0
-        );
-        initialStatsRef.current = {
-          lines: mappedLines.length,
-          chars: totalChars,
-        };
-        setHasInitializedStats(true);
-      }
     }
-  }, [sessionData, hasInitializedStats]);
+  }, [sessionData]);
 
   const { mutate: saveLines } = useMutation({
     mutationFn: (newLines: LineEntry[]) => {
@@ -277,13 +294,20 @@ function TextHooker() {
   const lastActivityRef = useRef(Date.now());
   const timerInitializedFromServerRef = useRef(false);
   const lastSavedTimerRef = useRef<number>(0);
+  const pendingHistoryEntryRef = useRef<{
+    isShared: boolean;
+    connectedUsersCount: number;
+    charactersLogged: number;
+    readingSpeed: number;
+    sessionSeconds: number;
+  } | null>(null);
 
   const timerKey = contentId || inviteRoomFromParams || roomId || 'session';
   const [seconds, setSeconds] = useState(() => {
     const saved = localStorage.getItem(`texthooker_timer_${timerKey}`);
     return saved ? Number(saved) : 0;
   });
-  const [isTimerActive, setIsTimerActive] = useState(true);
+  const [isTimerActive, setIsTimerActive] = useState(false);
 
   useEffect(() => {
     const mediaTitle =
@@ -326,7 +350,6 @@ function TextHooker() {
     setResumePromptHandled(true);
     setIsResumePromptOpen(false);
     lastActivityRef.current = Date.now();
-    setIsTimerActive(true);
   }, []);
 
   const handleStartNewMediaSession = useCallback(async () => {
@@ -339,7 +362,6 @@ function TextHooker() {
       ]);
 
       initialStatsRef.current = { lines: 0, chars: 0 };
-      setHasInitializedStats(true);
       setLines([]);
       setSeconds(0);
       lastSavedTimerRef.current = 0;
@@ -437,6 +459,20 @@ function TextHooker() {
     localStorage.setItem('texthooker_lineGap', String(lineGap));
   }, [lineGap]);
   useEffect(() => {
+    localStorage.setItem('texthooker_theme', hookerTheme);
+  }, [hookerTheme]);
+
+  useEffect(() => {
+    if (
+      !hasPatreonAccess &&
+      hookerTheme !== 'light' &&
+      hookerTheme !== 'dark'
+    ) {
+      setHookerTheme('dark');
+    }
+  }, [hasPatreonAccess, hookerTheme]);
+
+  useEffect(() => {
     localStorage.setItem('texthooker_websocketUrl', websocketUrl);
   }, [websocketUrl]);
   useEffect(() => {
@@ -515,6 +551,7 @@ function TextHooker() {
         : undefined);
     const newSocket = io(socketUrl, { withCredentials: true });
     setSocket(newSocket);
+    roomSocketRef.current = newSocket;
 
     newSocket.on('connect', () => {
       if (roomId) {
@@ -578,6 +615,7 @@ function TextHooker() {
     }
 
     return () => {
+      roomSocketRef.current = null;
       newSocket.disconnect();
     };
   }, [
@@ -621,13 +659,12 @@ function TextHooker() {
         saveLines([newLine]);
       }
 
-      if (mode === 'host' && socket) {
-        socket.emit('send_line', { roomId, lineData: newLine });
+      if (mode === 'host' && roomSocketRef.current) {
+        roomSocketRef.current.emit('send_line', { roomId, lineData: newLine });
       }
     },
     [
       mode,
-      socket,
       roomId,
       contentId,
       saveLines,
@@ -674,6 +711,12 @@ function TextHooker() {
       setConnectionStatus('error');
     }
   }, [websocketUrl, handleSocketMessage]);
+
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.onmessage = handleSocketMessage;
+    }
+  }, [handleSocketMessage]);
 
   const toggleSocket = useCallback(() => {
     if (reconnectIntervalRef.current) {
@@ -786,11 +829,17 @@ function TextHooker() {
   const handleResetTimer = useCallback(() => {
     setSeconds(0);
     lastActivityRef.current = Date.now();
+    setIsResetTimerConfirmOpen(false);
     if (contentId) {
       lastSavedTimerRef.current = 0;
       updateSessionTimerFn(contentId, 0).catch(console.error);
     }
   }, [contentId]);
+
+  const handleRequestResetTimer = useCallback(() => {
+    if (seconds === 0) return;
+    setIsResetTimerConfirmOpen(true);
+  }, [seconds]);
 
   const handleOpenTimerEdit = useCallback(() => {
     const h = Math.floor(seconds / 3600);
@@ -874,13 +923,43 @@ function TextHooker() {
   const { mutate: createLog, isPending: isLogging } = useMutation({
     mutationFn: createLogFn,
     onSuccess: () => {
+      if (contentId && pendingHistoryEntryRef.current) {
+        addSessionHistoryEntry({
+          contentId,
+          entry: pendingHistoryEntryRef.current,
+        });
+      }
+      pendingHistoryEntryRef.current = null;
       triggerLogAnimation();
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
     },
     onError: (error) => {
+      pendingHistoryEntryRef.current = null;
       toast.error('Failed to log session');
       console.error(error);
+    },
+  });
+
+  const { mutate: addSessionHistoryEntry } = useMutation({
+    mutationFn: ({
+      contentId,
+      entry,
+    }: {
+      contentId: string;
+      entry: {
+        isShared: boolean;
+        connectedUsersCount: number;
+        charactersLogged: number;
+        readingSpeed: number;
+        sessionSeconds: number;
+      };
+    }) => addSessionHistoryEntryFn(contentId, entry),
+    onSuccess: (updatedSession, variables) => {
+      queryClient.setQueryData<ITextSession | undefined>(
+        ['textSession', variables.contentId],
+        updatedSession
+      );
     },
   });
 
@@ -896,6 +975,20 @@ function TextHooker() {
       setIsQuickLogOpen(true);
       return;
     }
+
+    const isSharedNow =
+      isRoomConnected && (mode === 'host' || mode === 'guest');
+    const connectedUsersCount = isSharedNow
+      ? Math.max(connectedMembers.length, 1)
+      : 0;
+
+    pendingHistoryEntryRef.current = {
+      isShared: isSharedNow,
+      connectedUsersCount,
+      charactersLogged: currentSessionChars,
+      readingSpeed: formatSpeed(currentSessionChars, seconds),
+      sessionSeconds: seconds,
+    };
 
     createLog({
       mediaId: media.contentId,
@@ -953,6 +1046,12 @@ function TextHooker() {
     }
   }, [vertical]);
 
+  const sessionHistory = [...(sessionData?.sessionHistory || [])]
+    .sort(
+      (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
+    )
+    .slice(0, 10);
+
   const callback = useCallback(
     (mutationsList: MutationRecord[]) => {
       for (const mutation of mutationsList) {
@@ -1002,14 +1101,16 @@ function TextHooker() {
             saveLines([newLine]);
           }
 
-          if (mode === 'host' && socket) {
-            socket.emit('send_line', { roomId, lineData: newLine });
+          if (mode === 'host' && roomSocketRef.current) {
+            roomSocketRef.current.emit('send_line', {
+              roomId,
+              lineData: newLine,
+            });
           }
         }
       }
     },
     [
-      socket,
       mode,
       roomId,
       contentId,
@@ -1161,7 +1262,10 @@ function TextHooker() {
   }, [isSettingsOpen]);
 
   return (
-    <div className="bg-base-300 min-h-screen th-root">
+    <div
+      data-theme={hookerTheme || undefined}
+      className="bg-base-300 min-h-screen th-root"
+    >
       {customCss.trim() && <style>{customCss}</style>}
       <ToastContainer autoClose={2000} position="bottom-right" />
       {/* Top Bar */}
@@ -1225,7 +1329,7 @@ function TextHooker() {
 
         <button
           type="button"
-          onClick={handleResetTimer}
+          onClick={handleRequestResetTimer}
           className="btn btn-xs btn-ghost btn-square"
           title="Reset Timer"
         >
@@ -1433,6 +1537,39 @@ function TextHooker() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button onClick={() => setIsTimerEditOpen(false)}>close</button>
+        </form>
+      </dialog>
+
+      {/* Reset Timer Confirmation Modal */}
+      <dialog
+        className={`modal ${isResetTimerConfirmOpen ? 'modal-open' : ''}`}
+      >
+        <div className="modal-box max-w-sm">
+          <h3 className="font-bold text-lg mb-2">Reset timer?</h3>
+          <p className="text-base-content/70 mb-5">
+            This will set the current timer back to 00:00:00.
+          </p>
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setIsResetTimerConfirmOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={handleResetTimer}
+            >
+              Reset timer
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setIsResetTimerConfirmOpen(false)}>
+            close
+          </button>
         </form>
       </dialog>
 
@@ -1655,6 +1792,67 @@ function TextHooker() {
                 </div>
               </div>
 
+              <div className="divider"></div>
+
+              <div>
+                <h4 className="text-sm font-semibold uppercase tracking-wider opacity-70 mb-3">
+                  Session History
+                </h4>
+                {sessionHistory.length === 0 ? (
+                  <div className="bg-base-200 p-3 rounded-lg text-sm opacity-70">
+                    No logged sessions yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {sessionHistory.map((entry, index) => (
+                      <div
+                        key={`${entry.loggedAt}-${index}`}
+                        className="bg-base-200 p-3 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-xs opacity-70">
+                            {new Date(entry.loggedAt).toLocaleString()}
+                          </span>
+                          <span
+                            className={`badge badge-sm ${entry.isShared ? 'badge-primary' : 'badge-ghost'}`}
+                          >
+                            {entry.isShared ? 'Shared' : 'Offline'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="opacity-70">Characters</span>
+                            <span className="font-semibold">
+                              {numberWithCommas(entry.charactersLogged)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="opacity-70">Speed</span>
+                            <span className="font-semibold">
+                              {numberWithCommas(entry.readingSpeed)} chars/h
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="opacity-70">Time</span>
+                            <span className="font-semibold">
+                              {formatTime(entry.sessionSeconds)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="opacity-70">Connected</span>
+                            <span className="font-semibold">
+                              {entry.isShared
+                                ? `${entry.connectedUsersCount} people`
+                                : '-'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end pt-4 border-t border-base-content/10">
                 <button
                   onClick={handleLogSession}
@@ -1768,6 +1966,28 @@ function TextHooker() {
                     <option value="Hiragino Sans">Hiragino Sans</option>
                     <option value="sans-serif">Sans Serif</option>
                   </select>
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Hooker Theme</span>
+                  </label>
+                  <select
+                    value={hookerTheme}
+                    onChange={(event) => setHookerTheme(event.target.value)}
+                    className="select select-bordered select-sm w-full"
+                  >
+                    {availableHookerThemes.map((themeOption) => (
+                      <option key={themeOption.value} value={themeOption.value}>
+                        {themeOption.label}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="label">
+                    <span className="label-text-alt opacity-70">
+                      Only affects TextHooker screen
+                    </span>
+                  </label>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
