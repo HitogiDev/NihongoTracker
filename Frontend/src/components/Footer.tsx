@@ -4,9 +4,31 @@ import { Link } from 'react-router-dom';
 function Footer() {
   return (
     <footer className="footer items-center p-4 bg-base-100 text-base-content flex flex-col md:flex-row justify-between mt-auto">
-      <aside className="items-center grid-flow-col">
+      <aside className="items-center grid-flow-col gap-2">
         <p className="text-base-content">
           © {new Date().getFullYear()} NihongoTracker
+          <span className="text-base-content/50 mx-2">•</span>
+          <span className="text-xs text-base-content/70">
+            Data provided by{' '}
+            <a
+              href="https://anilist.co"
+              target="_blank"
+              rel="noreferrer"
+              className="link link-hover"
+            >
+              AniList
+            </a>{' '}
+            and{' '}
+            <a
+              href="https://vndb.org"
+              target="_blank"
+              rel="noreferrer"
+              className="link link-hover"
+            >
+              VNDB
+            </a>
+            .
+          </span>
         </p>
       </aside>
       <nav className="grid-flow-col gap-4 md:place-self-center md:justify-self-end flex items-center">
