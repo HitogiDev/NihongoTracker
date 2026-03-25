@@ -50,7 +50,7 @@ function MediaDetails() {
     undefined
   );
   const [sortBy, setSortBy] = useState<
-    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
+    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time' | 'readingSpeed'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -244,6 +244,10 @@ function MediaDetails() {
           return log.pages ?? 0;
         case 'time':
           return log.time ?? 0;
+        case 'readingSpeed':
+          return log.time && log.time > 0
+            ? ((log.chars ?? 0) / log.time) * 60
+            : 0;
         case 'date':
         default:
           return new Date(log.date).getTime();
@@ -429,6 +433,7 @@ function MediaDetails() {
     { value: 'chars', label: 'Characters' },
     { value: 'pages', label: 'Pages' },
     { value: 'time', label: 'Time' },
+    { value: 'readingSpeed', label: 'Reading Speed' },
   ];
 
   const getDateFilterLabel = () =>

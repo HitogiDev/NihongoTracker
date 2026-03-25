@@ -3,7 +3,7 @@ import LogCard from '../components/LogCard';
 import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
@@ -54,7 +54,7 @@ function ProfileScreen() {
     undefined
   );
   const [sortBy, setSortBy] = useState<
-    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time'
+    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time' | 'readingSpeed'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const aboutHtml = (() => {
@@ -65,7 +65,6 @@ function ProfileScreen() {
     return DOMPurify.sanitize(rawHtml);
   })();
 
-  // Type guard to validate log type
   const isValidLogType = (
     value: string
   ): value is
@@ -152,44 +151,6 @@ function ProfileScreen() {
   };
 
   const dateRange = getDateRange();
-
-  const {
-    data: logs,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      'logs',
-      username,
-      searchTerm,
-      filterType,
-      dateFilter,
-      customStartDate?.toISOString(),
-      customEndDate?.toISOString(),
-      sortBy,
-      sortDirection,
-    ],
-    queryFn: ({ pageParam }) =>
-      getUserLogsFn(username as string, {
-        limit,
-        page: pageParam as number,
-        search: searchTerm,
-        type: filterType !== 'all' ? filterType : undefined,
-        start: dateRange?.startDate?.toISOString(),
-        end: dateRange?.endDate?.toISOString(),
-        sortBy: sortBy,
-        sortDirection: sortDirection,
-      }),
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage || lastPage.length < limit) return undefined;
-      return allPages ? allPages.length + 1 : 2;
-    },
-    initialPageParam: 1,
-    staleTime: Infinity,
-    enabled: !!username,
-  });
-
   const totalUserXpToLevelUp = user?.stats?.userXpToNextLevel
     ? user?.stats?.userXpToNextLevel - user?.stats?.userXpToCurrentLevel
     : 0;
@@ -216,6 +177,67 @@ function ProfileScreen() {
     : 0;
   const readingProgressPercentage =
     (readingProgressXP / totalReadingXpToLevelUp) * 100;
+
+  const backendSortBy = sortBy === 'readingSpeed' ? 'date' : sortBy;
+  const backendSortDirection =
+    sortBy === 'readingSpeed' ? 'desc' : sortDirection;
+
+  const {
+    data: logs,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      'logs',
+      username,
+      searchTerm,
+      filterType,
+      dateFilter,
+      customStartDate?.toISOString(),
+      customEndDate?.toISOString(),
+      backendSortBy,
+      backendSortDirection,
+    ],
+    queryFn: ({ pageParam }) =>
+      getUserLogsFn(username as string, {
+        limit,
+        page: pageParam as number,
+        search: searchTerm,
+        type: filterType !== 'all' ? filterType : undefined,
+        start: dateRange?.startDate?.toISOString(),
+        end: dateRange?.endDate?.toISOString(),
+        sortBy: backendSortBy,
+        sortDirection: backendSortDirection,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < limit) return undefined;
+      return allPages ? allPages.length + 1 : 2;
+    },
+    initialPageParam: 1,
+    staleTime: Infinity,
+    enabled: !!username,
+  });
+
+  const displayedLogs = (() => {
+    const pages = logs?.pages ?? [];
+    const flattened = pages.flatMap((page) =>
+      Array.isArray(page) ? page : []
+    );
+
+    if (sortBy !== 'readingSpeed') {
+      return flattened;
+    }
+
+    return flattened
+      .filter((log) => (log.time ?? 0) > 0 && (log.chars ?? 0) > 0)
+      .sort((a, b) => {
+        const speedA = ((a.chars ?? 0) / (a.time ?? 1)) * 60;
+        const speedB = ((b.chars ?? 0) / (b.time ?? 1)) * 60;
+        return sortDirection === 'asc' ? speedA - speedB : speedB - speedA;
+      });
+  })();
+
   return (
     <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
       <div className="w-full max-w-7xl">
@@ -454,7 +476,9 @@ function ProfileScreen() {
                                 ? 'Characters'
                                 : sortBy === 'pages'
                                   ? 'Pages'
-                                  : 'Time'}{' '}
+                                  : sortBy === 'readingSpeed'
+                                    ? 'Reading Speed'
+                                    : 'Time'}{' '}
                         {sortDirection === 'desc' ? (
                           <ArrowDown className="w-3 h-3" />
                         ) : (
@@ -476,6 +500,7 @@ function ProfileScreen() {
                           { value: 'chars', label: 'Characters' },
                           { value: 'pages', label: 'Pages' },
                           { value: 'time', label: 'Time' },
+                          { value: 'readingSpeed', label: 'Reading Speed' },
                         ].map((option) => (
                           <li key={option.value}>
                             <a
@@ -692,7 +717,9 @@ function ProfileScreen() {
                               ? 'Characters'
                               : sortBy === 'pages'
                                 ? 'Pages'
-                                : 'Time'}
+                                : sortBy === 'readingSpeed'
+                                  ? 'Reading Speed'
+                                  : 'Time'}
                         <button
                           className="ml-1 hover:bg-info-focus rounded-full"
                           onClick={() => setSortBy('date')}
@@ -723,14 +750,8 @@ function ProfileScreen() {
             </div>
 
             {logs?.pages ? (
-              logs.pages.map((page, index) => (
-                <React.Fragment key={index}>
-                  {Array.isArray(page)
-                    ? page.map((log) => (
-                        <LogCard key={log._id} log={log} user={username} />
-                      ))
-                    : null}
-                </React.Fragment>
+              displayedLogs.map((log) => (
+                <LogCard key={log._id} log={log} user={username} />
               ))
             ) : (
               <div className="card w-full bg-base-100 shadow-sm p-4">
@@ -738,10 +759,7 @@ function ProfileScreen() {
               </div>
             )}
 
-            {logs?.pages &&
-            logs.pages.every(
-              (page) => Array.isArray(page) && page.length === 0
-            ) ? (
+            {logs?.pages && displayedLogs.length === 0 ? (
               <div className="card w-full bg-base-100 shadow-sm p-4">
                 <div className="alert alert-info">
                   <svg

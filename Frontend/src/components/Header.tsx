@@ -356,7 +356,7 @@ function Header() {
             aria-label="Search"
           >
             <Search className="w-4 h-4" />
-            <span className="hidden xl:inline text-xs text-base-content/50">
+            <span className="hidden 2xl:inline text-xs text-base-content/50">
               <kbd className="kbd kbd-xs">
                 {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
                   ? '⌘'
