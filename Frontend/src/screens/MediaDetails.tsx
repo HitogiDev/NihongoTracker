@@ -16,10 +16,14 @@ import {
   Search,
   Funnel,
   Clock4,
+  Clock3,
   ChevronDown,
   ListFilter,
   ArrowUp,
   ArrowDown,
+  Zap,
+  LineChart,
+  BarChart3,
 } from 'lucide-react';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 
@@ -53,6 +57,8 @@ function MediaDetails() {
     'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time' | 'readingSpeed'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [chartMetric, setChartMetric] = useState<'xp' | 'hours'>('xp');
+  const [chartView, setChartView] = useState<'line' | 'bar'>('line');
 
   useEffect(() => {
     if (dateFilter !== 'custom') {
@@ -1032,7 +1038,7 @@ function MediaDetails() {
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  {username}'s Progress
+                  {username}'s Stats
                 </h2>
 
                 <div className="grid grid-cols-1 gap-4">
@@ -1380,23 +1386,88 @@ function MediaDetails() {
           <div className="space-y-6 min-w-0">
             <div className="card bg-base-100 shadow-lg">
               <div className="card-body">
-                <h2 className="card-title text-xl mb-4 flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  Progress Chart
-                </h2>
-                <ProgressChart logs={logs as ILog[]} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <h2 className="card-title text-xl flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    Activity Chart
+                  </h2>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-base-content/70">
+                        Metric:
+                      </span>
+                      <div className="join">
+                        <button
+                          className={`join-item btn btn-sm ${
+                            chartMetric === 'xp' ? 'btn-primary' : 'btn-outline'
+                          }`}
+                          onClick={() => setChartMetric('xp')}
+                        >
+                          <Zap className="w-4 h-4" />
+                          XP
+                        </button>
+                        <button
+                          className={`join-item btn btn-sm ${
+                            chartMetric === 'hours'
+                              ? 'btn-primary'
+                              : 'btn-outline'
+                          }`}
+                          onClick={() => setChartMetric('hours')}
+                        >
+                          <Clock3 className="w-4 h-4" />
+                          Hours
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-base-content/70">
+                        View:
+                      </span>
+                      <div className="join">
+                        <button
+                          className={`join-item btn btn-sm ${
+                            chartView === 'line' ? 'btn-primary' : 'btn-outline'
+                          }`}
+                          onClick={() => setChartView('line')}
+                        >
+                          <LineChart className="w-4 h-4" />
+                          Line
+                        </button>
+                        <button
+                          className={`join-item btn btn-sm ${
+                            chartView === 'bar' ? 'btn-primary' : 'btn-outline'
+                          }`}
+                          onClick={() => setChartView('bar')}
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                          Bar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <ProgressChart
+                  logs={logs as ILog[]}
+                  selectedType={mediaDocument?.type}
+                  metric={chartMetric}
+                  chartType={chartView}
+                  showTitle
+                />
               </div>
             </div>
 

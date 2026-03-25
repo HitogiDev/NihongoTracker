@@ -1,30 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartArea,
-  ScriptableContext,
-} from 'chart.js';
+import { ChartArea, ScriptableContext } from 'chart.js';
 import { ILog } from '../types';
 import { useTimezone } from '../hooks/useTimezone';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import LineChart from './LineChart';
 
 type TimeframeType = 'total' | 'today' | 'week' | 'month' | 'year';
 type ReadingType = 'reading' | 'vn' | 'manga';
@@ -380,35 +358,6 @@ function SpeedChart({
     }),
   };
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: `Reading Speed (${timeframe})`,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Characters per hour',
-        },
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Date',
-        },
-      },
-    },
-  };
-
   return (
     <div className="w-full h-full">
       {!externalTimeframe && (
@@ -457,7 +406,7 @@ function SpeedChart({
       )}
       {Object.values(filteredData).some((data) => data && data.length > 0) ? (
         <div className="w-full h-full">
-          <Line data={chartData} options={options} />
+          <LineChart data={chartData} />
         </div>
       ) : (
         <div className="alert alert-info">

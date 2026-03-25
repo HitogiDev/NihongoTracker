@@ -304,8 +304,8 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: selectedType === 'all',
-        position: 'top',
+        display: true,
+        position: 'right',
         labels: {
           color: baseContent || 'oklch(0.6 0 0)',
           font: {
@@ -389,8 +389,8 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       },
     },
     interaction: {
-      mode: 'nearest',
-      axis: 'x',
+      mode: 'index',
+      axis: 'xy',
       intersect: false,
     },
   };
@@ -398,42 +398,66 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   // Don't render until colors are loaded to prevent flash
   if (!colorsReady) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[350px]">
-        <div className="text-center">
-          <span className="loading loading-spinner text-primary" />
-        </div>
+      <div
+        className="bg-base-50 p-4 flex items-center justify-center mx-4"
+        style={{ height: '350px' }}
+      >
+        <span className="loading loading-spinner text-primary" />
       </div>
     );
   }
 
   if (!chartData) {
     return (
-      <div className="flex items-center justify-center h-full text-base-content/60">
-        <div className="text-center">
-          <div className="text-4xl mb-2">📊</div>
-          <p>No data available for the selected timeframe</p>
-          <p className="text-sm mt-1">
-            Try selecting a different time range or media type
-          </p>
+      <div className="rounded-lg border border-base-content/30 mx-4">
+        <div className="bg-base-50 p-4" style={{ height: '350px' }}>
+          <div className="alert alert-info">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              className="stroke-current shrink-0 w-6 h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <span>No data available for the selected timeframe.</span>
+          </div>
         </div>
       </div>
     );
   }
+
+  const typeLabel =
+    selectedType === 'all'
+      ? 'All Media Types'
+      : selectedType === 'vn'
+        ? 'Visual Novel'
+        : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
+
+  const timeframeLabel =
+    timeframe === 'today'
+      ? `Hourly ${metric === 'xp' ? 'XP' : 'Time'} - Today`
+      : timeframe === 'week'
+        ? `Daily ${metric === 'xp' ? 'XP' : 'Time'} - This Week`
+        : timeframe === 'month'
+          ? `Daily ${metric === 'xp' ? 'XP' : 'Time'} - Current Month`
+          : timeframe === 'year'
+            ? `${metric === 'xp' ? 'XP' : 'Time'} Over the Year`
+            : `Total ${metric === 'xp' ? 'XP' : 'Time'} Over Time`;
 
   return (
     <div className="w-full h-full">
       <div className="h-full w-full">
         <div className="flex items-center justify-between mb-6 px-4">
           <div>
-            <h2 className="text-2xl font-bold text-primary mb-2">
-              Progress Timeline
-            </h2>
+            <h2 className="text-2xl font-bold text-primary mb-2">Activity</h2>
             <p className="text-sm text-base-content mb-4">
-              {selectedType === 'all'
-                ? 'All Media Types'
-                : selectedType.charAt(0).toUpperCase() +
-                  selectedType.slice(1)}{' '}
-              - {metric === 'xp' ? 'XP' : 'Hours'} Progress Over Time
+              {typeLabel} - {timeframeLabel}
             </p>
           </div>
         </div>

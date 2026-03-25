@@ -1,6 +1,7 @@
 import { ILog } from '../types';
 import { ChartArea, ScriptableContext } from 'chart.js';
 import LineChart from './LineChart';
+import BarChart from './BarChart';
 import { useEffect, useState } from 'react';
 import { useTimezone } from '../hooks/useTimezone';
 import { convertToUserTimezone } from '../utils/timezone';
@@ -38,6 +39,8 @@ interface ProgressChartProps {
   selectedType?: string;
   timeframe?: 'today' | 'week' | 'month' | 'year' | 'total';
   metric?: 'xp' | 'hours';
+  chartType?: 'line' | 'bar';
+  showTitle?: boolean;
 }
 
 export default function ProgressChart({
@@ -46,6 +49,8 @@ export default function ProgressChart({
   selectedType = 'all',
   timeframe: externalTimeframe,
   metric = 'xp',
+  chartType = 'line',
+  showTitle = true,
 }: ProgressChartProps) {
   const { timezone } = useTimezone();
   const [timeframe, setTimeframe] = useState<
@@ -390,11 +395,13 @@ export default function ProgressChart({
     return gradient;
   }
 
-  const consistencyData = {
+  const datasetLabel = metric === 'xp' ? 'XP Earned' : 'Time Spent (hours)';
+
+  const lineData = {
     labels: labels,
     datasets: [
       {
-        label: metric === 'xp' ? 'XP Earned' : 'Time Spent (hours)',
+        label: datasetLabel,
         data: metricValues,
         fill: true,
         pointRadius: 3,
@@ -410,19 +417,37 @@ export default function ProgressChart({
     ],
   };
 
+  const barData = {
+    labels: labels,
+    datasets: [
+      {
+        label: datasetLabel,
+        data: metricValues,
+        backgroundColor: 'rgba(50, 170, 250, 0.35)',
+        borderColor: 'rgb(50, 170, 250)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const typeLabel =
+    logs && !statsData
+      ? 'This Media'
+      : selectedType === 'all'
+        ? 'All Media Types'
+        : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
+
   return (
     <div className="w-full h-full">
       <div className="h-full w-full">
         <div className="flex items-center justify-between mb-6 px-4">
           <div>
-            <h2 className="text-2xl font-bold text-primary mb-2">Progress</h2>
+            {showTitle && (
+              <h2 className="text-2xl font-bold text-primary mb-2">Activity</h2>
+            )}
             {hasData ? (
               <p className="text-sm text-base-content mb-4">
-                {selectedType === 'all'
-                  ? 'All Media Types'
-                  : selectedType.charAt(0).toUpperCase() +
-                    selectedType.slice(1)}{' '}
-                -
+                {typeLabel} -
                 {timeframe === 'today'
                   ? ` Hourly ${metric === 'xp' ? 'XP' : 'Time'} - Today`
                   : timeframe === 'week'
@@ -460,7 +485,25 @@ export default function ProgressChart({
             </div>
           )}
         </div>
-        <LineChart data={consistencyData} />
+        {chartType === 'line' ? (
+          <LineChart data={lineData} />
+        ) : (
+          <div className="rounded-lg border border-base-content/30 mx-4">
+            <div className="bg-base-50 p-4" style={{ height: '350px' }}>
+              <BarChart
+                data={barData}
+                options={{
+                  interaction: { mode: 'index', intersect: false },
+                  plugins: {
+                    legend: {
+                      position: 'right',
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
