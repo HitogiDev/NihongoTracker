@@ -1,5 +1,5 @@
-import type { ChangeEvent, CSSProperties } from 'react';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
+import { useCallback, useRef, useState, useEffect, Fragment } from 'react';
 import {
   useLocation,
   useParams,
@@ -130,6 +130,22 @@ function TextHooker() {
     const saved = localStorage.getItem('texthooker_lineGap');
     return saved ? Number(saved) : 16;
   });
+  const [showTopbarTimer, setShowTopbarTimer] = useState(() => {
+    const saved = localStorage.getItem('texthooker_showTopbarTimer');
+    return saved === null ? true : saved === 'true';
+  });
+  const [showTopbarReadingSpeed, setShowTopbarReadingSpeed] = useState(() => {
+    const saved = localStorage.getItem('texthooker_showTopbarReadingSpeed');
+    return saved === null ? true : saved === 'true';
+  });
+  const [showTopbarCharacters, setShowTopbarCharacters] = useState(() => {
+    const saved = localStorage.getItem('texthooker_showTopbarCharacters');
+    return saved === null ? true : saved === 'true';
+  });
+  const [showTopbarLines, setShowTopbarLines] = useState(() => {
+    const saved = localStorage.getItem('texthooker_showTopbarLines');
+    return saved === null ? true : saved === 'true';
+  });
   const [hookerTheme, setHookerTheme] = useState(() => {
     return localStorage.getItem('texthooker_theme') || '';
   });
@@ -156,6 +172,8 @@ function TextHooker() {
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
   const [isResetTimerConfirmOpen, setIsResetTimerConfirmOpen] = useState(false);
+  const [isPreventDuplicateConfirmOpen, setIsPreventDuplicateConfirmOpen] =
+    useState(false);
   const [isResumePromptOpen, setIsResumePromptOpen] = useState(false);
   const [resumePromptHandled, setResumePromptHandled] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<
@@ -220,17 +238,6 @@ function TextHooker() {
 
   const previouslyLoggedChars = userMediaStats?.total?.characters || 0;
 
-  useEffect(() => {
-    if (sessionData?.lines) {
-      const mappedLines = sessionData.lines.map((l) => ({
-        id: l.id,
-        text: l.text,
-        japaneseCount: l.charsCount,
-      }));
-      setLines(mappedLines);
-    }
-  }, [sessionData]);
-
   const { mutate: saveLines } = useMutation({
     mutationFn: (newLines: LineEntry[]) => {
       const linesToSave = newLines.map((l) => ({
@@ -279,6 +286,44 @@ function TextHooker() {
   const [continuousReconnect, setContinuousReconnect] = useState(() => {
     return localStorage.getItem('texthooker_continuousReconnect') === 'true';
   });
+  const [preventGlobalDuplicates, setPreventGlobalDuplicates] = useState(() => {
+    return (
+      localStorage.getItem('texthooker_preventGlobalDuplicates') === 'true'
+    );
+  });
+
+  useEffect(() => {
+    if (sessionData?.lines) {
+      const mappedLines = sessionData.lines.map((l) => ({
+        id: l.id,
+        text: l.text,
+        japaneseCount: l.charsCount,
+      }));
+
+      if (!preventGlobalDuplicates) {
+        setLines(mappedLines);
+        return;
+      }
+
+      const seenTexts = new Set<string>();
+      const duplicateIds: string[] = [];
+      const dedupedLines = mappedLines.filter((line) => {
+        const normalized = line.text.trim();
+        if (seenTexts.has(normalized)) {
+          duplicateIds.push(line.id);
+          return false;
+        }
+        seenTexts.add(normalized);
+        return true;
+      });
+
+      setLines(dedupedLines);
+
+      if (contentId && duplicateIds.length > 0) {
+        removeLinesFromSessionFn(contentId, duplicateIds).catch(console.error);
+      }
+    }
+  }, [sessionData, preventGlobalDuplicates, contentId]);
 
   const [websocketUrl, setWebsocketUrl] = useState(() => {
     return (
@@ -459,6 +504,24 @@ function TextHooker() {
     localStorage.setItem('texthooker_lineGap', String(lineGap));
   }, [lineGap]);
   useEffect(() => {
+    localStorage.setItem('texthooker_showTopbarTimer', String(showTopbarTimer));
+  }, [showTopbarTimer]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_showTopbarReadingSpeed',
+      String(showTopbarReadingSpeed)
+    );
+  }, [showTopbarReadingSpeed]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_showTopbarCharacters',
+      String(showTopbarCharacters)
+    );
+  }, [showTopbarCharacters]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_showTopbarLines', String(showTopbarLines));
+  }, [showTopbarLines]);
+  useEffect(() => {
     localStorage.setItem('texthooker_theme', hookerTheme);
   }, [hookerTheme]);
 
@@ -505,6 +568,12 @@ function TextHooker() {
       String(continuousReconnect)
     );
   }, [continuousReconnect]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_preventGlobalDuplicates',
+      String(preventGlobalDuplicates)
+    );
+  }, [preventGlobalDuplicates]);
 
   useEffect(() => {
     localStorage.setItem('texthooker_customCss', customCss);
@@ -592,7 +661,20 @@ function TextHooker() {
 
     if (mode === 'guest' || mode === 'host') {
       newSocket.on('receive_line', (lineData: LineEntry) => {
-        setLines((prev) => [...prev, lineData]);
+        let lineAdded = false;
+        setLines((prev) => {
+          if (
+            preventGlobalDuplicates &&
+            prev.some((line) => line.text.trim() === lineData.text.trim())
+          ) {
+            return prev;
+          }
+          lineAdded = true;
+          return [...prev, lineData];
+        });
+
+        if (!lineAdded) return;
+
         lastActivityRef.current = Date.now();
 
         if (!isTimerActive && autostartTimerByLine) {
@@ -606,10 +688,19 @@ function TextHooker() {
 
       // Persist room history so it survives disconnection
       newSocket.on('load_history', (history: LineEntry[]) => {
-        setLines(history);
+        const nextHistory = preventGlobalDuplicates
+          ? history.filter(
+              (line, index, list) =>
+                list.findIndex(
+                  (item) => item.text.trim() === line.text.trim()
+                ) === index
+            )
+          : history;
+
+        setLines(nextHistory);
 
         if (contentId) {
-          saveLines(history);
+          saveLines(nextHistory);
         }
       });
     }
@@ -625,6 +716,7 @@ function TextHooker() {
     hostToken,
     user,
     contentId,
+    preventGlobalDuplicates,
     saveLines,
     isTimerActive,
     autostartTimerByLine,
@@ -653,7 +745,19 @@ function TextHooker() {
       const japaneseCount = countJapaneseCharacters(text);
       const newLine = { id: createLineId(), text, japaneseCount };
 
-      setLines((prev) => [...prev, newLine]);
+      let lineAdded = false;
+      setLines((prev) => {
+        if (
+          preventGlobalDuplicates &&
+          prev.some((line) => line.text.trim() === text.trim())
+        ) {
+          return prev;
+        }
+        lineAdded = true;
+        return [...prev, newLine];
+      });
+
+      if (!lineAdded) return;
 
       if (contentId) {
         saveLines([newLine]);
@@ -671,6 +775,7 @@ function TextHooker() {
       isTimerActive,
       allowNewLineDuringPause,
       autostartTimerByLine,
+      preventGlobalDuplicates,
     ]
   );
 
@@ -1095,7 +1200,19 @@ function TextHooker() {
           const japaneseCount = countJapaneseCharacters(text);
           const newLine = { id: createLineId(), text, japaneseCount };
 
-          setLines((prev) => [...prev, newLine]);
+          let lineAdded = false;
+          setLines((prev) => {
+            if (
+              preventGlobalDuplicates &&
+              prev.some((line) => line.text.trim() === text.trim())
+            ) {
+              return prev;
+            }
+            lineAdded = true;
+            return [...prev, newLine];
+          });
+
+          if (!lineAdded) continue;
 
           if (contentId) {
             saveLines([newLine]);
@@ -1118,7 +1235,47 @@ function TextHooker() {
       isTimerActive,
       allowPasteDuringPause,
       autostartTimerByPaste,
+      preventGlobalDuplicates,
     ]
+  );
+
+  const applyPreventGlobalDuplicatesToCurrentLines = useCallback(() => {
+    const removedIds: string[] = [];
+
+    setLines((prev) => {
+      const seenTexts = new Set<string>();
+      return prev.filter((line) => {
+        const normalized = line.text.trim();
+        if (seenTexts.has(normalized)) {
+          removedIds.push(line.id);
+          return false;
+        }
+        seenTexts.add(normalized);
+        return true;
+      });
+    });
+
+    if (contentId && removedIds.length > 0) {
+      removeLinesFromSessionFn(contentId, removedIds).catch(console.error);
+    }
+
+    if (removedIds.length > 0) {
+      toast.success(`Removed ${removedIds.length} duplicate line(s)`);
+    }
+
+    setIsPreventDuplicateConfirmOpen(false);
+  }, [contentId]);
+
+  const handlePreventGlobalDuplicatesToggle = useCallback(
+    (checked: boolean) => {
+      setPreventGlobalDuplicates(checked);
+      if (checked) {
+        setIsPreventDuplicateConfirmOpen(true);
+      } else {
+        setIsPreventDuplicateConfirmOpen(false);
+      }
+    },
+    []
   );
 
   const handleDelete = useCallback(
@@ -1208,6 +1365,64 @@ function TextHooker() {
     display: 'block',
   };
 
+  const topbarMetrics: Array<{
+    key: string;
+    title: string;
+    content: ReactNode;
+  }> = [];
+
+  if (showTopbarTimer) {
+    topbarMetrics.push({
+      key: 'timer',
+      title: 'Timer',
+      content: (
+        <>
+          <Clock size={16} className="opacity-70" />
+          {formatTime(seconds)}
+        </>
+      ),
+    });
+  }
+
+  if (showTopbarReadingSpeed) {
+    topbarMetrics.push({
+      key: 'reading-speed',
+      title: 'Reading Speed (chars/hour)',
+      content: (
+        <>
+          <Activity size={16} className="opacity-70" />
+          {numberWithCommas(formatSpeed(charsNumber, seconds))}/h
+        </>
+      ),
+    });
+  }
+
+  if (showTopbarCharacters) {
+    topbarMetrics.push({
+      key: 'characters',
+      title: 'Characters',
+      content: (
+        <>
+          <Type size={16} className="opacity-70" />
+          {numberWithCommas(charsNumber)}
+        </>
+      ),
+    });
+  }
+
+  if (showTopbarLines) {
+    topbarMetrics.push({
+      key: 'lines',
+      title: 'Lines',
+      content: (
+        <>
+          <FileText size={16} className="opacity-70" />
+          {numberWithCommas(linesNumber)}
+        </>
+      ),
+    });
+  }
+
   const listContainerClasses = vertical
     ? 'pt-16 px-4 flex flex-row overflow-x-auto overflow-y-hidden h-screen items-start pb-6'
     : 'pt-16 px-4 flex flex-col overflow-y-auto h-screen pb-6';
@@ -1270,32 +1485,23 @@ function TextHooker() {
       <ToastContainer autoClose={2000} position="bottom-right" />
       {/* Top Bar */}
       <div className="fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center gap-3 th-topbar">
-        <div className="font-mono text-base flex items-center gap-2">
-          <Clock size={16} className="opacity-70" />
-          {formatTime(seconds)}
-        </div>
+        {topbarMetrics.map((metric, index) => (
+          <Fragment key={metric.key}>
+            <div
+              className="font-mono text-base flex items-center gap-2"
+              title={metric.title}
+            >
+              {metric.content}
+            </div>
+            {index < topbarMetrics.length - 1 && (
+              <div className="w-px h-4 bg-base-content/20"></div>
+            )}
+          </Fragment>
+        ))}
 
-        <div className="w-px h-4 bg-base-content/20"></div>
-
-        <div
-          className="font-mono text-base flex items-center gap-2"
-          title="Characters"
-        >
-          <Type size={16} className="opacity-70" />
-          {numberWithCommas(charsNumber)}
-        </div>
-
-        <div className="w-px h-4 bg-base-content/20"></div>
-
-        <div
-          className="font-mono text-base flex items-center gap-2"
-          title="Lines"
-        >
-          <FileText size={16} className="opacity-70" />
-          {numberWithCommas(linesNumber)}
-        </div>
-
-        <div className="w-px h-4 bg-base-content/20 mx-1"></div>
+        {topbarMetrics.length > 0 && (
+          <div className="w-px h-4 bg-base-content/20 mx-1"></div>
+        )}
 
         <button
           type="button"
@@ -1568,6 +1774,41 @@ function TextHooker() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button onClick={() => setIsResetTimerConfirmOpen(false)}>
+            close
+          </button>
+        </form>
+      </dialog>
+
+      <dialog
+        className={`modal ${isPreventDuplicateConfirmOpen ? 'modal-open' : ''}`}
+      >
+        <div className="modal-box max-w-md">
+          <h3 className="font-bold text-lg mb-2">
+            Apply duplicate prevention to current lines?
+          </h3>
+          <p className="text-base-content/70 mb-5">
+            This setting blocks adding new lines that match existing text. You
+            can also remove already duplicated lines in this session now.
+          </p>
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setIsPreventDuplicateConfirmOpen(false)}
+            >
+              Keep current lines
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={applyPreventGlobalDuplicatesToCurrentLines}
+            >
+              Apply to current lines
+            </button>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setIsPreventDuplicateConfirmOpen(false)}>
             close
           </button>
         </form>
@@ -1930,11 +2171,59 @@ function TextHooker() {
                     <span className="label-text">Vertical Text</span>
                     <input
                       type="checkbox"
-                      className="checkbox checkbox-primary checkbox-sm"
+                      className="toggle toggle-primary toggle-sm"
                       checked={vertical}
                       onChange={toggleVertical}
                     />
                   </label>
+                </div>
+
+                <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
+                    Top Bar Metrics
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">Timer</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={showTopbarTimer}
+                        onChange={(e) => setShowTopbarTimer(e.target.checked)}
+                      />
+                    </label>
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">Speed</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={showTopbarReadingSpeed}
+                        onChange={(e) =>
+                          setShowTopbarReadingSpeed(e.target.checked)
+                        }
+                      />
+                    </label>
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">Characters</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={showTopbarCharacters}
+                        onChange={(e) =>
+                          setShowTopbarCharacters(e.target.checked)
+                        }
+                      />
+                    </label>
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">Lines</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={showTopbarLines}
+                        onChange={(e) => setShowTopbarLines(e.target.checked)}
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="form-control">
@@ -1984,7 +2273,7 @@ function TextHooker() {
                     ))}
                   </select>
                   <label className="label">
-                    <span className="label-text-alt opacity-70">
+                    <span className="label-text-alt text-[10px] opacity-60">
                       Only affects TextHooker screen
                     </span>
                   </label>
@@ -2080,83 +2369,95 @@ function TextHooker() {
                   />
                 </div>
 
-                <div className="form-control">
-                  <label className="label cursor-pointer">
-                    <span className="label-text">Allow Paste during Pause</span>
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary checkbox-sm"
-                      checked={allowPasteDuringPause}
-                      onChange={(e) =>
-                        setAllowPasteDuringPause(e.target.checked)
-                      }
-                    />
-                  </label>
-                </div>
+                <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
+                    Runtime Behavior
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">Allow Paste during Pause</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={allowPasteDuringPause}
+                        onChange={(e) =>
+                          setAllowPasteDuringPause(e.target.checked)
+                        }
+                      />
+                    </label>
 
-                <div className="form-control">
-                  <label className="label cursor-pointer">
-                    <span className="label-text">
-                      Allow new Line during Pause
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary checkbox-sm"
-                      checked={allowNewLineDuringPause}
-                      onChange={(e) =>
-                        setAllowNewLineDuringPause(e.target.checked)
-                      }
-                    />
-                  </label>
-                </div>
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">
+                        Allow New Line during Pause
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={allowNewLineDuringPause}
+                        onChange={(e) =>
+                          setAllowNewLineDuringPause(e.target.checked)
+                        }
+                      />
+                    </label>
 
-                <div className="form-control">
-                  <label className="label cursor-pointer">
-                    <span className="label-text">
-                      Autostart Timer by Paste during Pause
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary checkbox-sm"
-                      checked={autostartTimerByPaste}
-                      onChange={(e) =>
-                        setAutostartTimerByPaste(e.target.checked)
-                      }
-                    />
-                  </label>
-                </div>
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">
+                        Autostart Timer by Paste during Pause
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={autostartTimerByPaste}
+                        onChange={(e) =>
+                          setAutostartTimerByPaste(e.target.checked)
+                        }
+                      />
+                    </label>
 
-                <div className="form-control">
-                  <label className="label cursor-pointer">
-                    <span className="label-text">
-                      Autostart Timer by Line during Pause
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary checkbox-sm"
-                      checked={autostartTimerByLine}
-                      onChange={(e) =>
-                        setAutostartTimerByLine(e.target.checked)
-                      }
-                    />
-                  </label>
-                </div>
+                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                      <span className="text-sm">
+                        Autostart Timer by Line during Pause
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={autostartTimerByLine}
+                        onChange={(e) =>
+                          setAutostartTimerByLine(e.target.checked)
+                        }
+                      />
+                    </label>
 
-                <div className="form-control">
-                  <label className="label cursor-pointer">
-                    <span
-                      className="label-text"
+                    <label
+                      className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer"
                       title="Keep trying to connect until successful"
                     >
-                      Continuous Reconnect
-                    </span>
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary checkbox-sm"
-                      checked={continuousReconnect}
-                      onChange={(e) => setContinuousReconnect(e.target.checked)}
-                    />
-                  </label>
+                      <span className="text-sm">Continuous Reconnect</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={continuousReconnect}
+                        onChange={(e) =>
+                          setContinuousReconnect(e.target.checked)
+                        }
+                      />
+                    </label>
+
+                    <label
+                      className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer"
+                      title="Block adding identical text lines globally"
+                    >
+                      <span className="text-sm">Prevent Global Duplicates</span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={preventGlobalDuplicates}
+                        onChange={(e) =>
+                          handlePreventGlobalDuplicatesToggle(e.target.checked)
+                        }
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 <div className="form-control">
