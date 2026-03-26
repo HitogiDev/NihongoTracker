@@ -33,6 +33,7 @@ import TagFilter from '../components/TagFilter';
 import { useTimezone } from '../hooks/useTimezone';
 import { OutletProfileContextType } from '../types';
 import { numberWithCommas } from '../utils/utils';
+import { useUserDataStore } from '../store/userData';
 
 const CATEGORY_OPTIONS = [
   { id: 'overview', label: 'Overview', Icon: Gauge },
@@ -124,6 +125,7 @@ function buildPieDataset(entries: Array<{ label: string; value: number }>) {
 
 function StatsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
+  const { user: loggedInUser } = useUserDataStore();
   const [timeRange, setTimeRange] = useState<TimeRange>('total');
   const [currentType, setCurrentType] = useState<string>('all');
   const [activeCategory, setActiveCategory] = useState<CategoryId>('overview');
@@ -402,10 +404,15 @@ function StatsScreen() {
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-base-content">Statistics</h1>
-            <p className="text-base-content/70">
-              Track your immersion progress with detailed breakdowns and charts.
-            </p>
+            <h1 className="text-3xl font-bold text-base-content">
+              {username}'s Statistics
+            </h1>
+            {username === loggedInUser?.username ? (
+              <p className="text-base-content/70">
+                Track your immersion progress with detailed breakdowns and
+                charts.
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge badge-outline text-sm">
@@ -418,202 +425,14 @@ function StatsScreen() {
         </div>
 
         <div className="card bg-base-100 shadow-xl">
-          <div className="card-body flex justify-between flex-row items-start">
-            <div className="space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="dropdown dropdown-bottom">
-                    <div tabIndex={0} role="button" className="btn btn-outline">
-                      <Calendar className="w-4 h-4" />
-                      {CATEGORY_LABELS[timeRange]}
-                      <ChevronDown className="w-4 h-4" />
-                    </div>
-                    <ul
-                      tabIndex={0}
-                      className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-60 border border-base-300"
-                    >
-                      {[
-                        { label: 'All Time', value: 'total' },
-                        { label: 'Today', value: 'today' },
-                        { label: 'This Week', value: 'week' },
-                        { label: 'This Month', value: 'month' },
-                        { label: 'This Year', value: 'year' },
-                      ].map((option) => (
-                        <li key={option.value}>
-                          <button
-                            className={
-                              timeRange === option.value ? 'active' : ''
-                            }
-                            onClick={() => {
-                              setTimeRange(option.value as TimeRange);
-                              setStartDate('');
-                              setEndDate('');
-                              setCustomStartDate(undefined);
-                              setCustomEndDate(undefined);
-                            }}
-                          >
-                            {option.label}
-                          </button>
-                        </li>
-                      ))}
-                      <li className="menu-title px-2 mt-2">Custom range</li>
-                      <li className="px-2 py-2">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex flex-col gap-2 w-full">
-                            <div className="dropdown dropdown-bottom">
-                              <div
-                                tabIndex={0}
-                                role="button"
-                                className="btn btn-outline btn-sm w-full"
-                                ref={startBtnRef}
-                              >
-                                {customStartDate
-                                  ? formatDisplayDate(customStartDate)
-                                  : 'Start Date'}
-                                <Calendar className="w-4 h-4 ml-1" />
-                              </div>
-                              <div
-                                tabIndex={0}
-                                className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
-                              >
-                                <DayPicker
-                                  className="react-day-picker mx-auto"
-                                  mode="single"
-                                  selected={customStartDate}
-                                  onSelect={(date) => {
-                                    setCustomStartDate(date ?? undefined);
-                                    if (
-                                      customEndDate &&
-                                      date &&
-                                      customEndDate < date
-                                    ) {
-                                      setCustomEndDate(undefined);
-                                    }
-                                    startBtnRef.current?.focus();
-                                  }}
-                                  disabled={(date) => date > new Date()}
-                                />
-                              </div>
-                            </div>
-                            <span className="text-center text-base-content/50">
-                              to
-                            </span>
-                            <div className="dropdown dropdown-bottom">
-                              <div
-                                tabIndex={0}
-                                role="button"
-                                className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
-                                ref={endBtnRef}
-                              >
-                                {customEndDate
-                                  ? formatDisplayDate(customEndDate)
-                                  : 'End Date'}
-                                <Calendar className="w-4 h-4 ml-1" />
-                              </div>
-                              {customStartDate && (
-                                <div
-                                  tabIndex={0}
-                                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
-                                >
-                                  <DayPicker
-                                    className="react-day-picker mx-auto"
-                                    mode="single"
-                                    selected={customEndDate}
-                                    onSelect={(date) => {
-                                      setCustomEndDate(date ?? undefined);
-                                      endBtnRef.current?.focus();
-                                    }}
-                                    disabled={(date) => {
-                                      const today = new Date();
-                                      return (
-                                        date > today ||
-                                        (customStartDate &&
-                                          date < customStartDate)
-                                      );
-                                    }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              className="btn btn-sm btn-primary"
-                              onClick={() => {
-                                setStartDate(
-                                  formatDateForQuery(customStartDate)
-                                );
-                                setEndDate(formatDateForQuery(customEndDate));
-                                setTimeRange('custom');
-                              }}
-                              disabled={!customStartDate || !customEndDate}
-                            >
-                              Apply
-                            </button>
-                            <button
-                              className="btn btn-sm"
-                              onClick={() => {
-                                setStartDate('');
-                                setEndDate('');
-                                setCustomStartDate(undefined);
-                                setCustomEndDate(undefined);
-                                setTimeRange('total');
-                              }}
-                            >
-                              Clear
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="dropdown dropdown-bottom">
-                    <div tabIndex={0} role="button" className="btn btn-outline">
-                      <Filter className="w-4 h-4" />
-                      {currentTypeDisplay}
-                      <ChevronDown className="w-4 h-4" />
-                    </div>
-                    <ul
-                      tabIndex={0}
-                      className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300"
-                    >
-                      <li>
-                        <button
-                          className={currentType === 'all' ? 'active' : ''}
-                          onClick={() => setCurrentType('all')}
-                        >
-                          All Types
-                        </button>
-                      </li>
-                      {logTypes.map((type) => (
-                        <li key={type}>
-                          <button
-                            className={currentType === type ? 'active' : ''}
-                            onClick={() => setCurrentType(type)}
-                          >
-                            {capitalizeType(type)}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-                <TagFilter
-                  includedTags={includedTags}
-                  excludedTags={excludedTags}
-                  onIncludeChange={setIncludedTags}
-                  onExcludeChange={setExcludedTags}
-                  username={username ?? ''}
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-base-content/60">View:</span>
-                <div className="join">
+          <div className="card-body flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-4 w-full">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+                <div className="join w-full sm:w-auto">
                   {CATEGORY_OPTIONS.map(({ id, label, Icon }) => (
                     <button
                       key={id}
-                      className={`join-item btn btn-sm ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
+                      className={`join-item btn flex-1 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
                       onClick={() => setActiveCategory(id)}
                     >
                       <Icon className="w-4 h-4" />
@@ -621,10 +440,196 @@ function StatsScreen() {
                     </button>
                   ))}
                 </div>
+                <div className="dropdown dropdown-bottom">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="btn btn-outline w-full sm:w-auto"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    {CATEGORY_LABELS[timeRange]}
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-60 border border-base-300"
+                  >
+                    {[
+                      { label: 'All Time', value: 'total' },
+                      { label: 'Today', value: 'today' },
+                      { label: 'This Week', value: 'week' },
+                      { label: 'This Month', value: 'month' },
+                      { label: 'This Year', value: 'year' },
+                    ].map((option) => (
+                      <li key={option.value}>
+                        <button
+                          className={timeRange === option.value ? 'active' : ''}
+                          onClick={() => {
+                            setTimeRange(option.value as TimeRange);
+                            setStartDate('');
+                            setEndDate('');
+                            setCustomStartDate(undefined);
+                            setCustomEndDate(undefined);
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      </li>
+                    ))}
+                    <li className="menu-title px-2 mt-2">Custom range</li>
+                    <li className="px-2 py-2">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 w-full">
+                          <div className="dropdown dropdown-bottom">
+                            <div
+                              tabIndex={0}
+                              role="button"
+                              className="btn btn-outline btn-sm w-full"
+                              ref={startBtnRef}
+                            >
+                              {customStartDate
+                                ? formatDisplayDate(customStartDate)
+                                : 'Start Date'}
+                              <Calendar className="w-4 h-4 ml-1" />
+                            </div>
+                            <div
+                              tabIndex={0}
+                              className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                            >
+                              <DayPicker
+                                className="react-day-picker mx-auto"
+                                mode="single"
+                                selected={customStartDate}
+                                onSelect={(date) => {
+                                  setCustomStartDate(date ?? undefined);
+                                  if (
+                                    customEndDate &&
+                                    date &&
+                                    customEndDate < date
+                                  ) {
+                                    setCustomEndDate(undefined);
+                                  }
+                                  startBtnRef.current?.focus();
+                                }}
+                                disabled={(date) => date > new Date()}
+                              />
+                            </div>
+                          </div>
+                          <span className="text-center text-base-content/50">
+                            to
+                          </span>
+                          <div className="dropdown dropdown-bottom">
+                            <div
+                              tabIndex={0}
+                              role="button"
+                              className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
+                              ref={endBtnRef}
+                            >
+                              {customEndDate
+                                ? formatDisplayDate(customEndDate)
+                                : 'End Date'}
+                              <Calendar className="w-4 h-4 ml-1" />
+                            </div>
+                            {customStartDate && (
+                              <div
+                                tabIndex={0}
+                                className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                              >
+                                <DayPicker
+                                  className="react-day-picker mx-auto"
+                                  mode="single"
+                                  selected={customEndDate}
+                                  onSelect={(date) => {
+                                    setCustomEndDate(date ?? undefined);
+                                    endBtnRef.current?.focus();
+                                  }}
+                                  disabled={(date) => {
+                                    const today = new Date();
+                                    return (
+                                      date > today ||
+                                      (customStartDate &&
+                                        date < customStartDate)
+                                    );
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => {
+                              setStartDate(formatDateForQuery(customStartDate));
+                              setEndDate(formatDateForQuery(customEndDate));
+                              setTimeRange('custom');
+                            }}
+                            disabled={!customStartDate || !customEndDate}
+                          >
+                            Apply
+                          </button>
+                          <button
+                            className="btn btn-sm"
+                            onClick={() => {
+                              setStartDate('');
+                              setEndDate('');
+                              setCustomStartDate(undefined);
+                              setCustomEndDate(undefined);
+                              setTimeRange('total');
+                            }}
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div className="dropdown dropdown-bottom">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="btn btn-outline w-full sm:w-auto"
+                  >
+                    <Filter className="w-4 h-4" />
+                    {currentTypeDisplay}
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300"
+                  >
+                    <li>
+                      <button
+                        className={currentType === 'all' ? 'active' : ''}
+                        onClick={() => setCurrentType('all')}
+                      >
+                        All Types
+                      </button>
+                    </li>
+                    {logTypes.map((type) => (
+                      <li key={type}>
+                        <button
+                          className={currentType === type ? 'active' : ''}
+                          onClick={() => setCurrentType(type)}
+                        >
+                          {capitalizeType(type)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
+              <TagFilter
+                includedTags={includedTags}
+                excludedTags={excludedTags}
+                onIncludeChange={setIncludedTags}
+                onExcludeChange={setExcludedTags}
+                username={username ?? ''}
+              />
             </div>
-            <label className="label cursor-pointer gap-2">
-              <span className="label-text text-sm text-base-content">
+            <label className="label cursor-pointer gap-3 w-full lg:w-auto justify-between lg:justify-end">
+              <span className="label-text text-sm text-base-content whitespace-nowrap">
                 Immersed days only
               </span>
               <input
@@ -639,8 +644,14 @@ function StatsScreen() {
 
         {activeCategory === 'overview' && (
           <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
+                Totals
+              </h3>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -663,7 +674,7 @@ function StatsScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -691,7 +702,7 @@ function StatsScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -723,8 +734,14 @@ function StatsScreen() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card bg-base-100 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
+                Daily Habit & Streaks
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="card bg-base-100 shadow-lg h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -756,7 +773,7 @@ function StatsScreen() {
                   </p>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-lg h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -780,7 +797,7 @@ function StatsScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-lg h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -806,145 +823,224 @@ function StatsScreen() {
             </div>
 
             {currentType === 'all' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="card bg-base-100 shadow-lg">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-4 h-4 text-info" />
-                      </div>
-                      <h3 className="font-semibold text-info">Reading</h3>
-                    </div>
-                    <p className="text-2xl font-bold">
-                      {numberWithCommas(
-                        parseFloat(userStats.totals.readingHours.toFixed(1))
-                      )}
-                      <span className="text-sm font-normal text-base-content/70 ml-1">
-                        hours
-                      </span>
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      Reading, manga, and visual novels
-                    </p>
-                  </div>
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
+                    Reading vs Listening
+                  </h3>
                 </div>
 
-                <div className="card bg-base-100 shadow-lg">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
-                        <Headphones className="w-4 h-4 text-success" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card-body">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
+                          <BookOpen className="w-4 h-4 text-info" />
+                        </div>
+                        <h3 className="font-semibold text-info">Reading</h3>
                       </div>
-                      <h3 className="font-semibold text-success">Listening</h3>
+                      <p className="text-2xl font-bold">
+                        {numberWithCommas(
+                          parseFloat(userStats.totals.readingHours.toFixed(1))
+                        )}
+                        <span className="text-sm font-normal text-base-content/70 ml-1">
+                          hours
+                        </span>
+                      </p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        Reading, manga, and visual novels
+                      </p>
                     </div>
-                    <p className="text-2xl font-bold">
-                      {numberWithCommas(
-                        parseFloat(userStats.totals.listeningHours.toFixed(1))
-                      )}
-                      <span className="text-sm font-normal text-base-content/70 ml-1">
-                        hours
-                      </span>
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      Anime, video, audio, movies, and TV
-                    </p>
                   </div>
-                </div>
 
-                <div className="card bg-base-100 shadow-lg">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
-                        <Scale className="w-4 h-4 text-warning" />
+                  <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card-body">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                          <Headphones className="w-4 h-4 text-success" />
+                        </div>
+                        <h3 className="font-semibold text-success">
+                          Listening
+                        </h3>
                       </div>
-                      <h3 className="font-semibold text-warning">Balance</h3>
+                      <p className="text-2xl font-bold">
+                        {numberWithCommas(
+                          parseFloat(userStats.totals.listeningHours.toFixed(1))
+                        )}
+                        <span className="text-sm font-normal text-base-content/70 ml-1">
+                          hours
+                        </span>
+                      </p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        Anime, video, audio, movies, and TV
+                      </p>
                     </div>
-                    <p className="text-2xl font-bold">
-                      {(() => {
-                        const readingHours = userStats.totals.readingHours;
-                        const listeningHours = userStats.totals.listeningHours;
-                        const combined = readingHours + listeningHours;
-                        if (combined <= 0) return '0:0';
-                        const readingRatio = Math.round(
-                          (readingHours / combined) * 10
-                        );
-                        const listeningRatio = 10 - readingRatio;
-                        return `${readingRatio}:${listeningRatio}`;
-                      })()}
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      Reading vs. listening ratio
-                    </p>
+                  </div>
+
+                  <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card-body">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+                          <Scale className="w-4 h-4 text-warning" />
+                        </div>
+                        <h3 className="font-semibold text-warning">Balance</h3>
+                      </div>
+                      <p className="text-2xl font-bold">
+                        {(() => {
+                          const readingHours = userStats.totals.readingHours;
+                          const listeningHours =
+                            userStats.totals.listeningHours;
+                          const combined = readingHours + listeningHours;
+                          if (combined <= 0) return '0:0';
+                          const readingRatio = Math.round(
+                            (readingHours / combined) * 10
+                          );
+                          const listeningRatio = 10 - readingRatio;
+                          return `${readingRatio}:${listeningRatio}`;
+                        })()}
+                      </p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        Reading vs. listening ratio
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             {showEpisodeMetrics && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="card bg-base-100 shadow-lg">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
-                        <Clapperboard className="w-5 h-5 text-accent" />
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
+                    Episode Totals
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card-body">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                          <Clapperboard className="w-5 h-5 text-accent" />
+                        </div>
+                        <h3 className="font-semibold text-accent">
+                          {currentType === 'anime'
+                            ? 'Episodes'
+                            : currentType === 'movie'
+                              ? 'Movies'
+                              : 'Videos'}
+                        </h3>
                       </div>
-                      <h3 className="font-semibold text-accent">
+                      <p className="text-2xl font-bold">
+                        {(() => {
+                          const typeStats = statsByType.find(
+                            (stat) => stat.type === currentType
+                          );
+                          return numberWithCommas(
+                            typeStats?.totalEpisodes || 0
+                          );
+                        })()}
+                      </p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        Total {currentType}{' '}
                         {currentType === 'anime'
-                          ? 'Episodes'
+                          ? 'episodes'
                           : currentType === 'movie'
-                            ? 'Movies'
-                            : 'Videos'}
-                      </h3>
+                            ? 'movies'
+                            : 'videos'}{' '}
+                        watched
+                      </p>
                     </div>
-                    <p className="text-2xl font-bold">
-                      {(() => {
-                        const typeStats = statsByType.find(
-                          (stat) => stat.type === currentType
-                        );
-                        return numberWithCommas(typeStats?.totalEpisodes || 0);
-                      })()}
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      Total {currentType}{' '}
-                      {currentType === 'anime'
-                        ? 'episodes'
-                        : currentType === 'movie'
-                          ? 'movies'
-                          : 'videos'}{' '}
-                      watched
-                    </p>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             {showReadingMetrics && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="card bg-base-100 shadow-lg">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Gauge className="w-5 h-5 text-primary" />
-                      </div>
-                      <h3 className="font-semibold text-primary">
-                        Average Reading Speed
-                      </h3>
-                    </div>
-                    <p className="text-2xl font-bold">
-                      {numberWithCommas(Math.round(avgReadingSpeed || 0))}
-                      <span className="text-sm font-normal text-base-content/70 ml-1">
-                        chars/hr
-                      </span>
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      Based on reading, manga, and visual novels
-                    </p>
-                  </div>
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
+                    Reading Metrics
+                  </h3>
                 </div>
-                <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
-                  <div className="card-body">
-                    <div className="mb-2">
-                      <div className="flex items-center gap-3">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card-body">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Gauge className="w-5 h-5 text-primary" />
+                        </div>
+                        <h3 className="font-semibold text-primary">
+                          Average Reading Speed
+                        </h3>
+                      </div>
+                      <p className="text-2xl font-bold">
+                        {numberWithCommas(Math.round(avgReadingSpeed || 0))}
+                        <span className="text-sm font-normal text-base-content/70 ml-1">
+                          chars/hr
+                        </span>
+                      </p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        Based on reading, manga, and visual novels
+                      </p>
+                    </div>
+                  </div>
+                  <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
+                    <div className="card-body">
+                      <div className="mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <svg
+                              className="w-5 h-5 text-primary"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                              focusable="false"
+                            >
+                              <g transform="translate(12,12)">
+                                <text
+                                  x="0"
+                                  y="0"
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  fill="currentColor"
+                                  fontSize="20"
+                                  fontWeight="700"
+                                >
+                                  字
+                                </text>
+                              </g>
+                            </svg>
+                          </div>
+                          <h3 className="font-semibold text-primary">
+                            Daily Average Characters
+                          </h3>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold">
+                        {numberWithCommas(
+                          Math.round(dailyAverageCharsDisplay || 0)
+                        )}
+                        <span className="text-sm font-normal text-base-content/70 ml-1">
+                          chars
+                        </span>
+                      </p>
+                      <p className="text-xs text-base-content/60 mt-1">
+                        {(() => {
+                          const period = PERIOD_LABELS[timeRange];
+                          const typeLabel =
+                            currentType === 'all'
+                              ? 'reading'
+                              : `${currentType.toLowerCase()} reading`;
+                          return `${period} daily ${typeLabel} average`;
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card-body">
+                      <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                           <svg
                             className="w-5 h-5 text-primary"
@@ -968,116 +1064,66 @@ function StatsScreen() {
                           </svg>
                         </div>
                         <h3 className="font-semibold text-primary">
-                          Daily Average Characters
+                          Characters Read
                         </h3>
                       </div>
-                    </div>
-                    <p className="text-2xl font-bold">
-                      {numberWithCommas(
-                        Math.round(dailyAverageCharsDisplay || 0)
-                      )}
-                      <span className="text-sm font-normal text-base-content/70 ml-1">
-                        chars
-                      </span>
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      {(() => {
-                        const period = PERIOD_LABELS[timeRange];
-                        const typeLabel =
-                          currentType === 'all'
-                            ? 'reading'
-                            : `${currentType.toLowerCase()} reading`;
-                        return `${period} daily ${typeLabel} average`;
-                      })()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="card bg-base-100 shadow-lg">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <svg
-                          className="w-5 h-5 text-primary"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                          focusable="false"
-                        >
-                          <g transform="translate(12,12)">
-                            <text
-                              x="0"
-                              y="0"
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              fill="currentColor"
-                              fontSize="20"
-                              fontWeight="700"
-                            >
-                              字
-                            </text>
-                          </g>
-                        </svg>
-                      </div>
-                      <h3 className="font-semibold text-primary">
-                        Characters Read
-                      </h3>
-                    </div>
-                    <p className="text-2xl font-bold">
-                      {numberWithCommas(totalChars)}
-                    </p>
-                    <p className="text-xs text-base-content/60 mt-1">
-                      {currentType === 'all'
-                        ? 'Characters across all reading types'
-                        : `Characters in ${currentType.toLowerCase()} logs`}
-                    </p>
-                  </div>
-                </div>
-
-                {showPageMetric && (
-                  <div className="card bg-base-100 shadow-lg">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
-                          <Book className="w-5 h-5 text-info" />
-                        </div>
-                        <h3 className="font-semibold text-info">Pages</h3>
-                      </div>
                       <p className="text-2xl font-bold">
-                        {numberWithCommas(totalPages)}
+                        {numberWithCommas(totalChars)}
                       </p>
                       <p className="text-xs text-base-content/60 mt-1">
                         {currentType === 'all'
-                          ? 'Total pages recorded across reading logs'
-                          : `Total pages read in ${currentTypeDisplay.toLowerCase()} logs`}
+                          ? 'Characters across all reading types'
+                          : `Characters in ${currentType.toLowerCase()} logs`}
                       </p>
                     </div>
                   </div>
-                )}
 
-                {currentType !== 'all' && (
-                  <div className="card bg-base-100 shadow-lg">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Gauge className="w-5 h-5 text-primary" />
+                  {showPageMetric && (
+                    <div className="card bg-base-100 shadow-lg h-full">
+                      <div className="card-body">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
+                            <Book className="w-5 h-5 text-info" />
+                          </div>
+                          <h3 className="font-semibold text-info">Pages</h3>
                         </div>
-                        <h3 className="font-semibold text-primary">
-                          Avg Reading Speed
-                        </h3>
+                        <p className="text-2xl font-bold">
+                          {numberWithCommas(totalPages)}
+                        </p>
+                        <p className="text-xs text-base-content/60 mt-1">
+                          {currentType === 'all'
+                            ? 'Total pages recorded across reading logs'
+                            : `Total pages read in ${currentTypeDisplay.toLowerCase()} logs`}
+                        </p>
                       </div>
-                      <p className="text-2xl font-bold">
-                        {numberWithCommas(Math.round(avgReadingSpeed || 0))}
-                        <span className="text-sm font-normal text-base-content/70 ml-1">
-                          chars/hr
-                        </span>
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        Based on reading, manga, and visual novels
-                      </p>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {currentType !== 'all' && (
+                    <div className="card bg-base-100 shadow-lg h-full">
+                      <div className="card-body">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Gauge className="w-5 h-5 text-primary" />
+                          </div>
+                          <h3 className="font-semibold text-primary">
+                            Avg Reading Speed
+                          </h3>
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {numberWithCommas(Math.round(avgReadingSpeed || 0))}
+                          <span className="text-sm font-normal text-base-content/70 ml-1">
+                            chars/hr
+                          </span>
+                        </p>
+                        <p className="text-xs text-base-content/60 mt-1">
+                          Based on reading, manga, and visual novels
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}

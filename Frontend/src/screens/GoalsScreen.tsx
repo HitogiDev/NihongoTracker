@@ -1,9 +1,11 @@
 import { useOutletContext } from 'react-router-dom';
 import { OutletProfileContextType } from '../types';
 import ImmersionGoals from '../components/ImmersionGoals';
+import { useUserDataStore } from '../store/userData';
 
 function GoalsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
+  const { user: loggedInUser } = useUserDataStore();
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -14,9 +16,11 @@ function GoalsScreen() {
               <h1 className="text-3xl font-bold text-base-content mb-2">
                 {username}'s Goals
               </h1>
-              <p className="text-base-content/70">
-                Set and track your daily and long-term immersion goals
-              </p>
+              {username === loggedInUser?.username ? (
+                <p className="text-base-content/70">
+                  Set and track your daily and long-term immersion goals
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
