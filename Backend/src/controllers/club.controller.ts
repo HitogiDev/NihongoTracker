@@ -1051,255 +1051,6 @@ export async function getClubMedia(
   }
 }
 
-// Add review for club media
-export async function addClubReview(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
-  try {
-    const { clubId, mediaId } = req.params;
-    const { content, rating, hasSpoilers } = req.body;
-    const userId = res.locals.user._id;
-
-    if (!Types.ObjectId.isValid(clubId)) {
-      return res.status(400).json({ message: 'Invalid club ID' });
-    }
-
-    const club = await Club.findById(clubId);
-    if (!club) {
-      return res.status(404).json({ message: 'Club not found' });
-    }
-
-    // Check if user is a member
-    const userMember = club.members.find(
-      (member) => member.user.toString() === userId.toString()
-    );
-
-    if (!userMember || userMember.status !== 'active') {
-      return res
-        .status(403)
-        .json({ message: 'Only active club members can write reviews' });
-    }
-
-    // Check if media exists in club
-    const media = club.currentMedia.find((m) => m._id?.toString() === mediaId);
-    if (!media) {
-      return res.status(404).json({ message: 'Media not found in club' });
-    }
-
-    // Import ClubReview model
-    const { ClubReview } = await import('../models/club.model.js');
-
-    // Check if user already reviewed this media
-    const existingReview = await ClubReview.findOne({
-      user: userId,
-      clubMedia: mediaId,
-    });
-
-    if (existingReview) {
-      return res
-        .status(400)
-        .json({ message: 'You have already reviewed this media' });
-    }
-
-    const newReview = new ClubReview({
-      user: userId,
-      clubMedia: mediaId,
-      content,
-      rating,
-      hasSpoilers: hasSpoilers || false,
-    });
-
-    await newReview.save();
-
-    return res
-      .status(201)
-      .json({ message: 'Review added successfully', review: newReview });
-  } catch (error) {
-    return next(error as customError);
-  }
-}
-
-// Get reviews for club media
-export async function getClubReviews(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
-  try {
-    const { clubId, mediaId } = req.params;
-
-    if (!Types.ObjectId.isValid(clubId)) {
-      return res.status(400).json({ message: 'Invalid club ID' });
-    }
-
-    // Import ClubReview model
-    const { ClubReview } = await import('../models/club.model.js');
-
-    const reviews = await ClubReview.find({ clubMedia: mediaId })
-      .populate('user', 'username avatar')
-      .sort({ createdAt: -1 });
-
-    return res.status(200).json({ reviews });
-  } catch (error) {
-    return next(error as customError);
-  }
-}
-
-// Edit review
-export async function editReview(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
-  try {
-    const { clubId, mediaId, reviewId } = req.params;
-    const { content, rating, hasSpoilers } = req.body;
-    const userId = res.locals.user._id;
-
-    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(reviewId)) {
-      return res.status(400).json({ message: 'Invalid club ID or review ID' });
-    }
-
-    if (!content || content.trim().length === 0) {
-      return res.status(400).json({ message: 'Review content is required' });
-    }
-
-    if (content.length > 1000) {
-      return res
-        .status(400)
-        .json({ message: 'Review content must be 1000 characters or less' });
-    }
-
-    if (rating && (rating < 1 || rating > 5)) {
-      return res
-        .status(400)
-        .json({ message: 'Rating must be between 1 and 5' });
-    }
-
-    const club = await Club.findById(clubId);
-    if (!club) {
-      return res.status(404).json({ message: 'Club not found' });
-    }
-
-    // Check if user is a member
-    const userMember = club.members.find(
-      (member) => member.user.toString() === userId.toString()
-    );
-
-    if (!userMember || userMember.status !== 'active') {
-      return res
-        .status(403)
-        .json({ message: 'Only active club members can edit reviews' });
-    }
-
-    // Import ClubReview model
-    const { ClubReview } = await import('../models/club.model.js');
-
-    const review = await ClubReview.findOne({
-      _id: reviewId,
-      clubMedia: mediaId,
-      user: userId, // Only allow users to edit their own reviews
-    });
-
-    if (!review) {
-      return res
-        .status(404)
-        .json({ message: 'Review not found or you are not the author' });
-    }
-
-    // Update the review
-    review.content = content.trim();
-    review.hasSpoilers = hasSpoilers || false;
-    review.editedAt = new Date();
-
-    if (rating !== undefined) {
-      review.rating = rating;
-    }
-
-    await review.save();
-
-    // Populate user data for response
-    const updatedReview = await ClubReview.findById(reviewId).populate(
-      'user',
-      'username avatar'
-    );
-
-    return res
-      .status(200)
-      .json({ message: 'Review updated successfully', review: updatedReview });
-  } catch (error) {
-    return next(error as customError);
-  }
-}
-
-// Like/Unlike review
-export async function toggleReviewLike(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<Response | void> {
-  try {
-    const { clubId, mediaId, reviewId } = req.params;
-    const userId = res.locals.user._id;
-
-    if (!Types.ObjectId.isValid(clubId) || !Types.ObjectId.isValid(reviewId)) {
-      return res.status(400).json({ message: 'Invalid club ID or review ID' });
-    }
-
-    const club = await Club.findById(clubId);
-    if (!club) {
-      return res.status(404).json({ message: 'Club not found' });
-    }
-
-    // Check if user is a member
-    const userMember = club.members.find(
-      (member) => member.user.toString() === userId.toString()
-    );
-
-    if (!userMember || userMember.status !== 'active') {
-      return res
-        .status(403)
-        .json({ message: 'Only active club members can like reviews' });
-    }
-
-    // Import ClubReview model
-    const { ClubReview } = await import('../models/club.model.js');
-
-    const review = await ClubReview.findOne({
-      _id: reviewId,
-      clubMedia: mediaId,
-    });
-
-    if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
-    }
-
-    const userIdString = userId.toString();
-    const isLiked = review.likes.some((id) => id.toString() === userIdString);
-
-    if (isLiked) {
-      review.likes = review.likes.filter(
-        (id) => id.toString() !== userIdString
-      );
-    } else {
-      review.likes.push(userId);
-    }
-
-    await review.save();
-    return res.status(200).json({
-      message: isLiked
-        ? 'Review unliked successfully'
-        : 'Review liked successfully',
-      liked: !isLiked,
-      likesCount: review.likes.length,
-    });
-  } catch (error) {
-    return next(error as customError);
-  }
-}
-
 // Create a new media voting (Step 1: Basic Info)
 export async function createMediaVoting(
   req: Request,
@@ -2187,24 +1938,8 @@ export async function getClubRecentActivity(
         },
       },
     ]);
-    // Get recent reviews
-    const { ClubReview } = await import('../models/club.model.js');
-    const clubMediaObjectIds = club.currentMedia.map((media) => media._id);
-
-    const recentReviews = await ClubReview.find({
-      user: { $in: memberIds },
-      clubMedia: { $in: clubMediaObjectIds },
-      createdAt: { $gte: startDate },
-    })
-      .populate('user', 'username avatar')
-      .populate('clubMedia', 'title')
-      .sort({ createdAt: -1 })
-      .skip(skipNum)
-      .limit(limitNum);
-
-    // Combine and sort by date
-    const activities = [
-      ...recentLogs.map((log) => {
+    const activities = recentLogs
+      .map((log) => {
         // Try to get populated media title
         let mediaTitle =
           log.media?.titleEnglish ||
@@ -2236,38 +1971,18 @@ export async function getClubRecentActivity(
           },
           createdAt: (log as any).createdAt,
         };
-      }),
-      ...recentReviews.map((review) => ({
-        type: 'review' as const,
-        _id: review._id,
-        user: review.user,
-        media: {
-          _id: review.clubMedia._id,
-          title: (review.clubMedia as any)?.title || 'Unknown Media',
-        },
-        content: review.content,
-        metadata: {
-          rating: review.rating,
-          hasSpoilers: review.hasSpoilers,
-        },
-        createdAt: review.createdAt,
-      })),
-    ].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     // Get total count for pagination
     const totalLogs = await Log.countDocuments({
       user: { $in: memberIds },
       createdAt: { $gte: startDate },
     });
-    const totalReviews = await ClubReview.countDocuments({
-      user: { $in: memberIds },
-      clubMedia: { $in: clubMediaObjectIds },
-      createdAt: { $gte: startDate },
-    });
-    const total = totalLogs + totalReviews;
+    const total = totalLogs;
 
     return res.status(200).json({
       activities,

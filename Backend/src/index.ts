@@ -207,6 +207,38 @@ io.on('connection', (socket) => {
     } catch (error) {}
   });
 
+  socket.on('delete_lines', async (data) => {
+    const { roomId, lineIds } = data;
+    try {
+      if (socket.data.role !== 'host') return;
+      await TextSession.updateOne(
+        { roomId },
+        { $pull: { lines: { id: { $in: lineIds } } } }
+      );
+      socket.to(roomId).emit('lines_deleted', { lineIds });
+    } catch (error) {}
+  });
+
+  socket.on('restore_lines', async (data) => {
+    const { roomId, lines } = data;
+    try {
+      if (socket.data.role !== 'host') return;
+
+      const dbLines = lines.map((lineData) => ({
+        id: lineData.id,
+        text: lineData.text,
+        charsCount: lineData.japaneseCount,
+        createdAt: lineData.createdAt,
+      }));
+
+      await TextSession.updateOne(
+        { roomId },
+        { $push: { lines: { $each: dbLines } } }
+      );
+      socket.to(roomId).emit('lines_restored', { lines });
+    } catch (error) {}
+  });
+
   socket.on('disconnecting', async () => {
     for (const roomId of socket.rooms) {
       if (roomId !== socket.id) {

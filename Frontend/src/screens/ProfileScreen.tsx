@@ -10,13 +10,7 @@ import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
-
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-});
+import { renderMarkdownWithSpoilers } from '../utils/markdown';
 import {
   Search,
   Funnel,
@@ -61,8 +55,7 @@ function ProfileScreen() {
     if (!user?.about || !user.about.trim()) {
       return '';
     }
-    const rawHtml = marked.parse(user.about, { async: false }) as string;
-    return DOMPurify.sanitize(rawHtml);
+    return renderMarkdownWithSpoilers(user.about);
   })();
 
   const isValidLogType = (

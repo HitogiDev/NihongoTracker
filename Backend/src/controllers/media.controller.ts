@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import {
   Anime,
   Manga,
@@ -6,6 +7,7 @@ import {
   Reading,
   Movie,
 } from '../models/media.model.js';
+import MediaReview from '../models/mediaReview.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import fac from 'fast-average-color-node';
 import { searchAnilist } from '../services/searchAnilist.js';
@@ -225,6 +227,211 @@ export async function searchMedia(
     const media = await searchDocuments(type, title, { limit, offset });
 
     return res.status(200).json(media.hits);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function addMediaReview(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaType, contentId } = req.params;
+    const { content, rating, hasSpoilers } = req.body;
+    const userId = res.locals.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Review content is required' });
+    }
+
+    if (content.length > 1000) {
+      return res
+        .status(400)
+        .json({ message: 'Review content must be 1000 characters or less' });
+    }
+
+    if (rating && (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)) {
+      return res
+        .status(400)
+        .json({ message: 'Rating must be between 0.5 and 5 in 0.5 increments' });
+    }
+
+    const existingReview = await MediaReview.findOne({
+      user: userId,
+      mediaContentId: contentId,
+      mediaType,
+    });
+
+    if (existingReview) {
+      return res
+        .status(400)
+        .json({ message: 'You have already reviewed this media' });
+    }
+
+    const review = await MediaReview.create({
+      user: userId,
+      mediaContentId: contentId,
+      mediaType,
+      content: content.trim(),
+      rating,
+      hasSpoilers: hasSpoilers || false,
+      likes: [],
+    });
+
+    return res
+      .status(201)
+      .json({ message: 'Review added successfully', review });
+  } catch (error) {
+    if ((error as Error).message.includes('E11000')) {
+      return res
+        .status(400)
+        .json({ message: 'You have already reviewed this media' });
+    }
+    return next(error as customError);
+  }
+}
+
+export async function getMediaReviews(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaType, contentId } = req.params;
+
+    const reviews = await MediaReview.find({
+      mediaContentId: contentId,
+      mediaType,
+    })
+      .populate('user', 'username avatar')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ reviews });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function editMediaReview(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaType, contentId, reviewId } = req.params;
+    const { content, rating, hasSpoilers } = req.body;
+    const userId = res.locals.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: 'Invalid review ID' });
+    }
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: 'Review content is required' });
+    }
+
+    if (content.length > 1000) {
+      return res
+        .status(400)
+        .json({ message: 'Review content must be 1000 characters or less' });
+    }
+
+    if (rating && (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)) {
+      return res
+        .status(400)
+        .json({ message: 'Rating must be between 0.5 and 5 in 0.5 increments' });
+    }
+
+    const review = await MediaReview.findOne({
+      _id: reviewId,
+      mediaContentId: contentId,
+      mediaType,
+      user: userId,
+    });
+
+    if (!review) {
+      return res
+        .status(404)
+        .json({ message: 'Review not found or you are not the author' });
+    }
+
+    review.content = content.trim();
+    review.hasSpoilers = hasSpoilers || false;
+    review.editedAt = new Date();
+    if (rating !== undefined) {
+      review.rating = rating;
+    }
+
+    await review.save();
+
+    const updatedReview = await MediaReview.findById(reviewId).populate(
+      'user',
+      'username avatar'
+    );
+
+    return res
+      .status(200)
+      .json({ message: 'Review updated successfully', review: updatedReview });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function toggleMediaReviewLike(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaType, contentId, reviewId } = req.params;
+    const userId = res.locals.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: 'Invalid review ID' });
+    }
+
+    const review = await MediaReview.findOne({
+      _id: reviewId,
+      mediaContentId: contentId,
+      mediaType,
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const userIdString = userId.toString();
+    const isLiked = review.likes.some((id) => id.toString() === userIdString);
+
+    if (isLiked) {
+      review.likes = review.likes.filter(
+        (id) => id.toString() !== userIdString
+      );
+    } else {
+      review.likes.push(userId);
+    }
+
+    await review.save();
+
+    return res.status(200).json({
+      message: isLiked ? 'Review unliked' : 'Review liked',
+      liked: !isLiked,
+      likesCount: review.likes.length,
+    });
   } catch (error) {
     return next(error as customError);
   }

@@ -725,10 +725,18 @@ export interface IClubMedia {
   updatedAt?: Date;
 }
 
-export interface IClubReview {
+export interface IMediaReview {
   _id: string;
   user: IUser;
-  clubMedia: string;
+  mediaContentId: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'tv show';
   content: string;
   rating?: number;
   hasSpoilers: boolean;

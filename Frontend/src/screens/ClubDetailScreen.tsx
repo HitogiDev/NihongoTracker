@@ -556,9 +556,9 @@ function ClubDetailScreen() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'leader':
-        return <Shield className="text-yellow-500" />;
+        return <Shield className="text-yellow-500 w-4 h-4" />;
       case 'moderator':
-        return <BadgeCheck className="text-blue-500" />;
+        return <BadgeCheck className="text-blue-500 w-4 h-4" />;
       default:
         return null;
     }
@@ -1191,7 +1191,7 @@ function ClubDetailScreen() {
                                 </div>
                               </div>
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1 flex-wrap">
                                   <span className="font-medium">
                                     {member.user.username}
                                   </span>

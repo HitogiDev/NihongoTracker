@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Info, MessageSquareText, BarChart, History } from 'lucide-react';
+import { Info, BarChart, History } from 'lucide-react';
 
 function ClubMediaNavbar({
   clubId,
@@ -22,12 +22,6 @@ function ClubMediaNavbar({
             <Link to={`/clubs/${clubId}/media/${mediaId}/activity`}>
               <History className="mr-1 w-4 h-4" />
               Member Activity
-            </Link>
-          </li>
-          <li>
-            <Link to={`/clubs/${clubId}/media/${mediaId}/reviews`}>
-              <MessageSquareText className="mr-1 w-4 h-4" />
-              Reviews
             </Link>
           </li>
           <li>

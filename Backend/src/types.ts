@@ -659,10 +659,18 @@ export interface IClubMedia {
   updatedAt?: Date;
 }
 
-export interface IClubReview extends Document {
+export interface IMediaReview extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
-  clubMedia: Types.ObjectId;
+  mediaContentId: string;
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'tv show';
   content: string;
   rating?: number;
   hasSpoilers: boolean;
@@ -835,11 +843,15 @@ export interface IServerToClientEvents {
     }>
   ) => void;
   receive_line: (lineData: ISocketLineData) => void;
+  lines_deleted: (data: { lineIds: string[] }) => void;
+  lines_restored: (data: { lines: ISocketLineData[] }) => void;
 }
 
 export interface IClientToServerEvents {
   join_room: (data: string | ISocketJoinRoomData) => void;
   send_line: (data: ISocketSendLineData) => void;
+  delete_lines: (data: { roomId: string; lineIds: string[] }) => void;
+  restore_lines: (data: { roomId: string; lines: ISocketLineData[] }) => void;
 }
 
 export interface ISocketData {

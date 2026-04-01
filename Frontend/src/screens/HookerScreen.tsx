@@ -41,6 +41,7 @@ import {
   RotateCcw,
   Edit3,
   HelpCircle,
+  Undo2,
 } from 'lucide-react';
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
@@ -119,6 +120,8 @@ function TextHooker() {
     useState<QuickLogInitialValues | null>(null);
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
   const [lines, setLines] = useState<LineEntry[]>([]);
+  const linesRef = useRef<LineEntry[]>([]);
+  const [undoStack, setUndoStack] = useState<{ id: string; action: 'delete' | 'clear'; data: LineEntry[]; indices?: number[] }[]>([]);
   const [vertical, setVertical] = useState(() => {
     return localStorage.getItem('texthooker_vertical') === 'true';
   });
@@ -198,6 +201,8 @@ function TextHooker() {
     queryKey: ['textSession', contentId],
     queryFn: () => getTextSessionFn(contentId!),
     enabled: !!contentId,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
 
   const media =
@@ -293,7 +298,40 @@ function TextHooker() {
   });
 
   useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
+
+  const appendIncomingLine = useCallback(
+    (lineData: LineEntry) => {
+      const normalizedText = lineData.text.trim();
+      if (!normalizedText) return false;
+
+      if (
+        preventGlobalDuplicates &&
+        linesRef.current.some((line) => line.text.trim() === normalizedText)
+      ) {
+        return false;
+      }
+
+      const nextLines = [...linesRef.current, lineData];
+      linesRef.current = nextLines;
+      setLines(nextLines);
+
+      if (contentId) {
+        saveLines([lineData]);
+      }
+
+      return true;
+    },
+    [contentId, preventGlobalDuplicates, saveLines]
+  );
+
+  const sessionDataLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (sessionDataLoadedRef.current) return;
     if (sessionData?.lines) {
+      sessionDataLoadedRef.current = true;
       const mappedLines = sessionData.lines.map((l) => ({
         id: l.id,
         text: l.text,
@@ -661,28 +699,13 @@ function TextHooker() {
 
     if (mode === 'guest' || mode === 'host') {
       newSocket.on('receive_line', (lineData: LineEntry) => {
-        let lineAdded = false;
-        setLines((prev) => {
-          if (
-            preventGlobalDuplicates &&
-            prev.some((line) => line.text.trim() === lineData.text.trim())
-          ) {
-            return prev;
-          }
-          lineAdded = true;
-          return [...prev, lineData];
-        });
-
+        const lineAdded = appendIncomingLine(lineData);
         if (!lineAdded) return;
 
         lastActivityRef.current = Date.now();
 
         if (!isTimerActive && autostartTimerByLine) {
           setIsTimerActive(true);
-        }
-
-        if (contentId) {
-          saveLines([lineData]);
         }
       });
 
@@ -697,11 +720,32 @@ function TextHooker() {
             )
           : history;
 
+        linesRef.current = nextHistory;
         setLines(nextHistory);
 
         if (contentId) {
           saveLines(nextHistory);
         }
+      });
+
+      newSocket.on('lines_deleted', (data: { lineIds: string[] }) => {
+        setLines(prev => prev.filter(line => !data.lineIds.includes(line.id)));
+      });
+
+      newSocket.on('lines_restored', (data: { lines: any[] }) => {
+        setLines(prev => {
+          const nextLines = [...prev];
+          data.lines.forEach(restored => {
+             if (!nextLines.some(l => l.id === restored.id)) {
+                nextLines.push({
+                   id: restored.id,
+                   text: restored.text,
+                   japaneseCount: restored.japaneseCount
+                });
+             }
+          });
+          return nextLines;
+        });
       });
     }
 
@@ -717,6 +761,7 @@ function TextHooker() {
     user,
     contentId,
     preventGlobalDuplicates,
+    appendIncomingLine,
     saveLines,
     isTimerActive,
     autostartTimerByLine,
@@ -745,23 +790,8 @@ function TextHooker() {
       const japaneseCount = countJapaneseCharacters(text);
       const newLine = { id: createLineId(), text, japaneseCount };
 
-      let lineAdded = false;
-      setLines((prev) => {
-        if (
-          preventGlobalDuplicates &&
-          prev.some((line) => line.text.trim() === text.trim())
-        ) {
-          return prev;
-        }
-        lineAdded = true;
-        return [...prev, newLine];
-      });
-
+      const lineAdded = appendIncomingLine(newLine);
       if (!lineAdded) return;
-
-      if (contentId) {
-        saveLines([newLine]);
-      }
 
       if (mode === 'host' && roomSocketRef.current) {
         roomSocketRef.current.emit('send_line', { roomId, lineData: newLine });
@@ -770,12 +800,10 @@ function TextHooker() {
     [
       mode,
       roomId,
-      contentId,
-      saveLines,
+      appendIncomingLine,
       isTimerActive,
       allowNewLineDuringPause,
       autostartTimerByLine,
-      preventGlobalDuplicates,
     ]
   );
 
@@ -975,9 +1003,58 @@ function TextHooker() {
       if (contentId) {
         removeLinesFromSessionFn(contentId, [lastLine.id]).catch(console.error);
       }
+      setUndoStack((stack) => [...stack, { id: createLineId(), action: 'delete', data: [lastLine], indices: [prev.length - 1] }]);
+      if (mode === 'host' && roomSocketRef.current) {
+        roomSocketRef.current.emit('delete_lines', { roomId, lineIds: [lastLine.id] });
+      }
       return prev.slice(0, -1);
     });
-  }, [contentId]);
+  }, [contentId, mode, roomId]);
+
+  const handleUndo = useCallback(() => {
+    setUndoStack((prevStack) => {
+      if (prevStack.length === 0) return prevStack;
+      
+      const lastAction = prevStack[prevStack.length - 1];
+      const nextStack = prevStack.slice(0, -1);
+      
+      setLines((prevLines) => {
+        const nextLines = [...prevLines];
+        lastAction.data.forEach((lineToRestore, indexInAction) => {
+          const targetIndex = lastAction.indices?.[indexInAction] ?? nextLines.length;
+          // To ensure we don't duplicate
+          if (!nextLines.some(l => l.id === lineToRestore.id)) {
+            nextLines.splice(targetIndex, 0, lineToRestore);
+          }
+        });
+        
+        if (contentId) {
+           addLinesToSessionFn(contentId, lastAction.data.map((l) => ({
+              id: l.id,
+              text: l.text,
+              charsCount: l.japaneseCount,
+              createdAt: new Date().toISOString(),
+           }))).catch(console.error);
+        }
+        
+        if (mode === 'host' && roomSocketRef.current) {
+           roomSocketRef.current.emit('restore_lines', { 
+              roomId, 
+              lines: lastAction.data.map(l => ({
+                id: l.id,
+                text: l.text,
+                japaneseCount: l.japaneseCount,
+                createdAt: new Date()
+              }))
+           });
+        }
+        
+        return nextLines;
+      });
+      
+      return nextStack;
+    });
+  }, [contentId, mode, roomId]);
 
   const listContainerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLElement>(document.body);
@@ -1200,23 +1277,8 @@ function TextHooker() {
           const japaneseCount = countJapaneseCharacters(text);
           const newLine = { id: createLineId(), text, japaneseCount };
 
-          let lineAdded = false;
-          setLines((prev) => {
-            if (
-              preventGlobalDuplicates &&
-              prev.some((line) => line.text.trim() === text.trim())
-            ) {
-              return prev;
-            }
-            lineAdded = true;
-            return [...prev, newLine];
-          });
-
+          const lineAdded = appendIncomingLine(newLine);
           if (!lineAdded) continue;
-
-          if (contentId) {
-            saveLines([newLine]);
-          }
 
           if (mode === 'host' && roomSocketRef.current) {
             roomSocketRef.current.emit('send_line', {
@@ -1230,12 +1292,10 @@ function TextHooker() {
     [
       mode,
       roomId,
-      contentId,
-      saveLines,
+      appendIncomingLine,
       isTimerActive,
       allowPasteDuringPause,
       autostartTimerByPaste,
-      preventGlobalDuplicates,
     ]
   );
 
@@ -1280,20 +1340,36 @@ function TextHooker() {
 
   const handleDelete = useCallback(
     (id: string) => {
-      setLines((prev) => prev.filter((line) => line.id !== id));
-      if (contentId) {
-        removeLinesFromSessionFn(contentId, [id]).catch(console.error);
-      }
+      setLines((prev) => {
+        const index = prev.findIndex((line) => line.id === id);
+        if (index === -1) return prev;
+        const line = prev[index];
+        if (contentId) {
+          removeLinesFromSessionFn(contentId, [id]).catch(console.error);
+        }
+        setUndoStack((stack) => [...stack, { id: createLineId(), action: 'delete', data: [line], indices: [index] }]);
+        if (mode === 'host' && roomSocketRef.current) {
+          roomSocketRef.current.emit('delete_lines', { roomId, lineIds: [id] });
+        }
+        return prev.filter((l) => l.id !== id);
+      });
     },
-    [contentId]
+    [contentId, mode, roomId]
   );
 
   const handleClearAll = useCallback(() => {
-    setLines([]);
-    if (contentId) {
-      clearSessionLinesFn(contentId).catch(console.error);
-    }
-  }, [contentId]);
+    setLines((prev) => {
+      if (prev.length === 0) return prev;
+      if (contentId) {
+        clearSessionLinesFn(contentId).catch(console.error);
+      }
+      setUndoStack((stack) => [...stack, { id: createLineId(), action: 'clear', data: prev, indices: prev.map((_, i) => i) }]);
+      if (mode === 'host' && roomSocketRef.current) {
+        roomSocketRef.current.emit('delete_lines', { roomId, lineIds: prev.map((l) => l.id) });
+      }
+      return [];
+    });
+  }, [contentId, mode, roomId]);
 
   const handleCopyAll = useCallback(async () => {
     const combined = lines.map((line) => line.text).join('\n');
@@ -1558,6 +1634,16 @@ function TextHooker() {
           title="Delete last line"
         >
           <Trash2 size={16} />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleUndo}
+          disabled={undoStack.length === 0}
+          className="btn btn-xs btn-ghost btn-square"
+          title="Undo delete"
+        >
+          <Undo2 size={16} />
         </button>
 
         <button
@@ -2685,25 +2771,24 @@ function TextHooker() {
             </div>
 
             <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Room ID</span>
-              </label>
+              <span className="text-sm font-semibold leading-none">
+                Room ID
+              </span>
               <input
                 type="text"
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value)}
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 placeholder={
                   mode === 'host' ? 'Create a room name' : 'Enter room ID'
                 }
+                aria-label="Room ID"
               />
-              <label className="label">
-                <span className="label-text-alt opacity-70">
-                  {mode === 'host'
-                    ? 'Choose a unique name for your room'
-                    : 'Get the room ID from the host'}
-                </span>
-              </label>
+              <span className="text-xs opacity-70 leading-snug">
+                {mode === 'host'
+                  ? 'Choose a unique name for your room'
+                  : 'Get the room ID from the host'}
+              </span>
             </div>
 
             <div className="flex gap-2 justify-end mt-6">

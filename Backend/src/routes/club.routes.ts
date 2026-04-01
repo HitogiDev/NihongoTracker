@@ -19,10 +19,6 @@ import {
   getClubMediaRankings,
   getClubMemberRankings,
   getClubMediaStats,
-  addClubReview,
-  getClubReviews,
-  editReview,
-  toggleReviewLike,
   createMediaVoting,
   editMediaVoting,
   deleteMediaVoting,
@@ -86,12 +82,6 @@ router.get('/:clubId/media/:mediaId/stats', getClubMediaStats); // Get club medi
 
 // Club Rankings routes
 router.get('/:clubId/rankings', getClubMemberRankings); // Get club member rankings (overall)
-
-// Club Reviews routes
-router.post('/:clubId/media/:mediaId/reviews', addClubReview); // Add review for club media
-router.get('/:clubId/media/:mediaId/reviews', getClubReviews); // Get reviews for club media
-router.put('/:clubId/media/:mediaId/reviews/:reviewId', editReview); // Edit review
-router.post('/:clubId/media/:mediaId/reviews/:reviewId/like', toggleReviewLike); // Like/unlike review
 
 // Club Media Voting routes
 router.post('/:clubId/votings', createMediaVoting); // Create new media voting

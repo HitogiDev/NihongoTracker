@@ -18,6 +18,11 @@ function MediaNavbar({
             <Link to={`/${mediaType}/${mediaId}/${username}`}>Overview</Link>
           </li>
           <li>
+            <Link to={`/${mediaType}/${mediaId}/${username}/reviews`}>
+              Reviews
+            </Link>
+          </li>
+          <li>
             <Link to={`/${mediaType}/${mediaId}/${username}/social`}>
               Social
             </Link>

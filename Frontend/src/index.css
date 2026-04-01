@@ -122,3 +122,28 @@ html {
 .badge-rainbow {
   animation: rainbow-fade 8s ease-in-out infinite;
 }
+
+.spoiler {
+  background-color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+  color: transparent;
+  border-radius: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  user-select: none;
+}
+
+.spoiler * {
+  color: transparent !important;
+}
+
+.spoiler.revealed {
+  background-color: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+  color: inherit;
+  cursor: text;
+  user-select: auto;
+}
+
+.spoiler.revealed * {
+  color: inherit !important;
+}

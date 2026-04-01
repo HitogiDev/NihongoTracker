@@ -47,6 +47,7 @@ import {
   ListOrdered,
   Quote,
   Type,
+  EyeOff,
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
@@ -265,11 +266,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
           }}
         ></textarea>
         <div className="flex justify-between items-center">
-          <label className="label py-1">
-            <span className="label-text-alt text-base-content/60">
-              Supports Markdown.
-            </span>
-          </label>
+          <label className="label py-1"></label>
           <span className="label-text-alt text-base-content/60">
             {length}/{maxLength}
           </span>
@@ -993,6 +990,10 @@ function SettingsScreen() {
     );
   }, []);
 
+  const insertSpoiler = useCallback(() => {
+    aboutEditorRef.current?.insertSnippet('||', '||', 'spoiler text');
+  }, []);
+
   async function handleUpdateUser(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData();
@@ -1600,6 +1601,15 @@ function SettingsScreen() {
                           aria-label="Insert link"
                         >
                           <LinkIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          onClick={insertSpoiler}
+                          title="Spoiler"
+                          aria-label="Insert spoiler"
+                        >
+                          <EyeOff className="w-4 h-4" />
                         </button>
                         <button
                           type="button"

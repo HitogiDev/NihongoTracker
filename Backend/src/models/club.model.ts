@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IClub, IClubMember, IClubMedia, IClubReview } from '../types.js';
+import { IClub, IClubMember, IClubMedia } from '../types.js';
 
 // Club Member Schema
 const ClubMemberSchema = new Schema<IClubMember>(
@@ -46,20 +46,6 @@ const ClubMediaSchema = new Schema<IClubMedia>(
   { timestamps: true }
 );
 
-// Club Review Schema
-const ClubReviewSchema = new Schema<IClubReview>(
-  {
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    clubMedia: { type: Schema.Types.ObjectId, required: true },
-    content: { type: String, required: true, maxlength: 1000 },
-    rating: { type: Number, min: 1, max: 5 },
-    hasSpoilers: { type: Boolean, default: false },
-    likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    editedAt: { type: Date },
-  },
-  { timestamps: true }
-);
-
 const ClubSchema = new Schema<IClub>(
   {
     name: { type: String, required: true, maxlength: 100 },
@@ -88,6 +74,5 @@ ClubSchema.index({ totalXp: -1 });
 ClubSchema.index({ 'members.user': 1 });
 
 const Club = model<IClub>('Club', ClubSchema);
-const ClubReview = model<IClubReview>('ClubReview', ClubReviewSchema);
 
-export { Club, ClubReview };
+export { Club };

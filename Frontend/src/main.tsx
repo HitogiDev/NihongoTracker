@@ -36,6 +36,8 @@ import SharedLogScreen from './screens/SharedLogScreen.tsx';
 import StatsScreen from './screens/StatsScreen.tsx';
 import TextHooker from './screens/HookerScreen.tsx';
 import MediaSocial from './screens/MediaSocial.tsx';
+import MediaReviews from './screens/MediaReviews.tsx';
+import MediaWriteReview from './screens/MediaWriteReview.tsx';
 import AdminScreen from './screens/AdminScreen.tsx';
 import ClubsScreen from './screens/ClubsScreen.tsx';
 import CreateClubScreen from './screens/CreateClubScreen.tsx';
@@ -43,7 +45,6 @@ import ClubDetailScreen from './screens/ClubDetailScreen.tsx';
 import ClubMediaHeader from './components/club/ClubMediaHeader.tsx';
 import ClubMediaInfo from './screens/ClubMediaInfo.tsx';
 import ClubMediaActivity from './screens/ClubMediaActivity.tsx';
-import ClubMediaReviews from './screens/ClubMediaReviews.tsx';
 import ClubMediaRankings from './screens/ClubMediaRankings.tsx';
 import GoalsScreen from './screens/GoalsScreen.tsx';
 import SupportScreen from './screens/SupportScreen.tsx';
@@ -82,7 +83,6 @@ const router = createBrowserRouter(
         >
           <Route index element={<ClubMediaInfo />} />
           <Route path="activity" element={<ClubMediaActivity />} />
-          <Route path="reviews" element={<ClubMediaReviews />} />
           <Route path="rankings" element={<ClubMediaRankings />} />
         </Route>
         <Route path="calculator" element={<CalculatorScreen />} />
@@ -112,6 +112,8 @@ const router = createBrowserRouter(
         </Route>
         <Route path=":mediaType/:mediaId/:username?" element={<MediaHeader />}>
           <Route index element={<MediaDetails />} />
+          <Route path="reviews" element={<MediaReviews />} />
+          <Route path="reviews/write" element={<MediaWriteReview />} />
           <Route path="social" element={<MediaSocial />} />
         </Route>
         <Route path="404" element={<NotFound />} />
@@ -120,6 +122,14 @@ const router = createBrowserRouter(
     </Route>
   )
 );
+
+// Global click handler for Discord-style spoilers (click to reveal/hide)
+document.addEventListener('click', (e) => {
+  const target = (e.target as HTMLElement).closest('.spoiler');
+  if (target) {
+    target.classList.toggle('revealed');
+  }
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

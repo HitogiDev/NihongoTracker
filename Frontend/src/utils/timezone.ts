@@ -102,7 +102,7 @@ export const getTimezones = (): { label: string; value: string }[] => {
       const offset = getTimezoneOffset(tz);
       const offsetStr = formatTimezoneOffset(offset);
 
-      // Format: "America/New_York" -> "EST (GMT-5)" or fallback to "Eastern Standard Time (GMT-5)"
+      // Format: "America/New_York" -> "EST (UTC-5)" or fallback to "Eastern Standard Time (UTC-5)"
       const label = `${timeZoneName} (${offsetStr})`;
       timezoneMap.set(tz, label);
     } catch (error) {
@@ -195,16 +195,16 @@ export const getTimezoneOffset = (timezone: string): number => {
   }
 };
 
-// Format timezone offset as string (e.g., "GMT+5", "GMT-3")
+// Format timezone offset as string (e.g., "UTC+5", "UTC-3")
 export const formatTimezoneOffset = (offsetMinutes: number): string => {
   const hours = Math.floor(Math.abs(offsetMinutes) / 60);
   const minutes = Math.abs(offsetMinutes) % 60;
   const sign = offsetMinutes <= 0 ? '+' : '-';
 
   if (minutes === 0) {
-    return `GMT${sign}${hours}`;
+    return `UTC${sign}${hours}`;
   } else {
-    return `GMT${sign}${hours}:${minutes.toString().padStart(2, '0')}`;
+    return `UTC${sign}${hours}:${minutes.toString().padStart(2, '0')}`;
   }
 };
 

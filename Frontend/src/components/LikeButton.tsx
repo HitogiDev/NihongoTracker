@@ -128,9 +128,9 @@ export default function LikeButton({
           }`}
         >
           {isLiked ? (
-            <ThumbsUp className="mr-1 text-white" />
+            <ThumbsUp className="w-4 h-4 mr-1 text-white" />
           ) : (
-            <ThumbsUp className="mr-1" />
+            <ThumbsUp className="w-4 h-4 mr-1" />
           )}
         </div>
         <span

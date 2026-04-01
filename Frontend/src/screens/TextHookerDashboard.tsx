@@ -425,10 +425,10 @@ function TextHookerDashboard() {
               </div>
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Room ID</span>
-              </label>
+            <div className="form-control gap-2">
+              <span className="text-sm font-semibold leading-none">
+                Room ID
+              </span>
               <input
                 type="text"
                 value={roomId}
@@ -436,21 +436,20 @@ function TextHookerDashboard() {
                   setRoomId(e.target.value);
                   setRoomError(null);
                 }}
-                className={`input input-bordered ${roomError ? 'input-error' : ''}`}
+                className={`input input-bordered w-full ${roomError ? 'input-error' : ''}`}
                 placeholder={
                   roomMode === 'host' ? 'Create a room name' : 'Enter room ID'
                 }
+                aria-label="Room ID"
               />
-              <label className="label">
-                <span
-                  className={`label-text-alt ${roomError ? 'text-error' : 'opacity-70'}`}
-                >
-                  {roomError ||
-                    (roomMode === 'host'
-                      ? 'Choose a unique name for your room'
-                      : 'Get the room ID from the host')}
-                </span>
-              </label>
+              <span
+                className={`text-xs leading-snug ${roomError ? 'text-error' : 'opacity-70'}`}
+              >
+                {roomError ||
+                  (roomMode === 'host'
+                    ? 'Choose a unique name for your room'
+                    : 'Get the room ID from the host')}
+              </span>
             </div>
 
             <div className="flex gap-2 justify-end mt-6">

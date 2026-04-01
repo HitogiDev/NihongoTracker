@@ -5,7 +5,6 @@ import {
   IClub,
   ICreateClubRequest,
   IClubMedia,
-  IClubReview,
   IClubMediaVoting,
   IClubMediaCandidate,
   ILog,
@@ -238,68 +237,6 @@ export async function editClubMediaFn(
 ): Promise<{ message: string; media: IClubMedia }> {
   const res = await api.put(`/clubs/${clubId}/media/${mediaId}`, data);
   return res.data;
-}
-
-// Club Review Functions
-
-// Add review for club media
-export async function addClubReviewFn(
-  clubId: string,
-  mediaId: string,
-  reviewData: {
-    content: string;
-    rating?: number;
-    hasSpoilers?: boolean;
-  }
-): Promise<{ message: string; review: IClubReview }> {
-  const { data } = await api.post<{
-    message: string;
-    review: IClubReview;
-  }>(`/clubs/${clubId}/media/${mediaId}/reviews`, reviewData);
-  return data;
-}
-
-// Get reviews for club media
-export async function getClubReviewsFn(
-  clubId: string,
-  mediaId: string
-): Promise<{ reviews: IClubReview[] }> {
-  const { data } = await api.get<{ reviews: IClubReview[] }>(
-    `/clubs/${clubId}/media/${mediaId}/reviews`
-  );
-  return data;
-}
-
-// Edit review for club media
-export async function editClubReviewFn(
-  clubId: string,
-  mediaId: string,
-  reviewId: string,
-  reviewData: {
-    content: string;
-    rating?: number;
-    hasSpoilers: boolean;
-  }
-): Promise<{ message: string; review: IClubReview }> {
-  const { data } = await api.put<{
-    message: string;
-    review: IClubReview;
-  }>(`/clubs/${clubId}/media/${mediaId}/reviews/${reviewId}`, reviewData);
-  return data;
-}
-
-// Toggle like/unlike on review
-export async function toggleReviewLikeFn(
-  clubId: string,
-  mediaId: string,
-  reviewId: string
-): Promise<{ message: string; liked: boolean; likesCount: number }> {
-  const { data } = await api.post<{
-    message: string;
-    liked: boolean;
-    likesCount: number;
-  }>(`/clubs/${clubId}/media/${mediaId}/reviews/${reviewId}/like`);
-  return data;
 }
 
 // Club Media Voting Functions

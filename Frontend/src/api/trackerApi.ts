@@ -19,6 +19,7 @@ import {
   ILongTermGoal,
   ILongTermGoalsResponse,
   IJitenResponse,
+  IMediaReview,
   ITag,
   SearchResultType,
   IRankingSummary,
@@ -195,6 +196,62 @@ export async function getMediaFn(
   const { data } = await api.get<IMediaDocument & { jiten?: IJitenResponse }>(
     `media/${mediaType}/${mediaId}`
   );
+  return data;
+}
+
+export async function getMediaReviewsFn(
+  mediaId: string,
+  mediaType: string
+): Promise<{ reviews: IMediaReview[] }> {
+  const { data } = await api.get<{ reviews: IMediaReview[] }>(
+    `media/${mediaType}/${mediaId}/reviews`
+  );
+  return data;
+}
+
+export async function addMediaReviewFn(
+  mediaId: string,
+  mediaType: string,
+  reviewData: {
+    content: string;
+    rating?: number;
+    hasSpoilers?: boolean;
+  }
+): Promise<{ message: string; review: IMediaReview }> {
+  const { data } = await api.post<{ message: string; review: IMediaReview }>(
+    `media/${mediaType}/${mediaId}/reviews`,
+    reviewData
+  );
+  return data;
+}
+
+export async function editMediaReviewFn(
+  mediaId: string,
+  mediaType: string,
+  reviewId: string,
+  reviewData: {
+    content: string;
+    rating?: number;
+    hasSpoilers: boolean;
+  }
+): Promise<{ message: string; review: IMediaReview }> {
+  const { data } = await api.put<{ message: string; review: IMediaReview }>(
+    `media/${mediaType}/${mediaId}/reviews/${reviewId}`,
+    reviewData
+  );
+  return data;
+}
+
+export async function toggleMediaReviewLikeFn(
+  mediaId: string,
+  mediaType: string,
+  reviewId: string
+): Promise<{ message: string; liked: boolean; likesCount: number }> {
+  const { data } = await api.post<{
+    message: string;
+    liked: boolean;
+    likesCount: number;
+  }>(`media/${mediaType}/${mediaId}/reviews/${reviewId}/like`);
   return data;
 }
 

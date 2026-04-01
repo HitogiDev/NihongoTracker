@@ -69,30 +69,6 @@ export default function MediaSocial() {
     staleTime: 60 * 1000,
   });
 
-  // Share current page helper
-  function shareCurrentPage() {
-    const shareUrl = window.location.href;
-    if (navigator.share) {
-      navigator
-        .share({
-          title: mediaDocument?.title?.contentTitleNative || 'NihongoTracker',
-          text: 'Check out this media social page on NihongoTracker',
-          url: shareUrl,
-        })
-        .catch(() => {
-          navigator.clipboard
-            .writeText(shareUrl)
-            .then(() => toast.success('Link copied to clipboard!'))
-            .catch(() => toast.success('Link copied to clipboard!'));
-        });
-    } else {
-      navigator.clipboard
-        .writeText(shareUrl)
-        .then(() => toast.success('Link copied to clipboard!'))
-        .catch(() => toast.success('Link copied to clipboard!'));
-    }
-  }
-
   // Compare with a friend
   const [friend, setFriend] = useState('');
   const [comparison, setComparison] = useState<IComparisonResult | null>(null);
@@ -140,9 +116,6 @@ export default function MediaSocial() {
               See community stats for this title and share your page.
             </p>
           </div>
-          <button onClick={shareCurrentPage} className="btn btn-primary">
-            Share
-          </button>
         </div>
 
         {/* Stats */}
@@ -394,7 +367,7 @@ export default function MediaSocial() {
                     const logWithUser = log as unknown as {
                       user?: { username?: string; avatar?: string };
                     };
-                    const uname = logWithUser.user?.username;
+                    const username = logWithUser.user?.username;
                     const avatar = logWithUser.user?.avatar;
                     return (
                       <div key={log._id} className="space-y-2">
@@ -408,18 +381,18 @@ export default function MediaSocial() {
                           ) : (
                             <div className="w-6 h-6 rounded-full bg-base-300" />
                           )}
-                          {uname ? (
+                          {username ? (
                             <Link
-                              to={`/user/${encodeURIComponent(uname)}`}
+                              to={`/user/${encodeURIComponent(username)}`}
                               className="link link-hover"
                             >
-                              @{uname}
+                              {username}
                             </Link>
                           ) : (
-                            <span>@unknown</span>
+                            <span>unknown</span>
                           )}
                         </div>
-                        <LogCard log={log} user={uname} />
+                        <LogCard log={log} user={username} />
                       </div>
                     );
                   })}
