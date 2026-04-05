@@ -737,6 +737,7 @@ export interface IMediaReview {
     | 'video'
     | 'movie'
     | 'tv show';
+  summary: string;
   content: string;
   rating?: number;
   hasSpoilers: boolean;

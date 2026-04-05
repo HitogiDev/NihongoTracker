@@ -17,7 +17,6 @@ import {
   ListFilter,
   LayoutGrid,
   LayoutList,
-  Sparkles,
   TrendingUp,
   Bookmark,
   Play,
@@ -466,7 +465,7 @@ function ListScreen() {
           )}
 
         <div className="container mx-auto px-4 mt-4 relative z-50">
-          <div className="card bg-base-100 shadow-xl relative z-50">
+          <div className="card bg-base-100 shadow-sm relative z-50">
             <div className="card-body p-6">
               <div className="flex flex-col gap-4">
                 {/* Search Bar */}
@@ -645,19 +644,11 @@ function ListScreen() {
                   of {stats.totalCount} items
                   {searchQuery && ` for "${searchQuery}"`}
                 </p>
-                {(Object.keys(groupedMedia).includes('ungrouped')
+                {Object.keys(groupedMedia).includes('ungrouped')
                   ? (groupedMedia.ungrouped?.length || 0) > 0
                   : Object.values(groupedMedia).some(
                       (group) => group.length > 0
-                    )) && (
-                  <div className="flex items-center gap-2 text-sm text-base-content/70">
-                    <Sparkles className="w-4 h-4" />
-                    <span>
-                      {username !== user?.username ? username + "'s" : 'Your'}{' '}
-                      immersion journey
-                    </span>
-                  </div>
-                )}
+                    )}
               </div>
             </div>
           </div>
@@ -933,7 +924,7 @@ function MediaCard({
 
   return (
     <div
-      className={`card bg-base-100 shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer border ${config.border}`}
+      className={`card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer border ${config.border}`}
       onClick={handleCardClick}
     >
       <figure className="relative aspect-[3/4] overflow-hidden">

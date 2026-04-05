@@ -17,12 +17,18 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { IMediaReview } from '../types';
+import { renderMarkdownWithSpoilers } from '../utils/markdown';
+
+const REVIEW_MAX_LENGTH = 5000;
+const REVIEW_SUMMARY_MIN_LENGTH = 20;
+const REVIEW_SUMMARY_MAX_LENGTH = 150;
 
 interface EditReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   review: IMediaReview;
   onSubmit: (reviewData: {
+    summary: string;
     content: string;
     rating?: number;
     hasSpoilers: boolean;
@@ -39,12 +45,14 @@ export default function EditReviewModal({
 }: EditReviewModalProps) {
   const reviewTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [editForm, setEditForm] = useState({
+    summary: review.summary,
     content: review.content,
     rating: review.rating,
   });
 
   useEffect(() => {
     setEditForm({
+      summary: review.summary,
       content: review.content,
       rating: review.rating,
     });
@@ -52,9 +60,29 @@ export default function EditReviewModal({
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (editForm.content.trim()) {
-      onSubmit({ ...editForm, hasSpoilers: review.hasSpoilers });
+    const trimmedSummary = editForm.summary.trim();
+    const trimmedContent = editForm.content.trim();
+
+    if (trimmedSummary.length < REVIEW_SUMMARY_MIN_LENGTH) {
+      toast.error(
+        `Summary must be at least ${REVIEW_SUMMARY_MIN_LENGTH} characters.`
+      );
+      return;
     }
+
+    if (!trimmedContent) {
+      toast.error('Review content is required.');
+      return;
+    }
+
+    if (editForm.content.length > REVIEW_MAX_LENGTH) {
+      toast.error(
+        `Review content must be ${REVIEW_MAX_LENGTH} characters or less.`
+      );
+      return;
+    }
+
+    onSubmit({ ...editForm, hasSpoilers: review.hasSpoilers });
   }
 
   const needsLineBreak = useCallback(() => {
@@ -83,11 +111,6 @@ export default function EditReviewModal({
         selectedText +
         suffix +
         editForm.content.slice(selectionEnd);
-
-      if (newContent.length > 1000) {
-        toast.error('Review text is at the maximum length.');
-        return;
-      }
 
       setEditForm((prev) => ({ ...prev, content: newContent }));
 
@@ -170,6 +193,33 @@ export default function EditReviewModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Summary</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="One-sentence summary of your review"
+              value={editForm.summary}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, summary: e.target.value }))
+              }
+              maxLength={REVIEW_SUMMARY_MAX_LENGTH}
+              minLength={REVIEW_SUMMARY_MIN_LENGTH}
+              required
+            />
+            {editForm.summary.trim().length > 0 &&
+              editForm.summary.trim().length < REVIEW_SUMMARY_MIN_LENGTH && (
+                <div className="label">
+                  <span className="label-text-alt text-warning">
+                    Summary must be at least {REVIEW_SUMMARY_MIN_LENGTH}{' '}
+                    characters.
+                  </span>
+                </div>
+              )}
+          </div>
+
           {/* Rating */}
           <div>
             <label className="label">
@@ -193,7 +243,7 @@ export default function EditReviewModal({
                     name="edit-review-rating"
                     className={`mask mask-star ${
                       value % 1 === 0.5 ? 'mask-half-1' : 'mask-half-2'
-                    } bg-yellow-500`}
+                    } bg-primary`}
                     aria-label={`${value} star${value !== 1 ? 's' : ''}`}
                     checked={editForm.rating === value}
                     onChange={() =>
@@ -334,20 +384,50 @@ export default function EditReviewModal({
               </button>
             </div>
             <textarea
-              className="textarea textarea-bordered w-full h-32 resize-none"
+              className="textarea textarea-bordered w-full min-h-56 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
               placeholder="Share your thoughts about this media..."
               value={editForm.content}
               ref={reviewTextareaRef}
               onChange={(e) =>
                 setEditForm((prev) => ({ ...prev, content: e.target.value }))
               }
-              maxLength={1000}
               required
             />
-            <div className="label">
-              <span className="label-text-alt text-base-content/60">
-                {editForm.content.length}/1000 characters
-              </span>
+            {editForm.content.length > REVIEW_MAX_LENGTH && (
+              <div className="label">
+                <span className="label-text-alt text-error">
+                  {editForm.content.length - REVIEW_MAX_LENGTH} characters over
+                  the {REVIEW_MAX_LENGTH} limit.
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="card bg-base-200/50 border border-base-300">
+            <div className="card-body p-4">
+              <h4 className="font-semibold">Preview</h4>
+              <div className="grow-0 w-full">
+                {editForm.summary.trim() && (
+                  <div className="text-base font-medium text-base-content/85">
+                    {editForm.summary.trim()}
+                  </div>
+                )}
+
+                {editForm.summary.trim() && <div className="divider my-2" />}
+
+                {editForm.content.trim() ? (
+                  <div
+                    className="prose prose-sm max-w-none text-base-content [&>*:first-child]:mt-0"
+                    dangerouslySetInnerHTML={{
+                      __html: renderMarkdownWithSpoilers(editForm.content),
+                    }}
+                  />
+                ) : (
+                  <div className="text-base-content/60">
+                    Your live preview appears here as you edit.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -364,7 +444,12 @@ export default function EditReviewModal({
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isLoading || !editForm.content.trim()}
+              disabled={
+                isLoading ||
+                editForm.summary.trim().length < REVIEW_SUMMARY_MIN_LENGTH ||
+                !editForm.content.trim() ||
+                editForm.content.length > REVIEW_MAX_LENGTH
+              }
             >
               {isLoading ? 'Updating...' : 'Update Review'}
             </button>

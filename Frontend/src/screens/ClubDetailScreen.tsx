@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   Users,
@@ -629,7 +629,7 @@ function ClubDetailScreen() {
             {/* Club Avatar - Responsive positioning */}
             <div className="absolute left-1/2 transform -translate-x-1/2 -top-12 sm:left-4 sm:translate-x-0 sm:-top-16">
               <div className="avatar">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-base-100 p-1 shadow-xl">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-base-100 p-1 shadow-sm">
                   {club.avatar ? (
                     <img
                       src={club.avatar}
@@ -1091,25 +1091,39 @@ function ClubDetailScreen() {
                             <div className="avatar">
                               <div className="w-10 h-10 rounded-full">
                                 {member.user.avatar ? (
-                                  <img
-                                    src={member.user.avatar}
-                                    alt={member.user.username}
-                                    className="rounded-full w-full h-full object-cover"
-                                  />
+                                  <Link
+                                    to={`/user/${encodeURIComponent(member.user.username)}`}
+                                  >
+                                    <img
+                                      src={member.user.avatar}
+                                      alt={member.user.username}
+                                      className="rounded-full w-full h-full object-cover"
+                                    />
+                                  </Link>
                                 ) : (
                                   <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                    <span className="text-primary font-semibold">
-                                      {member.user.username
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </span>
+                                    <Link
+                                      to={`/user/${encodeURIComponent(member.user.username)}`}
+                                      className="link link-hover"
+                                    >
+                                      <span className="text-primary font-semibold">
+                                        {member.user.username
+                                          .charAt(0)
+                                          .toUpperCase()}
+                                      </span>
+                                    </Link>
                                   </div>
                                 )}
                               </div>
                             </div>
                             <div className="flex-1">
                               <div className="font-medium">
-                                {member.user.username}
+                                <Link
+                                  to={`/user/${encodeURIComponent(member.user.username)}`}
+                                  className="link link-hover"
+                                >
+                                  {member.user.username}
+                                </Link>
                               </div>
                               <div className="text-xs text-base-content/60">
                                 Requested{' '}
@@ -1174,27 +1188,42 @@ function ClubDetailScreen() {
                               <div className="avatar">
                                 <div className="w-12 h-12 rounded-full">
                                   {member.user.avatar ? (
-                                    <img
-                                      src={member.user.avatar}
-                                      alt={member.user.username}
-                                      className="rounded-full w-full h-full object-cover"
-                                    />
+                                    <Link
+                                      to={`/user/${encodeURIComponent(member.user.username)}`}
+                                    >
+                                      <img
+                                        src={member.user.avatar}
+                                        alt={member.user.username}
+                                        className="rounded-full w-full h-full object-cover"
+                                      />
+                                    </Link>
                                   ) : (
                                     <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                      <span className="text-primary font-semibold">
-                                        {member.user.username
-                                          .charAt(0)
-                                          .toUpperCase()}
-                                      </span>
+                                      <Link
+                                        to={`/user/${encodeURIComponent(member.user.username)}`}
+                                        className="link link-hover"
+                                      >
+                                        <span className="text-primary font-semibold">
+                                          {member.user.username
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                        </span>
+                                      </Link>
                                     </div>
                                   )}
                                 </div>
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-1 flex-wrap">
-                                  <span className="font-medium">
-                                    {member.user.username}
-                                  </span>
+                                  <Link
+                                    to={`/user/${encodeURIComponent(member.user.username)}`}
+                                    className="link link-hover"
+                                  >
+                                    <span className="font-medium">
+                                      {member.user.username}
+                                    </span>
+                                  </Link>
+
                                   {getRoleIcon(member.role)}
                                   {patreonBadge && (
                                     <div
@@ -1367,7 +1396,7 @@ function ClubDetailScreen() {
                   {/* Search Results - Positioned as absolute popup */}
                   {showResults && searchResults && searchResults.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-50 mt-1">
-                      <div className="card bg-base-100 shadow-xl border border-base-300 max-h-60 overflow-y-auto">
+                      <div className="card bg-base-100 shadow-sm border border-base-300 max-h-60 overflow-y-auto">
                         <div className="card-body p-2">
                           {searchResults.map((result) => (
                             <div

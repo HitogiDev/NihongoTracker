@@ -30,7 +30,9 @@ import { useUserDataStore } from '../store/userData';
 import { addMediaReviewFn, getMediaReviewsFn } from '../api/trackerApi';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
 
-const REVIEW_MAX_LENGTH = 1000;
+const REVIEW_MAX_LENGTH = 5000;
+const REVIEW_SUMMARY_MIN_LENGTH = 20;
+const REVIEW_SUMMARY_MAX_LENGTH = 150;
 
 function MediaWriteReview() {
   const { mediaDocument, username } =
@@ -40,10 +42,12 @@ function MediaWriteReview() {
   const queryClient = useQueryClient();
 
   const [reviewForm, setReviewForm] = useState({
+    summary: '',
     content: '',
     rating: undefined as number | undefined,
   });
   const reviewTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const bypassUnsavedPromptRef = useRef(false);
 
   const mediaBasePath = useMemo(() => {
     if (!mediaDocument?.type || !mediaDocument?.contentId) {
@@ -73,11 +77,14 @@ function MediaWriteReview() {
   );
 
   const hasStartedWriting =
-    reviewForm.content.trim().length > 0 || reviewForm.rating !== undefined;
+    reviewForm.summary.trim().length > 0 ||
+    reviewForm.content.trim().length > 0 ||
+    reviewForm.rating !== undefined;
 
   useBeforeUnload(
     useCallback(
       (event) => {
+        if (bypassUnsavedPromptRef.current) return;
         if (!hasStartedWriting) return;
         event.preventDefault();
         event.returnValue = '';
@@ -86,10 +93,20 @@ function MediaWriteReview() {
     )
   );
 
-  const blocker = useBlocker(hasStartedWriting);
+  const blocker = useBlocker(
+    useCallback(
+      () => hasStartedWriting && !bypassUnsavedPromptRef.current,
+      [hasStartedWriting]
+    )
+  );
 
   useEffect(() => {
     if (blocker.state !== 'blocked') return;
+
+    if (bypassUnsavedPromptRef.current) {
+      blocker.proceed();
+      return;
+    }
 
     const shouldLeave = window.confirm(
       'You have an unfinished review. Leave this page?'
@@ -122,6 +139,9 @@ function MediaWriteReview() {
         ],
       });
       toast.success('Review added successfully');
+      bypassUnsavedPromptRef.current = true;
+      // Clear form first so the leave-page blocker doesn't trigger on navigate
+      setReviewForm({ summary: '', content: '', rating: undefined });
       navigate(reviewsPath);
     },
     onError: (error: unknown) => {
@@ -160,11 +180,6 @@ function MediaWriteReview() {
         selectedText +
         suffix +
         reviewForm.content.slice(selectionEnd);
-
-      if (newContent.length > REVIEW_MAX_LENGTH) {
-        toast.error('Review text is at the maximum length.');
-        return;
-      }
 
       setReviewForm((prev) => ({ ...prev, content: newContent }));
 
@@ -282,11 +297,62 @@ function MediaWriteReview() {
               className="space-y-4"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (reviewForm.content.trim()) {
-                  addReviewMutation.mutate(reviewForm);
+                const trimmedSummary = reviewForm.summary.trim();
+                const trimmedContent = reviewForm.content.trim();
+
+                if (trimmedSummary.length < REVIEW_SUMMARY_MIN_LENGTH) {
+                  toast.error(
+                    `Summary must be at least ${REVIEW_SUMMARY_MIN_LENGTH} characters.`
+                  );
+                  return;
                 }
+
+                if (!trimmedContent) {
+                  toast.error('Review content is required.');
+                  return;
+                }
+
+                if (reviewForm.content.length > REVIEW_MAX_LENGTH) {
+                  toast.error(
+                    `Review content must be ${REVIEW_MAX_LENGTH} characters or less.`
+                  );
+                  return;
+                }
+
+                addReviewMutation.mutate(reviewForm);
               }}
             >
+              <div>
+                <label className="label">
+                  <span className="label-text">Summary</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  value={reviewForm.summary}
+                  placeholder="One-sentence summary of your review"
+                  maxLength={REVIEW_SUMMARY_MAX_LENGTH}
+                  minLength={REVIEW_SUMMARY_MIN_LENGTH}
+                  onChange={(e) =>
+                    setReviewForm((prev) => ({
+                      ...prev,
+                      summary: e.target.value,
+                    }))
+                  }
+                  required
+                />
+                {reviewForm.summary.trim().length > 0 &&
+                  reviewForm.summary.trim().length <
+                    REVIEW_SUMMARY_MIN_LENGTH && (
+                    <label className="label">
+                      <span className="label-text-alt text-warning">
+                        Summary must be at least {REVIEW_SUMMARY_MIN_LENGTH}{' '}
+                        characters.
+                      </span>
+                    </label>
+                  )}
+              </div>
+
               <div>
                 <label className="label">
                   <span className="label-text">Rating (optional)</span>
@@ -312,7 +378,7 @@ function MediaWriteReview() {
                         name="review-rating"
                         className={`mask mask-star ${
                           value % 1 === 0.5 ? 'mask-half-1' : 'mask-half-2'
-                        } bg-yellow-500`}
+                        } bg-primary`}
                         aria-label={`${value} star${value !== 1 ? 's' : ''}`}
                         checked={reviewForm.rating === value}
                         onChange={() =>
@@ -454,10 +520,9 @@ function MediaWriteReview() {
 
                 <textarea
                   ref={reviewTextareaRef}
-                  className="textarea textarea-bordered w-full min-h-72"
+                  className="textarea textarea-bordered w-full min-h-72 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
                   value={reviewForm.content}
                   placeholder="Share your thoughts about this media..."
-                  maxLength={REVIEW_MAX_LENGTH}
                   onChange={(e) =>
                     setReviewForm((prev) => ({
                       ...prev,
@@ -466,11 +531,14 @@ function MediaWriteReview() {
                   }
                   required
                 />
-                <label className="label">
-                  <span className="label-text-alt opacity-70">
-                    {reviewForm.content.length}/{REVIEW_MAX_LENGTH}
-                  </span>
-                </label>
+                {reviewForm.content.length > REVIEW_MAX_LENGTH && (
+                  <label className="label">
+                    <span className="label-text-alt text-error">
+                      {reviewForm.content.length - REVIEW_MAX_LENGTH} characters
+                      over the {REVIEW_MAX_LENGTH} limit.
+                    </span>
+                  </label>
+                )}
               </div>
 
               <div className="flex justify-end">
@@ -478,7 +546,11 @@ function MediaWriteReview() {
                   type="submit"
                   className="btn btn-primary"
                   disabled={
-                    addReviewMutation.isPending || !reviewForm.content.trim()
+                    addReviewMutation.isPending ||
+                    reviewForm.summary.trim().length <
+                      REVIEW_SUMMARY_MIN_LENGTH ||
+                    !reviewForm.content.trim() ||
+                    reviewForm.content.length > REVIEW_MAX_LENGTH
                   }
                 >
                   {addReviewMutation.isPending ? 'Posting...' : 'Post Review'}
@@ -489,20 +561,30 @@ function MediaWriteReview() {
         </div>
 
         <div className="card bg-base-100 shadow-lg">
-          <div className="card-body">
+          <div className="card-body justify-start">
             <h2 className="card-title text-lg">Preview</h2>
-            {reviewForm.content.trim() ? (
-              <div
-                className="prose prose-sm max-w-none text-base-content"
-                dangerouslySetInnerHTML={{
-                  __html: renderMarkdownWithSpoilers(reviewForm.content),
-                }}
-              />
-            ) : (
-              <p className="text-base-content/60">
-                Your live preview appears here as you write.
-              </p>
-            )}
+            <div className="grow-0 w-full">
+              {reviewForm.summary.trim() && (
+                <div className="text-base font-medium text-base-content/85">
+                  {reviewForm.summary.trim()}
+                </div>
+              )}
+
+              {reviewForm.summary.trim() && <div className="divider my-2" />}
+
+              {reviewForm.content.trim() ? (
+                <div
+                  className="prose prose-sm max-w-none text-base-content [&>*:first-child]:mt-0"
+                  dangerouslySetInnerHTML={{
+                    __html: renderMarkdownWithSpoilers(reviewForm.content),
+                  }}
+                />
+              ) : (
+                <div className="text-base-content/60">
+                  Your live preview appears here as you write.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

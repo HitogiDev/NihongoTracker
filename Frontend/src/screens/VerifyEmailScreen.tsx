@@ -60,7 +60,7 @@ export default function VerifyEmailScreen() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-xl">
+      <div className="card w-full max-w-md bg-base-100 shadow-sm">
         <div className="card-body items-center text-center">
           {status === 'verifying' && (
             <>

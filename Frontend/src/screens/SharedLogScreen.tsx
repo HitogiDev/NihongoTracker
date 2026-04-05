@@ -192,7 +192,7 @@ function SharedLogScreen() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-base-200 to-base-300 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
         <div className="card w-full max-w-lg bg-base-100 shadow-2xl">
           <div className="card-body text-center p-8">
             <div className="mb-6">
@@ -249,8 +249,8 @@ function SharedLogScreen() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-base-200 to-base-300 flex items-center justify-center p-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-xl">
+      <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
+        <div className="card w-full max-w-md bg-base-100 shadow-sm">
           <div className="card-body text-center p-8">
             <div className="flex justify-center mb-6">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -270,8 +270,8 @@ function SharedLogScreen() {
 
   if (error || !sharedLog) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-base-200 to-base-300 flex items-center justify-center p-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-xl">
+      <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
+        <div className="card w-full max-w-md bg-base-100 shadow-sm">
           <div className="card-body text-center p-8">
             <div className="w-20 h-20 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl">😔</span>
@@ -319,7 +319,7 @@ function SharedLogScreen() {
     sharedLog.media.contentImage;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-200 to-base-300 pt-20 pb-16 px-4">
+    <div className="min-h-screen bg-base-200 pt-20 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 bg-base-100 rounded-full px-6 py-3 shadow-lg mb-4">
@@ -339,7 +339,7 @@ function SharedLogScreen() {
           <div className="lg:col-span-1">
             <div className="sticky top-24">
               {coverImage && (
-                <div className="card bg-base-100 shadow-xl mb-6">
+                <div className="card bg-base-100 shadow-sm mb-6">
                   <figure className="aspect-[3/4] overflow-hidden rounded-xl">
                     <img
                       src={coverImage}
@@ -350,7 +350,7 @@ function SharedLogScreen() {
                 </div>
               )}
 
-              <div className="card bg-base-100 shadow-xl">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`p-3 ${typeConfig.bgColor} rounded-xl`}>
@@ -439,7 +439,7 @@ function SharedLogScreen() {
           </div>
 
           <div className="lg:col-span-2">
-            <div className="card bg-base-100 shadow-xl">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-success/10 rounded-xl">

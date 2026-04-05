@@ -564,7 +564,7 @@ function ProfileScreen() {
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-xl bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-sm bg-base-100 border border-base-300"
                       >
                         <DayPicker
                           className="react-day-picker mx-auto"
@@ -614,7 +614,7 @@ function ProfileScreen() {
                       {customStartDate && (
                         <div
                           tabIndex={0}
-                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-xl bg-base-100 border border-base-300"
+                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-sm bg-base-100 border border-base-300"
                         >
                           <DayPicker
                             className="react-day-picker mx-auto"

@@ -185,7 +185,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
   if (isLoading || isLoadingLongTerm) {
     return (
-      <div className="card bg-base-100 shadow-xl">
+      <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
           <div className="flex justify-center">
             <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -202,7 +202,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   return (
     <>
       {activeGoals.length > 0 && (
-        <div className="card bg-base-100 shadow-xl">
+        <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
             <div className="flex justify-between items-center mb-6">
               <h2 className="card-title text-2xl">Immersion Goals</h2>
@@ -354,7 +354,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               return (
                 <div
                   key={goal._id}
-                  className={`card bg-base-100 shadow-lg overflow-hidden transition-all duration-200 hover:shadow-xl ${
+                  className={`card bg-base-100 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md ${
                     isCompleted ? 'border-2 border-success/30' : ''
                   }`}
                 >

@@ -209,11 +209,22 @@ export async function getMediaReviewsFn(
   return data;
 }
 
+export async function getMediaReviewByIdFn(
+  reviewId: string
+): Promise<{ review: IMediaReview; media: IMediaDocument | null }> {
+  const { data } = await api.get<{
+    review: IMediaReview;
+    media: IMediaDocument | null;
+  }>(`media/reviews/${reviewId}`);
+  return data;
+}
+
 export async function addMediaReviewFn(
   mediaId: string,
   mediaType: string,
   reviewData: {
     content: string;
+    summary: string;
     rating?: number;
     hasSpoilers?: boolean;
   }
@@ -231,8 +242,9 @@ export async function editMediaReviewFn(
   reviewId: string,
   reviewData: {
     content: string;
+    summary: string;
     rating?: number;
-    hasSpoilers: boolean;
+    hasSpoilers?: boolean;
   }
 ): Promise<{ message: string; review: IMediaReview }> {
   const { data } = await api.put<{ message: string; review: IMediaReview }>(
@@ -252,6 +264,17 @@ export async function toggleMediaReviewLikeFn(
     liked: boolean;
     likesCount: number;
   }>(`media/${mediaType}/${mediaId}/reviews/${reviewId}/like`);
+  return data;
+}
+
+export async function deleteMediaReviewFn(
+  mediaId: string,
+  mediaType: string,
+  reviewId: string
+): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(
+    `media/${mediaType}/${mediaId}/reviews/${reviewId}`
+  );
   return data;
 }
 

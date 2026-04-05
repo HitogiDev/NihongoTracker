@@ -213,8 +213,7 @@ function LoginScreen() {
 
               <p className="text-xl text-base-content/70 leading-relaxed">
                 Join {getUserCountWord(stats?.totalUsers)} tracking their
-                immersion, leveling up, and achieving their Japanese language
-                goals.
+                immersion, leveling up, and achieving their immersion goals.
               </p>
             </div>
 
@@ -345,7 +344,7 @@ function LoginScreen() {
                   Welcome Back
                 </h2>
                 <p className="text-center text-base-content/60 mb-6 text-sm">
-                  Sign in to continue your journey! 🚀
+                  Sign in and continue tracking!
                 </p>
 
                 {/* Username/Email Field */}
@@ -455,7 +454,7 @@ function LoginScreen() {
                     className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
                       !isFormValid || isPending
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-lg hover:scale-[1.02]'
+                        : 'hover:shadow-md hover:scale-[1.02]'
                     }`}
                     type="submit"
                     disabled={!isFormValid || isPending}

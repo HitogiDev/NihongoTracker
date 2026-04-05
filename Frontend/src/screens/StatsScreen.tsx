@@ -424,7 +424,7 @@ function StatsScreen() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-xl">
+        <div className="card bg-base-100 shadow-sm">
           <div className="card-body flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
@@ -452,7 +452,7 @@ function StatsScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-60 border border-base-300"
+                    className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-60 border border-base-300"
                   >
                     {[
                       { label: 'All Time', value: 'total' },
@@ -597,7 +597,7 @@ function StatsScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300"
+                    className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
                   >
                     <li>
                       <button
@@ -651,7 +651,7 @@ function StatsScreen() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -674,7 +674,7 @@ function StatsScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -702,7 +702,7 @@ function StatsScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -741,7 +741,7 @@ function StatsScreen() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              <div className="card bg-base-100 shadow-lg h-full">
+              <div className="card bg-base-100 shadow-sm h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -773,7 +773,7 @@ function StatsScreen() {
                   </p>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg h-full">
+              <div className="card bg-base-100 shadow-sm h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -797,7 +797,7 @@ function StatsScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg h-full">
+              <div className="card bg-base-100 shadow-sm h-full">
                 <div className="card-body">
                   <div className="flex items-center justify-between">
                     <div>
@@ -831,7 +831,7 @@ function StatsScreen() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="card bg-base-100 shadow-lg h-full">
+                  <div className="card bg-base-100 shadow-sm h-full">
                     <div className="card-body">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
@@ -853,7 +853,7 @@ function StatsScreen() {
                     </div>
                   </div>
 
-                  <div className="card bg-base-100 shadow-lg h-full">
+                  <div className="card bg-base-100 shadow-sm h-full">
                     <div className="card-body">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
@@ -877,7 +877,7 @@ function StatsScreen() {
                     </div>
                   </div>
 
-                  <div className="card bg-base-100 shadow-lg h-full">
+                  <div className="card bg-base-100 shadow-sm h-full">
                     <div className="card-body">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
@@ -917,7 +917,7 @@ function StatsScreen() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="card bg-base-100 shadow-lg h-full">
+                  <div className="card bg-base-100 shadow-sm h-full">
                     <div className="card-body">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
@@ -965,7 +965,7 @@ function StatsScreen() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="card bg-base-100 shadow-lg h-full">
+                  <div className="card bg-base-100 shadow-sm h-full">
                     <div className="card-body">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -986,7 +986,7 @@ function StatsScreen() {
                       </p>
                     </div>
                   </div>
-                  <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow h-full">
+                  <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
                     <div className="card-body">
                       <div className="mb-2">
                         <div className="flex items-center gap-3">
@@ -1038,7 +1038,7 @@ function StatsScreen() {
                     </div>
                   </div>
 
-                  <div className="card bg-base-100 shadow-lg h-full">
+                  <div className="card bg-base-100 shadow-sm h-full">
                     <div className="card-body">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -1079,7 +1079,7 @@ function StatsScreen() {
                   </div>
 
                   {showPageMetric && (
-                    <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card bg-base-100 shadow-sm h-full">
                       <div className="card-body">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
@@ -1100,7 +1100,7 @@ function StatsScreen() {
                   )}
 
                   {currentType !== 'all' && (
-                    <div className="card bg-base-100 shadow-lg h-full">
+                    <div className="card bg-base-100 shadow-sm h-full">
                       <div className="card-body">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -1132,7 +1132,7 @@ function StatsScreen() {
           <div className="space-y-6">
             {currentType === 'all' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="card bg-base-100 shadow-lg">
+                <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <PieChartIcon className="w-5 h-5 text-primary" />
@@ -1144,7 +1144,7 @@ function StatsScreen() {
                   </div>
                 </div>
 
-                <div className="card bg-base-100 shadow-lg">
+                <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Clock3 className="w-5 h-5 text-primary" />
@@ -1156,7 +1156,7 @@ function StatsScreen() {
                   </div>
                 </div>
 
-                <div className="card bg-base-100 shadow-lg">
+                <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Zap className="w-5 h-5 text-primary" />
@@ -1173,7 +1173,7 @@ function StatsScreen() {
             {showReadingMetrics &&
               userStats.readingSpeedData &&
               userStats.readingSpeedData.length > 0 && (
-                <div className="card bg-base-100 shadow-lg">
+                <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
                     <h3 className="card-title text-xl mb-4">
                       <TrendingUp className="w-6 h-6 text-primary" />
@@ -1189,7 +1189,7 @@ function StatsScreen() {
                 </div>
               )}
 
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <h3 className="card-title text-xl flex items-center gap-2">

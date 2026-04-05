@@ -77,7 +77,7 @@ function ClubRanking({ username }: ClubRankingProps) {
 
   if (clubsError || rankingsError) {
     return (
-      <div className="card bg-base-100 shadow-lg">
+      <div className="card bg-base-100 shadow-sm">
         <div className="card-body">
           <h3 className="card-title text-lg flex items-center gap-2">
             <BarChart className="text-primary w-4 h-4" />
@@ -92,14 +92,14 @@ function ClubRanking({ username }: ClubRankingProps) {
   }
 
   return (
-    <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+    <div className="card bg-base-100 shadow-sm">
       <div className="card-body">
         <div className="flex items-center justify-between mb-4">
           <h3 className="card-title text-lg flex items-center gap-2">
             <BarChart className="text-primary w-4 h-4" />
             Club Ranking
           </h3>
-          {/* Club Selection Dropdown (only show if user has multiple clubs) */}
+          {/* Club Selection Dropdown */}
           {userClubs && userClubs.length > 1 && (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-sm btn-ghost">

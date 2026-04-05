@@ -671,6 +671,7 @@ export interface IMediaReview extends Document {
     | 'video'
     | 'movie'
     | 'tv show';
+  summary: string;
   content: string;
   rating?: number;
   hasSpoilers: boolean;

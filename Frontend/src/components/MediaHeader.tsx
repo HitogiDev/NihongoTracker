@@ -293,12 +293,12 @@ export default function MediaHeader() {
             <div className="flex flex-col items-center md:items-start">
               <div className="w-full max-w-[200px] md:w-full -mt-16 sm:-mt-24 md:-mt-32">
                 {isLoadingMedia ? (
-                  <div className="w-full aspect-[2/3] rounded-lg shadow-xl border-2 border-white/20 skeleton"></div>
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 skeleton"></div>
                 ) : media?.contentImage ? (
                   <img
                     src={media.contentImage}
                     alt={media.title.contentTitleNative}
-                    className={`w-full h-auto rounded-lg shadow-xl border-2 border-white/20 ${
+                    className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${
                       media.isAdult && user?.settings?.blurAdultContent
                         ? 'blur-sm'
                         : ''
@@ -309,7 +309,7 @@ export default function MediaHeader() {
                     }}
                   />
                 ) : (
-                  <div className="w-full aspect-[2/3] rounded-lg shadow-xl border-2 border-white/20 bg-base-200 flex items-center justify-center">
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 bg-base-200 flex items-center justify-center">
                     <div className="text-4xl text-base-content/30">
                       {getMediaTypeIcon(media?.type || '')}
                     </div>

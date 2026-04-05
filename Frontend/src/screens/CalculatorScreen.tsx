@@ -16,9 +16,8 @@ function CalculatorScreen() {
               </h1>
             </div>
             <p className="text-base-content/70">
-              Plan your learning journey with precision. Calculate XP gains from
-              immersion or determine how much practice you need to reach your
-              goals.
+              Find out how much you need to immerse to reach your desired goals
+              or to surpass that friend you are competing with!
             </p>
           </div>
 

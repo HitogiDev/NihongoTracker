@@ -38,6 +38,7 @@ import TextHooker from './screens/HookerScreen.tsx';
 import MediaSocial from './screens/MediaSocial.tsx';
 import MediaReviews from './screens/MediaReviews.tsx';
 import MediaWriteReview from './screens/MediaWriteReview.tsx';
+import ReviewDetailScreen from './screens/ReviewDetailScreen.tsx';
 import AdminScreen from './screens/AdminScreen.tsx';
 import ClubsScreen from './screens/ClubsScreen.tsx';
 import CreateClubScreen from './screens/CreateClubScreen.tsx';
@@ -101,6 +102,7 @@ const router = createBrowserRouter(
           <Route path="list" element={<ListScreen />} />
           <Route path="goals" element={<GoalsScreen />} />
         </Route>
+        <Route path="review/:reviewId" element={<ReviewDetailScreen />} />
         <Route element={<ProtectedRoutes />}>
           <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />

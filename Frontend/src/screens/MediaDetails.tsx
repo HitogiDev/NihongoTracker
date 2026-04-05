@@ -9,6 +9,7 @@ import {
   getMediaReviewsFn,
   editMediaReviewFn,
   toggleMediaReviewLikeFn,
+  deleteMediaReviewFn,
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
@@ -33,9 +34,9 @@ import {
   Pencil,
 } from 'lucide-react';
 import { useDateFormatting } from '../hooks/useDateFormatting';
-import LikeButton from '../components/LikeButton';
 import EditReviewModal from '../components/EditReviewModal';
-import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import MediaReviewCard from '../components/MediaReviewCard';
+import ReviewRatingSummary from '../components/ReviewRatingSummary';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -70,6 +71,7 @@ function MediaDetails() {
   const [chartMetric, setChartMetric] = useState<'xp' | 'hours'>('xp');
   const [chartView, setChartView] = useState<'line' | 'bar'>('line');
   const [editingReview, setEditingReview] = useState<IMediaReview | null>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -248,7 +250,12 @@ function MediaDetails() {
   const editReviewMutation = useMutation({
     mutationFn: (data: {
       reviewId: string;
-      reviewData: { content: string; rating?: number; hasSpoilers: boolean };
+      reviewData: {
+        summary: string;
+        content: string;
+        rating?: number;
+        hasSpoilers: boolean;
+      };
     }) => {
       if (!mediaDocument?.contentId || !mediaDocument?.type) {
         throw new Error('Media ID and type are required');
@@ -299,6 +306,36 @@ function MediaDetails() {
           mediaDocument?.type,
         ],
       });
+    },
+  });
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: (reviewId: string) => {
+      if (!mediaDocument?.contentId || !mediaDocument?.type) {
+        throw new Error('Media ID and type are required');
+      }
+      return deleteMediaReviewFn(
+        mediaDocument.contentId,
+        mediaDocument.type,
+        reviewId
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          'mediaReviews',
+          mediaDocument?.contentId,
+          mediaDocument?.type,
+        ],
+      });
+      toast.success('Review deleted successfully');
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data?.message || error.message
+          : 'Failed to delete review';
+      toast.error(errorMessage);
     },
   });
 
@@ -505,6 +542,7 @@ function MediaDetails() {
   const writeReviewPath = mediaBasePath
     ? `${mediaBasePath}/reviews/write`
     : '#';
+  const reviewsTabPath = mediaBasePath ? `${mediaBasePath}/reviews` : '#';
 
   const handleShowMore = () => {
     setVisibleLogsCount((prev) => Math.min(prev + 10, filteredLogs.length));
@@ -574,7 +612,7 @@ function MediaDetails() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
             {/* Left column skeleton - Media Details Card */}
             <div className="space-y-6 min-w-0">
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="skeleton h-6 w-32 mb-4"></div>
                   <div className="space-y-4">
@@ -612,7 +650,7 @@ function MediaDetails() {
             {/* Right column skeleton - Progress Chart and Activity Logs */}
             <div className="space-y-6 min-w-0">
               {/* Progress Chart skeleton */}
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="skeleton h-6 w-40 mb-4"></div>
                   <div className="skeleton h-64 w-full rounded-lg"></div>
@@ -620,7 +658,7 @@ function MediaDetails() {
               </div>
 
               {/* Activity Logs skeleton */}
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex justify-between items-center mb-6">
                     <div className="skeleton h-6 w-32"></div>
@@ -768,7 +806,7 @@ function MediaDetails() {
     };
 
     return (
-      <div className="card bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 shadow-lg">
+      <div className="card bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 shadow-sm">
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
             <svg
@@ -879,7 +917,7 @@ function MediaDetails() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
           <div className="space-y-6 min-w-0">
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <h2 className="card-title text-xl flex items-center gap-2 mb-0">
@@ -1115,7 +1153,12 @@ function MediaDetails() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-lg">
+            <ReviewRatingSummary
+              reviews={mediaReviews}
+              reviewsTabPath={reviewsTabPath}
+            />
+
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
                   <svg
@@ -1135,7 +1178,7 @@ function MediaDetails() {
                 </h2>
 
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                  <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="card-body">
                       <div className="flex items-center justify-between">
                         <div>
@@ -1166,7 +1209,7 @@ function MediaDetails() {
                   </div>
 
                   {totalTime > 0 && (
-                    <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                    <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                       <div className="card-body">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1205,7 +1248,7 @@ function MediaDetails() {
                     logsArray.some(
                       (log) => log.episodes && log.episodes > 0
                     ) && (
-                      <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1242,7 +1285,7 @@ function MediaDetails() {
                   {mediaDocument?.type === 'manga' &&
                     logsArray.length > 0 &&
                     logsArray.some((log) => log.pages && log.pages > 0) && (
-                      <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1282,7 +1325,7 @@ function MediaDetails() {
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     totalCharsRead > 0 && (
-                      <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1317,7 +1360,7 @@ function MediaDetails() {
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     totalCharCount > 0 && (
-                      <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1359,7 +1402,7 @@ function MediaDetails() {
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     readingSpeed > 0 && (
-                      <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow">
+                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1477,7 +1520,7 @@ function MediaDetails() {
           </div>
 
           <div className="space-y-6 min-w-0">
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <h2 className="card-title text-xl flex items-center gap-2">
@@ -1564,7 +1607,7 @@ function MediaDetails() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h2 className="card-title text-xl flex items-center gap-2">
@@ -1594,109 +1637,20 @@ function MediaDetails() {
                 ) : mediaReviews.length > 0 ? (
                   <div className="space-y-4">
                     {mediaReviews.map((review) => (
-                      <div
+                      <MediaReviewCard
                         key={review._id}
-                        className="card bg-base-200/60 shadow-sm"
-                      >
-                        <div className="card-body p-4">
-                          <div className="flex items-start justify-between">
-                            <Link
-                              to={`/user/${review.user.username}`}
-                              className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
-                            >
-                              <div className="avatar">
-                                <div className="w-9 h-9 rounded-full">
-                                  <img
-                                    src={
-                                      review.user.avatar ||
-                                      '/default-avatar.png'
-                                    }
-                                    alt={review.user.username}
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold group-hover:underline">
-                                  {review.user.username}
-                                </h4>
-                                <p className="text-xs text-base-content/60">
-                                  {new Date(
-                                    review.createdAt!
-                                  ).toLocaleDateString()}
-                                  {review.editedAt && (
-                                    <span
-                                      className="ml-2 tooltip tooltip-bottom cursor-default"
-                                      data-tip={`Edited ${new Date(review.editedAt).toLocaleString()}`}
-                                    >
-                                      (edited)
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-                            </Link>
-                            {review.rating && (
-                              <div className="rating rating-sm rating-half pointer-events-none">
-                                <input
-                                  type="radio"
-                                  className="rating-hidden"
-                                  checked={false}
-                                  readOnly
-                                />
-                                {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(
-                                  (value) => (
-                                    <input
-                                      key={value}
-                                      type="radio"
-                                      className={`mask mask-star ${
-                                        value % 1 === 0.5
-                                          ? 'mask-half-1'
-                                          : 'mask-half-2'
-                                      } bg-yellow-500`}
-                                      checked={review.rating === value}
-                                      readOnly
-                                      tabIndex={-1}
-                                    />
-                                  )
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div
-                            className="prose prose-sm max-w-none mt-3 text-base-content"
-                            dangerouslySetInnerHTML={{
-                              __html: renderMarkdownWithSpoilers(
-                                review.content
-                              ),
-                            }}
-                          />
-
-                          <div className="flex items-center justify-between mt-4">
-                            <LikeButton
-                              isLiked={review.likes.includes(
-                                currentUser?._id || ''
-                              )}
-                              likesCount={review.likes.length}
-                              onToggleLike={() =>
-                                likeReviewMutation.mutate(review._id)
-                              }
-                              disabled={
-                                likeReviewMutation.isPending || !currentUser
-                              }
-                              size="xs"
-                            />
-                            {review.user._id === currentUser?._id && (
-                              <button
-                                className="btn btn-ghost btn-xs"
-                                onClick={() => setEditingReview(review)}
-                                title="Edit review"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        review={review}
+                        currentUserId={currentUser?._id}
+                        onEdit={setEditingReview}
+                        onDelete={setDeletingReviewId}
+                        onLike={(reviewId) =>
+                          likeReviewMutation.mutate(reviewId)
+                        }
+                        likeDisabled={
+                          likeReviewMutation.isPending || !currentUser
+                        }
+                        ratingColorClass="bg-primary"
+                      />
                     ))}
                   </div>
                 ) : (
@@ -1713,7 +1667,7 @@ function MediaDetails() {
 
             <ComparisonCard />
 
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="card-title text-xl flex items-center gap-2">
@@ -1876,7 +1830,7 @@ function MediaDetails() {
                         </div>
                         <div
                           tabIndex={0}
-                          className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-xl bg-base-100 border border-base-300"
+                          className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-sm bg-base-100 border border-base-300"
                         >
                           <DayPicker
                             className="react-day-picker mx-auto"
@@ -1914,7 +1868,7 @@ function MediaDetails() {
                         {customStartDate && (
                           <div
                             tabIndex={0}
-                            className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-xl bg-base-100 border border-base-300"
+                            className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-sm bg-base-100 border border-base-300"
                           >
                             <DayPicker
                               className="react-day-picker mx-auto"
@@ -2107,6 +2061,44 @@ function MediaDetails() {
           }
           isLoading={editReviewMutation.isPending}
         />
+      )}
+
+      {deletingReviewId && (
+        <dialog className="modal modal-open">
+          <div className="modal-box max-w-sm">
+            <h3 className="font-bold text-lg">Delete Review</h3>
+            <p className="py-4 text-base-content/70">
+              Are you sure you want to delete your review? This cannot be
+              undone.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setDeletingReviewId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error"
+                disabled={deleteReviewMutation.isPending}
+                onClick={() => {
+                  deleteReviewMutation.mutate(deletingReviewId);
+                  setDeletingReviewId(null);
+                }}
+              >
+                {deleteReviewMutation.isPending ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  'Delete'
+                )}
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => setDeletingReviewId(null)}
+          />
+        </dialog>
       )}
     </div>
   );

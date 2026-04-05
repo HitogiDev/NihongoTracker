@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { filterTypes, IStats } from '../types';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTimezone } from '../hooks/useTimezone';
@@ -123,45 +123,47 @@ function RankingScreen() {
       label: string;
       value: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
     }>
-  > = {
-    anime: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-      { label: 'Episodes', value: 'episodes' },
-    ],
-    audio: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-    ],
-    reading: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-      { label: 'Characters', value: 'chars' },
-    ],
-    manga: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-      { label: 'Pages', value: 'pages' },
-      { label: 'Characters', value: 'chars' },
-    ],
-    video: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-    ],
-    vn: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-      { label: 'Characters', value: 'chars' },
-    ],
-    movie: [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-    ],
-    'tv show': [
-      { label: 'XP', value: 'xp' },
-      { label: 'Time', value: 'time' },
-    ],
-  };
+  > = useMemo(() => {
+    return {
+      anime: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Episodes', value: 'episodes' },
+      ],
+      audio: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+      ],
+      reading: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Characters', value: 'chars' },
+      ],
+      manga: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Pages', value: 'pages' },
+        { label: 'Characters', value: 'chars' },
+      ],
+      video: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+      ],
+      vn: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Characters', value: 'chars' },
+      ],
+      movie: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+      ],
+      'tv show': [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+      ],
+    };
+  }, []);
   const [mediumMetric, setMediumMetric] = useState<
     'xp' | 'time' | 'episodes' | 'chars' | 'pages'
   >(() => {
@@ -392,6 +394,7 @@ function RankingScreen() {
     mediumType,
     mediumMetric,
     setSearchParams,
+    mediumMetricOptions,
   ]);
 
   // Time filter options
@@ -604,7 +607,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-72 border border-base-300"
+              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-72 border border-base-300"
             >
               {timeFilterOptions.map((option) => (
                 <li key={option.value}>
@@ -774,7 +777,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
+              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
             >
               <li className="menu-title px-2">Scope</li>
               {scopeOptions.map((option) => (
@@ -830,7 +833,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
+              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
             >
               {(
                 [
@@ -881,7 +884,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
+              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
             >
               {mediumMetricOptions[mediumType].map((opt) => (
                 <li key={opt.value}>
@@ -902,7 +905,7 @@ function RankingScreen() {
             </div>
           </div>
         ) : (
-          <div className="card bg-base-100 shadow-xl">
+          <div className="card bg-base-100 shadow-sm">
             <div className="card-body p-0">
               {mode === 'global' &&
                 rankedUsers?.pages[0] &&

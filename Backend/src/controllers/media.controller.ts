@@ -14,6 +14,10 @@ import { searchAnilist } from '../services/searchAnilist.js';
 import axios from 'axios';
 import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
 
+const REVIEW_SUMMARY_MIN_LENGTH = 20;
+const REVIEW_SUMMARY_MAX_LENGTH = 150;
+const REVIEW_CONTENT_MAX_LENGTH = 5000;
+
 export async function getAverageColor(
   req: Request,
   res: Response,
@@ -239,27 +243,48 @@ export async function addMediaReview(
 ) {
   try {
     const { mediaType, contentId } = req.params;
-    const { content, rating, hasSpoilers } = req.body;
+    const { content, rating, hasSpoilers, summary } = req.body;
     const userId = res.locals.user?._id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (!content || content.trim().length === 0) {
+    const trimmedSummary = summary?.trim();
+    const trimmedContent = content?.trim();
+
+    if (!trimmedSummary || trimmedSummary.length === 0) {
+      return res.status(400).json({ message: 'Review summary is required' });
+    }
+
+    if (trimmedSummary.length < REVIEW_SUMMARY_MIN_LENGTH) {
+      return res.status(400).json({
+        message: `Review summary must be at least ${REVIEW_SUMMARY_MIN_LENGTH} characters`,
+      });
+    }
+
+    if (trimmedSummary.length > REVIEW_SUMMARY_MAX_LENGTH) {
+      return res.status(400).json({
+        message: `Review summary must be ${REVIEW_SUMMARY_MAX_LENGTH} characters or less`,
+      });
+    }
+
+    if (!trimmedContent || trimmedContent.length === 0) {
       return res.status(400).json({ message: 'Review content is required' });
     }
 
-    if (content.length > 1000) {
-      return res
-        .status(400)
-        .json({ message: 'Review content must be 1000 characters or less' });
+    if (content.length > REVIEW_CONTENT_MAX_LENGTH) {
+      return res.status(400).json({
+        message: `Review content must be ${REVIEW_CONTENT_MAX_LENGTH} characters or less`,
+      });
     }
 
     if (rating && (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)) {
       return res
         .status(400)
-        .json({ message: 'Rating must be between 0.5 and 5 in 0.5 increments' });
+        .json({
+          message: 'Rating must be between 0.5 and 5 in 0.5 increments',
+        });
     }
 
     const existingReview = await MediaReview.findOne({
@@ -278,7 +303,8 @@ export async function addMediaReview(
       user: userId,
       mediaContentId: contentId,
       mediaType,
-      content: content.trim(),
+      summary: trimmedSummary,
+      content: trimmedContent,
       rating,
       hasSpoilers: hasSpoilers || false,
       likes: [],
@@ -325,7 +351,7 @@ export async function editMediaReview(
 ) {
   try {
     const { mediaType, contentId, reviewId } = req.params;
-    const { content, rating, hasSpoilers } = req.body;
+    const { content, rating, hasSpoilers, summary } = req.body;
     const userId = res.locals.user?._id;
 
     if (!userId) {
@@ -336,20 +362,41 @@ export async function editMediaReview(
       return res.status(400).json({ message: 'Invalid review ID' });
     }
 
-    if (!content || content.trim().length === 0) {
+    const trimmedSummary = summary?.trim();
+    const trimmedContent = content?.trim();
+
+    if (!trimmedSummary || trimmedSummary.length === 0) {
+      return res.status(400).json({ message: 'Review summary is required' });
+    }
+
+    if (trimmedSummary.length < REVIEW_SUMMARY_MIN_LENGTH) {
+      return res.status(400).json({
+        message: `Review summary must be at least ${REVIEW_SUMMARY_MIN_LENGTH} characters`,
+      });
+    }
+
+    if (trimmedSummary.length > REVIEW_SUMMARY_MAX_LENGTH) {
+      return res.status(400).json({
+        message: `Review summary must be ${REVIEW_SUMMARY_MAX_LENGTH} characters or less`,
+      });
+    }
+
+    if (!trimmedContent || trimmedContent.length === 0) {
       return res.status(400).json({ message: 'Review content is required' });
     }
 
-    if (content.length > 1000) {
-      return res
-        .status(400)
-        .json({ message: 'Review content must be 1000 characters or less' });
+    if (content.length > REVIEW_CONTENT_MAX_LENGTH) {
+      return res.status(400).json({
+        message: `Review content must be ${REVIEW_CONTENT_MAX_LENGTH} characters or less`,
+      });
     }
 
     if (rating && (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)) {
       return res
         .status(400)
-        .json({ message: 'Rating must be between 0.5 and 5 in 0.5 increments' });
+        .json({
+          message: 'Rating must be between 0.5 and 5 in 0.5 increments',
+        });
     }
 
     const review = await MediaReview.findOne({
@@ -365,7 +412,8 @@ export async function editMediaReview(
         .json({ message: 'Review not found or you are not the author' });
     }
 
-    review.content = content.trim();
+    review.summary = trimmedSummary;
+    review.content = trimmedContent;
     review.hasSpoilers = hasSpoilers || false;
     review.editedAt = new Date();
     if (rating !== undefined) {
@@ -431,6 +479,77 @@ export async function toggleMediaReviewLike(
       message: isLiked ? 'Review unliked' : 'Review liked',
       liked: !isLiked,
       likesCount: review.likes.length,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+export async function deleteMediaReview(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { mediaType, contentId, reviewId } = req.params;
+    const userId = res.locals.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: 'Invalid review ID' });
+    }
+
+    const review = await MediaReview.findOneAndDelete({
+      _id: reviewId,
+      mediaContentId: contentId,
+      mediaType,
+      user: userId,
+    });
+
+    if (!review) {
+      return res
+        .status(404)
+        .json({ message: 'Review not found or you are not the author' });
+    }
+
+    return res.status(200).json({ message: 'Review deleted successfully' });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getMediaReviewById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { reviewId } = req.params;
+
+    if (!Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: 'Invalid review ID' });
+    }
+
+    const review = await MediaReview.findById(reviewId).populate(
+      'user',
+      'username avatar'
+    );
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    // Fetch associated media document
+    const media = await MediaBase.findOne({
+      contentId: review.mediaContentId,
+      type: review.mediaType,
+    });
+
+    return res.status(200).json({
+      review,
+      media: media ? media.toObject() : null,
     });
   } catch (error) {
     return next(error as customError);

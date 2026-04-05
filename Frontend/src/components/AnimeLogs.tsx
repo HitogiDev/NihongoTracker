@@ -283,7 +283,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
   if (isLoadingLogs) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
-        <div className="card bg-base-100 shadow-xl w-full max-w-md">
+        <div className="card bg-base-100 shadow-sm w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -433,7 +433,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left panel - Log groups */}
-        <div className="card bg-base-200 shadow-lg">
+        <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
             <h2 className="card-title">Unassigned Logs</h2>
             <div className="divider my-1"></div>
@@ -515,7 +515,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           </div>
         </div>
 
-        <div className="card bg-base-200 shadow-lg">
+        <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
             <h2 className="card-title">Find Matching Anime</h2>
             <div className="divider my-1"></div>

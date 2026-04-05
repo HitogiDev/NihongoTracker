@@ -1439,7 +1439,7 @@ function SettingsScreen() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2 space-y-6">
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-primary/10 rounded-lg">
@@ -2012,7 +2012,7 @@ function SettingsScreen() {
             </div>
 
             {/* Tag Management Section */}
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-accent/10 rounded-lg">
@@ -2042,7 +2042,7 @@ function SettingsScreen() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-secondary/10 rounded-lg">
@@ -2280,7 +2280,7 @@ function SettingsScreen() {
             </div>
 
             {/* Badge Customization Card - Always visible, locked for non-Consumer */}
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body relative">
                 {/* Lock Overlay for non-Consumer tiers */}
                 {!(
@@ -2500,7 +2500,7 @@ function SettingsScreen() {
           </div>
 
           <div className="space-y-6">
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-accent/10 rounded-lg">
@@ -2616,7 +2616,7 @@ function SettingsScreen() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-info/10 rounded-lg">
@@ -2809,7 +2809,7 @@ function SettingsScreen() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-xl border border-base-300/50">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-warning/10 rounded-lg">
@@ -2883,7 +2883,7 @@ function SettingsScreen() {
               </div>
             </div>
 
-            <div className="card bg-error/5 border border-error/20 shadow-xl">
+            <div className="card bg-error/5 border border-error/20 shadow-sm">
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-error/10 rounded-lg">

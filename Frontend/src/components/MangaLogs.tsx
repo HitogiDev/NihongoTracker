@@ -273,7 +273,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
   if (isLoadingLogs) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
-        <div className="card bg-base-100 shadow-xl w-full max-w-md">
+        <div className="card bg-base-100 shadow-sm w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
               <span className="loading loading-spinner loading-lg text-primary"></span>

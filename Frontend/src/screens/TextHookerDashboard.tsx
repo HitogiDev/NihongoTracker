@@ -177,7 +177,7 @@ function TextHookerDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="stats shadow bg-base-200">
+          <div className="stats shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-primary">
                 <BookOpen className="w-8 h-8" />
@@ -190,7 +190,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats shadow bg-base-200">
+          <div className="stats shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-secondary">
                 <List className="w-8 h-8" />
@@ -203,7 +203,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats shadow bg-base-200">
+          <div className="stats shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-accent">
                 <Type className="w-8 h-8" />
@@ -216,7 +216,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats shadow bg-base-200">
+          <div className="stats shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-info">
                 <Clock className="w-8 h-8" />
@@ -246,7 +246,7 @@ function TextHookerDashboard() {
                 Start Session
                 <ChevronDown size={16} />
               </summary>
-              <ul className="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow-lg mt-1">
+              <ul className="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow-sm mt-1">
                 <li>
                   <Link to="/texthooker/session">
                     <Type size={16} />
@@ -278,7 +278,7 @@ function TextHookerDashboard() {
                 to={`/texthooker/${media.contentId}`}
                 className="group relative"
               >
-                <div className="card bg-base-200 shadow-lg hover:shadow-xl transition-all duration-200 h-full group-hover:scale-105">
+                <div className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 h-full group-hover:scale-105">
                   <figure className="px-2 pt-2 relative">
                     <img
                       src={media.contentImage || media.coverImage}

@@ -148,7 +148,7 @@ export default function ClubMediaHeader() {
                   <img
                     src={media.mediaDocument.contentImage}
                     alt={media.title}
-                    className={`w-full h-auto rounded-lg shadow-xl border-2 border-white/20 ${
+                    className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${
                       media.mediaDocument.isAdult &&
                       user?.settings?.blurAdultContent
                         ? 'blur-sm'
@@ -160,7 +160,7 @@ export default function ClubMediaHeader() {
                     }}
                   />
                 ) : (
-                  <div className="w-full aspect-[2/3] rounded-lg shadow-xl border-2 border-white/20 bg-base-200 flex items-center justify-center">
+                  <div className="w-full aspect-[2/3] rounded-lg shadow-sm border-2 border-white/20 bg-base-200 flex items-center justify-center">
                     <div className="text-4xl text-base-content/30">
                       {getMediaTypeIcon(media.mediaType)}
                     </div>

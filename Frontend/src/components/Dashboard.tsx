@@ -385,7 +385,7 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card bg-gradient-to-br from-secondary/10 to-secondary/5 shadow-xl">
+        <div className="card bg-gradient-to-br from-secondary/10 to-secondary/5 shadow-sm">
           <div className="card-body">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-secondary text-secondary-content">
@@ -405,7 +405,7 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-xl">
+        <div className="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
           <div className="card-body">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-primary text-primary-content">
@@ -428,7 +428,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-8">
-          <div className="card bg-base-100 shadow-xl border border-base-200/60">
+          <div className="card bg-base-100 shadow-sm border border-base-200/60">
             <div className="card-body">
               <h2 className="card-title">This Month's Immersion</h2>
               <p className="text-sm text-base-content/60 -mt-2 mb-4">
@@ -490,7 +490,7 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="card bg-base-100 shadow-xl border border-base-200/60">
+          <div className="card bg-base-100 shadow-sm border border-base-200/60">
             <div className="card-body space-y-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -753,7 +753,7 @@ function RecentMediaPanel({
   onRemove,
 }: RecentMediaPanelProps) {
   return (
-    <div className="card bg-base-100 shadow-xl border border-base-200/60">
+    <div className="card bg-base-100 shadow-sm border border-base-200/60">
       <div className="card-body space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -825,7 +825,7 @@ function RecentMediaRail({
   const logs = allLogs.slice(0, limit);
 
   return (
-    <div className="card bg-base-100 shadow-xl border border-base-200/60">
+    <div className="card bg-base-100 shadow-sm border border-base-200/60">
       <div className="card-body space-y-3">
         <div className="flex items-center justify-between">
           <div>

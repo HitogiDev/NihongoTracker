@@ -3,9 +3,78 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 const APP_NAME = 'NihongoTracker';
+
+const MEDIA_TYPES = new Set([
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'video',
+  'movie',
+  'tv show',
+  'audio',
+]);
+
+type MediaTabSection = 'overview' | 'reviews' | 'social';
+
+interface ParsedMediaTabRoute {
+  key: string;
+  section: MediaTabSection;
+}
+
+function parseMediaTabRoute(pathname: string): ParsedMediaTabRoute | null {
+  const segments = pathname
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => decodeURIComponent(segment));
+
+  if (segments.length < 2) {
+    return null;
+  }
+
+  const mediaType = segments[0];
+  const mediaId = segments[1];
+
+  if (!MEDIA_TYPES.has(mediaType) || !mediaId) {
+    return null;
+  }
+
+  if (segments.length === 2) {
+    return {
+      key: `${mediaType}/${mediaId}`,
+      section: 'overview',
+    };
+  }
+
+  if (segments.length === 3) {
+    if (segments[2] === 'reviews' || segments[2] === 'social') {
+      return {
+        key: `${mediaType}/${mediaId}`,
+        section: segments[2],
+      };
+    }
+
+    return {
+      key: `${mediaType}/${mediaId}/${segments[2]}`,
+      section: 'overview',
+    };
+  }
+
+  if (
+    segments.length === 4 &&
+    (segments[3] === 'reviews' || segments[3] === 'social')
+  ) {
+    return {
+      key: `${mediaType}/${mediaId}/${segments[2]}`,
+      section: segments[3],
+    };
+  }
+
+  return null;
+}
 
 function getTitle(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -97,6 +166,7 @@ function TitleManager() {
 
 function ScrollToTop() {
   const { pathname, search, hash } = useLocation();
+  const previousPathnameRef = useRef(pathname);
 
   useEffect(() => {
     if ('scrollRestoration' in window.history) {
@@ -111,6 +181,21 @@ function ScrollToTop() {
   }, []);
 
   useLayoutEffect(() => {
+    const previousPathname = previousPathnameRef.current;
+    const previousMediaTab = parseMediaTabRoute(previousPathname);
+    const currentMediaTab = parseMediaTabRoute(pathname);
+
+    const isSwitchingBetweenMediaTabs =
+      previousMediaTab &&
+      currentMediaTab &&
+      previousMediaTab.key === currentMediaTab.key &&
+      previousMediaTab.section !== currentMediaTab.section;
+
+    if (isSwitchingBetweenMediaTabs) {
+      previousPathnameRef.current = pathname;
+      return;
+    }
+
     // Reset both window/document scroll and any app-level scroll container.
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     document.documentElement.scrollTop = 0;
@@ -120,6 +205,8 @@ function ScrollToTop() {
     if (main) {
       main.scrollTop = 0;
     }
+
+    previousPathnameRef.current = pathname;
   }, [pathname, search, hash]);
 
   return null;

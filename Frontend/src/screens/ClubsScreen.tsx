@@ -66,7 +66,7 @@ function ClubsScreen() {
     placeholderData: (previousData) => previousData,
   });
 
-  // Available tags for filtering
+  // TODO: make them dynamic according to the club tags
   const availableTags = [
     'beginner',
     'intermediate',
@@ -126,7 +126,7 @@ function ClubsScreen() {
           </div>
           <p className="text-base-content/70">
             Join clubs to immerse with others, participate in challenges, and
-            share your Japanese learning journey
+            share your Japanese immersion milestones
           </p>
         </div>
 
@@ -182,7 +182,7 @@ function ClubsScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-full border border-base-300"
+                    className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-full border border-base-300"
                   >
                     {sortOptions.map((option) => (
                       <li key={option.value}>

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { IMediaDocument } from '../types';
 
 function MediaNavbar({
@@ -10,22 +10,40 @@ function MediaNavbar({
   mediaId: string | undefined;
   username: string | undefined;
 }) {
+  const basePath = username
+    ? `/${mediaType}/${mediaId}/${username}`
+    : `/${mediaType}/${mediaId}`;
+
+  const activeTabClass = 'active bg-primary text-primary-content';
+
   return (
     <div className="navbar min-h-12 bg-base-100">
       <div className="mx-auto">
         <ul className="menu menu-horizontal gap-5">
           <li>
-            <Link to={`/${mediaType}/${mediaId}/${username}`}>Overview</Link>
+            <NavLink
+              to={basePath}
+              end
+              className={({ isActive }) => (isActive ? activeTabClass : '')}
+            >
+              Overview
+            </NavLink>
           </li>
           <li>
-            <Link to={`/${mediaType}/${mediaId}/${username}/reviews`}>
+            <NavLink
+              to={`${basePath}/reviews`}
+              className={({ isActive }) => (isActive ? activeTabClass : '')}
+            >
               Reviews
-            </Link>
+            </NavLink>
           </li>
           <li>
-            <Link to={`/${mediaType}/${mediaId}/${username}/social`}>
+            <NavLink
+              to={`${basePath}/social`}
+              className={({ isActive }) => (isActive ? activeTabClass : '')}
+            >
               Social
-            </Link>
+            </NavLink>
           </li>
         </ul>
       </div>

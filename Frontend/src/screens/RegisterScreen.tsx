@@ -899,7 +899,7 @@ function RegisterScreen() {
                     className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
                       !isFormValid() || isPending
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-lg hover:scale-[1.02]'
+                        : 'hover:shadow-md hover:scale-[1.02]'
                     }`}
                     type="submit"
                     disabled={!isFormValid() || isPending}

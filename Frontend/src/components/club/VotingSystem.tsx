@@ -638,7 +638,7 @@ export default function VotingSystem({
                       : isSelected
                         ? 'ring-2 ring-primary shadow-primary/20'
                         : canVote
-                          ? 'hover:shadow-lg hover:ring-1 hover:ring-primary/50 cursor-pointer'
+                          ? 'hover:shadow-md hover:ring-1 hover:ring-primary/50 cursor-pointer'
                           : ''
                   } ${!canVote && !userVoted ? 'opacity-60' : ''} ${!isUserMember && status.status === 'voting_open' ? 'cursor-not-allowed' : ''}`}
                   onClick={() => {

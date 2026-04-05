@@ -104,7 +104,7 @@ function Header() {
             {user ? (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-xl bg-base-100 text-base-content rounded-xl w-72 border border-base-300 max-h-96 overflow-y-auto"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-sm bg-base-100 text-base-content rounded-xl w-72 border border-base-300 max-h-96 overflow-y-auto"
               >
                 {isAdmin && (
                   <>
@@ -224,7 +224,7 @@ function Header() {
             ) : (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-xl bg-base-100 text-base-content rounded-xl w-72 border border-base-300"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-sm bg-base-100 text-base-content rounded-xl w-72 border border-base-300"
               >
                 <li>
                   <Link
@@ -449,7 +449,7 @@ function Header() {
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content z-[50] menu p-2 shadow-xl bg-base-100 text-base-content rounded-xl w-52 border border-base-300"
+                  className="dropdown-content z-[50] menu p-2 shadow-sm bg-base-100 text-base-content rounded-xl w-52 border border-base-300"
                 >
                   {isAdmin && (
                     <li>

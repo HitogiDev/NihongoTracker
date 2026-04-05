@@ -537,13 +537,13 @@ function LogScreen() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-2">Log Your Immersion</h1>
             <p className="text-base-content/70">
-              Track your progress and stay motivated on your language immersion
-              journey.
+              Register your media consumption and stay motivated in your
+              learning journey
             </p>
           </div>
 
           {/* Log Type Selection */}
-          <div className="card bg-base-100 shadow-xl">
+          <div className="card bg-base-100 shadow-sm">
             <div className="card-body">
               <h2 className="card-title">1. What did you immerse in today?</h2>
               <div
@@ -587,7 +587,7 @@ function LogScreen() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
               {/* Left Column: Form Inputs */}
               <div className="lg:col-span-3 space-y-6">
-                <div className="card bg-base-100 shadow-xl">
+                <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
                     <h2 className="card-title">2. Fill in the details</h2>
                     {/* Media Name Input */}
@@ -1178,7 +1178,7 @@ function LogScreen() {
                             onClick={openDatePicker}
                             className="btn btn-outline w-full justify-start"
                           >
-                            <Calendar />
+                            <Calendar className="w-4 h-4" />
                             {logData.date instanceof Date
                               ? logData.date.toLocaleDateString()
                               : 'Select date (defaults to today)'}
@@ -1207,7 +1207,7 @@ function LogScreen() {
 
               {/* Right Column: Media Preview */}
               <div className="lg:col-span-2">
-                <div className="card bg-base-100 shadow-xl sticky top-24">
+                <div className="card bg-base-100 shadow-sm sticky top-24">
                   <div className="card-body">
                     <h2 className="card-title">Preview</h2>
                     <div className="flex flex-col items-center justify-center min-h-[300px] bg-base-200 rounded-lg p-4">
@@ -1260,7 +1260,7 @@ function LogScreen() {
 
           {/* Tags Selection */}
           {logData.type && (
-            <div className="card bg-base-100 shadow-xl">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <TagSelector
                   selectedTags={selectedTags}
@@ -1273,7 +1273,7 @@ function LogScreen() {
 
           {/* Submit Button */}
           {logData.type && (
-            <div className="card bg-base-100 shadow-xl">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body items-center text-center">
                 <h2 className="card-title">3. Ready to log?</h2>
                 <p>Review your details above and click the button to save.</p>

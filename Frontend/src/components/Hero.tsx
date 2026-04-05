@@ -486,9 +486,9 @@ function Hero() {
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
                 Join or create an immersion club. Compete on club leaderboards,
-                share your journey, and find people who are into the same things
-                you are. Submit and vote on polls to decide the media to consume
-                together next!
+                share your accomplishments, and find people who are into the
+                same things you are. Submit and vote on polls to decide the
+                media to consume together next!
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">

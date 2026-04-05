@@ -33,27 +33,27 @@ Track your anime, manga, visual novels, books, videos, movies, TV shows, and aud
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
-All screenshots below are the dark theme versions from the `screenshots` folder.
+All screenshots below are in the dark theme.
 
 ### Dashboard
 
 ![Dashboard](./screenshots/dashboard.png)
 
-*Main dashboard showing your recent activity and progress overview*
+*Main dashboard showing your recent activity, a feed and some useful stats*
 
 ### Log Tracking
 
 ![Log Tracking](./screenshots/log-tracking.png)
 
-*Track your immersion across multiple media types*
+*Track your immersion across multiple media types with autocomplete*
 
 ### Stats
 
 ![Stats](./screenshots/user-stats.png)
 
-*Detailed charts and statistics for your learning journey*
+*Detailed charts and stats of your immersion*
 
 ### Media Stats
 
@@ -65,80 +65,23 @@ All screenshots below are the dark theme versions from the `screenshots` folder.
 
 ![TextHooker](./screenshots/texthooker.png)
 
-*Live text capture, timer, and session tools for reading immersion*
+*Texthooker to easily log your visual novel immersion with one click*
 
 ### Leaderboards
 
 ![Leaderboards](./screenshots/leaderboards.png)
 
-*Compete with other learners globally*
+*Compete with other immersion learners*
 
 ### Clubs
 
 ![Clubs](./screenshots/clubs.png)
 
-*Join or create clubs with your friends*
+*Join or create immersion clubs*
 
 ---
 
-## ✨ Features
-
-### 📚 Comprehensive Immersion Tracking
-
-| Media Type        | What You Can Track                   |
-| ----------------- | -------------------------------------|
-| **Anime**         | Episodes watched, time spent         |
-| **Manga**         | Chapters, pages read                 |
-| **Visual Novels** | Characters read, playtime            |
-| **Books/Reading** | Pages, characters, reading time      |
-| **Videos**        | YouTube content, watch time          |
-| **Audio**         | Podcasts, audiobooks, listening time |
-
-- **Smart Media Integration** — Automatically fetch metadata from AniList, VNDB, and YouTube
-- **Flexible Logging** — Log by time, characters, pages, or episodes
-- **Bulk Assignment** — Group and assign multiple logs to media at once
-
-### 🎮 Gamification System
-
-- **Dual XP System** — Separate tracks for reading and listening skills
-- **Dynamic Leveling** — Progress through levels with increasing XP requirements
-- **Daily Streaks** — Build consistency with streak tracking (timezone-aware!)
-- **Achievements** — Unlock badges for milestones and accomplishments
-- **Leaderboards** — Compete globally or within your friend circle
-
-### 📊 Powerful Analytics
-
-- **Reading Speed Metrics** — Track characters/hour improvements over time
-- **Interactive Charts** — Visualize your progress with beautiful graphs
-- **Monthly Comparisons** — See how you stack up against previous months
-- **Media Breakdown** — Understand your immersion distribution by type
-- **Goal Tracking** — Set daily and long-term goals with progress indicators
-
-### 📝 TextHooker Session Tools
-
-- **Live Text Capture** — Capture incoming lines from websocket and paste flows in real time
-- **Global Duplicate Prevention** — Optionally block identical lines from being added to the hooked text
-- **Apply-to-Current Deduping** — Enabling duplicate prevention can also clean existing duplicate lines in the active session
-- **Top Bar Display Toggles** — Show or hide timer, speed, characters, and lines independently
-- **Runtime Behavior Toggles** — Fine-tune pause behavior, autostart rules, and reconnect strategy
-
-### 🌐 Platform Integrations
-
-| Platform    | Features                                        |
-| ----------- | ----------------------------------------------- |
-| **AniList** | Sync anime/manga progress, import watch history |
-| **VNDB**    | Visual novel metadata and tracking              |
-| **YouTube** | Japanese video content logging                  |
-
-### 👥 Social Features
-
-- **Public Profiles** — Showcase your immersion journey
-- **Privacy Controls** — Choose what others can see
-- **Clubs** — Create or join communities with shared goals
-
----
-
-## 🛠 Technology Stack
+## Technology Stack
 
 ### Frontend
 
