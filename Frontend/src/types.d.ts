@@ -868,6 +868,7 @@ export interface ITextSessionHistoryEntry {
   loggedAt: string;
   isShared: boolean;
   connectedUsersCount: number;
+  linesLogged?: number;
   charactersLogged: number;
   readingSpeed: number;
   sessionSeconds: number;

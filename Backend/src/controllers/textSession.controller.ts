@@ -68,6 +68,7 @@ interface IAddSessionHistoryBody {
   charactersLogged: number;
   readingSpeed: number;
   sessionSeconds: number;
+  linesLogged?: number;
 }
 
 export const getRecentSessions = async (
@@ -84,21 +85,28 @@ export const getRecentSessions = async (
 
     // Calculate overall stats
     const allSessions = await TextSession.find({ userId });
-    const totalLines = allSessions.reduce((sum, s) => sum + s.lines.length, 0);
-    const totalChars = allSessions.reduce(
-      (sum, s) =>
-        sum + s.lines.reduce((lineSum, l) => lineSum + (l.charsCount || 0), 0),
+    const allHistoryEntries = allSessions.flatMap(
+      (session) => session.sessionHistory || []
+    );
+
+    const totalSessions = allHistoryEntries.length;
+    const totalLines = allHistoryEntries.reduce(
+      (sum, entry) => sum + (entry.linesLogged || 0),
       0
     );
-    const totalTimerSeconds = allSessions.reduce(
-      (sum, s) => sum + (s.timerSeconds || 0),
+    const totalChars = allHistoryEntries.reduce(
+      (sum, entry) => sum + (entry.charactersLogged || 0),
+      0
+    );
+    const totalTimerSeconds = allHistoryEntries.reduce(
+      (sum, entry) => sum + (entry.sessionSeconds || 0),
       0
     );
 
     res.status(200).json({
       sessions,
       stats: {
-        totalSessions: allSessions.length,
+        totalSessions,
         totalLines,
         totalChars,
         totalTimerSeconds,
@@ -246,13 +254,64 @@ export const addLinesToSession = async (
     const session = await TextSession.findOneAndUpdate(
       { userId, mediaId: media._id },
       {
-        $push: { lines: { $each: lines } },
-        $set: { updatedAt: new Date() },
+        $setOnInsert: {
+          userId,
+          mediaId: media._id,
+          lines: [],
+        },
       },
       { new: true, upsert: true }
     );
 
-    res.status(200).json(session);
+    const existingLineIds = new Set(
+      session.lines.map((line) => line.id).filter(Boolean)
+    );
+    const incomingLineIds = new Set<string>();
+
+    const linesToInsert = lines
+      .filter(
+        (
+          line
+        ): line is {
+          id: string;
+          text?: string;
+          charsCount?: number;
+          createdAt?: string | Date;
+        } => typeof line?.id === 'string' && line.id.trim().length > 0
+      )
+      .filter((line) => {
+        if (existingLineIds.has(line.id) || incomingLineIds.has(line.id)) {
+          return false;
+        }
+
+        incomingLineIds.add(line.id);
+        return true;
+      })
+      .map((line) => ({
+        id: line.id,
+        text: typeof line.text === 'string' ? line.text : '',
+        charsCount: typeof line.charsCount === 'number' ? line.charsCount : 0,
+        createdAt: line.createdAt ? new Date(line.createdAt) : new Date(),
+      }));
+
+    let updatedSession = session;
+
+    if (linesToInsert.length > 0) {
+      const persistedSession = await TextSession.findOneAndUpdate(
+        { _id: session._id },
+        {
+          $push: { lines: { $each: linesToInsert } },
+          $set: { updatedAt: new Date() },
+        },
+        { new: true }
+      );
+
+      if (persistedSession) {
+        updatedSession = persistedSession;
+      }
+    }
+
+    res.status(200).json(updatedSession);
   } catch (error) {
     next(error);
   }
@@ -343,6 +402,7 @@ export const addSessionHistoryEntry = async (
       charactersLogged,
       readingSpeed,
       sessionSeconds,
+      linesLogged,
     } = req.body as IAddSessionHistoryBody;
 
     if (typeof isShared !== 'boolean') {
@@ -372,6 +432,10 @@ export const addSessionHistoryEntry = async (
       loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
       isShared,
       connectedUsersCount: Math.floor(connectedUsersCount),
+      linesLogged:
+        typeof linesLogged === 'number' && linesLogged >= 0
+          ? Math.floor(linesLogged)
+          : 0,
       charactersLogged: Math.floor(charactersLogged),
       readingSpeed: Math.round(readingSpeed),
       sessionSeconds: Math.floor(sessionSeconds),

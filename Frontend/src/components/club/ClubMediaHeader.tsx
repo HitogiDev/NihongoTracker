@@ -191,7 +191,11 @@ export default function ClubMediaHeader() {
             <div className="py-4 md:py-5 md:px-4">
               <div className="flex items-center gap-2 mb-4">
                 <span className="badge badge-primary badge-lg capitalize">
-                  {media.mediaType === 'vn' ? 'Visual Novel' : media.mediaType}
+                  {media.mediaType === 'vn'
+                    ? 'visual novel'
+                    : media.mediaType === 'reading'
+                      ? 'light novel'
+                      : media.mediaType}
                 </span>
                 <span
                   className={`badge badge-lg ${media.isActive ? 'badge-success' : 'badge-outline'}`}

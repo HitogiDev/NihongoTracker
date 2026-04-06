@@ -20,6 +20,7 @@ const TextSessionSchema = new Schema<ITextSession>({
       loggedAt: { type: Date, default: Date.now },
       isShared: { type: Boolean, default: false },
       connectedUsersCount: { type: Number, default: 0 },
+      linesLogged: { type: Number, default: 0 },
       charactersLogged: { type: Number, default: 0 },
       readingSpeed: { type: Number, default: 0 },
       sessionSeconds: { type: Number, default: 0 },

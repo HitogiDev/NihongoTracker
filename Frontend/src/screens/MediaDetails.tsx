@@ -968,10 +968,10 @@ function MediaDetails() {
                       Type:
                     </span>
                     <div className="badge badge-primary badge-lg capitalize font-medium">
-                      {mediaDocument?.type === 'reading'
-                        ? 'Light Novel'
-                        : mediaDocument?.type === 'vn'
-                          ? 'Visual Novel'
+                      {mediaDocument?.type === 'vn'
+                        ? 'visual novel'
+                        : mediaDocument?.type === 'reading'
+                          ? 'light novel'
                           : mediaDocument?.type || mediaType}
                     </div>
                   </div>

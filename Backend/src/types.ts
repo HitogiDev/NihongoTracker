@@ -792,6 +792,7 @@ export interface ITextSessionHistoryEntry {
   loggedAt: Date;
   isShared: boolean;
   connectedUsersCount: number;
+  linesLogged?: number;
   charactersLogged: number;
   readingSpeed: number;
   sessionSeconds: number;

@@ -226,6 +226,10 @@ io.on('connection', (socket) => {
     const { roomId, lineData } = data;
 
     try {
+      if (!lineData?.id) {
+        return;
+      }
+
       const dbLine = {
         id: lineData.id,
         text: lineData.text,
@@ -233,13 +237,21 @@ io.on('connection', (socket) => {
         createdAt: lineData.createdAt,
       };
 
-      await TextSession.findOneAndUpdate(
-        { roomId },
-        { $push: { lines: dbLine } },
-        { upsert: true, new: true }
+      const updateResult = await TextSession.updateOne(
+        { roomId, 'lines.id': { $ne: lineData.id } },
+        {
+          $push: { lines: dbLine },
+          $setOnInsert: {
+            roomId,
+            expireAt: new Date(Date.now() + 86400000),
+          },
+        },
+        { upsert: true }
       );
 
-      socket.to(roomId).emit('receive_line', lineData);
+      if (updateResult.modifiedCount > 0 || updateResult.upsertedCount > 0) {
+        socket.to(roomId).emit('receive_line', lineData);
+      }
     } catch (error) {}
   });
 

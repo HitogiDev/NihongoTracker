@@ -186,7 +186,7 @@ function TextHookerDashboard() {
               <div className="stat-value text-primary">
                 {stats.totalSessions}
               </div>
-              <div className="stat-desc">Active reading materials</div>
+              <div className="stat-desc">Logged texthooker sessions</div>
             </div>
           </div>
 

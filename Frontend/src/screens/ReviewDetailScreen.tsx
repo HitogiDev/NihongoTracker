@@ -291,8 +291,10 @@ function ReviewDetailScreen() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="badge badge-soft capitalize">
                   {review.mediaType === 'vn'
-                    ? 'Visual Novel'
-                    : review.mediaType}
+                    ? 'visual novel'
+                    : review.mediaType === 'reading'
+                      ? 'light novel'
+                      : review.mediaType}
                 </span>
                 {review.rating && (
                   <span className="badge badge-primary gap-1">

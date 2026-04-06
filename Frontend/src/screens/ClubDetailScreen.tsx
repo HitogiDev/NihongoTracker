@@ -962,9 +962,11 @@ function ClubDetailScreen() {
                             <span className="badge badge-primary badge-sm capitalize">
                               {media.mediaType
                                 ? media.mediaType === 'vn'
-                                  ? 'Visual Novel'
-                                  : media.mediaType
-                                : 'Unknown'}
+                                  ? 'visual novel'
+                                  : media.mediaType === 'reading'
+                                    ? 'light novel'
+                                    : media.mediaType
+                                : 'unknown'}
                             </span>
                           </div>
                         </figure>

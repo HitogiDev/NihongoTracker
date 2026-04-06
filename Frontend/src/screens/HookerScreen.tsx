@@ -55,6 +55,14 @@ type LineEntry = {
   id: string;
   text: string;
   japaneseCount: number;
+  createdAt?: string;
+};
+
+type PendingSessionLine = {
+  id: string;
+  text: string;
+  japaneseCount: number;
+  createdAt: string;
 };
 
 type Member = {
@@ -121,7 +129,14 @@ function TextHooker() {
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
   const [lines, setLines] = useState<LineEntry[]>([]);
   const linesRef = useRef<LineEntry[]>([]);
-  const [undoStack, setUndoStack] = useState<{ id: string; action: 'delete' | 'clear'; data: LineEntry[]; indices?: number[] }[]>([]);
+  const [undoStack, setUndoStack] = useState<
+    {
+      id: string;
+      action: 'delete' | 'clear';
+      data: LineEntry[];
+      indices?: number[];
+    }[]
+  >([]);
   const [vertical, setVertical] = useState(() => {
     return localStorage.getItem('texthooker_vertical') === 'true';
   });
@@ -152,8 +167,8 @@ function TextHooker() {
   const [hookerTheme, setHookerTheme] = useState(() => {
     return localStorage.getItem('texthooker_theme') || '';
   });
-  const [lineMarginBlock] = useState(0);
-  const [lineMarginInline] = useState(0);
+  const lineMarginBlock = 0;
+  const lineMarginInline = 0;
   const [mode, setMode] = useState<'local' | 'host' | 'guest'>('local');
   const [roomId, setRoomId] = useState<string>('');
   const [hostToken, setHostToken] = useState<string | null>(null);
@@ -161,6 +176,15 @@ function TextHooker() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const roomSocketRef = useRef<Socket | null>(null);
   const [connectedMembers, setConnectedMembers] = useState<Member[]>([]);
+  const pendingSessionLinesRef = useRef<PendingSessionLine[]>([]);
+  const pendingSessionLinesFlushTimeoutRef = useRef<NodeJS.Timeout | null>(
+    null
+  );
+  const isFlushingPendingSessionLinesRef = useRef(false);
+  const [pendingSessionLinesCount, setPendingSessionLinesCount] = useState(0);
+  const [isPendingSessionSyncing, setIsPendingSessionSyncing] = useState(false);
+  const pendingRoomLinesRef = useRef<LineEntry[]>([]);
+  const pendingRoomLineIdsRef = useRef(new Set<string>());
 
   const sortedMembers = (() => {
     if (!connectedMembers || connectedMembers.length === 0)
@@ -172,7 +196,6 @@ function TextHooker() {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
-  const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
   const [isResetTimerConfirmOpen, setIsResetTimerConfirmOpen] = useState(false);
   const [isPreventDuplicateConfirmOpen, setIsPreventDuplicateConfirmOpen] =
@@ -201,8 +224,9 @@ function TextHooker() {
     queryKey: ['textSession', contentId],
     queryFn: () => getTextSessionFn(contentId!),
     enabled: !!contentId,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
+    staleTime: 0,
   });
 
   const media =
@@ -243,17 +267,226 @@ function TextHooker() {
 
   const previouslyLoggedChars = userMediaStats?.total?.characters || 0;
 
-  const { mutate: saveLines } = useMutation({
-    mutationFn: (newLines: LineEntry[]) => {
-      const linesToSave = newLines.map((l) => ({
-        id: l.id,
-        text: l.text,
-        charsCount: l.japaneseCount,
-        createdAt: new Date().toISOString(),
-      }));
-      return addLinesToSessionFn(contentId!, linesToSave);
+  const pendingSessionLinesStorageKey = contentId
+    ? `texthooker_pendingSessionLines_${contentId}`
+    : null;
+
+  const syncPendingSessionSyncState = useCallback(() => {
+    setPendingSessionLinesCount(pendingSessionLinesRef.current.length);
+    setIsPendingSessionSyncing(isFlushingPendingSessionLinesRef.current);
+  }, []);
+
+  const persistPendingSessionLines = useCallback(() => {
+    if (!pendingSessionLinesStorageKey) return;
+
+    if (pendingSessionLinesRef.current.length === 0) {
+      localStorage.removeItem(pendingSessionLinesStorageKey);
+      return;
+    }
+
+    localStorage.setItem(
+      pendingSessionLinesStorageKey,
+      JSON.stringify(pendingSessionLinesRef.current)
+    );
+  }, [pendingSessionLinesStorageKey]);
+
+  const flushPendingSessionLines = useCallback(async () => {
+    if (!contentId || isFlushingPendingSessionLinesRef.current) return;
+    if (pendingSessionLinesRef.current.length === 0) {
+      syncPendingSessionSyncState();
+      return;
+    }
+
+    isFlushingPendingSessionLinesRef.current = true;
+    syncPendingSessionSyncState();
+    const queuedLines = [...pendingSessionLinesRef.current];
+
+    try {
+      await addLinesToSessionFn(
+        contentId,
+        queuedLines.map((line) => ({
+          id: line.id,
+          text: line.text,
+          charsCount: line.japaneseCount,
+          createdAt: line.createdAt,
+        }))
+      );
+
+      const sentIds = new Set(queuedLines.map((line) => line.id));
+      pendingSessionLinesRef.current = pendingSessionLinesRef.current.filter(
+        (line) => !sentIds.has(line.id)
+      );
+      persistPendingSessionLines();
+    } catch (error) {
+      console.error('Failed to flush pending session lines:', error);
+    } finally {
+      isFlushingPendingSessionLinesRef.current = false;
+      syncPendingSessionSyncState();
+    }
+  }, [contentId, persistPendingSessionLines, syncPendingSessionSyncState]);
+
+  const schedulePendingSessionLinesFlush = useCallback(
+    (delayMs = 800) => {
+      if (pendingSessionLinesFlushTimeoutRef.current) {
+        clearTimeout(pendingSessionLinesFlushTimeoutRef.current);
+      }
+
+      pendingSessionLinesFlushTimeoutRef.current = setTimeout(() => {
+        pendingSessionLinesFlushTimeoutRef.current = null;
+        void flushPendingSessionLines();
+      }, delayMs);
     },
-  });
+    [flushPendingSessionLines]
+  );
+
+  const enqueueSessionLines = useCallback(
+    (newLines: LineEntry[]) => {
+      if (!contentId || newLines.length === 0) return;
+
+      const queuedIds = new Set(
+        pendingSessionLinesRef.current.map((line) => line.id)
+      );
+      let changed = false;
+
+      for (const line of newLines) {
+        if (!line?.id || queuedIds.has(line.id)) continue;
+
+        pendingSessionLinesRef.current.push({
+          id: line.id,
+          text: line.text,
+          japaneseCount: line.japaneseCount,
+          createdAt: line.createdAt || new Date().toISOString(),
+        });
+        queuedIds.add(line.id);
+        changed = true;
+      }
+
+      if (!changed) return;
+
+      persistPendingSessionLines();
+      syncPendingSessionSyncState();
+      schedulePendingSessionLinesFlush();
+    },
+    [
+      contentId,
+      persistPendingSessionLines,
+      syncPendingSessionSyncState,
+      schedulePendingSessionLinesFlush,
+    ]
+  );
+
+  const queueRoomLineForRetry = useCallback((lineData: LineEntry) => {
+    if (pendingRoomLineIdsRef.current.has(lineData.id)) {
+      return;
+    }
+
+    pendingRoomLineIdsRef.current.add(lineData.id);
+    pendingRoomLinesRef.current.push(lineData);
+  }, []);
+
+  const flushPendingRoomLines = useCallback(
+    (targetSocket?: Socket) => {
+      if (mode !== 'host' || !roomId) return;
+
+      const activeSocket = targetSocket || roomSocketRef.current;
+      if (!activeSocket || !activeSocket.connected) return;
+      if (pendingRoomLinesRef.current.length === 0) return;
+
+      const queuedLines = [...pendingRoomLinesRef.current];
+      pendingRoomLinesRef.current = [];
+      pendingRoomLineIdsRef.current.clear();
+
+      for (const lineData of queuedLines) {
+        activeSocket.emit('send_line', { roomId, lineData });
+      }
+    },
+    [mode, roomId]
+  );
+
+  useEffect(() => {
+    pendingRoomLinesRef.current = [];
+    pendingRoomLineIdsRef.current.clear();
+  }, [mode, roomId]);
+
+  useEffect(() => {
+    if (!pendingSessionLinesStorageKey) {
+      pendingSessionLinesRef.current = [];
+      syncPendingSessionSyncState();
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(pendingSessionLinesStorageKey);
+      if (!stored) {
+        pendingSessionLinesRef.current = [];
+        syncPendingSessionSyncState();
+        return;
+      }
+
+      const parsed = JSON.parse(stored) as PendingSessionLine[];
+      if (!Array.isArray(parsed)) {
+        pendingSessionLinesRef.current = [];
+        syncPendingSessionSyncState();
+        return;
+      }
+
+      const seenIds = new Set<string>();
+      pendingSessionLinesRef.current = parsed.filter((line) => {
+        const isValid =
+          line &&
+          typeof line.id === 'string' &&
+          typeof line.text === 'string' &&
+          typeof line.japaneseCount === 'number' &&
+          typeof line.createdAt === 'string';
+
+        if (!isValid || seenIds.has(line.id)) {
+          return false;
+        }
+
+        seenIds.add(line.id);
+        return true;
+      });
+      syncPendingSessionSyncState();
+    } catch {
+      pendingSessionLinesRef.current = [];
+      syncPendingSessionSyncState();
+    }
+  }, [pendingSessionLinesStorageKey, syncPendingSessionSyncState]);
+
+  useEffect(() => {
+    if (!contentId) return;
+    void flushPendingSessionLines();
+  }, [contentId, flushPendingSessionLines]);
+
+  useEffect(() => {
+    if (!contentId) return;
+
+    const interval = setInterval(() => {
+      void flushPendingSessionLines();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [contentId, flushPendingSessionLines]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      void flushPendingSessionLines();
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [flushPendingSessionLines]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingSessionLinesFlushTimeoutRef.current) {
+        clearTimeout(pendingSessionLinesFlushTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (roomId) {
@@ -317,32 +550,45 @@ function TextHooker() {
       linesRef.current = nextLines;
       setLines(nextLines);
 
-      if (contentId) {
-        saveLines([lineData]);
-      }
+      enqueueSessionLines([lineData]);
 
       return true;
     },
-    [contentId, preventGlobalDuplicates, saveLines]
+    [preventGlobalDuplicates, enqueueSessionLines]
   );
 
-  const sessionDataLoadedRef = useRef(false);
+  const loggedBaselineStorageKey = contentId
+    ? `texthooker_loggedBaseline_${contentId}`
+    : null;
 
-  useEffect(() => {
-    if (sessionDataLoadedRef.current) return;
-    if (sessionData?.lines) {
-      sessionDataLoadedRef.current = true;
-      const mappedLines = sessionData.lines.map((l) => ({
-        id: l.id,
-        text: l.text,
-        japaneseCount: l.charsCount,
-      }));
+  const persistLoggedBaseline = useCallback(
+    (baseline: { lines: number; chars: number }) => {
+      initialStatsRef.current = baseline;
 
-      if (!preventGlobalDuplicates) {
-        setLines(mappedLines);
+      if (!loggedBaselineStorageKey) {
         return;
       }
 
+      localStorage.setItem(loggedBaselineStorageKey, JSON.stringify(baseline));
+    },
+    [loggedBaselineStorageKey]
+  );
+
+  useEffect(() => {
+    if (!sessionData || !Array.isArray(sessionData.lines)) return;
+
+    const mappedLines = sessionData.lines.map((l) => ({
+      id: l.id,
+      text: l.text,
+      japaneseCount: l.charsCount,
+      createdAt: l.createdAt
+        ? new Date(l.createdAt).toISOString()
+        : new Date().toISOString(),
+    }));
+
+    let nextLines = mappedLines;
+
+    if (preventGlobalDuplicates) {
       const seenTexts = new Set<string>();
       const duplicateIds: string[] = [];
       const dedupedLines = mappedLines.filter((line) => {
@@ -355,13 +601,90 @@ function TextHooker() {
         return true;
       });
 
-      setLines(dedupedLines);
+      nextLines = dedupedLines;
 
       if (contentId && duplicateIds.length > 0) {
         removeLinesFromSessionFn(contentId, duplicateIds).catch(console.error);
       }
     }
-  }, [sessionData, preventGlobalDuplicates, contentId]);
+
+    // Keep queued unsynced lines visible after re-entering so current session
+    // counters don't briefly reset while background sync catches up.
+    const mergedLines = [...nextLines];
+    const existingIds = new Set(mergedLines.map((line) => line.id));
+
+    pendingSessionLinesRef.current.forEach((pendingLine) => {
+      if (existingIds.has(pendingLine.id)) {
+        return;
+      }
+
+      mergedLines.push({
+        id: pendingLine.id,
+        text: pendingLine.text,
+        japaneseCount: pendingLine.japaneseCount,
+        createdAt: pendingLine.createdAt,
+      });
+      existingIds.add(pendingLine.id);
+    });
+
+    nextLines = mergedLines;
+
+    linesRef.current = nextLines;
+    setLines(nextLines);
+
+    const linesCharsTotal = nextLines.reduce(
+      (sum, line) => sum + (line.japaneseCount || 0),
+      0
+    );
+
+    let baseline = { lines: 0, chars: 0 };
+
+    if (loggedBaselineStorageKey) {
+      const savedBaselineRaw = localStorage.getItem(loggedBaselineStorageKey);
+
+      if (savedBaselineRaw) {
+        try {
+          const parsed = JSON.parse(savedBaselineRaw) as {
+            lines?: number;
+            chars?: number;
+          };
+
+          baseline = {
+            lines: Math.max(
+              0,
+              Math.min(
+                nextLines.length,
+                Number.isFinite(parsed.lines) ? Number(parsed.lines) : 0
+              )
+            ),
+            chars: Math.max(
+              0,
+              Math.min(
+                linesCharsTotal,
+                Number.isFinite(parsed.chars) ? Number(parsed.chars) : 0
+              )
+            ),
+          };
+        } catch {
+          baseline = { lines: 0, chars: 0 };
+        }
+      } else if ((sessionData.sessionHistory?.length || 0) > 0) {
+        // Existing users may have old captured lines; treat current buffer as already logged baseline.
+        baseline = {
+          lines: nextLines.length,
+          chars: linesCharsTotal,
+        };
+      }
+    }
+
+    persistLoggedBaseline(baseline);
+  }, [
+    sessionData,
+    preventGlobalDuplicates,
+    contentId,
+    loggedBaselineStorageKey,
+    persistLoggedBaseline,
+  ]);
 
   const [websocketUrl, setWebsocketUrl] = useState(() => {
     return (
@@ -380,6 +703,7 @@ function TextHooker() {
   const pendingHistoryEntryRef = useRef<{
     isShared: boolean;
     connectedUsersCount: number;
+    linesLogged: number;
     charactersLogged: number;
     readingSpeed: number;
     sessionSeconds: number;
@@ -391,6 +715,16 @@ function TextHooker() {
     return saved ? Number(saved) : 0;
   });
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const isTimerActiveRef = useRef(isTimerActive);
+  const autostartTimerByLineRef = useRef(autostartTimerByLine);
+
+  useEffect(() => {
+    isTimerActiveRef.current = isTimerActive;
+  }, [isTimerActive]);
+
+  useEffect(() => {
+    autostartTimerByLineRef.current = autostartTimerByLine;
+  }, [autostartTimerByLine]);
 
   useEffect(() => {
     const mediaTitle =
@@ -444,7 +778,7 @@ function TextHooker() {
         updateSessionTimerFn(contentId, 0),
       ]);
 
-      initialStatsRef.current = { lines: 0, chars: 0 };
+      persistLoggedBaseline({ lines: 0, chars: 0 });
       setLines([]);
       setSeconds(0);
       lastSavedTimerRef.current = 0;
@@ -473,7 +807,7 @@ function TextHooker() {
       lastActivityRef.current = Date.now();
       setIsTimerActive(true);
     }
-  }, [contentId, queryClient]);
+  }, [contentId, queryClient, persistLoggedBaseline]);
 
   // Use whichever is higher to avoid losing timer progress
   useEffect(() => {
@@ -661,6 +995,8 @@ function TextHooker() {
     roomSocketRef.current = newSocket;
 
     newSocket.on('connect', () => {
+      void flushPendingSessionLines();
+
       if (roomId) {
         newSocket.emit('join_room', {
           roomId,
@@ -671,6 +1007,15 @@ function TextHooker() {
         });
       }
     });
+
+    newSocket.on(
+      'room_joined',
+      (data: { role: 'host' | 'guest'; roomId: string }) => {
+        if (data.role === 'host' && data.roomId === roomId) {
+          flushPendingRoomLines(newSocket);
+        }
+      }
+    );
 
     newSocket.on('connect_error', (error) => {
       toast.error(`Connection failed: ${error.message}`);
@@ -704,7 +1049,7 @@ function TextHooker() {
 
         lastActivityRef.current = Date.now();
 
-        if (!isTimerActive && autostartTimerByLine) {
+        if (!isTimerActiveRef.current && autostartTimerByLineRef.current) {
           setIsTimerActive(true);
         }
       });
@@ -722,27 +1067,27 @@ function TextHooker() {
 
         linesRef.current = nextHistory;
         setLines(nextHistory);
-
-        if (contentId) {
-          saveLines(nextHistory);
-        }
+        enqueueSessionLines(nextHistory);
       });
 
       newSocket.on('lines_deleted', (data: { lineIds: string[] }) => {
-        setLines(prev => prev.filter(line => !data.lineIds.includes(line.id)));
+        setLines((prev) =>
+          prev.filter((line) => !data.lineIds.includes(line.id))
+        );
       });
 
-      newSocket.on('lines_restored', (data: { lines: any[] }) => {
-        setLines(prev => {
+      newSocket.on('lines_restored', (data: { lines: LineEntry[] }) => {
+        setLines((prev) => {
           const nextLines = [...prev];
-          data.lines.forEach(restored => {
-             if (!nextLines.some(l => l.id === restored.id)) {
-                nextLines.push({
-                   id: restored.id,
-                   text: restored.text,
-                   japaneseCount: restored.japaneseCount
-                });
-             }
+          data.lines.forEach((restored) => {
+            if (!nextLines.some((l) => l.id === restored.id)) {
+              nextLines.push({
+                id: restored.id,
+                text: restored.text,
+                japaneseCount: restored.japaneseCount,
+                createdAt: restored.createdAt,
+              });
+            }
           });
           return nextLines;
         });
@@ -762,9 +1107,9 @@ function TextHooker() {
     contentId,
     preventGlobalDuplicates,
     appendIncomingLine,
-    saveLines,
-    isTimerActive,
-    autostartTimerByLine,
+    enqueueSessionLines,
+    flushPendingSessionLines,
+    flushPendingRoomLines,
   ]);
 
   const handleSocketMessage = useCallback(
@@ -788,19 +1133,30 @@ function TextHooker() {
       }
 
       const japaneseCount = countJapaneseCharacters(text);
-      const newLine = { id: createLineId(), text, japaneseCount };
+      const newLine = {
+        id: createLineId(),
+        text,
+        japaneseCount,
+        createdAt: new Date().toISOString(),
+      };
 
       const lineAdded = appendIncomingLine(newLine);
       if (!lineAdded) return;
 
-      if (mode === 'host' && roomSocketRef.current) {
-        roomSocketRef.current.emit('send_line', { roomId, lineData: newLine });
+      if (mode === 'host') {
+        const roomSocket = roomSocketRef.current;
+        if (roomSocket?.connected) {
+          roomSocket.emit('send_line', { roomId, lineData: newLine });
+        } else {
+          queueRoomLineForRetry(newLine);
+        }
       }
     },
     [
       mode,
       roomId,
       appendIncomingLine,
+      queueRoomLineForRetry,
       isTimerActive,
       allowNewLineDuringPause,
       autostartTimerByLine,
@@ -1003,9 +1359,20 @@ function TextHooker() {
       if (contentId) {
         removeLinesFromSessionFn(contentId, [lastLine.id]).catch(console.error);
       }
-      setUndoStack((stack) => [...stack, { id: createLineId(), action: 'delete', data: [lastLine], indices: [prev.length - 1] }]);
+      setUndoStack((stack) => [
+        ...stack,
+        {
+          id: createLineId(),
+          action: 'delete',
+          data: [lastLine],
+          indices: [prev.length - 1],
+        },
+      ]);
       if (mode === 'host' && roomSocketRef.current) {
-        roomSocketRef.current.emit('delete_lines', { roomId, lineIds: [lastLine.id] });
+        roomSocketRef.current.emit('delete_lines', {
+          roomId,
+          lineIds: [lastLine.id],
+        });
       }
       return prev.slice(0, -1);
     });
@@ -1014,47 +1381,46 @@ function TextHooker() {
   const handleUndo = useCallback(() => {
     setUndoStack((prevStack) => {
       if (prevStack.length === 0) return prevStack;
-      
+
       const lastAction = prevStack[prevStack.length - 1];
       const nextStack = prevStack.slice(0, -1);
-      
+
       setLines((prevLines) => {
         const nextLines = [...prevLines];
         lastAction.data.forEach((lineToRestore, indexInAction) => {
-          const targetIndex = lastAction.indices?.[indexInAction] ?? nextLines.length;
+          const targetIndex =
+            lastAction.indices?.[indexInAction] ?? nextLines.length;
           // To ensure we don't duplicate
-          if (!nextLines.some(l => l.id === lineToRestore.id)) {
+          if (!nextLines.some((l) => l.id === lineToRestore.id)) {
             nextLines.splice(targetIndex, 0, lineToRestore);
           }
         });
-        
-        if (contentId) {
-           addLinesToSessionFn(contentId, lastAction.data.map((l) => ({
+
+        enqueueSessionLines(
+          lastAction.data.map((line) => ({
+            ...line,
+            createdAt: line.createdAt || new Date().toISOString(),
+          }))
+        );
+
+        if (mode === 'host' && roomSocketRef.current) {
+          roomSocketRef.current.emit('restore_lines', {
+            roomId,
+            lines: lastAction.data.map((l) => ({
               id: l.id,
               text: l.text,
-              charsCount: l.japaneseCount,
-              createdAt: new Date().toISOString(),
-           }))).catch(console.error);
+              japaneseCount: l.japaneseCount,
+              createdAt: new Date(),
+            })),
+          });
         }
-        
-        if (mode === 'host' && roomSocketRef.current) {
-           roomSocketRef.current.emit('restore_lines', { 
-              roomId, 
-              lines: lastAction.data.map(l => ({
-                id: l.id,
-                text: l.text,
-                japaneseCount: l.japaneseCount,
-                createdAt: new Date()
-              }))
-           });
-        }
-        
+
         return nextLines;
       });
-      
+
       return nextStack;
     });
-  }, [contentId, mode, roomId]);
+  }, [mode, roomId, enqueueSessionLines]);
 
   const listContainerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLElement>(document.body);
@@ -1080,27 +1446,65 @@ function TextHooker() {
   );
   const loggedChars = Math.max(charsNumber - currentSessionChars, 0);
 
-  const triggerLogAnimation = useCallback(() => {
-    const previousLogged = loggedChars;
-    const nextLogged = previousLogged + currentSessionChars;
+  const clearSessionLineHistoryAfterLog = useCallback(() => {
+    const lineIds = linesRef.current.map((line) => line.id);
 
-    setAnimatedChars(previousLogged);
-    setTargetChars(nextLogged);
-    setIsLogAnimating(true);
+    linesRef.current = [];
+    setLines([]);
+    setUndoStack([]);
+    persistLoggedBaseline({ lines: 0, chars: 0 });
 
-    setTimeout(() => {
-      initialStatsRef.current = {
-        lines: linesNumber,
-        chars: charsNumber,
-      };
-      setSeconds(0);
-      if (contentId) {
-        lastSavedTimerRef.current = 0;
-        updateSessionTimerFn(contentId, 0).catch(console.error);
-      }
-      setIsLogAnimating(false);
-    }, 1500);
-  }, [loggedChars, currentSessionChars, linesNumber, charsNumber, contentId]);
+    if (pendingSessionLinesFlushTimeoutRef.current) {
+      clearTimeout(pendingSessionLinesFlushTimeoutRef.current);
+      pendingSessionLinesFlushTimeoutRef.current = null;
+    }
+
+    pendingSessionLinesRef.current = [];
+    isFlushingPendingSessionLinesRef.current = false;
+    persistPendingSessionLines();
+    syncPendingSessionSyncState();
+
+    pendingRoomLinesRef.current = [];
+    pendingRoomLineIdsRef.current.clear();
+
+    if (mode === 'host' && roomSocketRef.current && lineIds.length > 0) {
+      roomSocketRef.current.emit('delete_lines', { roomId, lineIds });
+    }
+
+    setIsTimerActive(false);
+    setSeconds(0);
+    lastSavedTimerRef.current = 0;
+
+    if (contentId) {
+      clearSessionLinesFn(contentId).catch(console.error);
+      updateSessionTimerFn(contentId, 0).catch(console.error);
+    }
+  }, [
+    contentId,
+    mode,
+    roomId,
+    persistLoggedBaseline,
+    persistPendingSessionLines,
+    syncPendingSessionSyncState,
+  ]);
+
+  const triggerLogAnimation = useCallback(
+    (onComplete?: () => void) => {
+      const previousLogged = loggedChars;
+      const nextLogged = previousLogged + currentSessionChars;
+
+      setAnimatedChars(previousLogged);
+      setTargetChars(nextLogged);
+      setIsTimerActive(false);
+      setIsLogAnimating(true);
+
+      setTimeout(() => {
+        onComplete?.();
+        setIsLogAnimating(false);
+      }, 1500);
+    },
+    [loggedChars, currentSessionChars]
+  );
 
   const { mutate: createLog, isPending: isLogging } = useMutation({
     mutationFn: createLogFn,
@@ -1112,7 +1516,7 @@ function TextHooker() {
         });
       }
       pendingHistoryEntryRef.current = null;
-      triggerLogAnimation();
+      triggerLogAnimation(clearSessionLineHistoryAfterLog);
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
     },
@@ -1132,6 +1536,7 @@ function TextHooker() {
       entry: {
         isShared: boolean;
         connectedUsersCount: number;
+        linesLogged: number;
         charactersLogged: number;
         readingSpeed: number;
         sessionSeconds: number;
@@ -1167,6 +1572,7 @@ function TextHooker() {
     pendingHistoryEntryRef.current = {
       isShared: isSharedNow,
       connectedUsersCount,
+      linesLogged: currentSessionLines,
       charactersLogged: currentSessionChars,
       readingSpeed: formatSpeed(currentSessionChars, seconds),
       sessionSeconds: seconds,
@@ -1275,16 +1681,26 @@ function TextHooker() {
           }
 
           const japaneseCount = countJapaneseCharacters(text);
-          const newLine = { id: createLineId(), text, japaneseCount };
+          const newLine = {
+            id: createLineId(),
+            text,
+            japaneseCount,
+            createdAt: new Date().toISOString(),
+          };
 
           const lineAdded = appendIncomingLine(newLine);
           if (!lineAdded) continue;
 
-          if (mode === 'host' && roomSocketRef.current) {
-            roomSocketRef.current.emit('send_line', {
-              roomId,
-              lineData: newLine,
-            });
+          if (mode === 'host') {
+            const roomSocket = roomSocketRef.current;
+            if (roomSocket?.connected) {
+              roomSocket.emit('send_line', {
+                roomId,
+                lineData: newLine,
+              });
+            } else {
+              queueRoomLineForRetry(newLine);
+            }
           }
         }
       }
@@ -1293,6 +1709,7 @@ function TextHooker() {
       mode,
       roomId,
       appendIncomingLine,
+      queueRoomLineForRetry,
       isTimerActive,
       allowPasteDuringPause,
       autostartTimerByPaste,
@@ -1347,7 +1764,15 @@ function TextHooker() {
         if (contentId) {
           removeLinesFromSessionFn(contentId, [id]).catch(console.error);
         }
-        setUndoStack((stack) => [...stack, { id: createLineId(), action: 'delete', data: [line], indices: [index] }]);
+        setUndoStack((stack) => [
+          ...stack,
+          {
+            id: createLineId(),
+            action: 'delete',
+            data: [line],
+            indices: [index],
+          },
+        ]);
         if (mode === 'host' && roomSocketRef.current) {
           roomSocketRef.current.emit('delete_lines', { roomId, lineIds: [id] });
         }
@@ -1363,13 +1788,25 @@ function TextHooker() {
       if (contentId) {
         clearSessionLinesFn(contentId).catch(console.error);
       }
-      setUndoStack((stack) => [...stack, { id: createLineId(), action: 'clear', data: prev, indices: prev.map((_, i) => i) }]);
+      persistLoggedBaseline({ lines: 0, chars: 0 });
+      setUndoStack((stack) => [
+        ...stack,
+        {
+          id: createLineId(),
+          action: 'clear',
+          data: prev,
+          indices: prev.map((_, i) => i),
+        },
+      ]);
       if (mode === 'host' && roomSocketRef.current) {
-        roomSocketRef.current.emit('delete_lines', { roomId, lineIds: prev.map((l) => l.id) });
+        roomSocketRef.current.emit('delete_lines', {
+          roomId,
+          lineIds: prev.map((l) => l.id),
+        });
       }
       return [];
     });
-  }, [contentId, mode, roomId]);
+  }, [contentId, mode, roomId, persistLoggedBaseline]);
 
   const handleCopyAll = useCallback(async () => {
     const combined = lines.map((line) => line.text).join('\n');
@@ -1985,7 +2422,11 @@ function TextHooker() {
                     </p>
                     <div className="flex gap-2 mt-2">
                       <span className="badge badge-primary badge-sm capitalize">
-                        {media.type}
+                        {media.type === 'vn'
+                          ? 'visual novel'
+                          : media.type === 'reading'
+                            ? 'light novel'
+                            : media.type}
                       </span>
                     </div>
                   </div>
@@ -2009,36 +2450,20 @@ function TextHooker() {
                           <>
                             <div className="flex justify-between items-center text-sm">
                               <span className="opacity-70">Progress</span>
-                              <span
-                                className={`font-bold transition-all duration-700 ${isLogAnimating ? 'scale-150 text-success drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]' : ''}`}
-                              >
+                              <span className="font-bold">
                                 {progressPercent.toFixed(1)}%
                               </span>
                             </div>
                             <div className="w-full bg-base-300 rounded-full h-3 overflow-hidden relative">
                               <div
-                                className={`h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700 ease-out ${isLogAnimating ? 'shadow-lg shadow-primary/50' : ''}`}
+                                className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
                                 style={{
                                   width: `${progressPercent}%`,
                                 }}
                               />
-                              {isLogAnimating && (
-                                <div
-                                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
-                                  style={{
-                                    animation: 'shimmer 1s ease-in-out',
-                                  }}
-                                />
-                              )}
                             </div>
                             <div className="flex justify-between text-xs opacity-60">
-                              <span
-                                className={
-                                  isLogAnimating
-                                    ? 'text-success font-semibold transition-all duration-500'
-                                    : ''
-                                }
-                              >
+                              <span>
                                 {numberWithCommas(Math.round(totalProgress))}{' '}
                                 chars
                               </span>
@@ -2093,6 +2518,21 @@ function TextHooker() {
                     </div>
                   </div>
                 </div>
+
+                {(pendingSessionLinesCount > 0 || isPendingSessionSyncing) && (
+                  <div className="mt-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-base-content/80">
+                      {isPendingSessionSyncing && (
+                        <span className="loading loading-spinner loading-xs text-info" />
+                      )}
+                      <span>
+                        {isPendingSessionSyncing
+                          ? 'Syncing pending lines...'
+                          : `${numberWithCommas(pendingSessionLinesCount)} pending ${pendingSessionLinesCount === 1 ? 'line is' : 'lines are'} waiting to sync.`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="divider"></div>
@@ -2707,123 +3147,6 @@ function TextHooker() {
         </form>
       </dialog>
 
-      {/* Join Room Modal */}
-      <dialog className={`modal ${isJoinRoomOpen ? 'modal-open' : ''}`}>
-        <div className="modal-box max-w-md">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Join Room
-            </h3>
-            <button
-              onClick={() => setIsJoinRoomOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">Join as</span>
-              </label>
-              <div className="flex gap-2">
-                <label className="label cursor-pointer border rounded-lg p-3 flex-1 border-base-300 hover:border-primary transition-colors">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <Crown size={16} className="text-warning" />
-                      <span className="label-text font-medium">Host</span>
-                    </div>
-                    <span className="text-xs opacity-70">
-                      Create & share room
-                    </span>
-                  </div>
-                  <input
-                    type="radio"
-                    name="join-mode"
-                    className="radio radio-primary radio-sm"
-                    value="host"
-                    checked={mode === 'host'}
-                    onChange={(e) => setMode(e.target.value as 'host')}
-                  />
-                </label>
-                <label className="label cursor-pointer border rounded-lg p-3 flex-1 border-base-300 hover:border-primary transition-colors">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <Users size={16} />
-                      <span className="label-text font-medium">Guest</span>
-                    </div>
-                    <span className="text-xs opacity-70">
-                      Join existing room
-                    </span>
-                  </div>
-                  <input
-                    type="radio"
-                    name="join-mode"
-                    className="radio radio-primary radio-sm"
-                    value="guest"
-                    checked={mode === 'guest'}
-                    onChange={(e) => setMode(e.target.value as 'guest')}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="form-control">
-              <span className="text-sm font-semibold leading-none">
-                Room ID
-              </span>
-              <input
-                type="text"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
-                className="input input-bordered w-full"
-                placeholder={
-                  mode === 'host' ? 'Create a room name' : 'Enter room ID'
-                }
-                aria-label="Room ID"
-              />
-              <span className="text-xs opacity-70 leading-snug">
-                {mode === 'host'
-                  ? 'Choose a unique name for your room'
-                  : 'Get the room ID from the host'}
-              </span>
-            </div>
-
-            <div className="flex gap-2 justify-end mt-6">
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => {
-                  setIsJoinRoomOpen(false);
-                  setMode('local');
-                  setRoomId('');
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  if (roomId.trim()) {
-                    setIsRoomConnected(true);
-                    setIsJoinRoomOpen(false);
-                  }
-                }}
-                disabled={!roomId.trim()}
-              >
-                {mode === 'host' ? 'Create Room' : 'Join Room'}
-              </button>
-            </div>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button onClick={() => setIsJoinRoomOpen(false)}>close</button>
-        </form>
-      </dialog>
-
       <div
         ref={listContainerRef}
         className={`${listContainerClasses} th-line-list`}
@@ -2904,10 +3227,10 @@ function TextHooker() {
         onClose={() => setIsQuickLogOpen(false)}
         initialValues={quickLogDefaults || undefined}
         onLogged={async () => {
-          triggerLogAnimation();
+          triggerLogAnimation(clearSessionLineHistoryAfterLog);
           await queryClient.invalidateQueries({ queryKey: ['userStats'] });
         }}
-        allowedTypes={['manga', 'vn', 'reading']}
+        allowedTypes={['vn']}
       />
     </div>
   );

@@ -767,7 +767,11 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                         Media Type:
                       </span>
                       <span className="badge badge-outline ml-2 capitalize">
-                        {media.type}
+                        {media.type === 'vn'
+                          ? 'Visual Novel'
+                          : media.type === 'reading'
+                            ? 'Light Novel'
+                            : media.type}
                       </span>
                     </div>
                   )}
@@ -958,7 +962,11 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                         Media Type:
                       </span>
                       <span className="badge badge-outline ml-2 capitalize">
-                        {media.type}
+                        {media.type === 'vn'
+                          ? 'Visual Novel'
+                          : media.type === 'reading'
+                            ? 'Light Novel'
+                            : media.type}
                       </span>
                     </div>
 
@@ -1026,7 +1034,13 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     <span className="label-text font-medium">
                       Content Type:
                     </span>
-                    <span className="capitalize">{type}</span>
+                    <span className="capitalize">
+                      {type === 'vn'
+                        ? 'visual novel'
+                        : type === 'reading'
+                          ? 'light novel'
+                          : type}
+                    </span>
                   </div>
                 </div>
               </div>
