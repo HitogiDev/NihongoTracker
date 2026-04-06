@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 import GoalsModal from './GoalsModal';
+import { useUserDataStore } from '../store/userData';
 
 const goalTypeConfig = {
   time: {
@@ -59,6 +60,10 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   const [editingGoal, setEditingGoal] = useState<ILongTermGoal | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<ILongTermGoal | null>(null);
+  const { user: loggedInUser } = useUserDataStore();
+  const canManageGoals = Boolean(
+    username && loggedInUser?.username === username
+  );
 
   const queryClient = useQueryClient();
 
@@ -195,8 +200,41 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     );
   }
 
-  if (!hasAnyActiveGoals) {
+  if (!hasAnyActiveGoals && !canManageGoals) {
     return null;
+  }
+
+  if (!hasAnyActiveGoals && canManageGoals) {
+    return (
+      <>
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body text-center py-10">
+            <h3 className="text-xl font-bold text-base-content">
+              No active goals yet
+            </h3>
+            <p className="text-base-content/70 mt-2 mb-5">
+              Create your first daily or long-term goal and start tracking your
+              immersion progress.
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="btn btn-primary"
+              >
+                Create goal
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <GoalsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          goals={goalsData?.goals || []}
+          username={username}
+        />
+      </>
+    );
   }
 
   return (
@@ -206,13 +244,15 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
           <div className="card-body">
             <div className="flex justify-between items-center mb-6">
               <h2 className="card-title text-2xl">Immersion Goals</h2>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="btn btn-ghost btn-sm"
-                title="Manage Goals"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
+              {canManageGoals && (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="btn btn-ghost btn-sm"
+                  title="Manage Goals"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             <div className="mb-6">
@@ -273,12 +313,22 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       {/* Long-term Goals Section */}
       {activeLongTermGoals.length > 0 && (
         <div className="mt-6 space-y-4">
-          <div className="flex items-center gap-2 px-1">
-            <Target className="w-5 h-5 text-primary" />
-            <h3 className="text-xl font-bold">Long-term Goals</h3>
-            <span className="badge badge-primary badge-sm">
-              {activeLongTermGoals.length}
-            </span>
+          <div className="flex items-center justify-between gap-3 px-1">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              <h3 className="text-xl font-bold">Long-term Goals</h3>
+              <span className="badge badge-primary badge-sm">
+                {activeLongTermGoals.length}
+              </span>
+            </div>
+            {canManageGoals && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="btn btn-ghost btn-xs sm:btn-sm"
+              >
+                Manage goals
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4">
@@ -420,39 +470,40 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                         </div>
                       </div>
 
-                      {/* Actions dropdown */}
-                      <div className="dropdown dropdown-end">
-                        <div
-                          tabIndex={0}
-                          role="button"
-                          className="btn btn-ghost btn-xs btn-square"
-                        >
-                          <EllipsisVertical className="w-4 h-4" />
+                      {canManageGoals && (
+                        <div className="dropdown dropdown-end">
+                          <div
+                            tabIndex={0}
+                            role="button"
+                            className="btn btn-ghost btn-xs btn-square"
+                          >
+                            <EllipsisVertical className="w-4 h-4" />
+                          </div>
+                          <ul
+                            tabIndex={0}
+                            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-36 p-1 shadow-lg"
+                          >
+                            <li>
+                              <button
+                                onClick={() => handleEditGoal(goal)}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                Edit
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => handleDeleteGoal(goal._id)}
+                                className="flex items-center gap-2 text-sm text-error"
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
                         </div>
-                        <ul
-                          tabIndex={0}
-                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-36 p-1 shadow-lg"
-                        >
-                          <li>
-                            <button
-                              onClick={() => handleEditGoal(goal)}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              onClick={() => handleDeleteGoal(goal._id)}
-                              className="flex items-center gap-2 text-sm text-error"
-                            >
-                              <Trash className="w-3.5 h-3.5" />
-                              Delete
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
+                      )}
                     </div>
 
                     {progress && (
@@ -620,7 +671,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
             })}
           </div>
 
-          {activeLongTermGoals.length > 3 && (
+          {activeLongTermGoals.length > 3 && canManageGoals && (
             <div className="text-center pt-2">
               <button
                 onClick={() => setIsModalOpen(true)}
@@ -633,12 +684,14 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
         </div>
       )}
 
-      <GoalsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        goals={goalsData?.goals || []}
-        username={username}
-      />
+      {canManageGoals && (
+        <GoalsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          goals={goalsData?.goals || []}
+          username={username}
+        />
+      )}
 
       {/* Edit Long-term Goal Modal */}
       {isEditModalOpen && editingGoal && (
