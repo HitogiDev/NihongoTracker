@@ -3,6 +3,7 @@
     "composite": true,
     "skipLibCheck": true,
     "module": "ESNext",
+    "rootDir": ".",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "strict": true,

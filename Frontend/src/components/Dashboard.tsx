@@ -13,7 +13,7 @@ import {
 } from '../api/trackerApi';
 import {
   Flame,
-  Sparkles,
+  CirclePlus,
   Trophy,
   Plus,
   ChevronDown,
@@ -70,6 +70,11 @@ const feedTimeOptions: Array<{ label: string; value: FeedTimeRange }> = [
 ];
 
 const RECENT_MEDIA_PANEL_LIMIT = 4;
+const DASHBOARD_CARD_EYEBROW_CLASS =
+  'text-[11px] uppercase tracking-[0.2em] text-base-content/60';
+const DASHBOARD_CARD_TITLE_CLASS =
+  'card-title text-xl font-semibold leading-snug text-base-content';
+const DASHBOARD_CARD_DESCRIPTION_CLASS = 'text-sm text-base-content/65';
 
 function getRecentMediaRailLimit(width: number) {
   if (width >= 1024) return 7;
@@ -430,8 +435,10 @@ function Dashboard() {
         <div className="xl:col-span-2 space-y-8">
           <div className="card bg-base-100 shadow-sm border border-base-200/60">
             <div className="card-body">
-              <h2 className="card-title">This Month's Immersion</h2>
-              <p className="text-sm text-base-content/60 -mt-2 mb-4">
+              <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
+                This Month's Immersion
+              </h2>
+              <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} -mt-1 mb-4`}>
                 Compared to the same period last month
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -494,8 +501,8 @@ function Dashboard() {
             <div className="card-body space-y-4">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <h2 className="card-title">Global Feed</h2>
-                  <p className="text-sm text-base-content/70">
+                  <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Global Feed</h2>
+                  <p className={DASHBOARD_CARD_DESCRIPTION_CLASS}>
                     See what the community is immersing in right now
                   </p>
                 </div>
@@ -757,17 +764,16 @@ function RecentMediaPanel({
       <div className="card-body space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-base-content/60">
+            <h2
+              className={`${DASHBOARD_CARD_TITLE_CLASS} flex items-center gap-2`}
+            >
+              <CirclePlus className="w-5 h-5 text-primary" />
               Recent Media
-            </p>
-            <h2 className="card-title flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              Jump back in instantly
             </h2>
+            <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
+              Quick log shortcuts
+            </p>
           </div>
-          <span className="text-xs text-base-content/60">
-            Quick log shortcuts
-          </span>
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
@@ -829,10 +835,11 @@ function RecentMediaRail({
       <div className="card-body space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-base-content/60">
-              Recent Media
+            <p className={DASHBOARD_CARD_EYEBROW_CLASS}>Recent Media</p>
+            <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Jump back in</h2>
+            <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
+              Quick log shortcuts
             </p>
-            <h2 className="card-title text-lg">Jump back in</h2>
           </div>
           {showSwipeHint && (
             <span className="text-xs text-base-content/60">Swipe</span>

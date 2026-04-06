@@ -2,14 +2,17 @@ services:
   app:
     image: elaxdev/nihongotracker:latest
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - Backend/.env
+    environment:
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
     depends_on:
       mongo:
         condition: service_healthy
-      migration:
-        condition: service_completed_successfully
+      meilisearch:
+        condition: service_started
     volumes:
       - ./Backend/.env:/app/Backend/.env:ro
     restart: always
@@ -18,17 +21,34 @@ services:
     image: mongo:7
     restart: always
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          'CMD-SHELL',
+          'mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok" | grep 1',
+        ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
+
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    restart: always
+    ports:
+      - '7700:7700'
+    environment:
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: 'true'
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
+    volumes:
+      - meilisearch-data:/meili_data
 
   migration:
+    profiles: ['migration']
     image: elaxdev/nihongo-tracker:latest
     env_file:
       - Backend/.env
@@ -41,7 +61,8 @@ services:
       sh -c "cd /app/Backend && 
              npm run migrate:indexes:prod && 
              echo 'Migration completed successfully'"
-    restart: "no"
+    restart: 'no'
 
 volumes:
   mongo-data:
+  meilisearch-data:

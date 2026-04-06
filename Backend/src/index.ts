@@ -19,13 +19,49 @@ import {
   initMediaIndexes,
   syncAllMedia,
 } from './services/meilisearch/mediaIndex.js';
+import meiliClient from './services/meilisearch/meiliClient.js';
 
 connectDB();
 
-// Initialize Meilisearch indexes and sync if empty
-Promise.all([initUsersIndex(), initMediaIndexes()])
-  .then(() => Promise.all([syncAllUsers(), syncAllMedia()]))
-  .catch((err) => console.error('Meilisearch init error:', err));
+const MEILI_STARTUP_TIMEOUT_MS = 90000;
+const MEILI_RETRY_INTERVAL_MS = 3000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForMeilisearchReady() {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < MEILI_STARTUP_TIMEOUT_MS) {
+    try {
+      await meiliClient.health();
+      console.log('✅ Meilisearch is reachable');
+      return true;
+    } catch {
+      console.log('⏳ Waiting for Meilisearch to become ready...');
+      await sleep(MEILI_RETRY_INTERVAL_MS);
+    }
+  }
+
+  console.error('❌ Timed out waiting for Meilisearch to become ready');
+  return false;
+}
+
+async function bootstrapMeilisearch() {
+  const meiliReady = await waitForMeilisearchReady();
+
+  if (!meiliReady) {
+    return;
+  }
+
+  await Promise.all([initUsersIndex(), initMediaIndexes()]);
+  await Promise.all([syncAllUsers(), syncAllMedia()]);
+}
+
+bootstrapMeilisearch().catch((err) =>
+  console.error('Meilisearch init error:', err)
+);
 
 const httpServer = createServer(app);
 
