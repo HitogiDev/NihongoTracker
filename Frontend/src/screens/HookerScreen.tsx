@@ -77,6 +77,7 @@ const JAPANESE_CHAR_REGEX =
 
 const HOOKER_THEME_OPTIONS = [
   { value: '', label: 'Use app theme' },
+  { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
   { value: 'cupcake', label: 'Cupcake' },
@@ -121,7 +122,10 @@ function TextHooker() {
     ? HOOKER_THEME_OPTIONS
     : HOOKER_THEME_OPTIONS.filter(
         (themeOption) =>
-          themeOption.value === 'light' || themeOption.value === 'dark'
+          themeOption.value === '' ||
+          themeOption.value === 'light' ||
+          themeOption.value === 'dark' ||
+          themeOption.value === 'system'
       );
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
   const [quickLogDefaults, setQuickLogDefaults] =
@@ -165,7 +169,19 @@ function TextHooker() {
     return saved === null ? true : saved === 'true';
   });
   const [hookerTheme, setHookerTheme] = useState(() => {
-    return localStorage.getItem('texthooker_theme') || '';
+    const savedTheme = localStorage.getItem('texthooker_theme');
+    return savedTheme ?? 'system';
+  });
+  const [resolvedSystemHookerTheme, setResolvedSystemHookerTheme] = useState<
+    'light' | 'dark'
+  >(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+    }
+
+    return 'dark';
   });
   const lineMarginBlock = 0;
   const lineMarginInline = 0;
@@ -898,12 +914,27 @@ function TextHooker() {
   }, [hookerTheme]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const onSystemThemeChange = () => {
+      setResolvedSystemHookerTheme(mediaQuery.matches ? 'dark' : 'light');
+    };
+
+    mediaQuery.addEventListener('change', onSystemThemeChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', onSystemThemeChange);
+    };
+  }, []);
+
+  useEffect(() => {
     if (
       !hasPatreonAccess &&
+      hookerTheme !== '' &&
       hookerTheme !== 'light' &&
-      hookerTheme !== 'dark'
+      hookerTheme !== 'dark' &&
+      hookerTheme !== 'system'
     ) {
-      setHookerTheme('dark');
+      setHookerTheme('system');
     }
   }, [hasPatreonAccess, hookerTheme]);
 
@@ -1989,9 +2020,14 @@ function TextHooker() {
     };
   }, [isSettingsOpen]);
 
+  const effectiveHookerTheme =
+    hookerTheme === 'system'
+      ? resolvedSystemHookerTheme
+      : hookerTheme || undefined;
+
   return (
     <div
-      data-theme={hookerTheme || undefined}
+      data-theme={effectiveHookerTheme}
       className="bg-base-300 min-h-screen th-root"
     >
       {customCss.trim() && <style>{customCss}</style>}

@@ -19,6 +19,7 @@ import {
   Search,
   Sun,
   Moon,
+  SunMoon,
 } from 'lucide-react';
 
 import { useUserDataStore } from '../store/userData';
@@ -30,15 +31,42 @@ import { logoutResponseType } from '../types';
 import Loader from './Loader';
 import SearchModal from './SearchModal';
 
+type ThemeMode = 'dark' | 'light' | 'system';
+
+const THEME_CYCLE: ThemeMode[] = ['dark', 'light', 'system'];
+
+const normalizeThemeMode = (theme: string | null | undefined): ThemeMode => {
+  if (theme === 'dark' || theme === 'light' || theme === 'system') {
+    return theme;
+  }
+
+  return 'system';
+};
+
+const resolveThemeForDocument = (theme: ThemeMode) => {
+  const selectedTheme = theme || 'system';
+
+  if (selectedTheme === 'system') {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    return true;
+  }
+
+  return selectedTheme !== 'light';
+};
+
 function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isDark, setIsDark] = useState(() => {
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('theme') || 'dark') !== 'light';
+      return normalizeThemeMode(localStorage.getItem('theme'));
     }
-    return true;
+
+    return 'system';
   });
   const isAdmin = Array.isArray(user?.roles)
     ? (user?.roles as string[]).includes('admin')
@@ -68,20 +96,51 @@ function Header() {
   // Ctrl+K / Cmd+K shortcut
   useEffect(() => {
     const onThemeChange = (e: CustomEvent) => {
-      setIsDark(e.detail !== 'light');
+      setThemeMode(normalizeThemeMode(e.detail as string | null | undefined));
     };
     window.addEventListener('themeChange', onThemeChange as EventListener);
     return () =>
       window.removeEventListener('themeChange', onThemeChange as EventListener);
   }, []);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const onSystemThemeChange = () => {
+      if (themeMode === 'system') {
+        document.documentElement.setAttribute(
+          'data-theme',
+          resolveThemeForDocument('system') ? 'dark' : 'light'
+        );
+      }
+    };
+
+    mediaQuery.addEventListener('change', onSystemThemeChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', onSystemThemeChange);
+    };
+  }, [themeMode]);
+
   function toggleTheme() {
-    const next = isDark ? 'light' : 'dark';
-    setIsDark(!isDark);
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    window.dispatchEvent(new CustomEvent('themeChange', { detail: next }));
+    const currentIndex = THEME_CYCLE.indexOf(themeMode);
+    const nextTheme = THEME_CYCLE[(currentIndex + 1) % THEME_CYCLE.length];
+    const resolvedTheme = resolveThemeForDocument(nextTheme) ? 'dark' : 'light';
+
+    setThemeMode(nextTheme);
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    localStorage.setItem('theme', nextTheme);
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: nextTheme }));
   }
+
+  const themeIcon =
+    themeMode === 'system' ? (
+      <SunMoon className="w-5 h-5" />
+    ) : themeMode === 'dark' ? (
+      <Moon className="w-5 h-5" />
+    ) : (
+      <Sun className="w-5 h-5" />
+    );
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -506,13 +565,9 @@ function Header() {
               <button
                 className="btn btn-ghost btn-sm sm:btn-md btn-circle"
                 onClick={toggleTheme}
-                aria-label="Toggle theme"
+                aria-label={`Theme: ${themeMode}. Click to cycle dark, light, system.`}
               >
-                {isDark ? (
-                  <Sun className="w-5 h-5" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                )}
+                {themeIcon}
               </button>
               <Link className="btn btn-primary btn-sm sm:btn-md" to="/login">
                 Sign In

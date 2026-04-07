@@ -13,6 +13,20 @@ import {
   Play,
 } from 'lucide-react';
 
+const resolveIsDarkTheme = (theme: string | null | undefined) => {
+  const selectedTheme = theme || 'system';
+
+  if (selectedTheme === 'system') {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    return true;
+  }
+
+  return selectedTheme !== 'light';
+};
+
 function ScreenshotWindow({
   src,
   url,
@@ -53,18 +67,36 @@ function Hero() {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   const heroImgRef = useRef<HTMLDivElement>(null);
-  const [isDark, setIsDark] = useState(
-    () => (localStorage.getItem('theme') || 'dark') !== 'light'
+  const [isDark, setIsDark] = useState(() =>
+    resolveIsDarkTheme(localStorage.getItem('theme'))
   );
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     const onThemeChange = (e: CustomEvent) => {
-      setIsDark((e.detail as string) !== 'light');
+      setIsDark(resolveIsDarkTheme(e.detail as string | null | undefined));
     };
     window.addEventListener('themeChange', onThemeChange as EventListener);
     return () => {
       window.removeEventListener('themeChange', onThemeChange as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const onSystemThemeChange = () => {
+      const selectedTheme = localStorage.getItem('theme') || 'system';
+
+      if (selectedTheme === 'system') {
+        setIsDark(mediaQuery.matches);
+      }
+    };
+
+    mediaQuery.addEventListener('change', onSystemThemeChange);
+
+    return () => {
+      mediaQuery.removeEventListener('change', onSystemThemeChange);
     };
   }, []);
 

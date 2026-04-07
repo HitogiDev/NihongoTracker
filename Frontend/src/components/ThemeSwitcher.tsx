@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
 
-const freeThemes = ['light', 'dark'];
+const defaultTheme = 'system';
+const freeThemes = ['system', 'light', 'dark'];
 
 const patreonThemes = [
   'cupcake',
@@ -25,6 +26,29 @@ const patreonThemes = [
 
 const themes = [...freeThemes, ...patreonThemes];
 
+const normalizeTheme = (theme: string | null | undefined) => {
+  if (!theme) {
+    return defaultTheme;
+  }
+
+  return theme;
+};
+
+const resolveTheme = (theme: string) => {
+  if (theme === 'system') {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    ) {
+      return 'dark';
+    }
+
+    return 'light';
+  }
+
+  return theme;
+};
+
 // Global theme management to prevent conflicts
 let globalTheme: string | null = null;
 
@@ -35,17 +59,20 @@ const getInitialTheme = () => {
     if (globalTheme) return globalTheme;
 
     const saved = localStorage.getItem('theme');
-    const theme = saved || 'dark';
+    const theme = normalizeTheme(saved);
     globalTheme = theme;
     return theme;
   }
-  return 'dark';
+  return defaultTheme;
 };
 
 // Set theme on document immediately
 const initialTheme = getInitialTheme();
 if (typeof document !== 'undefined') {
-  document.documentElement.setAttribute('data-theme', initialTheme);
+  document.documentElement.setAttribute(
+    'data-theme',
+    resolveTheme(initialTheme)
+  );
 }
 
 export default function ThemeSwitcher() {
@@ -56,35 +83,62 @@ export default function ThemeSwitcher() {
 
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'dark';
+      return normalizeTheme(localStorage.getItem('theme'));
     }
-    return 'dark';
+    return defaultTheme;
   });
 
   // Track the theme when entering settings (for reverting on exit)
   const [originalTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'dark';
+      return normalizeTheme(localStorage.getItem('theme'));
     }
-    return 'dark';
+    return defaultTheme;
   });
 
   // Update theme and save to localStorage
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', resolveTheme(theme));
     localStorage.setItem('theme', theme);
     globalTheme = theme; // Update global reference
+  }, [theme]);
+
+  // Keep system theme synced with OS preference changes
+  useEffect(() => {
+    if (theme !== 'system') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applySystemTheme = () => {
+      document.documentElement.setAttribute(
+        'data-theme',
+        resolveTheme('system')
+      );
+      window.dispatchEvent(
+        new CustomEvent('themeChange', { detail: 'system' })
+      );
+    };
+
+    mediaQuery.addEventListener('change', applySystemTheme);
+
+    return () => {
+      mediaQuery.removeEventListener('change', applySystemTheme);
+    };
   }, [theme]);
 
   // Revert to original theme on unmount if user selected premium theme without access
   useEffect(() => {
     return () => {
       if (!hasPatreonAccess && !freeThemes.includes(theme)) {
-        // Revert to original theme if it was a free theme, otherwise default to dark
+        // Revert to original theme if it was a free theme, otherwise default to system
         const revertTheme = freeThemes.includes(originalTheme)
           ? originalTheme
-          : 'dark';
-        document.documentElement.setAttribute('data-theme', revertTheme);
+          : defaultTheme;
+        document.documentElement.setAttribute(
+          'data-theme',
+          resolveTheme(revertTheme)
+        );
         localStorage.setItem('theme', revertTheme);
         globalTheme = revertTheme;
       }
@@ -95,17 +149,23 @@ export default function ThemeSwitcher() {
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'theme' && e.newValue && e.newValue !== theme) {
-        setTheme(e.newValue);
-        document.documentElement.setAttribute('data-theme', e.newValue);
-        globalTheme = e.newValue;
+        const nextTheme = normalizeTheme(e.newValue);
+        setTheme(nextTheme);
+        document.documentElement.setAttribute(
+          'data-theme',
+          resolveTheme(nextTheme)
+        );
+        globalTheme = nextTheme;
       }
     };
 
     // Also listen for custom theme events
     const onThemeChange = (e: CustomEvent) => {
-      if (e.detail && e.detail !== theme) {
-        setTheme(e.detail);
-        globalTheme = e.detail;
+      const nextTheme = normalizeTheme(e.detail as string | null | undefined);
+
+      if (nextTheme !== theme) {
+        setTheme(nextTheme);
+        globalTheme = nextTheme;
       }
     };
 
@@ -119,10 +179,11 @@ export default function ThemeSwitcher() {
   }, [theme]);
 
   const handleThemeChange = (newTheme: string) => {
-    setTheme(newTheme);
-    globalTheme = newTheme;
+    const nextTheme = normalizeTheme(newTheme);
+    setTheme(nextTheme);
+    globalTheme = nextTheme;
     // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('themeChange', { detail: newTheme }));
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: nextTheme }));
   };
 
   return (
