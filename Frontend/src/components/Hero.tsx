@@ -40,7 +40,7 @@ function ScreenshotWindow({
   isDark: boolean;
   onOpen: (imgSrc: string) => void;
 }) {
-  const activeSrc = isDark ? src : src.replace('.png', '-light.png');
+  const activeSrc = isDark ? src : src.replace('-v2.png', '-light-v2.png');
   return (
     <div
       className="rounded-2xl overflow-hidden shadow-xl border border-base-300 hover:shadow-2xl transition-shadow duration-500 cursor-zoom-in"
@@ -279,8 +279,8 @@ function Hero() {
               <img
                 src={
                   isDark
-                    ? '/screenshots/dashboard.png'
-                    : '/screenshots/dashboard-light.png'
+                    ? '/screenshots/dashboard-v2.png'
+                    : '/screenshots/dashboard-light-v2.png'
                 }
                 alt="NihongoTracker Dashboard"
                 className="w-full block cursor-zoom-in"
@@ -288,8 +288,8 @@ function Hero() {
                 onClick={() =>
                   setLightboxSrc(
                     isDark
-                      ? '/screenshots/dashboard.png'
-                      : '/screenshots/dashboard-light.png'
+                      ? '/screenshots/dashboard-v2.png'
+                      : '/screenshots/dashboard-light-v2.png'
                   )
                 }
               />
@@ -357,7 +357,7 @@ function Hero() {
             </div>
             <div className="scroll-reveal order-1 md:order-2">
               <ScreenshotWindow
-                src="/screenshots/log-tracking.png"
+                src="/screenshots/log-tracking-v2.png"
                 url="nihongotracker.app/log"
                 alt="Log Tracking"
                 isDark={isDark}
@@ -372,7 +372,7 @@ function Hero() {
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal">
               <ScreenshotWindow
-                src="/screenshots/user-stats.png"
+                src="/screenshots/user-stats-v2.png"
                 url="nihongotracker.app/hitogi/stats"
                 alt="Statistics"
                 isDark={isDark}
@@ -445,7 +445,7 @@ function Hero() {
             </div>
             <div className="scroll-reveal order-1 md:order-2">
               <ScreenshotWindow
-                src="/screenshots/leaderboards.png"
+                src="/screenshots/leaderboards-v2.png"
                 url="nihongotracker.app/ranking"
                 alt="Leaderboards"
                 isDark={isDark}
@@ -460,7 +460,7 @@ function Hero() {
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal">
               <ScreenshotWindow
-                src="/screenshots/texthooker.png"
+                src="/screenshots/texthooker-v2.png"
                 url="nihongotracker.app/texthooker"
                 alt="TextHooker Dashboard"
                 isDark={isDark}
@@ -534,7 +534,7 @@ function Hero() {
             </div>
             <div className="scroll-reveal order-1 md:order-2">
               <ScreenshotWindow
-                src="/screenshots/clubs.png"
+                src="/screenshots/clubs-v2.png"
                 url="nihongotracker.app/clubs"
                 alt="Clubs"
                 isDark={isDark}

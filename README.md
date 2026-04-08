@@ -34,43 +34,43 @@ All screenshots below are in the dark theme.
 
 ### Dashboard
 
-![Dashboard](./screenshots/dashboard.png)
+![Dashboard](./screenshots/dashboard-v2.png)
 
 *Main dashboard showing your recent activity, a feed and some useful stats*
 
 ### Log Tracking
 
-![Log Tracking](./screenshots/log-tracking.png)
+![Log Tracking](./screenshots/log-tracking-v2.png)
 
 *Track your immersion across multiple media types with autocomplete*
 
 ### Stats
 
-![Stats](./screenshots/user-stats.png)
+![Stats](./screenshots/user-stats-v2.png)
 
 *Detailed charts and stats of your immersion*
 
 ### Media Stats
 
-![Media Stats](./screenshots/media-stats.png)
+![Media Stats](./screenshots/media-stats-v2.png)
 
 *Media-specific breakdowns and progress analytics*
 
 ### TextHooker
 
-![TextHooker](./screenshots/texthooker.png)
+![TextHooker](./screenshots/texthooker-v2.png)
 
 *Texthooker to easily log your visual novel immersion with one click*
 
 ### Leaderboards
 
-![Leaderboards](./screenshots/leaderboards.png)
+![Leaderboards](./screenshots/leaderboards-v2.png)
 
 *Compete with other immersion learners*
 
 ### Clubs
 
-![Clubs](./screenshots/clubs.png)
+![Clubs](./screenshots/clubs-v2.png)
 
 *Join or create immersion clubs*
 
