@@ -16,6 +16,26 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
 import queryClient from './queryClient.ts';
 
+function resolveInitialTheme() {
+  if (typeof window === 'undefined') {
+    return 'dark';
+  }
+
+  const savedTheme = localStorage.getItem('theme') || 'system';
+
+  if (savedTheme === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  }
+
+  return savedTheme;
+}
+
+if (typeof document !== 'undefined') {
+  document.documentElement.setAttribute('data-theme', resolveInitialTheme());
+}
+
 const App = lazy(() => import('./App.tsx'));
 const CalculatorScreen = lazy(() => import('./screens/CalculatorScreen.tsx'));
 const FeaturesScreen = lazy(() => import('./screens/FeaturesScreen.tsx'));

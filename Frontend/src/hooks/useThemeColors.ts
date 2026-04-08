@@ -1,51 +1,110 @@
 import { useEffect, useState } from 'react';
 
 function getCssVariable(name: string) {
-  const themeEl = document.documentElement.hasAttribute('data-theme')
-    ? document.documentElement
-    : document.body.hasAttribute('data-theme')
-      ? document.body
-      : document.querySelector('[data-theme]');
+  if (typeof document === 'undefined') {
+    return null;
+  }
 
-  if (!themeEl) return null;
-  return getComputedStyle(themeEl).getPropertyValue(name).trim() || null;
+  const rootValue = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+
+  if (rootValue) {
+    return rootValue;
+  }
+
+  const scopedThemeEl = document.querySelector('[data-theme]');
+  if (scopedThemeEl instanceof HTMLElement) {
+    const scopedValue = getComputedStyle(scopedThemeEl)
+      .getPropertyValue(name)
+      .trim();
+
+    if (scopedValue) {
+      return scopedValue;
+    }
+  }
+
+  return null;
 }
 
 /**
  * Convierte un color CSS (hsl, rgb, hex, oklch) en rgba con opacidad
  */
 function toRGBA(color: string, alpha = 1): string {
-  if (!color) return `rgba(0,0,0,${alpha})`;
+  const normalizedColor = color.trim();
+  if (!normalizedColor) return `rgba(0,0,0,${alpha})`;
 
-  // Si ya es hsl u oklch, Chart.js lo acepta con barra de opacidad
-  if (color.startsWith('hsl')) {
-    return color.replace('hsl', 'hsla').replace(')', `, ${alpha})`);
+  if (normalizedColor.startsWith('hsla(')) {
+    return normalizedColor.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
   }
 
-  if (color.startsWith('oklch')) {
-    return color.replace('oklch', 'oklch').replace(')', ` / ${alpha})`);
+  if (normalizedColor.startsWith('hsl(')) {
+    return normalizedColor
+      .replace(/^hsl\(/, 'hsla(')
+      .replace(')', `, ${alpha})`);
   }
 
-  // Si es hex (#rrggbb)
-  if (color.startsWith('#')) {
-    const r = parseInt(color.slice(1, 3), 16);
-    const g = parseInt(color.slice(3, 5), 16);
-    const b = parseInt(color.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  if (normalizedColor.startsWith('oklch(')) {
+    if (normalizedColor.includes('/')) {
+      return normalizedColor.replace(/\/\s*[\d.]+\)$/, `/ ${alpha})`);
+    }
+
+    return normalizedColor.replace(')', ` / ${alpha})`);
   }
 
-  // Si ya es rgb
-  if (color.startsWith('rgb')) {
-    return color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+  if (normalizedColor.startsWith('#')) {
+    const hex = normalizedColor.slice(1);
+
+    const expandedHex =
+      hex.length === 3 || hex.length === 4
+        ? hex
+            .split('')
+            .map((char) => char + char)
+            .join('')
+        : hex;
+
+    if (expandedHex.length !== 6 && expandedHex.length !== 8) {
+      return `rgba(0,0,0,${alpha})`;
+    }
+
+    const r = parseInt(expandedHex.slice(0, 2), 16);
+    const g = parseInt(expandedHex.slice(2, 4), 16);
+    const b = parseInt(expandedHex.slice(4, 6), 16);
+
+    if ([r, g, b].some((value) => Number.isNaN(value))) {
+      return `rgba(0,0,0,${alpha})`;
+    }
+
+    const embeddedAlpha =
+      expandedHex.length === 8
+        ? parseInt(expandedHex.slice(6, 8), 16) / 255
+        : 1;
+
+    const finalAlpha = Math.max(
+      0,
+      Math.min(1, Number((embeddedAlpha * alpha).toFixed(3)))
+    );
+
+    return `rgba(${r}, ${g}, ${b}, ${finalAlpha})`;
   }
 
-  return color;
+  if (normalizedColor.startsWith('rgba(')) {
+    return normalizedColor.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
+  }
+
+  if (normalizedColor.startsWith('rgb(')) {
+    return normalizedColor
+      .replace(/^rgb\(/, 'rgba(')
+      .replace(')', `, ${alpha})`);
+  }
+
+  return normalizedColor;
 }
 
 export function useThemeColors(alpha = 1) {
   const [colors, setColors] = useState({
-    baseContent: '#000',
-    base100: '#fff',
+    baseContent: '#000000',
+    base100: '#ffffff',
     base200: '#f9f9f9',
     base300: '#e0e0e0',
     primary: '#3b82f6',
@@ -56,10 +115,10 @@ export function useThemeColors(alpha = 1) {
     const updateColors = () => {
       setColors({
         baseContent: toRGBA(
-          getCssVariable('--color-base-content') || '#000',
+          getCssVariable('--color-base-content') || '#000000',
           alpha
         ),
-        base100: toRGBA(getCssVariable('--color-base-100') || '#fff', alpha),
+        base100: toRGBA(getCssVariable('--color-base-100') || '#ffffff', alpha),
         base200: toRGBA(getCssVariable('--color-base-200') || '#f9f9f9', alpha),
         base300: toRGBA(getCssVariable('--color-base-300') || '#e0e0e0', alpha),
         primary: toRGBA(getCssVariable('--color-primary') || '#3b82f6', alpha),

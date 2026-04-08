@@ -683,6 +683,7 @@ function Dashboard() {
           <div className="hidden xl:block">
             <RecentMediaPanel
               logs={recentMediaPanelHighlights}
+              user={user}
               onQuickLog={handleQuickLogOpen}
               onRemove={handleRemoveMedia}
             />
@@ -750,12 +751,14 @@ type RecentMediaLog = ILog & { formattedDate: string; formattedTime: string };
 
 type RecentMediaPanelProps = {
   logs: RecentMediaLog[];
+  user: ILoginResponse | null;
   onQuickLog: (media?: ILog['media']) => void;
   onRemove: (mediaId: string, title: string) => void;
 };
 
 function RecentMediaPanel({
   logs,
+  user,
   onQuickLog,
   onRemove,
 }: RecentMediaPanelProps) {
@@ -785,6 +788,7 @@ function RecentMediaPanel({
               <RecentMediaTile
                 key={log._id}
                 log={log}
+                user={user}
                 onQuickLog={onQuickLog}
                 onRemove={onRemove}
               />
@@ -942,11 +946,17 @@ function RecentMediaRailTile({
 
 type RecentMediaTileProps = {
   log: RecentMediaLog;
+  user: ILoginResponse | null;
   onQuickLog: (media?: ILog['media']) => void;
   onRemove: (mediaId: string, title: string) => void;
 };
 
-function RecentMediaTile({ log, onQuickLog, onRemove }: RecentMediaTileProps) {
+function RecentMediaTile({
+  log,
+  user,
+  onQuickLog,
+  onRemove,
+}: RecentMediaTileProps) {
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -991,7 +1001,9 @@ function RecentMediaTile({ log, onQuickLog, onRemove }: RecentMediaTileProps) {
           src={image}
           alt={title}
           className={`absolute inset-0 h-full w-full object-cover ${
-            isAdult ? 'blur-sm scale-110' : ''
+            isAdult && user?.settings?.blurAdultContent
+              ? 'blur-sm scale-110'
+              : ''
           }`}
         />
       ) : (
