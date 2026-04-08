@@ -1,7 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useUserDataStore } from '../store/userData';
 
 function ProfileNavbar({ username }: { username: string | undefined }) {
   const location = useLocation();
+  const loggedUser = useUserDataStore((state) => state.user);
+  const isAdmin = loggedUser?.roles?.includes('admin');
+  const viewedUsername = username?.toLowerCase();
+  const loggedUsername = loggedUser?.username?.toLowerCase();
+  const isOwnProfile =
+    Boolean(viewedUsername) &&
+    Boolean(loggedUsername) &&
+    viewedUsername === loggedUsername;
+  const showModerationTab = Boolean(isAdmin && !isOwnProfile);
 
   const isActive = (path: string) => {
     if (path === `/user/${username}/`) {
@@ -65,6 +75,20 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
               Goals
             </Link>
           </li>
+          {showModerationTab && (
+            <li>
+              <Link
+                to={`/user/${username}/moderation`}
+                className={
+                  isActive(`/user/${username}/moderation`)
+                    ? 'active bg-primary text-primary-content'
+                    : ''
+                }
+              >
+                Moderation
+              </Link>
+            </li>
+          )}
         </ul>
       </div>
     </div>

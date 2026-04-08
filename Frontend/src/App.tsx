@@ -145,7 +145,9 @@ function getTitle(pathname: string) {
           ? 'Immersion List'
           : sectionKey === 'goals'
             ? 'Goals'
-            : 'Profile';
+            : sectionKey === 'moderation'
+              ? 'Moderation'
+              : 'Profile';
     return `${username}'s ${sectionLabel.toLocaleLowerCase()} • ${APP_NAME}`;
   }
   if (segments[0] === 'goals') return `Goals • ${APP_NAME}`;

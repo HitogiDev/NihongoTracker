@@ -74,6 +74,9 @@ const VerifyEmailScreen = lazy(() => import('./screens/VerifyEmailScreen.tsx'));
 const TextHookerDashboard = lazy(
   () => import('./screens/TextHookerDashboard.tsx')
 );
+const ProfileModerationScreen = lazy(
+  () => import('./screens/ProfileModerationScreen.tsx')
+);
 
 function RouteLoadingFallback() {
   return (
@@ -126,6 +129,7 @@ const router = createBrowserRouter(
           <Route path="stats" element={<StatsScreen />} />
           <Route path="list" element={<ListScreen />} />
           <Route path="goals" element={<GoalsScreen />} />
+          <Route path="moderation" element={<ProfileModerationScreen />} />
         </Route>
         <Route path="review/:reviewId" element={<ReviewDetailScreen />} />
         <Route element={<ProtectedRoutes />}>

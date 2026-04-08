@@ -18,6 +18,23 @@ export interface IUser {
     isActive: boolean;
     lastChecked?: Date;
   };
+  moderation?: {
+    rankingBanned: boolean;
+    banned: boolean;
+    banReason?: string;
+    updatedAt?: string | Date | null;
+    updatedBy?: string | null;
+    updatedByUsername?: string;
+    history?: {
+      field: 'rankingBanned' | 'banned' | 'banReason';
+      previousValue: boolean | string;
+      newValue: boolean | string;
+      reasonSnapshot?: string;
+      updatedAt: string | Date;
+      updatedBy?: string | null;
+      updatedByUsername?: string;
+    }[];
+  };
   stats: IStats;
   titles: string[];
   roles: userRoles;

@@ -778,6 +778,46 @@ export async function adminResetPasswordFn(
   return data;
 }
 
+export async function adminGetUserModerationFn(username: string) {
+  const { data } = await api.get(`admin/users/username/${username}/moderation`);
+  return data as {
+    username: string;
+    roles: string[];
+    moderation: {
+      rankingBanned: boolean;
+      banned: boolean;
+      banReason?: string;
+      updatedAt?: string | null;
+      updatedBy?: string | null;
+      updatedByUsername?: string;
+      history?: {
+        field: 'rankingBanned' | 'banned' | 'banReason';
+        previousValue: boolean | string;
+        newValue: boolean | string;
+        reasonSnapshot?: string;
+        updatedAt: string;
+        updatedBy?: string | null;
+        updatedByUsername?: string;
+      }[];
+    };
+  };
+}
+
+export async function adminUpdateUserModerationFn(
+  username: string,
+  payload: {
+    rankingBanned?: boolean;
+    banned?: boolean;
+    banReason?: string;
+  }
+) {
+  const { data } = await api.patch(
+    `admin/users/username/${username}/moderation`,
+    payload
+  );
+  return data;
+}
+
 // Patreon API functions
 export async function getPatreonStatusFn(): Promise<{
   patreonEmail?: string;

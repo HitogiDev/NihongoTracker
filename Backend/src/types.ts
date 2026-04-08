@@ -43,6 +43,26 @@ export interface IPatreonData {
   manualTierExpiry?: Date;
 }
 
+export interface IUserModeration {
+  rankingBanned: boolean;
+  banned: boolean;
+  banReason?: string;
+  updatedAt?: Date;
+  updatedBy?: Types.ObjectId;
+  updatedByUsername?: string;
+  history?: IUserModerationHistoryItem[];
+}
+
+export interface IUserModerationHistoryItem {
+  field: 'rankingBanned' | 'banned' | 'banReason';
+  previousValue: boolean | string;
+  newValue: boolean | string;
+  reasonSnapshot?: string;
+  updatedAt: Date;
+  updatedBy?: Types.ObjectId;
+  updatedByUsername?: string;
+}
+
 export interface IUserMediaStatus extends Document {
   user: Types.ObjectId;
   mediaId: string;
@@ -252,6 +272,7 @@ export interface IUser extends Document {
   updatedAt?: Date;
   settings?: IUserSettings;
   patreon?: IPatreonData;
+  moderation?: IUserModeration;
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 

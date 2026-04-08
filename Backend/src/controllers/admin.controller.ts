@@ -455,6 +455,162 @@ export async function syncPatreonMembers(
   }
 }
 
+export async function getUserModerationByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+      .select('username moderation roles')
+      .lean();
+
+    if (!user) {
+      throw new customError('User not found', 404);
+    }
+
+    const moderationHistory = [...(user.moderation?.history || [])].sort(
+      (a, b) =>
+        new Date(b.updatedAt || 0).getTime() -
+        new Date(a.updatedAt || 0).getTime()
+    );
+
+    return res.status(200).json({
+      username: user.username,
+      roles: user.roles,
+      moderation: {
+        rankingBanned: user.moderation?.rankingBanned ?? false,
+        banned: user.moderation?.banned ?? false,
+        banReason: user.moderation?.banReason ?? '',
+        updatedAt: user.moderation?.updatedAt ?? null,
+        updatedBy: user.moderation?.updatedBy ?? null,
+        updatedByUsername: user.moderation?.updatedByUsername ?? '',
+        history: moderationHistory,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateUserModerationByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { rankingBanned, banned, banReason } = req.body as {
+      rankingBanned?: boolean;
+      banned?: boolean;
+      banReason?: string;
+    };
+
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) {
+      throw new customError('User not found', 404);
+    }
+
+    const hasRankingBanned = typeof rankingBanned === 'boolean';
+    const hasBanned = typeof banned === 'boolean';
+    const hasReason = typeof banReason === 'string';
+
+    if (!hasRankingBanned && !hasBanned && !hasReason) {
+      throw new customError(
+        'At least one moderation field must be provided',
+        400
+      );
+    }
+
+    const currentRankingBanned = user.moderation?.rankingBanned ?? false;
+    const currentBanned = user.moderation?.banned ?? false;
+    const currentReason = user.moderation?.banReason?.trim() || '';
+
+    const nextRankingBanned = hasRankingBanned
+      ? Boolean(rankingBanned)
+      : currentRankingBanned;
+    const nextBanned = hasBanned ? Boolean(banned) : currentBanned;
+    const nextReason = hasReason ? banReason!.trim() : currentReason;
+
+    const now = new Date();
+    const updatedBy = res.locals.user?._id;
+    const updatedByUsername = res.locals.user?.username || 'system';
+
+    const moderationHistory = [...(user.moderation?.history || [])];
+
+    if (hasRankingBanned && currentRankingBanned !== nextRankingBanned) {
+      moderationHistory.push({
+        field: 'rankingBanned',
+        previousValue: currentRankingBanned,
+        newValue: nextRankingBanned,
+        reasonSnapshot: nextReason,
+        updatedAt: now,
+        updatedBy,
+        updatedByUsername,
+      } as any);
+    }
+
+    if (hasBanned && currentBanned !== nextBanned) {
+      moderationHistory.push({
+        field: 'banned',
+        previousValue: currentBanned,
+        newValue: nextBanned,
+        reasonSnapshot: nextReason,
+        updatedAt: now,
+        updatedBy,
+        updatedByUsername,
+      } as any);
+    }
+
+    if (hasReason && currentReason !== nextReason) {
+      moderationHistory.push({
+        field: 'banReason',
+        previousValue: currentReason,
+        newValue: nextReason,
+        reasonSnapshot: nextReason,
+        updatedAt: now,
+        updatedBy,
+        updatedByUsername,
+      } as any);
+    }
+
+    const MAX_HISTORY_ENTRIES = 100;
+    const trimmedHistory = moderationHistory.slice(-MAX_HISTORY_ENTRIES);
+
+    user.moderation = {
+      rankingBanned: nextRankingBanned,
+      banned: nextBanned,
+      banReason: nextReason,
+      updatedAt: now,
+      updatedBy,
+      updatedByUsername,
+      history: trimmedHistory,
+    } as any;
+
+    await user.save();
+
+    const sortedHistory = [...(user.moderation?.history || [])].sort(
+      (a, b) =>
+        new Date(b.updatedAt || 0).getTime() -
+        new Date(a.updatedAt || 0).getTime()
+    );
+
+    return res.status(200).json({
+      message: 'Moderation settings updated',
+      moderation: {
+        rankingBanned: user.moderation?.rankingBanned ?? false,
+        banned: user.moderation?.banned ?? false,
+        banReason: user.moderation?.banReason ?? '',
+        updatedAt: user.moderation?.updatedAt ?? null,
+        updatedBy: user.moderation?.updatedBy ?? null,
+        updatedByUsername: user.moderation?.updatedByUsername ?? '',
+        history: sortedHistory,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 // Get paid users statistics
 export async function getPatronStats(
   _req: Request,

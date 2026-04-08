@@ -131,6 +131,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     });
 
     if (user && (await user.matchPassword(password))) {
+      if (user.moderation?.banned) {
+        throw new customError(
+          user.moderation?.banReason || 'Your account has been banned',
+          403
+        );
+      }
+
       generateToken(res, user._id.toString());
       return res.status(200).json({
         _id: user._id,
@@ -145,6 +152,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         roles: user.roles,
         settings: user.settings,
         patreon: user.patreon,
+        moderation: user.moderation,
       });
     } else {
       throw new customError('Incorrect login or password', 401);

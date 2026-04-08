@@ -22,7 +22,12 @@ import {
   Tag,
 } from 'lucide-react';
 
-import { deleteLogFn, updateLogFn } from '../api/trackerApi';
+import {
+  deleteLogFn,
+  updateLogFn,
+  adminDeleteLogFn,
+  adminUpdateLogFn,
+} from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import queryClient from '../queryClient';
 import { AxiosError } from 'axios';
@@ -148,6 +153,9 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const deleteModalRef = useRef<HTMLDialogElement>(null);
   const editModalRef = useRef<HTMLDialogElement>(null);
   const detailsModalRef = useRef<HTMLDialogElement>(null);
+  const isOwner = logUser === user?.username;
+  const isAdmin = user?.roles?.includes('admin');
+  const shouldUseAdminLogEndpoints = isAdmin && !isOwner;
 
   const buildEditState = (): EditLogFormState => ({
     description: description || '',
@@ -186,7 +194,8 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     logTitle.length > 35 ? `${logTitle.slice(0, 35)}...` : logTitle;
 
   const { mutate: deleteLog, isPending: loadingDeleteLog } = useMutation({
-    mutationFn: (id: string) => deleteLogFn(id),
+    mutationFn: (id: string) =>
+      shouldUseAdminLogEndpoints ? adminDeleteLogFn(id) : deleteLogFn(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         predicate: (query) => {
@@ -209,7 +218,10 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   });
 
   const { mutate: updateLog, isPending: loadingUpdateLog } = useMutation({
-    mutationFn: (data: IUpdateLogRequest) => updateLogFn(log._id, data),
+    mutationFn: (data: IUpdateLogRequest) =>
+      shouldUseAdminLogEndpoints
+        ? adminUpdateLogFn(log._id, data)
+        : updateLogFn(log._id, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         predicate: (query) => {
@@ -437,7 +449,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   }
 
   const quantityInfo = getQuantityInfo();
-  const isOwner = logUser === user?.username;
+  const canModerateLog = isOwner || isAdmin;
   const readingSpeed = getReadingSpeed();
 
   function handleShare() {
@@ -551,7 +563,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               </div>
             </div>
 
-            {isOwner && (
+            {canModerateLog && (
               <div className="dropdown dropdown-end">
                 <button
                   tabIndex={0}

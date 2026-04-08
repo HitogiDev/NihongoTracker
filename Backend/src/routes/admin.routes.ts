@@ -11,6 +11,8 @@ import {
   getPatronStats,
   adminSetPatreonStatus,
   syncPatreonMembers,
+  getUserModerationByUsername,
+  updateUserModerationByUsername,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -82,6 +84,18 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   adminSetPatreonStatus
+);
+router.get(
+  '/users/username/:username/moderation',
+  protect,
+  checkPermission(userRoles.admin),
+  getUserModerationByUsername
+);
+router.patch(
+  '/users/username/:username/moderation',
+  protect,
+  checkPermission(userRoles.admin),
+  updateUserModerationByUsername
 );
 router.post(
   '/patreon/sync',

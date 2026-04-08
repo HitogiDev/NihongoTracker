@@ -407,6 +407,14 @@ export async function getRanking(
       // Lookup user details with aggregated stats
       const rankingUsers = await User.aggregate([
         {
+          $match: {
+            $or: [
+              { 'moderation.rankingBanned': { $exists: false } },
+              { 'moderation.rankingBanned': false },
+            ],
+          },
+        },
+        {
           $lookup: {
             from: 'logs',
             let: { userId: '$_id' },
@@ -565,6 +573,14 @@ export async function getRanking(
     } else {
       // Default behavior - get all-time stats with hours calculated from logs
       const rankingUsers = await User.aggregate([
+        {
+          $match: {
+            $or: [
+              { 'moderation.rankingBanned': { $exists: false } },
+              { 'moderation.rankingBanned': false },
+            ],
+          },
+        },
         {
           $lookup: {
             from: 'logs',
@@ -757,16 +773,29 @@ export async function getRankingSummary(
 
     const higherCount = await User.countDocuments({
       'stats.userXp': { $gt: userXp },
+      $or: [
+        { 'moderation.rankingBanned': { $exists: false } },
+        { 'moderation.rankingBanned': false },
+      ],
     });
 
     const nextUser = await User.findOne({
       'stats.userXp': { $gt: userXp },
+      $or: [
+        { 'moderation.rankingBanned': { $exists: false } },
+        { 'moderation.rankingBanned': false },
+      ],
     })
       .sort({ 'stats.userXp': 1 })
       .select('username stats.userXp')
       .lean();
 
-    const totalUsers = await User.countDocuments({});
+    const totalUsers = await User.countDocuments({
+      $or: [
+        { 'moderation.rankingBanned': { $exists: false } },
+        { 'moderation.rankingBanned': false },
+      ],
+    });
 
     const { monthStart, monthEnd } = getMonthBoundaries(timezone);
 
@@ -806,6 +835,28 @@ export async function getRankingSummary(
         },
       },
       {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { 'user.moderation.rankingBanned': { $exists: false } },
+            { 'user.moderation.rankingBanned': false },
+          ],
+        },
+      },
+      {
         $facet: {
           ahead: [
             { $match: { xp: { $gt: userMonthlyXp } } },
@@ -816,20 +867,6 @@ export async function getRankingSummary(
             { $match: { xp: { $gt: userMonthlyXp } } },
             { $sort: { xp: 1 } },
             { $limit: 1 },
-            {
-              $lookup: {
-                from: 'users',
-                localField: '_id',
-                foreignField: '_id',
-                as: 'user',
-              },
-            },
-            {
-              $unwind: {
-                path: '$user',
-                preserveNullAndEmptyArrays: false,
-              },
-            },
             {
               $project: {
                 username: '$user.username',
@@ -956,6 +993,14 @@ export async function getMediumRanking(
 
     // Build pipeline
     const pipeline: any[] = [
+      {
+        $match: {
+          $or: [
+            { 'moderation.rankingBanned': { $exists: false } },
+            { 'moderation.rankingBanned': false },
+          ],
+        },
+      },
       {
         $lookup: {
           from: 'logs',

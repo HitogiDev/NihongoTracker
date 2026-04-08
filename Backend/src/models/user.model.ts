@@ -1,5 +1,12 @@
 import { Schema, model } from 'mongoose';
-import { IUser, userRoles, IUserSettings, IPatreonData } from '../types.js';
+import {
+  IUser,
+  userRoles,
+  IUserSettings,
+  IPatreonData,
+  IUserModeration,
+  IUserModerationHistoryItem,
+} from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
@@ -47,6 +54,43 @@ const PatreonSchema = new Schema<IPatreonData>(
   { _id: false }
 );
 
+const ModerationSchema = new Schema<IUserModeration>(
+  {
+    rankingBanned: { type: Boolean, default: false },
+    banned: { type: Boolean, default: false },
+    banReason: { type: String, default: '', maxlength: 500 },
+    updatedAt: { type: Date, default: null },
+    updatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    updatedByUsername: { type: String, default: '' },
+    history: {
+      type: [
+        new Schema<IUserModerationHistoryItem>(
+          {
+            field: {
+              type: String,
+              enum: ['rankingBanned', 'banned', 'banReason'],
+              required: true,
+            },
+            previousValue: { type: Schema.Types.Mixed, required: true },
+            newValue: { type: Schema.Types.Mixed, required: true },
+            reasonSnapshot: { type: String, default: '', maxlength: 500 },
+            updatedAt: { type: Date, required: true, default: Date.now },
+            updatedBy: {
+              type: Schema.Types.ObjectId,
+              ref: 'User',
+              default: null,
+            },
+            updatedByUsername: { type: String, default: '' },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+  },
+  { _id: false }
+);
+
 const UserSchema = new Schema<IUser>(
   {
     username: {
@@ -73,7 +117,7 @@ const UserSchema = new Schema<IUser>(
       trim: true,
     },
     password: { type: String, required: true },
-    discordId: { type: String, sparse: true, unique: true },
+    discordId: { type: String, sparse: true, unique: true }, // For Manabe log importing
     stats: {
       userLevel: { type: Number, required: true, default: 1 },
       userXp: { type: Number, required: true, default: 0 },
@@ -142,6 +186,10 @@ const UserSchema = new Schema<IUser>(
     patreon: {
       type: PatreonSchema,
       default: { tier: null, isActive: false },
+    },
+    moderation: {
+      type: ModerationSchema,
+      default: { rankingBanned: false, banned: false, banReason: '' },
     },
   },
   { timestamps: true }

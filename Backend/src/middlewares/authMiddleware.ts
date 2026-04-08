@@ -26,6 +26,15 @@ export async function protect(req: Request, res: Response, next: NextFunction) {
       await user.save();
     }
 
+    if (user?.moderation?.banned) {
+      return next(
+        new customError(
+          user.moderation?.banReason || 'Your account has been banned',
+          403
+        )
+      );
+    }
+
     res.locals.user = user;
     return next();
   } catch (error) {
