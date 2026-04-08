@@ -26,12 +26,11 @@ function SupportScreen() {
       name: 'Donator',
       price: '$1',
       description:
-        'You like what NihongoTracker stands for — helping self-learners track their Japanese immersion — and you want to show a little love. Every dollar helps keep the servers running and the project alive 💕',
+        'You like what NihongoTracker strives for: "helping self-learners track their Japanese immersion", and you want to show a little love. Every dollar helps keep the servers running and the project alive 💕',
       color: 'badge-accent',
-      icon: <Heart className="text-2xl" />,
+      icon: <Heart className="w-5 h-5" />,
       benefits: [
         'Show your symbolic support for the project',
-        "Your name added to the Supporter Wall in the app's About section (optional)",
         'Donator Badge on the profile',
         'Increase maximum log tags to 7',
         'Unlock more themes',
@@ -43,7 +42,7 @@ function SupportScreen() {
       description:
         'For those who use NihongoTracker daily and want to contribute a little more to its development. This tier helps fund hosting, testing, and small feature improvements.',
       color: 'badge-secondary',
-      icon: <Award className="text-2xl" />,
+      icon: <Award className="w-5 h-5" />,
       benefits: [
         'Animated GIF Avatars',
         'Custom text in the profile donator badge',
@@ -58,7 +57,7 @@ function SupportScreen() {
       description:
         "You're going above and beyond to support NihongoTracker. This tier helps cover development and server costs while allowing the project to grow sustainably. Every update, every improvement, and every new feature is made possible thanks to people like you.",
       color: 'badge-primary',
-      icon: <Rocket className="text-2xl" />,
+      icon: <Rocket className="w-5 h-5" />,
       benefits: [
         'Custom donator badge color (rainbow included)',
         'Site-wide donator badge',
@@ -348,13 +347,20 @@ function SupportScreen() {
             <div className="collapse collapse-arrow bg-base-100 shadow border border-base-300">
               <input type="radio" name="faq-accordion" />
               <div className="collapse-title text-lg font-medium">
-                What happens to my data if I stop supporting?
+                I linked my patreon and my benefits are not applying, what
+                should I do?
               </div>
               <div className="collapse-content">
                 <p className="text-base-content/70">
-                  Your data is always yours. If you stop supporting, you'll lose
-                  access to premium features, but all your logs, stats, and
-                  progress remain intact.
+                  You can contact me through Discord:
+                  <span className="font-mono">hitogi</span>.<br /> Or email me
+                  at:{' '}
+                  <a
+                    href="mailto:support@nihongotracker.app"
+                    className="link underline"
+                  >
+                    support@nihongotracker.app
+                  </a>
                 </p>
               </div>
             </div>

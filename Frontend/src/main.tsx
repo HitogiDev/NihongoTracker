@@ -78,14 +78,6 @@ const ProfileModerationScreen = lazy(
   () => import('./screens/ProfileModerationScreen.tsx')
 );
 
-function RouteLoadingFallback() {
-  return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center">
-      <span className="loading loading-spinner loading-lg text-primary"></span>
-    </div>
-  );
-}
-
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/">
@@ -166,7 +158,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <TimezoneProvider>
-        <Suspense fallback={<RouteLoadingFallback />}>
+        <Suspense
+          fallback={
+            <div className="min-h-screen bg-base-200 flex items-center justify-center">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+          }
+        >
           <RouterProvider router={router} />
         </Suspense>
       </TimezoneProvider>

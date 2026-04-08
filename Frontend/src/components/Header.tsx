@@ -569,14 +569,14 @@ function Header() {
               >
                 {themeIcon}
               </button>
-              <Link className="btn btn-primary btn-sm sm:btn-md" to="/login">
-                Sign In
-              </Link>
               <Link
-                className="btn btn-disabled btn-primary btn-outline btn-sm sm:btn-md"
-                to="/register"
+                className="btn btn-primary btn-ghost btn-sm sm:btn-md"
+                to="/login"
               >
-                Coming Soon!
+                Login
+              </Link>
+              <Link className="btn btn-primary btn-sm sm:btn-md" to="/register">
+                Sign Up
               </Link>
             </>
           )}

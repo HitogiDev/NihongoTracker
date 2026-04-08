@@ -25,6 +25,7 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
   // ArrowRight,
 } from 'lucide-react';
 
@@ -328,14 +329,10 @@ function FeaturesScreen() {
             covered.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/register" className="pointer-events-none">
-              <button
-                disabled
-                className="btn btn-primary btn-lg btn-disabled gap-2 px-10"
-              >
-                {/* Start for Free */}
-                {/* <ArrowRight size={18} /> */}
-                Coming Soon!
+            <Link to="/register">
+              <button className="btn btn-primary btn-lg gap-2 px-10">
+                Start for Free
+                <ArrowRight size={18} />
               </button>
             </Link>
             <Link to="/ranking">
@@ -525,12 +522,9 @@ function FeaturesScreen() {
             Free, start tracking your immersion.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/register" className="pointer-events-none">
-              <button
-                disabled
-                className="btn btn-primary btn-lg btn-disabled px-12"
-              >
-                Coming Soon!
+            <Link to="/register">
+              <button className="btn btn-primary btn-lg px-12">
+                Start tracking
               </button>
             </Link>
             <Link to="/ranking">

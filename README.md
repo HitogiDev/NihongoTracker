@@ -9,27 +9,22 @@
 [![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 [![Patreon](https://img.shields.io/badge/Support-Patreon-FF424D?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/nihongotracker)
 
-Track your anime, manga, visual novels, books, videos, movies, TV shows, and audio immersion. Earn XP, level up, maintain streaks, and compete on leaderboards while mastering Japanese.
-
-[**Live Demo**](https://nihongotracker.com) · [**Report Bug**](https://github.com/HitogiDev/NihongoTracker/issues) · [**Request Feature**](https://github.com/HitogiDev/NihongoTracker/issues)
+A Japanese immersion tracker with auto-complete and focused on ease of use, gamification and competitiveness.
+Earn XP, level up, maintain streaks, and compete on leaderboards while immersing in Japanese.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [Screenshots](#-screenshots)
-- [Features](#-features)
-- [Technology Stack](#-technology-stack)
-- [Getting Started](#-getting-started)
+- [Screenshots](#screenshots)
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Docker Setup (Recommended)](#docker-setup-recommended)
   - [Manual Setup](#manual-setup-for-development)
   - [Environment Variables](#environment-variables)
-- [API Reference](#-api-reference)
-- [Project Structure](#-project-structure)
-- [Contributing](#-contributing)
-- [Support](#-support)
-- [License](#-license)
+- [Support](#support)
+- [License](#license)
 
 ---
 
@@ -106,7 +101,7 @@ All screenshots below are in the dark theme.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -117,7 +112,14 @@ All screenshots below are in the dark theme.
 
 ### Docker Setup (Recommended)
 
-The fastest way to get NihongoTracker running:
+You can use the prebuilt docker images for more ease.
+
+#### Requirements
+
+- **Docker Engine** 24+
+- **Docker Compose plugin** (or `docker compose` support)
+
+#### Quick Start
 
 ```bash
 # Clone the repository
@@ -128,11 +130,41 @@ cd NihongoTracker
 cp Backend/.env.example Backend/.env
 # Edit Backend/.env with your configuration
 
-# Build and start all services
-docker compose up --build
+# Pull latest images (optional but recommended)
+docker compose pull
+
+# Start app + MongoDB + Meilisearch
+docker compose up -d
 ```
 
-The app will be available at `http://localhost:5173`
+For Docker, make sure these values are correct in `Backend/.env`:
+
+```env
+DATABASE_URL=mongodb://mongo:27017/nihongotracker
+BACKEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
+```
+
+Services will be available at:
+
+- **App + API:** `http://localhost:3000`
+- **Meilisearch:** `http://localhost:7700`
+- **MongoDB:** `mongodb://localhost:27017`
+
+#### Optional: Run Production Index Migration
+
+```bash
+docker compose --profile migration up migration
+```
+
+#### Optional: Use nginx external network compose
+
+If you're running behind an existing nginx reverse proxy network:
+
+```bash
+docker network create nginx_default
+docker compose -f docker-compose.nginx.yml up -d
+```
 
 ### Manual Setup (for Development)
 
@@ -146,7 +178,7 @@ npm install
 cp .env.example .env
 # Edit .env with your settings (see Environment Variables below)
 
-# Start development server with hot reload
+# Start development server
 npm run dev
 ```
 
@@ -244,149 +276,27 @@ MEILISEARCH_API_KEY=your-meilisearch-key
 
 ---
 
-## 📖 API Reference
-
-Base URL: `/api`
-
-### Authentication API
-
-| Method | Endpoint         | Description                  |
-| ------ | ---------------- | ---------------------------- |
-| `POST` | `/auth/register` | Create a new account         |
-| `POST` | `/auth/login`    | Authenticate and receive JWT |
-| `POST` | `/auth/logout`   | Invalidate session           |
-| `GET`  | `/auth/me`       | Get current user info        |
-
-### Logs API
-
-| Method   | Endpoint       | Description                       |
-| -------- | -------------- | --------------------------------- |
-| `GET`    | `/logs`        | Get user's logs (paginated)       |
-| `POST`   | `/logs`        | Create a new immersion log        |
-| `PATCH`  | `/logs/:id`    | Update an existing log            |
-| `DELETE` | `/logs/:id`    | Delete a log                      |
-| `POST`   | `/logs/assign` | Assign media to logs              |
-| `POST`   | `/logs/import` | Import logs from external sources |
-
-### Media API
-
-| Method | Endpoint           | Description                           |
-| ------ | ------------------ | ------------------------------------- |
-| `GET`  | `/search/:type`    | Search media (anime, manga, vn, etc.) |
-| `GET`  | `/media/:type/:id` | Get media details                     |
-
-### Users & Stats API
-
-| Method  | Endpoint                 | Description             |
-| ------- | ------------------------ | ----------------------- |
-| `GET`   | `/users/:username`       | Get user profile        |
-| `GET`   | `/users/:username/stats` | Get user statistics     |
-| `PATCH` | `/users/settings`        | Update user settings    |
-| `GET`   | `/ranking`               | Get global leaderboards |
-
-### Goals API
-
-| Method | Endpoint          | Description              |
-| ------ | ----------------- | ------------------------ |
-| `GET`  | `/goals/daily`    | Get daily goals          |
-| `POST` | `/goals/daily`    | Create/update daily goal |
-| `GET`  | `/goals/longterm` | Get long-term goals      |
-| `POST` | `/goals/longterm` | Create long-term goal    |
-
-### Clubs API
-
-| Method | Endpoint           | Description       |
-| ------ | ------------------ | ----------------- |
-| `GET`  | `/clubs`           | List all clubs    |
-| `POST` | `/clubs`           | Create a new club |
-| `GET`  | `/clubs/:id`       | Get club details  |
-| `POST` | `/clubs/:id/join`  | Join a club       |
-| `POST` | `/clubs/:id/leave` | Leave a club      |
-
----
-
-## 📁 Project Structure
-
-```text
-NihongoTracker/
-├── Backend/
-│   ├── src/
-│   │   ├── controllers/     # Route handlers
-│   │   ├── middlewares/     # Express middleware (auth, XP calc, etc.)
-│   │   ├── models/          # Mongoose schemas
-│   │   ├── routes/          # API route definitions
-│   │   ├── services/        # Business logic & external APIs
-│   │   ├── libs/            # Utilities (JWT, auth helpers)
-│   │   ├── types.ts         # TypeScript interfaces
-│   │   └── app.ts           # Express app configuration
-│   ├── build/               # Compiled JavaScript output
-│   └── dist/                # Frontend assets (production)
-│
-├── Frontend/
-│   ├── src/
-│   │   ├── api/             # API client functions
-│   │   ├── components/      # Reusable UI components
-│   │   ├── screens/         # Page components
-│   │   ├── store/           # Zustand state stores
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── contexts/        # React contexts
-│   │   └── utils/           # Helper functions
-│   └── public/              # Static assets
-│
-├── docker-compose.yml       # Docker orchestration
-└── README.md
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Whether it's bug fixes, new features, or documentation improvements.
-
-### Development Workflow
-
-1. **Fork** the repository
-2. **Clone** your fork locally
-3. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-4. **Make** your changes
-5. **Test** thoroughly
-6. **Commit** with clear messages: `git commit -m "feat: add amazing feature"`
-7. **Push** to your fork: `git push origin feature/amazing-feature`
-8. **Open** a Pull Request
-
-### Code Guidelines
-
-- **TypeScript** — All code must be typed
-- **ES Modules** — Use `.js` extensions in imports (TypeScript compiles to ESM)
-- **Formatting** — Run Prettier before committing
-- **Naming** — Use camelCase for variables/functions, PascalCase for components/classes
-
-### Commit Convention
-
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` — New features
-- `fix:` — Bug fixes
-- `docs:` — Documentation changes
-- `style:` — Code style changes (formatting, etc.)
-- `refactor:` — Code refactoring
-- `test:` — Adding or updating tests
-- `chore:` — Maintenance tasks
-
----
-
-## 💬 Support
+## Support
 
 Need help or have questions?
 
-- 📖 Check the [Issues](https://github.com/HitogiDev/NihongoTracker/issues) page
-- 🐛 [Report a bug](https://github.com/HitogiDev/NihongoTracker/issues/new?template=bug_report.md)
-- 💡 [Request a feature](https://github.com/HitogiDev/NihongoTracker/issues/new?template=feature_request.md)
-- ☕ Support development on [Patreon](https://www.patreon.com/nihongotracker)
+- Check the [Issues](https://github.com/HitogiDev/NihongoTracker/issues) page
+- [Report a bug](https://github.com/HitogiDev/NihongoTracker/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/HitogiDev/NihongoTracker/issues/new?template=feature_request.md)
+- Support development on [Patreon](https://www.patreon.com/nihongotracker)
 
 ---
 
-## 📄 License
+## Acknowledgements
+
+- [Jiten](https://github.com/Sirush/Jiten) - Difficulty and character count.
+- [Texthooker-ui](https://github.com/Renji-XD/texthooker-ui) - Texthooker inspiration.
+- [VNDB](https://vndb.org/) - Visual Novel data.
+- [Anilist](https://anilist.co/) - Anime, manga and light novels data.
+
+---
+
+## License
 
 This project is licensed under the **ISC License** — see the [LICENSE](LICENSE) file for details.
 

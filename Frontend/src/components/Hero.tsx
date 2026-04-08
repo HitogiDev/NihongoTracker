@@ -242,11 +242,8 @@ function Hero() {
               ref={ctaRef}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5"
             >
-              <Link to="/register" className="pointer-events-none">
-                <button
-                  disabled
-                  className="btn btn-primary btn-lg btn-disabled gap-2 px-10"
-                >
+              <Link to="/register">
+                <button className="btn btn-primary btn-lg gap-2 px-10">
                   Start Tracking
                   <ArrowRight size={18} />
                 </button>
@@ -335,9 +332,7 @@ function Hero() {
                 Log Tracking
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                Log in moments,
-                <br />
-                not minutes
+                Log in an instant
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
                 Search a title, fill in the details, hit save. No more writing
@@ -348,7 +343,7 @@ function Hero() {
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Anime, manga, VNs, audio, books & more
+                  Anime, manga, VNs, audio, light novels & more
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
@@ -559,12 +554,9 @@ function Hero() {
               Free, start tracking your immersion.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/register" className="pointer-events-none">
-                <button
-                  disabled
-                  className="btn btn-primary btn-lg btn-disabled px-12"
-                >
-                  Coming Soon!
+              <Link to="/register">
+                <button className="btn btn-primary btn-lg px-12">
+                  Join Now
                 </button>
               </Link>
               <Link to="/features">
