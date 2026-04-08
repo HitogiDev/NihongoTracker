@@ -364,6 +364,13 @@ export async function importLogFileFn(file: FormData) {
   return data;
 }
 
+export async function exportLogsCSVFn() {
+  const { data } = await api.get(`users/export/csv`, {
+    responseType: 'blob',
+  });
+  return data;
+}
+
 interface IDashboardHours {
   currentMonth: {
     totalTime: number;

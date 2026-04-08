@@ -7,12 +7,14 @@ import {
   TMWLog,
   ManabeTSVLog,
   VNCRLog,
+  OtherCSVLog,
   IManabeLogs,
 } from '../types.js';
 import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import { MediaBase } from '../models/media.model.js';
+import Tag from '../models/tag.model.js';
 import { getYouTubeVideoInfo } from '../services/searchYoutube.js';
 
 interface ILogManabeTypeMap {
@@ -42,6 +44,7 @@ interface ILogNT {
   pages?: number;
   mediaId?: string;
   date: Date;
+  tagNames?: string[];
 }
 
 function transformManabeLogsList(
@@ -253,13 +256,21 @@ function transformTMWLogsList(
     .map((log) => {
       const type = mediaTypeMap[log['Media Type']];
       const amount = parseFloat(log['Amount Logged']) || 0;
+      const mediaName = (log['Media Name'] || '').trim();
+      const comment = (log['Comment'] || '').trim();
+      const hasUsableComment =
+        comment.length > 0 && comment.toLowerCase() !== 'no comment';
 
       const NTLog: ILogNT = {
         user: user._id,
         type: type,
         date: new Date(log['Log Date']),
-        description: log['Media Name'],
+        description: mediaName,
       };
+
+      if (mediaName.toUpperCase() === 'N/A' && hasUsableComment) {
+        NTLog.description = comment;
+      }
 
       // Check if is a youtube video
       if (
@@ -301,11 +312,11 @@ function transformTMWLogsList(
       }
 
       if (
-        log['Comment'] &&
-        log['Comment'] !== 'No comment' &&
-        /^v?\d+$/.test(log['Media Name'])
+        hasUsableComment &&
+        (/^v?\d+$/.test(log['Media Name']) ||
+          /^https?:\/\/(www\.)?youtu(be\.com|\.be)\//.test(log['Comment']))
       ) {
-        NTLog.description = log['Comment'];
+        NTLog.description = comment;
       }
 
       return NTLog;
@@ -425,6 +436,71 @@ function transformVNCRLogsList(
     });
 }
 
+// Transform "other" custom CSV format logs
+function transformOtherCSVLogsList(
+  list: OtherCSVLog[],
+  user: Omit<IUser, 'password'>
+): ILogNT[] {
+  const validTypes: ILog['type'][] = [
+    'reading',
+    'anime',
+    'vn',
+    'video',
+    'manga',
+    'audio',
+    'movie',
+    'other',
+    'tv show',
+  ];
+
+  return list
+    .filter((log) => {
+      const type = log.type?.toLowerCase().trim();
+      return validTypes.includes(type as ILog['type']);
+    })
+    .map((log) => {
+      const type = log.type.toLowerCase().trim() as ILog['type'];
+
+      const NTLog: ILogNT = {
+        user: user._id,
+        type,
+        date: new Date(log.date),
+        description: log.description || undefined,
+        mediaId: log.mediaId?.trim() || undefined,
+      };
+
+      if (log.time) {
+        const time = parseFloat(log.time);
+        if (!isNaN(time) && time > 0) {
+          NTLog.time = Math.round(time);
+        }
+      }
+
+      if (log.characters) {
+        const chars = parseFloat(log.characters);
+        if (!isNaN(chars) && chars > 0) {
+          NTLog.chars = Math.round(chars);
+        }
+      }
+
+      if (log.episodes) {
+        const episodes = parseFloat(log.episodes);
+        if (!isNaN(episodes) && episodes > 0) {
+          NTLog.episodes = Math.round(episodes);
+        }
+      }
+
+      if (log.pages) {
+        const pages = parseFloat(log.pages);
+        if (!isNaN(pages) && pages > 0) {
+          NTLog.pages = Math.round(pages);
+        }
+      }
+
+      return NTLog;
+    });
+}
+
 export async function getLogsFromCSV(
   req: Request,
   res: Response,
@@ -440,6 +516,55 @@ export async function getLogsFromCSV(
       logs = transformManabeTSVLogsList(req.body.logs, res.locals.user);
     } else if (importType === 'vncr') {
       logs = transformVNCRLogsList(req.body.logs, res.locals.user);
+    } else if (importType === 'other') {
+      logs = transformOtherCSVLogsList(req.body.logs, res.locals.user);
+
+      // Resolve tag names to ObjectIds, creating tags that don't exist
+      const allTagNames = new Set<string>();
+      for (const log of logs) {
+        if (log.tagNames) {
+          for (const name of log.tagNames) {
+            allTagNames.add(name);
+          }
+        }
+      }
+
+      if (allTagNames.size > 0) {
+        const userId = res.locals.user._id;
+        const existingTags = await Tag.find({
+          user: userId,
+          name: { $in: Array.from(allTagNames) },
+        }).lean();
+
+        const tagNameToId = new Map<string, Types.ObjectId>();
+        for (const tag of existingTags) {
+          tagNameToId.set(tag.name, tag._id);
+        }
+
+        // Create tags that don't exist yet
+        const missingNames = Array.from(allTagNames).filter(
+          (name) => !tagNameToId.has(name)
+        );
+        if (missingNames.length > 0) {
+          const newTags = await Tag.insertMany(
+            missingNames.map((name) => ({ user: userId, name })),
+            { ordered: false }
+          );
+          for (const tag of newTags) {
+            tagNameToId.set(tag.name, tag._id);
+          }
+        }
+
+        // Assign tag ObjectIds to each log and remove tagNames
+        for (const log of logs) {
+          if (log.tagNames) {
+            (log as any).tags = log.tagNames
+              .map((name) => tagNameToId.get(name))
+              .filter(Boolean);
+            delete log.tagNames;
+          }
+        }
+      }
     } else {
       throw new customError('Unsupported CSV type', 400);
     }

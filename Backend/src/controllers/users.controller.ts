@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import { sendVerificationEmail } from '../mailtrap/emails.js';
 import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
 import { indexUser } from '../services/meilisearch/userIndex.js';
+import { calculateXp } from '../services/calculateLevel.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -1174,20 +1175,62 @@ export async function clearUserData(
       await deleteFile(user.banner);
     }
 
-    await user.updateOne({
-      clubs: [],
-      titles: [],
-      roles: ['user'],
-      $unset: {
-        stats: '',
-        firstImport: '',
-        discordId: '',
-        avatar: '',
-        banner: '',
-        settings: '',
-        patreon: '',
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          clubs: [],
+          titles: [],
+          roles: ['user'],
+          firstImport: true,
+          about: '',
+          avatar: '',
+          banner: '',
+          stats: {
+            userLevel: 1,
+            userXp: 0,
+            userXpToNextLevel: calculateXp(2),
+            userXpToCurrentLevel: calculateXp(1),
+            readingXp: 0,
+            readingLevel: 1,
+            readingXpToNextLevel: calculateXp(2),
+            readingXpToCurrentLevel: calculateXp(1),
+            listeningXp: 0,
+            listeningLevel: 1,
+            listeningXpToNextLevel: calculateXp(2),
+            listeningXpToCurrentLevel: calculateXp(1),
+            currentStreak: 0,
+            longestStreak: 0,
+            lastStreakDate: null,
+          },
+          settings: {
+            blurAdultContent: true,
+            hideUnmatchedLogsAlert: false,
+            timezone: 'UTC',
+            hiddenRecentMedia: [],
+          },
+          patreon: {
+            tier: null,
+            isActive: false,
+            customBadgeText: '',
+            badgeColor: '',
+            badgeTextColor: '',
+            manualTierExpiry: null,
+          },
+        },
+        $unset: {
+          discordId: 1,
+        },
       },
-    });
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedUser) {
+      throw new customError('User not found', 404);
+    }
 
     // Delete all logs
     await Log.deleteMany({ user: user._id });
@@ -1200,12 +1243,6 @@ export async function clearUserData(
     await LongTermGoal.deleteMany({ user: user._id });
     await Tag.deleteMany({ user: user._id });
 
-    // Fetch updated user to return
-    const updatedUser = await User.findById(user._id);
-    if (!updatedUser) {
-      throw new customError('User not found', 404);
-    }
-
     return res.status(200).json({
       message: 'User data cleared',
       user: {
@@ -1215,6 +1252,7 @@ export async function clearUserData(
         stats: updatedUser.stats,
         avatar: updatedUser.avatar,
         banner: updatedUser.banner,
+        about: updatedUser.about,
         titles: updatedUser.titles,
         roles: updatedUser.roles,
         settings: updatedUser.settings,

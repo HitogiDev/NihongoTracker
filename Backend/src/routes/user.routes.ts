@@ -13,6 +13,7 @@ import {
   updateMediaCompletionStatus,
   updateHiddenRecentMedia,
 } from '../controllers/users.controller.js';
+import { exportLogsCSV } from '../controllers/export.controller.js';
 import {
   getDashboardHours,
   getRecentLogs,
@@ -63,5 +64,7 @@ router.put(
 router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
 
 router.post('/cleardata', protect, clearUserData);
+
+router.get('/export/csv', protect, exportLogsCSV);
 
 export default router;

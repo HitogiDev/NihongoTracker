@@ -511,7 +511,7 @@ export interface ManabeTSVLog {
   Descripción: string; // Description
   Puntos: string; // Points
   Caracteres: string; // Characters
-  Tiempo: string; // Time
+  Tiempo: string; // Time (in minutes)
 }
 
 export interface VNCRLog {
@@ -548,6 +548,18 @@ export interface VNCRLog {
       };
     };
   };
+}
+
+export interface OtherCSVLog {
+  date: string;
+  type: string;
+  time?: string;
+  characters?: string;
+  episodes?: string;
+  pages?: string;
+  description?: string;
+  tags?: string;
+  mediaId?: string;
 }
 
 export interface IDailyGoal extends Document {

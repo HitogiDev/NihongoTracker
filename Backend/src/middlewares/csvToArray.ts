@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { customError } from './errorMiddleware.js';
 import csvtojson from 'csvtojson';
-import { TMWLog, ManabeTSVLog, VNCRLog } from '../types.js';
+import { TMWLog, ManabeTSVLog, VNCRLog, OtherCSVLog } from '../types.js';
 
 export async function csvToArray(
   req: Request,
@@ -12,7 +12,7 @@ export async function csvToArray(
     if (!req.file) {
       throw new customError('No file uploaded', 400);
     }
-    if (!['tmw', 'manabe', 'vncr'].includes(req.body.logImportType)) {
+    if (!['tmw', 'manabe', 'vncr', 'other'].includes(req.body.logImportType)) {
       throw new customError('Import type is invalid', 400);
     }
     if (req.file.size > 5 * 1024 * 1024) {
@@ -61,6 +61,27 @@ export async function csvToArray(
       if (results.length === 0) {
         throw new customError('No valid data found in the JSONL file', 400);
       }
+      req.body.logs = results;
+    } else if (csvType === 'other') {
+      // Parse Other CSV format
+      const results: OtherCSVLog[] = await csvtojson({
+        delimiter: ',',
+      }).fromString(csvString);
+
+      if (results.length === 0) {
+        throw new customError('No data found in the CSV file', 400);
+      }
+
+      // Validate required fields
+      for (const row of results) {
+        if (!row.date || !row.type) {
+          throw new customError(
+            'Each row must have at least a "date" and "type" field',
+            400
+          );
+        }
+      }
+
       req.body.logs = results;
     }
 

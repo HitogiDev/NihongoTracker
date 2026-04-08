@@ -11,6 +11,7 @@ import {
   clearUserDataFn,
   importLogFileFn,
   importLogsFn,
+  exportLogsCSVFn,
   updateUserFn,
   getPatreonStatusFn,
   unlinkPatreonAccountFn,
@@ -40,6 +41,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Info,
   Image as ImageIcon,
   Italic,
   Link as LinkIcon,
@@ -48,6 +50,8 @@ import {
   Quote,
   Type,
   EyeOff,
+  HelpCircle,
+  Download,
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
@@ -58,11 +62,13 @@ const PRESET_BADGE_TEXT_COLORS = [
   'primary-content',
   'secondary-content',
 ] as const;
-const IMPORT_TYPE_LABELS: Record<'tmw' | 'manabe' | 'vncr', string> = {
-  tmw: 'TheMoeWay (.csv)',
-  manabe: 'Manabe (.tsv)',
-  vncr: 'VN-CSV (.csv)',
-};
+const IMPORT_TYPE_LABELS: Record<'tmw' | 'manabe' | 'vncr' | 'other', string> =
+  {
+    tmw: 'TheMoeWay (.csv)',
+    manabe: 'Manabe (.tsv)',
+    vncr: 'VN-CSV (.csv)',
+    other: 'NihongoTracker | Other (.csv)',
+  };
 
 type PatreonStatus = {
   patreonEmail?: string;
@@ -344,7 +350,7 @@ function SettingsScreen() {
     string | null
   >(null);
   const [importType, setImportType] = useState<
-    'tmw' | 'manabe' | 'vncr' | null
+    'tmw' | 'manabe' | 'vncr' | 'other' | null
   >(null);
   const confirmUsernameRef = useRef<HTMLInputElement>(null);
   const [isUsernameMatch, setIsUsernameMatch] = useState(false);
@@ -359,6 +365,7 @@ function SettingsScreen() {
   const bannerPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const advancedOptionsRef = useRef<HTMLDetailsElement>(null);
   const aboutEditorRef = useRef<AboutEditorHandle>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
@@ -690,6 +697,29 @@ function SettingsScreen() {
     },
   });
 
+  const { mutate: exportLogs, isPending: isExportPending } = useMutation({
+    mutationFn: exportLogsCSVFn,
+    onSuccess: (data) => {
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nihongotracker-export-${user?.username || 'data'}-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Data exported successfully!');
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message || 'Export failed');
+      } else {
+        toast.error('Failed to export data');
+      }
+    },
+  });
+
   const { mutate: clearData, isPending: isClearDataPending } = useMutation({
     mutationFn: clearUserDataFn,
     onSuccess: (data) => {
@@ -846,6 +876,27 @@ function SettingsScreen() {
     formData.append('logImportType', importType ?? '');
     importFileLogs(formData);
   }
+
+  const handleAdvancedOptionsToggle = useCallback(
+    (event: React.SyntheticEvent<HTMLDetailsElement>) => {
+      const advancedOptions = event.currentTarget;
+      if (!advancedOptions.open) {
+        return;
+      }
+      (
+        document.getElementById(
+          'advanced_options_info_modal'
+        ) as HTMLDialogElement | null
+      )?.showModal();
+    },
+    []
+  );
+
+  const closeAdvancedOptions = useCallback(() => {
+    if (advancedOptionsRef.current) {
+      advancedOptionsRef.current.open = false;
+    }
+  }, []);
 
   async function handleClearData() {
     if (!user) return;
@@ -2675,6 +2726,7 @@ function SettingsScreen() {
                               className={`hover:bg-base-200 ${importType === 'tmw' ? 'active' : ''}`}
                               onClick={() => {
                                 setImportType('tmw');
+                                (document.activeElement as HTMLElement)?.blur();
                               }}
                             >
                               TheMoeWay
@@ -2686,6 +2738,7 @@ function SettingsScreen() {
                               className={`hover:bg-base-200 ${importType === 'manabe' ? 'active' : ''}`}
                               onClick={() => {
                                 setImportType('manabe');
+                                (document.activeElement as HTMLElement)?.blur();
                               }}
                             >
                               Manabe
@@ -2697,13 +2750,42 @@ function SettingsScreen() {
                               className={`hover:bg-base-200 ${importType === 'vncr' ? 'active' : ''}`}
                               onClick={() => {
                                 setImportType('vncr');
+                                (document.activeElement as HTMLElement)?.blur();
                               }}
                             >
                               VN Club Resurrection
                             </button>
                           </li>
+                          <li>
+                            <button
+                              type="button"
+                              className={`hover:bg-base-200 ${importType === 'other' ? 'active' : ''}`}
+                              onClick={() => {
+                                setImportType('other');
+                                (document.activeElement as HTMLElement)?.blur();
+                              }}
+                            >
+                              NihongoTracker | Other
+                            </button>
+                          </li>
                         </ul>
                       </div>
+                      {importType === 'other' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm gap-1 text-info self-start"
+                          onClick={() =>
+                            (
+                              document.getElementById(
+                                'other_csv_help_modal'
+                              ) as HTMLDialogElement
+                            ).showModal()
+                          }
+                        >
+                          <HelpCircle className="w-4 h-4" />
+                          CSV Format Help
+                        </button>
+                      )}
                       <button
                         type="submit"
                         className="btn btn-info w-full"
@@ -2737,9 +2819,41 @@ function SettingsScreen() {
                     </form>
                   </div>
 
+                  <div>
+                    <h3 className="font-semibold mb-3 text-base-content">
+                      Export Data
+                    </h3>
+                    <p className="text-base-content/70 text-sm mb-3">
+                      Download all your logs as a CSV file that can be
+                      re-imported later.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-success w-full"
+                      disabled={isExportPending}
+                      onClick={() => exportLogs()}
+                    >
+                      {isExportPending ? (
+                        <>
+                          <span className="loading loading-spinner loading-sm"></span>
+                          Exporting...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-5 w-5" />
+                          Export as CSV
+                        </>
+                      )}
+                    </button>
+                  </div>
+
                   <div className="divider"></div>
 
-                  <details className="collapse collapse-arrow bg-base-200 border border-base-300">
+                  <details
+                    ref={advancedOptionsRef}
+                    className="collapse collapse-arrow bg-base-200 border border-base-300"
+                    onToggle={handleAdvancedOptionsToggle}
+                  >
                     <summary className="collapse-title font-semibold text-base-content">
                       Advanced Options
                     </summary>
@@ -2761,7 +2875,7 @@ function SettingsScreen() {
                           <span className="label-text-alt text-base-content/60">
                             {user?.discordId
                               ? `Current: ${user.discordId}`
-                              : 'Needed for external sync'}
+                              : null}
                           </span>
                         </label>
                       </div>
@@ -3222,6 +3336,183 @@ function SettingsScreen() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button onClick={() => setShowEmailSentModal(false)}>close</button>
+        </form>
+      </dialog>
+
+      {/* Advanced Options Info Modal */}
+      <dialog id="advanced_options_info_modal" className="modal">
+        <div className="modal-box max-w-lg">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-info" />
+              <h3 className="text-lg font-bold">About Advanced Options</h3>
+            </div>
+            <form method="dialog">
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                type="submit"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </form>
+          </div>
+
+          <div className="space-y-3 text-base-content/80">
+            <p>
+              This menu is only useful for members of the Manabe Discord server
+              and users of Iniesta bot.
+            </p>
+            <p>
+              If you do not know what that is, you can safely ignore this
+              section.
+            </p>
+          </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button
+                className="btn btn-ghost"
+                type="submit"
+                onClick={closeAdvancedOptions}
+              >
+                Okay, forget it
+              </button>
+            </form>
+            <form method="dialog">
+              <button className="btn btn-primary" type="submit">
+                I know what I'm doing
+              </button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop cursor-default">
+          <button className="cursor-default">close</button>
+        </form>
+      </dialog>
+
+      {/* Other CSV Help Modal */}
+      <dialog id="other_csv_help_modal" className="modal">
+        <div className="modal-box max-w-lg">
+          <h3 className="text-lg font-bold mb-4">Custom CSV Format</h3>
+          <p className="text-base-content/70 mb-4">
+            Your CSV file should have the following columns as headers in the
+            first row:
+          </p>
+          <div className="overflow-x-auto">
+            <table className="table table-sm">
+              <thead>
+                <tr>
+                  <th>Field</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">date</code>
+                  </td>
+                  <td>
+                    <span className="text-error font-semibold">Yes</span>
+                  </td>
+                  <td>
+                    Date of the log (e.g.{' '}
+                    <code className="text-xs">2025-01-15</code>)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">type</code>
+                  </td>
+                  <td>
+                    <span className="text-error font-semibold">Yes</span>
+                  </td>
+                  <td>
+                    Log type:{' '}
+                    <code className="text-xs">
+                      reading, anime, vn, video, manga, audio, movie, other, tv
+                      show
+                    </code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">
+                      mediaId
+                    </code>
+                  </td>
+                  <td>No</td>
+                  <td>AniList, VNDB or content ID for the media</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">time</code>
+                  </td>
+                  <td>No</td>
+                  <td>Time spent in minutes</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">
+                      characters
+                    </code>
+                  </td>
+                  <td>No</td>
+                  <td>Number of characters read</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">
+                      episodes
+                    </code>
+                  </td>
+                  <td>No</td>
+                  <td>Number of episodes watched</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">pages</code>
+                  </td>
+                  <td>No</td>
+                  <td>Number of pages read</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">
+                      description
+                    </code>
+                  </td>
+                  <td>No</td>
+                  <td>Description or title of the media</td>
+                </tr>
+                <tr>
+                  <td>
+                    <code className="badge badge-neutral badge-sm">tags</code>
+                  </td>
+                  <td>No</td>
+                  <td>
+                    Tag names separated by semicolons (e.g.{' '}
+                    <code className="text-xs">tag1;tag2</code>)
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 p-3 bg-base-200 rounded-lg">
+            <p className="text-sm font-semibold mb-1">Example:</p>
+            <code className="text-xs block whitespace-pre-wrap text-base-content/80">
+              {`date,type,mediaId,time,characters,episodes,pages,description,tags\n2025-01-15,reading,,60,5000,,,My Novel,novels;fiction\n2025-01-16,anime,21,24,,2,,Anime Title,`}
+            </code>
+          </div>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-primary">Got it!</button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
         </form>
       </dialog>
     </div>
