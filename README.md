@@ -74,8 +74,6 @@ All screenshots below are in the dark theme.
 
 *Join or create immersion clubs*
 
----
-
 ## Technology Stack
 
 ### Frontend
@@ -98,8 +96,6 @@ All screenshots below are in the dark theme.
 - **Search:** Meilisearch
 - **File Storage:** Firebase Storage
 - **External APIs:** GraphQL (AniList), REST (VNDB, YouTube)
-
----
 
 ## Getting Started
 
@@ -274,8 +270,6 @@ MEILISEARCH_HOST=http://localhost:7700
 MEILISEARCH_API_KEY=your-meilisearch-key
 ```
 
----
-
 ## Support
 
 Need help or have questions?
@@ -285,16 +279,12 @@ Need help or have questions?
 - [Request a feature](https://github.com/HitogiDev/NihongoTracker/issues/new?template=feature_request.md)
 - Support development on [Patreon](https://www.patreon.com/nihongotracker)
 
----
-
 ## Acknowledgements
 
 - [Jiten](https://github.com/Sirush/Jiten) - Difficulty and character count.
 - [Texthooker-ui](https://github.com/Renji-XD/texthooker-ui) - Texthooker inspiration.
 - [VNDB](https://vndb.org/) - Visual Novel data.
 - [Anilist](https://anilist.co/) - Anime, manga and light novels data.
-
----
 
 ## License
 
