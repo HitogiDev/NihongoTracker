@@ -68,17 +68,17 @@ const PERIOD_LABELS: Record<TimeRange, string> = {
   custom: 'Custom',
 };
 
-const PIE_COLORS = [
-  'hsl(221, 76%, 56%)',
-  'hsl(199, 89%, 55%)',
-  'hsl(166, 64%, 48%)',
-  'hsl(41, 94%, 55%)',
-  'hsl(348, 83%, 60%)',
-  'hsl(280, 75%, 60%)',
-  'hsl(24, 93%, 53%)',
-  'hsl(28, 85%, 65%)',
-  'hsl(162, 84%, 39%)',
-];
+const PIE_TYPE_COLORS: Record<string, string> = {
+  vn: '#3a70e4',
+  anime: '#26b2f2',
+  video: '#2cc9a4',
+  'tv show': '#f8b420',
+  manga: '#ee4466',
+  reading: '#b34ce6',
+  movie: '#f77118',
+  audio: '#f2a15a',
+  other: '#10b785',
+};
 
 function capitalizeType(value: string) {
   if (value === 'vn') return 'Visual Novel';
@@ -102,12 +102,14 @@ function formatDisplayDate(date?: Date) {
   }).format(date);
 }
 
-function buildPieDataset(entries: Array<{ label: string; value: number }>) {
+function buildPieDataset(
+  entries: Array<{ type: string; label: string; value: number }>
+) {
   const sortedEntries = [...entries].sort((a, b) => b.value - a.value);
   const values = sortedEntries.map((entry) => entry.value);
   const labels = sortedEntries.map((entry) => entry.label);
-  const colors = values.map(
-    (_, index) => PIE_COLORS[index % PIE_COLORS.length]
+  const colors = sortedEntries.map(
+    (entry) => PIE_TYPE_COLORS[entry.type] || PIE_TYPE_COLORS.other
   );
 
   return {
@@ -300,9 +302,12 @@ function StatsScreen() {
     return readingChars / hours;
   })();
 
+  const pieStatsByType = statsByType.filter((stat) => stat.type !== 'other');
+
   const logCountData = (() => {
     return buildPieDataset(
-      statsByType.map((stat) => ({
+      pieStatsByType.map((stat) => ({
+        type: stat.type,
         label: capitalizeType(stat.type),
         value: stat.count || 0,
       }))
@@ -311,7 +316,8 @@ function StatsScreen() {
 
   const logTimeData = (() => {
     return buildPieDataset(
-      statsByType.map((stat) => ({
+      pieStatsByType.map((stat) => ({
+        type: stat.type,
         label: capitalizeType(stat.type),
         value: stat.totalTimeHours || 0,
       }))
@@ -320,7 +326,8 @@ function StatsScreen() {
 
   const logXpData = (() => {
     return buildPieDataset(
-      statsByType.map((stat) => ({
+      pieStatsByType.map((stat) => ({
+        type: stat.type,
         label: capitalizeType(stat.type),
         value: stat.totalXp || 0,
       }))

@@ -1624,6 +1624,7 @@ export async function getUserStats(
       'reading',
       'audio',
       'video',
+      'tv show',
       'movie',
       'vn',
       'other',
@@ -1807,6 +1808,7 @@ export async function getUserStats(
       'anime',
       'vn',
       'video',
+      'tv show',
       'movie',
       'manga',
       'audio',
@@ -1960,7 +1962,9 @@ export async function getUserStats(
 
         if (['reading', 'manga', 'vn'].includes(stat.type)) {
           acc.readingHours += stat.totalTimeHours;
-        } else if (['anime', 'video', 'movie', 'audio'].includes(stat.type)) {
+        } else if (
+          ['anime', 'video', 'tv show', 'movie', 'audio'].includes(stat.type)
+        ) {
           acc.listeningHours += stat.totalTimeHours;
         }
 

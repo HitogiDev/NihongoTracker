@@ -60,15 +60,15 @@ interface StackedBarChartProps {
 }
 
 const typeColors: { [key: string]: string } = {
-  reading: 'rgba(255, 99, 132, 1)',
-  anime: 'rgba(54, 162, 235, 1)',
-  vn: 'rgba(255, 206, 86, 1)',
-  video: 'rgba(75, 192, 192, 1)',
-  manga: 'rgba(153, 102, 255, 1)',
-  audio: 'rgba(255, 159, 64, 1)',
-  movie: 'rgba(255, 87, 34, 1)',
-  'tv show': 'rgba(76, 175, 80, 1)',
-  other: 'rgba(99, 99, 132, 1)',
+  vn: '#3a70e4',
+  anime: '#26b2f2',
+  video: '#2cc9a4',
+  'tv show': '#f8b420',
+  manga: '#ee4466',
+  reading: '#b34ce6',
+  movie: '#f77118',
+  audio: '#f2a15a',
+  other: '#10b785',
 };
 
 const StackedBarChart: React.FC<StackedBarChartProps> = ({
@@ -244,7 +244,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
             ? 'Visual Novel'
             : stat.type.charAt(0).toUpperCase() + stat.type.slice(1),
         data,
-        backgroundColor: typeColors[stat.type] || 'rgba(99, 99, 132, 1)',
+        backgroundColor: typeColors[stat.type] || typeColors.other,
       };
     });
 

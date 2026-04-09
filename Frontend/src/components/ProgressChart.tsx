@@ -4,6 +4,7 @@ import LineChart from './LineChart';
 import BarChart from './BarChart';
 import { useEffect, useState } from 'react';
 import { useTimezone } from '../hooks/useTimezone';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { convertToUserTimezone } from '../utils/timezone';
 
 interface LocalDateInfo {
@@ -43,6 +44,61 @@ interface ProgressChartProps {
   showTitle?: boolean;
 }
 
+const MEDIA_TYPE_COLORS: Record<string, string> = {
+  vn: '#3a70e4',
+  anime: '#26b2f2',
+  video: '#2cc9a4',
+  'tv show': '#f8b420',
+  manga: '#ee4466',
+  reading: '#b34ce6',
+  movie: '#f77118',
+  audio: '#f2a15a',
+  other: '#10b785',
+};
+
+function withAlpha(hexColor: string, alpha: number) {
+  const normalized = hexColor.replace('#', '');
+
+  if (hexColor.startsWith('rgba(')) {
+    return hexColor.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
+  }
+
+  if (hexColor.startsWith('rgb(')) {
+    return hexColor.replace(/^rgb\(/, 'rgba(').replace(')', `, ${alpha})`);
+  }
+
+  if (hexColor.startsWith('hsla(')) {
+    return hexColor.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
+  }
+
+  if (hexColor.startsWith('hsl(')) {
+    return hexColor.replace(/^hsl\(/, 'hsla(').replace(')', `, ${alpha})`);
+  }
+
+  if (hexColor.startsWith('oklch(')) {
+    if (hexColor.includes('/')) {
+      return hexColor.replace(/\/\s*[\d.]+\)$/, `/ ${alpha})`);
+    }
+    return hexColor.replace(')', ` / ${alpha})`);
+  }
+
+  if (normalized.length !== 6) {
+    return hexColor;
+  }
+
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getProgressColor(selectedType: string, primaryColor: string) {
+  if (selectedType === 'all') {
+    return primaryColor;
+  }
+  return MEDIA_TYPE_COLORS[selectedType] || MEDIA_TYPE_COLORS.other;
+}
+
 export default function ProgressChart({
   logs,
   statsData,
@@ -53,6 +109,7 @@ export default function ProgressChart({
   showTitle = true,
 }: ProgressChartProps) {
   const { timezone } = useTimezone();
+  const themeColors = useThemeColors(1);
   const [timeframe, setTimeframe] = useState<
     'today' | 'week' | 'month' | 'year' | 'total'
   >('total');
@@ -391,11 +448,12 @@ export default function ProgressChart({
     const { top, bottom } = chartArea;
     const gradient = ctx.createLinearGradient(0, top, 0, bottom);
     gradient.addColorStop(0, color);
-    gradient.addColorStop(1, 'rgba(50, 170, 250, 0)');
+    gradient.addColorStop(1, withAlpha(color, 0));
     return gradient;
   }
 
   const datasetLabel = metric === 'xp' ? 'XP Earned' : 'Time Spent (hours)';
+  const progressColor = getProgressColor(selectedType, themeColors.primary);
 
   const lineData = {
     labels: labels,
@@ -405,12 +463,12 @@ export default function ProgressChart({
         data: metricValues,
         fill: true,
         pointRadius: 3,
-        borderColor: 'rgb(50, 170, 250)',
+        borderColor: progressColor,
         backgroundColor: function (context: ScriptableContext<'line'>) {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
           if (!chartArea) return undefined;
-          return createGradient(ctx, chartArea, 'rgba(50, 170, 250, 1)');
+          return createGradient(ctx, chartArea, progressColor);
         },
         tension: 0.1,
       },
@@ -423,8 +481,8 @@ export default function ProgressChart({
       {
         label: datasetLabel,
         data: metricValues,
-        backgroundColor: 'rgba(50, 170, 250, 0.35)',
-        borderColor: 'rgb(50, 170, 250)',
+        backgroundColor: withAlpha(progressColor, 0.35),
+        borderColor: progressColor,
         borderWidth: 1,
       },
     ],

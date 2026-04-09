@@ -50,7 +50,10 @@ export default function ProfileHeader() {
               ) : (
                 <div className="avatar">
                   <div className="w-24 rounded-full">
-                    <img src={user?.avatar ? user.avatar : ''} />
+                    <img
+                      src={user?.avatar || undefined}
+                      alt={`${user?.username ?? 'User'} avatar`}
+                    />
                   </div>
                 </div>
               )}
