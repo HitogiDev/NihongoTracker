@@ -590,7 +590,10 @@ function SettingsScreen() {
   }, [user, isInitialized, detectedTimezone]);
 
   useEffect(() => {
-    aboutRef.current = user?.about || '';
+    // Avoid wiping editor state when user is temporarily null (e.g. auth state transitions)
+    if (user?.about !== undefined) {
+      aboutRef.current = user.about;
+    }
     // AboutEditor will sync automatically via useEffect watching aboutRef.current
   }, [user?.about]);
 
@@ -1739,7 +1742,7 @@ function SettingsScreen() {
                         ref={aboutEditorRef}
                         aboutRef={aboutRef}
                         maxLength={ABOUT_MAX_LENGTH}
-                        initialValue={user?.about || ''}
+                        initialValue={user?.about}
                         onSave={handleSaveAbout}
                         isSaving={isSavingAbout}
                       />

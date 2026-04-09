@@ -295,18 +295,19 @@ function Dashboard() {
       const updatedXp = updatedUser.stats?.userXp ?? previousXp;
 
       const loginResponse: ILoginResponse = {
-        _id: updatedUser._id,
-        username: updatedUser.username,
-        email: updatedUser.email,
-        verified: updatedUser.verified,
-        stats: updatedUser.stats,
-        avatar: updatedUser.avatar,
-        banner: updatedUser.banner,
-        titles: updatedUser.titles,
-        roles: updatedUser.roles,
-        discordId: updatedUser.discordId,
-        patreon: updatedUser.patreon,
-        settings: updatedUser.settings,
+        _id: updatedUser._id || user._id,
+        username: updatedUser.username || user.username,
+        email: updatedUser.email ?? user.email,
+        verified: updatedUser.verified ?? user.verified,
+        stats: updatedUser.stats || user.stats,
+        avatar: updatedUser.avatar ?? user.avatar,
+        banner: updatedUser.banner ?? user.banner,
+        titles: updatedUser.titles || user.titles,
+        roles: updatedUser.roles || user.roles,
+        discordId: updatedUser.discordId ?? user.discordId,
+        patreon: updatedUser.patreon ?? user.patreon,
+        settings: updatedUser.settings ?? user.settings,
+        about: updatedUser.about ?? user.about,
       };
 
       setUser(loginResponse);

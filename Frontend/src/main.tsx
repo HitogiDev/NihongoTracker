@@ -113,7 +113,6 @@ const router = createBrowserRouter(
         <Route path="forgot-password" element={<ForgotPasswordScreen />} />
         <Route path="reset-password/:token" element={<ResetPasswordScreen />} />
         <Route path="verify-email/:token" element={<VerifyEmailScreen />} />
-        <Route path="settings" element={<SettingsScreen />} />
         <Route path="ranking" element={<RankingScreen />} />
         <Route path="clubs" element={<ClubsScreen />} />
         <Route path="clubs/create" element={<CreateClubScreen />} />
@@ -147,6 +146,7 @@ const router = createBrowserRouter(
         <Route element={<ProtectedRoutes />}>
           <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />
+          <Route path="settings" element={<SettingsScreen />} />
           <Route
             path=":mediaType/:mediaId/texthooker"
             element={<TextHooker />}

@@ -52,6 +52,32 @@ type userDataState = {
   handleTokenExpiration: () => void;
 };
 
+function mergeUserState(
+  currentUser: ILoginResponse | null,
+  incomingUser: ILoginResponse
+): ILoginResponse {
+  if (!currentUser) {
+    return incomingUser;
+  }
+
+  return {
+    ...currentUser,
+    ...incomingUser,
+    settings: incomingUser.settings
+      ? {
+          ...currentUser.settings,
+          ...incomingUser.settings,
+        }
+      : currentUser.settings,
+    patreon: incomingUser.patreon
+      ? {
+          ...currentUser.patreon,
+          ...incomingUser.patreon,
+        }
+      : currentUser.patreon,
+  };
+}
+
 export const useUserDataStore = create(
   persist<userDataState>(
     (set) => ({
@@ -59,7 +85,7 @@ export const useUserDataStore = create(
       setUser: (user: ILoginResponse) => {
         // Preserve current theme when setting user data
         const currentTheme = localStorage.getItem('theme') || 'system';
-        set({ user: user });
+        set((state) => ({ user: mergeUserState(state.user, user) }));
 
         // Restore theme if it was changed during user update
         if (typeof document !== 'undefined') {
