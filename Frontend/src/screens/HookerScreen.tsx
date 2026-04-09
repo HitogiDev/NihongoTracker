@@ -252,20 +252,34 @@ function TextHooker() {
 
   const inviteRoomFromParams = searchParams.get('roomId');
   const inviteModeFromParams = searchParams.get('mode');
+  const normalizedInviteMode =
+    inviteModeFromParams === 'host' || inviteModeFromParams === 'guest'
+      ? inviteModeFromParams
+      : null;
 
   useEffect(() => {
     if (inviteAppliedRef.current) return;
-    if (inviteRoomFromParams && inviteModeFromParams) {
+    if (inviteRoomFromParams && normalizedInviteMode) {
       inviteAppliedRef.current = true;
-      setMode(inviteModeFromParams as 'host' | 'guest');
+      const savedHostToken = localStorage.getItem(
+        `hostToken_${inviteRoomFromParams}`
+      );
+
+      // If this browser has the room host token, reclaim host role on rejoin.
+      const nextMode =
+        normalizedInviteMode === 'host' || savedHostToken ? 'host' : 'guest';
+
+      setMode(nextMode);
       setRoomId(inviteRoomFromParams);
+      setHostToken(savedHostToken);
       setIsRoomConnected(true);
     }
   }, [
     inviteRoomFromParams,
-    inviteModeFromParams,
+    normalizedInviteMode,
     setMode,
     setRoomId,
+    setHostToken,
     setIsRoomConnected,
   ]);
 
