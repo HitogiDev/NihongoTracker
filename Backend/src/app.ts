@@ -21,6 +21,8 @@ import patreonRoutes from './routes/patreon.routes.js';
 import tagRoutes from './routes/tag.routes.js';
 import changelogRoutes from './routes/changelog.routes.js';
 import textSessionRoutes from './routes/textSession.routes.js';
+import apiKeyRoutes from './routes/apiKey.routes.js';
+import swaggerRoutes from './swagger.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
 const app = express();
@@ -65,6 +67,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/patreon', patreonRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/changelogs', changelogRoutes);
+app.use('/api/api-keys', apiKeyRoutes);
+app.use('/api/docs', swaggerRoutes);
 app.use('/og-image', ogImageRoutes);
 
 app.use(

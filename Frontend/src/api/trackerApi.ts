@@ -1113,3 +1113,35 @@ export async function hideRecentMediaFn(
   });
   return data;
 }
+
+// API Keys
+export interface IApiKey {
+  _id: string;
+  name: string;
+  keyPrefix: string;
+  lastUsedAt?: string;
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export interface ICreatedApiKey extends IApiKey {
+  key: string; // Raw key, returned only once
+}
+
+export async function listApiKeysFn(): Promise<IApiKey[]> {
+  const { data } = await api.get<IApiKey[]>('api-keys');
+  return data;
+}
+
+export async function generateApiKeyFn(payload: {
+  name: string;
+  expiresAt?: string;
+}): Promise<ICreatedApiKey> {
+  const { data } = await api.post<ICreatedApiKey>('api-keys', payload);
+  return data;
+}
+
+export async function deleteApiKeyFn(id: string): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(`api-keys/${id}`);
+  return data;
+}

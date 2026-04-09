@@ -19,6 +19,11 @@ import {
   updateBadgeColorsFn,
   initiatePatreonOAuthFn,
   resendVerificationEmailFn,
+  listApiKeysFn,
+  generateApiKeyFn,
+  deleteApiKeyFn,
+  type IApiKey,
+  type ICreatedApiKey,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -37,21 +42,43 @@ import Wheel from '@uiw/react-color-wheel';
 import { getUserTimezone } from '../utils/timezone';
 import {
   Bold,
+  CloudDownload,
+  CloudUpload,
+  Clock3,
   Code,
   Heading1,
   Heading2,
   Heading3,
+  Heart,
+  HeartHandshake,
   Info,
   Image as ImageIcon,
   Italic,
+  KeyRound,
   Link as LinkIcon,
+  Link2,
+  Lock,
   List,
   ListOrdered,
+  Mail,
   Quote,
+  RefreshCw,
+  Settings2,
+  ShieldCheck,
+  Tag,
+  TriangleAlert,
   Type,
+  Unlink2,
+  UserRound,
+  XCircle,
   EyeOff,
   HelpCircle,
   Download,
+  Key,
+  Copy,
+  Check,
+  Trash2,
+  Plus,
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
@@ -306,6 +333,12 @@ function SettingsScreen() {
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
     isActive: false,
   });
+  const [apiKeys, setApiKeys] = useState<IApiKey[]>([]);
+  const [apiKeyName, setApiKeyName] = useState('');
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<ICreatedApiKey | null>(
+    null
+  );
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [username, setUsername] = useState(user?.username || '');
   const [discordId, setDiscordId] = useState(user?.discordId || '');
   const aboutRef = useRef(user?.about || '');
@@ -738,6 +771,44 @@ function SettingsScreen() {
     },
   });
 
+  const { mutate: fetchApiKeys, isPending: isLoadingApiKeys } = useMutation({
+    mutationFn: listApiKeysFn,
+    onSuccess: (data) => {
+      setApiKeys(data);
+    },
+  });
+
+  const { mutate: generateApiKey, isPending: isGeneratingKey } = useMutation({
+    mutationFn: generateApiKeyFn,
+    onSuccess: (data) => {
+      setNewlyCreatedKey(data);
+      setApiKeyName('');
+      fetchApiKeys();
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message || 'Failed to create API key');
+      } else {
+        toast.error('Failed to create API key');
+      }
+    },
+  });
+
+  const { mutate: deleteApiKey, isPending: isDeletingKey } = useMutation({
+    mutationFn: deleteApiKeyFn,
+    onSuccess: () => {
+      toast.success('API key revoked');
+      fetchApiKeys();
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message || 'Failed to revoke API key');
+      } else {
+        toast.error('Failed to revoke API key');
+      }
+    },
+  });
+
   const { mutate: unlinkPatreon, isPending: isUnlinkingPatreon } = useMutation({
     mutationFn: unlinkPatreonAccountFn,
     onSuccess: (data) => {
@@ -802,9 +873,10 @@ function SettingsScreen() {
       },
     });
 
-  // Fetch Patreon status on mount
+  // Fetch Patreon status and API keys on mount
   useEffect(() => {
     fetchPatreonStatus();
+    fetchApiKeys();
 
     // Handle OAuth callback from Patreon
     const params = new URLSearchParams(window.location.search);
@@ -835,7 +907,7 @@ function SettingsScreen() {
       // Limpiar URL
       window.history.replaceState({}, '', '/settings');
     }
-  }, []);
+  }, [fetchApiKeys]);
 
   async function fetchPatreonStatus() {
     try {
@@ -1494,20 +1566,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-primary/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-primary"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
+                    <UserRound className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">Profile Information</h2>
@@ -1697,13 +1756,7 @@ function SettingsScreen() {
                           {/* Connected Status */}
                           <div className="flex items-center justify-between p-4 bg-success/10 border border-success/20 rounded-lg">
                             <div className="flex items-center gap-3">
-                              <svg
-                                className="w-5 h-5 text-success"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                              >
-                                <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
-                              </svg>
+                              <HeartHandshake className="w-5 h-5 text-success" />
                               <div>
                                 <div className="font-semibold text-success">
                                   Connected
@@ -1746,20 +1799,7 @@ function SettingsScreen() {
                               <span className="loading loading-spinner loading-sm"></span>
                             ) : (
                               <>
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                                  />
-                                </svg>
+                                <Unlink2 className="h-4 w-4" />
                                 Unlink Patreon
                               </>
                             )}
@@ -1778,15 +1818,7 @@ function SettingsScreen() {
                                 <span className="loading loading-spinner loading-sm"></span>
                               ) : (
                                 <>
-                                  <svg
-                                    role="img"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-5 fill-current"
-                                  >
-                                    <title>Patreon</title>
-                                    <path d="M22.957 7.21c-.004-3.064-2.391-5.576-5.191-6.482-3.478-1.125-8.064-.962-11.384.604C2.357 3.231 1.093 7.391 1.046 11.54c-.039 3.411.302 12.396 5.369 12.46 3.765.047 4.326-4.804 6.068-7.141 1.24-1.662 2.836-2.132 4.801-2.618 3.376-.836 5.678-3.501 5.673-7.031Z" />
-                                  </svg>
+                                  <HeartHandshake className="size-5" />
                                   Connect with Patreon
                                 </>
                               )}
@@ -1797,20 +1829,7 @@ function SettingsScreen() {
                               rel="noopener noreferrer"
                               className="btn btn-ghost btn-sm gap-1"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
+                              <Info className="h-4 w-4" />
                               Benefits
                             </a>
                           </div>
@@ -1870,20 +1889,7 @@ function SettingsScreen() {
                                       <span className="loading loading-spinner loading-sm"></span>
                                     ) : (
                                       <>
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M5 13l4 4L19 7"
-                                          />
-                                        </svg>
+                                        <Check className="h-4 w-4" />
                                         Save
                                       </>
                                     )}
@@ -2039,20 +2045,7 @@ function SettingsScreen() {
                         </>
                       ) : (
                         <>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
+                          <Check className="h-5 w-5" />
                           Update Profile
                         </>
                       )}
@@ -2067,20 +2060,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-accent/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-accent"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                      />
-                    </svg>
+                    <Tag className="h-6 w-6 text-accent" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">Tags</h2>
@@ -2097,20 +2077,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-secondary/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-secondary"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
+                    <ShieldCheck className="h-6 w-6 text-secondary" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">Security</h2>
@@ -2169,36 +2136,12 @@ function SettingsScreen() {
                             </>
                           ) : resendCooldown > 0 ? (
                             <>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                className="w-4 h-4 stroke-current"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
+                              <Clock3 className="w-4 h-4" />
                               Resend in {resendCooldown}s
                             </>
                           ) : (
                             <>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                className="w-4 h-4 stroke-current"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                />
-                              </svg>
+                              <Mail className="w-4 h-4" />
                               Resend Verification Email
                             </>
                           )}
@@ -2307,20 +2250,7 @@ function SettingsScreen() {
                         </>
                       ) : (
                         <>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                            />
-                          </svg>
+                          <KeyRound className="h-5 w-5" />
                           Update Security Settings
                         </>
                       )}
@@ -2340,20 +2270,7 @@ function SettingsScreen() {
                   <div className="absolute inset-0 bg-base-300/70 backdrop-blur-sm rounded-xl z-10 flex items-center justify-center">
                     <div className="text-center p-6">
                       <div className="p-4 bg-base-100/80 rounded-lg inline-block">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-12 w-12 text-primary mx-auto mb-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                          />
-                        </svg>
+                        <Lock className="h-12 w-12 text-primary mx-auto mb-3" />
                         <h3 className="text-xl font-bold mb-2">
                           Consumer Tier Only
                         </h3>
@@ -2369,13 +2286,7 @@ function SettingsScreen() {
                               rel="noopener noreferrer"
                               className="btn btn-primary btn-sm gap-2"
                             >
-                              <svg
-                                className="w-4 h-4"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                              >
-                                <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003" />
-                              </svg>
+                              <HeartHandshake className="w-4 h-4" />
                               Pledge on Patreon
                             </a>
                           </>
@@ -2390,15 +2301,7 @@ function SettingsScreen() {
                               onClick={handlePatreonOAuth}
                               disabled={isInitiatingOAuth}
                             >
-                              <svg
-                                role="img"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="size-5 fill-current"
-                              >
-                                <title>Patreon</title>
-                                <path d="M22.957 7.21c-.004-3.064-2.391-5.576-5.191-6.482-3.478-1.125-8.064-.962-11.384.604C2.357 3.231 1.093 7.391 1.046 11.54c-.039 3.411.302 12.396 5.369 12.46 3.765.047 4.326-4.804 6.068-7.141 1.24-1.662 2.836-2.132 4.801-2.618 3.376-.836 5.678-3.501 5.673-7.031Z" />
-                              </svg>
+                              <HeartHandshake className="size-5" />
                               Support on Patreon
                             </button>
                           </>
@@ -2410,14 +2313,7 @@ function SettingsScreen() {
 
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-primary/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-primary"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                    </svg>
+                    <Heart className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold">
@@ -2457,14 +2353,7 @@ function SettingsScreen() {
                             }
                       }
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        className="inline-block w-4 h-4"
-                      >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
+                      <Heart className="inline-block w-4 h-4" />
                       <span className="font-bold">
                         {user?.patreon?.customBadgeText || 'Consumer'}
                       </span>
@@ -2527,20 +2416,7 @@ function SettingsScreen() {
                       </>
                     ) : (
                       <>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <Check className="h-5 w-5" />
                         Save Badge Colors
                       </>
                     )}
@@ -2555,26 +2431,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-accent/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-accent"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
+                    <Settings2 className="h-6 w-6 text-accent" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">Preferences</h2>
@@ -2671,20 +2528,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-info/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-info"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                      />
-                    </svg>
+                    <CloudDownload className="h-6 w-6 text-info" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">Data Management</h2>
@@ -2798,20 +2642,7 @@ function SettingsScreen() {
                           </>
                         ) : (
                           <>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                              />
-                            </svg>
+                            <CloudUpload className="h-5 w-5" />
                             Import File
                           </>
                         )}
@@ -2845,6 +2676,165 @@ function SettingsScreen() {
                         </>
                       )}
                     </button>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      API Keys
+                    </h3>
+                    <p className="text-base-content/70 text-sm mb-3">
+                      Generate API keys to interact with the NihongoTracker API
+                      programmatically. Use the{' '}
+                      <a
+                        href="/api/docs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link link-primary"
+                      >
+                        API documentation
+                      </a>{' '}
+                      to explore available endpoints.
+                    </p>
+
+                    {/* New key creation */}
+                    <div className="flex gap-2 mb-4">
+                      <input
+                        type="text"
+                        className="input input-bordered focus:input-primary transition-colors flex-1"
+                        placeholder="Key name (e.g. My Script)"
+                        value={apiKeyName}
+                        maxLength={100}
+                        onChange={(e) => setApiKeyName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && apiKeyName.trim()) {
+                            generateApiKey({ name: apiKeyName.trim() });
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={!apiKeyName.trim() || isGeneratingKey}
+                        onClick={() =>
+                          generateApiKey({ name: apiKeyName.trim() })
+                        }
+                      >
+                        {isGeneratingKey ? (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                        Generate
+                      </button>
+                    </div>
+
+                    {/* Newly created key banner */}
+                    {newlyCreatedKey && (
+                      <div className="alert alert-success mb-4 max-w-full overflow-hidden">
+                        <div className="w-full min-w-0 space-y-2">
+                          <p className="font-semibold text-sm leading-snug">
+                            Key created — copy it now, it won&apos;t be shown
+                            again!
+                          </p>
+
+                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 min-w-0">
+                            <div className="min-w-0">
+                              <code className="block w-full text-xs bg-success-content/10 rounded px-2 py-2 overflow-x-auto whitespace-nowrap select-all">
+                                {newlyCreatedKey.key}
+                              </code>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-ghost shrink-0"
+                              onClick={() => {
+                                void navigator.clipboard.writeText(
+                                  newlyCreatedKey.key
+                                );
+                                setCopiedKeyId('new');
+                                setTimeout(() => setCopiedKeyId(null), 2000);
+                              }}
+                            >
+                              {copiedKeyId === 'new' ? (
+                                <Check className="h-4 w-4 text-success" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs"
+                              onClick={() => setNewlyCreatedKey(null)}
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Existing keys list */}
+                    {isLoadingApiKeys ? (
+                      <div className="flex justify-center py-4">
+                        <span className="loading loading-spinner loading-md"></span>
+                      </div>
+                    ) : apiKeys.length === 0 ? (
+                      <p className="text-base-content/50 text-sm text-center py-4">
+                        No API keys yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {apiKeys.map((key) => (
+                          <div
+                            key={key._id}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-base-200 border border-base-300"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {key.name}
+                              </p>
+                              <p className="text-xs text-base-content/50 font-mono">
+                                {key.keyPrefix}••••••••
+                              </p>
+                              <p className="text-xs text-base-content/40 mt-0.5">
+                                Created{' '}
+                                {new Date(key.createdAt).toLocaleDateString()}
+                                {key.lastUsedAt && (
+                                  <>
+                                    {' '}
+                                    · Last used{' '}
+                                    {new Date(
+                                      key.lastUsedAt
+                                    ).toLocaleDateString()}
+                                  </>
+                                )}
+                                {key.expiresAt && (
+                                  <>
+                                    {' '}
+                                    · Expires{' '}
+                                    {new Date(
+                                      key.expiresAt
+                                    ).toLocaleDateString()}
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-ghost text-error hover:bg-error/10"
+                              disabled={isDeletingKey}
+                              onClick={() => deleteApiKey(key._id)}
+                              title="Revoke key"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="divider"></div>
@@ -2897,20 +2887,7 @@ function SettingsScreen() {
                               </>
                             ) : (
                               <>
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-5 w-5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                  />
-                                </svg>
+                                <RefreshCw className="h-5 w-5" />
                                 Sync Logs
                               </>
                             )}
@@ -2927,20 +2904,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-warning/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-warning"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                      />
-                    </svg>
+                    <Link2 className="h-6 w-6 text-warning" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">Log Management</h2>
@@ -2952,19 +2916,7 @@ function SettingsScreen() {
 
                 <div className="space-y-4">
                   <div className="alert alert-info">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="stroke-current shrink-0 h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                    <Info className="stroke-current shrink-0 h-6 w-6" />
                     <div>
                       <h3 className="font-bold">Match Media</h3>
                       <div className="text-xs">
@@ -2977,20 +2929,7 @@ function SettingsScreen() {
                     className="btn btn-warning w-full"
                     onClick={() => navigate('/matchmedia')}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                      />
-                    </svg>
+                    <Link2 className="h-5 w-5" />
                     Go to Match Media
                   </button>
                 </div>
@@ -3001,20 +2940,7 @@ function SettingsScreen() {
               <div className="card-body">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-error/10 rounded-lg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-error"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
+                    <TriangleAlert className="h-6 w-6 text-error" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-error">
@@ -3027,19 +2953,7 @@ function SettingsScreen() {
                 </div>
 
                 <div className="alert alert-error alert-soft mb-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="stroke-current shrink-0 h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <XCircle className="stroke-current shrink-0 h-6 w-6" />
                   <div>
                     <h3 className="font-bold">Warning!</h3>
                     <div className="text-xs">
@@ -3059,20 +2973,7 @@ function SettingsScreen() {
                     )?.showModal()
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
+                  <Trash2 className="h-5 w-5" />
                   Clear All Data
                 </button>
               </div>
@@ -3306,19 +3207,7 @@ function SettingsScreen() {
               <span className="font-semibold">{emailSentTo}</span>
             </p>
             <div className="alert alert-info">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="h-6 w-6 shrink-0 stroke-current"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
+              <Info className="h-6 w-6 shrink-0 stroke-current" />
               <span>
                 Please check your spam or junk folder if you don't see the email
                 in your inbox.

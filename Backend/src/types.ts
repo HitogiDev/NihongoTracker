@@ -896,3 +896,15 @@ export interface ISocketData {
   };
   role?: 'host' | 'guest';
 }
+
+export interface IApiKey extends Document {
+  _id: Types.ObjectId;
+  key: string;
+  keyPrefix: string;
+  name: string;
+  user: Types.ObjectId;
+  lastUsedAt?: Date;
+  expiresAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
