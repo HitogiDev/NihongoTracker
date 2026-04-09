@@ -6,7 +6,14 @@ import {
   getIndexStats,
 } from './meiliSearch.js';
 
-const MEDIA_INDEXES = ['anime', 'manga', 'vn', 'movie', 'tv_show'] as const;
+const MEDIA_INDEXES = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'movie',
+  'tv_show',
+] as const;
 
 const MEDIA_INDEX_SETTINGS = {
   searchableAttributes: [
@@ -63,6 +70,7 @@ async function isIndexEmpty(indexName: string): Promise<boolean> {
 const TYPE_TO_INDEX: Record<string, string> = {
   anime: 'anime',
   manga: 'manga',
+  reading: 'reading',
   vn: 'vn',
   movie: 'movie',
   'tv show': 'tv_show',

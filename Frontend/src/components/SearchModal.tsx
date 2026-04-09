@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { searchUsersFn, searchMediaFn } from '../api/trackerApi';
+import { searchAnilist } from '../api/anilistApi';
 import { SearchResultType } from '../types';
 import { useDebounce } from '../hooks/useDebounce';
 import { useUserDataStore } from '../store/userData';
@@ -32,7 +33,7 @@ const MEDIA_TYPE_CONFIG: Record<
 > = {
   anime: { icon: Play, color: 'text-secondary', label: 'Anime' },
   manga: { icon: Book, color: 'text-warning', label: 'Manga' },
-  reading: { icon: Book, color: 'text-primary', label: 'Reading' },
+  reading: { icon: Book, color: 'text-primary', label: 'Light Novel' },
   vn: { icon: Gamepad, color: 'text-accent', label: 'Visual Novel' },
   video: { icon: Video, color: 'text-info', label: 'Video' },
   movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
@@ -42,10 +43,41 @@ const MEDIA_TYPE_CONFIG: Record<
 const SEARCH_MEDIA_TYPES = [
   'anime',
   'manga',
+  'reading',
   'vn',
   'movie',
   'tv_show',
 ] as const;
+
+async function searchMediaByType(
+  type: (typeof SEARCH_MEDIA_TYPES)[number],
+  query: string,
+  perPage: number
+): Promise<SearchResultType[]> {
+  if (type === 'anime') {
+    return searchAnilist(query, 'ANIME', 1, perPage) as Promise<
+      SearchResultType[]
+    >;
+  }
+
+  if (type === 'manga') {
+    return searchAnilist(query, 'MANGA', 1, perPage, 'MANGA') as Promise<
+      SearchResultType[]
+    >;
+  }
+
+  if (type === 'reading') {
+    return searchAnilist(query, 'MANGA', 1, perPage, 'NOVEL') as Promise<
+      SearchResultType[]
+    >;
+  }
+
+  return searchMediaFn({
+    type,
+    search: query,
+    perPage,
+  });
+}
 
 function MediaResultRow({
   media,
@@ -258,11 +290,9 @@ function SearchModal({
 
         if (activeTab === 'all' || activeTab === 'media') {
           const mediaPromises = SEARCH_MEDIA_TYPES.map((type) =>
-            searchMediaFn({
-              type,
-              search: debouncedQuery,
-              perPage: 3,
-            }).catch(() => [] as SearchResultType[])
+            searchMediaByType(type, debouncedQuery, 3).catch(
+              () => [] as SearchResultType[]
+            )
           );
 
           promises.push(

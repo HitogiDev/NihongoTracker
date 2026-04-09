@@ -250,14 +250,43 @@ export async function searchMedia(
 ) {
   try {
     const title = req.query.search as string;
-    const type =
-      req.query.type !== 'tv show' ? (req.query.type as string) : 'tv_show';
+    const rawType = String(req.query.type || '')
+      .trim()
+      .toLowerCase();
+    const normalizedTypeMap: Record<string, string> = {
+      anime: 'anime',
+      manga: 'manga',
+      reading: 'reading',
+      'light novel': 'reading',
+      'light novels': 'reading',
+      light_novel: 'reading',
+      'light-novel': 'reading',
+      ln: 'reading',
+      vn: 'vn',
+      movie: 'movie',
+      'tv show': 'tv_show',
+      tv_show: 'tv_show',
+    };
+    const type = normalizedTypeMap[rawType] ?? rawType;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.perPage as string) || 10;
     const offset = (page - 1) * limit;
 
     if (!title || !type)
       return res.status(400).json({ message: 'Invalid query parameters' });
+
+    const allowedTypes = new Set([
+      'anime',
+      'manga',
+      'reading',
+      'vn',
+      'movie',
+      'tv_show',
+    ]);
+
+    if (!allowedTypes.has(type)) {
+      return res.status(400).json({ message: 'Unsupported media type' });
+    }
 
     const media = await searchDocuments(type, title, { limit, offset });
 
