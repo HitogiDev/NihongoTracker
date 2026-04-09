@@ -36,6 +36,28 @@ export default function MediaSocial() {
     ? (type as ILog['type'])
     : undefined;
 
+  const normalizedType = (type || '').toLowerCase().trim();
+  const socialMetricType: 'episodes' | 'pages' | 'characters' | null = (() => {
+    if (normalizedType === 'anime' || normalizedType === 'tv show') {
+      return 'episodes';
+    }
+
+    if (normalizedType === 'manga') {
+      return 'pages';
+    }
+
+    if (
+      normalizedType === 'vn' ||
+      normalizedType === 'reading' ||
+      normalizedType === 'light novel' ||
+      normalizedType === 'light novels'
+    ) {
+      return 'characters';
+    }
+
+    return null;
+  })();
+
   // Fetch aggregate media stats (global for this media/type)
   const {
     data: mediaStats,
@@ -174,33 +196,36 @@ export default function MediaSocial() {
                     <div className="stat-desc">All-time</div>
                   </div>
                 )}
-                {(mediaStats.total.characters || 0) > 0 && (
-                  <div className="stat">
-                    <div className="stat-title">Characters Read</div>
-                    <div className="stat-value text-info">
-                      {numberWithCommas(mediaStats.total.characters)}
+                {socialMetricType === 'characters' &&
+                  (mediaStats.total.characters || 0) > 0 && (
+                    <div className="stat">
+                      <div className="stat-title">Characters Read</div>
+                      <div className="stat-value text-info">
+                        {numberWithCommas(mediaStats.total.characters)}
+                      </div>
+                      <div className="stat-desc">All-time</div>
                     </div>
-                    <div className="stat-desc">All-time</div>
-                  </div>
-                )}
-                {(mediaStats.total.pages || 0) > 0 && (
-                  <div className="stat">
-                    <div className="stat-title">Pages</div>
-                    <div className="stat-value text-warning">
-                      {numberWithCommas(mediaStats.total.pages)}
+                  )}
+                {socialMetricType === 'pages' &&
+                  (mediaStats.total.pages || 0) > 0 && (
+                    <div className="stat">
+                      <div className="stat-title">Pages</div>
+                      <div className="stat-value text-warning">
+                        {numberWithCommas(mediaStats.total.pages)}
+                      </div>
+                      <div className="stat-desc">All-time</div>
                     </div>
-                    <div className="stat-desc">All-time</div>
-                  </div>
-                )}
-                {(mediaStats.total.episodes || 0) > 0 && (
-                  <div className="stat">
-                    <div className="stat-title">Episodes</div>
-                    <div className="stat-value text-success">
-                      {numberWithCommas(mediaStats.total.episodes)}
+                  )}
+                {socialMetricType === 'episodes' &&
+                  (mediaStats.total.episodes || 0) > 0 && (
+                    <div className="stat">
+                      <div className="stat-title">Episodes</div>
+                      <div className="stat-value text-success">
+                        {numberWithCommas(mediaStats.total.episodes)}
+                      </div>
+                      <div className="stat-desc">All-time</div>
                     </div>
-                    <div className="stat-desc">All-time</div>
-                  </div>
-                )}
+                  )}
               </div>
             ) : (
               <div className="text-sm text-base-content/60">
@@ -277,42 +302,49 @@ export default function MediaSocial() {
                         : `${comparison.user2.stats.totalTime}m`}
                     </div>
                   </div>
-                  {(comparison.user1.stats.totalChars || 0) > 0 && (
-                    <div className="stat">
-                      <div className="stat-title">Characters</div>
-                      <div className="stat-value text-info">
-                        {numberWithCommas(comparison.user1.stats.totalChars)}
+                  {socialMetricType === 'characters' &&
+                    (comparison.user1.stats.totalChars || 0) > 0 && (
+                      <div className="stat">
+                        <div className="stat-title">Characters</div>
+                        <div className="stat-value text-info">
+                          {numberWithCommas(comparison.user1.stats.totalChars)}
+                        </div>
+                        <div className="stat-desc">
+                          vs {comparison.user2.username}:{' '}
+                          {numberWithCommas(comparison.user2.stats.totalChars)}
+                        </div>
                       </div>
-                      <div className="stat-desc">
-                        vs {comparison.user2.username}:{' '}
-                        {numberWithCommas(comparison.user2.stats.totalChars)}
+                    )}
+                  {socialMetricType === 'pages' &&
+                    (comparison.user1.stats.totalPages || 0) > 0 && (
+                      <div className="stat">
+                        <div className="stat-title">Pages</div>
+                        <div className="stat-value text-warning">
+                          {numberWithCommas(comparison.user1.stats.totalPages)}
+                        </div>
+                        <div className="stat-desc">
+                          vs {comparison.user2.username}:{' '}
+                          {numberWithCommas(comparison.user2.stats.totalPages)}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {(comparison.user1.stats.totalPages || 0) > 0 && (
-                    <div className="stat">
-                      <div className="stat-title">Pages</div>
-                      <div className="stat-value text-warning">
-                        {numberWithCommas(comparison.user1.stats.totalPages)}
+                    )}
+                  {socialMetricType === 'episodes' &&
+                    (comparison.user1.stats.totalEpisodes || 0) > 0 && (
+                      <div className="stat">
+                        <div className="stat-title">Episodes</div>
+                        <div className="stat-value text-success">
+                          {numberWithCommas(
+                            comparison.user1.stats.totalEpisodes
+                          )}
+                        </div>
+                        <div className="stat-desc">
+                          vs {comparison.user2.username}:{' '}
+                          {numberWithCommas(
+                            comparison.user2.stats.totalEpisodes
+                          )}
+                        </div>
                       </div>
-                      <div className="stat-desc">
-                        vs {comparison.user2.username}:{' '}
-                        {numberWithCommas(comparison.user2.stats.totalPages)}
-                      </div>
-                    </div>
-                  )}
-                  {(comparison.user1.stats.totalEpisodes || 0) > 0 && (
-                    <div className="stat">
-                      <div className="stat-title">Episodes</div>
-                      <div className="stat-value text-success">
-                        {numberWithCommas(comparison.user1.stats.totalEpisodes)}
-                      </div>
-                      <div className="stat-desc">
-                        vs {comparison.user2.username}:{' '}
-                        {numberWithCommas(comparison.user2.stats.totalEpisodes)}
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             )}
