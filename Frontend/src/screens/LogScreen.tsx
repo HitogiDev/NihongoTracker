@@ -130,11 +130,6 @@ function LogScreen() {
   );
 
   const queryClient = useQueryClient();
-  const datePickerRef = useRef<HTMLDialogElement>(null);
-
-  const openDatePicker = () => {
-    datePickerRef.current?.showModal();
-  };
 
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
@@ -1173,16 +1168,44 @@ function LogScreen() {
                           <label className="label flex flex-col items-start gap-1">
                             <span className="label-text">Date</span>
                           </label>
-                          <button
-                            type="button"
-                            onClick={openDatePicker}
-                            className="btn btn-outline w-full justify-start"
-                          >
-                            <Calendar className="w-4 h-4" />
-                            {logData.date instanceof Date
-                              ? logData.date.toLocaleDateString()
-                              : 'Select date (defaults to today)'}
-                          </button>
+                          <div className="dropdown dropdown-top dropdown-end w-full">
+                            <div
+                              tabIndex={0}
+                              role="button"
+                              className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                            >
+                              <span
+                                className={
+                                  logData.date
+                                    ? 'text-base-content'
+                                    : 'text-base-content/50'
+                                }
+                              >
+                                {logData.date instanceof Date
+                                  ? logData.date.toLocaleDateString()
+                                  : 'Select date (defaults to today)'}
+                              </span>
+                              <Calendar className="w-4 h-4" />
+                            </div>
+                            <div
+                              tabIndex={0}
+                              className="dropdown-content z-[1000] card card-compact w-72 p-2 shadow bg-base-100 border border-base-300"
+                            >
+                              <DayPicker
+                                className="react-day-picker mx-auto"
+                                mode="single"
+                                selected={logData.date || undefined}
+                                onSelect={(date) => {
+                                  handleInputChange('date', date || undefined);
+                                  (
+                                    document.activeElement as HTMLElement
+                                  )?.blur?.();
+                                }}
+                                endMonth={new Date()}
+                                disabled={(date) => date > new Date()}
+                              />
+                            </div>
+                          </div>
                         </div>
                         <div className="form-control">
                           <label className="label flex flex-col items-start gap-1">
@@ -1296,34 +1319,6 @@ function LogScreen() {
           )}
         </form>
       </div>
-
-      {/* Date Picker Modal */}
-      <dialog
-        ref={datePickerRef}
-        className="modal modal-bottom sm:modal-middle"
-      >
-        <div className="modal-box">
-          <DayPicker
-            className="react-day-picker mx-auto"
-            mode="single"
-            selected={logData.date || undefined}
-            onSelect={(date) => {
-              handleInputChange('date', date || undefined);
-              datePickerRef.current?.close();
-            }}
-            endMonth={new Date()}
-            hidden={[{ after: new Date() }]}
-          />
-          <div className="modal-action">
-            <form method="dialog">
-              <button className="btn">Close</button>
-            </form>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
 
       {/* Level Up Animation Overlay */}
       {showLevelUpAnimation && (

@@ -673,7 +673,7 @@ function ClubDetailScreen() {
                         className="btn btn-secondary btn-sm"
                         onClick={() => setIsEditClubModalOpen(true)}
                       >
-                        <Pencil className="text-lg" />
+                        <Pencil className="w-4 h-4" />
                         <span className="hidden sm:inline">Edit</span>
                       </button>
                     )}
@@ -837,7 +837,7 @@ function ClubDetailScreen() {
                             setShowVotingManagement(!showVotingManagement)
                           }
                         >
-                          <Settings className="text-lg" />
+                          <Settings className="w-4 h-4" />
                           <span className="hidden sm:inline">
                             {showVotingManagement ? 'Hide' : 'Manage'}
                           </span>
@@ -846,7 +846,7 @@ function ClubDetailScreen() {
                           className="btn btn-primary btn-sm"
                           onClick={() => setIsCreateVotingWizardOpen(true)}
                         >
-                          <Plus className="text-lg" />
+                          <Plus className="w-4 h-4" />
                           <span className="hidden sm:inline">
                             Create Voting
                           </span>

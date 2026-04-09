@@ -20,6 +20,7 @@ import {
   TriangleAlert,
   Upload,
   Trash,
+  Tag,
 } from 'lucide-react';
 import { createClubFn } from '../api/clubApi';
 import { ICreateClubRequest } from '../types';
@@ -433,12 +434,12 @@ function CreateClubScreen() {
 
                 {/* Description */}
                 <div className="form-control">
-                  <fieldset className="fieldset">
+                  <fieldset className="fieldset w-full">
                     <legend className="fieldset-legend font-medium">
                       Description
                     </legend>
                     <textarea
-                      className={`textarea textarea-bordered h-24 ${errors.description ? 'textarea-error' : ''}`}
+                      className={`textarea textarea-bordered w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
                       placeholder="Tell others what your club is about..."
                       value={formData.description}
                       onChange={(e) =>
@@ -513,7 +514,6 @@ function CreateClubScreen() {
                     <span className="label-text font-medium">Member Limit</span>
                   </label>
                   <div className="flex items-center gap-4">
-                    <Users className="text-xl text-base-content/60" />
                     <input
                       type="number"
                       className={`input input-bordered flex-1 ${errors.memberLimit ? 'input-error' : ''}`}
@@ -546,7 +546,10 @@ function CreateClubScreen() {
             {/* Tags Card */}
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
-                <h2 className="card-title text-lg mb-4">Tags</h2>
+                <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+                  <Tag className="text-primary w-6 h-6" />
+                  Tags
+                </h2>
                 <p className="text-sm text-base-content/60 mb-4">
                   Add tags to help others find your club. You can add up to 10
                   tags.
@@ -627,7 +630,7 @@ function CreateClubScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-                  <Image className="text-primary" />
+                  <Image className="text-primary w-6 h-6" />
                   Club Media
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
@@ -659,7 +662,7 @@ function CreateClubScreen() {
                       </div>
                       <div className="flex gap-2">
                         <label className="btn btn-sm btn-primary">
-                          <Upload />
+                          <Upload className="w-4 h-4" />
                           Upload
                           <input
                             type="file"
@@ -674,7 +677,7 @@ function CreateClubScreen() {
                             className="btn btn-sm btn-ghost"
                             onClick={() => clearFile('avatar')}
                           >
-                            <Trash />
+                            <Trash className="w-4 h-4" />
                             Remove
                           </button>
                         )}
@@ -704,7 +707,7 @@ function CreateClubScreen() {
                       </div>
                       <div className="flex gap-2">
                         <label className="btn btn-sm btn-primary">
-                          <Upload />
+                          <Upload className="w-4 h-4" />
                           Upload
                           <input
                             type="file"
@@ -719,7 +722,7 @@ function CreateClubScreen() {
                             className="btn btn-sm btn-ghost"
                             onClick={() => clearFile('banner')}
                           >
-                            <Trash />
+                            <Trash className="w-4 h-4" />
                             Remove
                           </button>
                         )}
@@ -737,7 +740,7 @@ function CreateClubScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-                  <Info className="text-primary" />
+                  <Info className="text-primary w-6 h-6" />
                   Club Rules
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
@@ -754,9 +757,9 @@ function CreateClubScreen() {
                 </div>
 
                 <div className="form-control">
-                  <fieldset className="fieldset">
+                  <fieldset className="fieldset w-full">
                     <textarea
-                      className={`textarea textarea-bordered h-32 ${errors.rules ? 'textarea-error' : ''}`}
+                      className={`textarea textarea-bordered w-full h-32 ${errors.rules ? 'textarea-error' : ''}`}
                       placeholder={`1. Be respectful to all members
 2. Share your progress regularly
 3. Help others when possible
@@ -801,7 +804,7 @@ function CreateClubScreen() {
                 {createClubMutation.isPending ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : (
-                  <Users className="text-lg" />
+                  <Users className="w-4 h-4" />
                 )}
                 Create Club
               </button>
