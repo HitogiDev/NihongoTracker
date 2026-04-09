@@ -9,6 +9,53 @@ import {
   youtubeChannelInfo,
 } from '../types';
 
+function extractYouTubeVideoId(input: string): string | null {
+  const normalizeVideoId = (value: string | null | undefined) => {
+    if (!value) return null;
+    const cleaned = value.trim();
+    return /^[A-Za-z0-9_-]{11}$/.test(cleaned) ? cleaned : null;
+  };
+
+  try {
+    const parsed = new URL(
+      input.startsWith('http://') || input.startsWith('https://')
+        ? input
+        : `https://${input}`
+    );
+
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const pathSegments = parsed.pathname.split('/').filter(Boolean);
+
+    if (host === 'youtu.be') {
+      return normalizeVideoId(pathSegments[0]);
+    }
+
+    if (host.endsWith('youtube.com')) {
+      if (parsed.pathname === '/watch') {
+        return normalizeVideoId(parsed.searchParams.get('v'));
+      }
+
+      if (
+        pathSegments[0] === 'live' ||
+        pathSegments[0] === 'shorts' ||
+        pathSegments[0] === 'embed' ||
+        pathSegments[0] === 'v'
+      ) {
+        return normalizeVideoId(pathSegments[1]);
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function normalizeYouTubeUrl(input: string): string | null {
+  const videoId = extractYouTubeVideoId(input);
+  return videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+}
+
 export default function useSearch(
   type: string,
   search: string = '',
@@ -57,13 +104,11 @@ export default function useSearch(
       if (!debouncedSearch.trim() || !type) return [];
 
       if (type === 'video') {
-        const isYouTubeUrl =
-          /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)/.test(
-            debouncedSearch
-          );
-        if (isYouTubeUrl) {
+        const normalizedYouTubeUrl = normalizeYouTubeUrl(debouncedSearch);
+        if (normalizedYouTubeUrl) {
           try {
-            const youtubeResult = await searchYouTubeVideoFn(debouncedSearch);
+            const youtubeResult =
+              await searchYouTubeVideoFn(normalizedYouTubeUrl);
             // Convert YouTube result to match IMediaDocument format
             const videoItem: SearchResultType & {
               __youtubeChannelInfo?: youtubeChannelInfo;

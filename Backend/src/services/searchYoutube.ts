@@ -142,10 +142,57 @@ export async function getYouTubeVideoInfo(videoUrl: string): Promise<{
 }
 
 function extractVideoId(url: string): string | null {
-  const regex =
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#]+)/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
+  const normalizeVideoId = (
+    value: string | null | undefined
+  ): string | null => {
+    if (!value) return null;
+    const cleaned = value.trim();
+    return /^[A-Za-z0-9_-]{11}$/.test(cleaned) ? cleaned : null;
+  };
+
+  const parseFromUrl = (input: string): string | null => {
+    try {
+      const parsed = new URL(
+        input.startsWith('http://') || input.startsWith('https://')
+          ? input
+          : `https://${input}`
+      );
+
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const pathSegments = parsed.pathname.split('/').filter(Boolean);
+
+      if (host === 'youtu.be') {
+        return normalizeVideoId(pathSegments[0]);
+      }
+
+      if (host.endsWith('youtube.com')) {
+        if (parsed.pathname === '/watch') {
+          return normalizeVideoId(parsed.searchParams.get('v'));
+        }
+
+        if (
+          pathSegments[0] === 'live' ||
+          pathSegments[0] === 'shorts' ||
+          pathSegments[0] === 'embed' ||
+          pathSegments[0] === 'v'
+        ) {
+          return normalizeVideoId(pathSegments[1]);
+        }
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  };
+
+  const parsedId = parseFromUrl(url);
+  if (parsedId) return parsedId;
+
+  const fallbackRegex =
+    /(?:youtube\.com\/(?:watch\?[^\s]*v=|live\/|shorts\/|embed\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i;
+  const match = url.match(fallbackRegex);
+  return normalizeVideoId(match?.[1]);
 }
 
 function parseDuration(duration: string): number {

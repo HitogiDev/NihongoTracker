@@ -61,14 +61,59 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     []
   );
 
+  const extractYouTubeVideoId = useCallback((input: string): string | null => {
+    const normalizeVideoId = (value: string | null | undefined) => {
+      if (!value) return null;
+      const cleaned = value.trim();
+      return /^[A-Za-z0-9_-]{11}$/.test(cleaned) ? cleaned : null;
+    };
+
+    try {
+      const parsed = new URL(
+        input.startsWith('http://') || input.startsWith('https://')
+          ? input
+          : `https://${input}`
+      );
+
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const pathSegments = parsed.pathname.split('/').filter(Boolean);
+
+      if (host === 'youtu.be') {
+        return normalizeVideoId(pathSegments[0]);
+      }
+
+      if (host.endsWith('youtube.com')) {
+        if (parsed.pathname === '/watch') {
+          return normalizeVideoId(parsed.searchParams.get('v'));
+        }
+
+        if (
+          pathSegments[0] === 'live' ||
+          pathSegments[0] === 'shorts' ||
+          pathSegments[0] === 'embed' ||
+          pathSegments[0] === 'v'
+        ) {
+          return normalizeVideoId(pathSegments[1]);
+        }
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }, []);
+
   const extractYouTubeUrl = useCallback(
     (description: string): string | null => {
-      const youtubeRegex =
-        /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\n?#\s]+)/;
-      const match = description.match(youtubeRegex);
-      return match ? match[0] : null;
+      const youtubeUrlRegex =
+        /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com\/(?:watch\?[^\s]*v=|live\/|shorts\/|embed\/|v\/)[^\s]+|youtu\.be\/[^\s]+)/i;
+      const match = description.match(youtubeUrlRegex);
+      if (!match) return null;
+
+      const videoId = extractYouTubeVideoId(match[0]);
+      return videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
     },
-    []
+    [extractYouTubeVideoId]
   );
 
   const groupedLogs = useGroupLogs(logs, 'video');
