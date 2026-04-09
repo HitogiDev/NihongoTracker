@@ -1242,6 +1242,7 @@ export async function clearUserData(
     await DailyGoal.deleteMany({ user: user._id });
     await LongTermGoal.deleteMany({ user: user._id });
     await Tag.deleteMany({ user: user._id });
+    await UserMediaStatus.deleteMany({ user: user._id });
 
     return res.status(200).json({
       message: 'User data cleared',
