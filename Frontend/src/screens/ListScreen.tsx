@@ -179,6 +179,9 @@ function ListScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ImmersionList'] });
+      if (username) {
+        queryClient.invalidateQueries({ queryKey: ['recentLogs', username] });
+      }
     },
     onError: (mutationError) => {
       console.error('Failed to update media completion status:', mutationError);

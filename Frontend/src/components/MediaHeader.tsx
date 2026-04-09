@@ -148,6 +148,9 @@ export default function MediaHeader() {
           queryClient.invalidateQueries({
             queryKey: ['ImmersionList', targetUsername],
           });
+          queryClient.invalidateQueries({
+            queryKey: ['recentLogs', targetUsername],
+          });
         }
         toast.success(
           data.isCompleted ? 'Marked as completed.' : 'Marked as in progress.'

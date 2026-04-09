@@ -125,6 +125,47 @@ export async function getRecentLogs(
         },
       },
       {
+        $lookup: {
+          from: 'usermediastatuses',
+          let: {
+            mediaId: '$mediaId',
+            logType: '$type',
+            userId: '$user',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$mediaId', '$$mediaId'] },
+                    { $eq: ['$type', '$$logType'] },
+                    { $eq: ['$user', '$$userId'] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                completed: 1,
+              },
+            },
+          ],
+          as: 'completionStatus',
+        },
+      },
+      {
+        $addFields: {
+          isCompleted: {
+            $ifNull: [{ $first: '$completionStatus.completed' }, false],
+          },
+        },
+      },
+      {
+        $match: {
+          isCompleted: { $ne: true },
+        },
+      },
+      {
         $limit: limit,
       },
       {
