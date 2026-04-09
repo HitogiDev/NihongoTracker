@@ -460,13 +460,21 @@ function transformOtherCSVLogsList(
     })
     .map((log) => {
       const type = log.type.toLowerCase().trim() as ILog['type'];
+      const rawMediaId = log.mediaId?.trim();
+      let normalizedMediaId = rawMediaId || undefined;
+
+      if (rawMediaId && type === 'vn') {
+        normalizedMediaId = rawMediaId.toLowerCase().startsWith('v')
+          ? `v${rawMediaId.slice(1)}`
+          : `v${rawMediaId}`;
+      }
 
       const NTLog: ILogNT = {
         user: user._id,
         type,
         date: new Date(log.date),
-        description: log.description || undefined,
-        mediaId: log.mediaId?.trim() || undefined,
+        description: log.description ?? '',
+        mediaId: normalizedMediaId,
       };
 
       if (log.time) {

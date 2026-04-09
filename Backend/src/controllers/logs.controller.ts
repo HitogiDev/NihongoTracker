@@ -29,6 +29,38 @@ import {
 } from '../middlewares/calculateXp.js';
 import { addDocuments } from '../services/meilisearch/meiliSearch.js';
 
+interface IMediaTitleFallback {
+  contentTitleNative?: string;
+  contentTitleRomaji?: string;
+  contentTitleEnglish?: string;
+}
+
+interface IMediaWithTitle {
+  title?: IMediaTitleFallback;
+}
+
+function getMediaTitle(media?: IMediaWithTitle | null): string {
+  if (!media?.title) return '';
+
+  return (
+    media.title.contentTitleNative ||
+    media.title.contentTitleRomaji ||
+    media.title.contentTitleEnglish ||
+    ''
+  );
+}
+
+function getDescriptionWithMediaFallback(
+  description: string | null | undefined,
+  media?: IMediaWithTitle | null
+): string {
+  if (typeof description === 'string' && description.trim().length > 0) {
+    return description;
+  }
+
+  return getMediaTitle(media);
+}
+
 export async function getUntrackedLogs(
   _req: Request,
   res: Response,
@@ -142,7 +174,12 @@ export async function getRecentLogs(
       },
     ]);
 
-    return res.status(200).json(recentLogs);
+    const normalizedRecentLogs = recentLogs.map((log) => ({
+      ...log,
+      description: getDescriptionWithMediaFallback(log.description, log.media),
+    }));
+
+    return res.status(200).json(normalizedRecentLogs);
   } catch (error) {
     return next(error as customError);
   }
@@ -270,7 +307,12 @@ export async function getGlobalFeed(
       },
     ]);
 
-    return res.status(200).json(feedLogs);
+    const normalizedFeedLogs = feedLogs.map((log) => ({
+      ...log,
+      description: getDescriptionWithMediaFallback(log.description, log.media),
+    }));
+
+    return res.status(200).json(normalizedFeedLogs);
   } catch (error) {
     return next(error as customError);
   }
@@ -674,7 +716,12 @@ export async function getUserLogs(
 
     if (!logs.length) return res.sendStatus(204);
 
-    return res.status(200).json(logs);
+    const normalizedLogs = logs.map((log) => ({
+      ...log,
+      description: getDescriptionWithMediaFallback(log.description, log.media),
+    }));
+
+    return res.status(200).json(normalizedLogs);
   } catch (error) {
     return next(error as customError);
   }
@@ -762,7 +809,10 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
     const sharedLogData = {
       _id: foundLog._id,
       type: foundLog.type,
-      description: foundLog.description,
+      description: getDescriptionWithMediaFallback(
+        foundLog.description,
+        foundLog.mediaData
+      ),
       episodes: foundLog.episodes,
       pages: foundLog.pages,
       chars: foundLog.chars,
@@ -2899,7 +2949,12 @@ export async function getRecentMediaLogs(
     const logs = await Log.aggregate(pipeline);
     if (!logs.length) return res.sendStatus(204);
 
-    return res.status(200).json(logs);
+    const normalizedLogs = logs.map((log) => ({
+      ...log,
+      description: getDescriptionWithMediaFallback(log.description, log.media),
+    }));
+
+    return res.status(200).json(normalizedLogs);
   } catch (error) {
     return next(error as customError);
   }

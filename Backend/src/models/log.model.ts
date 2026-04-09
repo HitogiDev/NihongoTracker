@@ -45,7 +45,7 @@ const LogSchema = new Schema<ILog>(
     description: {
       type: String,
       trim: true,
-      required: true,
+      default: '',
     },
     editedFields: { type: editedFieldsSchema, default: null },
     episodes: {
