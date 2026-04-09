@@ -1340,18 +1340,6 @@ export async function getImmersionList(
       UserMediaStatus.find({ user: user._id }),
     ]);
 
-    if (immersionList.length === 0) {
-      return res.status(200).json({
-        anime: [],
-        manga: [],
-        reading: [],
-        vn: [],
-        video: [],
-        movie: [],
-        'tv show': [],
-      });
-    }
-
     const result: Record<ImmersionMediaType, IMediaDocument[]> = {
       anime: [],
       manga: [],
@@ -1360,6 +1348,18 @@ export async function getImmersionList(
       video: [],
       movie: [],
       'tv show': [],
+    };
+
+    const matchesCompletionFilter = (isCompleted: boolean) => {
+      if (completionFilter === 'completed') {
+        return isCompleted;
+      }
+
+      if (completionFilter === 'incomplete') {
+        return !isCompleted;
+      }
+
+      return true;
     };
 
     const statusMap = new Map<
@@ -1374,11 +1374,14 @@ export async function getImmersionList(
       });
     });
 
+    const mediaKeysFromLogs = new Set<string>();
+
     immersionList.forEach((group) => {
       const mediaType = group._id as ImmersionMediaType;
       const mediaWithStatus = group.media
         .map((media) => {
           const key = `${mediaType}:${media.contentId}`;
+          mediaKeysFromLogs.add(key);
           const status = statusMap.get(key);
           return {
             ...media,
@@ -1386,18 +1389,59 @@ export async function getImmersionList(
             completedAt: status?.completedAt ?? null,
           };
         })
-        .filter((media) => {
-          if (completionFilter === 'completed') {
-            return media.isCompleted;
-          }
-          if (completionFilter === 'incomplete') {
-            return !media.isCompleted;
-          }
-          return true;
-        });
+        .filter((media) => matchesCompletionFilter(media.isCompleted ?? false));
 
       result[mediaType] = mediaWithStatus;
     });
+
+    const completedStatusesWithoutLogs = mediaStatuses.filter((status) => {
+      const key = `${status.type}:${status.mediaId}`;
+      return status.completed && !mediaKeysFromLogs.has(key);
+    });
+
+    if (
+      completedStatusesWithoutLogs.length > 0 &&
+      completionFilter !== 'incomplete'
+    ) {
+      const missingMediaMatchers = Array.from(
+        new Map(
+          completedStatusesWithoutLogs.map((status) => [
+            `${status.type}:${status.mediaId}`,
+            { contentId: status.mediaId, type: status.type },
+          ])
+        ).values()
+      );
+
+      if (missingMediaMatchers.length > 0) {
+        const missingMediaDocs = await MediaBase.find({
+          $or: missingMediaMatchers,
+        }).lean();
+
+        const missingMediaMap = new Map<string, IMediaDocument>();
+        missingMediaDocs.forEach((media) => {
+          missingMediaMap.set(
+            `${media.type}:${media.contentId}`,
+            media as IMediaDocument
+          );
+        });
+
+        completedStatusesWithoutLogs.forEach((status) => {
+          const mediaType = status.type as ImmersionMediaType;
+          const key = `${mediaType}:${status.mediaId}`;
+          const media = missingMediaMap.get(key);
+
+          if (!media || !matchesCompletionFilter(true)) {
+            return;
+          }
+
+          result[mediaType].push({
+            ...media,
+            isCompleted: true,
+            completedAt: status.completedAt ?? null,
+          });
+        });
+      }
+    }
 
     // Sort each media type alphabetically
     (Object.keys(result) as ImmersionMediaType[]).forEach((key) => {
