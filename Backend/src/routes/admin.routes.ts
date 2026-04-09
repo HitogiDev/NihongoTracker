@@ -13,6 +13,7 @@ import {
   syncPatreonMembers,
   getUserModerationByUsername,
   updateUserModerationByUsername,
+  recalculateUserStreakByUsername,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -96,6 +97,12 @@ router.patch(
   protect,
   checkPermission(userRoles.admin),
   updateUserModerationByUsername
+);
+router.post(
+  '/users/username/:username/recalculate-streaks',
+  protect,
+  checkPermission(userRoles.admin),
+  recalculateUserStreakByUsername
 );
 router.post(
   '/patreon/sync',

@@ -14,10 +14,12 @@ import { toast } from 'react-toastify';
 
 import {
   adminGetUserModerationFn,
+  adminRecalculateUserStreakFn,
   adminUpdateUserModerationFn,
 } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
+import { AxiosError } from 'axios';
 
 type ModerationHistoryEntry = {
   field: 'rankingBanned' | 'banned' | 'banReason';
@@ -142,6 +144,28 @@ function ProfileModerationScreen() {
     },
   });
 
+  const { mutate: recalculateStreak, isPending: isRecalculatingStreak } =
+    useMutation({
+      mutationFn: () => adminRecalculateUserStreakFn(username),
+      onSuccess: (result) => {
+        queryClient.invalidateQueries({ queryKey: ['user', username] });
+        queryClient.invalidateQueries({ queryKey: ['userStats', username] });
+        queryClient.invalidateQueries({
+          queryKey: ['profileModeration', username],
+        });
+        toast.success(
+          `${result.username}'s streak recalculated (current: ${result.streaks.currentStreak})`
+        );
+      },
+      onError: (error) => {
+        const axiosError = error as AxiosError<{ message?: string }>;
+        toast.error(
+          axiosError?.response?.data?.message ||
+            'Failed to recalculate streak for this user'
+        );
+      },
+    });
+
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center py-8 px-4">
@@ -192,6 +216,33 @@ function ProfileModerationScreen() {
 
         <div className="card bg-base-100 shadow-sm border border-base-300">
           <div className="card-body gap-5">
+            <div className="rounded-lg border border-base-300 px-4 py-3 bg-base-200/40">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold text-base-content">
+                    Recalculate streak for this user
+                  </p>
+                  <p className="text-xs text-base-content/60 mt-1">
+                    Rebuilds streak from all existing logs for{' '}
+                    <span className="font-semibold">{username}</span>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline"
+                  onClick={() => recalculateStreak()}
+                  disabled={isRecalculatingStreak || isLoading}
+                >
+                  {isRecalculatingStreak ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Recalculate streak
+                </button>
+              </div>
+            </div>
+
             <label className="flex w-full cursor-pointer items-start gap-3 rounded-lg border border-base-300 px-4 py-3">
               <div className="min-w-0 flex items-start gap-3">
                 <Trophy className="w-5 h-5 text-warning mt-0.5" />

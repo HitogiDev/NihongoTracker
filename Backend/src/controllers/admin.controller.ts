@@ -6,6 +6,7 @@ import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile } from '../services/uploadFile.js';
 import bcrypt from 'bcryptjs';
 import { checkPatreonMembershipForUser } from '../controllers/patreon.controller.js';
+import { recalculateStreaksForUser } from '../services/streaks.js';
 
 export async function getAdminStats(
   _req: Request,
@@ -604,6 +605,48 @@ export async function updateUserModerationByUsername(
         updatedBy: user.moderation?.updatedBy ?? null,
         updatedByUsername: user.moderation?.updatedByUsername ?? '',
         history: sortedHistory,
+      },
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function recalculateUserStreakByUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+      .select(
+        '_id username stats.currentStreak stats.longestStreak stats.lastStreakDate'
+      )
+      .lean();
+
+    if (!user) {
+      throw new customError('User not found', 404);
+    }
+
+    await recalculateStreaksForUser(user._id);
+
+    const updatedUser = await User.findById(user._id)
+      .select(
+        'username stats.currentStreak stats.longestStreak stats.lastStreakDate'
+      )
+      .lean();
+
+    if (!updatedUser) {
+      throw new customError('User not found', 404);
+    }
+
+    return res.status(200).json({
+      message: `Recalculated streak for ${updatedUser.username}`,
+      username: updatedUser.username,
+      streaks: {
+        currentStreak: updatedUser.stats?.currentStreak ?? 0,
+        longestStreak: updatedUser.stats?.longestStreak ?? 0,
+        lastStreakDate: updatedUser.stats?.lastStreakDate ?? null,
       },
     });
   } catch (error) {

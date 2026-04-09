@@ -829,6 +829,21 @@ export async function adminUpdateUserModerationFn(
   return data;
 }
 
+export async function adminRecalculateUserStreakFn(username: string) {
+  const { data } = await api.post(
+    `admin/users/username/${username}/recalculate-streaks`
+  );
+  return data as {
+    message: string;
+    username: string;
+    streaks: {
+      currentStreak: number;
+      longestStreak: number;
+      lastStreakDate: string | null;
+    };
+  };
+}
+
 // Patreon API functions
 export async function getPatreonStatusFn(): Promise<{
   patreonEmail?: string;
