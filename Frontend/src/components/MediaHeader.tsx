@@ -91,12 +91,12 @@ export default function MediaHeader() {
     error: mediaError,
     isLoading: isLoadingMedia,
   } = useQuery({
-    queryKey: ['media', mediaId, mediaType],
+    queryKey: ['media', mediaId, mediaType, targetUsername],
     queryFn: () => {
       if (!mediaId || !mediaType) {
         throw new Error('Media ID and type are required');
       }
-      return getMediaFn(mediaId, mediaType);
+      return getMediaFn(mediaId, mediaType, targetUsername);
     },
     enabled: !!mediaId && !!mediaType,
     refetchOnMount: 'always',
@@ -133,7 +133,7 @@ export default function MediaHeader() {
           completedAt: data.completedAt,
         });
         queryClient.setQueryData<IMediaDocument | undefined>(
-          ['media', mediaId, mediaType],
+          ['media', mediaId, mediaType, targetUsername],
           (prev) =>
             prev
               ? {
@@ -339,39 +339,51 @@ export default function MediaHeader() {
                     )}
                   {isOwnProfile && media?.contentId && media?.type && (
                     <div className="flex flex-col gap-1">
-                      <button
-                        type="button"
-                        className={`btn gap-2 w-full ${
-                          completionStatus.isCompleted
-                            ? 'btn-success'
-                            : 'btn-outline'
-                        }`}
-                        onClick={() =>
-                          toggleCompletionStatus(!completionStatus.isCompleted)
+                      <div
+                        className={
+                          completionStatus.completedAt
+                            ? 'tooltip tooltip-bottom sm:tooltip-right w-full before:max-w-[calc(100vw-2rem)] before:whitespace-normal before:break-words'
+                            : 'w-full'
                         }
-                        disabled={isUpdatingCompletion}
+                        data-tip={
+                          completionStatus.completedAt
+                            ? `Completed at ${formatDateOnly(
+                                new Date(completionStatus.completedAt)
+                              )}`
+                            : undefined
+                        }
                       >
-                        {isUpdatingCompletion ? (
-                          <span className="loading loading-spinner loading-sm" />
-                        ) : completionStatus.isCompleted ? (
-                          <>
-                            <CircleCheck className="w-4 h-4" />
-                            <span>Mark as in progress</span>
-                          </>
-                        ) : (
-                          <>
-                            <Circle className="w-4 h-4" />
-                            <span>Mark as completed</span>
-                          </>
-                        )}
-                      </button>
-                      {completionStatus.completedAt && (
-                        <span className="text-xs text-base-content/60 text-center md:text-left">
-                          {`Completed at ${formatDateOnly(
-                            new Date(completionStatus.completedAt)
-                          )}`}
-                        </span>
-                      )}
+                        <button
+                          type="button"
+                          className={`btn gap-2 w-full ${
+                            completionStatus.isCompleted
+                              ? 'btn-success'
+                              : 'btn-outline'
+                          } ${
+                            completionStatus.completedAt ? 'cursor-help' : ''
+                          }`}
+                          onClick={() =>
+                            toggleCompletionStatus(
+                              !completionStatus.isCompleted
+                            )
+                          }
+                          disabled={isUpdatingCompletion}
+                        >
+                          {isUpdatingCompletion ? (
+                            <span className="loading loading-spinner loading-sm" />
+                          ) : completionStatus.isCompleted ? (
+                            <>
+                              <CircleCheck className="w-4 h-4" />
+                              <span>Mark as in progress</span>
+                            </>
+                          ) : (
+                            <>
+                              <Circle className="w-4 h-4" />
+                              <span>Mark as completed</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

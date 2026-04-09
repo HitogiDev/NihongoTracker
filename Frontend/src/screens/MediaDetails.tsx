@@ -939,25 +939,37 @@ function MediaDetails() {
 
                   {mediaDocument && (
                     <div className="flex flex-col gap-1 sm:items-end">
-                      <span
-                        className={`badge ${
-                          mediaDocument.isCompleted
-                            ? 'badge-success'
-                            : 'badge-outline'
-                        }`}
+                      <div
+                        className={
+                          mediaDocument.isCompleted && mediaDocument.completedAt
+                            ? 'tooltip tooltip-bottom sm:tooltip-left before:max-w-[calc(100vw-2rem)] before:whitespace-normal before:break-words'
+                            : ''
+                        }
+                        data-tip={
+                          mediaDocument.isCompleted && mediaDocument.completedAt
+                            ? `Completed at ${formatDateOnly(
+                                new Date(mediaDocument.completedAt)
+                              )}`
+                            : undefined
+                        }
                       >
-                        {mediaDocument.isCompleted
-                          ? 'Completed'
-                          : 'In progress'}
-                      </span>
-                      {mediaDocument.isCompleted &&
-                        mediaDocument.completedAt && (
-                          <span className="text-xs text-base-content/60">
-                            {`Completed at ${formatDateOnly(
-                              new Date(mediaDocument.completedAt)
-                            )}`}
-                          </span>
-                        )}
+                        <span
+                          className={`badge ${
+                            mediaDocument.isCompleted
+                              ? 'badge-success'
+                              : 'badge-outline'
+                          } ${
+                            mediaDocument.isCompleted &&
+                            mediaDocument.completedAt
+                              ? 'cursor-help'
+                              : ''
+                          }`}
+                        >
+                          {mediaDocument.isCompleted
+                            ? 'Completed'
+                            : 'In progress'}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>

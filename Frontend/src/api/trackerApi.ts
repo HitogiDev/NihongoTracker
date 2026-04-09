@@ -188,13 +188,17 @@ export async function searchMediaFn(params: {
 
 export async function getMediaFn(
   mediaId: string,
-  mediaType: string
+  mediaType: string,
+  username?: string
 ): Promise<IMediaDocument & { jiten?: IJitenResponse }> {
   if (!mediaId || !mediaType) {
     throw new Error('Both mediaId and mediaType are required');
   }
   const { data } = await api.get<IMediaDocument & { jiten?: IJitenResponse }>(
-    `media/${mediaType}/${mediaId}`
+    `media/${mediaType}/${mediaId}`,
+    {
+      params: username ? { username } : undefined,
+    }
   );
   return data;
 }

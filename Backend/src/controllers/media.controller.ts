@@ -7,6 +7,8 @@ import {
   Reading,
   Movie,
 } from '../models/media.model.js';
+import User from '../models/user.model.js';
+import UserMediaStatus from '../models/userMediaStatus.model.js';
 import MediaReview from '../models/mediaReview.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import fac from 'fast-average-color-node';
@@ -103,6 +105,8 @@ export async function getMedia(
 ) {
   try {
     const { contentId, mediaType } = req.params;
+    const requestedUsername =
+      typeof req.query.username === 'string' ? req.query.username.trim() : '';
 
     if (!contentId) {
       return res.status(400).json({ message: 'Content ID is required' });
@@ -112,7 +116,32 @@ export async function getMedia(
       return res.status(400).json({ message: 'Media type is required' });
     }
 
-    const mediaQuery = { contentId, type: mediaType };
+    const normalizedMediaType = mediaType.toLowerCase();
+    const mediaQuery = { contentId, type: normalizedMediaType };
+
+    const completionStatus = {
+      isCompleted: false,
+      completedAt: null as Date | null,
+    };
+
+    if (requestedUsername) {
+      const targetUser = await User.findOne({ username: requestedUsername })
+        .select('_id')
+        .lean();
+
+      if (targetUser?._id) {
+        const status = await UserMediaStatus.findOne({
+          user: targetUser._id,
+          mediaId: String(contentId),
+          type: normalizedMediaType,
+        })
+          .select('completed completedAt')
+          .lean();
+
+        completionStatus.isCompleted = status?.completed ?? false;
+        completionStatus.completedAt = status?.completedAt ?? null;
+      }
+    }
 
     const jitenURL = process.env.JITEN_API_URL;
     let jitenResponse = null;
@@ -157,18 +186,18 @@ export async function getMedia(
     const media = await MediaBase.findOne(mediaQuery);
     if (
       !media &&
-      (mediaType === 'anime' ||
-        mediaType === 'manga' ||
-        mediaType === 'reading' ||
-        mediaType === 'movie')
+      (normalizedMediaType === 'anime' ||
+        normalizedMediaType === 'manga' ||
+        normalizedMediaType === 'reading' ||
+        normalizedMediaType === 'movie')
     ) {
       const searchType =
-        mediaType === 'movie'
+        normalizedMediaType === 'movie'
           ? 'ANIME'
-          : mediaType === 'anime'
+          : normalizedMediaType === 'anime'
             ? 'ANIME'
             : 'MANGA';
-      const searchFormat = mediaType === 'movie' ? 'MOVIE' : null;
+      const searchFormat = normalizedMediaType === 'movie' ? 'MOVIE' : null;
 
       const mediaAnilist = await searchAnilist({
         ids: [parseInt(contentId)],
@@ -177,25 +206,26 @@ export async function getMedia(
       });
 
       if (mediaAnilist.length > 0) {
-        if (mediaType === 'anime') {
+        if (normalizedMediaType === 'anime') {
           await Anime.insertMany(mediaAnilist, {
             ordered: false,
           });
-        } else if (mediaType === 'manga') {
+        } else if (normalizedMediaType === 'manga') {
           await Manga.insertMany(mediaAnilist, {
             ordered: false,
           });
-        } else if (mediaType === 'reading') {
+        } else if (normalizedMediaType === 'reading') {
           await Reading.insertMany(mediaAnilist, {
             ordered: false,
           });
-        } else if (mediaType === 'movie') {
+        } else if (normalizedMediaType === 'movie') {
           await Movie.insertMany(mediaAnilist, {
             ordered: false,
           });
         }
         return res.status(200).json({
           ...mediaAnilist[0],
+          ...completionStatus,
           jiten: jitenResponse ? jitenResponse.data : null,
         });
       } else {
@@ -205,6 +235,7 @@ export async function getMedia(
     if (!media) return res.status(404).json({ message: 'Media not found' });
     return res.status(200).json({
       ...media.toObject(),
+      ...completionStatus,
       jiten: jitenResponse ? jitenResponse.data : null,
     });
   } catch (error) {
@@ -280,11 +311,9 @@ export async function addMediaReview(
     }
 
     if (rating && (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)) {
-      return res
-        .status(400)
-        .json({
-          message: 'Rating must be between 0.5 and 5 in 0.5 increments',
-        });
+      return res.status(400).json({
+        message: 'Rating must be between 0.5 and 5 in 0.5 increments',
+      });
     }
 
     const existingReview = await MediaReview.findOne({
@@ -392,11 +421,9 @@ export async function editMediaReview(
     }
 
     if (rating && (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)) {
-      return res
-        .status(400)
-        .json({
-          message: 'Rating must be between 0.5 and 5 in 0.5 increments',
-        });
+      return res.status(400).json({
+        message: 'Rating must be between 0.5 and 5 in 0.5 increments',
+      });
     }
 
     const review = await MediaReview.findOne({
