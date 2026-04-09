@@ -25,6 +25,13 @@ export function getUTCDateFromDayKey(dayKey: string): Date {
   return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
 }
 
+function getDayKeyFromUTCDate(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function dayDiff(aKey: string, bKey: string): number {
   const a = getUTCDateFromDayKey(aKey).getTime();
   const b = getUTCDateFromDayKey(bKey).getTime();
@@ -103,7 +110,8 @@ export async function updateStreakWithLog(
     return;
   }
 
-  const lastKey = getUserDayKey(new Date(lastDate), timezone);
+  // lastStreakDate stores a UTC day key anchor; read it back in UTC to avoid timezone day shifts
+  const lastKey = getDayKeyFromUTCDate(new Date(lastDate));
   const diff = dayDiff(lastKey, newKey);
 
   if (diff === 0) {
