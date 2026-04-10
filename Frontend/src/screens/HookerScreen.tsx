@@ -2109,7 +2109,7 @@ function TextHooker() {
           type="button"
           onClick={handleOpenTimerEdit}
           className="btn btn-xs btn-ghost btn-square"
-          title="Set Timer"
+          title="Edit Time"
         >
           <Edit3 size={16} />
         </button>
@@ -2238,7 +2238,7 @@ function TextHooker() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
-              Set Timer
+              Edit Time
             </h3>
             <button
               onClick={() => setIsTimerEditOpen(false)}
