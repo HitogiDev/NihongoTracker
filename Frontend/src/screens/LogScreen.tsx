@@ -6,7 +6,12 @@ import {
   IMediaDocument,
   youtubeChannelInfo,
 } from '../types';
-import { createLogFn, getUserFn } from '../api/trackerApi';
+import {
+  createLogFn,
+  getMediaFn,
+  getUserFn,
+  getUserLogsFn,
+} from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -41,6 +46,7 @@ interface logDataType {
   time: number;
   chars: number;
   readChars: number;
+  logVolume: number | undefined;
   pages: number;
   readPages: number;
   chapters: undefined | number;
@@ -81,6 +87,7 @@ const createInitialLogState = (
   time: 0,
   chars: 0,
   readChars: 0,
+  logVolume: undefined,
   pages: 0,
   readPages: 0,
   chapters: undefined,
@@ -95,6 +102,71 @@ const createInitialLogState = (
   runtime: undefined,
   youtubeChannelInfo: null,
 });
+
+const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
+
+const getLastLoggedVolumeKey = (type: 'manga' | 'reading', mediaId: string) =>
+  `${LAST_LOGGED_VOLUME_KEY_PREFIX}:${type}:${mediaId}`;
+
+const readLastLoggedVolume = (
+  type: 'manga' | 'reading',
+  mediaId: string
+): number | undefined => {
+  const stored = localStorage.getItem(getLastLoggedVolumeKey(type, mediaId));
+  if (!stored) return undefined;
+  const parsed = Number(stored);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.floor(parsed);
+};
+
+const writeLastLoggedVolume = (
+  type: 'manga' | 'reading',
+  mediaId: string,
+  volume: number
+) => {
+  if (!Number.isFinite(volume) || volume <= 0) return;
+  localStorage.setItem(
+    getLastLoggedVolumeKey(type, mediaId),
+    String(Math.floor(volume))
+  );
+};
+
+const parseVolumeNumberFromTitle = (
+  title: string | null | undefined
+): number | null => {
+  if (!title) return null;
+  const match = title.match(/(\d+)/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getDeckForVolume = (
+  subDecks:
+    | Array<{
+        originalTitle: string;
+        romajiTitle: string | null;
+        englishTitle: string | null;
+        characterCount: number;
+      }>
+    | undefined,
+  volume: number
+) => {
+  const decks = subDecks ?? [];
+  const byTitle = decks.find((deck) => {
+    const candidates = [
+      deck.originalTitle,
+      deck.romajiTitle,
+      deck.englishTitle,
+    ];
+    return candidates.some(
+      (candidate) => parseVolumeNumberFromTitle(candidate) === volume
+    );
+  });
+
+  if (byTitle) return byTitle;
+  return decks[volume - 1];
+};
 
 function LogScreen() {
   const [logData, setLogData] = useState<logDataType>(() =>
@@ -115,7 +187,54 @@ function LogScreen() {
   const [xpToCurrentLevel, setXpToCurrentLevel] = useState(0);
   const [xpToNextLevel, setXpToNextLevel] = useState(1);
   const suggestionRef = useRef<HTMLDivElement>(null);
+  const pendingVolumeRef = useRef<{
+    type: ILog['type'] | null;
+    mediaId?: string;
+    volume?: number;
+  } | null>(null);
   const { user, setUser } = useUserDataStore();
+
+  const resolveNextRememberedVolume = async (
+    type: 'manga' | 'reading',
+    mediaId: string,
+    submittedVolume: number
+  ): Promise<number> => {
+    if (!user?.username) return submittedVolume;
+
+    try {
+      const [mediaData, userLogs] = await Promise.all([
+        getMediaFn(mediaId, type, user.username),
+        getUserLogsFn(user.username, {
+          mediaId,
+          type,
+          limit: 0,
+          page: 1,
+        }),
+      ]);
+
+      const logsArray = Array.isArray(userLogs) ? userLogs : [];
+      const subDecks = mediaData?.jiten?.subDecks;
+      const currentDeck = getDeckForVolume(subDecks, submittedVolume);
+      const currentVolumeCharCount = currentDeck?.characterCount ?? 0;
+
+      if (currentVolumeCharCount <= 0) return submittedVolume;
+
+      const currentVolumeCharsRead = logsArray
+        .filter((log) => log.volume === submittedVolume)
+        .reduce((acc, log) => acc + (log.chars ?? 0), 0);
+
+      if (currentVolumeCharsRead < currentVolumeCharCount) {
+        return submittedVolume;
+      }
+
+      const totalVolumes =
+        mediaData?.volumes ?? mediaData?.jiten?.subDecks?.length ?? 0;
+      const canAdvance = totalVolumes > 0 && submittedVolume < totalVolumes;
+      return canAdvance ? submittedVolume + 1 : submittedVolume;
+    } catch {
+      return submittedVolume;
+    }
+  };
 
   const {
     data: searchResult,
@@ -134,6 +253,27 @@ function LogScreen() {
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
     onSuccess: async () => {
+      const pendingVolume = pendingVolumeRef.current;
+      if (
+        pendingVolume?.mediaId &&
+        pendingVolume?.volume &&
+        pendingVolume.volume > 0 &&
+        (pendingVolume.type === 'manga' || pendingVolume.type === 'reading')
+      ) {
+        const nextRememberedVolume = await resolveNextRememberedVolume(
+          pendingVolume.type,
+          pendingVolume.mediaId,
+          pendingVolume.volume
+        );
+
+        writeLastLoggedVolume(
+          pendingVolume.type,
+          pendingVolume.mediaId,
+          nextRememberedVolume
+        );
+      }
+      pendingVolumeRef.current = null;
+
       const currentType = logData.type;
       setLogData({
         type: currentType,
@@ -158,6 +298,7 @@ function LogScreen() {
         time: 0,
         chars: 0,
         readChars: 0,
+        logVolume: undefined,
         pages: 0,
         readPages: 0,
         chapters: undefined,
@@ -278,7 +419,7 @@ function LogScreen() {
   // Enhanced field change handler with proper types
   const handleFieldChange = (
     field: keyof logDataType,
-    value: string | number | boolean | Date | null
+    value: string | number | boolean | Date | null | undefined
   ) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     handleInputChange(field, value);
@@ -316,6 +457,8 @@ function LogScreen() {
         handleInputChange('hours', hours);
         handleInputChange('minutes', minutes);
       }
+
+      handleInputChange('logVolume', undefined);
     } else {
       // Handle regular AniList content
       handleInputChange('mediaName', group.title.contentTitleNative);
@@ -347,13 +490,22 @@ function LogScreen() {
       }
 
       // For manga, store chapter/volume information
-      if (logData.type === 'manga') {
+      if (logData.type === 'manga' || logData.type === 'reading') {
         if (group.chapters) {
           handleInputChange('chapters', group.chapters);
         }
         if (group.volumes) {
           handleInputChange('volumes', group.volumes);
         }
+
+        if (group.contentId) {
+          handleInputChange(
+            'logVolume',
+            readLastLoggedVolume(logData.type, group.contentId)
+          );
+        }
+      } else {
+        handleInputChange('logVolume', undefined);
       }
 
       // For movies, auto-populate time from runtime
@@ -451,12 +603,29 @@ function LogScreen() {
       }
     }
 
+    pendingVolumeRef.current = {
+      type: logData.type,
+      mediaId: logData.mediaId,
+      volume:
+        (logData.type === 'manga' || logData.type === 'reading') &&
+        typeof logData.logVolume === 'number' &&
+        logData.logVolume > 0
+          ? logData.logVolume
+          : undefined,
+    };
+
     createLog({
       type: logData.type,
       mediaId: logData.mediaId,
       description: logData.description || logData.mediaName,
       mediaData,
       episodes: logData.watchedEpisodes,
+      volume:
+        (logData.type === 'manga' || logData.type === 'reading') &&
+        typeof logData.logVolume === 'number' &&
+        logData.logVolume > 0
+          ? logData.logVolume
+          : undefined,
       time: totalMinutes || undefined,
       chars: logData.readChars || undefined,
       pages: logData.readPages,
@@ -967,6 +1136,45 @@ function LogScreen() {
                               </span>
                             </label>
                           )}
+                        </div>
+                      )}
+
+                      {(logData.type === 'manga' ||
+                        logData.type === 'reading') && (
+                        <div className="form-control">
+                          <label className="label">
+                            <span className="label-text font-medium">
+                              Volume
+                            </span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              max={logData.volumes}
+                              placeholder="1"
+                              className="input input-bordered input-sm w-12 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                              onInput={preventNegativeValues}
+                              onChange={(e) => {
+                                if (e.target.value === '') {
+                                  handleFieldChange('logVolume', undefined);
+                                  return;
+                                }
+
+                                const parsed = Number(e.target.value);
+                                handleFieldChange(
+                                  'logVolume',
+                                  Number.isFinite(parsed) && parsed > 0
+                                    ? parsed
+                                    : undefined
+                                );
+                              }}
+                              value={logData.logVolume ?? ''}
+                            />
+                            <span className="text-base-content/70 font-medium">
+                              /{logData.volumes ?? '?'}
+                            </span>
+                          </div>
                         </div>
                       )}
 

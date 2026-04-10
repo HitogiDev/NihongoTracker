@@ -1470,11 +1470,12 @@ export async function updateMediaCompletionStatus(
       throw new customError('Not authorized', 401);
     }
 
-    const { mediaId, type, completed, completedAt } = req.body as {
+    const { mediaId, type, completed, completedAt, source } = req.body as {
       mediaId?: string | number;
       type?: string;
       completed?: boolean;
       completedAt?: string | Date;
+      source?: string;
     };
 
     if (!mediaId || !type) {
@@ -1497,6 +1498,19 @@ export async function updateMediaCompletionStatus(
       throw new customError('Invalid media type', 400);
     }
 
+    const normalizedSource = source?.toLowerCase();
+    if (
+      normalizedSource &&
+      normalizedSource !== 'manual' &&
+      normalizedSource !== 'auto'
+    ) {
+      throw new customError('Invalid source', 400);
+    }
+
+    const completionSource = (normalizedSource ?? 'manual') as
+      | 'manual'
+      | 'auto';
+
     const mediaExists = await MediaBase.findOne({
       contentId: normalizedMediaId,
       type: normalizedType,
@@ -1509,17 +1523,33 @@ export async function updateMediaCompletionStatus(
     const shouldComplete = completed ?? true;
 
     if (!shouldComplete) {
-      await UserMediaStatus.findOneAndDelete({
-        user: res.locals.user._id,
-        mediaId: normalizedMediaId,
-        type: normalizedType,
-      });
+      const status = await UserMediaStatus.findOneAndUpdate(
+        {
+          user: res.locals.user._id,
+          mediaId: normalizedMediaId,
+          type: normalizedType,
+        },
+        {
+          user: res.locals.user._id,
+          mediaId: normalizedMediaId,
+          type: normalizedType,
+          completed: false,
+          completedAt: null,
+          autoCompleteSuppressed: completionSource !== 'auto',
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      );
 
       return res.status(200).json({
         mediaId: normalizedMediaId,
         type: normalizedType,
         isCompleted: false,
         completedAt: null,
+        autoCompleteSuppressed: status?.autoCompleteSuppressed ?? true,
       });
     }
 
@@ -1537,6 +1567,7 @@ export async function updateMediaCompletionStatus(
         type: normalizedType,
         completed: true,
         completedAt: completionDate,
+        autoCompleteSuppressed: false,
       },
       {
         new: true,
@@ -1550,6 +1581,7 @@ export async function updateMediaCompletionStatus(
       type: normalizedType,
       isCompleted: status?.completed ?? true,
       completedAt: status?.completedAt ?? completionDate,
+      autoCompleteSuppressed: status?.autoCompleteSuppressed ?? false,
     });
   } catch (error) {
     return next(error as customError);
@@ -1565,14 +1597,23 @@ const LinkTypeObject = {
   movie: 4, // Anilist for movies
 };
 
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
+
 interface IJitenDeck {
   deckId: number;
-  creationDate: Date;
+  creationDate: string;
+  releaseDate: string | null;
   coverName: string;
   mediaType: number;
   originalTitle: string;
-  romajiTitle: string;
-  englishTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
   characterCount: number;
   wordCount: number;
   uniqueWordCount: number;
@@ -1581,22 +1622,39 @@ interface IJitenDeck {
   uniqueKanjiUsedOnceCount: number;
   difficulty: number;
   difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
   sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
   averageSentenceLength: number;
   parentDeckId: number | null;
-  links: Array<{
-    linkId: number;
-    linkType: number;
-    url: string;
-  }>;
+  links: IJitenDeckLink[];
+  aliases: string[];
   childrenDeckCount: number;
-  selectedWordOcurrences: number;
+  selectedWordOccurrences: number;
   dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
 }
 
 interface IJitenResponse {
   data: {
-    parentDeck: IJitenDeck;
+    parentDeck: IJitenDeck | null;
     mainDeck: IJitenDeck;
     subDecks: IJitenDeck[];
   };

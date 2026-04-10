@@ -336,6 +336,7 @@ export async function updateMediaCompletionStatusFn(payload: {
   mediaId: string;
   type: IMediaDocument['type'];
   completed: boolean;
+  source?: 'manual' | 'auto';
 }) {
   const { data } = await api.post(`users/media/status`, payload);
   return data as {
@@ -343,6 +344,7 @@ export async function updateMediaCompletionStatusFn(payload: {
     type: IMediaDocument['type'];
     isCompleted: boolean;
     completedAt: string | null;
+    autoCompleteSuppressed: boolean;
   };
 }
 

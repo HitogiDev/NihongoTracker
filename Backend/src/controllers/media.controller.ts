@@ -52,20 +52,32 @@ const LinkTypeObject = {
   manga: 4, // Anilist
   reading: 4, // Anilist
   movie: 4, // Anilist for movies
+  // "MyAnimeList": 5,
   // "GoogleBooks": 6,
   // "Imdb": 7,
   // "Igdb": 8,
   // "Syosetsu": 9
+  // "Bookmeter": 10,
+  // "Amazon": 11
 };
+
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
 
 interface IJitenDeck {
   deckId: number;
-  creationDate: Date;
+  creationDate: string;
+  releaseDate: string | null;
   coverName: string;
   mediaType: number;
   originalTitle: string;
-  romajiTitle: string;
-  englishTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
   characterCount: number;
   wordCount: number;
   uniqueWordCount: number;
@@ -74,22 +86,39 @@ interface IJitenDeck {
   uniqueKanjiUsedOnceCount: number;
   difficulty: number;
   difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
   sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
   averageSentenceLength: number;
   parentDeckId: number | null;
-  links: Array<{
-    linkId: number;
-    linkType: number;
-    url: string;
-  }>;
+  links: IJitenDeckLink[];
+  aliases: string[];
   childrenDeckCount: number;
-  selectedWordOcurrences: number;
+  selectedWordOccurrences: number;
   dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
 }
 
 interface IJitenResponse {
   data: {
-    parentDeck: IJitenDeck;
+    parentDeck: IJitenDeck | null;
     mainDeck: IJitenDeck;
     subDecks: IJitenDeck[];
   };
@@ -122,6 +151,7 @@ export async function getMedia(
     const completionStatus = {
       isCompleted: false,
       completedAt: null as Date | null,
+      autoCompleteSuppressed: false,
     };
 
     if (requestedUsername) {
@@ -135,11 +165,13 @@ export async function getMedia(
           mediaId: String(contentId),
           type: normalizedMediaType,
         })
-          .select('completed completedAt')
+          .select('completed completedAt autoCompleteSuppressed')
           .lean();
 
         completionStatus.isCompleted = status?.completed ?? false;
         completionStatus.completedAt = status?.completedAt ?? null;
+        completionStatus.autoCompleteSuppressed =
+          status?.autoCompleteSuppressed ?? false;
       }
     }
 
@@ -184,6 +216,70 @@ export async function getMedia(
     }
 
     const media = await MediaBase.findOne(mediaQuery);
+
+    // Backfill missing AniList metadata on existing records so details pages
+    // don't keep showing Unknown for fields like volumes/episodes.
+    if (
+      media &&
+      (normalizedMediaType === 'anime' ||
+        normalizedMediaType === 'manga' ||
+        normalizedMediaType === 'reading' ||
+        normalizedMediaType === 'movie')
+    ) {
+      const needsAnimeFields =
+        normalizedMediaType === 'anime' &&
+        (media.episodes == null || media.episodeDuration == null);
+      const needsMangaLikeFields =
+        (normalizedMediaType === 'manga' ||
+          normalizedMediaType === 'reading') &&
+        (media.chapters == null || media.volumes == null);
+
+      if (needsAnimeFields || needsMangaLikeFields) {
+        const parsedContentId = Number.parseInt(contentId, 10);
+
+        if (!Number.isNaN(parsedContentId)) {
+          const refreshType =
+            normalizedMediaType === 'anime' ? 'ANIME' : 'MANGA';
+          const refreshFormat = null;
+
+          const refreshedFromAnilist = await searchAnilist({
+            ids: [parsedContentId],
+            type: refreshType,
+            format: refreshFormat,
+          });
+
+          const refreshedMedia = refreshedFromAnilist[0];
+          if (refreshedMedia) {
+            const metadataUpdates: Record<string, number> = {};
+
+            if (media.episodes == null && refreshedMedia.episodes != null) {
+              metadataUpdates.episodes = refreshedMedia.episodes;
+            }
+            if (
+              media.episodeDuration == null &&
+              refreshedMedia.episodeDuration != null
+            ) {
+              metadataUpdates.episodeDuration = refreshedMedia.episodeDuration;
+            }
+            if (media.chapters == null && refreshedMedia.chapters != null) {
+              metadataUpdates.chapters = refreshedMedia.chapters;
+            }
+            if (media.volumes == null && refreshedMedia.volumes != null) {
+              metadataUpdates.volumes = refreshedMedia.volumes;
+            }
+
+            if (Object.keys(metadataUpdates).length > 0) {
+              await MediaBase.updateOne(
+                { _id: media._id },
+                { $set: metadataUpdates }
+              );
+              Object.assign(media, metadataUpdates);
+            }
+          }
+        }
+      }
+    }
+
     if (
       !media &&
       (normalizedMediaType === 'anime' ||

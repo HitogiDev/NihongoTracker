@@ -827,6 +827,7 @@ const swaggerDocument = {
                   mediaId: { type: 'string' },
                   type: { type: 'string' },
                   completed: { type: 'boolean' },
+                  source: { type: 'string', enum: ['manual', 'auto'] },
                 },
               },
             },
@@ -3214,12 +3215,15 @@ const swaggerDocument = {
 const router = Router();
 
 router.use('/', swaggerUi.serve);
-router.get('/', swaggerUi.setup(swaggerDocument, {
-  customCss: `
+router.get(
+  '/',
+  swaggerUi.setup(swaggerDocument, {
+    customCss: `
     .swagger-ui .topbar { display: none; }
     .swagger-ui .info .title { font-size: 2rem; }
   `,
-  customSiteTitle: 'NihongoTracker API Docs',
-}));
+    customSiteTitle: 'NihongoTracker API Docs',
+  })
+);
 
 export default router;

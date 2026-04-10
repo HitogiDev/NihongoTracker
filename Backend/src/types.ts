@@ -69,6 +69,7 @@ export interface IUserMediaStatus extends Document {
   type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'tv show';
   completed: boolean;
   completedAt?: Date | null;
+  autoCompleteSuppressed?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -307,6 +308,7 @@ export interface IMediaDocument {
   lastLogDate?: Date;
   isCompleted?: boolean;
   completedAt?: Date | null;
+  autoCompleteSuppressed?: boolean;
 }
 
 export interface IImportLogs {
@@ -355,6 +357,7 @@ export interface IEditedFields {
   pages?: number;
   chars?: number;
   time?: number;
+  volume?: number;
   xp?: number;
 }
 
@@ -425,6 +428,7 @@ export interface ILog extends Document {
   description?: string;
   editedFields?: IEditedFields | null;
   episodes?: number;
+  volume?: number;
   pages?: number;
   chars?: number;
   time?: number;

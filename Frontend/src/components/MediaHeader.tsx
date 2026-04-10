@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   getAverageColorFn,
   getMediaFn,
@@ -49,6 +49,7 @@ export default function MediaHeader() {
     !!user?.username && !!targetUsername && user.username === targetUsername;
 
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [completionStatus, setCompletionStatus] = useState({
@@ -115,6 +116,29 @@ export default function MediaHeader() {
     });
   }, [media?.isCompleted, media?.completedAt]);
 
+  useEffect(() => {
+    if (!media) return;
+
+    const mediaTitle =
+      media.title.contentTitleEnglish ||
+      media.title.contentTitleRomaji ||
+      media.title.contentTitleNative;
+
+    const section = pathname.endsWith('/reviews')
+      ? 'Reviews'
+      : pathname.endsWith('/social')
+        ? 'Social'
+        : 'Overview';
+
+    document.title = `${mediaTitle} • ${section} • NihongoTracker`;
+  }, [
+    media,
+    pathname,
+    media?.title.contentTitleEnglish,
+    media?.title.contentTitleRomaji,
+    media?.title.contentTitleNative,
+  ]);
+
   const { mutate: toggleCompletionStatus, isPending: isUpdatingCompletion } =
     useMutation({
       mutationFn: (completed: boolean) => {
@@ -125,6 +149,7 @@ export default function MediaHeader() {
           mediaId: media.contentId,
           type: media.type,
           completed,
+          source: 'manual',
         });
       },
       onSuccess: (data) => {
@@ -132,6 +157,7 @@ export default function MediaHeader() {
           isCompleted: data.isCompleted,
           completedAt: data.completedAt,
         });
+
         queryClient.setQueryData<IMediaDocument | undefined>(
           ['media', mediaId, mediaType, targetUsername],
           (prev) =>
@@ -140,6 +166,7 @@ export default function MediaHeader() {
                   ...prev,
                   isCompleted: data.isCompleted,
                   completedAt: data.completedAt,
+                  autoCompleteSuppressed: data.autoCompleteSuppressed,
                 }
               : prev
         );

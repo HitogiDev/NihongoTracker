@@ -12,6 +12,7 @@ const UserMediaStatusSchema = new Schema<IUserMediaStatus>(
     },
     completed: { type: Boolean, default: false },
     completedAt: { type: Date, default: null },
+    autoCompleteSuppressed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -24,14 +24,23 @@ const LinkTypeObject = {
   reading: 3,
 } as const;
 
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
+
 interface IJitenDeck {
   deckId: number;
-  creationDate: Date;
+  creationDate: string;
+  releaseDate: string | null;
   coverName: string;
   mediaType: number;
   originalTitle: string;
-  romajiTitle: string;
-  englishTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
   characterCount: number;
   wordCount: number;
   uniqueWordCount: number;
@@ -40,25 +49,45 @@ interface IJitenDeck {
   uniqueKanjiUsedOnceCount: number;
   difficulty: number;
   difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
   sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
   averageSentenceLength: number;
   parentDeckId: number | null;
-  links: Array<{
-    linkId: number;
-    linkType: number;
-    url: string;
-  }>;
+  links: IJitenDeckLink[];
+  aliases: string[];
   childrenDeckCount: number;
-  selectedWordOcurrences: number;
+  selectedWordOccurrences: number;
   dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
 }
 
 interface IJitenResponse {
   data: {
-    parentDeck: IJitenDeck;
+    parentDeck: IJitenDeck | null;
     mainDeck: IJitenDeck;
     subDecks: IJitenDeck[];
   };
+  totalItems: number;
+  pageSize: number;
+  currentOffset: number;
 }
 
 interface IAddSessionHistoryBody {

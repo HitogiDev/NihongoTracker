@@ -204,6 +204,7 @@ export async function getRecentLogs(
           type: 1,
           time: 1,
           episodes: 1,
+          volume: 1,
           mediaId: 1,
           manabeId: 1,
           media: 1,
@@ -325,6 +326,7 @@ export async function getGlobalFeed(
           type: 1,
           xp: 1,
           episodes: 1,
+          volume: 1,
           pages: 1,
           chars: 1,
           time: 1,
@@ -740,6 +742,7 @@ export async function getUserLogs(
           xp: 1,
           description: 1,
           episodes: 1,
+          volume: 1,
           pages: 1,
           chars: 1,
           time: 1,
@@ -827,6 +830,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
           type: 1,
           description: 1,
           episodes: 1,
+          volume: 1,
           pages: 1,
           chars: 1,
           time: 1,
@@ -855,6 +859,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
         foundLog.mediaData
       ),
       episodes: foundLog.episodes,
+      volume: foundLog.volume,
       pages: foundLog.pages,
       chars: foundLog.chars,
       time: foundLog.time,
@@ -943,6 +948,7 @@ export async function updateLog(
     date,
     mediaId,
     episodes,
+    volume,
     pages,
     chars,
     type,
@@ -960,6 +966,7 @@ export async function updateLog(
 
     const validKeys: (keyof IEditedFields)[] = [
       'episodes',
+      'volume',
       'pages',
       'chars',
       'time',
@@ -983,6 +990,7 @@ export async function updateLog(
     log.date = date !== undefined ? date : log.date;
     log.mediaId = mediaId !== undefined ? mediaId : log.mediaId;
     log.episodes = episodes !== undefined ? episodes : log.episodes;
+    log.volume = volume !== undefined ? volume : log.volume;
     log.pages = pages !== undefined ? pages : log.pages;
     log.chars = chars !== undefined ? chars : log.chars;
     log.type = type !== undefined ? type : log.type;
@@ -1015,8 +1023,18 @@ export async function adminUpdateLog(
   res: Response,
   next: NextFunction
 ) {
-  const { description, time, date, mediaId, episodes, pages, chars, type, xp } =
-    req.body;
+  const {
+    description,
+    time,
+    date,
+    mediaId,
+    episodes,
+    volume,
+    pages,
+    chars,
+    type,
+    xp,
+  } = req.body;
 
   try {
     const log: ILog | null = await Log.findById(
@@ -1027,6 +1045,7 @@ export async function adminUpdateLog(
 
     const validKeys: (keyof IEditedFields)[] = [
       'episodes',
+      'volume',
       'pages',
       'chars',
       'time',
@@ -1050,6 +1069,7 @@ export async function adminUpdateLog(
     log.date = date !== undefined ? date : log.date;
     log.mediaId = mediaId !== undefined ? mediaId : log.mediaId;
     log.episodes = episodes !== undefined ? episodes : log.episodes;
+    log.volume = volume !== undefined ? volume : log.volume;
     log.pages = pages !== undefined ? pages : log.pages;
     log.chars = chars !== undefined ? chars : log.chars;
     log.type = type !== undefined ? type : log.type;
@@ -1094,6 +1114,7 @@ export async function createLog(
     description,
     pages,
     episodes,
+    volume,
     xp,
     time,
     date,
@@ -1196,6 +1217,7 @@ export async function createLog(
       mediaId: logMedia ? logMedia.contentId : mediaId,
       pages,
       episodes,
+      volume,
       xp,
       description,
       private: false,

@@ -1,5 +1,10 @@
 import { Link, useOutletContext } from 'react-router-dom';
-import { OutletMediaContextType, ILog, IMediaReview } from '../types';
+import {
+  OutletMediaContextType,
+  ILog,
+  IMediaDocument,
+  IMediaReview,
+} from '../types';
 import ProgressChart from '../components/ProgressChart';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,10 +15,11 @@ import {
   editMediaReviewFn,
   toggleMediaReviewLikeFn,
   deleteMediaReviewFn,
+  updateMediaCompletionStatusFn,
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
 import LogCard from '../components/LogCard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-toastify';
@@ -47,6 +53,43 @@ const difficultyLevels = [
   ['Expert', '#e91e63'],
 ];
 
+const parseVolumeNumberFromTitle = (
+  title: string | null | undefined
+): number | null => {
+  if (!title) return null;
+  const match = title.match(/(\d+)/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getDeckForVolume = (
+  subDecks:
+    | Array<{
+        originalTitle: string;
+        romajiTitle: string | null;
+        englishTitle: string | null;
+        characterCount: number;
+      }>
+    | undefined,
+  volume: number
+) => {
+  const decks = subDecks ?? [];
+  const byTitle = decks.find((deck) => {
+    const candidates = [
+      deck.originalTitle,
+      deck.romajiTitle,
+      deck.englishTitle,
+    ];
+    return candidates.some(
+      (candidate) => parseVolumeNumberFromTitle(candidate) === volume
+    );
+  });
+
+  if (byTitle) return byTitle;
+  return decks[volume - 1];
+};
+
 function MediaDetails() {
   const { mediaDocument, mediaType, username } =
     useOutletContext<OutletMediaContextType>();
@@ -72,6 +115,7 @@ function MediaDetails() {
   const [chartView, setChartView] = useState<'line' | 'bar'>('line');
   const [editingReview, setEditingReview] = useState<IMediaReview | null>(null);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+  const autoCompletionTriggerRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -339,6 +383,33 @@ function MediaDetails() {
     },
   });
 
+  const { mutate: autoCompleteMedia } = useMutation({
+    mutationFn: (payload: {
+      mediaId: string;
+      type: IMediaDocument['type'];
+      completed: boolean;
+      source?: 'manual' | 'auto';
+    }) => updateMediaCompletionStatusFn(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey[0] === 'media' &&
+          query.queryKey[1] === data.mediaId &&
+          query.queryKey[2] === data.type,
+      });
+      queryClient.invalidateQueries({ queryKey: ['ImmersionList'] });
+      if (currentUser?.username) {
+        queryClient.invalidateQueries({
+          queryKey: ['ImmersionList', currentUser.username],
+        });
+      }
+    },
+    onError: () => {
+      autoCompletionTriggerRef.current = null;
+    },
+  });
+
   // Memoize arrays to prevent recalculation
   const logsArray = Array.isArray(logs) ? (logs as ILog[]) : [];
   const myLogsArray = Array.isArray(myLogs) ? (myLogs as ILog[]) : [];
@@ -431,6 +502,59 @@ function MediaDetails() {
       0
     );
     const totalCharCount = mediaDocument?.jiten?.mainDeck.characterCount || 0;
+    const totalSeriesVolumes =
+      mediaDocument?.volumes ?? mediaDocument?.jiten?.subDecks?.length ?? 0;
+    const latestVolumeLog = sortedLogs.find(
+      (log) => typeof log.volume === 'number' && log.volume > 0
+    );
+    const baseVolume = latestVolumeLog?.volume
+      ? Math.floor(latestVolumeLog.volume)
+      : logsArray.length > 0 &&
+          (mediaDocument?.type === 'manga' || mediaDocument?.type === 'reading')
+        ? 1
+        : null;
+
+    const baseVolumeDeck = baseVolume
+      ? getDeckForVolume(mediaDocument?.jiten?.subDecks, baseVolume)
+      : undefined;
+    const baseVolumeCharsRead = baseVolume
+      ? logsArray
+          .filter((log) => log.volume === baseVolume)
+          .reduce((acc, log) => acc + (log.chars ?? 0), 0)
+      : 0;
+
+    const shouldAdvanceVolume =
+      !!baseVolume &&
+      (baseVolumeDeck?.characterCount ?? 0) > 0 &&
+      baseVolumeCharsRead >= (baseVolumeDeck?.characterCount ?? 0) &&
+      totalSeriesVolumes > 0 &&
+      baseVolume < totalSeriesVolumes;
+
+    const currentVolume = baseVolume
+      ? shouldAdvanceVolume
+        ? baseVolume + 1
+        : baseVolume
+      : null;
+
+    const currentVolumeDeck = currentVolume
+      ? getDeckForVolume(mediaDocument?.jiten?.subDecks, currentVolume)
+      : undefined;
+
+    const currentVolumeCharsRead = currentVolume
+      ? logsArray
+          .filter((log) => log.volume === currentVolume)
+          .reduce((acc, log) => acc + (log.chars ?? 0), 0)
+      : 0;
+    const currentVolumeCharCount = currentVolumeDeck?.characterCount ?? 0;
+    const currentVolumeReadingPercentage =
+      currentVolumeCharCount > 0
+        ? Math.min((currentVolumeCharsRead / currentVolumeCharCount) * 100, 100)
+        : 0;
+    const currentVolumeRemainingChars = Math.max(
+      currentVolumeCharCount - currentVolumeCharsRead,
+      0
+    );
+
     const readingPercentage =
       totalCharCount > 0
         ? Math.min((totalCharsRead / totalCharCount) * 100, 100)
@@ -456,6 +580,10 @@ function MediaDetails() {
     const remainingChars = Math.max(totalCharCount - totalCharsRead, 0);
     const recentEstimatedTimeToFinish =
       recentReadingSpeed > 0 ? remainingChars / recentReadingSpeed : 0; // in hours
+    const recentEstimatedTimeToFinishCurrentVolume =
+      recentReadingSpeed > 0
+        ? currentVolumeRemainingChars / recentReadingSpeed
+        : 0;
 
     // Calculate my stats for comparison
     const myTotalXp = myLogsArray.reduce((acc, log) => acc + log.xp, 0);
@@ -482,11 +610,18 @@ function MediaDetails() {
       totalTime,
       totalCharsRead,
       totalCharCount,
+      totalSeriesVolumes,
+      currentVolume,
+      currentVolumeCharsRead,
+      currentVolumeCharCount,
+      currentVolumeReadingPercentage,
+      currentVolumeRemainingChars,
       readingPercentage,
       readingSpeed,
       recentLogs,
       recentReadingSpeed,
       recentEstimatedTimeToFinish,
+      recentEstimatedTimeToFinishCurrentVolume,
       myTotalXp,
       myTotalTime,
       myTotalCharsRead,
@@ -502,11 +637,18 @@ function MediaDetails() {
     totalTime,
     totalCharsRead,
     totalCharCount,
+    totalSeriesVolumes,
+    currentVolume,
+    currentVolumeCharsRead,
+    currentVolumeCharCount,
+    currentVolumeReadingPercentage,
+    currentVolumeRemainingChars,
     readingPercentage,
     readingSpeed,
     recentLogs,
     recentReadingSpeed,
     recentEstimatedTimeToFinish,
+    recentEstimatedTimeToFinishCurrentVolume,
     myTotalXp,
     myTotalTime,
     myTotalCharsRead,
@@ -517,6 +659,82 @@ function MediaDetails() {
 
   const percentRemaining =
     totalCharCount > 0 ? Math.max(0, 100 - readingPercentage) : 0;
+
+  const isVolumeBasedMedia =
+    mediaDocument?.type === 'manga' || mediaDocument?.type === 'reading';
+  const isLastVolumeCompleted =
+    isVolumeBasedMedia &&
+    totalSeriesVolumes > 0 &&
+    !!currentVolume &&
+    currentVolume >= totalSeriesVolumes &&
+    currentVolumeCharCount > 0 &&
+    currentVolumeReadingPercentage >= 100;
+  const isCharacterProgressCompleted =
+    (mediaDocument?.type === 'vn' ||
+      mediaDocument?.type === 'manga' ||
+      mediaDocument?.type === 'reading') &&
+    totalCharCount > 0 &&
+    readingPercentage >= 100;
+  const isAutoCompleteSuppressed =
+    mediaDocument?.autoCompleteSuppressed ?? false;
+  const shouldAutoCompleteMedia =
+    !mediaDocument?.isCompleted &&
+    !isAutoCompleteSuppressed &&
+    (isLastVolumeCompleted || isCharacterProgressCompleted);
+  const effectiveIsCompleted =
+    !!mediaDocument?.isCompleted || shouldAutoCompleteMedia;
+  const isOwnProfile =
+    !!currentUser?.username && (!username || currentUser.username === username);
+  const useCurrentVolumeProgress =
+    isVolumeBasedMedia && currentVolumeCharCount > 0;
+  const progressCharsRead = isVolumeBasedMedia
+    ? currentVolumeCharsRead
+    : totalCharsRead;
+  const progressTotalChars = isVolumeBasedMedia
+    ? currentVolumeCharCount
+    : totalCharCount;
+  const progressPercentage = isVolumeBasedMedia
+    ? currentVolumeReadingPercentage
+    : readingPercentage;
+  const progressRemainingChars = isVolumeBasedMedia
+    ? currentVolumeRemainingChars
+    : remainingChars;
+  const progressPercentRemaining = isVolumeBasedMedia
+    ? Math.max(0, 100 - currentVolumeReadingPercentage)
+    : percentRemaining;
+  const progressEstimatedTimeToFinish = isVolumeBasedMedia
+    ? recentEstimatedTimeToFinishCurrentVolume
+    : recentEstimatedTimeToFinish;
+
+  useEffect(() => {
+    if (
+      !isOwnProfile ||
+      !shouldAutoCompleteMedia ||
+      !mediaDocument?.contentId ||
+      !mediaDocument?.type
+    ) {
+      return;
+    }
+
+    const mediaKey = `${mediaDocument.type}:${mediaDocument.contentId}`;
+    if (autoCompletionTriggerRef.current === mediaKey) {
+      return;
+    }
+
+    autoCompletionTriggerRef.current = mediaKey;
+    autoCompleteMedia({
+      mediaId: mediaDocument.contentId,
+      type: mediaDocument.type,
+      completed: true,
+      source: 'auto',
+    });
+  }, [
+    autoCompleteMedia,
+    isOwnProfile,
+    mediaDocument?.contentId,
+    mediaDocument?.type,
+    shouldAutoCompleteMedia,
+  ]);
 
   // Get difficulty info
   const difficultyLevel = mediaDocument?.jiten?.mainDeck.difficulty;
@@ -877,7 +1095,8 @@ function MediaDetails() {
                 </>
               )}
 
-            {mediaDocument?.type === 'anime' && (
+            {(mediaDocument?.type === 'anime' ||
+              mediaDocument?.type === 'tv show') && (
               <ComparisonStat
                 label="Episodes Watched"
                 myValue={myStats.totalEpisodes}
@@ -955,19 +1174,16 @@ function MediaDetails() {
                       >
                         <span
                           className={`badge ${
-                            mediaDocument.isCompleted
+                            effectiveIsCompleted
                               ? 'badge-success'
                               : 'badge-outline'
                           } ${
-                            mediaDocument.isCompleted &&
-                            mediaDocument.completedAt
+                            effectiveIsCompleted && mediaDocument.completedAt
                               ? 'cursor-help'
                               : ''
                           }`}
                         >
-                          {mediaDocument.isCompleted
-                            ? 'Completed'
-                            : 'In progress'}
+                          {effectiveIsCompleted ? 'Completed' : 'In progress'}
                         </span>
                       </div>
                     </div>
@@ -1006,46 +1222,50 @@ function MediaDetails() {
                     </div>
                   )}
 
-                  {mediaType === 'anime' && (
+                  {(mediaType === 'anime' || mediaType === 'tv show') && (
                     <>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-base-content/70 min-w-20">
                           Episodes:
                         </span>
-                        <span>{mediaDocument?.episodes || 'Unknown'}</span>
+                        <span>{mediaDocument?.episodes ?? 'Unknown'}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-base-content/70 min-w-20">
-                          Duration:
-                        </span>
-                        <span>
-                          {mediaDocument?.episodeDuration &&
-                          mediaDocument.episodeDuration >= 60
-                            ? `${Math.floor(mediaDocument.episodeDuration / 60)}h `
-                            : ''}
-                          {mediaDocument?.episodeDuration &&
-                          mediaDocument.episodeDuration % 60 > 0
-                            ? `${mediaDocument.episodeDuration % 60}m`
-                            : 'Unknown'}
-                        </span>
-                      </div>
+                      {mediaType === 'anime' && (
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-base-content/70 min-w-20">
+                            Duration:
+                          </span>
+                          <span>
+                            {mediaDocument?.episodeDuration &&
+                            mediaDocument.episodeDuration >= 60
+                              ? `${Math.floor(mediaDocument.episodeDuration / 60)}h `
+                              : ''}
+                            {mediaDocument?.episodeDuration &&
+                            mediaDocument.episodeDuration % 60 > 0
+                              ? `${mediaDocument.episodeDuration % 60}m`
+                              : 'Unknown'}
+                          </span>
+                        </div>
+                      )}
                     </>
                   )}
 
-                  {mediaType === 'manga' && (
+                  {(mediaType === 'manga' || mediaType === 'reading') && (
                     <>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-base-content/70 min-w-20">
                           Volumes:
                         </span>
-                        <span>{mediaDocument?.volumes || 'Unknown'}</span>
+                        <span>{mediaDocument?.volumes ?? 'Unknown'}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-base-content/70 min-w-20">
-                          Chapters:
-                        </span>
-                        <span>{mediaDocument?.chapters || 'Unknown'}</span>
-                      </div>
+                      {mediaType === 'manga' && (
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-base-content/70 min-w-20">
+                            Chapters:
+                          </span>
+                          <span>{mediaDocument?.chapters ?? 'Unknown'}</span>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -1255,7 +1475,8 @@ function MediaDetails() {
                     </div>
                   )}
 
-                  {mediaDocument?.type === 'anime' &&
+                  {(mediaDocument?.type === 'anime' ||
+                    mediaDocument?.type === 'tv show') &&
                     logsArray.length > 0 &&
                     logsArray.some(
                       (log) => log.episodes && log.episodes > 0
@@ -1333,6 +1554,60 @@ function MediaDetails() {
                       </div>
                     )}
 
+                  {(mediaDocument?.type === 'manga' ||
+                    mediaDocument?.type === 'reading') &&
+                    logsArray.length > 0 && (
+                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="card-body">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
+                                Current Volume
+                              </h3>
+                              <p className="text-3xl font-bold text-accent mt-1">
+                                {currentVolume ?? '?'}
+                                {totalSeriesVolumes > 0
+                                  ? `/${totalSeriesVolumes}`
+                                  : ''}
+                              </p>
+                            </div>
+                            <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                              <svg
+                                className="w-6 h-6 text-accent"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M12 6v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                ></path>
+                              </svg>
+                            </div>
+                          </div>
+
+                          {currentVolumeCharCount > 0 &&
+                            !effectiveIsCompleted && (
+                              <div className="mt-3 space-y-2">
+                                <progress
+                                  className="progress progress-accent w-full"
+                                  value={currentVolumeReadingPercentage}
+                                  max="100"
+                                ></progress>
+                                <p className="text-xs text-base-content/60">
+                                  {numberWithCommas(currentVolumeCharsRead)} /{' '}
+                                  {numberWithCommas(currentVolumeCharCount)}{' '}
+                                  chars (
+                                  {currentVolumeReadingPercentage.toFixed(1)}%)
+                                </p>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    )}
+
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
@@ -1371,22 +1646,25 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
-                    totalCharCount > 0 && (
+                    progressTotalChars > 0 &&
+                    !effectiveIsCompleted && (
                       <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
                               <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Characters Remaining
+                                {useCurrentVolumeProgress
+                                  ? 'Volume Characters Remaining'
+                                  : 'Characters Remaining'}
                               </h3>
                               <p className="text-3xl font-bold text-info mt-1">
-                                {remainingChars > 0
-                                  ? numberWithCommas(remainingChars)
+                                {progressRemainingChars > 0
+                                  ? numberWithCommas(progressRemainingChars)
                                   : 'Completed'}
                               </p>
                               <p className="text-xs text-base-content/60">
-                                {remainingChars > 0
-                                  ? `${percentRemaining.toFixed(1)}% left`
+                                {progressRemainingChars > 0
+                                  ? `${progressPercentRemaining.toFixed(1)}% left`
                                   : 'All caught up'}
                               </p>
                             </div>
@@ -1452,10 +1730,14 @@ function MediaDetails() {
                 {(mediaDocument?.type === 'vn' ||
                   mediaDocument?.type === 'manga' ||
                   mediaDocument?.type === 'reading') &&
-                  mediaDocument?.jiten?.mainDeck.characterCount &&
-                  totalCharCount > 0 && (
+                  progressTotalChars > 0 &&
+                  !effectiveIsCompleted && (
                     <div className="mt-6 space-y-4">
-                      <div className="divider">Reading Progress</div>
+                      <div className="divider">
+                        {useCurrentVolumeProgress
+                          ? `Volume ${currentVolume ?? '?'} Progress`
+                          : 'Reading Progress'}
+                      </div>
 
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
@@ -1463,21 +1745,25 @@ function MediaDetails() {
                             Completion
                           </span>
                           <span className="text-sm font-bold">
-                            {readingPercentage.toFixed(1)}%
+                            {progressPercentage.toFixed(1)}%
                           </span>
                         </div>
                         <progress
                           className="progress progress-primary w-full"
-                          value={readingPercentage}
+                          value={progressPercentage}
                           max="100"
                         ></progress>
                         <div className="flex justify-between text-xs text-base-content/60">
-                          <span>{numberWithCommas(totalCharsRead)} chars</span>
-                          <span>{numberWithCommas(totalCharCount)} chars</span>
+                          <span>
+                            {numberWithCommas(progressCharsRead)} chars
+                          </span>
+                          <span>
+                            {numberWithCommas(progressTotalChars)} chars
+                          </span>
                         </div>
                       </div>
 
-                      {totalCharCount > 0 && (
+                      {progressTotalChars > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {readingSpeed > 0 &&
                             recentReadingSpeed > 0 &&
@@ -1500,22 +1786,24 @@ function MediaDetails() {
                             )}
 
                           {readingSpeed > 0 &&
-                            recentEstimatedTimeToFinish > 0 &&
-                            readingPercentage < 100 && (
+                            progressEstimatedTimeToFinish > 0 &&
+                            progressPercentage < 100 && (
                               <div className="card bg-base-100 shadow-md">
                                 <div className="card-body">
                                   <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
                                     Time to Finish
                                   </h3>
                                   <p className="text-2xl font-bold mt-1">
-                                    {recentEstimatedTimeToFinish >= 1
-                                      ? Math.round(recentEstimatedTimeToFinish)
+                                    {progressEstimatedTimeToFinish >= 1
+                                      ? Math.round(
+                                          progressEstimatedTimeToFinish
+                                        )
                                       : Math.round(
-                                          recentEstimatedTimeToFinish * 60
+                                          progressEstimatedTimeToFinish * 60
                                         )}
                                   </p>
                                   <p className="text-xs text-base-content/60">
-                                    {recentEstimatedTimeToFinish >= 1
+                                    {progressEstimatedTimeToFinish >= 1
                                       ? 'hours'
                                       : 'minutes'}{' '}
                                     (recent pace)

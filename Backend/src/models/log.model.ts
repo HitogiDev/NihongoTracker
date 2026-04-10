@@ -7,6 +7,7 @@ const hasPositiveValue = (value?: number | null) =>
 const editedFieldsSchema = new Schema<IEditedFields>(
   {
     episodes: { type: Number },
+    volume: { type: Number },
     pages: { type: Number },
     chars: { type: Number },
     time: { type: Number },
@@ -54,6 +55,10 @@ const LogSchema = new Schema<ILog>(
         return this.type === 'anime';
       },
       default: 1,
+    },
+    volume: {
+      type: Number,
+      min: 1,
     },
     pages: {
       type: Number,

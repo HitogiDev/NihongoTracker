@@ -242,6 +242,7 @@ export interface IMatchMediaLog {
   mediaId?: string;
   date: Date;
   episodes?: number;
+  volume?: number;
   pages?: number;
   chars?: number;
   time?: number;
@@ -262,6 +263,7 @@ export interface updateUserRequest {
 
 export interface IEditedFields {
   episodes?: number;
+  volume?: number;
   pages?: number;
   chars?: number;
   time?: number;
@@ -275,6 +277,7 @@ export interface IUpdateLogRequest {
   type?: ILog['type'];
   contentId?: number;
   episodes?: number;
+  volume?: number;
   pages?: number;
   chars?: number;
   mediaId?: string;
@@ -347,6 +350,7 @@ export interface ILog {
     | 'other';
   description: string;
   episodes?: number;
+  volume?: number;
   pages?: number;
   chars?: number;
   time?: number;
@@ -501,6 +505,7 @@ export interface IMediaDocument {
   lastLogDate?: string;
   isCompleted?: boolean;
   completedAt?: string | Date | null;
+  autoCompleteSuppressed?: boolean;
 }
 
 export interface IAverageColor {
@@ -672,14 +677,23 @@ export interface ILongTermGoalsResponse {
   goals: ILongTermGoal[];
 }
 
+interface IJitenDeckLink {
+  linkId: number;
+  linkType: number;
+  url: string;
+  deckId: number;
+}
+
 interface IJitenDeck {
   deckId: number;
-  creationDate: Date;
+  creationDate: string;
+  releaseDate: string | null;
   coverName: string;
   mediaType: number;
   originalTitle: string;
-  romajiTitle: string;
-  englishTitle: string;
+  romajiTitle: string | null;
+  englishTitle: string | null;
+  description: string;
   characterCount: number;
   wordCount: number;
   uniqueWordCount: number;
@@ -688,21 +702,38 @@ interface IJitenDeck {
   uniqueKanjiUsedOnceCount: number;
   difficulty: number;
   difficultyRaw: number;
+  difficultyOverride: number;
+  difficultyAlgorithmic: number;
   sentenceCount: number;
+  speechDuration: number;
+  speechMoraCount: number;
+  speechSpeed: number;
   averageSentenceLength: number;
   parentDeckId: number | null;
-  links: Array<{
-    linkId: number;
-    linkType: number;
-    url: string;
-  }>;
+  links: IJitenDeckLink[];
+  aliases: string[];
   childrenDeckCount: number;
-  selectedWordOcurrences: number;
+  selectedWordOccurrences: number;
   dialoguePercentage: number;
+  hideDialoguePercentage: boolean;
+  coverage: number;
+  uniqueCoverage: number;
+  youngCoverage: number;
+  youngUniqueCoverage: number;
+  externalRating: number;
+  exampleSentence: string | null;
+  genres: number[];
+  tags: unknown[];
+  relationships: unknown[];
+  status: string | null;
+  isFavourite: boolean | null;
+  isIgnored: boolean | null;
+  distinctVoterCount: number;
+  userAdjustment: number;
 }
 
 export interface IJitenResponse {
-  parentDeck: IJitenDeck;
+  parentDeck: IJitenDeck | null;
   mainDeck: IJitenDeck;
   subDecks: IJitenDeck[];
 }

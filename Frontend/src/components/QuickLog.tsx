@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { ICreateLog, ILog, IMediaDocument, youtubeChannelInfo } from '../types';
-import { createLogFn } from '../api/trackerApi';
+import { createLogFn, getMediaFn, getUserLogsFn } from '../api/trackerApi';
 import useSearch from '../hooks/useSearch';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { validateQuickLogData } from '../utils/validation';
 import { Link } from 'react-router-dom';
+import { useUserDataStore } from '../store/userData';
 
 interface QuickLogProps {
   open: boolean;
@@ -22,11 +23,77 @@ export interface QuickLogInitialValues {
   type?: ILog['type'];
   description?: string;
   episodes?: number;
+  volume?: number;
   chars?: number;
   pages?: number;
   hours?: number;
   minutes?: number;
 }
+
+const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
+
+const getLastLoggedVolumeKey = (type: 'manga' | 'reading', mediaId: string) =>
+  `${LAST_LOGGED_VOLUME_KEY_PREFIX}:${type}:${mediaId}`;
+
+const readLastLoggedVolume = (
+  type: 'manga' | 'reading',
+  mediaId: string
+): number | undefined => {
+  const stored = localStorage.getItem(getLastLoggedVolumeKey(type, mediaId));
+  if (!stored) return undefined;
+  const parsed = Number(stored);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.floor(parsed);
+};
+
+const writeLastLoggedVolume = (
+  type: 'manga' | 'reading',
+  mediaId: string,
+  volume: number
+) => {
+  if (!Number.isFinite(volume) || volume <= 0) return;
+  localStorage.setItem(
+    getLastLoggedVolumeKey(type, mediaId),
+    String(Math.floor(volume))
+  );
+};
+
+const parseVolumeNumberFromTitle = (
+  title: string | null | undefined
+): number | null => {
+  if (!title) return null;
+  const match = title.match(/(\d+)/);
+  if (!match) return null;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getDeckForVolume = (
+  subDecks:
+    | Array<{
+        originalTitle: string;
+        romajiTitle: string | null;
+        englishTitle: string | null;
+        characterCount: number;
+      }>
+    | undefined,
+  volume: number
+) => {
+  const decks = subDecks ?? [];
+  const byTitle = decks.find((deck) => {
+    const candidates = [
+      deck.originalTitle,
+      deck.romajiTitle,
+      deck.englishTitle,
+    ];
+    return candidates.some(
+      (candidate) => parseVolumeNumberFromTitle(candidate) === volume
+    );
+  });
+
+  if (byTitle) return byTitle;
+  return decks[volume - 1];
+};
 
 function QuickLog({
   open,
@@ -36,9 +103,16 @@ function QuickLog({
   initialValues,
   allowedTypes,
 }: QuickLogProps) {
+  const { user } = useUserDataStore();
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
   const [logDescription, setLogDescription] = useState<string>('');
   const [episodes, setEpisodes] = useState<number>(0);
+  const [loggedVolume, setLoggedVolume] = useState<number | undefined>(
+    undefined
+  );
+  const [seriesVolumes, setSeriesVolumes] = useState<number | undefined>(
+    undefined
+  );
   const [chars, setChars] = useState<number>(0);
   const [pages, setPages] = useState<number>(0);
   const [hours, setHours] = useState<number>(0);
@@ -55,6 +129,53 @@ function QuickLog({
   );
   const suggestionRef = useRef<HTMLDivElement>(null);
   const lastSeedRef = useRef<string | null>(null);
+  const pendingVolumeRef = useRef<{
+    type: ILog['type'] | null;
+    mediaId?: string;
+    volume?: number;
+  } | null>(null);
+
+  const resolveNextRememberedVolume = async (
+    type: 'manga' | 'reading',
+    mediaId: string,
+    submittedVolume: number
+  ): Promise<number> => {
+    if (!user?.username) return submittedVolume;
+
+    try {
+      const [mediaData, userLogs] = await Promise.all([
+        getMediaFn(mediaId, type, user.username),
+        getUserLogsFn(user.username, {
+          mediaId,
+          type,
+          limit: 0,
+          page: 1,
+        }),
+      ]);
+
+      const logsArray = Array.isArray(userLogs) ? userLogs : [];
+      const subDecks = mediaData?.jiten?.subDecks;
+      const currentDeck = getDeckForVolume(subDecks, submittedVolume);
+      const currentVolumeCharCount = currentDeck?.characterCount ?? 0;
+
+      if (currentVolumeCharCount <= 0) return submittedVolume;
+
+      const currentVolumeCharsRead = logsArray
+        .filter((log) => log.volume === submittedVolume)
+        .reduce((acc, log) => acc + (log.chars ?? 0), 0);
+
+      if (currentVolumeCharsRead < currentVolumeCharCount) {
+        return submittedVolume;
+      }
+
+      const totalVolumes =
+        mediaData?.volumes ?? mediaData?.jiten?.subDecks?.length ?? 0;
+      const canAdvance = totalVolumes > 0 && submittedVolume < totalVolumes;
+      return canAdvance ? submittedVolume + 1 : submittedVolume;
+    } catch {
+      return submittedVolume;
+    }
+  };
 
   const queryClient = useQueryClient();
   const totalMinutes = hours * 60 + minutes;
@@ -62,6 +183,8 @@ function QuickLog({
     totalMinutes > 0 || episodes > 0 || chars > 0 || pages > 0;
 
   useEffect(() => {
+    if (!open) return;
+
     // When media data is provided, auto-populate the form fields
     if (media) {
       setLogType(media.type);
@@ -69,6 +192,16 @@ function QuickLog({
       setContentId(media.contentId);
       setCoverImage(media.contentImage);
       setIsAdultMedia(media.isAdult);
+      setSeriesVolumes(media.volumes);
+
+      if (
+        (media.type === 'manga' || media.type === 'reading') &&
+        media.contentId
+      ) {
+        setLoggedVolume(readLastLoggedVolume(media.type, media.contentId));
+      } else {
+        setLoggedVolume(undefined);
+      }
 
       // If it's anime, set episode duration (from API or default to 24 minutes)
       if (media.type === 'anime') {
@@ -93,7 +226,7 @@ function QuickLog({
         setMinutes(newMinutes);
       }
     }
-  }, [media]); // Re-run when media changes
+  }, [media, open]); // Re-run when media changes or modal reopens
 
   // Reset custom duration when log type changes
   useEffect(() => {
@@ -116,6 +249,8 @@ function QuickLog({
     }
     if (logType !== 'manga' && logType !== 'reading') {
       setPages(0);
+      setLoggedVolume(undefined);
+      setSeriesVolumes(undefined);
     }
     if ((logType === 'anime' || logType === 'tv show') && episodes > 0) {
       // Don't reset time for anime as it's auto-calculated
@@ -165,6 +300,9 @@ function QuickLog({
     if (Object.prototype.hasOwnProperty.call(initialValues, 'episodes')) {
       setEpisodes(initialValues.episodes ?? 0);
     }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'volume')) {
+      setLoggedVolume(initialValues.volume);
+    }
     if (Object.prototype.hasOwnProperty.call(initialValues, 'chars')) {
       setChars(initialValues.chars ?? 0);
     }
@@ -181,7 +319,28 @@ function QuickLog({
 
   const { mutate, isPending } = useMutation({
     mutationFn: createLogFn,
-    onSuccess: () => {
+    onSuccess: async () => {
+      const pendingVolume = pendingVolumeRef.current;
+      if (
+        pendingVolume?.mediaId &&
+        pendingVolume?.volume &&
+        pendingVolume.volume > 0 &&
+        (pendingVolume.type === 'manga' || pendingVolume.type === 'reading')
+      ) {
+        const nextRememberedVolume = await resolveNextRememberedVolume(
+          pendingVolume.type,
+          pendingVolume.mediaId,
+          pendingVolume.volume
+        );
+
+        writeLastLoggedVolume(
+          pendingVolume.type,
+          pendingVolume.mediaId,
+          nextRememberedVolume
+        );
+      }
+      pendingVolumeRef.current = null;
+
       resetForm();
       void queryClient.invalidateQueries({
         predicate: (query) => {
@@ -233,6 +392,8 @@ function QuickLog({
     setLogType(null);
     setLogDescription('');
     setEpisodes(0);
+    setLoggedVolume(undefined);
+    setSeriesVolumes(undefined);
     setChars(0);
     setPages(0);
     setHours(0);
@@ -283,10 +444,27 @@ function QuickLog({
       return;
     }
 
+    pendingVolumeRef.current = {
+      type: logType,
+      mediaId: contentId,
+      volume:
+        (logType === 'manga' || logType === 'reading') &&
+        typeof loggedVolume === 'number' &&
+        loggedVolume > 0
+          ? loggedVolume
+          : undefined,
+    };
+
     mutate({
       type: logType,
       description: logDescription,
       episodes,
+      volume:
+        (logType === 'manga' || logType === 'reading') &&
+        typeof loggedVolume === 'number' &&
+        loggedVolume > 0
+          ? loggedVolume
+          : undefined,
       time: totalMinutes || undefined,
       mediaId: contentId,
       chars,
@@ -328,12 +506,21 @@ function QuickLog({
         setHours(newHours);
         setMinutes(newMinutes);
       }
+      setSeriesVolumes(undefined);
+      setLoggedVolume(undefined);
     } else {
       // Handle regular media
       setLogDescription(group.title.contentTitleNative);
       setContentId(group.contentId);
       setCoverImage(group.coverImage || group.contentImage);
       setIsAdultMedia(group.isAdult);
+      setSeriesVolumes(group.volumes);
+
+      if ((logType === 'manga' || logType === 'reading') && group.contentId) {
+        setLoggedVolume(readLastLoggedVolume(logType, group.contentId));
+      } else {
+        setLoggedVolume(undefined);
+      }
 
       // For anime and tv show, store episode duration
       if (
@@ -618,6 +805,41 @@ function QuickLog({
                           </div>
                         )}
 
+                        {/* Pages field for Manga, Reading */}
+                        {(logType === 'manga' || logType === 'reading') && (
+                          <div>
+                            <label className="label">
+                              <span className="label-text">Volume</span>
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="1"
+                                max={seriesVolumes}
+                                onInput={preventNegativeValues}
+                                placeholder="1"
+                                className="input input-bordered input-sm w-12 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                onChange={(e) => {
+                                  if (e.target.value === '') {
+                                    setLoggedVolume(undefined);
+                                    return;
+                                  }
+                                  const value = Number(e.target.value);
+                                  setLoggedVolume(
+                                    Number.isFinite(value) && value > 0
+                                      ? value
+                                      : undefined
+                                  );
+                                }}
+                                value={loggedVolume ?? ''}
+                              />
+                              <span className="text-base-content/70 font-medium">
+                                /{seriesVolumes ?? '?'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Characters field for VN, Manga, Reading */}
                         {(logType === 'vn' ||
                           logType === 'manga' ||
@@ -640,7 +862,6 @@ function QuickLog({
                           </div>
                         )}
 
-                        {/* Pages field for Manga, Reading */}
                         {(logType === 'manga' || logType === 'reading') && (
                           <div>
                             <label className="label">
