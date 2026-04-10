@@ -91,6 +91,30 @@ const HOOKER_THEME_OPTIONS = [
   { value: 'sunset', label: 'Sunset' },
 ] as const;
 
+const FONT_FAMILY_OPTIONS = [
+  { value: 'Noto Sans JP', label: 'Noto Sans JP' },
+  { value: 'Noto Serif JP', label: 'Noto Serif JP' },
+  { value: 'Sawarabi Gothic', label: 'Sawarabi Gothic' },
+  { value: 'Ackaisyo', label: 'Ackaisyo' },
+  { value: 'Hyoukinna Pop', label: 'Hyoukinna Pop' },
+  { value: 'Humour Original', label: 'Humour Original' },
+  { value: 'sans-serif', label: 'Sans Serif' },
+] as const;
+
+const FONT_FAMILY_STACKS: Record<string, string> = {
+  'Noto Sans JP':
+    '"Noto Sans JP Local", "Noto Sans JP", "Noto Sans CJK JP", sans-serif',
+  'Noto Serif JP': '"Noto Serif JP Local", "Noto Serif JP", serif',
+  'Sawarabi Gothic':
+    '"Sawarabi Gothic", "Noto Sans JP Local", "Noto Sans JP", sans-serif',
+  Ackaisyo: '"Ackaisyo", "Noto Sans JP Local", "Noto Sans JP", sans-serif',
+  'Hyoukinna Pop':
+    '"Hyoukinna Pop", "Noto Sans JP Local", "Noto Sans JP", sans-serif',
+  'Humour Original':
+    '"Humour Original", "Noto Sans JP Local", "Noto Sans JP", sans-serif',
+  'sans-serif': 'sans-serif',
+};
+
 function countJapaneseCharacters(value: string) {
   return (value.match(JAPANESE_CHAR_REGEX) ?? []).length;
 }
@@ -1947,9 +1971,8 @@ function TextHooker() {
     lineHeight: lineSpacing,
     fontSize: fontSize,
     fontFamily:
-      fontFamily === 'sans-serif'
-        ? 'sans-serif'
-        : `"${fontFamily}", sans-serif`,
+      FONT_FAMILY_STACKS[fontFamily] ||
+      `"${fontFamily}", "Noto Sans JP Local", "Noto Sans JP", sans-serif`,
   };
 
   const verticalTextStyle: CSSProperties = {
@@ -2868,11 +2891,11 @@ function TextHooker() {
                     onChange={handleFontFamilyChange}
                     className="select select-bordered select-sm w-full"
                   >
-                    <option value="Noto Sans JP">Noto Sans JP</option>
-                    <option value="Meiryo">Meiryo</option>
-                    <option value="Yu Gothic">Yu Gothic</option>
-                    <option value="Hiragino Sans">Hiragino Sans</option>
-                    <option value="sans-serif">Sans Serif</option>
+                    {FONT_FAMILY_OPTIONS.map((fontOption) => (
+                      <option key={fontOption.value} value={fontOption.value}>
+                        {fontOption.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

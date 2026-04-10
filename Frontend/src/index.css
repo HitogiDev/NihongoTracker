@@ -1,5 +1,72 @@
 @import "tailwindcss";
 @import "./animations.css";
+
+@font-face {
+  font-family: "Noto Sans JP Local";
+  src: url("/fonts/NotoSansCJKjp-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans JP Local";
+  src: url("/fonts/NotoSansCJKjp-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif JP Local";
+  src: url("/fonts/NotoSerifCJKjp-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif JP Local";
+  src: url("/fonts/NotoSerifCJKjp-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ackaisyo";
+  src: url("/fonts/ackaisyo.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Hyoukinna Pop";
+  src: url("/fonts/JocularPOP.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Humour Original";
+  src:
+    url("/fonts/Humour-Original.woff2") format("woff2"),
+    url("/fonts/Humour-Original.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sawarabi Gothic";
+  src: url("/fonts/SawarabiGothic-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @plugin "daisyui" {
   themes: dark --default, light, cupcake, bumblebee, emerald, corporate, synthwave, retro, valentine, halloween, garden, forest, dracula, cmyk, night, winter, dim, sunset, abyss;
 }
