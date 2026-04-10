@@ -3,23 +3,10 @@
 
 @font-face {
   font-family: "Noto Sans JP Local";
-  src: url("/fonts/NotoSansCJKjp-Regular.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Noto Sans JP Local";
-  src: url("/fonts/NotoSansCJKjp-Bold.woff") format("woff");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Noto Serif JP Local";
-  src: url("/fonts/NotoSerifCJKjp-Regular.woff") format("woff");
+  src:
+    url("/fonts/NotoSansJP.woff2") format("woff2"),
+    local("Noto Sans JP"),
+    local("Noto Sans CJK JP");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -27,8 +14,11 @@
 
 @font-face {
   font-family: "Noto Serif JP Local";
-  src: url("/fonts/NotoSerifCJKjp-Bold.woff") format("woff");
-  font-weight: 700;
+  src:
+    url("/fonts/NotoSerifJP.woff2") format("woff2"),
+    local("Noto Serif JP"),
+    local("Noto Serif CJK JP");
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
