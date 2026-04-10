@@ -63,7 +63,7 @@ export default function TagFilter({
   const activeCount = includedTags.length + excludedTags.length;
 
   return (
-    <div className="dropdown dropdown-end">
+    <div className="dropdown dropdown-start">
       <div tabIndex={0} role="button" className="btn btn-outline">
         <svg
           className="w-4 h-4"
@@ -98,7 +98,7 @@ export default function TagFilter({
       </div>
       <div
         tabIndex={0}
-        className="dropdown-content menu p-4 shadow-sm bg-base-100 rounded-box w-96 border border-base-300 max-h-[500px] overflow-y-auto"
+        className="dropdown-content menu p-4 shadow-sm bg-base-100 rounded-box w-[calc(100vw-2rem)] max-w-sm sm:w-96 border border-base-300 max-h-[500px] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-sm">Filter by Tags</h3>
