@@ -241,6 +241,7 @@ export const validateUpdateLogData = (logData: {
   hours: number;
   minutes: number;
   episodes: number;
+  volume: number;
   chars: number;
   pages: number;
 }): ValidationResult => {
@@ -273,6 +274,10 @@ export const validateUpdateLogData = (logData: {
 
   if (logData.pages > 10000) {
     errors.pages = 'Page count seems unreasonably high (max: 10,000)';
+  }
+
+  if (logData.volume > 10000) {
+    errors.volume = 'Volume number seems unreasonably high (max: 10,000)';
   }
 
   return {

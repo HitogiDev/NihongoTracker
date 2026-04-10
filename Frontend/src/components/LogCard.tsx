@@ -117,6 +117,7 @@ type EditLogFormState = {
   type: ILog['type'];
   date: string;
   episodes: number;
+  volume: number;
   pages: number;
   chars: number;
   hours: number;
@@ -142,6 +143,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     date,
     type,
     episodes,
+    volume,
     pages,
     time,
     chars,
@@ -166,6 +168,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         : new Date(date).toISOString().split('T')[0]
       : '',
     episodes: episodes || 0,
+    volume: volume || 0,
     pages: pages || 0,
     chars: chars || 0,
     hours: time ? Math.floor(time / 60) : 0,
@@ -262,6 +265,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
       hours: editData.hours,
       minutes: editData.minutes,
       episodes: editData.episodes,
+      volume: editData.volume,
       chars: editData.chars,
       pages: editData.pages,
     });
@@ -291,6 +295,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
         hasDateChanged && editData.date ? new Date(editData.date) : undefined,
       time: totalMinutes || undefined,
       episodes: editData.episodes || undefined,
+      volume: editData.volume || undefined,
       pages: editData.pages || undefined,
       chars: editData.chars || undefined,
       tags: editData.tags,
@@ -1300,7 +1305,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           type="number"
                           min="0"
                           className="input input-bordered w-full"
-                          value={editData.hours}
+                          value={editData.hours || ''}
                           onChange={(e) =>
                             setEditData({
                               ...editData,
@@ -1320,7 +1325,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           min="0"
                           max="59"
                           className="input input-bordered w-full"
-                          value={editData.minutes}
+                          value={editData.minutes || ''}
                           onChange={(e) =>
                             setEditData({
                               ...editData,
@@ -1350,7 +1355,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           type="number"
                           min="0"
                           className="input input-bordered w-full"
-                          value={editData.episodes}
+                          value={editData.episodes || ''}
                           onChange={(e) =>
                             setEditData({
                               ...editData,
@@ -1376,7 +1381,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           type="number"
                           min="0"
                           className="input input-bordered w-full"
-                          value={editData.chars}
+                          value={editData.chars || ''}
                           onChange={(e) =>
                             setEditData({
                               ...editData,
@@ -1385,6 +1390,29 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           }
                           onInput={preventNegativeValues}
                           placeholder="Number of characters"
+                        />
+                      </div>
+                    )}
+
+                    {(editData.type === 'manga' ||
+                      editData.type === 'reading') && (
+                      <div>
+                        <label className="label">
+                          <span className="label-text font-medium">Volume</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="input input-bordered w-full"
+                          value={editData.volume || ''}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              volume: Number(e.target.value),
+                            })
+                          }
+                          onInput={preventNegativeValues}
+                          placeholder="Volume number"
                         />
                       </div>
                     )}
@@ -1398,7 +1426,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                           type="number"
                           min="0"
                           className="input input-bordered w-full"
-                          value={editData.pages}
+                          value={editData.pages || ''}
                           onChange={(e) =>
                             setEditData({
                               ...editData,

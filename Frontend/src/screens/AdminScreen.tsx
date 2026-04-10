@@ -42,6 +42,7 @@ type AdminLogRow = {
   type: string;
   description: string;
   episodes?: number;
+  volume?: number;
   pages?: number;
   chars?: number;
   time?: number;
@@ -1466,7 +1467,7 @@ function AdminScreen() {
                       <input
                         type="number"
                         className="input input-bordered"
-                        value={selectedLog.time ?? 0}
+                        value={selectedLog.time || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
                             l ? { ...l, time: Number(e.target.value) } : l
@@ -1481,7 +1482,7 @@ function AdminScreen() {
                       <input
                         type="number"
                         className="input input-bordered"
-                        value={selectedLog.episodes ?? 0}
+                        value={selectedLog.episodes || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
                             l ? { ...l, episodes: Number(e.target.value) } : l
@@ -1489,6 +1490,24 @@ function AdminScreen() {
                         }
                       />
                     </label>
+                    {(selectedLog.type === 'manga' ||
+                      selectedLog.type === 'reading') && (
+                      <label className="form-control">
+                        <div className="label">
+                          <span className="label-text">Volume</span>
+                        </div>
+                        <input
+                          type="number"
+                          className="input input-bordered"
+                          value={selectedLog.volume || ''}
+                          onChange={(e) =>
+                            setSelectedLog((l) =>
+                              l ? { ...l, volume: Number(e.target.value) } : l
+                            )
+                          }
+                        />
+                      </label>
+                    )}
                     <label className="form-control">
                       <div className="label">
                         <span className="label-text">Pages</span>
@@ -1496,7 +1515,7 @@ function AdminScreen() {
                       <input
                         type="number"
                         className="input input-bordered"
-                        value={selectedLog.pages ?? 0}
+                        value={selectedLog.pages || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
                             l ? { ...l, pages: Number(e.target.value) } : l
@@ -1511,7 +1530,7 @@ function AdminScreen() {
                       <input
                         type="number"
                         className="input input-bordered"
-                        value={selectedLog.chars ?? 0}
+                        value={selectedLog.chars || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
                             l ? { ...l, chars: Number(e.target.value) } : l
@@ -1529,6 +1548,7 @@ function AdminScreen() {
                           description: selectedLog.description,
                           time: selectedLog.time,
                           episodes: selectedLog.episodes,
+                          volume: selectedLog.volume,
                           pages: selectedLog.pages,
                           chars: selectedLog.chars,
                           date: selectedLog.date
