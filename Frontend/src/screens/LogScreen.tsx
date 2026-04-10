@@ -1218,7 +1218,7 @@ function LogScreen() {
                     </div>
 
                     {/* Advanced Options */}
-                    <div className="collapse collapse-arrow border border-base-300 bg-base-200 rounded-box">
+                    <div className="collapse collapse-arrow border border-base-300 bg-base-200 rounded-box overflow-visible">
                       <input
                         type="checkbox"
                         checked={isAdvancedOptions}
