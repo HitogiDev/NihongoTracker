@@ -726,6 +726,7 @@ function TextHooker() {
     'disconnected' | 'connecting' | 'connected' | 'error'
   >('disconnected');
   const socketRef = useRef<WebSocket | null>(null);
+  const isManualSocketDisconnectRef = useRef(false);
 
   const lastActivityRef = useRef(Date.now());
   const timerInitializedFromServerRef = useRef(false);
@@ -1216,12 +1217,17 @@ function TextHooker() {
       return;
     }
 
+    isManualSocketDisconnectRef.current = false;
     setConnectionStatus('connecting');
     try {
       const socket = new WebSocket(websocketUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
+        if (socketRef.current !== socket) {
+          return;
+        }
+
         setConnectionStatus('connected');
         if (reconnectIntervalRef.current) {
           clearInterval(reconnectIntervalRef.current);
@@ -1230,11 +1236,19 @@ function TextHooker() {
       };
 
       socket.onclose = () => {
+        if (socketRef.current !== socket) {
+          return;
+        }
+
         setConnectionStatus('disconnected');
         socketRef.current = null;
       };
 
       socket.onerror = () => {
+        if (socketRef.current !== socket) {
+          return;
+        }
+
         setConnectionStatus('error');
         socketRef.current = null;
       };
@@ -1252,14 +1266,45 @@ function TextHooker() {
     }
   }, [handleSocketMessage]);
 
-  const toggleSocket = useCallback(() => {
+  const disconnectSocket = useCallback((isManual = false) => {
+    if (isManual) {
+      isManualSocketDisconnectRef.current = true;
+    }
+
     if (reconnectIntervalRef.current) {
       clearInterval(reconnectIntervalRef.current);
       reconnectIntervalRef.current = null;
     }
 
-    if (connectionStatus === 'connected' || connectionStatus === 'connecting') {
-      socketRef.current?.close();
+    const activeSocket = socketRef.current;
+    socketRef.current = null;
+    setConnectionStatus('disconnected');
+
+    if (!activeSocket) {
+      return;
+    }
+
+    activeSocket.onopen = null;
+    activeSocket.onclose = null;
+    activeSocket.onerror = null;
+    activeSocket.onmessage = null;
+
+    if (
+      activeSocket.readyState === WebSocket.OPEN ||
+      activeSocket.readyState === WebSocket.CONNECTING
+    ) {
+      activeSocket.close();
+    }
+  }, []);
+
+  const toggleSocket = useCallback(() => {
+    const activeSocket = socketRef.current;
+    const isActiveConnection =
+      activeSocket?.readyState === WebSocket.OPEN ||
+      activeSocket?.readyState === WebSocket.CONNECTING;
+
+    if (isActiveConnection) {
+      disconnectSocket(true);
       return;
     }
 
@@ -1275,11 +1320,12 @@ function TextHooker() {
         }
       }, 3000);
     }
-  }, [connectionStatus, attemptConnect, continuousReconnect]);
+  }, [attemptConnect, continuousReconnect, disconnectSocket]);
 
   useEffect(() => {
     if (
       continuousReconnect &&
+      !isManualSocketDisconnectRef.current &&
       connectionStatus !== 'connected' &&
       connectionStatus !== 'connecting'
     ) {
@@ -1301,12 +1347,9 @@ function TextHooker() {
 
   useEffect(() => {
     return () => {
-      socketRef.current?.close();
-      if (reconnectIntervalRef.current) {
-        clearInterval(reconnectIntervalRef.current);
-      }
+      disconnectSocket();
     };
-  }, []);
+  }, [disconnectSocket]);
 
   const handleFontSizeChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -2109,7 +2152,7 @@ function TextHooker() {
           type="button"
           onClick={handleOpenTimerEdit}
           className="btn btn-xs btn-ghost btn-square"
-          title="Edit Time"
+          title="Set Timer"
         >
           <Edit3 size={16} />
         </button>
@@ -2238,7 +2281,7 @@ function TextHooker() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
-              Edit Time
+              Set Timer
             </h3>
             <button
               onClick={() => setIsTimerEditOpen(false)}
