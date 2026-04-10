@@ -175,7 +175,11 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     if (days === 1) return '1 day left';
     if (days < 7) return `${days} days left`;
     if (days < 30) return `${Math.ceil(days / 7)} weeks left`;
-    return `${Math.ceil(days / 30)} months left`;
+
+    // Use average calendar month length so values like 364 days show 12 months.
+    const averageDaysPerMonth = 365.2425 / 12;
+    const months = Math.max(1, Math.ceil(days / averageDaysPerMonth));
+    return months === 1 ? '1 month left' : `${months} months left`;
   };
 
   const getProgressPercentage = (current: number, target: number) => {
