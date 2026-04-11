@@ -8,7 +8,16 @@ const MediaReviewSchema = new Schema<IMediaReview>(
     mediaType: {
       type: String,
       required: true,
-      enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'tv show'],
+      enum: [
+        'anime',
+        'manga',
+        'reading',
+        'vn',
+        'video',
+        'movie',
+        'tv show',
+        'game',
+      ],
     },
     summary: { type: String, required: true, minlength: 20, maxlength: 150 },
     content: { type: String, required: true, maxlength: 5000 },

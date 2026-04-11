@@ -26,6 +26,7 @@ interface VotingData {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'custom';
@@ -53,6 +54,7 @@ const MEDIA_TYPES = [
   { value: 'manga', label: 'Manga' },
   { value: 'reading', label: 'Light Novel' },
   { value: 'vn', label: 'Visual Novel' },
+  { value: 'game', label: 'Video Game' },
   { value: 'video', label: 'Video/Movie' },
   { value: 'custom', label: 'Custom' },
 ];

@@ -8,6 +8,7 @@ import {
   Tv2,
   BookOpen,
   Gamepad2,
+  BookImage,
   Headphones,
   BookMarked,
   Play,
@@ -307,10 +308,11 @@ function Hero() {
               {[
                 { Icon: Tv2, label: 'Anime' },
                 { Icon: BookOpen, label: 'Manga' },
-                { Icon: Gamepad2, label: 'Visual Novels' },
+                { Icon: BookImage, label: 'Visual Novels' },
                 { Icon: Headphones, label: 'Audio & Podcasts' },
                 { Icon: BookMarked, label: 'Books & Reading' },
                 { Icon: Play, label: 'Video' },
+                { Icon: Gamepad2, label: 'Video Games' },
               ].map(({ Icon, label }) => (
                 <span
                   key={label}

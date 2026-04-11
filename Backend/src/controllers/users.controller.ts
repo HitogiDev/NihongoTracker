@@ -19,6 +19,7 @@ type ImmersionMediaType =
   | 'manga'
   | 'reading'
   | 'vn'
+  | 'game'
   | 'video'
   | 'movie'
   | 'tv show';
@@ -439,7 +440,7 @@ export async function getRanking(
                   readingXp: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn']] },
+                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
                         '$xp',
                         0,
                       ],
@@ -479,7 +480,7 @@ export async function getRanking(
                   readingMinutes: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn']] },
+                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
                         { $ifNull: ['$time', 0] },
                         0,
                       ],
@@ -620,7 +621,7 @@ export async function getRanking(
                   readingMinutes: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn']] },
+                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
                         { $ifNull: ['$time', 0] },
                         0,
                       ],
@@ -936,6 +937,7 @@ export async function getMediumRanking(
       | 'manga'
       | 'reading'
       | 'vn'
+      | 'game'
       | 'video'
       | 'movie'
       | 'tv show'
@@ -1346,6 +1348,7 @@ export async function getImmersionList(
       manga: [],
       reading: [],
       vn: [],
+      game: [],
       video: [],
       movie: [],
       'tv show': [],
@@ -1489,6 +1492,7 @@ export async function updateMediaCompletionStatus(
       'manga',
       'reading',
       'vn',
+      'game',
       'video',
       'movie',
       'tv show',
@@ -1722,7 +1726,7 @@ export async function compareUserStats(
 
     // Get media info for character count (if applicable)
     let totalCharCount = 0;
-    if (['reading', 'manga', 'vn'].includes(type as string)) {
+    if (['reading', 'manga', 'vn', 'game'].includes(type as string)) {
       try {
         // Try to get character count from jiten API
         const jitenURL = process.env.JITEN_API_URL;

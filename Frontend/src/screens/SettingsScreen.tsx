@@ -3444,10 +3444,9 @@ function SettingsScreen() {
               exports are not imported by this option.
             </span>
           </div>
-          <div className="mt-4 p-3 bg-base-200 rounded-lg">
+          <div className="mt-3 p-3 bg-base-200 rounded-lg">
             <p className="text-sm font-semibold mb-2">Imported as Other</p>
             <ul className="list-disc pl-5 text-sm text-base-content/80 space-y-1">
-              <li>Playing entries (including game and video game labels).</li>
               <li>Entries marked as None or Unknown.</li>
               <li>Any unrecognized Media Type or Activity Type.</li>
             </ul>

@@ -91,6 +91,7 @@ function RankingScreen() {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show'
@@ -101,6 +102,7 @@ function RankingScreen() {
       mediumTypeParam === 'manga' ||
       mediumTypeParam === 'reading' ||
       mediumTypeParam === 'vn' ||
+      mediumTypeParam === 'game' ||
       mediumTypeParam === 'video' ||
       mediumTypeParam === 'movie' ||
       mediumTypeParam === 'tv show' ||
@@ -115,6 +117,7 @@ function RankingScreen() {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show'
@@ -154,6 +157,11 @@ function RankingScreen() {
         { label: 'Time', value: 'time' },
         { label: 'Characters', value: 'chars' },
       ],
+      game: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Characters', value: 'chars' },
+      ],
       movie: [
         { label: 'XP', value: 'xp' },
         { label: 'Time', value: 'time' },
@@ -172,6 +180,7 @@ function RankingScreen() {
       mediumTypeParam === 'manga' ||
       mediumTypeParam === 'reading' ||
       mediumTypeParam === 'vn' ||
+      mediumTypeParam === 'game' ||
       mediumTypeParam === 'video' ||
       mediumTypeParam === 'movie' ||
       mediumTypeParam === 'tv show' ||
@@ -201,6 +210,7 @@ function RankingScreen() {
       mediumTypeParam === 'manga' ||
       mediumTypeParam === 'reading' ||
       mediumTypeParam === 'vn' ||
+      mediumTypeParam === 'game' ||
       mediumTypeParam === 'video' ||
       mediumTypeParam === 'movie' ||
       mediumTypeParam === 'tv show' ||
@@ -554,6 +564,19 @@ function RankingScreen() {
     }
   };
 
+  const getMediumTypeLabel = (type: string) => {
+    switch (type) {
+      case 'vn':
+        return 'Visual Novel';
+      case 'game':
+        return 'Video Game';
+      case 'tv show':
+        return 'TV Show';
+      default:
+        return type.slice(0, 1).toUpperCase() + type.slice(1);
+    }
+  };
+
   return (
     <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -816,7 +839,7 @@ function RankingScreen() {
           {/* Medium filters */}
           <div className="dropdown dropdown-end" hidden={mode !== 'medium'}>
             <div tabIndex={0} role="button" className="btn btn-primary gap-2">
-              {mediumType.toUpperCase()}
+              {getMediumTypeLabel(mediumType)}
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -841,6 +864,7 @@ function RankingScreen() {
                   'manga',
                   'reading',
                   'vn',
+                  'game',
                   'video',
                   'movie',
                   'tv show',
@@ -854,7 +878,7 @@ function RankingScreen() {
                       setMediumMetric(mediumMetricOptions[t][0].value);
                     }}
                   >
-                    {t.toUpperCase()}
+                    {getMediumTypeLabel(t)}
                   </button>
                 </li>
               ))}

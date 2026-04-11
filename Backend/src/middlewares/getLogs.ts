@@ -73,6 +73,7 @@ function transformManabeLogsList(
     VN: { logType: 'vn', parametro: 'chars' },
     VIDEO: { logType: 'video', parametro: 'time' },
     AUDIO: { logType: 'audio', parametro: 'time' },
+    JUEGO: { logType: 'game', parametro: 'time' },
   };
 
   return list
@@ -571,10 +572,10 @@ function mapKechimochiType(
     audio: 'audio',
     listening: 'audio',
     podcast: 'audio',
-    videogame: 'other',
-    'video game': 'other',
-    game: 'other',
-    playing: 'other',
+    videogame: 'game',
+    'video game': 'game',
+    game: 'game',
+    playing: 'game',
     none: 'other',
     unknown: 'other',
   };

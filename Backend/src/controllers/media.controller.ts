@@ -6,6 +6,7 @@ import {
   MediaBase,
   Reading,
   Movie,
+  VideoGame,
 } from '../models/media.model.js';
 import User from '../models/user.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
@@ -13,8 +14,12 @@ import MediaReview from '../models/mediaReview.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import fac from 'fast-average-color-node';
 import { searchAnilist } from '../services/searchAnilist.js';
+import { getIgdbGame, searchIgdb } from '../services/searchIgdb.js';
 import axios from 'axios';
-import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
+import {
+  addDocuments,
+  searchDocuments,
+} from '../services/meilisearch/meiliSearch.js';
 
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
 const REVIEW_SUMMARY_MAX_LENGTH = 150;
@@ -127,6 +132,39 @@ interface IJitenResponse {
   currentOffset: number;
 }
 
+function normalizeMediaTypeParam(mediaType: string): string {
+  const rawMediaType = mediaType.trim().toLowerCase();
+  const mediaTypeMap: Record<string, string> = {
+    game: 'game',
+    'video game': 'game',
+    videogame: 'game',
+  };
+
+  return mediaTypeMap[rawMediaType] ?? rawMediaType;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function indexGameMediaForSearch(media: any[]) {
+  if (!media.length) return;
+
+  await addDocuments(
+    'game',
+    media.map((doc) => ({
+      _id: String(doc._id),
+      contentId: doc.contentId,
+      title: doc.title,
+      contentImage: doc.contentImage,
+      coverImage: doc.coverImage,
+      isAdult: doc.isAdult,
+      synonyms: doc.synonyms || [],
+      type: doc.type,
+    }))
+  );
+}
+
 export async function getMedia(
   req: Request,
   res: Response,
@@ -145,7 +183,7 @@ export async function getMedia(
       return res.status(400).json({ message: 'Media type is required' });
     }
 
-    const normalizedMediaType = mediaType.toLowerCase();
+    const normalizedMediaType = normalizeMediaTypeParam(mediaType);
     const mediaQuery = { contentId, type: normalizedMediaType };
 
     const completionStatus = {
@@ -180,8 +218,10 @@ export async function getMedia(
 
     if (jitenURL) {
       try {
-        const LinkType: number | null = mediaType
-          ? (LinkTypeObject[mediaType as keyof typeof LinkTypeObject] ?? null)
+        const LinkType: number | null = normalizedMediaType
+          ? (LinkTypeObject[
+              normalizedMediaType as keyof typeof LinkTypeObject
+            ] ?? null)
           : null;
 
         if (LinkType) {
@@ -328,6 +368,37 @@ export async function getMedia(
         return res.status(404).json({ message: 'Media not found' });
       }
     }
+
+    if (!media && normalizedMediaType === 'game') {
+      const parsedIgdbId = contentId.startsWith('igdb-')
+        ? Number.parseInt(contentId.slice(5), 10)
+        : Number.parseInt(contentId, 10);
+
+      if (!Number.isNaN(parsedIgdbId)) {
+        const igdbMedia = await getIgdbGame(parsedIgdbId);
+
+        if (igdbMedia) {
+          const savedMedia = await VideoGame.findOneAndUpdate(
+            { contentId: igdbMedia.contentId, type: 'game' },
+            { $setOnInsert: igdbMedia },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+
+          if (savedMedia) {
+            await indexGameMediaForSearch([savedMedia]);
+
+            return res.status(200).json({
+              ...savedMedia.toObject(),
+              ...completionStatus,
+              jiten: null,
+            });
+          }
+        }
+      }
+
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
     if (!media) return res.status(404).json({ message: 'Media not found' });
     return res.status(200).json({
       ...media.toObject(),
@@ -362,6 +433,9 @@ export async function searchMedia(
       movie: 'movie',
       'tv show': 'tv_show',
       tv_show: 'tv_show',
+      game: 'game',
+      'video game': 'game',
+      videogame: 'game',
     };
     const type = normalizedTypeMap[rawType] ?? rawType;
     const page = parseInt(req.query.page as string) || 1;
@@ -378,10 +452,74 @@ export async function searchMedia(
       'vn',
       'movie',
       'tv_show',
+      'game',
     ]);
 
     if (!allowedTypes.has(type)) {
       return res.status(400).json({ message: 'Unsupported media type' });
+    }
+
+    if (type === 'game') {
+      const normalizedTitle = title.trim();
+      if (!normalizedTitle) {
+        return res.status(200).json([]);
+      }
+
+      const gameRegex = new RegExp(escapeRegex(normalizedTitle), 'i');
+
+      const dbMedia = await MediaBase.find({
+        type: 'game',
+        $or: [
+          { 'title.contentTitleNative': gameRegex },
+          { 'title.contentTitleEnglish': gameRegex },
+          { 'title.contentTitleRomaji': gameRegex },
+          { synonyms: { $elemMatch: { $regex: gameRegex } } },
+        ],
+      })
+        .select('contentId title contentImage coverImage isAdult synonyms type')
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .skip(offset)
+        .limit(limit)
+        .lean();
+
+      if (dbMedia.length > 0) {
+        await indexGameMediaForSearch(dbMedia);
+        return res.status(200).json(dbMedia);
+      }
+
+      const igdbResults = await searchIgdb(normalizedTitle);
+      if (!igdbResults.length) {
+        return res.status(200).json([]);
+      }
+
+      const igdbContentIds = igdbResults.map((item) => item.contentId);
+
+      const existingMedia = await MediaBase.find({
+        type: 'game',
+        contentId: { $in: igdbContentIds },
+      })
+        .select('contentId title contentImage coverImage isAdult synonyms type')
+        .lean();
+
+      const existingIds = new Set(existingMedia.map((item) => item.contentId));
+      const newMedia = igdbResults.filter(
+        (item) => !existingIds.has(item.contentId)
+      );
+
+      if (newMedia.length > 0) {
+        await VideoGame.insertMany(newMedia, { ordered: false });
+      }
+
+      const combinedMedia = await MediaBase.find({
+        type: 'game',
+        contentId: { $in: igdbContentIds },
+      })
+        .select('contentId title contentImage coverImage isAdult synonyms type')
+        .lean();
+
+      await indexGameMediaForSearch(combinedMedia);
+
+      return res.status(200).json(combinedMedia.slice(0, limit));
     }
 
     const media = await searchDocuments(type, title, { limit, offset });

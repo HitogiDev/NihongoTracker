@@ -35,6 +35,7 @@ const MEDIA_TYPE_CONFIG: Record<
   manga: { icon: Book, color: 'text-warning', label: 'Manga' },
   reading: { icon: Book, color: 'text-primary', label: 'Light Novel' },
   vn: { icon: Gamepad, color: 'text-accent', label: 'Visual Novel' },
+  game: { icon: Gamepad, color: 'text-neutral', label: 'Video Game' },
   video: { icon: Video, color: 'text-info', label: 'Video' },
   movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
   'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
@@ -45,6 +46,7 @@ const SEARCH_MEDIA_TYPES = [
   'manga',
   'reading',
   'vn',
+  'game',
   'movie',
   'tv_show',
 ] as const;

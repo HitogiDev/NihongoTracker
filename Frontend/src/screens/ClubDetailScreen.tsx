@@ -12,6 +12,7 @@ import {
   BadgeCheck,
   Play,
   Book,
+  Gamepad2,
   Clapperboard,
   MonitorPlay,
   Plus,
@@ -168,6 +169,7 @@ function ClubDetailScreen() {
       | 'manga'
       | 'reading'
       | 'vn'
+      | 'game'
       | 'video'
       | 'movie',
     title: '',
@@ -547,7 +549,8 @@ function ClubDetailScreen() {
       case 'tv show':
         return <MonitorPlay className="text-lg" />;
       case 'vn':
-        return <Play className="text-lg" />;
+      case 'game':
+        return <Gamepad2 className="text-lg" />;
       default:
         return <Play className="text-lg" />;
     }
@@ -963,9 +966,11 @@ function ClubDetailScreen() {
                               {media.mediaType
                                 ? media.mediaType === 'vn'
                                   ? 'visual novel'
-                                  : media.mediaType === 'reading'
-                                    ? 'light novel'
-                                    : media.mediaType
+                                  : media.mediaType === 'game'
+                                    ? 'video game'
+                                    : media.mediaType === 'reading'
+                                      ? 'light novel'
+                                      : media.mediaType
                                 : 'unknown'}
                             </span>
                           </div>
@@ -1370,6 +1375,7 @@ function ClubDetailScreen() {
                   <option value="manga">Manga</option>
                   <option value="reading">Reading</option>
                   <option value="vn">Visual Novel</option>
+                  <option value="game">Video Game</option>
                   <option value="video">Video</option>
                   <option value="movie">Movie</option>
                 </select>
@@ -1568,6 +1574,7 @@ function ClubDetailScreen() {
               | 'manga'
               | 'reading'
               | 'vn'
+              | 'game'
               | 'video'
               | 'movie',
             contentImage: undefined, // Let QuickLog handle image loading

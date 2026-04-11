@@ -642,6 +642,7 @@ function LogScreen() {
     { value: 'anime', label: 'Anime' },
     { value: 'manga', label: 'Manga' },
     { value: 'vn', label: 'Visual Novel' },
+    { value: 'game', label: 'Video Game' },
     { value: 'video', label: 'Video' },
     { value: 'tv show', label: 'TV Show' },
     { value: 'movie', label: 'Movie' },
@@ -654,13 +655,14 @@ function LogScreen() {
   const showEpisodesInMain = isSeriesType;
   const showTimeInMain = [
     'vn',
+    'game',
     'video',
     'reading',
     'audio',
     'manga',
     'movie',
   ].includes(logData.type ?? '');
-  const showCharsInMain = ['vn', 'reading', 'manga'].includes(
+  const showCharsInMain = ['vn', 'game', 'reading', 'manga'].includes(
     logData.type ?? ''
   );
   const showPagesInMain = logData.type === 'manga';

@@ -82,6 +82,16 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
         log.xp = 0;
       }
       break;
+    case 'game': {
+      const gameTimeXp = log.time
+        ? Math.floor(((log.time * 45) / 100) * XP_FACTOR_TIME * 0.75)
+        : 0;
+      const gameCharsXp = log.chars
+        ? Math.floor((log.chars / 350) * XP_FACTOR_CHARS)
+        : 0;
+      log.xp = Math.max(gameTimeXp, gameCharsXp, 0);
+      break;
+    }
     case 'other':
       log.xp = 0;
       break;

@@ -113,7 +113,7 @@ export const validateLogData = (
 
   if (
     (touched.hours || touched.minutes) &&
-    ['video', 'movie', 'audio', 'other'].includes(logData.type || '')
+    ['video', 'movie', 'audio', 'other', 'game'].includes(logData.type || '')
   ) {
     if (totalMinutes <= 0) {
       errors.time = 'Please enter the time spent (must be greater than 0)';
@@ -130,7 +130,11 @@ export const validateLogData = (
     errors.time = 'Please enter the time spent (must be greater than 0)';
   }
 
-  if (logData.type === 'reading' || logData.type === 'vn') {
+  if (
+    logData.type === 'reading' ||
+    logData.type === 'vn' ||
+    logData.type === 'game'
+  ) {
     if (
       (touched.chars || touched.hours || touched.minutes) &&
       logData.readChars <= 0 &&
@@ -222,6 +226,10 @@ export const validateQuickLogData = (logData: {
   }
 
   if (logData.type === 'vn' && logData.chars <= 0 && totalMinutes <= 0) {
+    errors.activity = 'Please enter characters read or time spent';
+  }
+
+  if (logData.type === 'game' && logData.chars <= 0 && totalMinutes <= 0) {
     errors.activity = 'Please enter characters read or time spent';
   }
 

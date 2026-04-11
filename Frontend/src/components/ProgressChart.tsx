@@ -46,6 +46,7 @@ interface ProgressChartProps {
 
 const MEDIA_TYPE_COLORS: Record<string, string> = {
   vn: '#3a70e4',
+  game: '#59c94e',
   anime: '#26b2f2',
   video: '#2cc9a4',
   'tv show': '#f8b420',
@@ -493,7 +494,9 @@ export default function ProgressChart({
       ? 'This Media'
       : selectedType === 'all'
         ? 'All Media Types'
-        : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
+        : selectedType === 'game'
+          ? 'Video Game'
+          : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
 
   return (
     <div className="w-full h-full">

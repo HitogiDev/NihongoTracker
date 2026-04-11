@@ -244,7 +244,12 @@ function QuickLog({
     if (logType !== 'anime' && logType !== 'movie' && logType !== 'tv show') {
       setEpisodes(0);
     }
-    if (logType !== 'vn' && logType !== 'manga' && logType !== 'reading') {
+    if (
+      logType !== 'vn' &&
+      logType !== 'game' &&
+      logType !== 'manga' &&
+      logType !== 'reading'
+    ) {
       setChars(0);
     }
     if (logType !== 'manga' && logType !== 'reading') {
@@ -260,7 +265,8 @@ function QuickLog({
       logType !== 'manga' &&
       logType !== 'reading' &&
       logType !== 'movie' &&
-      logType !== 'vn'
+      logType !== 'vn' &&
+      logType !== 'game'
     ) {
       // Reset manual time for types that don't typically use it
       setHours(0);
@@ -588,6 +594,7 @@ function QuickLog({
                             'anime',
                             'manga',
                             'vn',
+                            'game',
                             'video',
                             'movie',
                             'tv show',
@@ -598,9 +605,12 @@ function QuickLog({
                           <option key={type} value={type}>
                             {type === 'vn'
                               ? 'Visual Novel'
-                              : type === 'tv show'
-                                ? 'TV Show'
-                                : type.charAt(0).toUpperCase() + type.slice(1)}
+                              : type === 'game'
+                                ? 'Video Game'
+                                : type === 'tv show'
+                                  ? 'TV Show'
+                                  : type.charAt(0).toUpperCase() +
+                                    type.slice(1)}
                           </option>
                         ))}
                       </select>
@@ -842,6 +852,7 @@ function QuickLog({
 
                         {/* Characters field for VN, Manga, Reading */}
                         {(logType === 'vn' ||
+                          logType === 'game' ||
                           logType === 'manga' ||
                           logType === 'reading') && (
                           <div>
@@ -885,6 +896,7 @@ function QuickLog({
                           logType === 'manga' ||
                           logType === 'reading' ||
                           logType === 'vn' ||
+                          logType === 'game' ||
                           (logType === 'movie' && !episodes)) && (
                           <div>
                             <label className="label">

@@ -221,8 +221,13 @@ export default function useSearch(
         // }
       }
 
-      // VN, movie, and TV show only search in database
-      if (type === 'vn' || type === 'movie' || type === 'tv show') {
+      // VN, game, movie, and TV show only search in database
+      if (
+        type === 'vn' ||
+        type === 'game' ||
+        type === 'movie' ||
+        type === 'tv show'
+      ) {
         return searchMediaFn({
           type,
           search: debouncedSearch,

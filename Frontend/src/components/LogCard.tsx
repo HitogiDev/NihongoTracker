@@ -62,6 +62,14 @@ const logTypeConfig = {
     borderColor: 'border-[#3a70e4]/30',
     accentColor: 'bg-[#3a70e4]',
   },
+  game: {
+    label: 'Video Game',
+    icon: GamepadDirectional,
+    color: 'text-[#59c94e]',
+    bgColor: 'bg-[#59c94e]/10',
+    borderColor: 'border-[#59c94e]/30',
+    accentColor: 'bg-[#59c94e]',
+  },
   video: {
     label: 'Video',
     icon: Video,
@@ -105,10 +113,10 @@ const logTypeConfig = {
   other: {
     label: 'Other',
     icon: Ellipsis,
-    color: 'text-[#10b785]',
-    bgColor: 'bg-[#10b785]/10',
-    borderColor: 'border-[#10b785]/30',
-    accentColor: 'bg-[#10b785]',
+    color: 'text-[#6b7280]',
+    bgColor: 'bg-[#6b7280]/10',
+    borderColor: 'border-[#6b7280]/30',
+    accentColor: 'bg-[#6b7280]',
   },
 };
 
@@ -387,7 +395,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
           tooltip: `${time} minutes spent reading`,
         });
       }
-    } else if (type === 'vn' || type === 'reading') {
+    } else if (type === 'vn' || type === 'game' || type === 'reading') {
       if (chars) {
         const readingSpeed =
           time && chars ? Math.round((chars / time) * 60) : null;
@@ -447,7 +455,12 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   }
 
   function getReadingSpeed() {
-    if ((type === 'reading' || type === 'vn') && chars && time && time > 0) {
+    if (
+      (type === 'reading' || type === 'vn' || type === 'game') &&
+      chars &&
+      time &&
+      time > 0
+    ) {
       return Math.round((chars / time) * 60);
     }
     return null;
@@ -786,9 +799,11 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       <span className="badge badge-outline ml-2 capitalize">
                         {media.type === 'vn'
                           ? 'Visual Novel'
-                          : media.type === 'reading'
-                            ? 'Light Novel'
-                            : media.type}
+                          : media.type === 'game'
+                            ? 'Video Game'
+                            : media.type === 'reading'
+                              ? 'Light Novel'
+                              : media.type}
                       </span>
                     </div>
                   )}
@@ -981,9 +996,11 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       <span className="badge badge-outline ml-2 capitalize">
                         {media.type === 'vn'
                           ? 'Visual Novel'
-                          : media.type === 'reading'
-                            ? 'Light Novel'
-                            : media.type}
+                          : media.type === 'game'
+                            ? 'Video Game'
+                            : media.type === 'reading'
+                              ? 'Light Novel'
+                              : media.type}
                       </span>
                     </div>
 
@@ -1054,9 +1071,11 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     <span className="capitalize">
                       {type === 'vn'
                         ? 'visual novel'
-                        : type === 'reading'
-                          ? 'light novel'
-                          : type}
+                        : type === 'game'
+                          ? 'video game'
+                          : type === 'reading'
+                            ? 'light novel'
+                            : type}
                     </span>
                   </div>
                 </div>
@@ -1262,6 +1281,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                       <option value="reading">Reading</option>
                       <option value="anime">Anime</option>
                       <option value="vn">Visual Novel</option>
+                      <option value="game">Video Game</option>
                       <option value="video">Video</option>
                       <option value="manga">Manga</option>
                       <option value="audio">Audio</option>
@@ -1370,6 +1390,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
 
                     {(editData.type === 'reading' ||
                       editData.type === 'vn' ||
+                      editData.type === 'game' ||
                       editData.type === 'manga') && (
                       <div>
                         <label className="label">

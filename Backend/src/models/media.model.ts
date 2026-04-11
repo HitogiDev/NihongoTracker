@@ -25,7 +25,16 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
     type: {
       type: String,
       required: true,
-      enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'tv show'],
+      enum: [
+        'anime',
+        'manga',
+        'reading',
+        'vn',
+        'video',
+        'movie',
+        'tv show',
+        'game',
+      ],
     },
     genres: { type: [String], default: [] },
     synonyms: { type: [String], default: [] },
@@ -72,4 +81,11 @@ const TVShowSchema = new Schema({
 
 const TVShow = MediaBase.discriminator('tv show', TVShowSchema);
 
-export { MediaBase, Anime, Manga, Reading, Video, Movie, TVShow };
+const VideoGameSchema = new Schema({
+  igdbId: { type: Number, default: null },
+  platforms: { type: [String], default: [] },
+});
+
+const VideoGame = MediaBase.discriminator('game', VideoGameSchema);
+
+export { MediaBase, Anime, Manga, Reading, Video, Movie, TVShow, VideoGame };

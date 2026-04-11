@@ -41,6 +41,13 @@ const logTypeConfig = {
     bgColor: 'bg-accent/10',
     borderColor: 'border-accent/20',
   },
+  game: {
+    label: 'Video Game',
+    icon: GamepadDirectional,
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+  },
   video: {
     label: 'Video',
     icon: Video,

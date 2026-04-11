@@ -33,6 +33,7 @@ function ProfileScreen() {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'audio'
@@ -65,6 +66,7 @@ function ProfileScreen() {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'audio'
@@ -74,6 +76,7 @@ function ProfileScreen() {
       'manga',
       'reading',
       'vn',
+      'game',
       'video',
       'movie',
       'audio',
@@ -371,6 +374,7 @@ function ProfileScreen() {
                           { value: 'manga', label: 'Manga' },
                           { value: 'reading', label: 'Reading' },
                           { value: 'vn', label: 'Visual Novel' },
+                          { value: 'game', label: 'Video Game' },
                           { value: 'video', label: 'Video' },
                           { value: 'movie', label: 'Movie' },
                           { value: 'audio', label: 'Audio' },

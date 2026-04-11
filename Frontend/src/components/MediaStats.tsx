@@ -57,6 +57,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
         return ['characters', 'pages', 'hours'];
       case 'reading':
       case 'vn':
+      case 'game':
         return ['characters', 'hours'];
       case 'video':
       case 'audio':

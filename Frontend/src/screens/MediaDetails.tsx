@@ -671,6 +671,7 @@ function MediaDetails() {
     currentVolumeReadingPercentage >= 100;
   const isCharacterProgressCompleted =
     (mediaDocument?.type === 'vn' ||
+      mediaDocument?.type === 'game' ||
       mediaDocument?.type === 'manga' ||
       mediaDocument?.type === 'reading') &&
     totalCharCount > 0 &&
@@ -757,6 +758,61 @@ function MediaDetails() {
         ? `/${mediaDocument.type}/${mediaDocument.contentId}/${username}`
         : `/${mediaDocument.type}/${mediaDocument.contentId}`
       : '';
+  const igdbGameUrl = (() => {
+    if (!mediaDocument || mediaDocument.type !== 'game') {
+      return null;
+    }
+
+    const typedMedia = mediaDocument as IMediaDocument & {
+      igdbId?: number;
+      igdbSlug?: string;
+      igdbUrl?: string;
+      url?: string;
+    };
+
+    const directUrl = [typedMedia.igdbUrl, typedMedia.url].find(
+      (url) => typeof url === 'string' && url.includes('igdb.com')
+    );
+
+    if (directUrl) {
+      return directUrl;
+    }
+
+    if (typedMedia.igdbSlug && typedMedia.igdbSlug.trim()) {
+      return `https://www.igdb.com/games/${typedMedia.igdbSlug.trim()}`;
+    }
+
+    const rawTitle =
+      mediaDocument.title.contentTitleEnglish ||
+      mediaDocument.title.contentTitleNative ||
+      mediaDocument.title.contentTitleRomaji ||
+      '';
+
+    const slugFromTitle = rawTitle
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    if (slugFromTitle) {
+      return `https://www.igdb.com/games/${slugFromTitle}`;
+    }
+
+    const fallbackId =
+      typeof typedMedia.igdbId === 'number' &&
+      Number.isFinite(typedMedia.igdbId)
+        ? String(typedMedia.igdbId)
+        : mediaDocument.contentId?.startsWith('igdb-')
+          ? mediaDocument.contentId.slice(5)
+          : '';
+
+    if (fallbackId) {
+      return `https://www.igdb.com/search?type=1&q=${encodeURIComponent(fallbackId)}`;
+    }
+
+    return null;
+  })();
   const writeReviewPath = mediaBasePath
     ? `${mediaBasePath}/reviews/write`
     : '#';
@@ -1063,6 +1119,7 @@ function MediaDetails() {
             />
 
             {(mediaDocument?.type === 'vn' ||
+              mediaDocument?.type === 'game' ||
               mediaDocument?.type === 'manga' ||
               mediaDocument?.type === 'reading') &&
               totalCharCount > 0 &&
@@ -1198,9 +1255,11 @@ function MediaDetails() {
                     <div className="badge badge-primary badge-lg capitalize font-medium">
                       {mediaDocument?.type === 'vn'
                         ? 'visual novel'
-                        : mediaDocument?.type === 'reading'
-                          ? 'light novel'
-                          : mediaDocument?.type || mediaType}
+                        : mediaDocument?.type === 'game'
+                          ? 'video game'
+                          : mediaDocument?.type === 'reading'
+                            ? 'light novel'
+                            : mediaDocument?.type || mediaType}
                     </div>
                   </div>
 
@@ -1337,6 +1396,16 @@ function MediaDetails() {
                             />
                           </svg>
                           VNDB
+                        </a>
+                      )}
+                      {mediaDocument?.type === 'game' && igdbGameUrl && (
+                        <a
+                          className="btn btn-outline btn-sm gap-2"
+                          href={igdbGameUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          IGDB
                         </a>
                       )}
                       {mediaDocument?.type === 'video' && (
@@ -1609,6 +1678,7 @@ function MediaDetails() {
                     )}
 
                   {(mediaDocument?.type === 'vn' ||
+                    mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     totalCharsRead > 0 && (
@@ -1644,6 +1714,7 @@ function MediaDetails() {
                     )}
 
                   {(mediaDocument?.type === 'vn' ||
+                    mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     progressTotalChars > 0 &&
@@ -1689,6 +1760,7 @@ function MediaDetails() {
                     )}
 
                   {(mediaDocument?.type === 'vn' ||
+                    mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     readingSpeed > 0 && (
@@ -1728,6 +1800,7 @@ function MediaDetails() {
                 </div>
 
                 {(mediaDocument?.type === 'vn' ||
+                  mediaDocument?.type === 'game' ||
                   mediaDocument?.type === 'manga' ||
                   mediaDocument?.type === 'reading') &&
                   progressTotalChars > 0 &&

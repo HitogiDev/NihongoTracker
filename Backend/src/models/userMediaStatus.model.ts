@@ -8,7 +8,16 @@ const UserMediaStatusSchema = new Schema<IUserMediaStatus>(
     type: {
       type: String,
       required: true,
-      enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'tv show'],
+      enum: [
+        'anime',
+        'manga',
+        'reading',
+        'vn',
+        'video',
+        'movie',
+        'tv show',
+        'game',
+      ],
     },
     completed: { type: Boolean, default: false },
     completedAt: { type: Date, default: null },

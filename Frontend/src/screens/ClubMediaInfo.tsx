@@ -82,6 +82,7 @@ export default function ClubMediaInfo() {
         };
       case 'reading':
       case 'vn':
+      case 'game':
         return {
           primary: {
             label: 'Characters',
@@ -291,7 +292,9 @@ export default function ClubMediaInfo() {
                           ? mediaStats.thisWeek.episodes
                           : mediaType === 'manga'
                             ? mediaStats.thisWeek.pages
-                            : mediaType === 'reading' || mediaType === 'vn'
+                            : mediaType === 'reading' ||
+                                mediaType === 'vn' ||
+                                mediaType === 'game'
                               ? mediaStats.thisWeek.characters
                               : Math.round(
                                   (mediaStats.thisWeek.minutes / 60) * 100
@@ -357,7 +360,9 @@ export default function ClubMediaInfo() {
                             ? mediaStats.thisMonth.episodes
                             : mediaType === 'manga'
                               ? mediaStats.thisMonth.pages
-                              : mediaType === 'reading' || mediaType === 'vn'
+                              : mediaType === 'reading' ||
+                                  mediaType === 'vn' ||
+                                  mediaType === 'game'
                                 ? mediaStats.thisMonth.characters
                                 : Math.round(
                                     (mediaStats.thisMonth.minutes / 60) * 100
@@ -540,7 +545,8 @@ export default function ClubMediaInfo() {
                         });
                       } else if (
                         mediaType === 'reading' ||
-                        mediaType === 'vn'
+                        mediaType === 'vn' ||
+                        mediaType === 'game'
                       ) {
                         baseDatasets.push({
                           label: 'Characters Read',

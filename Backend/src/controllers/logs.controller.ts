@@ -70,7 +70,9 @@ export async function getUntrackedLogs(
   try {
     const untrackedLogs = await Log.find({
       user: user._id,
-      type: { $in: ['anime', 'manga', 'reading', 'vn', 'video', 'movie'] },
+      type: {
+        $in: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'game'],
+      },
       $or: [
         { mediaId: { $exists: false } },
         { mediaId: null },
@@ -414,7 +416,7 @@ export async function getDashboardHours(
       previousMonthActualDateLocal.getTime() + offsetNow
     );
 
-    const readingTypes = ['reading', 'manga', 'vn'];
+    const readingTypes = ['reading', 'manga', 'vn', 'game'];
     const listeningTypes = ['anime', 'audio', 'video'];
 
     const currentMonthStats = await Log.aggregate([
@@ -1397,7 +1399,8 @@ export async function importLogs(
         } else if (
           log.type === 'reading' ||
           log.type === 'manga' ||
-          log.type === 'vn'
+          log.type === 'vn' ||
+          log.type === 'game'
         ) {
           acc.readingXp += log.xp;
         }
@@ -1538,6 +1541,7 @@ interface IGetUserStatsQuery {
     | 'video'
     | 'movie'
     | 'vn'
+    | 'game'
     | 'other'
     | 'tv show';
   start?: string;
@@ -1649,6 +1653,7 @@ export async function getUserStats(
       'tv show',
       'movie',
       'vn',
+      'game',
       'other',
     ];
 
@@ -1829,6 +1834,7 @@ export async function getUserStats(
       'reading',
       'anime',
       'vn',
+      'game',
       'video',
       'tv show',
       'movie',
@@ -1982,7 +1988,7 @@ export async function getUserStats(
         acc.untrackedCount += stat.untrackedCount;
         acc.totalChars += stat.totalChars || 0;
 
-        if (['reading', 'manga', 'vn'].includes(stat.type)) {
+        if (['reading', 'manga', 'vn', 'game'].includes(stat.type)) {
           acc.readingHours += stat.totalTimeHours;
         } else if (
           ['anime', 'video', 'tv show', 'movie', 'audio'].includes(stat.type)
@@ -2042,14 +2048,14 @@ export async function getUserStats(
     const readingSpeedData =
       type === 'all' ||
       (Array.isArray(type) &&
-        type.some((t) => ['reading', 'manga', 'vn'].includes(t))) ||
-      ['reading', 'manga', 'vn'].includes(type as string)
+        type.some((t) => ['reading', 'manga', 'vn', 'game'].includes(t))) ||
+      ['reading', 'manga', 'vn', 'game'].includes(type as string)
         ? await Log.aggregate([
             {
               $match: {
                 user: user._id,
                 ...dateFilter,
-                type: { $in: ['reading', 'manga', 'vn'] },
+                type: { $in: ['reading', 'manga', 'vn', 'game'] },
                 time: { $ne: null, $gt: 0 },
                 $or: [
                   { chars: { $ne: null, $gt: 0 } },
@@ -2218,6 +2224,16 @@ export async function recalculateXp(
                 log.xp = 0;
               }
               break;
+            case 'game': {
+              const gameTimeXp = log.time
+                ? Math.floor(((log.time * 45) / 100) * XP_FACTOR_TIME * 0.75)
+                : 0;
+              const gameCharsXp = log.chars
+                ? Math.floor((log.chars / 350) * XP_FACTOR_CHARS)
+                : 0;
+              log.xp = Math.max(gameTimeXp, gameCharsXp, 0);
+              break;
+            }
             case 'other':
               log.xp = 0;
               break;
@@ -2231,7 +2247,7 @@ export async function recalculateXp(
           if (user.stats) {
             if (['anime', 'video', 'movie', 'audio'].includes(log.type)) {
               user.stats.listeningXp += log.xp;
-            } else if (['reading', 'manga', 'vn'].includes(log.type)) {
+            } else if (['reading', 'manga', 'vn', 'game'].includes(log.type)) {
               user.stats.readingXp += log.xp;
             }
             user.stats.userXp += log.xp;

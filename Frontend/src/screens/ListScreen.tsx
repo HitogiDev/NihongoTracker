@@ -42,6 +42,7 @@ type FilterOption =
   | 'manga'
   | 'reading'
   | 'vn'
+  | 'game'
   | 'video'
   | 'movie'
   | 'tv show';
@@ -67,6 +68,7 @@ function ListScreen() {
     'manga',
     'reading',
     'vn',
+    'game',
     'video',
     'movie',
     'tv show',
@@ -217,6 +219,10 @@ function ListScreen() {
         category: 'reading' as const,
       })),
       ...immersionList.vn.map((item) => ({ ...item, category: 'vn' as const })),
+      ...immersionList.game.map((item) => ({
+        ...item,
+        category: 'game' as const,
+      })),
       ...immersionList.video.map((item) => ({
         ...item,
         category: 'video' as const,
@@ -288,6 +294,7 @@ function ListScreen() {
       'manga',
       'reading',
       'vn',
+      'game',
       'video',
       'movie',
       'tv show',
@@ -341,6 +348,7 @@ function ListScreen() {
       manga: immersionList?.manga.length || 0,
       reading: immersionList?.reading.length || 0,
       vn: immersionList?.vn.length || 0,
+      game: immersionList?.game.length || 0,
       video: immersionList?.video.length || 0,
       movie: immersionList?.movie?.length || 0,
       'tv show': immersionList?.['tv show']?.length || 0,
@@ -512,6 +520,7 @@ function ListScreen() {
                           { value: 'manga', label: 'Manga' },
                           { value: 'reading', label: 'Reading' },
                           { value: 'vn', label: 'Visual Novels' },
+                          { value: 'game', label: 'Video Games' },
                           { value: 'video', label: 'Video' },
                           { value: 'movie', label: 'Movies' },
                           { value: 'tv show', label: 'TV Shows' },
@@ -785,6 +794,11 @@ function MediaGroup({
       color: 'text-accent',
       label: 'Visual Novels',
     },
+    game: {
+      icon: Gamepad,
+      color: 'text-neutral',
+      label: 'Video Games',
+    },
     video: {
       icon: Video,
       color: 'text-info',
@@ -902,6 +916,12 @@ function MediaCard({
       bg: 'bg-accent/10',
       border: 'border-accent/20',
     },
+    game: {
+      icon: Gamepad,
+      color: 'text-neutral',
+      bg: 'bg-base-300',
+      border: 'border-base-300',
+    },
     video: {
       icon: Video,
       color: 'text-info',
@@ -1014,11 +1034,13 @@ function MediaCard({
             <TypeIcon className="w-3 h-3 mr-1" />
             {media.type === 'vn'
               ? 'VN'
-              : media.type === 'tv show'
-                ? 'TV Show'
-                : media.type === 'reading'
-                  ? 'Light Novel'
-                  : media.type.charAt(0).toUpperCase() + media.type.slice(1)}
+              : media.type === 'game'
+                ? 'Game'
+                : media.type === 'tv show'
+                  ? 'TV Show'
+                  : media.type === 'reading'
+                    ? 'Light Novel'
+                    : media.type.charAt(0).toUpperCase() + media.type.slice(1)}
           </span>
         </div>
       </div>
@@ -1120,6 +1142,7 @@ function MediaListItem({
     manga: { icon: Book, color: 'text-warning', bg: 'bg-warning/10' },
     reading: { icon: Book, color: 'text-primary', bg: 'bg-primary/10' },
     vn: { icon: Gamepad, color: 'text-accent', bg: 'bg-accent/10' },
+    game: { icon: Gamepad, color: 'text-neutral', bg: 'bg-base-300' },
     video: { icon: Video, color: 'text-info', bg: 'bg-info/10' },
     movie: { icon: Clapperboard, color: 'text-error', bg: 'bg-error/10' },
     'tv show': {
@@ -1194,12 +1217,14 @@ function MediaListItem({
                   <TypeIcon className="w-3 h-3" />
                   {media.type === 'vn'
                     ? 'Visual Novel'
-                    : media.type === 'tv show'
-                      ? 'TV Show'
-                      : media.type === 'reading'
-                        ? 'Light Novel'
-                        : media.type.charAt(0).toUpperCase() +
-                          media.type.slice(1)}
+                    : media.type === 'game'
+                      ? 'Video Game'
+                      : media.type === 'tv show'
+                        ? 'TV Show'
+                        : media.type === 'reading'
+                          ? 'Light Novel'
+                          : media.type.charAt(0).toUpperCase() +
+                            media.type.slice(1)}
                 </div>
 
                 {media.isAdult && (

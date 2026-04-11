@@ -33,6 +33,7 @@ const LogSchema = new Schema<ILog>(
         'movie',
         'tv show',
         'other',
+        'game',
       ],
     },
     mediaId: {
@@ -82,7 +83,8 @@ const LogSchema = new Schema<ILog>(
           this.type === 'video' ||
           this.type === 'movie' ||
           this.type === 'audio' ||
-          this.type === 'other'
+          this.type === 'other' ||
+          (this.type === 'game' && !hasChars)
         );
       },
     },

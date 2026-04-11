@@ -6,7 +6,14 @@ import {
 } from '../api/trackerApi';
 import { AxiosError } from 'axios';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Play, Book, Clapperboard, CircleCheck, Circle } from 'lucide-react';
+import {
+  Play,
+  Book,
+  Clapperboard,
+  CircleCheck,
+  Circle,
+  Gamepad2,
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
 import { useEffect, useState } from 'react';
@@ -28,7 +35,9 @@ const getMediaTypeIcon = (type: string) => {
     case 'video':
       return <Clapperboard className="text-lg" />;
     case 'vn':
-      return <Play className="text-lg" />;
+      return <Gamepad2 className="text-lg" />;
+    case 'game':
+      return <Gamepad2 className="text-lg" />;
     default:
       return <Play className="text-lg" />;
   }
@@ -269,6 +278,7 @@ export default function MediaHeader() {
       mediaType !== 'anime' &&
       mediaType !== 'manga' &&
       mediaType !== 'vn' &&
+      mediaType !== 'game' &&
       mediaType !== 'video' &&
       mediaType !== 'reading' &&
       mediaType !== 'movie' &&

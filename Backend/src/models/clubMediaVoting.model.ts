@@ -18,6 +18,7 @@ type MediaType =
   | 'vn'
   | 'video'
   | 'movie'
+  | 'game'
   | 'custom';
 
 export interface IClubMediaVotingDocument extends Document {
@@ -60,7 +61,16 @@ const ClubMediaVotingSchema = new Schema<IClubMediaVotingDocument>(
     description: { type: String },
     mediaType: {
       type: String,
-      enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'custom'],
+      enum: [
+        'anime',
+        'manga',
+        'reading',
+        'vn',
+        'video',
+        'movie',
+        'game',
+        'custom',
+      ],
       required: true,
     },
     customMediaType: { type: String },

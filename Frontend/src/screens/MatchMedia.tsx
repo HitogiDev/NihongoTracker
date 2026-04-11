@@ -7,6 +7,7 @@ import ReadingLogs from '../components/ReadingLogs';
 import VideoLogs from '../components/VideoLogs';
 import MovieLogs from '../components/MovieLogs';
 import TVShowLogs from '../components/TVShowLogs';
+import GameLogs from '../components/GameLogs';
 
 function AssignMedia() {
   const { user } = useUserDataStore();
@@ -32,6 +33,12 @@ function AssignMedia() {
               label: 'VN',
               component: (isActive) => (
                 <VNLogs username={user?.username} isActive={isActive} />
+              ),
+            },
+            {
+              label: 'Game',
+              component: (isActive) => (
+                <GameLogs username={user?.username} isActive={isActive} />
               ),
             },
             {

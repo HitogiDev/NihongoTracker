@@ -131,6 +131,7 @@ export async function getMediumRankingFn(params: {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show'

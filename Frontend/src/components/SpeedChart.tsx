@@ -5,7 +5,7 @@ import { useTimezone } from '../hooks/useTimezone';
 import LineChart from './LineChart';
 
 type TimeframeType = 'total' | 'today' | 'week' | 'month' | 'year';
-type ReadingType = 'reading' | 'vn' | 'manga';
+type ReadingType = 'reading' | 'vn' | 'game' | 'manga';
 
 // Updated to include the readingSpeedData format from IUserStats
 interface SpeedChartProps {
@@ -47,6 +47,7 @@ type FilteredData = {
 const READING_TYPES = [
   'reading',
   'vn',
+  'game',
   'manga',
 ] as const satisfies ReadingType[];
 
@@ -297,7 +298,9 @@ function SpeedChart({
         label:
           type === 'vn'
             ? 'Visual Novel'
-            : type.charAt(0).toUpperCase() + type.slice(1),
+            : type === 'game'
+              ? 'Video Game'
+              : type.charAt(0).toUpperCase() + type.slice(1),
         data: (() => {
           // Create a map of dates to speeds with null gaps filled in
           const allDates = getAllDates();

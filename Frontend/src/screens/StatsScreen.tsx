@@ -44,10 +44,15 @@ type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
 
 type TimeRange = 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
 
-type ReadingType = 'reading' | 'manga' | 'vn';
+type ReadingType = 'reading' | 'manga' | 'vn' | 'game';
 type EpisodeType = 'anime' | 'video' | 'movie';
 
-const READING_TYPES: ReadonlyArray<ReadingType> = ['reading', 'manga', 'vn'];
+const READING_TYPES: ReadonlyArray<ReadingType> = [
+  'reading',
+  'manga',
+  'vn',
+  'game',
+];
 const EPISODE_TYPES: ReadonlyArray<EpisodeType> = ['anime', 'video', 'movie'];
 
 const CATEGORY_LABELS: Record<TimeRange, string> = {
@@ -70,6 +75,7 @@ const PERIOD_LABELS: Record<TimeRange, string> = {
 
 const PIE_TYPE_COLORS: Record<string, string> = {
   vn: '#3a70e4',
+  game: '#59c94e',
   anime: '#26b2f2',
   video: '#2cc9a4',
   'tv show': '#f8b420',
@@ -82,6 +88,7 @@ const PIE_TYPE_COLORS: Record<string, string> = {
 
 function capitalizeType(value: string) {
   if (value === 'vn') return 'Visual Novel';
+  if (value === 'game') return 'Video Game';
   if (value === 'tv show') return 'TV Show';
   if (value === 'all') return 'All Types';
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -372,6 +379,7 @@ function StatsScreen() {
     'reading',
     'anime',
     'vn',
+    'game',
     'video',
     'manga',
     'audio',
@@ -855,7 +863,7 @@ function StatsScreen() {
                         </span>
                       </p>
                       <p className="text-xs text-base-content/60 mt-1">
-                        Reading, manga, and visual novels
+                        Reading, manga, visual novels, and video games
                       </p>
                     </div>
                   </div>

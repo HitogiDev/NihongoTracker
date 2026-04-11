@@ -61,6 +61,7 @@ interface StackedBarChartProps {
 
 const typeColors: { [key: string]: string } = {
   vn: '#3a70e4',
+  game: '#59c94e',
   anime: '#26b2f2',
   video: '#2cc9a4',
   'tv show': '#f8b420',
@@ -242,7 +243,9 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         label:
           stat.type === 'vn'
             ? 'Visual Novel'
-            : stat.type.charAt(0).toUpperCase() + stat.type.slice(1),
+            : stat.type === 'game'
+              ? 'Video Game'
+              : stat.type.charAt(0).toUpperCase() + stat.type.slice(1),
         data,
         backgroundColor: typeColors[stat.type] || typeColors.other,
       };
@@ -437,7 +440,9 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       ? 'All Media Types'
       : selectedType === 'vn'
         ? 'Visual Novel'
-        : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
+        : selectedType === 'game'
+          ? 'Video Game'
+          : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
 
   const timeframeLabel =
     timeframe === 'today'

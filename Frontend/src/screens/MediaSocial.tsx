@@ -26,6 +26,7 @@ export default function MediaSocial() {
     'manga',
     'reading',
     'vn',
+    'game',
     'video',
     'movie',
     'tv show',
@@ -48,6 +49,7 @@ export default function MediaSocial() {
 
     if (
       normalizedType === 'vn' ||
+      normalizedType === 'game' ||
       normalizedType === 'reading' ||
       normalizedType === 'light novel' ||
       normalizedType === 'light novels'

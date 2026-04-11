@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Pencil, Play, Book, Clapperboard, Calendar } from 'lucide-react';
+import {
+  Pencil,
+  Play,
+  Book,
+  Clapperboard,
+  Calendar,
+  Gamepad2,
+} from 'lucide-react';
 import { getClubFn, getClubMediaFn } from '../../api/clubApi';
 import Loader from '../Loader';
 import QuickLog from '../QuickLog';
@@ -21,7 +28,9 @@ const getMediaTypeIcon = (type: string) => {
     case 'video':
       return <Clapperboard className="text-lg" />;
     case 'vn':
-      return <Play className="text-lg" />;
+      return <Gamepad2 className="text-lg" />;
+    case 'game':
+      return <Gamepad2 className="text-lg" />;
     default:
       return <Play className="text-lg" />;
   }
@@ -193,9 +202,11 @@ export default function ClubMediaHeader() {
                 <span className="badge badge-primary badge-lg capitalize">
                   {media.mediaType === 'vn'
                     ? 'visual novel'
-                    : media.mediaType === 'reading'
-                      ? 'light novel'
-                      : media.mediaType}
+                    : media.mediaType === 'game'
+                      ? 'video game'
+                      : media.mediaType === 'reading'
+                        ? 'light novel'
+                        : media.mediaType}
                 </span>
                 <span
                   className={`badge badge-lg ${media.isActive ? 'badge-success' : 'badge-outline'}`}
@@ -272,6 +283,7 @@ export default function ClubMediaHeader() {
               | 'manga'
               | 'reading'
               | 'vn'
+              | 'game'
               | 'video'
               | 'movie',
             contentImage: undefined, // Let QuickLog handle image loading

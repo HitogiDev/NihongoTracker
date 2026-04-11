@@ -26,7 +26,7 @@ const ClubMediaSchema = new Schema<IClubMedia>(
     mediaId: { type: String },
     mediaType: {
       type: String,
-      enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie'],
+      enum: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'game'],
       required: true,
     },
     title: { type: String, required: true },

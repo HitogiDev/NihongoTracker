@@ -233,6 +233,7 @@ export interface IMatchMediaLog {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show'
@@ -343,6 +344,7 @@ export interface ILog {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show'
@@ -471,6 +473,7 @@ export interface IImmersionList {
   manga: IMediaDocument[];
   reading: IMediaDocument[];
   vn: IMediaDocument[];
+  game: IMediaDocument[];
   video: IMediaDocument[];
   movie: IMediaDocument[];
   'tv show': IMediaDocument[];
@@ -493,7 +496,15 @@ export interface IMediaDocument {
   contentImage?: string;
   coverImage?: string;
   description?: Array<IMediaDescription>;
-  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'tv show';
+  type:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'game'
+    | 'video'
+    | 'movie'
+    | 'tv show';
   episodes?: number;
   episodeDuration?: number;
   runtime?: number;
@@ -754,6 +765,7 @@ export interface IClubMedia {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show';
@@ -782,6 +794,7 @@ export interface IMediaReview {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'tv show';
@@ -815,6 +828,7 @@ export interface IClubMediaVoting {
     | 'manga'
     | 'reading'
     | 'vn'
+    | 'game'
     | 'video'
     | 'movie'
     | 'custom';
