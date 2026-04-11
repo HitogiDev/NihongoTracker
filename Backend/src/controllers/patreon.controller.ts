@@ -6,17 +6,99 @@ import axios from 'axios';
 import qs from 'qs';
 import { IPatreonIdentityResponse } from '../types.js';
 
+function normalizeBaseUrl(value?: string): string {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = value.trim().replace(/\/+$/, '');
+  if (!trimmed) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(trimmed)) {
+    return `http://${trimmed}`;
+  }
+
+  return `https://${trimmed}`;
+}
+
+function isLocalUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname;
+    return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname);
+  } catch {
+    return /localhost|127\.0\.0\.1|\[::1\]/i.test(value);
+  }
+}
+
+function getFirstHeaderValue(
+  value: string | string[] | undefined
+): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw.split(',')[0]?.trim();
+}
+
+function getRequestOrigin(req?: Request): string {
+  if (!req) {
+    return '';
+  }
+
+  const forwardedProto = getFirstHeaderValue(req.headers['x-forwarded-proto']);
+  const forwardedHost = getFirstHeaderValue(req.headers['x-forwarded-host']);
+  const host = forwardedHost || req.get('host') || '';
+
+  if (!host) {
+    return '';
+  }
+
+  const protocol = forwardedProto || req.protocol || 'https';
+  return `${protocol}://${host}`.replace(/\/+$/, '');
+}
+
 // Helper function to get backend and frontend URLs
-function getUrls() {
-  const backendUrl =
-    process.env.BACKEND_URL ||
-    process.env.PROD_DOMAIN?.replace(/\/$/, '') ||
-    '';
-  const frontendUrl =
-    process.env.FRONTEND_URL ||
-    process.env.PROD_DOMAIN?.replace(/\/$/, '') ||
-    '';
-  return { backendUrl, frontendUrl };
+function getUrls(req?: Request) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const requestOrigin = normalizeBaseUrl(getRequestOrigin(req));
+
+  // Production uses one canonical public origin.
+  if (isProduction) {
+    const productionDomain = normalizeBaseUrl(process.env.PROD_DOMAIN);
+    const canonicalUrl = productionDomain;
+    return {
+      backendUrl: canonicalUrl.replace(/\/+$/, ''),
+      frontendUrl: canonicalUrl.replace(/\/+$/, ''),
+    };
+  }
+
+  const configuredBackendUrl = normalizeBaseUrl(
+    process.env.BACKEND_PUBLIC_URL || process.env.BACKEND_URL
+  );
+  const configuredFrontendUrl = normalizeBaseUrl(process.env.FRONTEND_URL);
+  const rejectLocalhost = false;
+
+  let backendUrl = configuredBackendUrl;
+  if (!backendUrl || (rejectLocalhost && isLocalUrl(backendUrl))) {
+    backendUrl = requestOrigin || configuredBackendUrl;
+  }
+
+  let frontendUrl = configuredFrontendUrl;
+  if (!frontendUrl || (rejectLocalhost && isLocalUrl(frontendUrl))) {
+    frontendUrl = requestOrigin || configuredFrontendUrl || backendUrl;
+  }
+
+  return {
+    backendUrl: backendUrl.replace(/\/+$/, ''),
+    frontendUrl: frontendUrl.replace(/\/+$/, ''),
+  };
 }
 
 // Link Patreon account (user-initiated)
@@ -412,7 +494,7 @@ export async function getPatreonStatus(
 }
 
 export async function initiatePatreonOAuth(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
@@ -420,10 +502,10 @@ export async function initiatePatreonOAuth(
     const user = res.locals.user;
     const clientId = process.env.PATREON_CLIENT_ID;
 
-    const { backendUrl } = getUrls();
+    const { backendUrl } = getUrls(req);
 
     if (!backendUrl) {
-      console.error('BACKEND_URL is not configured');
+      console.error('Patreon OAuth base URL is not configured');
       return next(
         new customError('OAuth is not configured properly on this server', 500)
       );
@@ -474,7 +556,7 @@ export async function handlePatreonOAuthCallback(
 ) {
   try {
     const { code, state } = req.query;
-    const { backendUrl, frontendUrl } = getUrls();
+    const { backendUrl, frontendUrl } = getUrls(req);
 
     if (!code || !state) {
       return res.redirect(
@@ -637,7 +719,7 @@ export async function handlePatreonOAuthCallback(
     // Redirect to frontend with success
     res.redirect(`${frontendUrl}/settings?patreon=success`);
   } catch (error: any) {
-    const { frontendUrl } = getUrls();
+    const { frontendUrl } = getUrls(req);
     res.redirect(`${frontendUrl}/settings?patreon=error&message=oauth_failed`);
   }
 }
