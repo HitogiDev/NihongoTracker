@@ -8,6 +8,7 @@ import {
   ManabeTSVLog,
   VNCRLog,
   OtherCSVLog,
+  KechimochiCSVLog,
   IManabeLogs,
 } from '../types.js';
 import { Types } from 'mongoose';
@@ -509,6 +510,140 @@ function transformOtherCSVLogsList(
     });
 }
 
+function normalizeKechimochiLabel(value?: string): string {
+  if (!value) {
+    return '';
+  }
+  return value.toLowerCase().trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+}
+
+function parseKechimochiDate(dateValue: string): Date | null {
+  const rawDate = dateValue.trim();
+  if (!rawDate) {
+    return null;
+  }
+
+  const normalizedDate = /^\d{4}\/\d{2}\/\d{2}$/.test(rawDate)
+    ? rawDate.replace(/\//g, '-')
+    : rawDate;
+
+  const parsedDate = new Date(normalizedDate);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function parseKechimochiNumber(value?: string): number {
+  if (!value) {
+    return 0;
+  }
+
+  const parsed = parseFloat(value.trim());
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function mapKechimochiType(
+  mediaTypeValue: string,
+  activityTypeValue?: string
+): ILog['type'] {
+  const explicitTypeMap: { [key: string]: ILog['type'] } = {
+    anime: 'anime',
+    manga: 'manga',
+    vn: 'vn',
+    'visual novel': 'vn',
+    visualnovel: 'vn',
+    movie: 'movie',
+    drama: 'tv show',
+    'tv show': 'tv show',
+    tvshow: 'tv show',
+    'tv series': 'tv show',
+    tvseries: 'tv show',
+    'youtube video': 'video',
+    youtubevideo: 'video',
+    youtube: 'video',
+    livestream: 'video',
+    video: 'video',
+    reading: 'reading',
+    novel: 'reading',
+    'web novel': 'reading',
+    webnovel: 'reading',
+    nonfiction: 'reading',
+    'non fiction': 'reading',
+    book: 'reading',
+    audio: 'audio',
+    listening: 'audio',
+    podcast: 'audio',
+    videogame: 'other',
+    'video game': 'other',
+    game: 'other',
+    playing: 'other',
+    none: 'other',
+    unknown: 'other',
+  };
+
+  const normalizedActivityType = normalizeKechimochiLabel(activityTypeValue);
+  const activityAlias = normalizedActivityType.replace(/\s+/g, '');
+
+  if (normalizedActivityType) {
+    if (explicitTypeMap[normalizedActivityType]) {
+      return explicitTypeMap[normalizedActivityType];
+    }
+    if (explicitTypeMap[activityAlias]) {
+      return explicitTypeMap[activityAlias];
+    }
+  }
+
+  const normalizedMediaType = normalizeKechimochiLabel(mediaTypeValue);
+  const mediaAlias = normalizedMediaType.replace(/\s+/g, '');
+
+  if (explicitTypeMap[normalizedMediaType]) {
+    return explicitTypeMap[normalizedMediaType];
+  }
+  if (explicitTypeMap[mediaAlias]) {
+    return explicitTypeMap[mediaAlias];
+  }
+
+  return 'other';
+}
+
+function transformKechimochiLogsList(
+  list: KechimochiCSVLog[],
+  user: Omit<IUser, 'password'>
+): ILogNT[] {
+  return list
+    .map((log) => {
+      const date = parseKechimochiDate(log.Date);
+      if (!date) {
+        return null;
+      }
+
+      const type = mapKechimochiType(log['Media Type'], log['Activity Type']);
+      const time = Math.round(parseKechimochiNumber(log.Duration));
+      const chars = Math.round(parseKechimochiNumber(log.Characters));
+
+      // Skip rows that don't provide any measurable progress.
+      if (time <= 0 && chars <= 0) {
+        return null;
+      }
+
+      const NTLog: ILogNT = {
+        user: user._id,
+        type,
+        date,
+        description: (log['Log Name'] || '').trim(),
+      };
+
+      if (time > 0) {
+        NTLog.time = time;
+      }
+
+      if (chars > 0) {
+        NTLog.chars = chars;
+      }
+
+      return NTLog;
+    })
+    .filter((log): log is ILogNT => Boolean(log));
+}
+
 export async function getLogsFromCSV(
   req: Request,
   res: Response,
@@ -573,6 +708,8 @@ export async function getLogsFromCSV(
           }
         }
       }
+    } else if (importType === 'kechimochi') {
+      logs = transformKechimochiLogsList(req.body.logs, res.locals.user);
     } else {
       throw new customError('Unsupported CSV type', 400);
     }

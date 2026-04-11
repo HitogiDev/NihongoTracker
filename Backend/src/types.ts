@@ -566,6 +566,16 @@ export interface OtherCSVLog {
   mediaId?: string;
 }
 
+export interface KechimochiCSVLog {
+  Date: string;
+  'Log Name': string;
+  'Media Type': string;
+  Duration: string;
+  Language: string;
+  Characters?: string;
+  'Activity Type'?: string;
+}
+
 export interface IDailyGoal extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;

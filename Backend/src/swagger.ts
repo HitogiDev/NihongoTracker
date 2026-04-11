@@ -964,8 +964,14 @@ const swaggerDocument = {
             'multipart/form-data': {
               schema: {
                 type: 'object',
+                required: ['logFileImport', 'logImportType'],
                 properties: {
                   logFileImport: { type: 'string', format: 'binary' },
+                  logImportType: {
+                    type: 'string',
+                    enum: ['tmw', 'manabe', 'vncr', 'other', 'kechimochi'],
+                    description: 'Format of the uploaded file',
+                  },
                 },
               },
             },

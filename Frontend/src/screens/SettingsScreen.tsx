@@ -89,13 +89,16 @@ const PRESET_BADGE_TEXT_COLORS = [
   'primary-content',
   'secondary-content',
 ] as const;
-const IMPORT_TYPE_LABELS: Record<'tmw' | 'manabe' | 'vncr' | 'other', string> =
-  {
-    tmw: 'TheMoeWay (.csv)',
-    manabe: 'Manabe (.tsv)',
-    vncr: 'VN-CSV (.csv)',
-    other: 'NihongoTracker | Other (.csv)',
-  };
+const IMPORT_TYPE_LABELS: Record<
+  'tmw' | 'manabe' | 'vncr' | 'other' | 'kechimochi',
+  string
+> = {
+  tmw: 'TheMoeWay (.csv)',
+  manabe: 'Manabe (.tsv)',
+  vncr: 'VN-CSV (.csv)',
+  other: 'NihongoTracker | Other (.csv)',
+  kechimochi: 'Kechimochi (.csv)',
+};
 
 type PatreonStatus = {
   patreonEmail?: string;
@@ -383,7 +386,7 @@ function SettingsScreen() {
     string | null
   >(null);
   const [importType, setImportType] = useState<
-    'tmw' | 'manabe' | 'vncr' | 'other' | null
+    'tmw' | 'manabe' | 'vncr' | 'other' | 'kechimochi' | null
   >(null);
   const confirmUsernameRef = useRef<HTMLInputElement>(null);
   const [isUsernameMatch, setIsUsernameMatch] = useState(false);
@@ -2615,22 +2618,39 @@ function SettingsScreen() {
                               NihongoTracker | Other
                             </button>
                           </li>
+                          <li>
+                            <button
+                              type="button"
+                              className={`hover:bg-base-200 ${importType === 'kechimochi' ? 'active' : ''}`}
+                              onClick={() => {
+                                setImportType('kechimochi');
+                                (document.activeElement as HTMLElement)?.blur();
+                              }}
+                            >
+                              Kechimochi
+                            </button>
+                          </li>
                         </ul>
                       </div>
-                      {importType === 'other' && (
+                      {(importType === 'other' ||
+                        importType === 'kechimochi') && (
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm gap-1 text-info self-start"
                           onClick={() =>
                             (
                               document.getElementById(
-                                'other_csv_help_modal'
+                                importType === 'other'
+                                  ? 'other_csv_help_modal'
+                                  : 'kechimochi_csv_help_modal'
                               ) as HTMLDialogElement
                             ).showModal()
                           }
                         >
                           <HelpCircle className="w-4 h-4" />
-                          CSV Format Help
+                          {importType === 'other'
+                            ? 'CSV Format Help'
+                            : 'Kechimochi Import Help'}
                         </button>
                       )}
                       <button
@@ -3040,8 +3060,8 @@ function SettingsScreen() {
             </button>
           </div>
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
+        <form method="dialog" className="modal-backdrop cursor-default">
+          <button className="cursor-default">close</button>
         </form>
       </dialog>
 
@@ -3120,8 +3140,8 @@ function SettingsScreen() {
             </button>
           </div>
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
+        <form method="dialog" className="modal-backdrop cursor-default">
+          <button className="cursor-default">close</button>
         </form>
       </dialog>
 
@@ -3405,6 +3425,53 @@ function SettingsScreen() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button>close</button>
+        </form>
+      </dialog>
+
+      {/* Kechimochi CSV Help Modal */}
+      <dialog id="kechimochi_csv_help_modal" className="modal">
+        <div className="modal-box max-w-lg">
+          <h3 className="text-lg font-bold mb-4">Kechimochi Import Help</h3>
+          <div role="alert" className="alert alert-info alert-soft mb-4">
+            <span>
+              Export your Activity Logs from Kechimochi and upload that file
+              directly here. You do not need to edit the CSV format manually.
+            </span>
+          </div>
+          <div role="alert" className="alert alert-warning alert-soft mb-4">
+            <span>
+              Use only the Activity Logs export. Milestones and Media Library
+              exports are not imported by this option.
+            </span>
+          </div>
+          <div className="mt-4 p-3 bg-base-200 rounded-lg">
+            <p className="text-sm font-semibold mb-2">Imported as Other</p>
+            <ul className="list-disc pl-5 text-sm text-base-content/80 space-y-1">
+              <li>Playing entries (including game and video game labels).</li>
+              <li>Entries marked as None or Unknown.</li>
+              <li>Any unrecognized Media Type or Activity Type.</li>
+            </ul>
+          </div>
+          <div className="mt-3 p-3 bg-base-200 rounded-lg">
+            <p className="text-sm font-semibold mb-2">Notes</p>
+            <ul className="list-disc pl-5 text-sm text-base-content/80 space-y-1">
+              <li>
+                Watching logs are imported as video unless Kechimochi provides a
+                specific subtype like anime, movie, or TV show.
+              </li>
+              <li>
+                Reading and listening logs keep their corresponding log types.
+              </li>
+            </ul>
+          </div>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-primary">Got it!</button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop cursor-default">
+          <button className="cursor-default">close</button>
         </form>
       </dialog>
     </div>

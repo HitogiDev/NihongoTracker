@@ -1,7 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { customError } from './errorMiddleware.js';
 import csvtojson from 'csvtojson';
-import { TMWLog, ManabeTSVLog, VNCRLog, OtherCSVLog } from '../types.js';
+import {
+  TMWLog,
+  ManabeTSVLog,
+  VNCRLog,
+  OtherCSVLog,
+  KechimochiCSVLog,
+} from '../types.js';
 
 export async function csvToArray(
   req: Request,
@@ -12,7 +18,11 @@ export async function csvToArray(
     if (!req.file) {
       throw new customError('No file uploaded', 400);
     }
-    if (!['tmw', 'manabe', 'vncr', 'other'].includes(req.body.logImportType)) {
+    if (
+      !['tmw', 'manabe', 'vncr', 'other', 'kechimochi'].includes(
+        req.body.logImportType
+      )
+    ) {
       throw new customError('Import type is invalid', 400);
     }
     if (req.file.size > 5 * 1024 * 1024) {
@@ -77,6 +87,31 @@ export async function csvToArray(
         if (!row.date || !row.type) {
           throw new customError(
             'Each row must have at least a "date" and "type" field',
+            400
+          );
+        }
+      }
+
+      req.body.logs = results;
+    } else if (csvType === 'kechimochi') {
+      // Parse Kechimochi activity CSV format
+      const results: KechimochiCSVLog[] = await csvtojson({
+        delimiter: ',',
+      }).fromString(csvString);
+
+      if (results.length === 0) {
+        throw new customError('No data found in the CSV file', 400);
+      }
+
+      for (const row of results) {
+        if (
+          !row.Date ||
+          !row['Log Name'] ||
+          !row['Media Type'] ||
+          !row.Duration
+        ) {
+          throw new customError(
+            'Each row must have "Date", "Log Name", "Media Type", and "Duration" fields',
             400
           );
         }
