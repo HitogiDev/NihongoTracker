@@ -30,9 +30,11 @@ import {
   X,
   CircleCheck,
   Circle,
+  Plus,
 } from 'lucide-react';
 
 import { convertBBCodeToHtml } from '../utils/utils';
+import QuickLog from '../components/QuickLog';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
@@ -110,6 +112,10 @@ function ListScreen() {
   );
   const [showHideAlertModal, setShowHideAlertModal] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState<string | null>(null);
+
+  const [selectedMediaForLog, setSelectedMediaForLog] =
+    useState<IMediaDocument | null>(null);
+  const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -362,6 +368,16 @@ function ListScreen() {
     updateUserSettings(formData);
   };
 
+  const handleOpenQuickLog = (media: IMediaDocument) => {
+    setSelectedMediaForLog(media);
+    setIsQuickLogOpen(true);
+  };
+
+  const handleCloseQuickLog = () => {
+    setIsQuickLogOpen(false);
+    setSelectedMediaForLog(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -433,6 +449,22 @@ function ListScreen() {
             onClick={() => setShowHideAlertModal(false)}
           ></div>
         </dialog>
+      )}
+
+      {selectedMediaForLog && (
+        <QuickLog
+          open={isQuickLogOpen}
+          onClose={handleCloseQuickLog}
+          media={selectedMediaForLog}
+          onLogged={() => {
+            queryClient.invalidateQueries({
+              queryKey: ['recentLogs', username],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ['ImmersionList', username],
+            });
+          }}
+        />
       )}
 
       <div className="min-h-screen bg-base-200">
@@ -704,6 +736,7 @@ function ListScreen() {
                     isOwnProfile={!!isOwnProfile}
                     onToggleCompletion={handleToggleCompletion}
                     pendingToggleId={pendingToggleId}
+                    onLogMedia={handleOpenQuickLog}
                   />
                 ))}
               </div>
@@ -716,6 +749,7 @@ function ListScreen() {
                     isOwnProfile={!!isOwnProfile}
                     onToggleCompletion={handleToggleCompletion}
                     pendingToggleId={pendingToggleId}
+                    onLogMedia={handleOpenQuickLog}
                   />
                 ))}
               </div>
@@ -746,6 +780,7 @@ function ListScreen() {
                   isOwnProfile={!!isOwnProfile}
                   onToggleCompletion={handleToggleCompletion}
                   pendingToggleId={pendingToggleId}
+                  onLogMedia={handleOpenQuickLog}
                 />
               ))}
             </div>
@@ -764,6 +799,7 @@ function MediaGroup({
   isOwnProfile,
   onToggleCompletion,
   pendingToggleId,
+  onLogMedia,
 }: {
   type: string;
   mediaList: (IMediaDocument & { category: string })[];
@@ -772,46 +808,47 @@ function MediaGroup({
   isOwnProfile: boolean;
   onToggleCompletion: (media: IMediaDocument) => void;
   pendingToggleId: string | null;
+  onLogMedia: (media: IMediaDocument) => void;
 }) {
   const typeConfig = {
     anime: {
       icon: Play,
-      color: 'text-secondary',
+      color: 'text-[#26b2f2]',
       label: 'Anime',
     },
     manga: {
       icon: Book,
-      color: 'text-warning',
+      color: 'text-[#ee4466]',
       label: 'Manga',
     },
     reading: {
       icon: Book,
-      color: 'text-primary',
+      color: 'text-[#b34ce6]',
       label: 'Reading',
     },
     vn: {
       icon: Gamepad,
-      color: 'text-accent',
+      color: 'text-[#3a70e4]',
       label: 'Visual Novels',
     },
     game: {
       icon: Gamepad,
-      color: 'text-neutral',
+      color: 'text-[#59c94e]',
       label: 'Video Games',
     },
     video: {
       icon: Video,
-      color: 'text-info',
+      color: 'text-[#2cc9a4]',
       label: 'Video',
     },
     movie: {
       icon: Clapperboard,
-      color: 'text-error',
+      color: 'text-[#f77118]',
       label: 'Movies',
     },
     'tv show': {
       icon: MonitorPlay,
-      color: 'text-success',
+      color: 'text-[#f8b420]',
       label: 'TV Shows',
     },
   };
@@ -844,6 +881,7 @@ function MediaGroup({
               isOwnProfile={isOwnProfile}
               onToggleCompletion={onToggleCompletion}
               pendingToggleId={pendingToggleId}
+              onLogMedia={onLogMedia}
             />
           ))}
         </div>
@@ -856,6 +894,7 @@ function MediaGroup({
               isOwnProfile={isOwnProfile}
               onToggleCompletion={onToggleCompletion}
               pendingToggleId={pendingToggleId}
+              onLogMedia={onLogMedia}
             />
           ))}
         </div>
@@ -869,11 +908,13 @@ function MediaCard({
   isOwnProfile,
   onToggleCompletion,
   pendingToggleId,
+  onLogMedia,
 }: {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
   onToggleCompletion: (media: IMediaDocument) => void;
   pendingToggleId: string | null;
+  onLogMedia: (media: IMediaDocument) => void;
 }) {
   const { user } = useUserDataStore();
   const { username } = useParams<{ username: string }>();
@@ -894,51 +935,51 @@ function MediaCard({
   const typeConfig = {
     anime: {
       icon: Play,
-      color: 'text-secondary',
-      bg: 'bg-secondary/10',
-      border: 'border-secondary/20',
+      color: 'text-[#26b2f2]',
+      bg: 'bg-[#26b2f2]/10',
+      border: 'border-[#26b2f2]/30',
     },
     manga: {
       icon: Book,
-      color: 'text-warning',
-      bg: 'bg-warning/10',
-      border: 'border-warning/20',
+      color: 'text-[#ee4466]',
+      bg: 'bg-[#ee4466]/10',
+      border: 'border-[#ee4466]/30',
     },
     reading: {
       icon: Book,
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-      border: 'border-primary/20',
+      color: 'text-[#b34ce6]',
+      bg: 'bg-[#b34ce6]/10',
+      border: 'border-[#b34ce6]/30',
     },
     vn: {
       icon: Gamepad,
-      color: 'text-accent',
-      bg: 'bg-accent/10',
-      border: 'border-accent/20',
+      color: 'text-[#3a70e4]',
+      bg: 'bg-[#3a70e4]/10',
+      border: 'border-[#3a70e4]/30',
     },
     game: {
       icon: Gamepad,
-      color: 'text-neutral',
-      bg: 'bg-base-300',
-      border: 'border-base-300',
+      color: 'text-[#59c94e]',
+      bg: 'bg-[#59c94e]/10',
+      border: 'border-[#59c94e]/30',
     },
     video: {
       icon: Video,
-      color: 'text-info',
-      bg: 'bg-info/10',
-      border: 'border-info/20',
+      color: 'text-[#2cc9a4]',
+      bg: 'bg-[#2cc9a4]/10',
+      border: 'border-[#2cc9a4]/30',
     },
     movie: {
       icon: Clapperboard,
-      color: 'text-error',
-      bg: 'bg-error/10',
-      border: 'border-error/20',
+      color: 'text-[#f77118]',
+      bg: 'bg-[#f77118]/10',
+      border: 'border-[#f77118]/30',
     },
     'tv show': {
       icon: MonitorPlay,
-      color: 'text-success',
-      bg: 'bg-success/10',
-      border: 'border-success/20',
+      color: 'text-[#f8b420]',
+      bg: 'bg-[#f8b420]/10',
+      border: 'border-[#f8b420]/30',
     },
   };
 
@@ -1006,6 +1047,20 @@ function MediaCard({
             <p className="text-sm font-medium">View Details</p>
           </div>
         </div>
+
+        {isOwnProfile && (
+          <button
+            type="button"
+            className="btn btn-circle btn-sm btn-primary absolute bottom-2 right-2 z-20 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            onClick={(e) => {
+              e.stopPropagation();
+              onLogMedia(media);
+            }}
+            title="Quick Log"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        )}
       </figure>
 
       <div className="card-body p-3 flex flex-col">
@@ -1053,11 +1108,13 @@ function MediaListItem({
   isOwnProfile,
   onToggleCompletion,
   pendingToggleId,
+  onLogMedia,
 }: {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
   onToggleCompletion: (media: IMediaDocument) => void;
   pendingToggleId: string | null;
+  onLogMedia: (media: IMediaDocument) => void;
 }) {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -1136,19 +1193,23 @@ function MediaListItem({
   const typeConfig = {
     anime: {
       icon: Play,
-      color: 'text-secondary',
-      bg: 'bg-secondary/10',
+      color: 'text-[#26b2f2]',
+      bg: 'bg-[#26b2f2]/10',
     },
-    manga: { icon: Book, color: 'text-warning', bg: 'bg-warning/10' },
-    reading: { icon: Book, color: 'text-primary', bg: 'bg-primary/10' },
-    vn: { icon: Gamepad, color: 'text-accent', bg: 'bg-accent/10' },
-    game: { icon: Gamepad, color: 'text-neutral', bg: 'bg-base-300' },
-    video: { icon: Video, color: 'text-info', bg: 'bg-info/10' },
-    movie: { icon: Clapperboard, color: 'text-error', bg: 'bg-error/10' },
+    manga: { icon: Book, color: 'text-[#ee4466]', bg: 'bg-[#ee4466]/10' },
+    reading: { icon: Book, color: 'text-[#b34ce6]', bg: 'bg-[#b34ce6]/10' },
+    vn: { icon: Gamepad, color: 'text-[#3a70e4]', bg: 'bg-[#3a70e4]/10' },
+    game: { icon: Gamepad, color: 'text-[#59c94e]', bg: 'bg-[#59c94e]/10' },
+    video: { icon: Video, color: 'text-[#2cc9a4]', bg: 'bg-[#2cc9a4]/10' },
+    movie: {
+      icon: Clapperboard,
+      color: 'text-[#f77118]',
+      bg: 'bg-[#f77118]/10',
+    },
     'tv show': {
       icon: MonitorPlay,
-      color: 'text-success',
-      bg: 'bg-success/10',
+      color: 'text-[#f8b420]',
+      bg: 'bg-[#f8b420]/10',
     },
   };
 
@@ -1183,9 +1244,16 @@ function MediaListItem({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-lg leading-tight mb-1">
-                  {media.title.contentTitleNative}
-                </h3>
+                <div className="flex items-start gap-2 mb-1">
+                  <h3 className="font-bold text-lg leading-tight">
+                    {media.title.contentTitleNative}
+                  </h3>
+                  {media.isCompleted && (
+                    <span className="badge badge-success badge-sm gap-1 shrink-0">
+                      <CircleCheck className="w-3 h-3" /> Completed
+                    </span>
+                  )}
+                </div>
 
                 {media.title.contentTitleEnglish && (
                   <p className="text-sm text-base-content/60 mb-2">
@@ -1231,30 +1299,39 @@ function MediaListItem({
                   <div className="badge badge-error badge-sm">18+</div>
                 )}
 
-                <div className="flex flex-wrap gap-1 justify-end">
-                  {media.isCompleted && (
-                    <span className="badge badge-success badge-sm gap-1">
-                      <CircleCheck className="w-3 h-3" /> Completed
-                    </span>
-                  )}
-
+                <div className="flex flex-col gap-1 items-end">
                   {isOwnProfile && (
-                    <button
-                      type="button"
-                      className={`btn btn-xs ${media.isCompleted ? 'btn-success' : 'btn-outline'}`}
-                      onClick={handleToggleClick}
-                      disabled={isToggling}
-                    >
-                      {isToggling ? (
-                        <span className="loading loading-spinner loading-xs" />
-                      ) : media.isCompleted ? (
-                        'Mark in progress'
-                      ) : (
-                        'Mark completed'
-                      )}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-primary gap-1 w-36 justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLogMedia(media);
+                        }}
+                        title="Quick Log"
+                      >
+                        <Plus className="w-3 h-3" /> Log
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-xs w-36 justify-center ${media.isCompleted ? 'btn-success' : 'btn-outline'}`}
+                        onClick={handleToggleClick}
+                        disabled={isToggling}
+                      >
+                        {isToggling ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : media.isCompleted ? (
+                          'Mark in progress'
+                        ) : (
+                          'Mark completed'
+                        )}
+                      </button>
+                    </>
                   )}
+                </div>
 
+                <div className="flex flex-wrap gap-1 justify-end">
                   {media.episodes ? (
                     <span className="badge badge-ghost badge-sm">
                       {media.episodes} episodes
