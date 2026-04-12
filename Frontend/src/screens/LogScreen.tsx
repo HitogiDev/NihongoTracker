@@ -57,6 +57,7 @@ interface logDataType {
   showChars: boolean;
   img: undefined | string;
   cover: undefined | string;
+  unknownDate: boolean;
   date: Date | undefined;
   runtime?: number;
   youtubeChannelInfo: youtubeChannelInfo | null;
@@ -98,6 +99,7 @@ const createInitialLogState = (
   showChars: false,
   img: undefined,
   cover: undefined,
+  unknownDate: false,
   date: undefined,
   runtime: undefined,
   youtubeChannelInfo: null,
@@ -309,6 +311,7 @@ function LogScreen() {
         showChars: false,
         img: undefined,
         cover: undefined,
+        unknownDate: false,
         date: undefined,
         youtubeChannelInfo: null,
       });
@@ -629,7 +632,8 @@ function LogScreen() {
       time: totalMinutes || undefined,
       chars: logData.readChars || undefined,
       pages: logData.readPages,
-      date: logData.date,
+      date: logData.unknownDate ? undefined : logData.date,
+      unknownDate: logData.unknownDate,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
     } as ICreateLog);
   };
@@ -1380,48 +1384,77 @@ function LogScreen() {
                           </div>
                         )}
                         <div className="form-control">
-                          <label className="label flex flex-col items-start gap-1">
-                            <span className="label-text">Date</span>
-                          </label>
-                          <div className="dropdown dropdown-top dropdown-end w-full">
-                            <div
-                              tabIndex={0}
-                              role="button"
-                              className="input input-bordered w-full flex items-center justify-between cursor-pointer"
-                            >
-                              <span
-                                className={
-                                  logData.date
-                                    ? 'text-base-content'
-                                    : 'text-base-content/50'
+                          <label className="label cursor-pointer justify-start gap-3">
+                            <input
+                              type="checkbox"
+                              className="checkbox"
+                              checked={logData.unknownDate}
+                              onChange={(e) => {
+                                const isUnknownDate = e.target.checked;
+                                handleInputChange('unknownDate', isUnknownDate);
+                                if (isUnknownDate) {
+                                  handleInputChange('date', undefined);
                                 }
-                              >
-                                {logData.date instanceof Date
-                                  ? logData.date.toLocaleDateString()
-                                  : 'Select date (defaults to today)'}
+                              }}
+                            />
+                            <div className="flex flex-col">
+                              <span className="label-text font-medium">
+                                Unknown date
                               </span>
-                              <Calendar className="w-4 h-4" />
+                              <span className="label-text-alt text-base-content/70">
+                                Excluded from month's ranking
+                              </span>
                             </div>
-                            <div
-                              tabIndex={0}
-                              className="dropdown-content z-[1000] card card-compact w-72 p-2 shadow bg-base-100 border border-base-300"
-                            >
-                              <DayPicker
-                                className="react-day-picker mx-auto"
-                                mode="single"
-                                selected={logData.date || undefined}
-                                onSelect={(date) => {
-                                  handleInputChange('date', date || undefined);
-                                  (
-                                    document.activeElement as HTMLElement
-                                  )?.blur?.();
-                                }}
-                                endMonth={new Date()}
-                                disabled={(date) => date > new Date()}
-                              />
+                          </label>
+                        </div>
+                        {!logData.unknownDate && (
+                          <div className="form-control">
+                            <label className="label flex flex-col items-start gap-1">
+                              <span className="label-text">Date</span>
+                            </label>
+                            <div className="dropdown dropdown-top dropdown-end w-full">
+                              <div
+                                tabIndex={0}
+                                role="button"
+                                className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                              >
+                                <span
+                                  className={
+                                    logData.date
+                                      ? 'text-base-content'
+                                      : 'text-base-content/50'
+                                  }
+                                >
+                                  {logData.date instanceof Date
+                                    ? logData.date.toLocaleDateString()
+                                    : 'Select date (defaults to today)'}
+                                </span>
+                                <Calendar className="w-4 h-4" />
+                              </div>
+                              <div
+                                tabIndex={0}
+                                className="dropdown-content z-[1000] card card-compact w-72 p-2 shadow bg-base-100 border border-base-300"
+                              >
+                                <DayPicker
+                                  className="react-day-picker mx-auto"
+                                  mode="single"
+                                  selected={logData.date || undefined}
+                                  onSelect={(date) => {
+                                    handleInputChange(
+                                      'date',
+                                      date || undefined
+                                    );
+                                    (
+                                      document.activeElement as HTMLElement
+                                    )?.blur?.();
+                                  }}
+                                  endMonth={new Date()}
+                                  disabled={(date) => date > new Date()}
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
                         <div className="form-control">
                           <label className="label flex flex-col items-start gap-1">
                             <span className="label-text">

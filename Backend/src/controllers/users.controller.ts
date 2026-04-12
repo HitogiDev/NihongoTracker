@@ -426,6 +426,7 @@ export async function getRanking(
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$userId'] },
+                      { $ne: ['$unknownDate', true] },
                       ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
                       ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
                     ],
@@ -590,12 +591,38 @@ export async function getRanking(
             pipeline: [
               {
                 $match: {
-                  $expr: { $eq: ['$user', '$$userId'] },
+                  $expr: {
+                    $and: [{ $eq: ['$user', '$$userId'] }],
+                  },
                 },
               },
               {
                 $group: {
                   _id: '$user',
+                  userXp: { $sum: '$xp' },
+                  readingXp: {
+                    $sum: {
+                      $cond: [
+                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
+                        '$xp',
+                        0,
+                      ],
+                    },
+                  },
+                  listeningXp: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $in: [
+                            '$type',
+                            ['anime', 'audio', 'video', 'movie', 'tv show'],
+                          ],
+                        },
+                        '$xp',
+                        0,
+                      ],
+                    },
+                  },
                   totalMinutes: {
                     $sum: {
                       $cond: [
@@ -678,6 +705,15 @@ export async function getRanking(
         },
         {
           $addFields: {
+            'stats.userXp': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.userXp', 0] }, 0],
+            },
+            'stats.readingXp': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.readingXp', 0] }, 0],
+            },
+            'stats.listeningXp': {
+              $ifNull: [{ $arrayElemAt: ['$timeData.listeningXp', 0] }, 0],
+            },
             'stats.userHours': {
               $ifNull: [{ $arrayElemAt: ['$timeData.totalHours', 0] }, 0],
             },
@@ -689,6 +725,58 @@ export async function getRanking(
             },
             'stats.userChars': {
               $ifNull: [{ $arrayElemAt: ['$timeData.chars', 0] }, 0],
+            },
+            // Keep level-based ranking consistent with all-time aggregated XP.
+            'stats.userLevel': {
+              $floor: {
+                $multiply: [
+                  {
+                    $pow: [
+                      {
+                        $ifNull: [{ $arrayElemAt: ['$timeData.userXp', 0] }, 0],
+                      },
+                      0.5714285714,
+                    ],
+                  },
+                  0.07,
+                ],
+              },
+            },
+            'stats.readingLevel': {
+              $floor: {
+                $multiply: [
+                  {
+                    $pow: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ['$timeData.readingXp', 0] },
+                          0,
+                        ],
+                      },
+                      0.5714285714,
+                    ],
+                  },
+                  0.07,
+                ],
+              },
+            },
+            'stats.listeningLevel': {
+              $floor: {
+                $multiply: [
+                  {
+                    $pow: [
+                      {
+                        $ifNull: [
+                          { $arrayElemAt: ['$timeData.listeningXp', 0] },
+                          0,
+                        ],
+                      },
+                      0.5714285714,
+                    ],
+                  },
+                  0.07,
+                ],
+              },
             },
           },
         },
@@ -771,26 +859,110 @@ export async function getRankingSummary(
 
     const timezone = timezoneParam || userDoc.settings?.timezone || 'UTC';
 
-    const userXp = userDoc.stats.userXp ?? 0;
+    const [allTimeUserResult] = await Log.aggregate([
+      {
+        $match: {
+          user: userDoc._id,
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+    ]);
 
-    const higherCount = await User.countDocuments({
-      'stats.userXp': { $gt: userXp },
-      $or: [
-        { 'moderation.rankingBanned': { $exists: false } },
-        { 'moderation.rankingBanned': false },
-      ],
-    });
+    const userXp = allTimeUserResult?.xp ?? 0;
 
-    const nextUser = await User.findOne({
-      'stats.userXp': { $gt: userXp },
-      $or: [
-        { 'moderation.rankingBanned': { $exists: false } },
-        { 'moderation.rankingBanned': false },
-      ],
-    })
-      .sort({ 'stats.userXp': 1 })
-      .select('username stats.userXp')
-      .lean();
+    const [higherCountResult] = await Log.aggregate([
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+      {
+        $match: {
+          xp: { $gt: userXp },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { 'user.moderation.rankingBanned': { $exists: false } },
+            { 'user.moderation.rankingBanned': false },
+          ],
+        },
+      },
+      {
+        $count: 'count',
+      },
+    ]);
+
+    const higherCount = higherCountResult?.count ?? 0;
+
+    const [nextUser] = await Log.aggregate([
+      {
+        $group: {
+          _id: '$user',
+          xp: { $sum: '$xp' },
+        },
+      },
+      {
+        $match: {
+          xp: { $gt: userXp },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { 'user.moderation.rankingBanned': { $exists: false } },
+            { 'user.moderation.rankingBanned': false },
+          ],
+        },
+      },
+      {
+        $sort: { xp: 1 },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $project: {
+          username: '$user.username',
+          xp: 1,
+        },
+      },
+    ]);
 
     const totalUsers = await User.countDocuments({
       $or: [
@@ -805,6 +977,7 @@ export async function getRankingSummary(
       {
         $match: {
           user: userDoc._id,
+          unknownDate: { $ne: true },
           date: {
             $gte: monthStart,
             $lt: monthEnd,
@@ -824,6 +997,7 @@ export async function getRankingSummary(
     const [monthlyAggregate] = await Log.aggregate([
       {
         $match: {
+          unknownDate: { $ne: true },
           date: {
             $gte: monthStart,
             $lt: monthEnd,
@@ -906,8 +1080,8 @@ export async function getRankingSummary(
       nextUser: nextUser
         ? {
             username: nextUser.username,
-            xp: nextUser.stats?.userXp ?? 0,
-            gap: (nextUser.stats?.userXp ?? 0) - userXp,
+            xp: nextUser.xp ?? 0,
+            gap: (nextUser.xp ?? 0) - userXp,
           }
         : null,
       monthly: {
@@ -994,6 +1168,8 @@ export async function getMediumRanking(
       dateGte = new Date(startLocal.getTime() + offsetNow);
     }
 
+    const shouldExcludeUnknownDate = Boolean(dateGte || dateLt);
+
     // Build pipeline
     const pipeline: any[] = [
       {
@@ -1014,6 +1190,9 @@ export async function getMediumRanking(
                 $expr: {
                   $and: [
                     { $eq: ['$user', '$$userId'] },
+                    ...(shouldExcludeUnknownDate
+                      ? [{ $ne: ['$unknownDate', true] }]
+                      : []),
                     ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
                     ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
                     ...(type ? [{ $eq: ['$type', type] }] : []),

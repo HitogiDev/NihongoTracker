@@ -356,6 +356,7 @@ export interface ILog {
   pages?: number;
   chars?: number;
   time?: number;
+  unknownDate?: boolean;
   date: Date | string;
   xp: number;
   mediaId?: string;
@@ -581,6 +582,7 @@ interface IUserStats {
     untrackedCount: number;
     dates: Array<{
       date: Date;
+      unknownDate?: boolean;
       xp: number;
       time?: number;
       episodes?: number;

@@ -474,7 +474,9 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
                               <div className="grow">
                                 <h3 className="text-sm">{log.description}</h3>
                                 <p className="text-xs text-base-content/70">
-                                  {new Date(log.date).toLocaleDateString()}
+                                  {log.unknownDate
+                                    ? 'Unknown date'
+                                    : new Date(log.date).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>

@@ -202,6 +202,7 @@ export async function getRecentLogs(
         $project: {
           _id: 1,
           date: 1,
+          unknownDate: 1,
           description: 1,
           type: 1,
           time: 1,
@@ -324,6 +325,7 @@ export async function getGlobalFeed(
         $project: {
           _id: 1,
           date: 1,
+          unknownDate: 1,
           description: 1,
           type: 1,
           xp: 1,
@@ -749,6 +751,7 @@ export async function getUserLogs(
           chars: 1,
           time: 1,
           date: 1,
+          unknownDate: 1,
           tags: 1,
           'media.contentId': 1,
           'media.title': 1,
@@ -837,6 +840,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
           chars: 1,
           time: 1,
           date: 1,
+          unknownDate: 1,
           mediaId: 1,
           manabeId: 1,
           xp: 1,
@@ -866,6 +870,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
       chars: foundLog.chars,
       time: foundLog.time,
       date: foundLog.date,
+      unknownDate: foundLog.unknownDate,
       mediaId: foundLog.mediaId,
       media: foundLog.mediaData,
       xp: foundLog.xp,
@@ -1123,14 +1128,17 @@ export async function createLog(
     chars,
     mediaData,
     tags,
+    unknownDate,
   } = req.body;
 
   try {
     if (!type) throw new customError('Log type is required', 400);
     if (!description) throw new customError('Description is required', 400);
 
+    const isUnknownDate = Boolean(unknownDate);
+
     let logDate: Date;
-    if (date) {
+    if (!isUnknownDate && date) {
       if (typeof date === 'string') {
         logDate = new Date(date);
       } else {
@@ -1225,6 +1233,7 @@ export async function createLog(
       private: false,
       isAdult: logMedia?.isAdult ?? false,
       time,
+      unknownDate: isUnknownDate,
       date: logDate,
       chars,
       tags: tags || [],
@@ -1237,7 +1246,9 @@ export async function createLog(
     await updateStats(res, next);
 
     // Update streaks using user timezone and log date (incremental)
-    await updateStreakWithLog(res.locals.user._id, savedLog.date);
+    if (!savedLog.unknownDate) {
+      await updateStreakWithLog(res.locals.user._id, savedLog.date);
+    }
 
     // If this media was hidden from recent media, unhide it since user is actively logging it
     const finalMediaId = logMedia ? logMedia.contentId : mediaId;
@@ -1563,6 +1574,7 @@ interface IStatByType {
   untrackedCount: number;
   dates: Array<{
     date: Date;
+    unknownDate?: boolean;
     xp: number;
     time?: number;
     episodes?: number;
@@ -1904,6 +1916,7 @@ export async function getUserStats(
           dates: {
             $push: {
               date: '$date',
+              unknownDate: '$unknownDate',
               xp: '$xp',
               time: '$time',
               episodes: '$episodes',
@@ -2055,6 +2068,7 @@ export async function getUserStats(
               $match: {
                 user: user._id,
                 ...dateFilter,
+                unknownDate: { $ne: true },
                 type: { $in: ['reading', 'manga', 'vn', 'game'] },
                 time: { $ne: null, $gt: 0 },
                 $or: [
@@ -3024,6 +3038,7 @@ export async function getRecentMediaLogs(
           chars: 1,
           time: 1,
           date: 1,
+          unknownDate: 1,
           media: 1,
         },
       },

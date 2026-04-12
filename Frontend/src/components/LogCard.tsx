@@ -157,6 +157,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
     chars,
     media,
     manabeId,
+    unknownDate,
   } = log;
   const { user } = useUserDataStore();
   const { formatRelativeDate, formatDateTime } = useDateFormatting();
@@ -193,8 +194,16 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
   const typeConfig = logTypeConfig[type];
   const TypeIcon = typeConfig.icon;
 
-  const relativeDate = date ? formatRelativeDate(date) : '';
-  const fullDate = date ? formatDateTime(date) : '';
+  const relativeDate = unknownDate
+    ? 'Unknown'
+    : date
+      ? formatRelativeDate(date)
+      : '';
+  const fullDate = unknownDate
+    ? 'Unknown date'
+    : date
+      ? formatDateTime(date)
+      : '';
 
   const logTitle =
     media && typeof media === 'object' && media.title?.contentTitleNative
@@ -699,7 +708,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               <time
                 className="text-xs text-base-content/60 hover:text-base-content transition-colors duration-200 cursor-help flex items-center gap-1"
                 dateTime={
-                  date
+                  !unknownDate && date
                     ? typeof date === 'string'
                       ? date
                       : date.toISOString()
@@ -951,9 +960,11 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                   <div>
                     <span className="label-text font-medium">Created:</span>
                     <p className="text-base-content mt-1">{fullDate}</p>
-                    <p className="text-sm text-base-content/60">
-                      {relativeDate}
-                    </p>
+                    {!unknownDate ? (
+                      <p className="text-sm text-base-content/60">
+                        {relativeDate}
+                      </p>
+                    ) : null}
                   </div>
 
                   {time ? (

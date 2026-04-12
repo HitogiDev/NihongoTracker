@@ -451,6 +451,7 @@ export interface ILog extends Document {
   pages?: number;
   chars?: number;
   time?: number;
+  unknownDate?: boolean;
   date: Date;
   tags?: Types.ObjectId[];
 }
@@ -656,6 +657,7 @@ export interface IClubMember {
 
 export interface IClubMediaCandidate {
   mediaId: string;
+  unknownDate?: boolean;
   title: string;
   description?: string;
   image?: string;

@@ -31,6 +31,7 @@ interface ProgressChartProps {
     untrackedCount: number;
     dates: Array<{
       date: Date | string;
+      unknownDate?: boolean;
       xp: number;
       time?: number;
       episodes?: number;
@@ -141,6 +142,10 @@ export default function ProgressChart({
     // Fill with data
     relevantStats.forEach((typeStat) => {
       typeStat.dates.forEach((dateEntry) => {
+        if (dateEntry.unknownDate) {
+          return;
+        }
+
         if (!dateEntry.localDate) {
           return;
         }
@@ -394,6 +399,10 @@ export default function ProgressChart({
     const nowInUserTz = convertToUserTimezone(now, timezone);
 
     return logs.filter((log) => {
+      if (log.unknownDate) {
+        return false;
+      }
+
       const logDateInUserTz = convertToUserTimezone(
         new Date(log.date),
         timezone

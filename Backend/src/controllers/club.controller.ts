@@ -20,6 +20,7 @@ import {
   findVotingForClub,
   updateVotingStatusesForClub,
 } from '../services/clubMediaVoting.js';
+import { calculateLevel } from '../services/calculateLevel.js';
 
 export async function getClubs(
   req: Request,
@@ -2112,6 +2113,7 @@ export async function getClubMediaRankings(
 
     // Add time filter if consumption period
     if (period === 'consumption') {
+      baseMatch.unknownDate = { $ne: true };
       baseMatch.createdAt = { $gte: new Date(media.startDate) };
     }
 
@@ -2568,11 +2570,14 @@ export async function getClubMemberRankings(
       dateFilter.createdAt = { $gte: startOfMonth };
     }
 
+    const shouldExcludeUnknownDate = period !== 'all-time';
+
     // Aggregate member stats from logs
     const memberStats = await Log.aggregate([
       {
         $match: {
           user: { $in: memberIds },
+          ...(shouldExcludeUnknownDate ? { unknownDate: { $ne: true } } : {}),
           ...dateFilter,
         },
       },
@@ -2635,8 +2640,8 @@ export async function getClubMemberRankings(
             username: (member.userObj as any)?.username || 'Unknown',
             avatar: (member.userObj as any)?.avatar,
             stats: {
-              userLevel: (member.userObj as any)?.stats?.userLevel || 1,
-              userXp: (member.userObj as any)?.stats?.userXp || 0,
+              userLevel: Math.max(1, calculateLevel(stats.totalXp || 0)),
+              userXp: stats.totalXp || 0,
             },
           },
           totalLogs: stats.totalLogs,

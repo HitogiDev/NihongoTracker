@@ -100,6 +100,7 @@ const LogSchema = new Schema<ILog>(
         );
       },
     },
+    unknownDate: { type: Boolean, default: false },
     date: { type: Date, default: () => new Date(), required: true },
     tags: [{ type: Schema.Types.ObjectId, ref: 'Tag' }],
   },

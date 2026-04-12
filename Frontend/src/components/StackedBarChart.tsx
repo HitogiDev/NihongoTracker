@@ -45,6 +45,7 @@ interface StatsByType {
   totalXp: number;
   dates: Array<{
     date: Date | string;
+    unknownDate?: boolean;
     xp: number;
     time?: number;
     episodes?: number;
@@ -153,6 +154,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       const grouped = new Map<string, { xp: number; minutes: number }>();
 
       stat.dates.forEach((dateEntry) => {
+        if (dateEntry.unknownDate) {
+          return;
+        }
+
         if (!dateEntry.localDate) {
           return;
         }
