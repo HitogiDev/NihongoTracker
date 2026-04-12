@@ -176,8 +176,8 @@ function TextHookerDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="stats shadow bg-base-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-primary">
                 <BookOpen className="w-8 h-8" />
@@ -190,7 +190,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-secondary">
                 <List className="w-8 h-8" />
@@ -203,7 +203,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-accent">
                 <Type className="w-8 h-8" />
@@ -216,7 +216,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
             <div className="stat">
               <div className="stat-figure text-info">
                 <Clock className="w-8 h-8" />
