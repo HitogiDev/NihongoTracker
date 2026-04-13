@@ -3,6 +3,7 @@ import { Ellipsis, Pencil, Share2, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 import LikeButton from './LikeButton';
 import { IMediaReview } from '../types';
+import UserAvatar from './UserAvatar';
 
 interface MediaReviewCardProps {
   review: IMediaReview;
@@ -70,12 +71,14 @@ function MediaReviewCard({
               className="hover:opacity-80 transition-opacity"
             >
               <div className="avatar">
-                <div className="w-9 h-9 rounded-full">
-                  <img
-                    src={review.user.avatar || '/default-avatar.png'}
-                    alt={review.user.username}
-                  />
-                </div>
+                <UserAvatar
+                  username={review.user.username}
+                  avatar={review.user.avatar}
+                  containerClassName="w-9 h-9 rounded-full"
+                  imageClassName="w-full h-full rounded-full object-cover"
+                  fallbackClassName="w-full h-full rounded-full bg-base-300 flex items-center justify-center"
+                  textClassName="text-xs font-semibold"
+                />
               </div>
             </Link>
             <div>

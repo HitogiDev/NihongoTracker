@@ -34,6 +34,7 @@ import { useDateFormatting } from '../hooks/useDateFormatting';
 import ClubRanking from './club/ClubRanking';
 import QuickLog from './QuickLog';
 import XpAnimation from './XpAnimation';
+import UserAvatar from './UserAvatar';
 import { IMediaDocument, ILog, ILoginResponse } from '../types';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
@@ -598,24 +599,26 @@ function Dashboard() {
                             aria-label={`View ${log.user.username}'s profile`}
                           >
                             <div className="avatar">
-                              <div className="w-12 rounded-full border border-base-300 overflow-hidden">
-                                {userAvatar ? (
-                                  <img src={userAvatar} alt={feedUsername} />
-                                ) : (
-                                  <div className="w-full h-full bg-base-300" />
-                                )}
-                              </div>
+                              <UserAvatar
+                                username={feedUsername}
+                                avatar={userAvatar}
+                                containerClassName="w-12 rounded-full border border-base-300 overflow-hidden"
+                                imageClassName="w-full h-full object-cover"
+                                fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
+                                textClassName="text-sm font-semibold"
+                              />
                             </div>
                           </Link>
                         ) : (
                           <div className="avatar">
-                            <div className="w-12 rounded-full border border-base-300">
-                              {userAvatar ? (
-                                <img src={userAvatar} alt={feedUsername} />
-                              ) : (
-                                <div className="w-full h-full bg-base-300" />
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={feedUsername}
+                              avatar={userAvatar}
+                              containerClassName="w-12 rounded-full border border-base-300"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
+                              textClassName="text-sm font-semibold"
+                            />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">

@@ -13,6 +13,7 @@ import {
 import { getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
 import { getPatreonBadgeProps } from '../../utils/patreonBadge';
+import UserAvatar from '../UserAvatar';
 
 interface ClubRankingsTabProps {
   clubId: string;
@@ -333,22 +334,15 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                   <div className="text-center order-1">
                     <div className="relative mb-1 sm:mb-4">
                       <div className="avatar">
-                        <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40">
-                          {secondUser?.user.avatar ? (
-                            <img
-                              src={secondUser.user.avatar}
-                              alt={`${secondUser.user.username}'s Avatar`}
-                            />
-                          ) : (
-                            <div className="bg-neutral-content flex items-center justify-center h-full">
-                              <span className="text-sm sm:text-xl font-bold">
-                                {secondUser?.user.username
-                                  ?.charAt(0)
-                                  .toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <UserAvatar
+                          username={secondUser?.user.username}
+                          avatar={secondUser?.user.avatar}
+                          alt={`${secondUser?.user.username ?? 'User'}'s Avatar`}
+                          containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
+                          imageClassName="w-full h-full rounded-full object-cover"
+                          fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                          textClassName="text-sm sm:text-xl font-bold"
+                        />
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-0.5">
@@ -398,22 +392,15 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                   <div className="text-center order-2">
                     <div className="relative mb-2 sm:mb-4">
                       <div className="avatar">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2">
-                          {firstUser?.user.avatar ? (
-                            <img
-                              src={firstUser.user.avatar}
-                              alt={`${firstUser.user.username}'s Avatar`}
-                            />
-                          ) : (
-                            <div className="bg-neutral-content flex items-center justify-center h-full">
-                              <span className="text-lg sm:text-2xl font-bold">
-                                {firstUser?.user.username
-                                  ?.charAt(0)
-                                  .toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <UserAvatar
+                          username={firstUser?.user.username}
+                          avatar={firstUser?.user.avatar}
+                          alt={`${firstUser?.user.username ?? 'User'}'s Avatar`}
+                          containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
+                          imageClassName="w-full h-full rounded-full object-cover"
+                          fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                          textClassName="text-lg sm:text-2xl font-bold"
+                        />
                       </div>
                       <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
                         <svg
@@ -474,22 +461,15 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                   <div className="text-center order-3">
                     <div className="relative mb-1 sm:mb-4">
                       <div className="avatar">
-                        <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50">
-                          {thirdUser?.user.avatar ? (
-                            <img
-                              src={thirdUser.user.avatar}
-                              alt={`${thirdUser.user.username}'s Avatar`}
-                            />
-                          ) : (
-                            <div className="bg-neutral-content flex items-center justify-center h-full">
-                              <span className="text-sm sm:text-xl font-bold">
-                                {thirdUser?.user.username
-                                  ?.charAt(0)
-                                  .toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <UserAvatar
+                          username={thirdUser?.user.username}
+                          avatar={thirdUser?.user.avatar}
+                          alt={`${thirdUser?.user.username ?? 'User'}'s Avatar`}
+                          containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
+                          imageClassName="w-full h-full rounded-full object-cover"
+                          fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                          textClassName="text-sm sm:text-xl font-bold"
+                        />
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-0.5">
@@ -571,22 +551,15 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <td>
                           <div className="flex items-center gap-2 sm:gap-3">
                             <div className="avatar">
-                              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10">
-                                {member.user.avatar ? (
-                                  <img
-                                    src={member.user.avatar}
-                                    alt={`${member.user.username}'s Avatar`}
-                                  />
-                                ) : (
-                                  <div className="bg-neutral-content flex items-center justify-center h-full">
-                                    <span className="text-xs sm:text-lg font-bold">
-                                      {member.user.username
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+                              <UserAvatar
+                                username={member.user.username}
+                                avatar={member.user.avatar}
+                                alt={`${member.user.username}'s Avatar`}
+                                containerClassName="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10"
+                                imageClassName="w-full h-full rounded-full object-cover"
+                                fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                                textClassName="text-xs sm:text-lg font-bold"
+                              />
                             </div>
                             <div className="min-w-0">
                               <Link

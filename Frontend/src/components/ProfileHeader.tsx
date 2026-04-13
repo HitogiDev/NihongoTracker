@@ -1,4 +1,5 @@
 import ProfileNavbar from './ProfileNavbar';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { getUserFn } from '../api/trackerApi';
 import { AxiosError } from 'axios';
@@ -6,10 +7,12 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { OutletProfileContextType } from '../types';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { getAvatarInitials } from '../utils/avatar';
 
 export default function ProfileHeader() {
   const { username = '' } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
 
   const {
     data: user,
@@ -32,6 +35,10 @@ export default function ProfileHeader() {
 
   const patreonBadge = getPatreonBadgeProps(user?.patreon);
 
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [user?.avatar]);
+
   return (
     <div className="flex flex-col justify-center bg-base-200 text-base-content">
       <div
@@ -50,10 +57,17 @@ export default function ProfileHeader() {
               ) : (
                 <div className="avatar">
                   <div className="w-24 rounded-full">
-                    <img
-                      src={user?.avatar || undefined}
-                      alt={`${user?.username ?? 'User'} avatar`}
-                    />
+                    {user?.avatar && !avatarLoadFailed ? (
+                      <img
+                        src={user.avatar}
+                        alt={`${user.username ?? 'User'} avatar`}
+                        onError={() => setAvatarLoadFailed(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-base-300 flex items-center justify-center text-xl font-semibold">
+                        {getAvatarInitials(user?.username)}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

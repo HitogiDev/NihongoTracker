@@ -11,6 +11,7 @@ import {
 import { getClubRecentActivityFn } from '../../api/clubApi';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
+import UserAvatar from '../UserAvatar';
 
 interface RecentActivityProps {
   clubId: string;
@@ -163,19 +164,14 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
             >
               {/* User Avatar */}
               <Link to={`/user/${activity.user.username}`} className="avatar">
-                <div className="w-8 h-8 rounded-full">
-                  {activity.user.avatar ? (
-                    <img
-                      src={activity.user.avatar}
-                      alt={activity.user.username}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="bg-base-300 flex items-center justify-center text-xs font-semibold">
-                      {activity.user.username.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+                <UserAvatar
+                  username={activity.user.username}
+                  avatar={activity.user.avatar}
+                  containerClassName="w-8 h-8 rounded-full"
+                  imageClassName="w-full h-full rounded-full object-cover"
+                  fallbackClassName="w-full h-full rounded-full bg-base-300 flex items-center justify-center"
+                  textClassName="text-xs font-semibold"
+                />
               </Link>
 
               {/* Activity Content */}

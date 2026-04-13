@@ -17,6 +17,7 @@ import { useTimezone } from '../hooks/useTimezone';
 import { numberWithCommas } from '../utils/utils';
 import { DayPicker } from 'react-day-picker';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import UserAvatar from '../components/UserAvatar';
 
 type RankedUser = {
   username: string;
@@ -939,24 +940,15 @@ function RankingScreen() {
                       <div className="text-center order-1">
                         <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40">
-                              {secondGlobalUser?.avatar ? (
-                                <img
-                                  src={secondGlobalUser.avatar}
-                                  alt={`${secondGlobalUser.username}'s Avatar`}
-                                />
-                              ) : (
-                                <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-sm sm:text-xl font-bold">
-                                    {secondGlobalUser?.username
-                                      ? secondGlobalUser.username
-                                          .charAt(0)
-                                          .toUpperCase()
-                                      : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={secondGlobalUser?.username}
+                              avatar={secondGlobalUser?.avatar}
+                              alt={`${secondGlobalUser?.username ?? 'User'}'s Avatar`}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
                           </div>
                         </div>
                         <div className="flex flex-col items-center gap-0.5">
@@ -1007,24 +999,15 @@ function RankingScreen() {
                       <div className="text-center order-2">
                         <div className="relative mb-2 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2">
-                              {firstGlobalUser?.avatar ? (
-                                <img
-                                  src={firstGlobalUser.avatar}
-                                  alt={`${firstGlobalUser.username}'s Avatar`}
-                                />
-                              ) : (
-                                <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-lg sm:text-2xl font-bold">
-                                    {firstGlobalUser?.username
-                                      ? firstGlobalUser.username
-                                          .charAt(0)
-                                          .toUpperCase()
-                                      : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={firstGlobalUser?.username}
+                              avatar={firstGlobalUser?.avatar}
+                              alt={`${firstGlobalUser?.username ?? 'User'}'s Avatar`}
+                              containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-lg sm:text-2xl font-bold"
+                            />
                           </div>
                           <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
                             <svg
@@ -1086,24 +1069,15 @@ function RankingScreen() {
                       <div className="text-center order-3">
                         <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50">
-                              {thirdGlobalUser?.avatar ? (
-                                <img
-                                  src={thirdGlobalUser.avatar}
-                                  alt={`${thirdGlobalUser.username}'s Avatar`}
-                                />
-                              ) : (
-                                <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-sm sm:text-xl font-bold">
-                                    {thirdGlobalUser?.username
-                                      ? thirdGlobalUser.username
-                                          .charAt(0)
-                                          .toUpperCase()
-                                      : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={thirdGlobalUser?.username}
+                              avatar={thirdGlobalUser?.avatar}
+                              alt={`${thirdGlobalUser?.username ?? 'User'}'s Avatar`}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
                           </div>
                         </div>
                         <div className="flex flex-col items-center gap-0.5">
@@ -1162,24 +1136,15 @@ function RankingScreen() {
                       <div className="text-center order-1">
                         <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40">
-                              {secondMediumUser?.avatar ? (
-                                <img
-                                  src={secondMediumUser.avatar}
-                                  alt={`${secondMediumUser.username}'s Avatar`}
-                                />
-                              ) : (
-                                <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-sm sm:text-xl font-bold">
-                                    {secondMediumUser?.username
-                                      ? secondMediumUser.username
-                                          .charAt(0)
-                                          .toUpperCase()
-                                      : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={secondMediumUser?.username}
+                              avatar={secondMediumUser?.avatar}
+                              alt={`${secondMediumUser?.username ?? 'User'}'s Avatar`}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
                           </div>
                         </div>
                         <div className="flex flex-col items-center gap-0.5">
@@ -1230,24 +1195,15 @@ function RankingScreen() {
                       <div className="text-center order-2">
                         <div className="relative mb-2 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2">
-                              {firstMediumUser?.avatar ? (
-                                <img
-                                  src={firstMediumUser.avatar}
-                                  alt={`${firstMediumUser.username}'s Avatar`}
-                                />
-                              ) : (
-                                <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-lg sm:text-2xl font-bold">
-                                    {firstMediumUser?.username
-                                      ? firstMediumUser.username
-                                          .charAt(0)
-                                          .toUpperCase()
-                                      : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={firstMediumUser?.username}
+                              avatar={firstMediumUser?.avatar}
+                              alt={`${firstMediumUser?.username ?? 'User'}'s Avatar`}
+                              containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-lg sm:text-2xl font-bold"
+                            />
                           </div>
                           <div className="absolute -top-4 sm:-top-6 left-1/2 transform -translate-x-1/2">
                             <svg
@@ -1309,24 +1265,15 @@ function RankingScreen() {
                       <div className="text-center order-3">
                         <div className="relative mb-1 sm:mb-4">
                           <div className="avatar">
-                            <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50">
-                              {thirdMediumUser?.avatar ? (
-                                <img
-                                  src={thirdMediumUser.avatar}
-                                  alt={`${thirdMediumUser?.username ?? 'User'}'s Avatar`}
-                                />
-                              ) : (
-                                <div className="bg-neutral-content flex items-center justify-center h-full">
-                                  <span className="text-sm sm:text-xl font-bold">
-                                    {thirdMediumUser?.username
-                                      ? thirdMediumUser.username
-                                          .charAt(0)
-                                          .toUpperCase()
-                                      : ''}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={thirdMediumUser?.username}
+                              avatar={thirdMediumUser?.avatar}
+                              alt={`${thirdMediumUser?.username ?? 'User'}'s Avatar`}
+                              containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                              textClassName="text-sm sm:text-xl font-bold"
+                            />
                           </div>
                         </div>
                         <div className="flex flex-col items-center gap-0.5">
@@ -1463,22 +1410,15 @@ function RankingScreen() {
                             <td>
                               <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="avatar">
-                                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10">
-                                    {user.avatar ? (
-                                      <img
-                                        src={user.avatar}
-                                        alt={`${user.username}'s Avatar`}
-                                      />
-                                    ) : (
-                                      <div className="bg-neutral-content flex items-center justify-center h-full">
-                                        <span className="text-xs sm:text-lg font-bold">
-                                          {user.username
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
+                                  <UserAvatar
+                                    username={user.username}
+                                    avatar={user.avatar}
+                                    alt={`${user.username}'s Avatar`}
+                                    containerClassName="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10"
+                                    imageClassName="w-full h-full rounded-full object-cover"
+                                    fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
+                                    textClassName="text-xs sm:text-lg font-bold"
+                                  />
                                 </div>
                                 <div className="min-w-0">
                                   <Link

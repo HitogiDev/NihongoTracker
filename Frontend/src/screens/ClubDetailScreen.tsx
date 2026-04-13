@@ -43,6 +43,7 @@ import ClubRankingsTab from '../components/club/ClubRankingsTab';
 import EditClubMediaModal from '../components/club/EditClubMediaModal';
 import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
+import UserAvatar from '../components/UserAvatar';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 
 function ClubDetailScreen() {
@@ -1095,34 +1096,19 @@ function ClubDetailScreen() {
                             key={member.user._id}
                             className="flex items-center gap-3 p-3 rounded border border-base-300 bg-base-100"
                           >
-                            <div className="avatar">
-                              <div className="w-10 h-10 rounded-full">
-                                {member.user.avatar ? (
-                                  <Link
-                                    to={`/user/${encodeURIComponent(member.user.username)}`}
-                                  >
-                                    <img
-                                      src={member.user.avatar}
-                                      alt={member.user.username}
-                                      className="rounded-full w-full h-full object-cover"
-                                    />
-                                  </Link>
-                                ) : (
-                                  <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                    <Link
-                                      to={`/user/${encodeURIComponent(member.user.username)}`}
-                                      className="link link-hover"
-                                    >
-                                      <span className="text-primary font-semibold">
-                                        {member.user.username
-                                          .charAt(0)
-                                          .toUpperCase()}
-                                      </span>
-                                    </Link>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                            <Link
+                              to={`/user/${encodeURIComponent(member.user.username)}`}
+                              className="avatar"
+                            >
+                              <UserAvatar
+                                username={member.user.username}
+                                avatar={member.user.avatar}
+                                containerClassName="w-10 h-10 rounded-full"
+                                imageClassName="w-full h-full rounded-full object-cover"
+                                fallbackClassName="w-full h-full rounded-full bg-primary/10 flex items-center justify-center"
+                                textClassName="text-primary font-semibold"
+                              />
+                            </Link>
                             <div className="flex-1">
                               <div className="font-medium">
                                 <Link
@@ -1192,34 +1178,19 @@ function ClubDetailScreen() {
                         >
                           <div className="card-body p-4">
                             <div className="flex items-center gap-3">
-                              <div className="avatar">
-                                <div className="w-12 h-12 rounded-full">
-                                  {member.user.avatar ? (
-                                    <Link
-                                      to={`/user/${encodeURIComponent(member.user.username)}`}
-                                    >
-                                      <img
-                                        src={member.user.avatar}
-                                        alt={member.user.username}
-                                        className="rounded-full w-full h-full object-cover"
-                                      />
-                                    </Link>
-                                  ) : (
-                                    <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                      <Link
-                                        to={`/user/${encodeURIComponent(member.user.username)}`}
-                                        className="link link-hover"
-                                      >
-                                        <span className="text-primary font-semibold">
-                                          {member.user.username
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                        </span>
-                                      </Link>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
+                              <Link
+                                to={`/user/${encodeURIComponent(member.user.username)}`}
+                                className="avatar"
+                              >
+                                <UserAvatar
+                                  username={member.user.username}
+                                  avatar={member.user.avatar}
+                                  containerClassName="w-12 h-12 rounded-full"
+                                  imageClassName="w-full h-full rounded-full object-cover"
+                                  fallbackClassName="w-full h-full rounded-full bg-primary/10 flex items-center justify-center"
+                                  textClassName="text-primary font-semibold"
+                                />
+                              </Link>
                               <div className="flex-1">
                                 <div className="flex items-center gap-1 flex-wrap">
                                   <Link

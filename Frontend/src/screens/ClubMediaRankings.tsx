@@ -4,6 +4,7 @@ import { TrendingUp, Calendar, History } from 'lucide-react';
 import { getClubMediaRankingsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
+import UserAvatar from '../components/UserAvatar';
 
 export default function ClubMediaRankings() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
@@ -120,21 +121,14 @@ export default function ClubMediaRankings() {
                         {ranking.rank}
                       </div>
                       <div className="avatar">
-                        <div className="w-10 h-10 rounded-full">
-                          {ranking.user.avatar ? (
-                            <img
-                              src={ranking.user.avatar}
-                              alt={ranking.user.username}
-                              className="rounded-full w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-primary font-semibold text-sm">
-                                {ranking.user.username.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <UserAvatar
+                          username={ranking.user.username}
+                          avatar={ranking.user.avatar}
+                          containerClassName="w-10 h-10 rounded-full"
+                          imageClassName="w-full h-full rounded-full object-cover"
+                          fallbackClassName="w-full h-full rounded-full bg-primary/10 flex items-center justify-center"
+                          textClassName="text-primary font-semibold text-sm"
+                        />
                       </div>
                       <div>
                         <h4 className="font-semibold">

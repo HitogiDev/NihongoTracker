@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { History } from 'lucide-react';
 import { getClubMediaLogsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
+import UserAvatar from '../components/UserAvatar';
 
 export default function ClubMediaActivity() {
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
@@ -50,23 +51,14 @@ export default function ClubMediaActivity() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <div className="avatar">
-                            <div className="w-10 h-10 rounded-full">
-                              {log.user?.avatar ? (
-                                <img
-                                  src={log.user.avatar}
-                                  alt={log.user.username}
-                                  className="rounded-full w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                                  <span className="text-primary font-semibold text-sm">
-                                    {log.user?.username
-                                      ?.charAt(0)
-                                      .toUpperCase() || 'U'}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            <UserAvatar
+                              username={log.user?.username}
+                              avatar={log.user?.avatar}
+                              containerClassName="w-10 h-10 rounded-full"
+                              imageClassName="w-full h-full rounded-full object-cover"
+                              fallbackClassName="w-full h-full rounded-full bg-primary/10 flex items-center justify-center"
+                              textClassName="text-primary font-semibold text-sm"
+                            />
                           </div>
                           <div>
                             <h4 className="font-semibold">
