@@ -325,11 +325,24 @@ function Dashboard() {
 
   const streak = user.stats?.currentStreak ?? 0;
   const monthlyRanking = rankingSummary?.monthly;
-  const xpGapText = monthlyRanking
-    ? monthlyRanking.nextUser
-      ? `${numberWithCommas(monthlyRanking.nextUser.gap)} XP behind ${monthlyRanking.nextUser.username} this month`
-      : 'You are leading the monthly ranking!'
-    : 'Log something to enter this month’s ranking.';
+  const xpGapContent = monthlyRanking ? (
+    monthlyRanking.nextUser ? (
+      <>
+        <span>{numberWithCommas(monthlyRanking.nextUser.gap)} XP behind </span>
+        <Link
+          to={`/user/${monthlyRanking.nextUser.username}`}
+          className="hover:underline"
+        >
+          {monthlyRanking.nextUser.username}
+        </Link>
+        <span> this month</span>
+      </>
+    ) : (
+      'You are leading the monthly ranking!'
+    )
+  ) : (
+    'Log something to enter this month’s ranking.'
+  );
 
   const closeQuickLog = () => {
     setQuickLogOpen(false);
@@ -427,7 +440,7 @@ function Dashboard() {
                   #{monthlyRanking?.position ?? '—'} /{' '}
                   {monthlyRanking?.totalUsers ?? '—'}
                 </h3>
-                <p className="text-base-content/70 text-sm">{xpGapText}</p>
+                <p className="text-base-content/70 text-sm">{xpGapContent}</p>
               </div>
             </div>
           </div>
