@@ -10,6 +10,8 @@ import {
   recalculateStatsFn,
   syncManabeIdsFn,
   forceSyncMeilisearchFn,
+  getIgdbDumpSyncStatusFn,
+  triggerIgdbDumpSyncFn,
   adminUpdateUserFn,
   adminResetPasswordFn,
   adminSetPatreonStatusFn,
@@ -22,6 +24,7 @@ import {
   createChangelogFn,
   updateChangelogFn,
   deleteChangelogFn,
+  type IIgdbDumpSyncStatus,
 } from '../api/trackerApi';
 import { Users } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
@@ -189,6 +192,17 @@ function AdminScreen() {
     staleTime: 30_000,
   });
 
+  const { data: igdbDumpStatus, isLoading: igdbDumpStatusLoading } = useQuery({
+    queryKey: ['adminIgdbDumpStatus'],
+    queryFn: getIgdbDumpSyncStatusFn,
+    enabled: isAdmin && selectedTab === 'system',
+    staleTime: 5_000,
+    refetchInterval: (query) => {
+      const status = query.state.data as IIgdbDumpSyncStatus | undefined;
+      return status?.isRunning ? 5_000 : 30_000;
+    },
+  });
+
   // Mutations
   const recalcMutation = useMutation({
     mutationFn: recalculateStatsFn,
@@ -214,6 +228,16 @@ function AdminScreen() {
       toast.success('Meilisearch indexes synced successfully');
     },
     onError: () => toast.error('Failed to sync Meilisearch indexes'),
+  });
+
+  const triggerIgdbDumpSyncMutation = useMutation({
+    mutationFn: ({ force = false }: { force?: boolean } = {}) =>
+      triggerIgdbDumpSyncFn(force),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ['adminIgdbDumpStatus'] });
+    },
+    onError: () => toast.error('Failed to start IGDB dump sync'),
   });
 
   const deleteUserMutation = useMutation({
@@ -346,6 +370,21 @@ function AdminScreen() {
     const d = Math.floor(days);
     const h = Math.floor((days - d) * 24);
     return `${d}d ${h}h`;
+  };
+
+  const formatDateTime = (value?: string | Date | null) => {
+    if (!value) return 'Never';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Unknown';
+    return date.toLocaleString();
+  };
+
+  const formatUnixTimestamp = (value: number | null) => {
+    if (!value) return 'N/A';
+    const millis = value > 10_000_000_000 ? value : value * 1000;
+    const date = new Date(millis);
+    if (Number.isNaN(date.getTime())) return 'Unknown';
+    return date.toLocaleString();
   };
 
   // Gate
@@ -2104,6 +2143,35 @@ function AdminScreen() {
                         ? 'Syncing...'
                         : 'Force Sync Meilisearch'}
                     </button>
+                    <button
+                      className="btn btn-primary w-full"
+                      onClick={() =>
+                        triggerIgdbDumpSyncMutation.mutate({ force: false })
+                      }
+                      disabled={
+                        triggerIgdbDumpSyncMutation.isPending ||
+                        Boolean(igdbDumpStatus?.isRunning)
+                      }
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      {triggerIgdbDumpSyncMutation.isPending
+                        ? 'Starting IGDB Sync...'
+                        : igdbDumpStatus?.isRunning
+                          ? 'IGDB Sync Running...'
+                          : 'Run IGDB Dump Sync'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2123,6 +2191,129 @@ function AdminScreen() {
                       <div className="stat-title">Indexes</div>
                       <div className="stat-value text-lg">12</div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card bg-base-100 shadow-lg lg:col-span-2">
+                <div className="card-body">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="card-title">IGDB Dump Sync Status</h3>
+                    {igdbDumpStatusLoading ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : igdbDumpStatus?.isRunning ? (
+                      <span className="badge badge-warning">Running</span>
+                    ) : igdbDumpStatus?.lastError ? (
+                      <span className="badge badge-error">Last Run Failed</span>
+                    ) : (
+                      <span className="badge badge-success">Idle</span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <span className="font-semibold">Message: </span>
+                        {igdbDumpStatus?.currentMessage ||
+                          'No status available'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Current phase: </span>
+                        {igdbDumpStatus?.currentPhase || 'idle'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last trigger: </span>
+                        {igdbDumpStatus?.lastTrigger || 'unknown'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last started: </span>
+                        {formatDateTime(igdbDumpStatus?.lastStartedAt)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last finished: </span>
+                        {formatDateTime(igdbDumpStatus?.lastFinishedAt)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last successful: </span>
+                        {formatDateTime(igdbDumpStatus?.lastSuccessfulAt)}
+                      </p>
+                      {igdbDumpStatus?.lastError ? (
+                        <p className="text-error">
+                          <span className="font-semibold">Last error: </span>
+                          {igdbDumpStatus.lastError}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="stats stats-vertical shadow w-full">
+                      <div className="stat">
+                        <div className="stat-title">Rows Scanned</div>
+                        <div className="stat-value text-lg">
+                          {igdbDumpStatus?.counters?.scanned || 0}
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-title">Rows Upserted</div>
+                        <div className="stat-value text-lg text-success">
+                          {igdbDumpStatus?.counters?.upserted || 0}
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-title">Rows Skipped</div>
+                        <div className="stat-value text-lg text-info">
+                          {igdbDumpStatus?.counters?.skipped || 0}
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-title">Rows Failed</div>
+                        <div className="stat-value text-lg text-error">
+                          {igdbDumpStatus?.counters?.failed || 0}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto mt-4">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Endpoint</th>
+                          <th>File</th>
+                          <th>Updated At</th>
+                          <th>Schema Version</th>
+                          <th>Processed At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(['games', 'genres', 'platforms'] as const).map(
+                          (endpoint) => {
+                            const endpointStatus =
+                              igdbDumpStatus?.dumps?.[endpoint];
+                            return (
+                              <tr key={endpoint}>
+                                <td className="font-medium capitalize">
+                                  {endpoint}
+                                </td>
+                                <td>{endpointStatus?.fileName || 'N/A'}</td>
+                                <td>
+                                  {formatUnixTimestamp(
+                                    endpointStatus?.updatedAt ?? null
+                                  )}
+                                </td>
+                                <td>
+                                  {endpointStatus?.schemaVersion || 'N/A'}
+                                </td>
+                                <td>
+                                  {formatDateTime(
+                                    endpointStatus?.processedAt || null
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          }
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>

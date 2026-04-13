@@ -20,6 +20,7 @@ import {
   syncAllMedia,
 } from './services/meilisearch/mediaIndex.js';
 import meiliClient from './services/meilisearch/meiliClient.js';
+import { initIgdbDumpScheduler } from './services/igdbDumpScheduler.js';
 
 connectDB();
 
@@ -62,6 +63,8 @@ async function bootstrapMeilisearch() {
 bootstrapMeilisearch().catch((err) =>
   console.error('Meilisearch init error:', err)
 );
+
+initIgdbDumpScheduler();
 
 const httpServer = createServer(app);
 

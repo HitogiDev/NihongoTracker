@@ -83,6 +83,7 @@ const TVShow = MediaBase.discriminator('tv show', TVShowSchema);
 
 const VideoGameSchema = new Schema({
   igdbId: { type: Number, default: null },
+  igdbUpdatedAt: { type: Number, default: 0 },
   platforms: { type: [String], default: [] },
 });
 

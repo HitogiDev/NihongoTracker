@@ -7,6 +7,10 @@ import { deleteFile } from '../services/uploadFile.js';
 import bcrypt from 'bcryptjs';
 import { checkPatreonMembershipForUser } from '../controllers/patreon.controller.js';
 import { recalculateStreaksForUser } from '../services/streaks.js';
+import {
+  getIgdbDumpSyncStatus as getIgdbDumpSyncStatusService,
+  startIgdbDumpSync,
+} from '../services/igdbDumpSync.js';
 
 export async function getAdminStats(
   _req: Request,
@@ -690,6 +694,41 @@ export async function getPatronStats(
         users: paidUsers,
       },
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerIgdbDumpSync(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const forceFromBody = Boolean((req.body as { force?: boolean })?.force);
+    const forceQuery = String(req.query.force || '')
+      .trim()
+      .toLowerCase();
+    const forceFromQuery = ['1', 'true', 'yes', 'on'].includes(forceQuery);
+
+    const result = await startIgdbDumpSync('manual', {
+      force: forceFromBody || forceFromQuery,
+    });
+
+    return res.status(result.started ? 202 : 200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getIgdbDumpSyncStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const status = await getIgdbDumpSyncStatusService();
+    return res.status(200).json(status);
   } catch (error) {
     return next(error as customError);
   }

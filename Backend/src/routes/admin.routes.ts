@@ -14,6 +14,8 @@ import {
   getUserModerationByUsername,
   updateUserModerationByUsername,
   recalculateUserStreakByUsername,
+  triggerIgdbDumpSync,
+  getIgdbDumpSyncStatus,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -153,6 +155,20 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   syncMeiliSearchIndexes
+);
+
+router.post(
+  '/igdb-dump/sync',
+  protect,
+  checkPermission(userRoles.admin),
+  triggerIgdbDumpSync
+);
+
+router.get(
+  '/igdb-dump/status',
+  protect,
+  checkPermission(userRoles.admin),
+  getIgdbDumpSyncStatus
 );
 
 export default router;

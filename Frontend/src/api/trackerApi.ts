@@ -729,6 +729,56 @@ export async function forceSyncMeilisearchFn() {
   return data;
 }
 
+export interface IIgdbDumpEndpointStatus {
+  fileName: string;
+  updatedAt: number | null;
+  schemaVersion: string;
+  sizeBytes: number;
+  processedAt: string | null;
+}
+
+export interface IIgdbDumpSyncStatus {
+  isRunning: boolean;
+  currentPhase: string;
+  currentMessage: string;
+  lastTrigger: 'manual' | 'scheduled' | 'unknown';
+  lastStartedAt: string | null;
+  lastFinishedAt: string | null;
+  lastSuccessfulAt: string | null;
+  lastFailedAt: string | null;
+  lastError: string;
+  counters: {
+    scanned: number;
+    upserted: number;
+    skipped: number;
+    failed: number;
+  };
+  dumps: {
+    games: IIgdbDumpEndpointStatus;
+    genres: IIgdbDumpEndpointStatus;
+    platforms: IIgdbDumpEndpointStatus;
+  };
+  updatedAt: string | null;
+}
+
+export interface ITriggerIgdbDumpSyncResponse {
+  started: boolean;
+  message: string;
+  status: IIgdbDumpSyncStatus;
+}
+
+export async function triggerIgdbDumpSyncFn(
+  force: boolean = false
+): Promise<ITriggerIgdbDumpSyncResponse> {
+  const { data } = await api.post('admin/igdb-dump/sync', { force });
+  return data;
+}
+
+export async function getIgdbDumpSyncStatusFn(): Promise<IIgdbDumpSyncStatus> {
+  const { data } = await api.get('admin/igdb-dump/status');
+  return data;
+}
+
 // Admin: logs management
 export async function searchAdminLogsFn(params: {
   page?: number;

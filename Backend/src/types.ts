@@ -320,6 +320,7 @@ export interface IMediaDocument {
   seasons?: number;
   runtime?: number;
   igdbId?: number;
+  igdbUpdatedAt?: number;
   platforms?: string[];
   synonyms?: string[];
   isAdult: boolean;
@@ -474,6 +475,7 @@ export interface IContentMedia {
   volumes?: number;
   runtime?: number;
   igdbId?: number;
+  igdbUpdatedAt?: number;
   platforms?: string[];
   synonyms?: string[] | null;
   isAdult: boolean;

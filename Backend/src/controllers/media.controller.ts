@@ -14,7 +14,7 @@ import MediaReview from '../models/mediaReview.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import fac from 'fast-average-color-node';
 import { searchAnilist } from '../services/searchAnilist.js';
-import { getIgdbGame, searchIgdb } from '../services/searchIgdb.js';
+import { getIgdbGame } from '../services/searchIgdb.js';
 import axios from 'axios';
 import {
   addDocuments,
@@ -141,10 +141,6 @@ function normalizeMediaTypeParam(mediaType: string): string {
   };
 
   return mediaTypeMap[rawMediaType] ?? rawMediaType;
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function indexGameMediaForSearch(media: any[]) {
@@ -465,61 +461,12 @@ export async function searchMedia(
         return res.status(200).json([]);
       }
 
-      const gameRegex = new RegExp(escapeRegex(normalizedTitle), 'i');
+      const media = await searchDocuments('game', normalizedTitle, {
+        limit,
+        offset,
+      });
 
-      const dbMedia = await MediaBase.find({
-        type: 'game',
-        $or: [
-          { 'title.contentTitleNative': gameRegex },
-          { 'title.contentTitleEnglish': gameRegex },
-          { 'title.contentTitleRomaji': gameRegex },
-          { synonyms: { $elemMatch: { $regex: gameRegex } } },
-        ],
-      })
-        .select('contentId title contentImage coverImage isAdult synonyms type')
-        .sort({ updatedAt: -1, createdAt: -1 })
-        .skip(offset)
-        .limit(limit)
-        .lean();
-
-      if (dbMedia.length > 0) {
-        await indexGameMediaForSearch(dbMedia);
-        return res.status(200).json(dbMedia);
-      }
-
-      const igdbResults = await searchIgdb(normalizedTitle);
-      if (!igdbResults.length) {
-        return res.status(200).json([]);
-      }
-
-      const igdbContentIds = igdbResults.map((item) => item.contentId);
-
-      const existingMedia = await MediaBase.find({
-        type: 'game',
-        contentId: { $in: igdbContentIds },
-      })
-        .select('contentId title contentImage coverImage isAdult synonyms type')
-        .lean();
-
-      const existingIds = new Set(existingMedia.map((item) => item.contentId));
-      const newMedia = igdbResults.filter(
-        (item) => !existingIds.has(item.contentId)
-      );
-
-      if (newMedia.length > 0) {
-        await VideoGame.insertMany(newMedia, { ordered: false });
-      }
-
-      const combinedMedia = await MediaBase.find({
-        type: 'game',
-        contentId: { $in: igdbContentIds },
-      })
-        .select('contentId title contentImage coverImage isAdult synonyms type')
-        .lean();
-
-      await indexGameMediaForSearch(combinedMedia);
-
-      return res.status(200).json(combinedMedia.slice(0, limit));
+      return res.status(200).json(media.hits);
     }
 
     const media = await searchDocuments(type, title, { limit, offset });
