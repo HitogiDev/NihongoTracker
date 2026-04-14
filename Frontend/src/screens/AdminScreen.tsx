@@ -2172,6 +2172,35 @@ function AdminScreen() {
                           ? 'IGDB Sync Running...'
                           : 'Run IGDB Dump Sync'}
                     </button>
+                    <button
+                      className="btn btn-warning w-full"
+                      onClick={() =>
+                        triggerIgdbDumpSyncMutation.mutate({ force: true })
+                      }
+                      disabled={
+                        triggerIgdbDumpSyncMutation.isPending ||
+                        Boolean(igdbDumpStatus?.isRunning)
+                      }
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 6v12m-6-6h12"
+                        />
+                      </svg>
+                      {triggerIgdbDumpSyncMutation.isPending
+                        ? 'Starting Force Sync...'
+                        : igdbDumpStatus?.isRunning
+                          ? 'IGDB Sync Running...'
+                          : 'Force IGDB Full Resync'}
+                    </button>
                   </div>
                 </div>
               </div>

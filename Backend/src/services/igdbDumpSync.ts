@@ -400,10 +400,38 @@ function buildImageUrl(imageId: string, size: string = 'cover_big'): string {
   return `https://images.igdb.com/igdb/image/upload/t_${size}/${imageId}.jpg`;
 }
 
+async function buildImageIdMapFromDump(
+  dump: IIgdbDumpDetails,
+  counters: IIgdbDumpSyncCounters,
+  label: string
+): Promise<Map<number, string>> {
+  const imageIdById = new Map<number, string>();
+
+  await streamDumpRows(dump, async (row) => {
+    counters.scanned += 1;
+
+    const normalizedRow = normalizeRowKeys(row);
+    const id = parseNumber(pickField(normalizedRow, ['id']));
+    const imageId = pickField(normalizedRow, ['image_id', 'imageid']);
+
+    if (!id || !imageId || !isLikelyImageId(imageId)) {
+      counters.failed += 1;
+      return;
+    }
+
+    imageIdById.set(id, imageId);
+  });
+
+  console.log(`✅ Parsed ${imageIdById.size} ${label} entries from dump`);
+
+  return imageIdById;
+}
+
 function normalizeGameRow(
   sourceRow: Record<string, unknown>,
   genreNameById: Map<number, string>,
-  platformNameById: Map<number, string>
+  platformNameById: Map<number, string>,
+  coverImageById: Map<number, string>
 ): INormalizedGameMedia | null {
   const row = normalizeRowKeys(sourceRow);
 
@@ -445,22 +473,20 @@ function normalizeGameRow(
     'cover.image_id',
     'coverimageid',
   ]);
-  const screenshotImageId = pickField(row, [
-    'screenshot_image_id',
-    'screenshots_image_id',
-    'screenshots.image_id',
-    'screenshotimageid',
-  ]);
+
+  const coverId = parseNumber(pickField(row, ['cover', 'cover_id', 'coverid']));
+  const resolvedCoverImageId = coverId
+    ? coverImageById.get(coverId) || null
+    : null;
+
+  const selectedImageId = resolvedCoverImageId || coverImageId || null;
 
   const contentImage =
-    coverImageId && isLikelyImageId(coverImageId)
-      ? buildImageUrl(coverImageId)
+    selectedImageId && isLikelyImageId(selectedImageId)
+      ? buildImageUrl(selectedImageId)
       : undefined;
 
-  const coverImage =
-    screenshotImageId && isLikelyImageId(screenshotImageId)
-      ? buildImageUrl(screenshotImageId, '720p')
-      : undefined;
+  const coverImage = contentImage;
 
   const isAdult =
     String(pickField(row, ['is_adult', 'adult']) || '').toLowerCase() ===
@@ -765,6 +791,24 @@ async function runSyncProcess(
     return didDumpChange(previousDumps[endpoint], details);
   });
 
+  if (!force && !changedEndpoints.includes('games') && dumpDetails.games) {
+    const missingImageCount = await MediaBase.countDocuments({
+      type: 'game',
+      $or: [
+        { contentImage: { $exists: false } },
+        { contentImage: null },
+        { contentImage: '' },
+      ],
+    });
+
+    if (missingImageCount > 0) {
+      changedEndpoints.push('games');
+      console.log(
+        `🖼️ IGDB sync backfill: found ${missingImageCount} game(s) missing content images, forcing games processing`
+      );
+    }
+  }
+
   if (changedEndpoints.length === 0) {
     await finalizeRunSuccess(
       'No new IGDB dump updates available',
@@ -778,6 +822,7 @@ async function runSyncProcess(
 
   let genreNameById = new Map<number, string>();
   let platformNameById = new Map<number, string>();
+  let coverImageById = new Map<number, string>();
 
   if (
     dumpDetails.genres &&
@@ -804,6 +849,21 @@ async function runSyncProcess(
   }
 
   if (shouldProcessGames) {
+    try {
+      await touchLockAndProgress('covers', 'Parsing covers dump', counters);
+      const coversDump = await getIgdbDumpDetails('covers');
+      coverImageById = await buildImageIdMapFromDump(
+        coversDump,
+        counters,
+        'covers'
+      );
+    } catch (error) {
+      console.warn(
+        'Failed to parse covers dump, continuing without cover mapping:',
+        error
+      );
+    }
+
     await touchLockAndProgress(
       'games',
       'Syncing games dump to media collection',
@@ -816,7 +876,12 @@ async function runSyncProcess(
     await streamDumpRows(dumpDetails.games, async (row) => {
       counters.scanned += 1;
 
-      const normalized = normalizeGameRow(row, genreNameById, platformNameById);
+      const normalized = normalizeGameRow(
+        row,
+        genreNameById,
+        platformNameById,
+        coverImageById
+      );
       if (!normalized) {
         counters.failed += 1;
         return;
@@ -880,10 +945,12 @@ export async function startIgdbDumpSync(
   trigger: IgdbSyncTrigger,
   options: IStartIgdbDumpSyncOptions = {}
 ): Promise<IStartIgdbDumpSyncResult> {
+  const runLabel = options.force ? 'force IGDB dump sync' : 'IGDB dump sync';
+
   if (activeSyncPromise) {
     return {
       started: false,
-      message: 'IGDB dump sync is already running',
+      message: `${runLabel} is already running`,
       status: await getIgdbDumpSyncStatus(),
     };
   }
@@ -893,7 +960,7 @@ export async function startIgdbDumpSync(
   if (!lockState) {
     return {
       started: false,
-      message: 'IGDB dump sync is already running',
+      message: `${runLabel} is already running`,
       status: await getIgdbDumpSyncStatus(),
     };
   }
@@ -912,7 +979,9 @@ export async function startIgdbDumpSync(
 
   return {
     started: true,
-    message: 'IGDB dump sync started',
+    message: options.force
+      ? 'Force IGDB dump sync started'
+      : 'IGDB dump sync started',
     status: mapStateToStatus(lockState),
   };
 }
