@@ -11,7 +11,7 @@ import {
   MonitorPlay,
   X,
 } from 'lucide-react';
-import { searchUsersFn, searchMediaFn } from '../api/trackerApi';
+import { searchUsersFn, multiSearchMediaFn } from '../api/trackerApi';
 import { searchAnilist } from '../api/anilistApi';
 import { SearchResultType } from '../types';
 import { useDebounce } from '../hooks/useDebounce';
@@ -41,45 +41,6 @@ const MEDIA_TYPE_CONFIG: Record<
   'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
 };
 
-const SEARCH_MEDIA_TYPES = [
-  'anime',
-  'manga',
-  'reading',
-  'vn',
-  'game',
-  'movie',
-  'tv_show',
-] as const;
-
-async function searchMediaByType(
-  type: (typeof SEARCH_MEDIA_TYPES)[number],
-  query: string,
-  perPage: number
-): Promise<SearchResultType[]> {
-  if (type === 'anime') {
-    return searchAnilist(query, 'ANIME', 1, perPage) as Promise<
-      SearchResultType[]
-    >;
-  }
-
-  if (type === 'manga') {
-    return searchAnilist(query, 'MANGA', 1, perPage, 'MANGA') as Promise<
-      SearchResultType[]
-    >;
-  }
-
-  if (type === 'reading') {
-    return searchAnilist(query, 'MANGA', 1, perPage, 'NOVEL') as Promise<
-      SearchResultType[]
-    >;
-  }
-
-  return searchMediaFn({
-    type,
-    search: query,
-    perPage,
-  });
-}
 
 function MediaResultRow({
   media,
@@ -291,23 +252,33 @@ function SearchModal({
         }
 
         if (activeTab === 'all' || activeTab === 'media') {
-          const mediaPromises = SEARCH_MEDIA_TYPES.map((type) =>
-            searchMediaByType(type, debouncedQuery, 3).catch(
-              () => [] as SearchResultType[]
-            )
-          );
+          // Single multi-index search across all MeiliSearch indexes (unified relevance ranking)
+          const dbSearchPromise = multiSearchMediaFn({
+            search: debouncedQuery,
+            perPage: 3,
+          }).catch(() => [] as SearchResultType[]);
+
+          // AniList searches for anime/manga/reading (discovers content not yet in DB)
+          const anilistPromises = [
+            searchAnilist(debouncedQuery, 'ANIME', 1, 3).catch(() => [] as SearchResultType[]),
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'MANGA').catch(() => [] as SearchResultType[]),
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'NOVEL').catch(() => [] as SearchResultType[]),
+          ];
 
           promises.push(
-            Promise.all(mediaPromises).then((results) => {
+            Promise.all([dbSearchPromise, ...anilistPromises]).then(([dbResults, ...anilistResults]) => {
               if (!controller.signal.aborted) {
-                const allMedia = results.flat();
+                // DB results first (cross-index relevance ranked), then AniList results
+                const allMedia = [...dbResults, ...anilistResults.flat()];
                 const seen = new Set<string>();
                 const unique = allMedia.filter((item) => {
-                  if (seen.has(item.contentId)) return false;
-                  seen.add(item.contentId);
+                  // Dedupe by contentId + type to handle same content from DB and AniList
+                  const key = `${item.type}:${item.contentId}`;
+                  if (seen.has(key)) return false;
+                  seen.add(key);
                   return true;
                 });
-                setMediaResults(unique.slice(0, 10));
+                setMediaResults(unique.slice(0, 15));
               }
             })
           );

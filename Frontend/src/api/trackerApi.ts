@@ -187,6 +187,16 @@ export async function searchMediaFn(params: {
   return data || [];
 }
 
+export async function multiSearchMediaFn(params: {
+  search: string;
+  perPage?: number;
+}): Promise<SearchResultType[]> {
+  const { data } = await api.get<SearchResultType[]>(`media/multi-search`, {
+    params,
+  });
+  return data || [];
+}
+
 export async function getMediaFn(
   mediaId: string,
   mediaType: string,
@@ -724,8 +734,8 @@ export async function syncManabeIdsFn() {
   return data;
 }
 
-export async function forceSyncMeilisearchFn() {
-  const { data } = await api.post('admin/meilisearch/sync');
+export async function forceSyncMeilisearchFn(rebuild: boolean = true) {
+  const { data } = await api.post('admin/meilisearch/sync', { rebuild });
   return data;
 }
 

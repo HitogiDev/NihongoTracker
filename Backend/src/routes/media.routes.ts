@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getMedia,
   searchMedia,
+  multiSearchMedia,
   getAverageColor,
   addMediaReview,
   getMediaReviews,
@@ -18,6 +19,7 @@ const router = Router();
 
 router.get('/utils/avgcolor', getAverageColor);
 router.get('/search', searchMedia);
+router.get('/multi-search', multiSearchMedia);
 router.get('/youtube/video', searchYouTubeVideo);
 router.get('/reviews/:reviewId', getMediaReviewById);
 router.get('/:mediaType/:contentId/reviews', getMediaReviews);

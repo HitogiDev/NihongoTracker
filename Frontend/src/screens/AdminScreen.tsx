@@ -223,7 +223,7 @@ function AdminScreen() {
   });
 
   const syncMeilisearchMutation = useMutation({
-    mutationFn: forceSyncMeilisearchFn,
+    mutationFn: () => forceSyncMeilisearchFn(true),
     onSuccess: () => {
       toast.success('Meilisearch indexes synced successfully');
     },

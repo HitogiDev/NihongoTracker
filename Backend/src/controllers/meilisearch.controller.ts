@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import {
+  clearIndex,
   deleteIndex,
   listIndexes,
   updateIndexSettings,
@@ -13,6 +14,29 @@ import {
   initMediaIndexes,
   forceSyncAllMedia,
 } from '../services/meilisearch/mediaIndex.js';
+
+const MEILI_USERS_INDEX = 'users';
+const MEILI_MEDIA_INDEXES = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'movie',
+  'tv_show',
+  'game',
+] as const;
+
+function shouldRebuildIndexes(value: unknown): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true';
+  }
+
+  return false;
+}
 
 export async function getMeiliSearchIndexes(
   _req: Request,
@@ -73,12 +97,31 @@ export async function updateMeiliSearchIndexSettings(
 }
 
 export async function syncMeiliSearchIndexes(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
+    const rebuild = shouldRebuildIndexes(req.body?.rebuild);
+
     await Promise.all([initUsersIndex(), initMediaIndexes()]);
+
+    if (rebuild) {
+      const indexesToClear = [MEILI_USERS_INDEX, ...MEILI_MEDIA_INDEXES];
+
+      await Promise.all(
+        indexesToClear.map(async (indexName) => {
+          try {
+            await clearIndex(indexName);
+          } catch (error) {
+            console.warn(
+              `Failed to clear Meilisearch index ${indexName}:`,
+              error
+            );
+          }
+        })
+      );
+    }
 
     const [userCount, mediaCount] = await Promise.all([
       forceSyncAllUsers(),
@@ -86,7 +129,10 @@ export async function syncMeiliSearchIndexes(
     ]);
 
     return res.status(200).json({
-      message: 'Meilisearch sync started successfully',
+      message: rebuild
+        ? 'Meilisearch indexes rebuilt successfully'
+        : 'Meilisearch sync completed successfully',
+      rebuild,
       users: userCount,
       media: mediaCount,
     });

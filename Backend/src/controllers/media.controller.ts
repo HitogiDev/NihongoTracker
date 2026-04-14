@@ -19,6 +19,7 @@ import axios from 'axios';
 import {
   addDocuments,
   searchDocuments,
+  multiSearchDocuments,
 } from '../services/meilisearch/meiliSearch.js';
 
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
@@ -472,6 +473,41 @@ export async function searchMedia(
     const media = await searchDocuments(type, title, { limit, offset });
 
     return res.status(200).json(media.hits);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+const MULTI_SEARCH_INDEXES = ['anime', 'manga', 'reading', 'vn', 'movie', 'tv_show', 'game'] as const;
+
+export async function multiSearchMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const title = req.query.search as string;
+    const limit = parseInt(req.query.perPage as string) || 3;
+
+    if (!title || title.trim().length < 2) {
+      return res.status(400).json({ message: 'Search query too short' });
+    }
+
+    const queries = MULTI_SEARCH_INDEXES.map((indexUid) => ({
+      indexUid,
+      q: title.trim(),
+      limit,
+      showRankingScore: true,
+    }));
+
+    const multiResult = await multiSearchDocuments(queries);
+
+    // Flatten and sort by _rankingScore for true cross-index relevance ranking
+    const allHits = multiResult.results
+      .flatMap((result: any) => result.hits)
+      .sort((a: any, b: any) => (b._rankingScore ?? 0) - (a._rankingScore ?? 0));
+
+    return res.status(200).json(allHits);
   } catch (error) {
     return next(error as customError);
   }

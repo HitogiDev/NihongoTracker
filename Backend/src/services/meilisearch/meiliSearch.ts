@@ -70,6 +70,14 @@ export async function clearIndex(indexName: string) {
   return response;
 }
 
+// Multi-search across multiple indexes
+export async function multiSearchDocuments(
+  queries: Array<{ indexUid: string; q: string; limit?: number; offset?: number; showRankingScore?: boolean }>
+) {
+  const response = await client.multiSearch({ queries });
+  return response;
+}
+
 // Settings
 export async function updateIndexSettings(
   indexName: string,
