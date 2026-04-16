@@ -13,6 +13,7 @@ import { sendVerificationEmail } from '../mailtrap/emails.js';
 import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
 import { indexUser } from '../services/meilisearch/userIndex.js';
 import { calculateXp } from '../services/calculateLevel.js';
+import { getLiveCurrentStreak } from '../services/streaks.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -312,10 +313,20 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
   }).collation({ locale: 'en', strength: 2 });
   if (!userFound) return next(new customError('User not found', 404));
 
+  const timezone = userFound.settings?.timezone || 'UTC';
+  const liveCurrentStreak = getLiveCurrentStreak(
+    userFound.stats?.currentStreak ?? 0,
+    userFound.stats?.lastStreakDate ?? null,
+    timezone
+  );
+
   return res.json({
     id: userFound._id,
     username: userFound.username,
-    stats: userFound.stats,
+    stats: {
+      ...userFound.stats,
+      currentStreak: liveCurrentStreak,
+    },
     discordId: userFound.discordId,
     avatar: userFound.avatar,
     banner: userFound.banner,

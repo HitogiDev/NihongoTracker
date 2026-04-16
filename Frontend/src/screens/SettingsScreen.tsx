@@ -90,14 +90,14 @@ const PRESET_BADGE_TEXT_COLORS = [
   'secondary-content',
 ] as const;
 const IMPORT_TYPE_LABELS: Record<
-  'tmw' | 'manabe' | 'vncr' | 'other' | 'kechimochi',
+  'tmw' | 'manabe' | 'vncr' | 'kechimochi' | 'other',
   string
 > = {
   tmw: 'TheMoeWay (.csv)',
   manabe: 'Manabe (.tsv)',
   vncr: 'VN-CSV (.csv)',
-  other: 'NihongoTracker | Other (.csv)',
   kechimochi: 'Kechimochi (.csv)',
+  other: 'NihongoTracker | Other (.csv)',
 };
 
 type PatreonStatus = {
@@ -386,7 +386,7 @@ function SettingsScreen() {
     string | null
   >(null);
   const [importType, setImportType] = useState<
-    'tmw' | 'manabe' | 'vncr' | 'other' | 'kechimochi' | null
+    'tmw' | 'manabe' | 'vncr' | 'kechimochi' | 'other' | null
   >(null);
   const confirmUsernameRef = useRef<HTMLInputElement>(null);
   const [isUsernameMatch, setIsUsernameMatch] = useState(false);
@@ -2609,18 +2609,6 @@ function SettingsScreen() {
                           <li>
                             <button
                               type="button"
-                              className={`hover:bg-base-200 ${importType === 'other' ? 'active' : ''}`}
-                              onClick={() => {
-                                setImportType('other');
-                                (document.activeElement as HTMLElement)?.blur();
-                              }}
-                            >
-                              NihongoTracker | Other
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
                               className={`hover:bg-base-200 ${importType === 'kechimochi' ? 'active' : ''}`}
                               onClick={() => {
                                 setImportType('kechimochi');
@@ -2628,6 +2616,18 @@ function SettingsScreen() {
                               }}
                             >
                               Kechimochi
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              type="button"
+                              className={`hover:bg-base-200 ${importType === 'other' ? 'active' : ''}`}
+                              onClick={() => {
+                                setImportType('other');
+                                (document.activeElement as HTMLElement)?.blur();
+                              }}
+                            >
+                              NihongoTracker | Other
                             </button>
                           </li>
                         </ul>

@@ -10,6 +10,7 @@ import {
   sendVerificationEmail,
 } from '../mailtrap/emails.js';
 import { indexUser } from '../services/meilisearch/userIndex.js';
+import { getLiveCurrentStreak } from '../services/streaks.js';
 
 const isValidTimezone = (timezone?: string): boolean => {
   if (!timezone) {
@@ -138,6 +139,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         );
       }
 
+      const tz = user.settings?.timezone || 'UTC';
+      const liveCurrentStreak = getLiveCurrentStreak(
+        user.stats?.currentStreak ?? 0,
+        user.stats?.lastStreakDate ?? null,
+        tz
+      );
       generateToken(res, user._id.toString());
       return res.status(200).json({
         _id: user._id,
@@ -145,7 +152,10 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         email: user.email,
         about: user.about,
         discordId: user.discordId,
-        stats: user.stats,
+        stats: {
+          ...user.stats,
+          currentStreak: liveCurrentStreak,
+        },
         avatar: user.avatar,
         banner: user.banner,
         titles: user.titles,

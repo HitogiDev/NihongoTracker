@@ -17,6 +17,7 @@ import updateStats from '../services/updateStats.js';
 import {
   recalculateStreaksForUser,
   updateStreakWithLog,
+  getLiveCurrentStreak,
 } from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
 import { updateLevelAndXp } from '../services/updateStats.js';
@@ -2126,7 +2127,11 @@ export async function getUserStats(
     }));
 
     const streaks = {
-      currentStreak: user.stats?.currentStreak ?? 0,
+      currentStreak: getLiveCurrentStreak(
+        user.stats?.currentStreak ?? 0,
+        user.stats?.lastStreakDate ?? null,
+        userTimezone
+      ),
       longestStreak: user.stats?.longestStreak ?? 0,
     };
 

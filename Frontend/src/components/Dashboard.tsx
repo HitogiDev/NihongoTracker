@@ -149,6 +149,16 @@ function Dashboard() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fetch live user profile for streak — this query key ['user', username]
+  // gets invalidated by LogCard's delete/update mutations, so the streak
+  // updates reactively without relying on the stale auth store.
+  const { data: liveUserProfile } = useQuery({
+    queryKey: ['user', username],
+    queryFn: () => getUserFn(username!),
+    enabled: !!username,
+    staleTime: 1000 * 60,
+  });
+
   const { data: globalFeed, isLoading: globalFeedLoading } = useQuery({
     queryKey: ['globalFeed', username, feedFilters],
     queryFn: () =>
@@ -324,7 +334,11 @@ function Dashboard() {
     }
   }
 
-  const streak = user.stats?.currentStreak ?? 0;
+  // Use live profile data for streak (reactive to log mutations);
+  // fall back to auth store while query is loading.
+  const streak =
+    liveUserProfile?.stats?.currentStreak ?? user.stats?.currentStreak ?? 0;
+
   const monthlyRanking = rankingSummary?.monthly;
   const xpGapContent = monthlyRanking ? (
     monthlyRanking.nextUser ? (
