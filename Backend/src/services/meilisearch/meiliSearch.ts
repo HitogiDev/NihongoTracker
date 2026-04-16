@@ -18,6 +18,19 @@ export async function deleteDocument(indexName: string, documentId: string) {
   return response;
 }
 
+export async function deleteDocuments(
+  indexName: string,
+  documentIds: string[]
+) {
+  if (documentIds.length === 0) {
+    return null;
+  }
+
+  const index = client.index(indexName);
+  const response = await index.deleteDocuments(documentIds);
+  return response;
+}
+
 export async function getDocument(indexName: string, documentId: string) {
   const index = client.index(indexName);
   const document = await index.getDocument(documentId);
@@ -72,7 +85,13 @@ export async function clearIndex(indexName: string) {
 
 // Multi-search across multiple indexes
 export async function multiSearchDocuments(
-  queries: Array<{ indexUid: string; q: string; limit?: number; offset?: number; showRankingScore?: boolean }>
+  queries: Array<{
+    indexUid: string;
+    q: string;
+    limit?: number;
+    offset?: number;
+    showRankingScore?: boolean;
+  }>
 ) {
   const response = await client.multiSearch({ queries });
   return response;

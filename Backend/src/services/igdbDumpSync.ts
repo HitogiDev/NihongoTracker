@@ -14,7 +14,12 @@ import {
   getIgdbDumpStream,
   IIgdbDumpDetails,
 } from './igdbDumpClient.js';
-import { addDocuments } from './meilisearch/meiliSearch.js';
+import { addDocuments, deleteDocuments } from './meilisearch/meiliSearch.js';
+import {
+  hasJapaneseLanguageMetadata,
+  hasJapaneseTextHeuristic,
+  isMainGameCategory,
+} from './igdbFilterPolicy.js';
 
 export type IgdbSyncTrigger = 'manual' | 'scheduled';
 
@@ -64,6 +69,56 @@ interface INormalizedGameMedia {
   synonyms: string[];
   isAdult: boolean;
 }
+
+interface IGameLanguageSupportContext {
+  japaneseLanguageIds: Set<number>;
+  gameIdsWithJapaneseSupport: Set<number>;
+  hasExplicitLanguageMap: boolean;
+}
+
+interface INormalizeGameRowResult {
+  media: INormalizedGameMedia | null;
+  reason: 'invalid' | 'non-main' | 'non-japanese' | null;
+}
+
+const GAME_CATEGORY_KEYS = [
+  'category',
+  'game_type',
+  'gametype',
+  'game_category',
+  'gamecategory',
+];
+const GAME_ALTERNATIVE_NAMES_KEYS = [
+  'alternative_names_text',
+  'alternative_names',
+];
+const GAME_LANGUAGE_METADATA_LABEL_KEYS = [
+  'languages_text',
+  'language_names',
+  'supported_languages',
+  'spoken_languages_text',
+  'language_supports_text',
+  'language_support_text',
+];
+const GAME_LANGUAGE_METADATA_ID_KEYS = [
+  'language_ids',
+  'languages',
+  'spoken_language_ids',
+  'spoken_languages',
+  'supported_language_ids',
+];
+const LANGUAGE_DUMP_LABEL_KEYS = [
+  'name',
+  'native_name',
+  'nativename',
+  'locale',
+  'code',
+  'iso_code',
+  'iso_639_1',
+  'iso639_1',
+];
+
+const IGDB_ADULT_THEME_ID = 42;
 
 let activeSyncPromise: Promise<void> | null = null;
 
@@ -367,6 +422,95 @@ function parseNumberArray(value: unknown): number[] {
     .filter((item) => Number.isFinite(item));
 }
 
+function parseStringArrayFromKeys(
+  row: Record<string, string>,
+  keys: string[]
+): string[] {
+  const values = new Set<string>();
+
+  keys.forEach((key) => {
+    parseStringArray(row[key]).forEach((item) => {
+      values.add(item);
+    });
+  });
+
+  return Array.from(values);
+}
+
+function parseNumberArrayFromKeys(
+  row: Record<string, string>,
+  keys: string[]
+): number[] {
+  const values = new Set<number>();
+
+  keys.forEach((key) => {
+    parseNumberArray(row[key]).forEach((item) => {
+      values.add(item);
+    });
+  });
+
+  return Array.from(values);
+}
+
+function defaultLanguageSupportContext(): IGameLanguageSupportContext {
+  return {
+    japaneseLanguageIds: new Set<number>(),
+    gameIdsWithJapaneseSupport: new Set<number>(),
+    hasExplicitLanguageMap: false,
+  };
+}
+
+function evaluateJapaneseAvailability(
+  gameId: number,
+  row: Record<string, string>,
+  languageSupportContext: IGameLanguageSupportContext
+): { isExplicit: boolean; hasJapanese: boolean } {
+  let isExplicit = false;
+  let hasJapanese = false;
+
+  if (languageSupportContext.hasExplicitLanguageMap) {
+    isExplicit = true;
+    hasJapanese = languageSupportContext.gameIdsWithJapaneseSupport.has(gameId);
+  }
+
+  if (languageSupportContext.japaneseLanguageIds.size > 0) {
+    const languageIds = parseNumberArrayFromKeys(
+      row,
+      GAME_LANGUAGE_METADATA_ID_KEYS
+    );
+
+    if (languageIds.length > 0) {
+      isExplicit = true;
+
+      if (
+        languageIds.some((languageId) =>
+          languageSupportContext.japaneseLanguageIds.has(languageId)
+        )
+      ) {
+        hasJapanese = true;
+      }
+    }
+  }
+
+  const languageLabels = parseStringArrayFromKeys(
+    row,
+    GAME_LANGUAGE_METADATA_LABEL_KEYS
+  );
+
+  if (languageLabels.length > 0) {
+    isExplicit = true;
+
+    if (hasJapaneseLanguageMetadata(languageLabels)) {
+      hasJapanese = true;
+    }
+  }
+
+  return {
+    isExplicit,
+    hasJapanese,
+  };
+}
+
 function normalizeRowKeys(
   row: Record<string, unknown>
 ): Record<string, string> {
@@ -427,24 +571,100 @@ async function buildImageIdMapFromDump(
   return imageIdById;
 }
 
+async function buildJapaneseLanguageIdSetFromDump(
+  dump: IIgdbDumpDetails,
+  counters: IIgdbDumpSyncCounters
+): Promise<Set<number>> {
+  const languageIds = new Set<number>();
+
+  await streamDumpRows(dump, async (row) => {
+    counters.scanned += 1;
+
+    const normalizedRow = normalizeRowKeys(row);
+    const id = parseNumber(pickField(normalizedRow, ['id']));
+
+    if (!id) {
+      counters.failed += 1;
+      return;
+    }
+
+    const labels = parseStringArrayFromKeys(
+      normalizedRow,
+      LANGUAGE_DUMP_LABEL_KEYS
+    );
+
+    if (hasJapaneseLanguageMetadata(labels)) {
+      languageIds.add(id);
+    }
+  });
+
+  console.log(
+    `✅ Parsed ${languageIds.size} Japanese language id(s) from languages dump`
+  );
+
+  return languageIds;
+}
+
+async function buildJapaneseGameSupportSetFromDump(
+  dump: IIgdbDumpDetails,
+  japaneseLanguageIds: Set<number>,
+  counters: IIgdbDumpSyncCounters
+): Promise<Set<number>> {
+  const gameIds = new Set<number>();
+
+  await streamDumpRows(dump, async (row) => {
+    counters.scanned += 1;
+
+    const normalizedRow = normalizeRowKeys(row);
+    const gameId = parseNumber(
+      pickField(normalizedRow, ['game', 'game_id', 'gameid'])
+    );
+    const languageId = parseNumber(
+      pickField(normalizedRow, ['language', 'language_id', 'languageid'])
+    );
+
+    if (!gameId || !languageId) {
+      counters.failed += 1;
+      return;
+    }
+
+    if (japaneseLanguageIds.has(languageId)) {
+      gameIds.add(gameId);
+    }
+  });
+
+  console.log(
+    `✅ Parsed ${gameIds.size} game(s) with Japanese support from language_supports dump`
+  );
+
+  return gameIds;
+}
+
 function normalizeGameRow(
   sourceRow: Record<string, unknown>,
   genreNameById: Map<number, string>,
   platformNameById: Map<number, string>,
-  coverImageById: Map<number, string>
-): INormalizedGameMedia | null {
+  coverImageById: Map<number, string>,
+  languageSupportContext: IGameLanguageSupportContext
+): INormalizeGameRowResult {
   const row = normalizeRowKeys(sourceRow);
 
   const idValue = pickField(row, ['id']);
   const nameValue = pickField(row, ['name']);
 
   if (!idValue || !nameValue) {
-    return null;
+    return { media: null, reason: 'invalid' };
   }
 
   const id = Number(idValue);
   if (!Number.isFinite(id)) {
-    return null;
+    return { media: null, reason: 'invalid' };
+  }
+
+  const category = parseNumber(pickField(row, GAME_CATEGORY_KEYS));
+
+  if (!isMainGameCategory(category)) {
+    return { media: null, reason: 'non-main' };
   }
 
   const updatedAt =
@@ -465,8 +685,28 @@ function normalizeGameRow(
   const summary = pickField(row, ['summary', 'storyline', 'description']);
 
   const alternatives = parseStringArray(
-    pickField(row, ['alternative_names_text', 'alternative_names'])
+    pickField(row, GAME_ALTERNATIVE_NAMES_KEYS)
   ).filter((item) => !/^\d+$/.test(item));
+
+  const japaneseAvailability = evaluateJapaneseAvailability(
+    id,
+    row,
+    languageSupportContext
+  );
+
+  if (japaneseAvailability.isExplicit && !japaneseAvailability.hasJapanese) {
+    return { media: null, reason: 'non-japanese' };
+  }
+
+  if (!japaneseAvailability.isExplicit) {
+    const hasJapaneseFallback = [nameValue, ...alternatives].some((value) =>
+      hasJapaneseTextHeuristic(value)
+    );
+
+    if (!hasJapaneseFallback) {
+      return { media: null, reason: 'non-japanese' };
+    }
+  }
 
   const coverImageId = pickField(row, [
     'cover_image_id',
@@ -490,7 +730,7 @@ function normalizeGameRow(
 
   const isAdult =
     String(pickField(row, ['is_adult', 'adult']) || '').toLowerCase() ===
-      'true' || themes.includes(42);
+      'true' || themes.includes(IGDB_ADULT_THEME_ID);
 
   const normalized: INormalizedGameMedia = {
     contentId: `igdb-${id}`,
@@ -524,7 +764,10 @@ function normalizeGameRow(
     normalized.coverImage = coverImage;
   }
 
-  return normalized;
+  return {
+    media: normalized,
+    reason: null,
+  };
 }
 
 async function streamDumpRows(
@@ -714,6 +957,59 @@ async function flushGameBatch(
   }
 }
 
+async function cleanupOutOfScopeIgdbGames(allowedContentIds: Set<string>) {
+  const staleDocs = await MediaBase.find({
+    type: 'game',
+    contentId: /^igdb-\d+$/,
+  })
+    .select('_id contentId')
+    .lean();
+
+  const docsToDelete = staleDocs.filter(
+    (doc) => !allowedContentIds.has(doc.contentId)
+  );
+
+  if (docsToDelete.length === 0) {
+    return;
+  }
+
+  const staleContentIds = docsToDelete.map((doc) => doc.contentId);
+  const staleIndexDocIds = docsToDelete.map((doc) => String(doc._id));
+
+  const deleteBatchSize = getBatchSize();
+
+  for (
+    let index = 0;
+    index < staleContentIds.length;
+    index += deleteBatchSize
+  ) {
+    await MediaBase.deleteMany({
+      type: 'game',
+      contentId: { $in: staleContentIds.slice(index, index + deleteBatchSize) },
+    });
+  }
+
+  try {
+    const indexBatchSize = getIndexBatchSize();
+    for (
+      let index = 0;
+      index < staleIndexDocIds.length;
+      index += indexBatchSize
+    ) {
+      await deleteDocuments(
+        'game',
+        staleIndexDocIds.slice(index, index + indexBatchSize)
+      );
+    }
+  } catch (error) {
+    console.warn('Meilisearch cleanup warning (IGDB sync):', error);
+  }
+
+  console.log(
+    `🧹 Removed ${docsToDelete.length} out-of-scope IGDB game(s) from media/index`
+  );
+}
+
 function didDumpChange(
   previous: IIgdbDumpEndpointState,
   current: IIgdbDumpDetails
@@ -823,6 +1119,8 @@ async function runSyncProcess(
   let genreNameById = new Map<number, string>();
   let platformNameById = new Map<number, string>();
   let coverImageById = new Map<number, string>();
+  let languageSupportContext = defaultLanguageSupportContext();
+  const allowedGameContentIds = new Set<string>();
 
   if (
     dumpDetails.genres &&
@@ -864,6 +1162,43 @@ async function runSyncProcess(
       );
     }
 
+    try {
+      await touchLockAndProgress(
+        'languages',
+        'Parsing language availability dumps',
+        counters
+      );
+
+      const languagesDump = await getIgdbDumpDetails('languages');
+      const japaneseLanguageIds = await buildJapaneseLanguageIdSetFromDump(
+        languagesDump,
+        counters
+      );
+
+      if (japaneseLanguageIds.size > 0) {
+        const languageSupportsDump =
+          await getIgdbDumpDetails('language_supports');
+        const gameIdsWithJapaneseSupport =
+          await buildJapaneseGameSupportSetFromDump(
+            languageSupportsDump,
+            japaneseLanguageIds,
+            counters
+          );
+
+        languageSupportContext = {
+          japaneseLanguageIds,
+          gameIdsWithJapaneseSupport,
+          hasExplicitLanguageMap: true,
+        };
+      }
+    } catch (error) {
+      console.warn(
+        'Failed to parse language support dumps, using heuristic fallback for Japanese detection:',
+        error
+      );
+      languageSupportContext = defaultLanguageSupportContext();
+    }
+
     await touchLockAndProgress(
       'games',
       'Syncing games dump to media collection',
@@ -876,16 +1211,35 @@ async function runSyncProcess(
     await streamDumpRows(dumpDetails.games, async (row) => {
       counters.scanned += 1;
 
-      const normalized = normalizeGameRow(
+      const normalizedResult = normalizeGameRow(
         row,
         genreNameById,
         platformNameById,
-        coverImageById
+        coverImageById,
+        languageSupportContext
       );
-      if (!normalized) {
+
+      if (!normalizedResult.media) {
+        if (
+          normalizedResult.reason === 'non-main' ||
+          normalizedResult.reason === 'non-japanese'
+        ) {
+          counters.skipped += 1;
+        } else {
+          counters.failed += 1;
+        }
+
+        return;
+      }
+
+      const normalized = normalizedResult.media;
+
+      if (!normalized.contentId) {
         counters.failed += 1;
         return;
       }
+
+      allowedGameContentIds.add(normalized.contentId);
 
       gameBatch.push(normalized);
 
@@ -904,6 +1258,14 @@ async function runSyncProcess(
     if (gameBatch.length > 0) {
       await flushGameBatch(gameBatch.splice(0, gameBatch.length), counters);
     }
+
+    await touchLockAndProgress(
+      'cleanup',
+      'Removing non-main/non-Japanese IGDB games',
+      counters
+    );
+
+    await cleanupOutOfScopeIgdbGames(allowedGameContentIds);
   }
 
   const processedAt = new Date();

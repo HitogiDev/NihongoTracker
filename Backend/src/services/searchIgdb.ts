@@ -1,5 +1,10 @@
 import axios from 'axios';
 import { IMediaDocument } from '../types.js';
+import {
+  hasJapaneseLanguageMetadata,
+  hasJapaneseTextHeuristic,
+  isMainGameCategory,
+} from './igdbFilterPolicy.js';
 
 const IGDB_API_URL = 'https://api.igdb.com/v4';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
@@ -42,6 +47,8 @@ function buildImageUrl(imageId: string, size: string = 'cover_big'): string {
 interface IgdbGame {
   id: number;
   name: string;
+  category?: number;
+  language_supports?: Array<{ language?: { locale?: string; name?: string } }>;
   cover?: { image_id: string };
   alternative_names?: Array<{ name: string; comment?: string }>;
   summary?: string;
@@ -50,13 +57,40 @@ interface IgdbGame {
   screenshots?: Array<{ image_id: string }>;
 }
 
-function normalizeGame(game: IgdbGame): IMediaDocument {
+function isJapaneseGame(game: IgdbGame): boolean {
+  const supportLabels =
+    game.language_supports?.flatMap((support) => {
+      const locale = support.language?.locale || null;
+      const name = support.language?.name || null;
+      return [locale, name];
+    }) || [];
+
+  if (supportLabels.length > 0) {
+    return hasJapaneseLanguageMetadata(supportLabels);
+  }
+
+  return (
+    hasJapaneseTextHeuristic(game.name) ||
+    (game.alternative_names || []).some(
+      (alt) =>
+        hasJapaneseTextHeuristic(alt.name) ||
+        hasJapaneseTextHeuristic(alt.comment)
+    )
+  );
+}
+
+function normalizeGame(game: IgdbGame): IMediaDocument | null {
+  if (!isMainGameCategory(game.category ?? null)) {
+    return null;
+  }
+
+  if (!isJapaneseGame(game)) {
+    return null;
+  }
+
   // Try to find Japanese name from alternative_names
   const japaneseName = game.alternative_names?.find(
-    (alt) =>
-      alt.comment?.toLowerCase().includes('japanese') ||
-      alt.comment?.toLowerCase().includes('jpn') ||
-      /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(alt.name)
+    (alt) => hasJapaneseTextHeuristic(alt.name) || hasJapaneseTextHeuristic(alt.comment)
   );
 
   return {
@@ -89,7 +123,7 @@ export async function searchIgdb(query: string): Promise<IMediaDocument[]> {
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `search "${query.replace(/"/g, '\\"')}";
-fields name, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id;
+fields name, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
 limit 10;`,
       {
         headers: {
@@ -102,7 +136,9 @@ limit 10;`,
 
     if (!response.data || response.data.length === 0) return [];
 
-    return response.data.map(normalizeGame);
+    return response.data
+      .map(normalizeGame)
+      .filter((item): item is IMediaDocument => item !== null);
   } catch (error) {
     console.error('IGDB search error:', error);
     return [];
@@ -119,7 +155,7 @@ export async function getIgdbGame(
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `where id = ${igdbId};
-fields name, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id;
+fields name, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
 limit 1;`,
       {
         headers: {
