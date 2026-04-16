@@ -256,31 +256,47 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       };
     });
 
-    // Format labels for display
+    // Format labels from precomputed keys to avoid browser-timezone shifts.
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    const formatMonthDayLabel = (key: string) => {
+      const [yearStr, monthStr, dayStr] = key.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const day = parseInt(dayStr, 10);
+
+      if (
+        !Number.isFinite(year) ||
+        !Number.isFinite(month) ||
+        !Number.isFinite(day) ||
+        month < 1 ||
+        month > 12
+      ) {
+        return key;
+      }
+
+      return `${monthNames[month - 1]} ${day}`;
+    };
+
     const labels = sortedDates.map((dateKey) => {
       switch (timeframe) {
-        case 'today': {
-          const [year, month, day] = dateKey
-            .split('-')
-            .map((v) => parseInt(v, 10));
-          const displayDate = new Date(
-            Date.UTC(year, (month || 1) - 1, day || 1)
-          );
-          return displayDate.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          });
-        }
-        case 'week': {
-          const [year, month, day] = dateKey
-            .split('-')
-            .map((v) => parseInt(v, 10));
-          const weekDate = new Date(Date.UTC(year, (month || 1) - 1, day || 1));
-          return `Week of ${weekDate.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })}`;
-        }
+        case 'today':
+          return formatMonthDayLabel(dateKey);
+        case 'week':
+          return `Week of ${formatMonthDayLabel(dateKey)}`;
         case 'month': {
           const parts = dateKey.split('-');
           const day = parts[2] ? parseInt(parts[2], 10) : NaN;
@@ -289,14 +305,19 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         case 'year':
           return dateKey;
         default: {
-          const [year, month] = dateKey.split('-');
-          const displayDate = new Date(
-            Date.UTC(parseInt(year, 10), parseInt(month, 10) - 1, 1)
-          );
-          return displayDate.toLocaleDateString('en-US', {
-            month: 'short',
-            year: 'numeric',
-          });
+          const [yearStr, monthStr] = dateKey.split('-');
+          const year = parseInt(yearStr, 10);
+          const month = parseInt(monthStr, 10);
+
+          if (!Number.isFinite(year) || !Number.isFinite(month)) {
+            return dateKey;
+          }
+
+          if (month < 1 || month > 12) {
+            return dateKey;
+          }
+
+          return `${monthNames[month - 1]} ${year}`;
         }
       }
     });
