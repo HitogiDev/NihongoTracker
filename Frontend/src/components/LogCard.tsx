@@ -1282,12 +1282,23 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
                     <select
                       className="select select-bordered w-full"
                       value={editData.type}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          type: e.target.value as ILog['type'],
-                        })
-                      }
+                      onChange={(e) => {
+                        const nextType = e.target.value as ILog['type'];
+                        setEditData((prev) => ({
+                          ...prev,
+                          type: nextType,
+                          episodes: nextType === 'anime' ? prev.episodes : 0,
+                          chars: ['reading', 'vn', 'game', 'manga'].includes(
+                            nextType
+                          )
+                            ? prev.chars
+                            : 0,
+                          volume: ['manga', 'reading'].includes(nextType)
+                            ? prev.volume
+                            : 0,
+                          pages: nextType === 'manga' ? prev.pages : 0,
+                        }));
+                      }}
                     >
                       <option value="reading">Reading</option>
                       <option value="anime">Anime</option>

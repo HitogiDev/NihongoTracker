@@ -58,7 +58,12 @@ async function calculateXpForLog(log: ILog, req: Request): Promise<ILog> {
     case 'video':
     case 'movie':
     case 'audio':
-      log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
+      // For non-series logs, keep time as authoritative when present.
+      if (timeXp > 0) {
+        log.xp = Math.max(timeXp, pagesXp, charsXp, 0);
+      } else {
+        log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
+      }
       break;
     case 'reading':
       if (charsXp) {

@@ -2215,11 +2215,22 @@ export async function recalculateXp(
                 log.xp = 0;
               }
               break;
+            case 'tv show':
+              if (timeXp) {
+                log.xp = timeXp;
+              } else {
+                log.xp = 0;
+              }
+              break;
             case 'vn':
             case 'video':
             case 'movie':
             case 'audio':
-              log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
+              if (timeXp > 0) {
+                log.xp = Math.max(timeXp, pagesXp, charsXp, 0);
+              } else {
+                log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
+              }
               break;
             case 'reading':
               if (charsXp) {
