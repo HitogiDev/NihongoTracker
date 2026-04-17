@@ -110,6 +110,27 @@ type PatreonStatus = {
   isActive: boolean;
 };
 
+type GifCropMetadata = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  sourceWidth: number;
+  sourceHeight: number;
+};
+
+const MAX_AVATAR_SIZE_MB_DEFAULT = 3;
+const MAX_BANNER_SIZE_MB_DEFAULT = 6;
+const MAX_MEDIA_SIZE_MB_PATREON = 8;
+
+const toBytesFromMb = (mb: number): number => mb * 1024 * 1024;
+
+const isGifMimeType = (mimeType?: string | null): boolean =>
+  (mimeType ?? '').toLowerCase() === 'image/gif';
+
+const isGifUploadFile = (file: File): boolean =>
+  isGifMimeType(file.type) || file.name.toLowerCase().endsWith('.gif');
+
 const sanitizeHex = (value: string): string | null => {
   if (!value) {
     return null;
@@ -377,8 +398,14 @@ function SettingsScreen() {
   const [showBannerCrop, setShowBannerCrop] = useState(false);
   const [croppedAvatarFile, setCroppedAvatarFile] = useState<File | null>(null);
   const [croppedBannerFile, setCroppedBannerFile] = useState<File | null>(null);
+  const [avatarCropMetadata, setAvatarCropMetadata] =
+    useState<GifCropMetadata | null>(null);
+  const [bannerCropMetadata, setBannerCropMetadata] =
+    useState<GifCropMetadata | null>(null);
   const [avatarFileName, setAvatarFileName] = useState<string | null>(null);
   const [bannerFileName, setBannerFileName] = useState<string | null>(null);
+  const [avatarMimeType, setAvatarMimeType] = useState<string | null>(null);
+  const [bannerMimeType, setBannerMimeType] = useState<string | null>(null);
   const [avatarOriginalFileName, setAvatarOriginalFileName] = useState<
     string | null
   >(null);
@@ -412,6 +439,19 @@ function SettingsScreen() {
   const newPasswordRef = useRef<HTMLInputElement>(null);
   const newPasswordConfirmRef = useRef<HTMLInputElement>(null);
 
+  const hasPatreonMediaAccess =
+    user?.patreon?.isActive &&
+    (user?.patreon?.tier === 'enthusiast' ||
+      user?.patreon?.tier === 'consumer');
+  const avatarMaxSizeMb = hasPatreonMediaAccess
+    ? MAX_MEDIA_SIZE_MB_PATREON
+    : MAX_AVATAR_SIZE_MB_DEFAULT;
+  const bannerMaxSizeMb = hasPatreonMediaAccess
+    ? MAX_MEDIA_SIZE_MB_PATREON
+    : MAX_BANNER_SIZE_MB_DEFAULT;
+  const avatarMaxSizeBytes = toBytesFromMb(avatarMaxSizeMb);
+  const bannerMaxSizeBytes = toBytesFromMb(bannerMaxSizeMb);
+
   useEffect(() => {
     if (isImageModalOpen) {
       requestAnimationFrame(() => {
@@ -443,10 +483,28 @@ function SettingsScreen() {
         avatarInputRef.current.value = '';
       }
       setCroppedAvatarFile(null);
+      setAvatarCropMetadata(null);
       setAvatarFileName(null);
       setAvatarOriginalFileName(null);
+      setAvatarMimeType(null);
       if (avatarPreviewCanvasRef.current) {
         const canvas = avatarPreviewCanvasRef.current;
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        canvas.classList.add('hidden');
+      }
+      if (bannerInputRef.current) {
+        bannerInputRef.current.value = '';
+      }
+      setCroppedBannerFile(null);
+      setBannerCropMetadata(null);
+      setBannerFileName(null);
+      setBannerOriginalFileName(null);
+      setBannerMimeType(null);
+      if (bannerPreviewCanvasRef.current) {
+        const canvas = bannerPreviewCanvasRef.current;
         const context = canvas.getContext('2d');
         if (context) {
           context.clearRect(0, 0, canvas.width, canvas.height);
@@ -1151,22 +1209,35 @@ function SettingsScreen() {
       formData.append('about', aboutRef.current);
     }
 
+    const selectedAvatarFile = avatarInputRef.current?.files?.[0];
+    const selectedBannerFile = bannerInputRef.current?.files?.[0];
+
     if (croppedAvatarFile) {
       formData.append('avatar', croppedAvatarFile);
-    } else if (
-      avatarInputRef.current?.files &&
-      avatarInputRef.current.files.length > 0
+    } else if (selectedAvatarFile) {
+      formData.append('avatar', selectedAvatarFile);
+    }
+
+    if (
+      selectedAvatarFile &&
+      isGifMimeType(avatarMimeType) &&
+      avatarCropMetadata
     ) {
-      formData.append('avatar', avatarInputRef.current.files[0]);
+      formData.append('avatarCrop', JSON.stringify(avatarCropMetadata));
     }
 
     if (croppedBannerFile) {
       formData.append('banner', croppedBannerFile);
-    } else if (
-      bannerInputRef.current?.files &&
-      bannerInputRef.current.files.length > 0
+    } else if (selectedBannerFile) {
+      formData.append('banner', selectedBannerFile);
+    }
+
+    if (
+      selectedBannerFile &&
+      isGifMimeType(bannerMimeType) &&
+      bannerCropMetadata
     ) {
-      formData.append('banner', bannerInputRef.current.files[0]);
+      formData.append('bannerCrop', JSON.stringify(bannerCropMetadata));
     }
 
     updateUser(formData);
@@ -1240,10 +1311,37 @@ function SettingsScreen() {
 
   const handleAvatarCropApply = useCallback(
     async ({ crop, image }: ImageCropResult) => {
+      const selectedFile = avatarInputRef.current?.files?.[0];
+      const isGifSelection =
+        (selectedFile ? isGifUploadFile(selectedFile) : false) ||
+        isGifMimeType(avatarMimeType);
+
+      if (isGifSelection) {
+        setAvatarCropMetadata({
+          x: Math.round(crop.x),
+          y: Math.round(crop.y),
+          width: Math.round(crop.width),
+          height: Math.round(crop.height),
+          sourceWidth: image.naturalWidth,
+          sourceHeight: image.naturalHeight,
+        });
+        setCroppedAvatarFile(null);
+        if (avatarPreviewCanvasRef.current) {
+          const canvas = avatarPreviewCanvasRef.current;
+          const context = canvas.getContext('2d');
+          if (context) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          canvas.classList.add('hidden');
+        }
+        return;
+      }
+
       if (!avatarPreviewCanvasRef.current) {
         return;
       }
 
+      setAvatarCropMetadata(null);
       await canvasPreview(image, avatarPreviewCanvasRef.current, crop);
       avatarPreviewCanvasRef.current.classList.remove('hidden');
 
@@ -1258,6 +1356,7 @@ function SettingsScreen() {
               type: 'image/jpeg',
             });
             setCroppedAvatarFile(croppedFile);
+            setAvatarMimeType(croppedFile.type);
             setAvatarFileName(croppedFile.name);
             if (avatarInputRef.current) {
               const dataTransfer = new DataTransfer();
@@ -1270,15 +1369,42 @@ function SettingsScreen() {
         0.9
       );
     },
-    [avatarFileName, avatarOriginalFileName]
+    [avatarFileName, avatarMimeType, avatarOriginalFileName]
   );
 
   const handleBannerCropApply = useCallback(
     async ({ crop, image }: ImageCropResult) => {
+      const selectedFile = bannerInputRef.current?.files?.[0];
+      const isGifSelection =
+        (selectedFile ? isGifUploadFile(selectedFile) : false) ||
+        isGifMimeType(bannerMimeType);
+
+      if (isGifSelection) {
+        setBannerCropMetadata({
+          x: Math.round(crop.x),
+          y: Math.round(crop.y),
+          width: Math.round(crop.width),
+          height: Math.round(crop.height),
+          sourceWidth: image.naturalWidth,
+          sourceHeight: image.naturalHeight,
+        });
+        setCroppedBannerFile(null);
+        if (bannerPreviewCanvasRef.current) {
+          const canvas = bannerPreviewCanvasRef.current;
+          const context = canvas.getContext('2d');
+          if (context) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+          }
+          canvas.classList.add('hidden');
+        }
+        return;
+      }
+
       if (!bannerPreviewCanvasRef.current) {
         return;
       }
 
+      setBannerCropMetadata(null);
       await canvasPreview(image, bannerPreviewCanvasRef.current, crop);
       bannerPreviewCanvasRef.current.classList.remove('hidden');
 
@@ -1293,6 +1419,7 @@ function SettingsScreen() {
               type: 'image/jpeg',
             });
             setCroppedBannerFile(croppedFile);
+            setBannerMimeType(croppedFile.type);
             setBannerFileName(croppedFile.name);
             if (bannerInputRef.current) {
               const dataTransfer = new DataTransfer();
@@ -1305,7 +1432,7 @@ function SettingsScreen() {
         0.9
       );
     },
-    [bannerFileName, bannerOriginalFileName]
+    [bannerFileName, bannerMimeType, bannerOriginalFileName]
   );
 
   const handleAvatarCropClose = useCallback(() => {
@@ -1319,6 +1446,8 @@ function SettingsScreen() {
     setAvatarFileName(null);
     setAvatarOriginalFileName(null);
     setCroppedAvatarFile(null);
+    setAvatarCropMetadata(null);
+    setAvatarMimeType(null);
     if (avatarPreviewCanvasRef.current) {
       const canvas = avatarPreviewCanvasRef.current;
       const context = canvas.getContext('2d');
@@ -1343,6 +1472,8 @@ function SettingsScreen() {
     setBannerFileName(null);
     setBannerOriginalFileName(null);
     setCroppedBannerFile(null);
+    setBannerCropMetadata(null);
+    setBannerMimeType(null);
     if (bannerPreviewCanvasRef.current) {
       const canvas = bannerPreviewCanvasRef.current;
       const context = canvas.getContext('2d');
@@ -1359,11 +1490,39 @@ function SettingsScreen() {
   async function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+
+      if (file.size > avatarMaxSizeBytes) {
+        toast.error(
+          `Avatar file size exceeds ${avatarMaxSizeMb} MB for your account tier.`
+        );
+        if (avatarInputRef.current) {
+          avatarInputRef.current.value = '';
+        }
+        return;
+      }
+
+      if (isGifUploadFile(file) && !hasPatreonMediaAccess) {
+        toast.error(
+          'Animated GIF avatars are only available for Enthusiast and Consumer Patreon tiers.'
+        );
+        if (avatarInputRef.current) {
+          avatarInputRef.current.value = '';
+        }
+        return;
+      }
+
       setAvatarFileName(file.name);
       setAvatarOriginalFileName(file.name);
+      setAvatarMimeType(file.type || null);
       setCroppedAvatarFile(null);
+      setAvatarCropMetadata(null);
       if (avatarPreviewCanvasRef.current) {
-        avatarPreviewCanvasRef.current.classList.add('hidden');
+        const canvas = avatarPreviewCanvasRef.current;
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        canvas.classList.add('hidden');
       }
       const reader = new FileReader();
       reader.addEventListener('load', () => {
@@ -1377,11 +1536,39 @@ function SettingsScreen() {
   async function onSelectBannerFile(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+
+      if (file.size > bannerMaxSizeBytes) {
+        toast.error(
+          `Banner file size exceeds ${bannerMaxSizeMb} MB for your account tier.`
+        );
+        if (bannerInputRef.current) {
+          bannerInputRef.current.value = '';
+        }
+        return;
+      }
+
+      if (isGifUploadFile(file) && !hasPatreonMediaAccess) {
+        toast.error(
+          'Animated GIF banners are only available for Enthusiast and Consumer Patreon tiers.'
+        );
+        if (bannerInputRef.current) {
+          bannerInputRef.current.value = '';
+        }
+        return;
+      }
+
       setBannerFileName(file.name);
       setBannerOriginalFileName(file.name);
+      setBannerMimeType(file.type || null);
       setCroppedBannerFile(null);
+      setBannerCropMetadata(null);
       if (bannerPreviewCanvasRef.current) {
-        bannerPreviewCanvasRef.current.classList.add('hidden');
+        const canvas = bannerPreviewCanvasRef.current;
+        const context = canvas.getContext('2d');
+        if (context) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        canvas.classList.add('hidden');
       }
       const reader = new FileReader();
       reader.addEventListener('load', () => {
@@ -1530,6 +1717,7 @@ function SettingsScreen() {
         imageSrc={avatarSrc}
         isOpen={showAvatarCrop}
         aspect={1}
+        modalBoxClassName="max-w-2xl"
         circular
         onClose={handleAvatarCropClose}
         onCancel={handleAvatarCropCancel}
@@ -1933,9 +2121,7 @@ function SettingsScreen() {
                               ref={avatarInputRef}
                               className="file-input file-input-bordered file-input-primary w-full"
                               accept={
-                                user?.patreon?.isActive &&
-                                (user?.patreon?.tier === 'enthusiast' ||
-                                  user?.patreon?.tier === 'consumer')
+                                hasPatreonMediaAccess
                                   ? 'image/*'
                                   : 'image/jpeg,image/jpg,image/png,image/webp'
                               }
@@ -1944,21 +2130,20 @@ function SettingsScreen() {
                             <label className="label pt-1 flex flex-col items-start gap-1">
                               <span className="label-text-alt text-base-content/60 leading-relaxed">
                                 Allowed Formats: JPEG, PNG, WebP
-                                {user?.patreon?.isActive &&
-                                (user?.patreon?.tier === 'enthusiast' ||
-                                  user?.patreon?.tier === 'consumer')
-                                  ? ', GIF'
-                                  : ''}
-                                . Max size: 3mb. Optimal dimensions: 230x230
+                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
+                                size: {avatarMaxSizeMb} MB. Optimal dimensions:
+                                230x230
                               </span>
-                              {croppedAvatarFile && (
+                              {(croppedAvatarFile || avatarCropMetadata) && (
                                 <span className="label-text-alt text-success">
                                   Cropped avatar ready to upload
                                 </span>
                               )}
                             </label>
                           </div>
-                          {user?.avatar || croppedAvatarFile ? (
+                          {user?.avatar ||
+                          croppedAvatarFile ||
+                          avatarCropMetadata ? (
                             <div className="flex flex-col items-center gap-2">
                               {user?.avatar && !croppedAvatarFile && (
                                 <img
@@ -1980,6 +2165,11 @@ function SettingsScreen() {
                                   height: 120,
                                 }}
                               />
+                              {avatarCropMetadata && !croppedAvatarFile && (
+                                <span className="text-xs text-success text-center max-w-[120px]">
+                                  GIF crop will be applied when you save
+                                </span>
+                              )}
                             </div>
                           ) : null}
                         </div>
@@ -1996,22 +2186,30 @@ function SettingsScreen() {
                               id="banner"
                               ref={bannerInputRef}
                               className="file-input file-input-bordered file-input-primary w-full"
-                              accept="image/*"
+                              accept={
+                                hasPatreonMediaAccess
+                                  ? 'image/*'
+                                  : 'image/jpeg,image/jpg,image/png,image/webp'
+                              }
                               onChange={onSelectBannerFile}
                             />
                             <label className="label pt-1 flex flex-col items-start gap-1">
                               <span className="label-text-alt text-base-content/60 leading-relaxed">
-                                Allowed Formats: JPEG, PNG. Max size: 6mb.
-                                Optimal dimensions: 1700x330
+                                Allowed Formats: JPEG, PNG, WebP
+                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
+                                size: {bannerMaxSizeMb} MB. Optimal dimensions:
+                                1700x330
                               </span>
-                              {croppedBannerFile && (
+                              {(croppedBannerFile || bannerCropMetadata) && (
                                 <span className="label-text-alt text-success">
                                   Cropped banner ready to upload
                                 </span>
                               )}
                             </label>
                           </div>
-                          {user?.banner || croppedBannerFile ? (
+                          {user?.banner ||
+                          croppedBannerFile ||
+                          bannerCropMetadata ? (
                             <>
                               {user?.banner && !croppedBannerFile && (
                                 <img
@@ -2031,6 +2229,11 @@ function SettingsScreen() {
                                   maxHeight: 150,
                                 }}
                               />
+                              {bannerCropMetadata && !croppedBannerFile && (
+                                <span className="text-xs text-success">
+                                  GIF crop will be applied when you save
+                                </span>
+                              )}
                             </>
                           ) : null}
                         </div>

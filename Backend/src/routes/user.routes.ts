@@ -24,8 +24,12 @@ import { protect } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
 
 const router = Router();
+const MAX_USER_MEDIA_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const upload = multer({
   storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_USER_MEDIA_FILE_SIZE_BYTES,
+  },
 });
 
 router.get('/', getUsers);

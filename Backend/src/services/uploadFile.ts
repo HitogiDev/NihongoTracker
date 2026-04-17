@@ -21,6 +21,11 @@ type fileResponse = {
   downloadURL: string;
 };
 
+type UploadValidationOptions = {
+  maxFileSizeBytes?: number;
+  allowedMimeTypes?: string[];
+};
+
 // Allowed image MIME types
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -30,24 +35,42 @@ const ALLOWED_MIME_TYPES = [
   'image/svg+xml',
 ];
 
-// Maximum file size (2MB)
-const MAX_FILE_SIZE = 2 * 1024 * 1024;
+// Default maximum file size (2MB)
+const DEFAULT_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 
-function validateImageFile(file: Express.Multer.File): void {
-  if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+function formatMaxSize(maxBytes: number): string {
+  const maxMb = maxBytes / (1024 * 1024);
+  return Number.isInteger(maxMb) ? `${maxMb}` : maxMb.toFixed(1);
+}
+
+function validateImageFile(
+  file: Express.Multer.File,
+  options: UploadValidationOptions = {}
+): void {
+  const allowedMimeTypes = options.allowedMimeTypes ?? ALLOWED_MIME_TYPES;
+  const maxFileSizeBytes =
+    options.maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE_BYTES;
+
+  if (!allowedMimeTypes.includes(file.mimetype)) {
     throw new customError(
       'Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)',
       400
     );
   }
 
-  if (file.size > MAX_FILE_SIZE) {
-    throw new customError('File size exceeds the 2MB limit', 400);
+  if (file.size > maxFileSizeBytes) {
+    throw new customError(
+      `File size exceeds the ${formatMaxSize(maxFileSizeBytes)}MB limit`,
+      400
+    );
   }
 }
 
-async function uploadFile(file: Express.Multer.File): Promise<fileResponse> {
-  validateImageFile(file);
+async function uploadFile(
+  file: Express.Multer.File,
+  options: UploadValidationOptions = {}
+): Promise<fileResponse> {
+  validateImageFile(file, options);
 
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
   const storageRef = ref(
@@ -81,7 +104,8 @@ async function uploadFile(file: Express.Multer.File): Promise<fileResponse> {
 // Function to upload a new file and automatically delete the old one
 export async function uploadFileWithCleanup(
   file: Express.Multer.File,
-  oldFileUrl?: string
+  oldFileUrl?: string,
+  options: UploadValidationOptions = {}
 ): Promise<fileResponse> {
   // Delete old file first if it exists
   if (oldFileUrl) {
@@ -91,7 +115,7 @@ export async function uploadFileWithCleanup(
   }
 
   // Upload new file
-  return await uploadFile(file);
+  return await uploadFile(file, options);
 }
 
 // Function to delete a file from Firebase Storage

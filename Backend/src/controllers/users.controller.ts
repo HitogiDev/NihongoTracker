@@ -7,6 +7,11 @@ import { Request, Response, NextFunction } from 'express';
 import { IMediaDocument, IUpdateRequest } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
+import {
+  cropAnimatedGifBuffer,
+  isGifFile,
+  parseGifCropMetadata,
+} from '../services/gifCrop.js';
 import axios from 'axios';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '../mailtrap/emails.js';
@@ -25,6 +30,11 @@ type ImmersionMediaType =
   | 'movie'
   | 'tv show';
 
+const BYTES_IN_MEGABYTE = 1024 * 1024;
+const DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES = 3 * BYTES_IN_MEGABYTE;
+const DEFAULT_BANNER_MAX_FILE_SIZE_BYTES = 6 * BYTES_IN_MEGABYTE;
+const PATREON_MEDIA_MAX_FILE_SIZE_BYTES = 8 * BYTES_IN_MEGABYTE;
+
 export async function updateUser(
   req: Request,
   res: Response,
@@ -41,6 +51,8 @@ export async function updateUser(
     hideUnmatchedLogsAlert,
     timezone,
     about,
+    avatarCrop,
+    bannerCrop,
   } = req.body as IUpdateRequest;
 
   try {
@@ -48,6 +60,13 @@ export async function updateUser(
     if (!user) {
       throw new customError('User not found', 404);
     }
+
+    const hasPatreonMediaAccess =
+      user.patreon?.isActive &&
+      (user.patreon?.tier === 'enthusiast' ||
+        user.patreon?.tier === 'consumer');
+    const parsedAvatarCrop = parseGifCropMetadata(avatarCrop, 'avatarCrop');
+    const parsedBannerCrop = parseGifCropMetadata(bannerCrop, 'bannerCrop');
 
     if (newPassword || newPasswordConfirm) {
       if (!password) {
@@ -138,18 +157,112 @@ export async function updateUser(
       }
     }
 
+    if (
+      (parsedAvatarCrop || parsedBannerCrop) &&
+      (!req.files || Object.keys(req.files).length === 0)
+    ) {
+      throw new customError(
+        'Crop metadata requires an uploaded avatar or banner file',
+        400
+      );
+    }
+
     if (req.files && Object.keys(req.files).length > 0) {
       const files = req.files as {
         [fieldname: string]: Express.Multer.File[];
       };
+      const avatarMaxFileSizeBytes = hasPatreonMediaAccess
+        ? PATREON_MEDIA_MAX_FILE_SIZE_BYTES
+        : DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES;
+      const bannerMaxFileSizeBytes = hasPatreonMediaAccess
+        ? PATREON_MEDIA_MAX_FILE_SIZE_BYTES
+        : DEFAULT_BANNER_MAX_FILE_SIZE_BYTES;
+
+      if (parsedAvatarCrop && !files.avatar?.[0]) {
+        throw new customError(
+          'avatarCrop was provided without an avatar file upload',
+          400
+        );
+      }
+
+      if (parsedBannerCrop && !files.banner?.[0]) {
+        throw new customError(
+          'bannerCrop was provided without a banner file upload',
+          400
+        );
+      }
 
       if (files.avatar?.[0]) {
-        const file = await uploadFileWithCleanup(files.avatar[0], user.avatar);
+        let avatarFile = files.avatar[0];
+        const isAvatarGif = isGifFile(avatarFile);
+
+        if (isAvatarGif && !hasPatreonMediaAccess) {
+          throw new customError(
+            'Animated GIF avatars are only available for Enthusiast and Consumer Patreon tiers.',
+            400
+          );
+        }
+
+        if (parsedAvatarCrop && !isAvatarGif) {
+          throw new customError(
+            'avatarCrop is only supported for GIF avatar uploads',
+            400
+          );
+        }
+
+        if (isAvatarGif && parsedAvatarCrop) {
+          const croppedAvatarBuffer = await cropAnimatedGifBuffer(
+            avatarFile.buffer,
+            parsedAvatarCrop
+          );
+          avatarFile = {
+            ...avatarFile,
+            buffer: croppedAvatarBuffer,
+            size: croppedAvatarBuffer.length,
+            mimetype: 'image/gif',
+          };
+        }
+
+        const file = await uploadFileWithCleanup(avatarFile, user.avatar, {
+          maxFileSizeBytes: avatarMaxFileSizeBytes,
+        });
         user.avatar = file.downloadURL;
       }
 
       if (files.banner?.[0]) {
-        const file = await uploadFileWithCleanup(files.banner[0], user.banner);
+        let bannerFile = files.banner[0];
+        const isBannerGif = isGifFile(bannerFile);
+
+        if (isBannerGif && !hasPatreonMediaAccess) {
+          throw new customError(
+            'Animated GIF banners are only available for Enthusiast and Consumer Patreon tiers.',
+            400
+          );
+        }
+
+        if (parsedBannerCrop && !isBannerGif) {
+          throw new customError(
+            'bannerCrop is only supported for GIF banner uploads',
+            400
+          );
+        }
+
+        if (isBannerGif && parsedBannerCrop) {
+          const croppedBannerBuffer = await cropAnimatedGifBuffer(
+            bannerFile.buffer,
+            parsedBannerCrop
+          );
+          bannerFile = {
+            ...bannerFile,
+            buffer: croppedBannerBuffer,
+            size: croppedBannerBuffer.length,
+            mimetype: 'image/gif',
+          };
+        }
+
+        const file = await uploadFileWithCleanup(bannerFile, user.banner, {
+          maxFileSizeBytes: bannerMaxFileSizeBytes,
+        });
         user.banner = file.downloadURL;
       }
 

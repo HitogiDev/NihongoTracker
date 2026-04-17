@@ -503,6 +503,8 @@ export interface IUpdateRequest {
   hiddenRecentMedia?: string;
   timezone?: string;
   about?: string;
+  avatarCrop?: string;
+  bannerCrop?: string;
 }
 
 export interface IRegister {

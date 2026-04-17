@@ -16,6 +16,7 @@ type ImageCropDialogProps = {
   imageSrc: string;
   isOpen: boolean;
   aspect: number;
+  modalBoxClassName?: string;
   onClose: () => void;
   onApply: (result: ImageCropResult) => void | Promise<void>;
   onCancel?: () => void;
@@ -33,6 +34,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
     imageSrc,
     isOpen,
     aspect,
+    modalBoxClassName = 'max-w-4xl',
     onClose,
     onApply,
     onCancel,
@@ -119,7 +121,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
 
     return (
       <dialog className="modal modal-open">
-        <div className="modal-box max-w-4xl">
+        <div className={`modal-box ${modalBoxClassName}`}>
           <h3 className="font-bold text-lg mb-4">{title}</h3>
           <div className="flex justify-center">
             <ReactCrop

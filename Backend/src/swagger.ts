@@ -587,7 +587,17 @@ const swaggerDocument = {
                   timezone: { type: 'string' },
                   blurAdultContent: { type: 'string' },
                   avatar: { type: 'string', format: 'binary' },
+                  avatarCrop: {
+                    type: 'string',
+                    description:
+                      'Optional JSON crop metadata for GIF avatar uploads ({x,y,width,height,sourceWidth,sourceHeight})',
+                  },
                   banner: { type: 'string', format: 'binary' },
+                  bannerCrop: {
+                    type: 'string',
+                    description:
+                      'Optional JSON crop metadata for GIF banner uploads ({x,y,width,height,sourceWidth,sourceHeight})',
+                  },
                 },
               },
             },
