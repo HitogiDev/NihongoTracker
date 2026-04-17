@@ -54,7 +54,6 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(cookieParser());
 
-app.use(express.static('dist'));
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/logs', logsRoutes);
@@ -84,19 +83,36 @@ app.use(
   express.static(path.join(__dirname, '../dist'), {
     index: false,
     setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        return;
+      }
+
       if (
         filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/i)
       ) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     },
   })
 );
 
+app.get('/assets/*', (_req: Request, res: Response) => {
+  res.status(404).end();
+});
+
 app.use(metaTagsMiddleware);
 
 app.get('*', (req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/api')) return next();
+  if (req.path.startsWith('/api') || req.path.startsWith('/assets/')) {
+    return next();
+  }
+
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 

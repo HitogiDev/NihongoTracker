@@ -14,6 +14,8 @@ import {
 } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
+import { RouteErrorBoundary } from './components/RouteErrorBoundary';
+import { setupChunkLoadRecoveryListeners } from './utils/chunkRecovery';
 import queryClient from './queryClient.ts';
 
 function resolveInitialTheme() {
@@ -34,6 +36,10 @@ function resolveInitialTheme() {
 
 if (typeof document !== 'undefined') {
   document.documentElement.setAttribute('data-theme', resolveInitialTheme());
+}
+
+if (typeof window !== 'undefined') {
+  setupChunkLoadRecoveryListeners();
 }
 
 const App = lazy(() => import('./App.tsx'));
@@ -100,7 +106,7 @@ const ProfileModerationScreen = lazy(
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/">
+    <Route path="/" errorElement={<RouteErrorBoundary />}>
       <Route element={<ProtectedRoutes />}>
         <Route path=":mediaType/:mediaId/texthooker" element={<TextHooker />} />
         <Route path="texthooker/:contentId" element={<TextHooker />} />
