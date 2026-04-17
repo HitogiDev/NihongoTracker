@@ -22,6 +22,62 @@ import {
 } from '../services/clubMediaVoting.js';
 import { calculateLevel } from '../services/calculateLevel.js';
 
+type PatreonTier = 'donator' | 'enthusiast' | 'consumer' | null | undefined;
+
+const MIN_CLUB_MEMBER_LIMIT = 1;
+const DEFAULT_CLUB_MEMBER_LIMIT = 100;
+const ENTHUSIAST_CLUB_MEMBER_LIMIT = 250;
+const CONSUMER_CLUB_MEMBER_LIMIT = 1000;
+
+function getPatreonTierFromUser(
+  user: {
+    patreon?: { tier?: PatreonTier; isActive?: boolean };
+  } | null
+): PatreonTier {
+  // Treat explicitly inactive memberships as no tier.
+  if (user?.patreon?.isActive === false) {
+    return null;
+  }
+
+  return user?.patreon?.tier ?? null;
+}
+
+function getMaxClubMemberLimitForTier(tier: PatreonTier): number {
+  if (tier === 'consumer') {
+    return CONSUMER_CLUB_MEMBER_LIMIT;
+  }
+
+  if (tier === 'enthusiast') {
+    return ENTHUSIAST_CLUB_MEMBER_LIMIT;
+  }
+
+  return DEFAULT_CLUB_MEMBER_LIMIT;
+}
+
+function getEffectiveClubMemberLimit(
+  configuredLimit: number,
+  tier: PatreonTier
+): number {
+  const normalizedConfiguredLimit =
+    Number.isInteger(configuredLimit) &&
+    configuredLimit >= MIN_CLUB_MEMBER_LIMIT
+      ? configuredLimit
+      : DEFAULT_CLUB_MEMBER_LIMIT;
+
+  return Math.min(
+    normalizedConfiguredLimit,
+    getMaxClubMemberLimitForTier(tier)
+  );
+}
+
+function buildClubMemberLimitExceededMessage(maxAllowedLimit: number): string {
+  if (maxAllowedLimit >= CONSUMER_CLUB_MEMBER_LIMIT) {
+    return `Member limit cannot exceed ${CONSUMER_CLUB_MEMBER_LIMIT}.`;
+  }
+
+  return `Your current Patreon tier allows up to ${maxAllowedLimit} club members. Upgrade your Patreon tier for a higher club member cap.`;
+}
+
 export async function getClubs(
   req: Request,
   res: Response,
@@ -226,6 +282,29 @@ export async function createClub(
       return res.status(400).json({ message: 'Club name already exists' });
     }
 
+    const requestedMemberLimit =
+      clubData.memberLimit ?? DEFAULT_CLUB_MEMBER_LIMIT;
+    if (
+      !Number.isInteger(requestedMemberLimit) ||
+      requestedMemberLimit < MIN_CLUB_MEMBER_LIMIT
+    ) {
+      return res.status(400).json({
+        message: `Member limit must be a whole number greater than or equal to ${MIN_CLUB_MEMBER_LIMIT}`,
+      });
+    }
+
+    const creatorPatreonTier = getPatreonTierFromUser(res.locals.user);
+    const maxAllowedMemberLimit =
+      getMaxClubMemberLimitForTier(creatorPatreonTier);
+
+    if (requestedMemberLimit > maxAllowedMemberLimit) {
+      return res.status(400).json({
+        message: buildClubMemberLimitExceededMessage(maxAllowedMemberLimit),
+      });
+    }
+
+    clubData.memberLimit = requestedMemberLimit;
+
     // Handle file uploads if present
     let avatarUrl = '';
     let bannerUrl = '';
@@ -317,8 +396,30 @@ export async function joinClub(
     const activeMemberCount = club.members.filter(
       (member) => member.status === 'active'
     ).length;
-    if (activeMemberCount >= club.memberLimit) {
-      return res.status(400).json({ message: 'Club has reached member limit' });
+
+    const clubLeader =
+      club.members.find(
+        (member) => member.role === 'leader' && member.status === 'active'
+      ) || club.members.find((member) => member.role === 'leader');
+
+    const leaderUser = clubLeader
+      ? await User.findById(clubLeader.user).select(
+          'patreon.tier patreon.isActive'
+        )
+      : null;
+
+    const effectiveMemberLimit = getEffectiveClubMemberLimit(
+      club.memberLimit,
+      getPatreonTierFromUser(leaderUser)
+    );
+
+    if (activeMemberCount >= effectiveMemberLimit) {
+      const isPatreonCapped = effectiveMemberLimit < club.memberLimit;
+      return res.status(400).json({
+        message: isPatreonCapped
+          ? `Club has reached the leader Patreon member limit (${effectiveMemberLimit})`
+          : 'Club has reached member limit',
+      });
     }
 
     // Add member with appropriate status
@@ -519,6 +620,45 @@ export async function updateClub(
       updateData.isPublic = updateData.isPublic === 'true';
     }
 
+    if (updateData.memberLimit !== undefined) {
+      if (
+        !Number.isInteger(updateData.memberLimit) ||
+        updateData.memberLimit < MIN_CLUB_MEMBER_LIMIT
+      ) {
+        return res.status(400).json({
+          message: `Member limit must be a whole number greater than or equal to ${MIN_CLUB_MEMBER_LIMIT}`,
+        });
+      }
+
+      const isChangingMemberLimit = updateData.memberLimit !== club.memberLimit;
+
+      if (!isChangingMemberLimit) {
+        updateData.memberLimit = club.memberLimit;
+      }
+
+      if (isChangingMemberLimit) {
+        const leaderPatreonTier = getPatreonTierFromUser(res.locals.user);
+        const maxAllowedMemberLimit =
+          getMaxClubMemberLimitForTier(leaderPatreonTier);
+
+        if (updateData.memberLimit > maxAllowedMemberLimit) {
+          return res.status(400).json({
+            message: buildClubMemberLimitExceededMessage(maxAllowedMemberLimit),
+          });
+        }
+
+        const activeMemberCount = club.members.filter(
+          (member) => member.status === 'active'
+        ).length;
+
+        if (updateData.memberLimit < activeMemberCount) {
+          return res.status(400).json({
+            message: `Member limit cannot be lower than the current active member count (${activeMemberCount})`,
+          });
+        }
+      }
+    }
+
     // Handle file uploads if present
     if (req.files && Object.keys(req.files).length > 0) {
       try {
@@ -640,6 +780,23 @@ export async function manageJoinRequests(
     }
 
     if (action === 'approve') {
+      const activeMemberCount = club.members.filter(
+        (member) => member.status === 'active'
+      ).length;
+      const effectiveMemberLimit = getEffectiveClubMemberLimit(
+        club.memberLimit,
+        getPatreonTierFromUser(res.locals.user)
+      );
+
+      if (activeMemberCount >= effectiveMemberLimit) {
+        const isPatreonCapped = effectiveMemberLimit < club.memberLimit;
+        return res.status(400).json({
+          message: isPatreonCapped
+            ? `Club has reached the leader Patreon member limit (${effectiveMemberLimit})`
+            : 'Club has reached member limit',
+        });
+      }
+
       pendingMember.status = 'active';
       await User.findByIdAndUpdate(memberId, {
         $push: { clubs: clubId },

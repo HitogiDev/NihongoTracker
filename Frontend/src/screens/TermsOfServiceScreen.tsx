@@ -438,7 +438,7 @@ function TermsOfServiceScreen() {
               Refund Policy
             </a>{' '}
             |{' '}
-            <a href="/pricing" className="text-primary hover:underline">
+            <a href="/support" className="text-primary hover:underline">
               Support
             </a>
           </p>

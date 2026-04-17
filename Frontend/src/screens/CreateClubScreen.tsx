@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { PercentCrop } from 'react-image-crop';
@@ -24,9 +24,16 @@ import {
 } from 'lucide-react';
 import { createClubFn } from '../api/clubApi';
 import { ICreateClubRequest } from '../types';
+import { useUserDataStore } from '../store/userData';
+import {
+  getMaxClubMemberLimitForUser,
+  getClubMemberLimitValidationMessage,
+} from '../utils/patreonClubLimits';
 
 function CreateClubScreen() {
   const navigate = useNavigate();
+  const { user } = useUserDataStore();
+  const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
 
   // Form state
   const [formData, setFormData] = useState<ICreateClubRequest>({
@@ -35,7 +42,7 @@ function CreateClubScreen() {
     isPublic: true,
     tags: [],
     rules: '',
-    memberLimit: 50,
+    memberLimit: 100,
   });
 
   // Media state
@@ -102,11 +109,15 @@ function CreateClubScreen() {
       newErrors.rules = 'Rules must be 1000 characters or less';
     }
 
-    if (
+    if (formData.memberLimit && formData.memberLimit < 2) {
+      newErrors.memberLimit = 'Member limit must be at least 2';
+    } else if (
       formData.memberLimit &&
-      (formData.memberLimit < 2 || formData.memberLimit > 500)
+      formData.memberLimit > maxAllowedMemberLimit
     ) {
-      newErrors.memberLimit = 'Member limit must be between 2 and 500';
+      newErrors.memberLimit = getClubMemberLimitValidationMessage(
+        maxAllowedMemberLimit
+      );
     }
 
     setErrors(newErrors);
@@ -517,14 +528,14 @@ function CreateClubScreen() {
                     <input
                       type="number"
                       className={`input input-bordered flex-1 ${errors.memberLimit ? 'input-error' : ''}`}
-                      placeholder="50"
+                      placeholder="100"
                       min={2}
-                      max={500}
+                      max={maxAllowedMemberLimit}
                       value={formData.memberLimit}
                       onChange={(e) =>
                         handleInputChange(
                           'memberLimit',
-                          parseInt(e.target.value) || 50
+                          parseInt(e.target.value) || 100
                         )
                       }
                     />
@@ -539,6 +550,18 @@ function CreateClubScreen() {
                       </span>
                     </label>
                   )}
+                  <div className="mt-1 space-y-1">
+                    <p className="text-xs text-base-content/60">
+                      Current tier max: {maxAllowedMemberLimit} members
+                    </p>
+                    <p className="text-xs text-base-content/70">
+                      Need more members?{' '}
+                      <Link to="/support" className="link link-primary">
+                        Donate
+                      </Link>{' '}
+                      to unlock higher club limits and more perks.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -34,7 +34,7 @@ function RefundPolicyScreen() {
           <p>
             For detailed information about what each tier includes, please visit
             our{' '}
-            <a href="/pricing" className="text-primary hover:underline">
+            <a href="/support" className="text-primary hover:underline">
               Support page
             </a>
             .
@@ -249,7 +249,7 @@ function RefundPolicyScreen() {
               Privacy Policy
             </a>{' '}
             |{' '}
-            <a href="/pricing" className="text-primary hover:underline">
+            <a href="/support" className="text-primary hover:underline">
               Support
             </a>
           </p>

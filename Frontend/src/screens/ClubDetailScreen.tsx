@@ -45,12 +45,17 @@ import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
 import UserAvatar from '../components/UserAvatar';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import {
+  getMaxClubMemberLimitForUser,
+  getClubMemberLimitValidationMessage,
+} from '../utils/patreonClubLimits';
 
 function ClubDetailScreen() {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useUserDataStore();
+  const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
 
   // Fetch club data
   const {
@@ -1571,6 +1576,31 @@ function ClubDetailScreen() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+
+                if (!club) {
+                  return;
+                }
+
+                const isChangingMemberLimit =
+                  editForm.memberLimit !== club.memberLimit;
+
+                if (editForm.memberLimit < club.memberCount) {
+                  toast.error(
+                    `Member limit cannot be lower than current active members (${club.memberCount})`
+                  );
+                  return;
+                }
+
+                if (
+                  isChangingMemberLimit &&
+                  editForm.memberLimit > maxAllowedMemberLimit
+                ) {
+                  toast.error(
+                    getClubMemberLimitValidationMessage(maxAllowedMemberLimit)
+                  );
+                  return;
+                }
+
                 updateClubMutation.mutate(editForm);
               }}
               className="space-y-4"
@@ -1782,8 +1812,23 @@ function ClubDetailScreen() {
                     })
                   }
                   min={1}
-                  max={1000}
+                  max={Math.max(
+                    maxAllowedMemberLimit,
+                    club?.memberLimit || maxAllowedMemberLimit
+                  )}
                 />
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-base-content/60">
+                    Current tier max: {maxAllowedMemberLimit} members
+                  </p>
+                  <p className="text-xs text-base-content/70">
+                    Need more members?{' '}
+                    <Link to="/support" className="link link-primary">
+                      Donate
+                    </Link>{' '}
+                    to unlock higher club limits and more perks.
+                  </p>
+                </div>
               </div>
 
               {/* Rules */}

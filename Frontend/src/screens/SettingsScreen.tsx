@@ -2018,7 +2018,7 @@ function SettingsScreen() {
                               )}
                             </button>
                             <a
-                              href={`${import.meta.env.VITE_DOMAIN_URL}/pricing`}
+                              href={`${import.meta.env.VITE_DOMAIN_URL}/support`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="btn btn-ghost btn-sm gap-1"

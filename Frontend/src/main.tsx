@@ -133,7 +133,7 @@ const router = createBrowserRouter(
         </Route>
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
-        <Route path="pricing" element={<SupportScreen />} />
+        <Route path="support" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />
         <Route path="terms" element={<TermsOfServiceScreen />} />
         <Route path="refund-policy" element={<RefundPolicyScreen />} />
