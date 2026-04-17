@@ -30,6 +30,7 @@ import ProgressChart from '../components/ProgressChart';
 import SpeedChart from '../components/SpeedChart';
 import StackedBarChart from '../components/StackedBarChart';
 import TagFilter from '../components/TagFilter';
+import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
 import { OutletProfileContextType } from '../types';
 import { numberWithCommas } from '../utils/utils';
@@ -73,19 +74,6 @@ const PERIOD_LABELS: Record<TimeRange, string> = {
   custom: 'Custom',
 };
 
-const PIE_TYPE_COLORS: Record<string, string> = {
-  vn: '#3a70e4',
-  game: '#59c94e',
-  anime: '#26b2f2',
-  video: '#2cc9a4',
-  'tv show': '#f8b420',
-  manga: '#ee4466',
-  reading: '#b34ce6',
-  movie: '#f77118',
-  audio: '#f2a15a',
-  other: '#10b785',
-};
-
 function capitalizeType(value: string) {
   if (value === 'vn') return 'Visual Novel';
   if (value === 'game') return 'Video Game';
@@ -115,9 +103,7 @@ function buildPieDataset(
   const sortedEntries = [...entries].sort((a, b) => b.value - a.value);
   const values = sortedEntries.map((entry) => entry.value);
   const labels = sortedEntries.map((entry) => entry.label);
-  const colors = sortedEntries.map(
-    (entry) => PIE_TYPE_COLORS[entry.type] || PIE_TYPE_COLORS.other
-  );
+  const colors = sortedEntries.map((entry) => getMediaTypeColor(entry.type));
 
   return {
     labels,

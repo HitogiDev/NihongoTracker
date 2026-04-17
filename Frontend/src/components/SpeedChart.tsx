@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChartArea, ScriptableContext } from 'chart.js';
 import { ILog } from '../types';
+import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
 import LineChart from './LineChart';
 
@@ -280,19 +281,51 @@ function SpeedChart({
   ) {
     const { top, bottom } = chartArea;
     const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-    gradient.addColorStop(0, color);
-    gradient.addColorStop(1, 'rgba(50, 170, 250, 0)');
+    gradient.addColorStop(0, withAlpha(color, 0.55));
+    gradient.addColorStop(1, withAlpha(color, 0));
     return gradient;
+  }
+
+  function withAlpha(hexColor: string, alpha: number) {
+    const normalized = hexColor.replace('#', '');
+
+    if (hexColor.startsWith('rgba(')) {
+      return hexColor.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
+    }
+
+    if (hexColor.startsWith('rgb(')) {
+      return hexColor.replace(/^rgb\(/, 'rgba(').replace(')', `, ${alpha})`);
+    }
+
+    if (hexColor.startsWith('hsla(')) {
+      return hexColor.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
+    }
+
+    if (hexColor.startsWith('hsl(')) {
+      return hexColor.replace(/^hsl\(/, 'hsla(').replace(')', `, ${alpha})`);
+    }
+
+    if (hexColor.startsWith('oklch(')) {
+      if (hexColor.includes('/')) {
+        return hexColor.replace(/\/\s*[\d.]+\)$/, `/ ${alpha})`);
+      }
+      return hexColor.replace(')', ` / ${alpha})`);
+    }
+
+    if (normalized.length !== 6) {
+      return hexColor;
+    }
+
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
   const chartData = {
     labels: getAllDates(),
-    datasets: READING_TYPES.map((type, index) => {
-      const colors = [
-        'rgba(255, 99, 132, 1)',
-        'rgba(54, 162, 235, 1)',
-        'rgba(255, 206, 86, 1)',
-      ];
+    datasets: READING_TYPES.map((type) => {
+      const lineColor = getMediaTypeColor(type);
 
       return {
         label:
@@ -346,17 +379,26 @@ function SpeedChart({
 
           return result;
         })(),
-        borderColor: colors[index % colors.length],
+        borderColor: lineColor,
         backgroundColor: function (context: ScriptableContext<'line'>) {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
           if (!chartArea) return undefined;
-          return createGradient(ctx, chartArea, colors[index % colors.length]);
+          return createGradient(ctx, chartArea, lineColor);
         },
         fill: true,
-        pointRadius: 3,
-        borderWidth: 2,
-        tension: 0.1,
+        spanGaps: true,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBorderWidth: 2,
+        pointHitRadius: 12,
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+        pointBorderColor: lineColor,
+        pointHoverBackgroundColor: lineColor,
+        pointHoverBorderColor: lineColor,
+        borderWidth: 3,
+        tension: 0.35,
+        cubicInterpolationMode: 'monotone' as const,
       };
     }),
   };

@@ -457,7 +457,7 @@ export default function ProgressChart({
   ) {
     const { top, bottom } = chartArea;
     const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-    gradient.addColorStop(0, color);
+    gradient.addColorStop(0, withAlpha(color, 0.55));
     gradient.addColorStop(1, withAlpha(color, 0));
     return gradient;
   }
@@ -472,15 +472,25 @@ export default function ProgressChart({
         label: datasetLabel,
         data: metricValues,
         fill: true,
-        pointRadius: 3,
+        spanGaps: true,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBorderWidth: 2,
+        pointHitRadius: 12,
+        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+        pointBorderColor: progressColor,
+        pointHoverBackgroundColor: progressColor,
+        pointHoverBorderColor: progressColor,
         borderColor: progressColor,
+        borderWidth: 3,
         backgroundColor: function (context: ScriptableContext<'line'>) {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
           if (!chartArea) return undefined;
           return createGradient(ctx, chartArea, progressColor);
         },
-        tension: 0.1,
+        tension: 0.35,
+        cubicInterpolationMode: 'monotone' as const,
       },
     ],
   };
