@@ -302,15 +302,30 @@ export async function updateUser(
       }
     }
 
-    if (discordId) {
-      if (!discordId.match(/^\d{17,19}$/)) {
-        throw new customError('Invalid Discord ID format', 400);
+    if (discordId !== undefined) {
+      const normalizedDiscordId =
+        typeof discordId === 'string' ? discordId.trim() : '';
+
+      if (!normalizedDiscordId) {
+        user.discordId = undefined;
+      } else {
+        if (!normalizedDiscordId.match(/^\d{17,19}$/)) {
+          throw new customError('Invalid Discord ID format', 400);
+        }
+        const existingUser = await User.findOne({
+          discordId: normalizedDiscordId,
+        });
+        if (
+          existingUser &&
+          existingUser._id.toString() !== user._id.toString()
+        ) {
+          throw new customError(
+            'Discord ID already linked to another user',
+            400
+          );
+        }
+        user.discordId = normalizedDiscordId;
       }
-      const existingUser = await User.findOne({ discordId });
-      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
-        throw new customError('Discord ID already linked to another user', 400);
-      }
-      user.discordId = discordId;
     }
 
     if (
@@ -378,7 +393,7 @@ export async function updateUser(
       username: updatedUser.username,
       email: updatedUser.email,
       verified: updatedUser.verified,
-      discordId: updatedUser.discordId,
+      discordId: updatedUser.discordId ?? '',
       stats: updatedUser.stats,
       avatar: updatedUser.avatar,
       banner: updatedUser.banner,
@@ -492,7 +507,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     ...sharedProfile,
     email: userFound.email,
     verified: userFound.verified,
-    discordId: userFound.discordId,
+    discordId: userFound.discordId ?? '',
     roles: userFound.roles,
     patreon: userFound.patreon,
     settings: userFound.settings,
@@ -1605,7 +1620,7 @@ export async function clearUserData(
       user: {
         _id: updatedUser._id,
         username: updatedUser.username,
-        discordId: updatedUser.discordId,
+        discordId: updatedUser.discordId ?? '',
         stats: updatedUser.stats,
         avatar: updatedUser.avatar,
         banner: updatedUser.banner,

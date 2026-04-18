@@ -3080,18 +3080,33 @@ function SettingsScreen() {
                             Discord ID
                           </span>
                         </label>
-                        <input
-                          type="text"
-                          className="input input-bordered focus:input-primary transition-colors w-full"
-                          placeholder="Discord ID (e.g., 123456789012345678)"
-                          value={discordId}
-                          onChange={(e) => setDiscordId(e.target.value)}
-                        />
-                        <label className="label">
-                          <span className="label-text-alt text-base-content/60">
+                        <div className="relative w-full">
+                          <input
+                            type="text"
+                            className="input input-bordered focus:input-primary transition-colors w-full pr-10"
+                            placeholder="Discord ID (e.g., 123456789012345678)"
+                            value={discordId}
+                            onChange={(e) => setDiscordId(e.target.value)}
+                          />
+                          {discordId && (
+                            <button
+                              type="button"
+                              aria-label="Clear Discord ID"
+                              className="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-error"
+                              onClick={() => setDiscordId('')}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                        <label className="label flex-col items-start gap-1">
+                          <span className="label-text-alt text-base-content/60 break-all">
                             {user?.discordId
                               ? `Current: ${user.discordId}`
                               : null}
+                          </span>
+                          <span className="label-text-alt text-base-content/60">
+                            Leave empty and save to unlink
                           </span>
                         </label>
                       </div>

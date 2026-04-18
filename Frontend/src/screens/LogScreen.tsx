@@ -357,7 +357,7 @@ function LogScreen() {
             banner: updatedUser.banner ?? user.banner,
             titles: updatedUser.titles || user.titles,
             roles: updatedUser.roles || user.roles,
-            discordId: updatedUser.discordId ?? user.discordId,
+            discordId: updatedUser.discordId ?? '',
             patreon: updatedUser.patreon ?? user.patreon,
             settings: updatedUser.settings ?? user.settings,
             about: updatedUser.about ?? user.about,

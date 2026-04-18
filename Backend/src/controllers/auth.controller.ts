@@ -38,7 +38,7 @@ function sanitizeAuthUser(user: IUser) {
     titles: user.titles,
     roles: user.roles,
     settings: user.settings,
-    discordId: user.discordId,
+    discordId: user.discordId ?? '',
     patreon: user.patreon,
     moderation: user.moderation,
   };
@@ -172,7 +172,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         username: user.username,
         email: user.email,
         about: user.about,
-        discordId: user.discordId,
+        discordId: user.discordId ?? '',
         stats: {
           ...user.stats,
           currentStreak: liveCurrentStreak,
@@ -248,7 +248,7 @@ export async function verifyEmail(
         titles: user.titles,
         roles: user.roles,
         settings: user.settings,
-        discordId: user.discordId,
+        discordId: user.discordId ?? '',
         patreon: user.patreon,
       },
     });
