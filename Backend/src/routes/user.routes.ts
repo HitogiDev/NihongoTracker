@@ -4,7 +4,6 @@ import {
   getMediumRanking,
   getUser,
   updateUser,
-  getUsers,
   searchUsers,
   clearUserData,
   getImmersionList,
@@ -20,7 +19,7 @@ import {
   getUserLogs,
   getUserStats,
 } from '../controllers/logs.controller.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
 
 const router = Router();
@@ -32,7 +31,6 @@ const upload = multer({
   },
 });
 
-router.get('/', getUsers);
 router.get('/search', searchUsers);
 
 router.get('/compare', compareUserStats);
@@ -41,11 +39,11 @@ router.get('/ranking', getRanking);
 router.get('/ranking/media', getMediumRanking);
 router.get('/:username/ranking-summary', getRankingSummary);
 
-router.get('/:username', getUser);
+router.get('/:username', optionalProtect, getUser);
 
 router.post('/media/status', protect, updateMediaCompletionStatus);
 
-router.get('/:username/logs', getUserLogs);
+router.get('/:username/logs', optionalProtect, getUserLogs);
 
 router.get('/:username/stats', getUserStats);
 

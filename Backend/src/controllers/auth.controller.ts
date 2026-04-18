@@ -25,6 +25,25 @@ const isValidTimezone = (timezone?: string): boolean => {
   }
 };
 
+function sanitizeAuthUser(user: IUser) {
+  return {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    verified: user.verified,
+    about: user.about,
+    stats: user.stats,
+    avatar: user.avatar,
+    banner: user.banner,
+    titles: user.titles,
+    roles: user.roles,
+    settings: user.settings,
+    discordId: user.discordId,
+    patreon: user.patreon,
+    moderation: user.moderation,
+  };
+}
+
 export async function register(
   req: Request,
   res: Response,
@@ -126,10 +145,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     const user = await User.findOne({
       $or: [{ username: login }, { email: { $exists: true, $eq: login } }],
-    }).collation({
-      locale: 'en',
-      strength: 2,
-    });
+    })
+      .collation({
+        locale: 'en',
+        strength: 2,
+      })
+      .select('+password');
 
     if (user && (await user.matchPassword(password))) {
       if (user.moderation?.banned) {
@@ -185,7 +206,7 @@ export async function logout(_req: Request, res: Response) {
 export async function verifyToken(_req: Request, res: Response) {
   res.status(200).json({
     valid: true,
-    user: res.locals.user,
+    user: sanitizeAuthUser(res.locals.user),
   });
 }
 
@@ -252,26 +273,25 @@ export async function forgotPassword(
       locale: 'en',
       strength: 2,
     });
-    if (!user) {
-      throw new customError('No user found with that email', 404);
-    }
-    user.resetPasswordToken = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
-    user.resetPasswordTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
-    await user.save();
+    if (user) {
+      user.resetPasswordToken = Math.floor(
+        100000 + Math.random() * 900000
+      ).toString();
+      user.resetPasswordTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000);
+      await user.save();
 
-    const baseUrl =
-      process.env.FRONTEND_URL ||
-      process.env.PROD_DOMAIN ||
-      'http://localhost:5173';
-    await sendPasswordResetEmail(
-      email,
-      `${baseUrl}/reset-password/${user.resetPasswordToken}`
-    );
+      const baseUrl =
+        process.env.FRONTEND_URL ||
+        process.env.PROD_DOMAIN ||
+        'http://localhost:5173';
+      await sendPasswordResetEmail(
+        email,
+        `${baseUrl}/reset-password/${user.resetPasswordToken}`
+      );
+    }
 
     res.status(200).json({
-      message: 'Password reset token generated and sent to email',
+      message: 'If an account exists for this email, a reset link was sent',
     });
   } catch (error) {
     return next(error as customError);

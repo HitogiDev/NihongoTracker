@@ -4,7 +4,7 @@ import Tag from '../models/tag.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { Request, Response, NextFunction } from 'express';
-import { IMediaDocument, IUpdateRequest } from '../types.js';
+import { IMediaDocument, IUpdateRequest, IUser, userRoles } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import {
@@ -35,6 +35,34 @@ const DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES = 3 * BYTES_IN_MEGABYTE;
 const DEFAULT_BANNER_MAX_FILE_SIZE_BYTES = 6 * BYTES_IN_MEGABYTE;
 const PATREON_MEDIA_MAX_FILE_SIZE_BYTES = 8 * BYTES_IN_MEGABYTE;
 
+function hasAdminRole(user?: Partial<IUser> | null): boolean {
+  const roles = user?.roles;
+
+  if (!Array.isArray(roles)) {
+    return false;
+  }
+
+  return roles.includes(userRoles.admin);
+}
+
+function isOwner(user: Partial<IUser> | null | undefined, ownerId: unknown) {
+  if (!user?._id || !ownerId) {
+    return false;
+  }
+
+  return user._id.toString() === ownerId.toString();
+}
+
+function getPublicPatreonProfile(patreon: IUser['patreon']) {
+  return {
+    isActive: patreon?.isActive ?? false,
+    tier: patreon?.tier ?? null,
+    customBadgeText: patreon?.customBadgeText,
+    badgeColor: patreon?.badgeColor,
+    badgeTextColor: patreon?.badgeTextColor,
+  };
+}
+
 export async function updateUser(
   req: Request,
   res: Response,
@@ -56,7 +84,7 @@ export async function updateUser(
   } = req.body as IUpdateRequest;
 
   try {
-    const user = await User.findById(res.locals.user._id);
+    const user = await User.findById(res.locals.user._id).select('+password');
     if (!user) {
       throw new customError('User not found', 404);
     }
@@ -433,22 +461,41 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     timezone
   );
 
-  return res.json({
+  const viewer = res.locals.user as IUser | undefined;
+  const canViewPrivateProfile =
+    hasAdminRole(viewer) || isOwner(viewer, userFound._id);
+
+  const sharedProfile = {
+    _id: userFound._id,
     id: userFound._id,
     username: userFound.username,
     stats: {
       ...userFound.stats,
       currentStreak: liveCurrentStreak,
     },
-    discordId: userFound.discordId,
     avatar: userFound.avatar,
     banner: userFound.banner,
     titles: userFound.titles,
-    patreon: userFound.patreon,
-    settings: userFound.settings,
     about: userFound.about,
     createdAt: userFound.createdAt,
     updatedAt: userFound.updatedAt,
+  };
+
+  if (!canViewPrivateProfile) {
+    return res.json({
+      ...sharedProfile,
+      patreon: getPublicPatreonProfile(userFound.patreon),
+    });
+  }
+
+  return res.json({
+    ...sharedProfile,
+    email: userFound.email,
+    verified: userFound.verified,
+    discordId: userFound.discordId,
+    roles: userFound.roles,
+    patreon: userFound.patreon,
+    settings: userFound.settings,
   });
 }
 
@@ -550,6 +597,7 @@ export async function getRanking(
                   $expr: {
                     $and: [
                       { $eq: ['$user', '$$userId'] },
+                      { $ne: ['$private', true] },
                       { $ne: ['$unknownDate', true] },
                       ...(dateGte ? [{ $gte: ['$date', dateGte] }] : []),
                       ...(dateLt ? [{ $lt: ['$date', dateLt] }] : []),
@@ -716,7 +764,10 @@ export async function getRanking(
               {
                 $match: {
                   $expr: {
-                    $and: [{ $eq: ['$user', '$$userId'] }],
+                    $and: [
+                      { $eq: ['$user', '$$userId'] },
+                      { $ne: ['$private', true] },
+                    ],
                   },
                 },
               },
@@ -987,6 +1038,7 @@ export async function getRankingSummary(
       {
         $match: {
           user: userDoc._id,
+          private: { $ne: true },
         },
       },
       {
@@ -1000,6 +1052,11 @@ export async function getRankingSummary(
     const userXp = allTimeUserResult?.xp ?? 0;
 
     const [higherCountResult] = await Log.aggregate([
+      {
+        $match: {
+          private: { $ne: true },
+        },
+      },
       {
         $group: {
           _id: '$user',
@@ -1041,6 +1098,11 @@ export async function getRankingSummary(
     const higherCount = higherCountResult?.count ?? 0;
 
     const [nextUser] = await Log.aggregate([
+      {
+        $match: {
+          private: { $ne: true },
+        },
+      },
       {
         $group: {
           _id: '$user',
@@ -1101,6 +1163,7 @@ export async function getRankingSummary(
       {
         $match: {
           user: userDoc._id,
+          private: { $ne: true },
           unknownDate: { $ne: true },
           date: {
             $gte: monthStart,
@@ -1121,6 +1184,7 @@ export async function getRankingSummary(
     const [monthlyAggregate] = await Log.aggregate([
       {
         $match: {
+          private: { $ne: true },
           unknownDate: { $ne: true },
           date: {
             $gte: monthStart,
@@ -1314,6 +1378,7 @@ export async function getMediumRanking(
                 $expr: {
                   $and: [
                     { $eq: ['$user', '$$userId'] },
+                    { $ne: ['$private', true] },
                     ...(shouldExcludeUnknownDate
                       ? [{ $ne: ['$unknownDate', true] }]
                       : []),
@@ -1404,20 +1469,6 @@ export async function getMediumRanking(
 
     const ranking = await User.aggregate(pipeline);
     return res.status(200).json(ranking);
-  } catch (error) {
-    return next(error as customError);
-  }
-}
-
-export async function getUsers(
-  _req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const users = await User.find({}).select('-password');
-    if (!users) throw new customError('No users found', 404);
-    return res.json(users);
   } catch (error) {
     return next(error as customError);
   }
@@ -1601,7 +1652,7 @@ export async function getImmersionList(
 
     const [immersionList, mediaStatuses] = await Promise.all([
       Log.aggregate<ImmersionGroup>([
-        { $match: { user: user._id } },
+        { $match: { user: user._id, private: { $ne: true } } },
         {
           $group: {
             _id: { mediaId: '$mediaId', type: '$type' },
@@ -2121,6 +2172,7 @@ async function calculateUserMediaStats(
         user: userId,
         mediaId: mediaId,
         type: type,
+        private: { $ne: true },
       },
     },
     {

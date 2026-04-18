@@ -17,7 +17,7 @@ import {
   syncManabeIds,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 import { csvToArray } from '../middlewares/csvToArray.js';
 import multer from 'multer';
 import {
@@ -69,7 +69,7 @@ router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 
 router.post('/sync-manabe-ids', protect, syncManabeIds);
 
-router.get('/:id', getLog);
+router.get('/:id', optionalProtect, getLog);
 
 router.delete('/:id', protect, deleteLog);
 

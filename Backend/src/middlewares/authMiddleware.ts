@@ -34,7 +34,17 @@ async function loadAndValidateUser(userId: string) {
   return user;
 }
 
-export async function protect(req: Request, res: Response, next: NextFunction) {
+async function authenticateRequest(
+  req: Request,
+  res: Response,
+  {
+    failOnMissingCredentials,
+    failOnInvalidCredentials,
+  }: {
+    failOnMissingCredentials: boolean;
+    failOnInvalidCredentials: boolean;
+  }
+) {
   // 1. Try API key authentication first
   const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
   if (apiKeyHeader) {
@@ -43,53 +53,104 @@ export async function protect(req: Request, res: Response, next: NextFunction) {
       const apiKey = await ApiKey.findOne({ key: hashedKey });
 
       if (!apiKey) {
-        return next(new customError('Invalid API key', 401));
+        if (failOnInvalidCredentials) {
+          throw new customError('Invalid API key', 401);
+        }
+        return null;
       }
 
       // Check expiration
       if (apiKey.expiresAt && new Date() > apiKey.expiresAt) {
         await ApiKey.deleteOne({ _id: apiKey._id });
-        return next(new customError('API key has expired', 401));
+        if (failOnInvalidCredentials) {
+          throw new customError('API key has expired', 401);
+        }
+        return null;
       }
 
       const user = await loadAndValidateUser(apiKey.user.toString());
       if (!user) {
-        return next(new customError('User not found', 401));
+        if (failOnInvalidCredentials) {
+          throw new customError('User not found', 401);
+        }
+        return null;
       }
-
-      res.locals.user = user;
 
       // Update lastUsedAt (fire-and-forget, don't block the request)
-      ApiKey.updateOne(
-        { _id: apiKey._id },
-        { lastUsedAt: new Date() }
-      ).exec();
+      ApiKey.updateOne({ _id: apiKey._id }, { lastUsedAt: new Date() }).exec();
 
-      return next();
+      return user;
     } catch (error) {
-      if (error instanceof customError) {
-        return next(error);
+      if (failOnInvalidCredentials) {
+        throw error;
       }
-      return next(new customError('API key authentication failed', 401));
+      return null;
     }
   }
 
   // 2. Fall back to JWT cookie authentication
   const token = req.cookies.jwt;
   if (!token) {
-    return next(new customError('Unauthorized, no token', 401));
+    if (failOnMissingCredentials) {
+      throw new customError('Unauthorized, no token', 401);
+    }
+    return null;
   }
+
   try {
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET!);
     const user = await loadAndValidateUser(
       (decoded as decodedJWT).id.toString()
     );
+    return user;
+  } catch (error) {
+    res.clearCookie('jwt');
+    if (failOnInvalidCredentials) {
+      throw error;
+    }
+    return null;
+  }
+}
+
+export async function protect(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await authenticateRequest(req, res, {
+      failOnMissingCredentials: true,
+      failOnInvalidCredentials: true,
+    });
+
+    if (!user) {
+      return next(new customError('Unauthorized', 401));
+    }
 
     res.locals.user = user;
     return next();
   } catch (error) {
-    res.clearCookie('jwt');
-    return next(error);
+    if (error instanceof customError) {
+      return next(error);
+    }
+
+    return next(new customError('Authentication failed', 401));
   }
 }
 
+export async function optionalProtect(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await authenticateRequest(req, res, {
+      failOnMissingCredentials: false,
+      failOnInvalidCredentials: false,
+    });
+
+    if (user) {
+      res.locals.user = user;
+    }
+
+    return next();
+  } catch (_error) {
+    return next();
+  }
+}

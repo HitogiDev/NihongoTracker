@@ -8,6 +8,7 @@ import {
   IMediaDocument,
   IManabeLogs,
   IUser,
+  userRoles,
 } from '../types.js';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
@@ -60,6 +61,31 @@ function getDescriptionWithMediaFallback(
   }
 
   return getMediaTitle(media);
+}
+
+function hasAdminRole(user?: Partial<IUser> | null): boolean {
+  const roles = user?.roles;
+
+  if (!Array.isArray(roles)) {
+    return false;
+  }
+
+  return roles.includes(userRoles.admin);
+}
+
+function isOwner(user: Partial<IUser> | null | undefined, ownerId: unknown) {
+  if (!user?._id || !ownerId) {
+    return false;
+  }
+
+  return user._id.toString() === ownerId.toString();
+}
+
+function canViewPrivateLog(
+  user: Partial<IUser> | null | undefined,
+  ownerId: unknown
+) {
+  return hasAdminRole(user) || isOwner(user, ownerId);
 }
 
 export async function getUntrackedLogs(
@@ -581,6 +607,7 @@ export async function getDashboardHours(
 interface IInitialMatch {
   user: Types.ObjectId;
   type?: string | { $in: string[] };
+  private?: { $ne: true };
   date?: {
     $gte?: Date;
     $lte?: Date;
@@ -627,9 +654,16 @@ export async function getUserLogs(
       throw new customError('User not found', 404);
     }
 
+    const viewer = res.locals.user as IUser | undefined;
+    const canViewPrivateLogs = canViewPrivateLog(viewer, userExists._id);
+
     let initialMatch: IInitialMatch = {
       user: userExists._id,
     };
+
+    if (!canViewPrivateLogs) {
+      initialMatch.private = { $ne: true };
+    }
 
     if (type) {
       if (Array.isArray(type)) {
@@ -833,6 +867,8 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
       {
         $project: {
           _id: 1,
+          user: 1,
+          private: 1,
           type: 1,
           description: 1,
           episodes: 1,
@@ -857,6 +893,11 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
 
     const foundLog = logAggregation[0];
     if (!foundLog) throw new customError('Log not found', 404);
+
+    const viewer = res.locals.user as IUser | undefined;
+    if (foundLog.private && !canViewPrivateLog(viewer, foundLog.user)) {
+      throw new customError('Log not found', 404);
+    }
 
     const sharedLogData = {
       _id: foundLog._id,
@@ -1781,7 +1822,10 @@ export async function getUserStats(
         ) + 1;
       daysPeriod = dayOfYear;
     } else if (timeRange === 'total') {
-      const firstLog = await Log.findOne({ user: user._id }).sort({ date: 1 });
+      const firstLog = await Log.findOne({
+        user: user._id,
+        private: { $ne: true },
+      }).sort({ date: 1 });
       if (firstLog) {
         const firstLogDate = firstLog.date ?? new Date(0);
         const daysDiff =
@@ -1797,7 +1841,11 @@ export async function getUserStats(
       daysPeriod = 1;
     }
 
-    let aggregationMatch: any = { user: user._id, ...dateFilter };
+    let aggregationMatch: any = {
+      user: user._id,
+      private: { $ne: true },
+      ...dateFilter,
+    };
 
     if (includedTagsParam || excludedTagsParam) {
       const tagFilter: any = {};
@@ -1816,7 +1864,11 @@ export async function getUserStats(
       aggregationMatch.tags = tagFilter;
     }
 
-    let totalsMatch: any = { user: user._id, ...dateFilter };
+    let totalsMatch: any = {
+      user: user._id,
+      private: { $ne: true },
+      ...dateFilter,
+    };
     if (type !== 'all') {
       if (Array.isArray(type)) {
         totalsMatch.type = { $in: type };
@@ -2068,6 +2120,7 @@ export async function getUserStats(
             {
               $match: {
                 user: user._id,
+                private: { $ne: true },
                 ...dateFilter,
                 unknownDate: { $ne: true },
                 type: { $in: ['reading', 'manga', 'vn', 'game'] },
@@ -2155,7 +2208,7 @@ export async function recalculateXp(
   next: NextFunction
 ) {
   try {
-    if (!res.locals.user.roles.includes('admin')) {
+    if (!res.locals.user.roles.includes(userRoles.admin)) {
       return res.status(403).json({ message: 'Admin permission required' });
     }
 
@@ -2315,7 +2368,7 @@ export async function recalculateStreaks(
   next: NextFunction
 ) {
   try {
-    if (!res.locals.user.roles.includes('admin')) {
+    if (!res.locals.user.roles.includes(userRoles.admin)) {
       return res.status(403).json({ message: 'Admin permission required' });
     }
 
@@ -2359,7 +2412,7 @@ export async function syncManabeIds(
   next: NextFunction
 ) {
   try {
-    if (!res.locals.user.roles.includes('admin')) {
+    if (!res.locals.user.roles.includes(userRoles.admin)) {
       return res.status(403).json({ message: 'Admin permission required' });
     }
 
@@ -2754,6 +2807,7 @@ export async function getGlobalMediaStats(
     const baseMatch = {
       mediaId: mediaId as string,
       type: type as string,
+      private: { $ne: true },
     };
 
     const totalStats = await Log.aggregate([

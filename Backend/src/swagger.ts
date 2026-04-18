@@ -1,5 +1,6 @@
 import swaggerUi from 'swagger-ui-express';
 import { Router } from 'express';
+import { protect } from './middlewares/authMiddleware.js';
 
 const swaggerDocument = {
   openapi: '3.0.3',
@@ -547,27 +548,6 @@ const swaggerDocument = {
 
     // ──────────────── Users ────────────────
     '/users': {
-      get: {
-        tags: ['Users'],
-        summary: 'Get all users (paginated)',
-        parameters: [
-          {
-            name: 'page',
-            in: 'query',
-            schema: { type: 'integer', default: 1 },
-          },
-          {
-            name: 'limit',
-            in: 'query',
-            schema: { type: 'integer', default: 20 },
-          },
-        ],
-        responses: {
-          200: {
-            description: 'List of users',
-          },
-        },
-      },
       put: {
         tags: ['Users'],
         summary: 'Update current user profile',
@@ -3231,17 +3211,86 @@ const swaggerDocument = {
   },
 };
 
+const PUBLICLY_HIDDEN_PATHS_EXACT = new Set([
+  '/auth/verify',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+  '/auth/forgot-password',
+  '/auth/reset-password/{token}',
+  '/users',
+  '/users/media/status',
+  '/users/settings/hidden-media',
+  '/users/cleardata',
+  '/users/export/csv',
+  '/users/{username}/dashboard',
+  '/users/{username}/recentlogs',
+  '/logs/manabe-webhook',
+  '/logs/sync-manabe-ids',
+]);
+
+const PUBLICLY_HIDDEN_PATH_PREFIXES = ['/admin', '/api-keys', '/patreon'];
+
+function isPathPubliclyHidden(pathname: string) {
+  if (PUBLICLY_HIDDEN_PATHS_EXACT.has(pathname)) {
+    return true;
+  }
+
+  return PUBLICLY_HIDDEN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function buildPublicSwaggerDocument() {
+  const publicDoc = JSON.parse(JSON.stringify(swaggerDocument));
+
+  publicDoc.paths = Object.fromEntries(
+    Object.entries(publicDoc.paths).filter(
+      ([pathname]) => !isPathPubliclyHidden(pathname)
+    )
+  );
+
+  if (publicDoc.tags) {
+    publicDoc.tags = publicDoc.tags.filter(
+      (tag: { name: string }) =>
+        !['Admin', 'Patreon', 'API Keys'].includes(tag.name)
+    );
+  }
+
+  const userProperties = publicDoc.components?.schemas?.User?.properties;
+  if (userProperties) {
+    delete userProperties.email;
+    delete userProperties.roles;
+    delete userProperties.settings;
+  }
+
+  return publicDoc;
+}
+
+const publicSwaggerDocument = buildPublicSwaggerDocument();
+
 const router = Router();
 
-router.use('/', swaggerUi.serve);
+router.use(swaggerUi.serve);
 router.get(
   '/',
+  swaggerUi.setup(publicSwaggerDocument, {
+    customCss: `
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info .title { font-size: 2rem; }
+  `,
+    customSiteTitle: 'NihongoTracker Public API Docs',
+  })
+);
+
+router.get(
+  '/internal',
+  protect,
   swaggerUi.setup(swaggerDocument, {
     customCss: `
     .swagger-ui .topbar { display: none; }
     .swagger-ui .info .title { font-size: 2rem; }
   `,
-    customSiteTitle: 'NihongoTracker API Docs',
+    customSiteTitle: 'NihongoTracker Internal API Docs',
   })
 );
 
