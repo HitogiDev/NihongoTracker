@@ -1140,7 +1140,7 @@ function StatsScreen() {
                       Log Count
                     </h3>
                     <div className="h-64">
-                      <PieChart data={logCountData} />
+                      <PieChart data={logCountData} valueFormat="logs" />
                     </div>
                   </div>
                 </div>
@@ -1152,7 +1152,7 @@ function StatsScreen() {
                       Time Distribution
                     </h3>
                     <div className="h-64">
-                      <PieChart data={logTimeData} />
+                      <PieChart data={logTimeData} valueFormat="hours" />
                     </div>
                   </div>
                 </div>
@@ -1164,7 +1164,7 @@ function StatsScreen() {
                       XP Distribution
                     </h3>
                     <div className="h-64">
-                      <PieChart data={logXpData} />
+                      <PieChart data={logXpData} valueFormat="xp" />
                     </div>
                   </div>
                 </div>
