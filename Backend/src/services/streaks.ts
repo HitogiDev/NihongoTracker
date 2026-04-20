@@ -138,6 +138,14 @@ export async function updateStreakWithLog(
   // Reject future-dated logs from advancing the streak (clock drift / bad client date)
   if (newKey > todayKey) return;
 
+  // Backdated logs can reconnect/extend historical chains.
+  // Incremental updates do not have enough context to rebuild those safely,
+  // so always recalculate from all logs for non-today entries.
+  if (newKey < todayKey) {
+    await recalculateStreaksForUser(user._id);
+    return;
+  }
+
   const lastDate = user.stats.lastStreakDate;
   if (!lastDate) {
     user.stats.currentStreak = 1;

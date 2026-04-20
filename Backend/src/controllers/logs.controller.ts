@@ -1034,6 +1034,8 @@ export async function updateLog(
       }
     }
 
+    const originalDate = log.date ? new Date(log.date) : null;
+
     log.description = description !== undefined ? description : log.description;
     log.time = time !== undefined ? time : log.time;
     log.date = date !== undefined ? date : log.date;
@@ -1047,7 +1049,6 @@ export async function updateLog(
     log.tags = tags !== undefined ? tags : log.tags;
     log.editedFields = editedFields;
 
-    const originalDate = log.date;
     const updatedLog = await log.save();
     res.locals.log = updatedLog;
     await updateStats(res, next);
@@ -1113,6 +1114,8 @@ export async function adminUpdateLog(
       }
     }
 
+    const originalDate = log.date ? new Date(log.date) : null;
+
     log.description = description !== undefined ? description : log.description;
     log.time = time !== undefined ? time : log.time;
     log.date = date !== undefined ? date : log.date;
@@ -1125,7 +1128,6 @@ export async function adminUpdateLog(
     log.xp = xp !== undefined ? xp : log.xp;
     log.editedFields = editedFields;
 
-    const originalDate = log.date;
     const updatedLog = await log.save();
 
     // Set locals for stats calculation to target log owner
