@@ -407,6 +407,62 @@ export async function getMedia(
   }
 }
 
+export async function anilistSearchProxy(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const title = String(req.query.search || '');
+    const rawType = String(req.query.type || '')
+      .trim()
+      .toLowerCase();
+    const normalizedTypeMap: Record<string, string> = {
+      anime: 'anime',
+      manga: 'manga',
+      reading: 'reading',
+      'light novel': 'reading',
+      'light novels': 'reading',
+      light_novel: 'reading',
+      'light-novel': 'reading',
+      ln: 'reading',
+      movie: 'movie',
+    };
+    const type = normalizedTypeMap[rawType] ?? rawType;
+
+    if (!title || !type)
+      return res.status(400).json({ message: 'Invalid query parameters' });
+
+    if (type === 'vn' || type === 'game' || type === 'tv_show') {
+      return res
+        .status(400)
+        .json({ message: 'Unsupported media type for AniList search' });
+    }
+
+    const searchType =
+      type === 'movie' ? 'ANIME' : type === 'anime' ? 'ANIME' : 'MANGA';
+
+    const format = req.query.format ? String(req.query.format) : null;
+    const idsParam = req.query.ids ? String(req.query.ids) : null;
+    const ids = idsParam
+      ? idsParam
+          .split(',')
+          .map((s) => Number.parseInt(s, 10))
+          .filter((n) => !Number.isNaN(n))
+      : undefined;
+
+    const variables: any = { search: title, type: searchType };
+    if (format) variables.format = format;
+    if (ids && ids.length) variables.ids = ids;
+
+    const results = await searchAnilist(variables);
+
+    return res.status(200).json(results);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function searchMedia(
   req: Request,
   res: Response,
@@ -478,7 +534,15 @@ export async function searchMedia(
   }
 }
 
-const MULTI_SEARCH_INDEXES = ['anime', 'manga', 'reading', 'vn', 'movie', 'tv_show', 'game'] as const;
+const MULTI_SEARCH_INDEXES = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'movie',
+  'tv_show',
+  'game',
+] as const;
 
 export async function multiSearchMedia(
   req: Request,
@@ -505,7 +569,9 @@ export async function multiSearchMedia(
     // Flatten and sort by _rankingScore for true cross-index relevance ranking
     const allHits = multiResult.results
       .flatMap((result: any) => result.hits)
-      .sort((a: any, b: any) => (b._rankingScore ?? 0) - (a._rankingScore ?? 0));
+      .sort(
+        (a: any, b: any) => (b._rankingScore ?? 0) - (a._rankingScore ?? 0)
+      );
 
     return res.status(200).json(allHits);
   } catch (error) {

@@ -10,6 +10,7 @@ import {
   deleteMediaReview,
   toggleMediaReviewLike,
   getMediaReviewById,
+  anilistSearchProxy,
 } from '../controllers/media.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -18,6 +19,7 @@ import { searchYouTubeVideo } from '../services/searchYoutube.js';
 const router = Router();
 
 router.get('/utils/avgcolor', getAverageColor);
+router.get('/anilist/search', anilistSearchProxy);
 router.get('/search', searchMedia);
 router.get('/multi-search', multiSearchMedia);
 router.get('/youtube/video', searchYouTubeVideo);
