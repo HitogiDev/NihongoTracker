@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -41,6 +41,61 @@ const MEDIA_TYPE_CONFIG: Record<
   'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
 };
 
+type SearchResultEntry = {
+  type: 'user' | 'media';
+  data: UserResult | SearchResultType;
+};
+
+const SCORE_BOOST_CAP = 100;
+
+function normalizeSearchValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+// Heuristic: exact > prefix > substring, with earlier matches ranked higher.
+function scoreSearchMatch(query: string, candidate?: string | null): number {
+  if (!query || !candidate) return 0;
+  const target = candidate.toLowerCase();
+
+  if (target === query) return 1000;
+  if (target.startsWith(query)) {
+    return 800 - Math.min(target.length - query.length, SCORE_BOOST_CAP);
+  }
+
+  const index = target.indexOf(query);
+  if (index >= 0) {
+    return 600 - Math.min(index, SCORE_BOOST_CAP);
+  }
+
+  return 0;
+}
+
+function scoreSearchCandidates(
+  query: string,
+  candidates: Array<string | null | undefined>
+): number {
+  return candidates.reduce(
+    (best, candidate) => Math.max(best, scoreSearchMatch(query, candidate)),
+    0
+  );
+}
+
+function getUserMatchScore(query: string, user: UserResult): number {
+  return scoreSearchCandidates(query, [user.username]);
+}
+
+function getMediaMatchScore(query: string, media: SearchResultType): number {
+  const title = media.title || {};
+  const rawSynonyms = (media as { synonyms?: unknown }).synonyms;
+  const synonyms = Array.isArray(rawSynonyms) ? (rawSynonyms as string[]) : [];
+
+  return scoreSearchCandidates(query, [
+    title.contentTitleNative,
+    title.contentTitleEnglish,
+    title.contentTitleRomaji,
+    ...synonyms,
+  ]);
+}
 
 function MediaResultRow({
   media,
@@ -260,27 +315,35 @@ function SearchModal({
 
           // AniList searches for anime/manga/reading (discovers content not yet in DB)
           const anilistPromises = [
-            searchAnilist(debouncedQuery, 'ANIME', 1, 3).catch(() => [] as SearchResultType[]),
-            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'MANGA').catch(() => [] as SearchResultType[]),
-            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'NOVEL').catch(() => [] as SearchResultType[]),
+            searchAnilist(debouncedQuery, 'ANIME', 1, 3).catch(
+              () => [] as SearchResultType[]
+            ),
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'MANGA').catch(
+              () => [] as SearchResultType[]
+            ),
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'NOVEL').catch(
+              () => [] as SearchResultType[]
+            ),
           ];
 
           promises.push(
-            Promise.all([dbSearchPromise, ...anilistPromises]).then(([dbResults, ...anilistResults]) => {
-              if (!controller.signal.aborted) {
-                // DB results first (cross-index relevance ranked), then AniList results
-                const allMedia = [...dbResults, ...anilistResults.flat()];
-                const seen = new Set<string>();
-                const unique = allMedia.filter((item) => {
-                  // Dedupe by contentId + type to handle same content from DB and AniList
-                  const key = `${item.type}:${item.contentId}`;
-                  if (seen.has(key)) return false;
-                  seen.add(key);
-                  return true;
-                });
-                setMediaResults(unique.slice(0, 15));
+            Promise.all([dbSearchPromise, ...anilistPromises]).then(
+              ([dbResults, ...anilistResults]) => {
+                if (!controller.signal.aborted) {
+                  // DB results first (cross-index relevance ranked), then AniList results
+                  const allMedia = [...dbResults, ...anilistResults.flat()];
+                  const seen = new Set<string>();
+                  const unique = allMedia.filter((item) => {
+                    // Dedupe by contentId + type to handle same content from DB and AniList
+                    const key = `${item.type}:${item.contentId}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                  });
+                  setMediaResults(unique.slice(0, 15));
+                }
               }
-            })
+            )
           );
         }
 
@@ -297,21 +360,42 @@ function SearchModal({
   }, [debouncedQuery, activeTab]);
 
   // Build combined results list for keyboard navigation
-  const allResults: Array<{
-    type: 'user' | 'media';
-    data: UserResult | SearchResultType;
-  }> = [];
+  const normalizedQuery = normalizeSearchValue(debouncedQuery);
+  const allResults = useMemo<SearchResultEntry[]>(() => {
+    if (activeTab === 'users') {
+      return userResults.map((user) => ({ type: 'user', data: user }));
+    }
 
-  if (activeTab === 'all' || activeTab === 'users') {
-    userResults.forEach((user) =>
-      allResults.push({ type: 'user', data: user })
-    );
-  }
-  if (activeTab === 'all' || activeTab === 'media') {
-    mediaResults.forEach((media) =>
-      allResults.push({ type: 'media', data: media })
-    );
-  }
+    if (activeTab === 'media') {
+      return mediaResults.map((media) => ({ type: 'media', data: media }));
+    }
+
+    const scoredResults: Array<
+      SearchResultEntry & { score: number; order: number }
+    > = [];
+
+    userResults.forEach((user, index) => {
+      scoredResults.push({
+        type: 'user',
+        data: user,
+        score: getUserMatchScore(normalizedQuery, user),
+        order: index,
+      });
+    });
+
+    mediaResults.forEach((media, index) => {
+      scoredResults.push({
+        type: 'media',
+        data: media,
+        score: getMediaMatchScore(normalizedQuery, media),
+        order: index,
+      });
+    });
+
+    return scoredResults
+      .sort((a, b) => b.score - a.score || a.order - b.order)
+      .map(({ type, data }) => ({ type, data }));
+  }, [activeTab, userResults, mediaResults, normalizedQuery]);
 
   const allResultsRef = useRef(allResults);
   allResultsRef.current = allResults;
@@ -369,7 +453,7 @@ function SearchModal({
   // Reset selection when results change
   useEffect(() => {
     setSelectedIndex(0);
-  }, [userResults, mediaResults]);
+  }, [allResults]);
 
   // Scroll selected item into view
   useEffect(() => {
@@ -455,65 +539,34 @@ function SearchModal({
 
           {hasResults && (
             <div className="divide-y divide-base-content/5">
-              {/* User Results */}
-              {(activeTab === 'all' || activeTab === 'users') &&
-                userResults.length > 0 && (
-                  <div>
-                    <div className="px-4 pt-3 pb-1">
-                      <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-widest">
-                        Users
-                      </span>
-                    </div>
-                    {userResults.map((user) => {
-                      const idx = allResults.findIndex(
-                        (r) =>
-                          r.type === 'user' &&
-                          (r.data as UserResult)._id === user._id
-                      );
-                      return (
-                        <UserResultRow
-                          key={user._id}
-                          user={user}
-                          isSelected={idx === selectedIndex}
-                          onSelect={() =>
-                            handleSelect({ type: 'user', data: user })
-                          }
-                        />
-                      );
-                    })}
-                  </div>
-                )}
+              {allResults.map((result, index) => {
+                if (result.type === 'user') {
+                  const user = result.data as UserResult;
+                  return (
+                    <UserResultRow
+                      key={user._id}
+                      user={user}
+                      isSelected={index === selectedIndex}
+                      onSelect={() =>
+                        handleSelect({ type: 'user', data: user })
+                      }
+                    />
+                  );
+                }
 
-              {/* Media Results */}
-              {(activeTab === 'all' || activeTab === 'media') &&
-                mediaResults.length > 0 && (
-                  <div>
-                    <div className="px-4 pt-3 pb-1">
-                      <span className="text-[11px] font-bold text-base-content/40 uppercase tracking-widest">
-                        Media
-                      </span>
-                    </div>
-                    {mediaResults.map((media) => {
-                      const idx = allResults.findIndex(
-                        (r) =>
-                          r.type === 'media' &&
-                          (r.data as SearchResultType).contentId ===
-                            media.contentId
-                      );
-                      return (
-                        <MediaResultRow
-                          key={`${media.type}-${media.contentId}`}
-                          media={media}
-                          isSelected={idx === selectedIndex}
-                          blurAdult={blurAdult}
-                          onSelect={() =>
-                            handleSelect({ type: 'media', data: media })
-                          }
-                        />
-                      );
-                    })}
-                  </div>
-                )}
+                const media = result.data as SearchResultType;
+                return (
+                  <MediaResultRow
+                    key={`${media.type}-${media.contentId}`}
+                    media={media}
+                    isSelected={index === selectedIndex}
+                    blurAdult={blurAdult}
+                    onSelect={() =>
+                      handleSelect({ type: 'media', data: media })
+                    }
+                  />
+                );
+              })}
             </div>
           )}
         </div>
