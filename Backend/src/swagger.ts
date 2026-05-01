@@ -1163,7 +1163,7 @@ const swaggerDocument = {
         summary: 'Search media',
         parameters: [
           {
-            name: 'q',
+            name: 'search',
             in: 'query',
             required: true,
             schema: { type: 'string' },
@@ -1171,7 +1171,29 @@ const swaggerDocument = {
           {
             name: 'type',
             in: 'query',
-            schema: { type: 'string' },
+            required: true,
+            schema: {
+              type: 'string',
+              enum: [
+                'anime',
+                'manga',
+                'reading',
+                'vn',
+                'movie',
+                'tv_show',
+                'game',
+              ],
+            },
+          },
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'perPage',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
           },
         ],
         responses: {
