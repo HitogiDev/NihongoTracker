@@ -1769,7 +1769,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get all clubs (paginated, filterable)',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'page',
@@ -1833,7 +1832,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get club details',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -1885,7 +1883,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get recent club activity',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -2087,7 +2084,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get club media',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -2129,7 +2125,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get club member logs for specific media',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -2153,7 +2148,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get club member rankings for specific media',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -2177,7 +2171,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get club media statistics',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -2201,7 +2194,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get overall club member rankings',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',
@@ -2235,7 +2227,6 @@ const swaggerDocument = {
       get: {
         tags: ['Clubs'],
         summary: 'Get media votings for a club',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         parameters: [
           {
             name: 'clubId',

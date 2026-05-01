@@ -29,7 +29,7 @@ import {
   completeVoting,
   getClubRecentActivity,
 } from '../controllers/club.controller.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { optionalProtect, protect } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
@@ -40,13 +40,23 @@ const upload = multer({
   },
 });
 
-// All routes require authentication
-router.use(protect);
+// Public club read routes (optional auth for member context)
+router.get('/', optionalProtect, getClubs); // Get all clubs with filtering
+router.get('/:clubId', optionalProtect, getClub); // Get specific club
+router.get('/:clubId/recent-activity', optionalProtect, getClubRecentActivity); // Get recent club activity
+router.get('/:clubId/media', optionalProtect, getClubMedia); // Get club media
+router.get('/:clubId/media/:mediaId/logs', optionalProtect, getClubMediaLogs); // Get club member logs for specific media
+router.get(
+  '/:clubId/media/:mediaId/rankings',
+  optionalProtect,
+  getClubMediaRankings
+); // Get club member rankings for specific media
+router.get('/:clubId/media/:mediaId/stats', optionalProtect, getClubMediaStats); // Get club media statistics
+router.get('/:clubId/rankings', optionalProtect, getClubMemberRankings); // Get club member rankings (overall)
+router.get('/:clubId/votings', optionalProtect, getMediaVotings); // Get media votings
 
-// Club routes (all authenticated)
-router.get('/', getClubs); // Get all clubs with filtering
-router.get('/:clubId', getClub); // Get specific club
-router.get('/:clubId/recent-activity', getClubRecentActivity); // Get recent club activity
+// All other routes require authentication
+router.use(protect);
 
 router.post(
   '/',
@@ -75,19 +85,11 @@ router.post('/:clubId/transfer-leadership', transferLeadership); // Transfer clu
 // Club Media routes
 router.post('/:clubId/media', addClubMedia); // Add media to club (leaders/moderators only)
 router.put('/:clubId/media/:mediaId', editClubMedia); // Edit club media (leaders/moderators only)
-router.get('/:clubId/media', getClubMedia); // Get club media
-router.get('/:clubId/media/:mediaId/logs', getClubMediaLogs); // Get club member logs for specific media
-router.get('/:clubId/media/:mediaId/rankings', getClubMediaRankings); // Get club member rankings for specific media
-router.get('/:clubId/media/:mediaId/stats', getClubMediaStats); // Get club media statistics
-
-// Club Rankings routes
-router.get('/:clubId/rankings', getClubMemberRankings); // Get club member rankings (overall)
 
 // Club Media Voting routes
 router.post('/:clubId/votings', createMediaVoting); // Create new media voting
 router.put('/:clubId/votings/:votingId', editMediaVoting); // Edit media voting
 router.delete('/:clubId/votings/:votingId', deleteMediaVoting); // Delete media voting
-router.get('/:clubId/votings', getMediaVotings); // Get media votings
 router.post('/:clubId/votings/:votingId/candidates', addVotingCandidate); // Add candidate to voting
 router.post('/:clubId/votings/:votingId/finalize', finalizeVoting); // Finalize voting setup
 router.post(

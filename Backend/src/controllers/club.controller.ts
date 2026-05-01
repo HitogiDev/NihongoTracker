@@ -1997,18 +1997,6 @@ export async function getClubRecentActivity(
       return res.status(404).json({ message: 'Club not found' });
     }
 
-    // Check if user is a member to see activity
-    const userId = res.locals.user._id;
-    const userMember = club.members.find(
-      (member) => member.user.toString() === userId.toString()
-    );
-
-    if (!userMember || userMember.status !== 'active') {
-      return res.status(403).json({
-        message: 'Only active club members can view club activity',
-      });
-    }
-
     // Get club member user IDs
     const memberIds = club.members
       .filter((member) => member.status === 'active')
