@@ -17,6 +17,7 @@ interface LogData {
   _id: string;
   date: string | Date;
   xp?: number;
+  unknownDate?: boolean;
 }
 
 /** Extract YYYY-MM-DD from a UTC Date in the given IANA timezone without
@@ -86,10 +87,13 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     const firstKey = addDays(todayKey, -(DAYS - 1));
 
     for (const log of logs as LogData[]) {
-      if (!log.date) continue;
+      if (log.unknownDate || !log.date) continue;
       const key = toDateKey(new Date(log.date), timezone);
       if (key < firstKey || key > todayKey) continue;
-      dailyXp.set(key, (dailyXp.get(key) ?? 0) + Math.max(0, Number(log.xp) || 0));
+      dailyXp.set(
+        key,
+        (dailyXp.get(key) ?? 0) + Math.max(0, Number(log.xp) || 0)
+      );
     }
 
     const maxXp = dailyXp.size ? Math.max(...dailyXp.values()) : 0;
@@ -137,11 +141,16 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
 
   const cellClass = (level: number) => {
     switch (level) {
-      case 1: return 'bg-primary/30';
-      case 2: return 'bg-primary/50';
-      case 3: return 'bg-primary/70';
-      case 4: return 'bg-primary';
-      default: return 'bg-base-300';
+      case 1:
+        return 'bg-primary/30';
+      case 2:
+        return 'bg-primary/50';
+      case 3:
+        return 'bg-primary/70';
+      case 4:
+        return 'bg-primary';
+      default:
+        return 'bg-base-300';
     }
   };
 
@@ -194,7 +203,10 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
         <span>Less</span>
         <div className="flex items-center gap-1">
           {[0, 1, 2, 3, 4].map((level) => (
-            <div key={level} className={`w-3 h-3 rounded-sm ${cellClass(level)}`} />
+            <div
+              key={level}
+              className={`w-3 h-3 rounded-sm ${cellClass(level)}`}
+            />
           ))}
         </div>
         <span>More</span>

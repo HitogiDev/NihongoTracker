@@ -137,10 +137,13 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       return value.toLocaleString();
     }
     if (type === 'time') {
-      if (value >= 60) {
-        return Math.round(value / 60) + 'h';
+      const totalMinutes = Math.round(value);
+      if (totalMinutes >= 60) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
       }
-      return value + 'min';
+      return `${totalMinutes}min`;
     }
     return value.toString();
   };
@@ -155,12 +158,13 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       return Math.round(value).toString();
     }
     if (type === 'time') {
-      // Assuming value is in minutes
-      if (value >= 60) {
-        const hours = Math.round(value / 60);
-        return hours === 1 ? '1hr' : `${hours}hrs`;
+      const totalMinutes = Math.round(value);
+      if (totalMinutes >= 60) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
       }
-      return Math.round(value) + 'min';
+      return `${totalMinutes}min`;
     }
     return value.toLocaleString();
   };
@@ -295,7 +299,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                       </div>
                       <div className="stat-desc">
                         of {formatProgress(goal.target, goal.type)}{' '}
-                        {config.unit}
+                        {goal.type !== 'time' ? config.unit : ''}
                       </div>
                       <div className="w-full bg-base-300 rounded-full h-2 mt-2">
                         <div

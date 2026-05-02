@@ -42,6 +42,7 @@ function ProfileScreen() {
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
   >('all');
+  const [showUnknownDates, setShowUnknownDates] = useState(false);
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
     undefined
   );
@@ -220,12 +221,15 @@ function ProfileScreen() {
     const flattened = pages.flatMap((page) =>
       Array.isArray(page) ? page : []
     );
+    const baseLogs = showUnknownDates
+      ? flattened
+      : flattened.filter((log) => !log.unknownDate);
 
     if (sortBy !== 'readingSpeed') {
-      return flattened;
+      return baseLogs;
     }
 
-    return flattened
+    return baseLogs
       .filter((log) => (log.time ?? 0) > 0 && (log.chars ?? 0) > 0)
       .sort((a, b) => {
         const speedA = ((a.chars ?? 0) / (a.time ?? 1)) * 60;
@@ -451,6 +455,22 @@ function ProfileScreen() {
                             </a>
                           </li>
                         ))}
+                        <li className="mt-1">
+                          <div className="divider my-1"></div>
+                        </li>
+                        <li>
+                          <label className="flex items-center gap-2 px-2 py-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-sm"
+                              checked={showUnknownDates}
+                              onChange={(e) =>
+                                setShowUnknownDates(e.target.checked)
+                              }
+                            />
+                            <span>Include unknown dates</span>
+                          </label>
+                        </li>
                       </ul>
                     </div>
 
@@ -646,7 +666,8 @@ function ProfileScreen() {
                 {/* Active Filters - Now below everything else */}
                 {(dateFilter !== 'all' ||
                   filterType !== 'all' ||
-                  searchTerm) && (
+                  searchTerm ||
+                  showUnknownDates) && (
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-xs text-base-content/60">
                       Active filters:
@@ -703,6 +724,19 @@ function ProfileScreen() {
                       </div>
                     )}
 
+                    {showUnknownDates && (
+                      <div className="badge badge-neutral badge-sm gap-1">
+                        Include unknown dates
+                        <button
+                          className="ml-1 hover:bg-neutral-focus rounded-full"
+                          onClick={() => setShowUnknownDates(false)}
+                          aria-label="Hide unknown dates"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
                     {sortBy !== 'date' && (
                       <div className="badge badge-info badge-sm gap-1">
                         Sort:{' '}
@@ -737,6 +771,7 @@ function ProfileScreen() {
                         setCustomEndDate(undefined);
                         setSortBy('date');
                         setSortDirection('desc');
+                        setShowUnknownDates(false);
                       }}
                     >
                       Clear all
