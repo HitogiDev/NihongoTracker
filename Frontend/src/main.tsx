@@ -53,6 +53,9 @@ const MatchMedia = lazy(() => import('./screens/MatchMedia.tsx'));
 const MediaDetails = lazy(() => import('./screens/MediaDetails.tsx'));
 const MediaHeader = lazy(() => import('./components/MediaHeader.tsx'));
 const NotFound = lazy(() => import('./screens/NotFound.tsx'));
+const NotificationsScreen = lazy(
+  () => import('./screens/NotificationsScreen.tsx')
+);
 const ProfileHeader = lazy(() => import('./components/ProfileHeader.tsx'));
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen.tsx'));
 const ProtectedRoutes = lazy(() => import('./contexts/protectedRoute.tsx'));
@@ -152,6 +155,7 @@ const router = createBrowserRouter(
         <Route element={<ProtectedRoutes />}>
           <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />
+          <Route path="notifications" element={<NotificationsScreen />} />
           <Route path="settings" element={<SettingsScreen />} />
           <Route
             path=":mediaType/:mediaId/texthooker"

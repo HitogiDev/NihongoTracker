@@ -8,9 +8,7 @@ function CalculatorScreen() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="inline-flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full">
-                <Calculator />
-              </div>
+              <Calculator className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
               <h1 className="text-4xl font-bold text-base-content">
                 Immersion Calculator
               </h1>

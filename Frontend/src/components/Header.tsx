@@ -30,6 +30,7 @@ import { AxiosError } from 'axios';
 import { logoutResponseType } from '../types';
 import Loader from './Loader';
 import SearchModal from './SearchModal';
+import NotificationBell from './NotificationBell';
 
 type ThemeMode = 'dark' | 'light' | 'system';
 
@@ -424,6 +425,8 @@ function Header() {
               <kbd className="kbd kbd-xs">K</kbd>
             </span>
           </button>
+
+          <NotificationBell />
 
           {user ? (
             <>

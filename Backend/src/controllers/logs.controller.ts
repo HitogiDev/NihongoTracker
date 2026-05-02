@@ -906,7 +906,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
         foundLog.description,
         foundLog.mediaData
       ),
-      episodes: foundLog.episodes,
+      episodes: foundLog.type === 'anime' ? foundLog.episodes : undefined,
       volume: foundLog.volume,
       pages: foundLog.pages,
       chars: foundLog.chars,

@@ -89,6 +89,7 @@ function getTitle(pathname: string) {
   if (segments[0] === 'verify-email') return `Verify Email • ${APP_NAME}`;
 
   if (segments[0] === 'settings') return `Settings • ${APP_NAME}`;
+  if (segments[0] === 'notifications') return `Notifications • ${APP_NAME}`;
 
   if (segments[0] === 'ranking') return `Ranking • ${APP_NAME}`;
 

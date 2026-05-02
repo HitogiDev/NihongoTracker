@@ -817,6 +817,26 @@ export interface IClubListResponse {
   limit: number;
 }
 
+export type NotificationSectionType = 'club_join_requests';
+
+export interface INotificationSummaryItem {
+  id: string;
+  label: string;
+  count: number;
+  meta?: Record<string, string>;
+}
+
+export interface INotificationSummarySection {
+  type: NotificationSectionType;
+  title: string;
+  items: INotificationSummaryItem[];
+}
+
+export interface INotificationSummaryResponse {
+  totalCount: number;
+  sections: INotificationSummarySection[];
+}
+
 export interface IChangelogChange {
   type: 'feature' | 'improvement' | 'bugfix' | 'breaking';
   description: string;

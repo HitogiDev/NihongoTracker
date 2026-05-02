@@ -133,7 +133,7 @@ function SharedLogScreen() {
   useEffect(() => {
     if (sharedLog) {
       setCustomValues({
-        episodes: sharedLog.episodes || 0,
+        episodes: sharedLog.type === 'anime' ? sharedLog.episodes || 0 : 0,
         time: sharedLog.time || 0,
         chars: sharedLog.chars || 0,
         pages: sharedLog.pages || 0,
@@ -184,7 +184,10 @@ function SharedLogScreen() {
     const logData: ICreateLog = {
       type: sharedLog.type,
       description: customValues.description || sharedLog.description || '',
-      episodes: customValues.episodes || undefined,
+      episodes:
+        sharedLog.type === 'anime'
+          ? customValues.episodes || undefined
+          : undefined,
       time: customValues.time || undefined,
       chars: customValues.chars || undefined,
       pages: customValues.pages || undefined,
@@ -398,7 +401,7 @@ function SharedLogScreen() {
                     <div className="divider my-4"></div>
 
                     <div className="space-y-2">
-                      {sharedLog.episodes ? (
+                      {sharedLog.type === 'anime' && sharedLog.episodes ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
                           <span className="text-sm font-medium">Episodes</span>
                           <span className="font-bold">
@@ -480,7 +483,8 @@ function SharedLogScreen() {
                       This log will be added to your profile: "
                       {customValues.description}" • {typeConfig.label}
                       {customValues.time > 0 && ` • ${customValues.time} min`}
-                      {customValues.episodes > 0 &&
+                      {sharedLog.type === 'anime' &&
+                        customValues.episodes > 0 &&
                         ` • ${customValues.episodes} episodes`}
                       {customValues.chars > 0 &&
                         ` • ${customValues.chars.toLocaleString()} chars`}

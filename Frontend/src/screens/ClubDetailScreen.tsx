@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
   Users,
@@ -53,6 +53,7 @@ import {
 function ClubDetailScreen() {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useUserDataStore();
   const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
@@ -186,6 +187,20 @@ function ClubDetailScreen() {
     mediaData: undefined as Partial<IMediaDocument> | undefined,
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+
+    if (
+      tab === 'overview' ||
+      tab === 'media' ||
+      tab === 'members' ||
+      tab === 'rankings'
+    ) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
   // Search state for media autocomplete
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -267,6 +282,7 @@ function ClubDetailScreen() {
     }) => manageMembershipRequestFn(clubId!, memberId, action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
       refetchPending();
     },
     onError: (error: unknown) => {

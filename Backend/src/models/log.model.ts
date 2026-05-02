@@ -55,7 +55,9 @@ const LogSchema = new Schema<ILog>(
       required: function (this: ILog) {
         return this.type === 'anime';
       },
-      default: 1,
+      default: function (this: ILog) {
+        return this.type === 'anime' ? 1 : undefined;
+      },
     },
     volume: {
       type: Number,
