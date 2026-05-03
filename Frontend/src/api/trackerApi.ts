@@ -26,6 +26,7 @@ import {
   ITextSession,
   ITextLine,
   ITextSessionHistoryEntry,
+  StatsGroupLayout,
 } from '../types';
 
 const api = axiosInstance;
@@ -1206,5 +1207,15 @@ export async function generateApiKeyFn(payload: {
 
 export async function deleteApiKeyFn(id: string): Promise<{ message: string }> {
   const { data } = await api.delete<{ message: string }>(`api-keys/${id}`);
+  return data;
+}
+
+export async function updateStatsLayoutFn(
+  layout: StatsGroupLayout[]
+): Promise<{ message: string; statsLayout: StatsGroupLayout[] }> {
+  const { data } = await api.patch<{ message: string; statsLayout: StatsGroupLayout[] }>(
+    'users/settings/stats-layout',
+    { layout }
+  );
   return data;
 }

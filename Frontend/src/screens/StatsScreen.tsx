@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useRef, useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DayPicker } from 'react-day-picker';
 import { useOutletContext } from 'react-router-dom';
 import {
@@ -11,12 +11,16 @@ import {
   ChevronDown,
   Clapperboard,
   Clock3,
+  Eye,
+  EyeOff,
   Filter,
   Flame,
   Gauge,
+  GripVertical,
   Headphones,
   Layers,
   LineChart,
+  Pencil,
   PieChart as PieChartIcon,
   Scale,
   Star,
@@ -24,7 +28,24 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { getUserStatsFn } from '../api/trackerApi';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { getUserStatsFn, getUserFn, updateStatsLayoutFn } from '../api/trackerApi';
 import PieChart from '../components/PieChart';
 import ProgressChart from '../components/ProgressChart';
 import SpeedChart from '../components/SpeedChart';
@@ -32,7 +53,7 @@ import StackedBarChart from '../components/StackedBarChart';
 import TagFilter from '../components/TagFilter';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
-import { OutletProfileContextType } from '../types';
+import { OutletProfileContextType, StatsGroupId, StatsGroupLayout } from '../types';
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
 
@@ -118,15 +139,159 @@ function buildPieDataset(
   };
 }
 
+
+// ─── Default grouped layout ───────────────────────────────────────────────────
+const DEFAULT_GROUPS_LAYOUT: StatsGroupLayout[] = [
+  {
+    id: 'totals',
+    visible: true,
+    cards: [
+      { id: 'totalXp', visible: true },
+      { id: 'timeSpent', visible: true },
+      { id: 'logCount', visible: true },
+      { id: 'dailyAverage', visible: true },
+    ],
+  },
+  {
+    id: 'streaks',
+    visible: true,
+    cards: [
+      { id: 'currentStreak', visible: true },
+      { id: 'longestStreak', visible: true },
+    ],
+  },
+  {
+    id: 'timeBreakdown',
+    visible: true,
+    cards: [
+      { id: 'readingHours', visible: true },
+      { id: 'listeningHours', visible: true },
+      { id: 'readingListeningBalance', visible: true },
+      { id: 'episodeTotals', visible: true },
+    ],
+  },
+  {
+    id: 'readingMetrics',
+    visible: true,
+    cards: [
+      { id: 'avgReadingSpeed', visible: true },
+      { id: 'dailyAvgChars', visible: true },
+      { id: 'charsRead', visible: true },
+      { id: 'pagesRead', visible: true },
+    ],
+  },
+];
+
+const GROUP_LABELS: Record<StatsGroupId, string> = {
+  totals: 'Totals',
+  streaks: 'Streaks',
+  timeBreakdown: 'Time Breakdown',
+  readingMetrics: 'Reading Metrics',
+};
+
+function isGroupLayoutFormat(data: unknown[]): boolean {
+  // New format: each item is { id, visible, cards: [...] }
+  // Old format: each item is { id, visible } (flat StatsLayoutItem[])
+  return data.length > 0 && typeof data[0] === 'object' && data[0] !== null && 'cards' in (data[0] as object);
+}
+
+function mergeGroupsWithDefault(saved: StatsGroupLayout[]): StatsGroupLayout[] {
+  const savedIds = new Set(saved.map((g) => g.id));
+  const missing = DEFAULT_GROUPS_LAYOUT.filter((g) => !savedIds.has(g.id));
+  return [
+    ...saved.map((savedGroup) => {
+      const defaultGroup = DEFAULT_GROUPS_LAYOUT.find((d) => d.id === savedGroup.id);
+      if (!defaultGroup) return savedGroup;
+      // Guard against groups missing cards (should not happen but protects against partial saves)
+      const existingCards = Array.isArray(savedGroup.cards) ? savedGroup.cards : [];
+      const savedCardIds = new Set(existingCards.map((c) => c.id));
+      const missingCards = defaultGroup.cards.filter((c) => !savedCardIds.has(c.id));
+      return { ...savedGroup, cards: [...existingCards, ...missingCards] };
+    }),
+    ...missing,
+  ];
+}
+
+// ─── SortableStatCard ─────────────────────────────────────────────────────────
+type SortableStatCardProps = {
+  id: string;
+  editMode: boolean;
+  visible: boolean;
+  onToggleVisibility: () => void;
+  children: React.ReactNode;
+};
+function SortableStatCard({ id, editMode, visible, onToggleVisibility, children }: SortableStatCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 20 : undefined,
+  };
+  if (!editMode) return visible ? <>{children}</> : null;
+  return (
+    <div ref={setNodeRef} style={style} className={`relative ${!visible ? 'opacity-40 grayscale' : ''}`}>
+      <div className="absolute left-0 top-0 bottom-0 flex items-center pl-1 cursor-grab active:cursor-grabbing z-10 touch-none" {...attributes} {...listeners}>
+        <GripVertical className="w-4 h-4 text-base-content/40 hover:text-base-content/70" />
+      </div>
+      <button type="button" className="absolute top-2 right-2 z-10 p-1 rounded-lg bg-base-200/80 hover:bg-base-300 transition-colors" onClick={onToggleVisibility} title={visible ? 'Hide card' : 'Show card'}>
+        {visible ? <Eye className="w-4 h-4 text-base-content/60" /> : <EyeOff className="w-4 h-4 text-base-content/40" />}
+      </button>
+      <div className="pl-7 pr-8">{children}</div>
+    </div>
+  );
+}
+
+// ─── SortableGroup ────────────────────────────────────────────────────────────
+type SortableGroupProps = {
+  id: string;
+  label: string;
+  editMode: boolean;
+  visible: boolean;
+  onToggleGroupVisibility: () => void;
+  children: React.ReactNode;
+};
+function SortableGroup({ id, label, editMode, visible, onToggleGroupVisibility, children }: SortableGroupProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 30 : undefined,
+  };
+
+  if (!editMode && !visible) return null;
+
+  return (
+    <div ref={setNodeRef} style={style} className={`space-y-4 ${!visible && editMode ? 'opacity-50' : ''}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {editMode && (
+            <div className="cursor-grab active:cursor-grabbing touch-none p-1" {...attributes} {...listeners}>
+              <GripVertical className="w-4 h-4 text-base-content/40 hover:text-base-content/70" />
+            </div>
+          )}
+          <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">{label}</h3>
+        </div>
+        {editMode && (
+          <button type="button" className="p-1 rounded-lg hover:bg-base-200 transition-colors" onClick={onToggleGroupVisibility} title={visible ? 'Hide group' : 'Show group'}>
+            {visible ? <Eye className="w-4 h-4 text-base-content/50" /> : <EyeOff className="w-4 h-4 text-base-content/30" />}
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function StatsScreen() {
   const { username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedInUser } = useUserDataStore();
+  const isOwner = username === loggedInUser?.username;
   const [timeRange, setTimeRange] = useState<TimeRange>('total');
   const [currentType, setCurrentType] = useState<string>('all');
   const [activeCategory, setActiveCategory] = useState<CategoryId>('overview');
-  const [progressChartView, setProgressChartView] = useState<'line' | 'bar'>(
-    'line'
-  );
+  const [progressChartView, setProgressChartView] = useState<'line' | 'bar'>('line');
   const [progressMetric, setProgressMetric] = useState<'xp' | 'hours'>('xp');
   const [onlyImmersedDays, setOnlyImmersedDays] = useState(false);
   const [includedTags, setIncludedTags] = useState<string[]>([]);
@@ -138,6 +303,87 @@ function StatsScreen() {
   const startBtnRef = useRef<HTMLDivElement | null>(null);
   const endBtnRef = useRef<HTMLDivElement | null>(null);
   const { timezone } = useTimezone();
+  const queryClient = useQueryClient();
+  const [editMode, setEditMode] = useState(false);
+  const [localGroups, setLocalGroups] = useState<StatsGroupLayout[] | null>(null);
+
+  const { data: profileData } = useQuery({
+    queryKey: ['user', username],
+    queryFn: () => getUserFn(username!),
+    enabled: Boolean(username),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const rawLayout = profileData?.statsLayout;
+  const savedGroups: StatsGroupLayout[] = Array.isArray(rawLayout) && rawLayout.length > 0 && isGroupLayoutFormat(rawLayout)
+    ? mergeGroupsWithDefault(rawLayout as StatsGroupLayout[])
+    : DEFAULT_GROUPS_LAYOUT;
+  const activeGroups = localGroups ?? savedGroups;
+
+  const layoutMutation = useMutation({
+    mutationFn: (groups: StatsGroupLayout[]) => updateStatsLayoutFn(groups),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['user', username] }); },
+  });
+
+  // Separate sensors for groups vs cards to avoid confusion
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // Drag end for GROUP reordering (outer DndContext)
+  const handleGroupDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setLocalGroups((prev) => {
+      const groups = prev ?? savedGroups;
+      const oldIndex = groups.findIndex((g) => g.id === active.id);
+      const newIndex = groups.findIndex((g) => g.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return groups;
+      return arrayMove(groups, oldIndex, newIndex);
+    });
+  }, [savedGroups]);
+
+  // Drag end for CARD reordering within a group (inner DndContext)
+  const handleCardDragEnd = useCallback((groupId: StatsGroupId, event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setLocalGroups((prev) => {
+      const groups = prev ?? savedGroups;
+      return groups.map((g) => {
+        if (g.id !== groupId) return g;
+        const oldIndex = g.cards.findIndex((c) => c.id === active.id);
+        const newIndex = g.cards.findIndex((c) => c.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return g;
+        return { ...g, cards: arrayMove(g.cards, oldIndex, newIndex) };
+      });
+    });
+  }, [savedGroups]);
+
+  const handleToggleGroup = useCallback((groupId: StatsGroupId) => {
+    setLocalGroups((prev) => {
+      const groups = prev ?? savedGroups;
+      return groups.map((g) => g.id === groupId ? { ...g, visible: !g.visible } : g);
+    });
+  }, [savedGroups]);
+
+  const handleToggleCard = useCallback((groupId: StatsGroupId, cardId: string) => {
+    setLocalGroups((prev) => {
+      const groups = prev ?? savedGroups;
+      return groups.map((g) => {
+        if (g.id !== groupId) return g;
+        return { ...g, cards: g.cards.map((c) => c.id === cardId ? { ...c, visible: !c.visible } : c) };
+      });
+    });
+  }, [savedGroups]);
+
+  const handleEnterEditMode = () => { setLocalGroups(savedGroups); setEditMode(true); };
+  const handleSaveLayout = () => {
+    if (localGroups) layoutMutation.mutate(localGroups);
+    setEditMode(false);
+    setLocalGroups(null);
+  };
+  const handleCancelEdit = () => { setEditMode(false); setLocalGroups(null); };
 
   const readingTypeSet = new Set<ReadingType>(READING_TYPES);
   const episodeTypeSet = new Set<EpisodeType>(EPISODE_TYPES);
@@ -643,491 +889,205 @@ function StatsScreen() {
           </div>
         </div>
 
-        {activeCategory === 'overview' && (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
-                Totals
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                        Total XP
-                      </h3>
-                      <p className="text-3xl font-bold text-primary mt-1">
-                        {numberWithCommas(totalXp)}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-primary" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-base-content/60 mt-2">
-                    {currentType === 'all'
-                      ? `${PERIOD_LABELS[timeRange]} experience gained`
-                      : `${capitalizeType(currentType)} category experience`}
-                  </p>
-                </div>
-              </div>
-
-              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                        Time Spent
-                      </h3>
-                      <p className="text-3xl font-bold text-secondary mt-1">
-                        {numberWithCommas(
-                          parseFloat(totalTimeHours.toFixed(1))
-                        )}
-                        <span className="text-lg text-base-content/70 ml-1">
-                          hours
-                        </span>
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                      <Clock3 className="w-6 h-6 text-secondary" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-base-content/60 mt-2">
-                    {currentType === 'all'
-                      ? `${PERIOD_LABELS[timeRange]} immersion time`
-                      : `${capitalizeType(currentType)} immersion time`}
-                  </p>
-                </div>
-              </div>
-
-              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                        Log Count
-                      </h3>
-                      <p className="text-3xl font-bold text-accent mt-1">
-                        {numberWithCommas(totalLogsValue)}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                      <Layers className="w-6 h-6 text-accent" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-base-content/60">
-                      {currentType === 'all'
-                        ? 'Total log entries'
-                        : `${capitalizeType(currentType)} entries`}
-                    </p>
-                    {currentType === 'all' &&
-                      (userStats.totals.untrackedCount ?? 0) > 0 && (
-                        <span className="badge badge-warning badge-xs">
-                          {userStats.totals.untrackedCount} untracked
-                        </span>
-                      )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
-                Daily Habit & Streaks
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              <div className="card bg-base-100 shadow-sm h-full">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                        Daily Average
-                      </h3>
-                      <p className="text-3xl font-bold text-secondary mt-1">
-                        {numberWithCommas(
-                          parseFloat((dailyAverageHoursDisplay || 0).toFixed(2))
-                        )}
-                        <span className="text-lg text-base-content/70 ml-1">
-                          hours
-                        </span>
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                      <Timer className="w-6 h-6 text-secondary" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-base-content/60 mt-2">
-                    {(() => {
-                      const period = PERIOD_LABELS[timeRange];
-                      const typeLabel =
-                        currentType === 'all'
-                          ? 'immersion'
-                          : `${currentType.toLowerCase()} immersion`;
-                      return `${period} daily ${typeLabel} average`;
-                    })()}
-                  </p>
-                </div>
-              </div>
-              <div className="card bg-base-100 shadow-sm h-full">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                        Current Streak
-                      </h3>
-                      <p className="text-3xl font-bold text-warning mt-1">
-                        {numberWithCommas(userStats.streaks.currentStreak ?? 0)}
-                        <span className="text-lg text-base-content/70 ml-1">
-                          days
-                        </span>
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
-                      <Flame className="w-6 h-6 text-warning" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-base-content/60 mt-2">
-                    Consecutive days of immersion activity
-                  </p>
-                </div>
-              </div>
-
-              <div className="card bg-base-100 shadow-sm h-full">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                        Longest Streak
-                      </h3>
-                      <p className="text-3xl font-bold text-info mt-1">
-                        {numberWithCommas(userStats.streaks.longestStreak ?? 0)}
-                        <span className="text-lg text-base-content/70 ml-1">
-                          days
-                        </span>
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center">
-                      <Star className="w-6 h-6 text-info" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-base-content/60 mt-2">
-                    Longest streak you have maintained
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {currentType === 'all' && (
-              <>
+        {activeCategory === 'overview' && (() => {
+          // Build the card content map (condition-gated cards return null when not applicable)
+          const cardMap: Partial<Record<string, React.ReactNode>> = {
+            totalXp: (
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full"><div className="card-body">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
-                    Reading vs Listening
-                  </h3>
+                  <div><h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">Total XP</h3><p className="text-3xl font-bold text-primary mt-1">{numberWithCommas(totalXp)}</p></div>
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center"><Zap className="w-6 h-6 text-primary" /></div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="card bg-base-100 shadow-sm h-full">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
-                          <BookOpen className="w-4 h-4 text-info" />
-                        </div>
-                        <h3 className="font-semibold text-info">Reading</h3>
-                      </div>
-                      <p className="text-2xl font-bold">
-                        {numberWithCommas(
-                          parseFloat(userStats.totals.readingHours.toFixed(1))
-                        )}
-                        <span className="text-sm font-normal text-base-content/70 ml-1">
-                          hours
-                        </span>
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        Reading, manga, visual novels, and video games
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="card bg-base-100 shadow-sm h-full">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
-                          <Headphones className="w-4 h-4 text-success" />
-                        </div>
-                        <h3 className="font-semibold text-success">
-                          Listening
-                        </h3>
-                      </div>
-                      <p className="text-2xl font-bold">
-                        {numberWithCommas(
-                          parseFloat(userStats.totals.listeningHours.toFixed(1))
-                        )}
-                        <span className="text-sm font-normal text-base-content/70 ml-1">
-                          hours
-                        </span>
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        Anime, video, audio, movies, and TV
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="card bg-base-100 shadow-sm h-full">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
-                          <Scale className="w-4 h-4 text-warning" />
-                        </div>
-                        <h3 className="font-semibold text-warning">Balance</h3>
-                      </div>
-                      <p className="text-2xl font-bold">
-                        {(() => {
-                          const readingHours = userStats.totals.readingHours;
-                          const listeningHours =
-                            userStats.totals.listeningHours;
-                          const combined = readingHours + listeningHours;
-                          if (combined <= 0) return '0:0';
-                          const readingRatio = Math.round(
-                            (readingHours / combined) * 10
-                          );
-                          const listeningRatio = 10 - readingRatio;
-                          return `${readingRatio}:${listeningRatio}`;
-                        })()}
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        Reading vs. listening ratio
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {showEpisodeMetrics && (
-              <>
+                <p className="text-xs text-base-content/60 mt-2">{currentType === 'all' ? `${PERIOD_LABELS[timeRange]} experience gained` : `${capitalizeType(currentType)} category experience`}</p>
+              </div></div>
+            ),
+            timeSpent: (
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full"><div className="card-body">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
-                    Episode Totals
-                  </h3>
+                  <div><h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">Time Spent</h3><p className="text-3xl font-bold text-secondary mt-1">{numberWithCommas(parseFloat(totalTimeHours.toFixed(1)))} <span className="text-lg text-base-content/70">hours</span></p></div>
+                  <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center"><Clock3 className="w-6 h-6 text-secondary" /></div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="card bg-base-100 shadow-sm h-full">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
-                          <Clapperboard className="w-5 h-5 text-accent" />
-                        </div>
-                        <h3 className="font-semibold text-accent">
-                          {currentType === 'anime'
-                            ? 'Episodes'
-                            : currentType === 'movie'
-                              ? 'Movies'
-                              : 'Videos'}
-                        </h3>
-                      </div>
-                      <p className="text-2xl font-bold">
-                        {(() => {
-                          const typeStats = statsByType.find(
-                            (stat) => stat.type === currentType
-                          );
-                          return numberWithCommas(
-                            typeStats?.totalEpisodes || 0
-                          );
-                        })()}
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        Total {currentType}{' '}
-                        {currentType === 'anime'
-                          ? 'episodes'
-                          : currentType === 'movie'
-                            ? 'movies'
-                            : 'videos'}{' '}
-                        watched
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {showReadingMetrics && (
-              <>
+                <p className="text-xs text-base-content/60 mt-2">{currentType === 'all' ? `${PERIOD_LABELS[timeRange]} immersion time` : `${capitalizeType(currentType)} immersion time`}</p>
+              </div></div>
+            ),
+            logCount: (
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full"><div className="card-body">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs uppercase tracking-[0.2em] text-base-content/60 font-semibold">
-                    Reading Metrics
-                  </h3>
+                  <div><h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">Log Count</h3><p className="text-3xl font-bold text-accent mt-1">{numberWithCommas(totalLogsValue)}</p></div>
+                  <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center"><Layers className="w-6 h-6 text-accent" /></div>
                 </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-base-content/60">{currentType === 'all' ? 'Total log entries' : `${capitalizeType(currentType)} entries`}</p>
+                  {currentType === 'all' && (userStats!.totals.untrackedCount ?? 0) > 0 && <span className="badge badge-warning badge-xs">{userStats!.totals.untrackedCount} untracked</span>}
+                </div>
+              </div></div>
+            ),
+            dailyAverage: (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center justify-between">
+                  <div><h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">Daily Average</h3><p className="text-3xl font-bold text-secondary mt-1">{numberWithCommas(parseFloat((dailyAverageHoursDisplay || 0).toFixed(2)))} <span className="text-lg text-base-content/70">hours</span></p></div>
+                  <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center"><Timer className="w-6 h-6 text-secondary" /></div>
+                </div>
+                <p className="text-xs text-base-content/60 mt-2">{`${PERIOD_LABELS[timeRange]} daily ${currentType === 'all' ? 'immersion' : currentType.toLowerCase() + ' immersion'} average`}</p>
+              </div></div>
+            ),
+            currentStreak: (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center justify-between">
+                  <div><h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">Current Streak</h3><p className="text-3xl font-bold text-warning mt-1">{numberWithCommas(userStats!.streaks.currentStreak ?? 0)} <span className="text-lg text-base-content/70">days</span></p></div>
+                  <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center"><Flame className="w-6 h-6 text-warning" /></div>
+                </div>
+                <p className="text-xs text-base-content/60 mt-2">Consecutive days of immersion activity</p>
+              </div></div>
+            ),
+            longestStreak: (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center justify-between">
+                  <div><h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">Longest Streak</h3><p className="text-3xl font-bold text-info mt-1">{numberWithCommas(userStats!.streaks.longestStreak ?? 0)} <span className="text-lg text-base-content/70">days</span></p></div>
+                  <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center"><Star className="w-6 h-6 text-info" /></div>
+                </div>
+                <p className="text-xs text-base-content/60 mt-2">Longest streak you have maintained</p>
+              </div></div>
+            ),
+            readingHours: currentType === 'all' ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center"><BookOpen className="w-4 h-4 text-info" /></div><h3 className="font-semibold text-info">Reading</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(parseFloat(userStats!.totals.readingHours.toFixed(1)))} <span className="text-sm font-normal text-base-content/70">hours</span></p>
+                <p className="text-xs text-base-content/60 mt-1">Reading, manga, visual novels, and video games</p>
+              </div></div>
+            ) : null,
+            listeningHours: currentType === 'all' ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center"><Headphones className="w-4 h-4 text-success" /></div><h3 className="font-semibold text-success">Listening</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(parseFloat(userStats!.totals.listeningHours.toFixed(1)))} <span className="text-sm font-normal text-base-content/70">hours</span></p>
+                <p className="text-xs text-base-content/60 mt-1">Anime, video, audio, movies, and TV</p>
+              </div></div>
+            ) : null,
+            readingListeningBalance: currentType === 'all' ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center"><Scale className="w-4 h-4 text-warning" /></div><h3 className="font-semibold text-warning">Balance</h3></div>
+                <p className="text-2xl font-bold">{(() => { const r = userStats!.totals.readingHours; const l = userStats!.totals.listeningHours; const c = r + l; if (c <= 0) return '0:0'; const rr = Math.round((r / c) * 10); return `${rr}:${10 - rr}`; })()}</p>
+                <p className="text-xs text-base-content/60 mt-1">Reading vs. listening ratio</p>
+              </div></div>
+            ) : null,
+            episodeTotals: showEpisodeMetrics ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center"><Clapperboard className="w-5 h-5 text-accent" /></div><h3 className="font-semibold text-accent">{currentType === 'anime' ? 'Episodes' : currentType === 'movie' ? 'Movies' : 'Videos'}</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(statsByType.find((s) => s.type === currentType)?.totalEpisodes || 0)}</p>
+                <p className="text-xs text-base-content/60 mt-1">Total {currentType} {currentType === 'anime' ? 'episodes' : currentType === 'movie' ? 'movies' : 'videos'} watched</p>
+              </div></div>
+            ) : null,
+            avgReadingSpeed: showReadingMetrics ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><Gauge className="w-5 h-5 text-primary" /></div><h3 className="font-semibold text-primary">Average Reading Speed</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(Math.round(avgReadingSpeed || 0))} <span className="text-sm font-normal text-base-content/70">chars/hr</span></p>
+                <p className="text-xs text-base-content/60 mt-1">Based on reading, manga, and visual novels</p>
+              </div></div>
+            ) : null,
+            dailyAvgChars: showReadingMetrics ? (
+              <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g transform="translate(12,12)"><text x="0" y="0" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="20" fontWeight="700">字</text></g></svg></div><h3 className="font-semibold text-primary">Daily Avg Characters</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(Math.round(dailyAverageCharsDisplay || 0))} <span className="text-sm font-normal text-base-content/70">chars</span></p>
+                <p className="text-xs text-base-content/60 mt-1">{`${PERIOD_LABELS[timeRange]} daily ${currentType === 'all' ? 'reading' : currentType.toLowerCase() + ' reading'} average`}</p>
+              </div></div>
+            ) : null,
+            charsRead: showReadingMetrics ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g transform="translate(12,12)"><text x="0" y="0" textAnchor="middle" dominantBaseline="central" fill="currentColor" fontSize="20" fontWeight="700">字</text></g></svg></div><h3 className="font-semibold text-primary">Characters Read</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(totalChars)}</p>
+                <p className="text-xs text-base-content/60 mt-1">{currentType === 'all' ? 'Characters across all reading types' : `Characters in ${currentType.toLowerCase()} logs`}</p>
+              </div></div>
+            ) : null,
+            pagesRead: showPageMetric ? (
+              <div className="card bg-base-100 shadow-sm h-full"><div className="card-body">
+                <div className="flex items-center gap-3 mb-2"><div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center"><Book className="w-5 h-5 text-info" /></div><h3 className="font-semibold text-info">Pages</h3></div>
+                <p className="text-2xl font-bold">{numberWithCommas(totalPages)}</p>
+                <p className="text-xs text-base-content/60 mt-1">{currentType === 'all' ? 'Total pages recorded across reading logs' : `Total pages read in ${currentTypeDisplay.toLowerCase()} logs`}</p>
+              </div></div>
+            ) : null,
+          };
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="card bg-base-100 shadow-sm h-full">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Gauge className="w-5 h-5 text-primary" />
-                        </div>
-                        <h3 className="font-semibold text-primary">
-                          Average Reading Speed
-                        </h3>
+          return (
+            <div className="space-y-8">
+              {/* Edit Layout toolbar */}
+              {isOwner && (
+                <div className="flex items-center justify-between">
+                  {!editMode ? (
+                    <button type="button" className="btn btn-sm btn-ghost gap-2 text-base-content/60 hover:text-base-content" onClick={handleEnterEditMode}>
+                      <Pencil className="w-4 h-4" /> Edit Layout
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-wrap w-full">
+                      <span className="text-sm text-base-content/60">Drag groups or cards · click 👁 to hide/show</span>
+                      <div className="flex gap-2 ml-auto">
+                        <button type="button" className="btn btn-sm btn-ghost" onClick={handleCancelEdit}>Cancel</button>
+                        <button type="button" className="btn btn-sm btn-primary" onClick={handleSaveLayout} disabled={layoutMutation.isPending}>
+                          {layoutMutation.isPending ? <span className="loading loading-spinner loading-xs" /> : 'Save'}
+                        </button>
                       </div>
-                      <p className="text-2xl font-bold">
-                        {numberWithCommas(Math.round(avgReadingSpeed || 0))}
-                        <span className="text-sm font-normal text-base-content/70 ml-1">
-                          chars/hr
-                        </span>
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        Based on reading, manga, and visual novels
-                      </p>
                     </div>
-                  </div>
-                  <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
-                    <div className="card-body">
-                      <div className="mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <svg
-                              className="w-5 h-5 text-primary"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                              focusable="false"
-                            >
-                              <g transform="translate(12,12)">
-                                <text
-                                  x="0"
-                                  y="0"
-                                  textAnchor="middle"
-                                  dominantBaseline="central"
-                                  fill="currentColor"
-                                  fontSize="20"
-                                  fontWeight="700"
-                                >
-                                  字
-                                </text>
-                              </g>
-                            </svg>
-                          </div>
-                          <h3 className="font-semibold text-primary">
-                            Daily Average Characters
-                          </h3>
-                        </div>
-                      </div>
-                      <p className="text-2xl font-bold">
-                        {numberWithCommas(
-                          Math.round(dailyAverageCharsDisplay || 0)
-                        )}
-                        <span className="text-sm font-normal text-base-content/70 ml-1">
-                          chars
-                        </span>
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        {(() => {
-                          const period = PERIOD_LABELS[timeRange];
-                          const typeLabel =
-                            currentType === 'all'
-                              ? 'reading'
-                              : `${currentType.toLowerCase()} reading`;
-                          return `${period} daily ${typeLabel} average`;
-                        })()}
-                      </p>
-                    </div>
-                  </div>
+                  )}
+                </div>
+              )}
 
-                  <div className="card bg-base-100 shadow-sm h-full">
-                    <div className="card-body">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <svg
-                            className="w-5 h-5 text-primary"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            focusable="false"
+              {/* Outer DndContext — reorders GROUPS */}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd}>
+                <SortableContext items={activeGroups.map((g) => g.id)} strategy={rectSortingStrategy}>
+                  <div className="space-y-8">
+                    {activeGroups.map((group) => {
+                      // Check if any card in this group has renderable content
+                      const visibleCards = group.cards.filter((c) => cardMap[c.id] !== null && cardMap[c.id] !== undefined);
+                      if (!editMode && (!group.visible || visibleCards.length === 0)) return null;
+                      if (editMode && visibleCards.length === 0) return null;
+
+                      return (
+                        <SortableGroup
+                          key={group.id}
+                          id={group.id}
+                          label={GROUP_LABELS[group.id]}
+                          editMode={editMode}
+                          visible={group.visible}
+                          onToggleGroupVisibility={() => handleToggleGroup(group.id as StatsGroupId)}
+                        >
+                          {/* Inner DndContext — reorders CARDS within this group */}
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(e) => handleCardDragEnd(group.id as StatsGroupId, e)}
                           >
-                            <g transform="translate(12,12)">
-                              <text
-                                x="0"
-                                y="0"
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                fill="currentColor"
-                                fontSize="20"
-                                fontWeight="700"
-                              >
-                                字
-                              </text>
-                            </g>
-                          </svg>
-                        </div>
-                        <h3 className="font-semibold text-primary">
-                          Characters Read
-                        </h3>
-                      </div>
-                      <p className="text-2xl font-bold">
-                        {numberWithCommas(totalChars)}
-                      </p>
-                      <p className="text-xs text-base-content/60 mt-1">
-                        {currentType === 'all'
-                          ? 'Characters across all reading types'
-                          : `Characters in ${currentType.toLowerCase()} logs`}
-                      </p>
-                    </div>
+                            <SortableContext items={group.cards.map((c) => c.id)} strategy={rectSortingStrategy}>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {group.cards.map((card) => {
+                                  const content = cardMap[card.id];
+                                  if (content === null || content === undefined) return null;
+                                  return (
+                                    <SortableStatCard
+                                      key={card.id}
+                                      id={card.id}
+                                      editMode={editMode}
+                                      visible={card.visible}
+                                      onToggleVisibility={() => handleToggleCard(group.id as StatsGroupId, card.id)}
+                                    >
+                                      {content}
+                                    </SortableStatCard>
+                                  );
+                                })}
+                              </div>
+                            </SortableContext>
+                          </DndContext>
+                        </SortableGroup>
+                      );
+                    })}
                   </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          );
+        })()}
 
-                  {showPageMetric && (
-                    <div className="card bg-base-100 shadow-sm h-full">
-                      <div className="card-body">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
-                            <Book className="w-5 h-5 text-info" />
-                          </div>
-                          <h3 className="font-semibold text-info">Pages</h3>
-                        </div>
-                        <p className="text-2xl font-bold">
-                          {numberWithCommas(totalPages)}
-                        </p>
-                        <p className="text-xs text-base-content/60 mt-1">
-                          {currentType === 'all'
-                            ? 'Total pages recorded across reading logs'
-                            : `Total pages read in ${currentTypeDisplay.toLowerCase()} logs`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
 
-                  {currentType !== 'all' && (
-                    <div className="card bg-base-100 shadow-sm h-full">
-                      <div className="card-body">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <Gauge className="w-5 h-5 text-primary" />
-                          </div>
-                          <h3 className="font-semibold text-primary">
-                            Avg Reading Speed
-                          </h3>
-                        </div>
-                        <p className="text-2xl font-bold">
-                          {numberWithCommas(Math.round(avgReadingSpeed || 0))}
-                          <span className="text-sm font-normal text-base-content/70 ml-1">
-                            chars/hr
-                          </span>
-                        </p>
-                        <p className="text-xs text-base-content/60 mt-1">
-                          Based on reading, manga, and visual novels
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
+
+
 
         {activeCategory === 'charts' && (
           <div className="space-y-6">

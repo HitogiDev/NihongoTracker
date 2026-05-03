@@ -11,6 +11,7 @@ import {
   getRankingSummary,
   updateMediaCompletionStatus,
   updateHiddenRecentMedia,
+  updateStatsLayout,
 } from '../controllers/users.controller.js';
 import { exportLogsCSV } from '../controllers/export.controller.js';
 import {
@@ -64,6 +65,7 @@ router.put(
 );
 
 router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
+router.patch('/settings/stats-layout', protect, updateStatsLayout);
 
 router.post('/cleardata', protect, clearUserData);
 

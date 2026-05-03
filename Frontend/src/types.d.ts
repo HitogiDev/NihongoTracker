@@ -1,3 +1,36 @@
+export type StatsCardId =
+  | 'totalXp'
+  | 'timeSpent'
+  | 'logCount'
+  | 'dailyAverage'
+  | 'currentStreak'
+  | 'longestStreak'
+  | 'readingHours'
+  | 'listeningHours'
+  | 'readingListeningBalance'
+  | 'episodeTotals'
+  | 'avgReadingSpeed'
+  | 'dailyAvgChars'
+  | 'charsRead'
+  | 'pagesRead';
+
+export type StatsGroupId =
+  | 'totals'
+  | 'streaks'
+  | 'timeBreakdown'
+  | 'readingMetrics';
+
+export interface StatsLayoutItem {
+  id: StatsCardId;
+  visible: boolean;
+}
+
+export interface StatsGroupLayout {
+  id: StatsGroupId;
+  visible: boolean;
+  cards: StatsLayoutItem[];
+}
+
 export interface IUser {
   _id: string;
   avatar?: string;
@@ -44,7 +77,9 @@ export interface IUser {
     blurAdultContent: boolean;
     hideUnmatchedLogsAlert?: boolean;
     timezone?: string;
+    statsLayout?: StatsGroupLayout[];
   };
+  statsLayout?: StatsGroupLayout[];
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 

@@ -18,6 +18,7 @@ const SettingsSchema = new Schema<IUserSettings>(
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },
     hiddenRecentMedia: { type: [String], default: [] },
+    statsLayout: { type: [Schema.Types.Mixed], default: [] },
   },
   { _id: false }
 );

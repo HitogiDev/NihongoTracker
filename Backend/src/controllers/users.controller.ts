@@ -4,7 +4,15 @@ import Tag from '../models/tag.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { Request, Response, NextFunction } from 'express';
-import { IMediaDocument, IUpdateRequest, IUser, userRoles } from '../types.js';
+import {
+  IMediaDocument,
+  IUpdateRequest,
+  IUser,
+  StatsCardId,
+  StatsGroupId,
+  StatsGroupLayout,
+  userRoles,
+} from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import {
@@ -463,6 +471,92 @@ export async function updateHiddenRecentMedia(
   }
 }
 
+const VALID_STATS_CARD_IDS = new Set<StatsCardId>([
+  'totalXp',
+  'timeSpent',
+  'logCount',
+  'dailyAverage',
+  'currentStreak',
+  'longestStreak',
+  'readingHours',
+  'listeningHours',
+  'readingListeningBalance',
+  'episodeTotals',
+  'avgReadingSpeed',
+  'dailyAvgChars',
+  'charsRead',
+  'pagesRead',
+]);
+
+const VALID_GROUP_IDS = new Set<StatsGroupId>([
+  'totals',
+  'streaks',
+  'timeBreakdown',
+  'readingMetrics',
+]);
+
+export async function updateStatsLayout(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { layout } = req.body as { layout: StatsGroupLayout[] };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw new customError('User not found', 404);
+
+    if (!Array.isArray(layout))
+      throw new customError('Layout must be an array of groups', 400);
+
+    for (const group of layout) {
+      if (!group || typeof group !== 'object')
+        throw new customError('Each group must be an object', 400);
+      if (!VALID_GROUP_IDS.has(group.id as StatsGroupId))
+        throw new customError(`Invalid group id: ${group.id}`, 400);
+      if (typeof group.visible !== 'boolean')
+        throw new customError(
+          'Each group must have a boolean visible field',
+          400
+        );
+      if (!Array.isArray(group.cards))
+        throw new customError('Each group must have a cards array', 400);
+      for (const card of group.cards) {
+        if (!card || typeof card !== 'object')
+          throw new customError('Each card must be an object', 400);
+        if (!VALID_STATS_CARD_IDS.has(card.id as StatsCardId))
+          throw new customError(`Invalid card id: ${card.id}`, 400);
+        if (typeof card.visible !== 'boolean')
+          throw new customError(
+            'Each card must have a boolean visible field',
+            400
+          );
+      }
+    }
+
+    if (!user.settings) {
+      user.settings = {
+        blurAdultContent: true,
+        hideUnmatchedLogsAlert: false,
+        timezone: 'UTC',
+        hiddenRecentMedia: [],
+        statsLayout: [],
+      };
+    }
+
+    user.settings.statsLayout = layout;
+    user.markModified('settings');
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stats layout updated successfully',
+      statsLayout: user.settings.statsLayout,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   const userFound = await User.findOne({
     username: req.params.username,
@@ -494,6 +588,8 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     about: userFound.about,
     createdAt: userFound.createdAt,
     updatedAt: userFound.updatedAt,
+    // Expose layout publicly so all visitors see the owner's preferred order
+    statsLayout: userFound.settings?.statsLayout ?? [],
   };
 
   if (!canViewPrivateProfile) {

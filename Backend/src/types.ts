@@ -20,11 +20,45 @@ export enum userRoles {
   mod = 'mod',
 }
 
+export type StatsCardId =
+  | 'totalXp'
+  | 'timeSpent'
+  | 'logCount'
+  | 'dailyAverage'
+  | 'currentStreak'
+  | 'longestStreak'
+  | 'readingHours'
+  | 'listeningHours'
+  | 'readingListeningBalance'
+  | 'episodeTotals'
+  | 'avgReadingSpeed'
+  | 'dailyAvgChars'
+  | 'charsRead'
+  | 'pagesRead';
+
+export type StatsGroupId =
+  | 'totals'
+  | 'streaks'
+  | 'timeBreakdown'
+  | 'readingMetrics';
+
+interface StatsLayoutItem {
+  id: StatsCardId;
+  visible: boolean;
+}
+
+export interface StatsGroupLayout {
+  id: StatsGroupId;
+  visible: boolean;
+  cards: StatsLayoutItem[];
+}
+
 export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
   timezone?: string;
   hiddenRecentMedia?: string[];
+  statsLayout?: StatsGroupLayout[];
 }
 
 export interface IPatreonData {
