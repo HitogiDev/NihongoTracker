@@ -12,13 +12,21 @@ export type StatsCardId =
   | 'avgReadingSpeed'
   | 'dailyAvgChars'
   | 'charsRead'
-  | 'pagesRead';
+  | 'pagesRead'
+  | 'logCountChart'
+  | 'timeDistributionChart'
+  | 'xpDistributionChart'
+  | 'readingSpeedChart'
+  | 'progressTimelineChart';
 
 export type StatsGroupId =
   | 'totals'
   | 'streaks'
   | 'timeBreakdown'
-  | 'readingMetrics';
+  | 'readingMetrics'
+  | 'chartDistribution'
+  | 'chartProgress'
+  | 'chartReading';
 
 export interface StatsLayoutItem {
   id: StatsCardId;
@@ -1008,15 +1016,15 @@ export interface ITextSession {
 export interface IGanttMediaItem {
   mediaId: string;
   type: string;
-  title: string;            // contentTitleNative
-  titleEnglish?: string;   // contentTitleEnglish (optional)
-  contentImage?: string;   // cover thumbnail URL
-  firstLogDate: string;    // ISO 8601 datetime string
-  lastLogDate: string;     // ISO 8601 datetime string
+  title: string; // contentTitleNative
+  titleEnglish?: string; // contentTitleEnglish (optional)
+  contentImage?: string; // cover thumbnail URL
+  firstLogDate: string; // ISO 8601 datetime string
+  lastLogDate: string; // ISO 8601 datetime string
   isCompleted: boolean;
-  completedAt?: string;    // ISO 8601 datetime string, set when completed
+  completedAt?: string; // ISO 8601 datetime string, set when completed
   logCount: number;
-  totalTime: number;       // total minutes across all logs
+  totalTime: number; // total minutes across all logs
   totalXp: number;
-  activeDates: string[];   // sorted YYYY-MM-DD strings (one per active day)
+  activeDates: string[]; // sorted YYYY-MM-DD strings (one per active day)
 }

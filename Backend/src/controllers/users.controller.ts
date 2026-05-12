@@ -486,6 +486,11 @@ const VALID_STATS_CARD_IDS = new Set<StatsCardId>([
   'dailyAvgChars',
   'charsRead',
   'pagesRead',
+  'logCountChart',
+  'timeDistributionChart',
+  'xpDistributionChart',
+  'readingSpeedChart',
+  'progressTimelineChart',
 ]);
 
 const VALID_GROUP_IDS = new Set<StatsGroupId>([
@@ -493,6 +498,9 @@ const VALID_GROUP_IDS = new Set<StatsGroupId>([
   'streaks',
   'timeBreakdown',
   'readingMetrics',
+  'chartDistribution',
+  'chartProgress',
+  'chartReading',
 ]);
 
 export async function updateStatsLayout(
@@ -2333,7 +2341,7 @@ export async function getGanttData(
     const typeFilter = req.query.type as string | undefined;
     const timezone = (req.query.timezone as string) || 'UTC';
     const startParam = req.query.start as string | undefined; // YYYY-MM-DD
-    const endParam = req.query.end as string | undefined;     // YYYY-MM-DD
+    const endParam = req.query.end as string | undefined; // YYYY-MM-DD
 
     // Build base match — always exclude private logs and logs without a mediaId
     const baseMatch: Record<string, unknown> = {
@@ -2408,7 +2416,10 @@ export async function getGanttData(
 
     // Fetch completion statuses for this user
     const mediaStatuses = await UserMediaStatus.find({ user: user._id }).lean();
-    const statusMap = new Map<string, { completed: boolean; completedAt?: Date | null }>();
+    const statusMap = new Map<
+      string,
+      { completed: boolean; completedAt?: Date | null }
+    >();
     mediaStatuses.forEach((s) => {
       statusMap.set(`${s.type}:${s.mediaId}`, {
         completed: s.completed,
@@ -2425,7 +2436,8 @@ export async function getGanttData(
           month: '2-digit',
           day: '2-digit',
         }).formatToParts(date);
-        const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
+        const get = (t: string) =>
+          parts.find((p) => p.type === t)?.value ?? '00';
         return `${get('year')}-${get('month')}-${get('day')}`;
       } catch {
         return date.toISOString().slice(0, 10);
@@ -2447,13 +2459,18 @@ export async function getGanttData(
       return {
         mediaId: group._id.mediaId as string,
         type: group._id.type as string,
-        title: (media?.title?.contentTitleNative as string) ?? group._id.mediaId,
-        titleEnglish: (media?.title?.contentTitleEnglish as string | undefined) ?? undefined,
+        title:
+          (media?.title?.contentTitleNative as string) ?? group._id.mediaId,
+        titleEnglish:
+          (media?.title?.contentTitleEnglish as string | undefined) ??
+          undefined,
         contentImage: (media?.contentImage as string | undefined) ?? undefined,
         firstLogDate: (group.firstLogDate as Date).toISOString(),
         lastLogDate: (group.lastLogDate as Date).toISOString(),
         isCompleted: status?.completed ?? false,
-        completedAt: status?.completedAt ? (status.completedAt as Date).toISOString() : undefined,
+        completedAt: status?.completedAt
+          ? (status.completedAt as Date).toISOString()
+          : undefined,
         logCount: group.logCount as number,
         totalTime: group.totalTime as number,
         totalXp: group.totalXp as number,

@@ -34,13 +34,21 @@ export type StatsCardId =
   | 'avgReadingSpeed'
   | 'dailyAvgChars'
   | 'charsRead'
-  | 'pagesRead';
+  | 'pagesRead'
+  | 'logCountChart'
+  | 'timeDistributionChart'
+  | 'xpDistributionChart'
+  | 'readingSpeedChart'
+  | 'progressTimelineChart';
 
 export type StatsGroupId =
   | 'totals'
   | 'streaks'
   | 'timeBreakdown'
-  | 'readingMetrics';
+  | 'readingMetrics'
+  | 'chartDistribution'
+  | 'chartProgress'
+  | 'chartReading';
 
 interface StatsLayoutItem {
   id: StatsCardId;

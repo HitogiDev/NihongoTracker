@@ -214,6 +214,25 @@ const DEFAULT_GROUPS_LAYOUT: StatsGroupLayout[] = [
       { id: 'pagesRead', visible: true },
     ],
   },
+  {
+    id: 'chartDistribution',
+    visible: true,
+    cards: [
+      { id: 'logCountChart', visible: true },
+      { id: 'timeDistributionChart', visible: true },
+      { id: 'xpDistributionChart', visible: true },
+    ],
+  },
+  {
+    id: 'chartReading',
+    visible: true,
+    cards: [{ id: 'readingSpeedChart', visible: true }],
+  },
+  {
+    id: 'chartProgress',
+    visible: true,
+    cards: [{ id: 'progressTimelineChart', visible: true }],
+  },
 ];
 
 const GROUP_LABELS: Record<StatsGroupId, string> = {
@@ -221,6 +240,19 @@ const GROUP_LABELS: Record<StatsGroupId, string> = {
   streaks: 'Streaks',
   timeBreakdown: 'Time Breakdown',
   readingMetrics: 'Reading Metrics',
+  chartDistribution: 'Distributions',
+  chartProgress: 'Progress',
+  chartReading: 'Reading',
+};
+
+const GROUP_CATEGORIES: Record<StatsGroupId, CategoryId> = {
+  totals: 'overview',
+  streaks: 'overview',
+  timeBreakdown: 'overview',
+  readingMetrics: 'overview',
+  chartDistribution: 'charts',
+  chartProgress: 'charts',
+  chartReading: 'charts',
 };
 
 function isGroupLayoutFormat(data: unknown[]): boolean {
@@ -263,6 +295,7 @@ type SortableStatCardProps = {
   editMode: boolean;
   visible: boolean;
   onToggleVisibility: () => void;
+  wrapperClassName?: string;
   children: React.ReactNode;
 };
 function SortableStatCard({
@@ -270,6 +303,7 @@ function SortableStatCard({
   editMode,
   visible,
   onToggleVisibility,
+  wrapperClassName,
   children,
 }: SortableStatCardProps) {
   const {
@@ -286,13 +320,23 @@ function SortableStatCard({
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 20 : undefined,
   };
-  if (!editMode) return visible ? <>{children}</> : null;
+  if (!editMode) {
+    if (!visible) return null;
+    if (wrapperClassName) {
+      return <div className={wrapperClassName}>{children}</div>;
+    }
+    return <>{children}</>;
+  }
+
+  const wrapperClasses = [
+    'relative',
+    wrapperClassName,
+    !visible ? 'opacity-40 grayscale' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`relative ${!visible ? 'opacity-40 grayscale' : ''}`}
-    >
+    <div ref={setNodeRef} style={style} className={wrapperClasses}>
       <div
         className="absolute left-0 top-0 bottom-0 flex items-center pl-1 cursor-grab active:cursor-grabbing z-10 touch-none"
         {...attributes}
@@ -528,6 +572,142 @@ function StatsScreen() {
   const handleCancelEdit = () => {
     setEditMode(false);
     setLocalGroups(null);
+  };
+
+  const cardWrapperClasses: Partial<Record<string, string>> = {
+    progressTimelineChart: 'md:col-span-2 lg:col-span-3',
+    readingSpeedChart: 'md:col-span-2 lg:col-span-3',
+  };
+
+  const renderLayoutSection = (
+    cardMap: Partial<Record<string, React.ReactNode>>,
+    category: CategoryId
+  ) => {
+    const categoryGroups = activeGroups.filter(
+      (group) => GROUP_CATEGORIES[group.id] === category
+    );
+
+    return (
+      <div className="space-y-8">
+        {/* Edit Layout toolbar */}
+        {isOwner && (
+          <div className="flex items-center justify-between">
+            {!editMode ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost gap-2 text-base-content/60 hover:text-base-content"
+                onClick={handleEnterEditMode}
+              >
+                <Pencil className="w-4 h-4" /> Edit Layout
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap w-full">
+                <span className="text-sm text-base-content/60">
+                  Drag groups or cards · click 👁 to hide/show
+                </span>
+                <div className="flex gap-2 ml-auto">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={handleCancelEdit}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={handleSaveLayout}
+                    disabled={layoutMutation.isPending}
+                  >
+                    {layoutMutation.isPending ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      'Save'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Outer DndContext — reorders GROUPS */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleGroupDragEnd}
+        >
+          <SortableContext
+            items={categoryGroups.map((g) => g.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="space-y-8">
+              {categoryGroups.map((group) => {
+                // Check if any card in this group has renderable content
+                const visibleCards = group.cards.filter(
+                  (c) => cardMap[c.id] !== null && cardMap[c.id] !== undefined
+                );
+                if (!editMode && (!group.visible || visibleCards.length === 0))
+                  return null;
+                if (editMode && visibleCards.length === 0) return null;
+
+                return (
+                  <SortableGroup
+                    key={group.id}
+                    id={group.id}
+                    label={GROUP_LABELS[group.id]}
+                    editMode={editMode}
+                    visible={group.visible}
+                    onToggleGroupVisibility={() =>
+                      handleToggleGroup(group.id as StatsGroupId)
+                    }
+                  >
+                    {/* Inner DndContext — reorders CARDS within this group */}
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(e) =>
+                        handleCardDragEnd(group.id as StatsGroupId, e)
+                      }
+                    >
+                      <SortableContext
+                        items={group.cards.map((c) => c.id)}
+                        strategy={rectSortingStrategy}
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {group.cards.map((card) => {
+                            const content = cardMap[card.id];
+                            if (content === null || content === undefined)
+                              return null;
+                            return (
+                              <SortableStatCard
+                                key={card.id}
+                                id={card.id}
+                                editMode={editMode}
+                                visible={card.visible}
+                                wrapperClassName={cardWrapperClasses[card.id]}
+                                onToggleVisibility={() =>
+                                  handleToggleCard(
+                                    group.id as StatsGroupId,
+                                    card.id
+                                  )
+                                }
+                              >
+                                {content}
+                              </SortableStatCard>
+                            );
+                          })}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </SortableGroup>
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
+    );
   };
 
   const readingTypeSet = new Set<ReadingType>(READING_TYPES);
@@ -1673,141 +1853,14 @@ function StatsScreen() {
               ) : null,
             };
 
-            return (
-              <div className="space-y-8">
-                {/* Edit Layout toolbar */}
-                {isOwner && (
-                  <div className="flex items-center justify-between">
-                    {!editMode ? (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-ghost gap-2 text-base-content/60 hover:text-base-content"
-                        onClick={handleEnterEditMode}
-                      >
-                        <Pencil className="w-4 h-4" /> Edit Layout
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-2 flex-wrap w-full">
-                        <span className="text-sm text-base-content/60">
-                          Drag groups or cards · click 👁 to hide/show
-                        </span>
-                        <div className="flex gap-2 ml-auto">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-ghost"
-                            onClick={handleCancelEdit}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-primary"
-                            onClick={handleSaveLayout}
-                            disabled={layoutMutation.isPending}
-                          >
-                            {layoutMutation.isPending ? (
-                              <span className="loading loading-spinner loading-xs" />
-                            ) : (
-                              'Save'
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Outer DndContext — reorders GROUPS */}
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleGroupDragEnd}
-                >
-                  <SortableContext
-                    items={activeGroups.map((g) => g.id)}
-                    strategy={rectSortingStrategy}
-                  >
-                    <div className="space-y-8">
-                      {activeGroups.map((group) => {
-                        // Check if any card in this group has renderable content
-                        const visibleCards = group.cards.filter(
-                          (c) =>
-                            cardMap[c.id] !== null &&
-                            cardMap[c.id] !== undefined
-                        );
-                        if (
-                          !editMode &&
-                          (!group.visible || visibleCards.length === 0)
-                        )
-                          return null;
-                        if (editMode && visibleCards.length === 0) return null;
-
-                        return (
-                          <SortableGroup
-                            key={group.id}
-                            id={group.id}
-                            label={GROUP_LABELS[group.id]}
-                            editMode={editMode}
-                            visible={group.visible}
-                            onToggleGroupVisibility={() =>
-                              handleToggleGroup(group.id as StatsGroupId)
-                            }
-                          >
-                            {/* Inner DndContext — reorders CARDS within this group */}
-                            <DndContext
-                              sensors={sensors}
-                              collisionDetection={closestCenter}
-                              onDragEnd={(e) =>
-                                handleCardDragEnd(group.id as StatsGroupId, e)
-                              }
-                            >
-                              <SortableContext
-                                items={group.cards.map((c) => c.id)}
-                                strategy={rectSortingStrategy}
-                              >
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                  {group.cards.map((card) => {
-                                    const content = cardMap[card.id];
-                                    if (
-                                      content === null ||
-                                      content === undefined
-                                    )
-                                      return null;
-                                    return (
-                                      <SortableStatCard
-                                        key={card.id}
-                                        id={card.id}
-                                        editMode={editMode}
-                                        visible={card.visible}
-                                        onToggleVisibility={() =>
-                                          handleToggleCard(
-                                            group.id as StatsGroupId,
-                                            card.id
-                                          )
-                                        }
-                                      >
-                                        {content}
-                                      </SortableStatCard>
-                                    );
-                                  })}
-                                </div>
-                              </SortableContext>
-                            </DndContext>
-                          </SortableGroup>
-                        );
-                      })}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            );
+            return renderLayoutSection(cardMap, 'overview');
           })()}
 
-        {activeCategory === 'charts' && (
-          <div className="space-y-6">
-            {showDistributionCharts && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="card bg-base-100 shadow-sm">
+        {activeCategory === 'charts' &&
+          (() => {
+            const chartCardMap: Partial<Record<string, React.ReactNode>> = {
+              logCountChart: showDistributionCharts ? (
+                <div className="card bg-base-100 shadow-sm h-full">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <PieChartIcon className="w-5 h-5 text-primary" />
@@ -1818,8 +1871,9 @@ function StatsScreen() {
                     </div>
                   </div>
                 </div>
-
-                <div className="card bg-base-100 shadow-sm">
+              ) : null,
+              timeDistributionChart: showDistributionCharts ? (
+                <div className="card bg-base-100 shadow-sm h-full">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Clock3 className="w-5 h-5 text-primary" />
@@ -1830,8 +1884,9 @@ function StatsScreen() {
                     </div>
                   </div>
                 </div>
-
-                <div className="card bg-base-100 shadow-sm">
+              ) : null,
+              xpDistributionChart: showDistributionCharts ? (
+                <div className="card bg-base-100 shadow-sm h-full">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Zap className="w-5 h-5 text-primary" />
@@ -1842,120 +1897,128 @@ function StatsScreen() {
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {showReadingMetrics &&
-              userStats.readingSpeedData &&
-              userStats.readingSpeedData.length > 0 && (
-                <div className="card bg-base-100 shadow-sm">
+              ) : null,
+              readingSpeedChart:
+                showReadingMetrics &&
+                userStats.readingSpeedData &&
+                userStats.readingSpeedData.length > 0 ? (
+                  <div className="card bg-base-100 shadow-sm h-full">
+                    <div className="card-body">
+                      <h3 className="card-title text-xl mb-4">
+                        <TrendingUp className="w-6 h-6 text-primary" />
+                        Reading Speed Over Time
+                      </h3>
+                      <div className="w-full" style={{ height: '400px' }}>
+                        <SpeedChart
+                          timeframe={
+                            timeRange === 'custom' ? 'total' : timeRange
+                          }
+                          readingSpeedData={userStats.readingSpeedData}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null,
+              progressTimelineChart: (
+                <div className="card bg-base-100 shadow-sm h-full">
                   <div className="card-body">
-                    <h3 className="card-title text-xl mb-4">
-                      <TrendingUp className="w-6 h-6 text-primary" />
-                      Reading Speed Over Time
-                    </h3>
-                    <div className="w-full" style={{ height: '400px' }}>
-                      <SpeedChart
-                        timeframe={timeRange === 'custom' ? 'total' : timeRange}
-                        readingSpeedData={userStats.readingSpeedData}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <h3 className="card-title text-xl flex items-center gap-2">
+                        <Activity className="w-6 h-6 text-primary" />
+                        Progress Timeline
+                      </h3>
 
-            <div className="card bg-base-100 shadow-sm">
-              <div className="card-body">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                  <h3 className="card-title text-xl flex items-center gap-2">
-                    <Activity className="w-6 h-6 text-primary" />
-                    Progress Timeline
-                  </h3>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-base-content/70">
+                            Metric:
+                          </span>
+                          <div className="join">
+                            <button
+                              className={`join-item btn btn-sm ${
+                                progressMetric === 'xp'
+                                  ? 'btn-primary'
+                                  : 'btn-outline'
+                              }`}
+                              onClick={() => setProgressMetric('xp')}
+                            >
+                              <Zap className="w-4 h-4" />
+                              XP
+                            </button>
+                            <button
+                              className={`join-item btn btn-sm ${
+                                progressMetric === 'hours'
+                                  ? 'btn-primary'
+                                  : 'btn-outline'
+                              }`}
+                              onClick={() => setProgressMetric('hours')}
+                            >
+                              <Clock3 className="w-4 h-4" />
+                              Hours
+                            </button>
+                          </div>
+                        </div>
 
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-base-content/70">
-                        Metric:
-                      </span>
-                      <div className="join">
-                        <button
-                          className={`join-item btn btn-sm ${
-                            progressMetric === 'xp'
-                              ? 'btn-primary'
-                              : 'btn-outline'
-                          }`}
-                          onClick={() => setProgressMetric('xp')}
-                        >
-                          <Zap className="w-4 h-4" />
-                          XP
-                        </button>
-                        <button
-                          className={`join-item btn btn-sm ${
-                            progressMetric === 'hours'
-                              ? 'btn-primary'
-                              : 'btn-outline'
-                          }`}
-                          onClick={() => setProgressMetric('hours')}
-                        >
-                          <Clock3 className="w-4 h-4" />
-                          Hours
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-base-content/70">
+                            View:
+                          </span>
+                          <div className="join">
+                            <button
+                              className={`join-item btn btn-sm ${
+                                progressChartView === 'line'
+                                  ? 'btn-primary'
+                                  : 'btn-outline'
+                              }`}
+                              onClick={() => setProgressChartView('line')}
+                            >
+                              <LineChart className="w-4 h-4" />
+                              Line
+                            </button>
+                            <button
+                              className={`join-item btn btn-sm ${
+                                progressChartView === 'bar'
+                                  ? 'btn-primary'
+                                  : 'btn-outline'
+                              }`}
+                              onClick={() => setProgressChartView('bar')}
+                            >
+                              <BarChart3 className="w-4 h-4" />
+                              Bar
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-base-content/70">
-                        View:
-                      </span>
-                      <div className="join">
-                        <button
-                          className={`join-item btn btn-sm ${
-                            progressChartView === 'line'
-                              ? 'btn-primary'
-                              : 'btn-outline'
-                          }`}
-                          onClick={() => setProgressChartView('line')}
-                        >
-                          <LineChart className="w-4 h-4" />
-                          Line
-                        </button>
-                        <button
-                          className={`join-item btn btn-sm ${
-                            progressChartView === 'bar'
-                              ? 'btn-primary'
-                              : 'btn-outline'
-                          }`}
-                          onClick={() => setProgressChartView('bar')}
-                        >
-                          <BarChart3 className="w-4 h-4" />
-                          Bar
-                        </button>
-                      </div>
+                    <div className="w-full" style={{ height: '450px' }}>
+                      {progressChartView === 'line' ? (
+                        <ProgressChart
+                          timeframe={
+                            timeRange === 'custom' ? 'total' : timeRange
+                          }
+                          statsData={selectedStats}
+                          selectedType={progressSelectedType}
+                          metric={progressMetric}
+                        />
+                      ) : (
+                        <StackedBarChart
+                          statsData={selectedStats}
+                          selectedType={progressSelectedType}
+                          metric={progressMetric}
+                          timeframe={
+                            timeRange === 'custom' ? 'total' : timeRange
+                          }
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
+              ),
+            };
 
-                <div className="w-full" style={{ height: '450px' }}>
-                  {progressChartView === 'line' ? (
-                    <ProgressChart
-                      timeframe={timeRange === 'custom' ? 'total' : timeRange}
-                      statsData={selectedStats}
-                      selectedType={progressSelectedType}
-                      metric={progressMetric}
-                    />
-                  ) : (
-                    <StackedBarChart
-                      statsData={selectedStats}
-                      selectedType={progressSelectedType}
-                      metric={progressMetric}
-                      timeframe={timeRange === 'custom' ? 'total' : timeRange}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+            return renderLayoutSection(chartCardMap, 'charts');
+          })()}
         {activeCategory === 'timeline' && (
           <div className="space-y-4">
             <div className="card bg-base-100 shadow-sm">
@@ -2000,7 +2063,8 @@ function computeGanttDateRange(
 
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
-  const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
   if (timeFilter === 'week') {
     const day = now.getDay();
