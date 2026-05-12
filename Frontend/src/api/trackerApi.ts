@@ -27,6 +27,7 @@ import {
   ITextLine,
   ITextSessionHistoryEntry,
   StatsGroupLayout,
+  IGanttMediaItem,
 } from '../types';
 
 const api = axiosInstance;
@@ -447,7 +448,7 @@ export async function getUserStatsFn(
   username: string | undefined,
   params?: {
     timeRange?: string;
-    type?: string;
+    type?: string | string[];
     start?: string;
     end?: string;
     timezone?: string;
@@ -458,8 +459,24 @@ export async function getUserStatsFn(
   if (!username) {
     throw new Error('Username is required to fetch user stats');
   }
+  const queryParams = new URLSearchParams();
+  if (params?.timeRange) queryParams.append('timeRange', params.timeRange);
+  if (params?.type) {
+    if (Array.isArray(params.type)) {
+      params.type.forEach((entry) => queryParams.append('type', entry));
+    } else {
+      queryParams.append('type', params.type);
+    }
+  }
+  if (params?.start) queryParams.append('start', params.start);
+  if (params?.end) queryParams.append('end', params.end);
+  if (params?.timezone) queryParams.append('timezone', params.timezone);
+  if (params?.includedTags)
+    queryParams.append('includedTags', params.includedTags);
+  if (params?.excludedTags)
+    queryParams.append('excludedTags', params.excludedTags);
   const { data } = await api.get<IUserStats>(`users/${username}/stats`, {
-    params,
+    params: queryParams,
   });
   return data;
 }
@@ -1213,9 +1230,19 @@ export async function deleteApiKeyFn(id: string): Promise<{ message: string }> {
 export async function updateStatsLayoutFn(
   layout: StatsGroupLayout[]
 ): Promise<{ message: string; statsLayout: StatsGroupLayout[] }> {
-  const { data } = await api.patch<{ message: string; statsLayout: StatsGroupLayout[] }>(
-    'users/settings/stats-layout',
-    { layout }
-  );
+  const { data } = await api.patch<{
+    message: string;
+    statsLayout: StatsGroupLayout[];
+  }>('users/settings/stats-layout', { layout });
+  return data;
+}
+
+export async function getGanttDataFn(
+  username: string,
+  params?: { type?: string; timezone?: string; start?: string; end?: string }
+): Promise<IGanttMediaItem[]> {
+  const { data } = await api.get<IGanttMediaItem[]>(`users/${username}/gantt`, {
+    params,
+  });
   return data;
 }

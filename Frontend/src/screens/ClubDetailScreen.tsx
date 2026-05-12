@@ -884,6 +884,10 @@ function ClubDetailScreen() {
                     club={club}
                     canManageVoting={canManageClub}
                     showManagement={showVotingManagement}
+                    sharedVotingId={
+                      new URLSearchParams(location.search).get('voting') ||
+                      undefined
+                    }
                   />
                 </div>
               </div>

@@ -7,7 +7,7 @@ const swaggerDocument = {
   info: {
     title: 'NihongoTracker API',
     description:
-      'API documentation for NihongoTracker — a Japanese immersion tracking platform. Authenticate using either JWT cookies (browser sessions) or API keys via the `X-API-Key` header.',
+      'API documentation for NihongoTracker — a Japanese immersion tracker. Authenticate using either JWT cookies (browser sessions) or API keys via the `X-API-Key` header.',
     version: '0.1.0',
     contact: {
       name: 'NihongoTracker',
@@ -137,22 +137,38 @@ const swaggerDocument = {
             ],
           },
           mediaId: { type: 'string' },
+          manabeId: { type: 'string' },
           mediaTitle: { type: 'string' },
           xp: { type: 'number' },
           private: { type: 'boolean' },
           isAdult: { type: 'boolean' },
           description: { type: 'string' },
           episodes: { type: 'number' },
+          volume: { type: 'number' },
           pages: { type: 'number' },
           chars: { type: 'number' },
           time: { type: 'number' },
+          unknownDate: { type: 'boolean' },
           date: { type: 'string', format: 'date-time' },
           tags: { type: 'array', items: { type: 'string' } },
+          editedFields: {
+            type: 'object',
+            properties: {
+              episodes: { type: 'number' },
+              volume: { type: 'number' },
+              pages: { type: 'number' },
+              chars: { type: 'number' },
+              time: { type: 'number' },
+              xp: { type: 'number' },
+            },
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
         },
       },
       CreateLog: {
         type: 'object',
-        required: ['type', 'date'],
+        required: ['type'],
         properties: {
           type: {
             type: 'string',
@@ -169,6 +185,7 @@ const swaggerDocument = {
               'tv show',
             ],
           },
+          mediaId: { type: 'string' },
           mediaData: {
             type: 'object',
             properties: {
@@ -177,16 +194,47 @@ const swaggerDocument = {
               contentTitleEnglish: { type: 'string' },
               contentTitleRomaji: { type: 'string' },
               contentImage: { type: 'string' },
+              coverImage: { type: 'string' },
+              channelId: { type: 'string' },
+              channelTitle: { type: 'string' },
+              channelImage: { type: 'string' },
+              channelDescription: { type: 'string' },
               type: { type: 'string' },
+              episodes: { type: 'number' },
+              episodeDuration: { type: 'number' },
+              chapters: { type: 'number' },
+              volumes: { type: 'number' },
+              synonyms: { type: 'array', items: { type: 'string' } },
+              platforms: { type: 'array', items: { type: 'string' } },
+              description: { type: 'array', items: { type: 'object' } },
+              isAdult: { type: 'boolean' },
             },
           },
           description: { type: 'string' },
           episodes: { type: 'number' },
+          volume: { type: 'number' },
           pages: { type: 'number' },
           chars: { type: 'number' },
           time: { type: 'number' },
           date: { type: 'string', format: 'date-time' },
+          unknownDate: { type: 'boolean' },
           private: { type: 'boolean' },
+          tags: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      UpdateLog: {
+        type: 'object',
+        properties: {
+          description: { type: 'string' },
+          mediaId: { type: 'string' },
+          type: { type: 'string' },
+          episodes: { type: 'number' },
+          volume: { type: 'number' },
+          pages: { type: 'number' },
+          chars: { type: 'number' },
+          time: { type: 'number' },
+          xp: { type: 'number' },
+          date: { type: 'string', format: 'date-time' },
           tags: { type: 'array', items: { type: 'string' } },
         },
       },
@@ -933,9 +981,30 @@ const swaggerDocument = {
             'application/json': {
               schema: {
                 type: 'object',
+                required: ['logs'],
                 properties: {
-                  forced: { type: 'boolean' },
-                  logs: { type: 'array', items: { type: 'object' } },
+                  forced: {
+                    type: 'boolean',
+                    description: 'Force import even if duplicates exist',
+                  },
+                  logs: {
+                    type: 'array',
+                    items: {
+                      allOf: [
+                        { $ref: '#/components/schemas/CreateLog' },
+                        {
+                          type: 'object',
+                          properties: {
+                            manabeId: {
+                              type: 'string',
+                              description: 'External ID for deduplication',
+                            },
+                          },
+                        },
+                      ],
+                    },
+                    description: 'Array of logs to import',
+                  },
                 },
               },
             },
@@ -1135,18 +1204,7 @@ const swaggerDocument = {
         requestBody: {
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  description: { type: 'string' },
-                  episodes: { type: 'number' },
-                  pages: { type: 'number' },
-                  chars: { type: 'number' },
-                  time: { type: 'number' },
-                  date: { type: 'string', format: 'date-time' },
-                  tags: { type: 'array', items: { type: 'string' } },
-                },
-              },
+              schema: { $ref: '#/components/schemas/UpdateLog' },
             },
           },
         },

@@ -14,6 +14,7 @@ import {
   Plus,
   Hourglass,
   Trophy,
+  Share2,
 } from 'lucide-react';
 import {
   getMediaVotingsFn,
@@ -41,12 +42,14 @@ interface VotingSystemProps {
   club: IClubResponse;
   canManageVoting: boolean;
   showManagement: boolean;
+  sharedVotingId?: string;
 }
 
 export default function VotingSystem({
   club,
   canManageVoting,
   showManagement,
+  sharedVotingId,
 }: VotingSystemProps) {
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
     null
@@ -238,7 +241,7 @@ export default function VotingSystem({
     });
   })();
 
-  // Reset carousel index if it's out of bounds
+  // Reset carousel index if it's out of bounds and navigate to shared voting if provided
   useEffect(() => {
     if (openVotings.length === 0) {
       if (currentVotingIndex !== 0) {
@@ -250,7 +253,17 @@ export default function VotingSystem({
     if (currentVotingIndex >= openVotings.length) {
       setCurrentVotingIndex(0);
     }
-  }, [currentVotingIndex, openVotings.length]);
+
+    // Navigate to shared voting if voting ID is provided in URL
+    if (sharedVotingId) {
+      const sharedVotingIndex = openVotings.findIndex(
+        (v) => v._id === sharedVotingId
+      );
+      if (sharedVotingIndex !== -1) {
+        setCurrentVotingIndex(sharedVotingIndex);
+      }
+    }
+  }, [currentVotingIndex, openVotings.length, openVotings, sharedVotingId]);
 
   if (isLoading && votings.length === 0) {
     return (
@@ -269,6 +282,41 @@ export default function VotingSystem({
     setCurrentVotingIndex((prev) =>
       prev === 0 ? openVotings.length - 1 : prev - 1
     );
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        toast.success('Voting link copied to clipboard!');
+      })
+      .catch(() => {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        toast.success('Voting link copied to clipboard!');
+      });
+  };
+
+  const handleShareVoting = (voting: IClubMediaVoting) => {
+    const shareUrl = `${window.location.origin}/clubs/${club._id}?voting=${voting._id}`;
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: `Voting: ${voting.title}`,
+          text: `Check out this voting in ${club.name}!`,
+          url: shareUrl,
+        })
+        .catch(() => {
+          copyToClipboard(shareUrl);
+        });
+    } else {
+      copyToClipboard(shareUrl);
+    }
   };
 
   return (
@@ -561,6 +609,13 @@ export default function VotingSystem({
                 {status.label}
               </span>
             </div>
+            <button
+              onClick={() => handleShareVoting(voting)}
+              className="btn btn-ghost btn-sm btn-circle"
+              title="Share this voting"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
           </div>
 
           {voting.description && (
@@ -754,7 +809,16 @@ export default function VotingSystem({
                 starts.
               </p>
             </div>
-            <Hourglass className="w-6 h-6 text-warning flex-shrink-0" />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleShareVoting(voting)}
+                className="btn btn-ghost btn-sm btn-circle"
+                title="Share this voting"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <Hourglass className="w-6 h-6 text-warning" />
+            </div>
           </div>
 
           {sortedCandidates.length > 0 && (
@@ -857,7 +921,16 @@ export default function VotingSystem({
                 {totalVotes} total vote{totalVotes === 1 ? '' : 's'} cast.
               </p>
             </div>
-            <Trophy className="w-6 h-6 text-success flex-shrink-0" />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleShareVoting(voting)}
+                className="btn btn-ghost btn-sm btn-circle"
+                title="Share this voting"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+              <Trophy className="w-6 h-6 text-success" />
+            </div>
           </div>
 
           {winner ? (
@@ -983,6 +1056,13 @@ export default function VotingSystem({
             </div>
             <div className="flex gap-2">
               <button
+                onClick={() => handleShareVoting(voting)}
+                className="btn btn-sm btn-outline btn-ghost"
+                title="Share voting"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => onEdit(voting)}
                 className="btn btn-sm btn-outline btn-primary"
                 title="Edit voting"
@@ -1056,19 +1136,28 @@ export default function VotingSystem({
             </div>
 
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => onSuggest(voting)}
-                className="btn btn-secondary btn-sm"
-                disabled={!club.isUserMember}
-                title={
-                  !club.isUserMember
-                    ? 'You must be a club member to suggest media'
-                    : 'Suggest media for this voting'
-                }
-              >
-                <Plus className="w-4 h-4" />
-                Suggest Media
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleShareVoting(voting)}
+                  className="btn btn-ghost btn-sm btn-circle"
+                  title="Share this voting"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => onSuggest(voting)}
+                  className="btn btn-secondary btn-sm flex-1"
+                  disabled={!club.isUserMember}
+                  title={
+                    !club.isUserMember
+                      ? 'You must be a club member to suggest media'
+                      : 'Suggest media for this voting'
+                  }
+                >
+                  <Plus className="w-4 h-4" />
+                  Suggest Media
+                </button>
+              </div>
               {voting.candidates.length > 0 && (
                 <span className="text-xs text-center text-base-content/60">
                   {voting.candidates.length} suggestion

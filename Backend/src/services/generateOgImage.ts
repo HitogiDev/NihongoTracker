@@ -1,475 +1,251 @@
 import { createCanvas, loadImage } from 'canvas';
 import { IUser } from '../types.js';
 
-interface ProfileOgImageOptions {
+export interface ProfileOgImageOptions {
   user: Pick<IUser, 'username' | 'avatar' | 'banner' | 'stats'> | IUser;
-  width?: number;
-  height?: number;
 }
 
-/**
- * Generates a beautiful OG image for user profiles
- */
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const W = 1200;
+const H = 630;
+const SPLIT = 390; // y of the separator line (same as the reference layout)
+
+// ── Avatar (straddles the divider line) ──────────────────────────────────────
+const AV_R = 72;
+const AV_CX = 116;
+const AV_CY = SPLIT - 6;
+
+// ── DaisyUI dark palette ─────────────────────────────────────────────────────
+const C_BASE100 = '#1d232a';
+const C_BASE200 = '#191e24';
+const C_CONTENT = '#ecf9ff';
+const C_MUTED = '#a6adbb';
+const C_PRIMARY = '#7480ff';
+const C_SECONDARY = '#f43098';
+const C_WARNING = '#ffbe00';
+const C_ACCENT = '#00bfaa';
+const C_SUCCESS = '#00a96e';
+
+function buildStats(user: ProfileOgImageOptions['user']) {
+  return [
+    { label: 'LEVEL', value: String(user.stats.userLevel), color: C_PRIMARY },
+    { label: 'TOTAL XP', value: fmtNum(user.stats.userXp), color: C_SECONDARY },
+    {
+      label: 'STREAK',
+      value: `${user.stats.currentStreak}d`,
+      color: C_WARNING,
+    },
+    {
+      label: 'READING LV',
+      value: `Lv ${user.stats.readingLevel}`,
+      color: C_ACCENT,
+    },
+    {
+      label: 'LISTENING LV',
+      value: `Lv ${user.stats.listeningLevel}`,
+      color: C_SUCCESS,
+    },
+  ];
+}
+
 export async function generateProfileOgImage(
   options: ProfileOgImageOptions
 ): Promise<Buffer> {
-  const { user, width = 1200, height = 630 } = options;
+  const { user } = options;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d') as any;
 
-  const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext('2d');
-
-  // Background - Use banner if available, otherwise gradient
+  // 1 ── Background ────────────────────────────────────────────────────────────
   if (user.banner) {
     try {
-      const banner = await loadImage(user.banner);
+      const img = await loadImage(user.banner);
+      const scale = Math.max(W / img.width, H / img.height);
+      const bw = img.width * scale;
+      const bh = img.height * scale;
+      ctx.drawImage(img, (W - bw) / 2, (H - bh) / 2, bw, bh);
 
-      // Draw banner covering entire canvas
-      ctx.drawImage(banner, 0, 0, width, height);
-
-      // Add dark overlay for better text readability
-      const overlayGradient = ctx.createLinearGradient(0, 0, 0, height);
-      overlayGradient.addColorStop(0, 'rgba(15, 23, 42, 0.85)'); // slate-900 with 85% opacity
-      overlayGradient.addColorStop(0.5, 'rgba(30, 41, 59, 0.80)'); // slate-800 with 80% opacity
-      overlayGradient.addColorStop(1, 'rgba(51, 65, 85, 0.85)'); // slate-700 with 85% opacity
-      ctx.fillStyle = overlayGradient;
-      ctx.fillRect(0, 0, width, height);
-    } catch (error) {
-      console.error('Error loading banner:', error);
-      // Fall back to gradient background
-      drawGradientBackground(ctx, width, height);
+      // Dark overlay so name is readable over any banner
+      ctx.fillStyle = 'rgba(25,30,36,0.72)';
+      ctx.fillRect(0, 0, W, SPLIT);
+    } catch {
+      drawFlatBg(ctx);
     }
   } else {
-    // Default gradient background
-    drawGradientBackground(ctx, width, height);
+    drawFlatBg(ctx);
   }
 
-  // Add subtle grid pattern overlay
-  ctx.globalAlpha = 0.02;
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1;
-  const gridSize = 40;
-  for (let i = 0; i < width; i += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, height);
-    ctx.stroke();
-  }
-  for (let j = 0; j < height; j += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(0, j);
-    ctx.lineTo(width, j);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
+  // 2 ── Bottom panel (solid dark) ───────────────────────────────────────────
+  ctx.fillStyle = C_BASE200;
+  ctx.fillRect(0, SPLIT + 2, W, H - SPLIT - 2);
 
-  // Decorative circles
-  ctx.globalAlpha = 0.1;
-  ctx.fillStyle = '#3b82f6'; // blue-500
+  // 3 ── Separator line (solid purple, full width) ───────────────────────────
+  ctx.fillStyle = C_PRIMARY;
+  ctx.fillRect(0, SPLIT, W, 2);
+
+  // 4 ── Avatar (initials circle straddling the line) ────────────────────────
+  // Backing disc to cover the line behind the circle
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(width - 100, 100, 200, 0, Math.PI * 2);
+  ctx.arc(AV_CX, AV_CY, AV_R + 7, 0, Math.PI * 2);
+  ctx.fillStyle = C_BASE200;
   ctx.fill();
+  ctx.restore();
 
-  ctx.fillStyle = '#8b5cf6'; // violet-500
+  // Circle fill
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(100, height - 100, 150, 0, Math.PI * 2);
+  ctx.arc(AV_CX, AV_CY, AV_R, 0, Math.PI * 2);
+  ctx.fillStyle = C_BASE100;
   ctx.fill();
-  ctx.globalAlpha = 1;
+  ctx.restore();
 
-  // Load and draw avatar with circular mask
+  // Avatar content: photo if available, initials as fallback
   if (user.avatar) {
     try {
-      const avatar = await loadImage(user.avatar);
-      const avatarSize = 180;
-      const avatarX = 80;
-      const avatarY = height / 2 - avatarSize / 2 - 20; // Move up more for better centering
-
-      // Draw avatar border/glow
-      ctx.save();
-      ctx.shadowColor = '#3b82f6';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = '#1e293b';
-      ctx.beginPath();
-      ctx.arc(
-        avatarX + avatarSize / 2,
-        avatarY + avatarSize / 2,
-        avatarSize / 2 + 5,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
-      ctx.restore();
-
-      // Draw avatar with circular clip
+      const img = await loadImage(user.avatar);
       ctx.save();
       ctx.beginPath();
-      ctx.arc(
-        avatarX + avatarSize / 2,
-        avatarY + avatarSize / 2,
-        avatarSize / 2,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(AV_CX, AV_CY, AV_R, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.drawImage(img, AV_CX - AV_R, AV_CY - AV_R, AV_R * 2, AV_R * 2);
       ctx.restore();
-    } catch (error) {
-      console.error('Error loading avatar:', error);
-      // Draw default avatar circle - moved up more for better centering
-      drawDefaultAvatar(ctx, 80, height / 2 - 110, 180);
+    } catch {
+      // Fallback to initials if image fails to load
+      drawInitials(ctx, user.username, AV_CX, AV_CY);
     }
   } else {
-    // Draw default avatar - moved up more for better centering
-    drawDefaultAvatar(ctx, 80, height / 2 - 110, 180);
+    drawInitials(ctx, user.username, AV_CX, AV_CY);
   }
 
-  // Username - moved up more for better centering
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 72px sans-serif';
-  ctx.fillText(user.username, 300, height / 2 - 100);
+  // 5 ── Username (baseline flush above the separator) ───────────────────────
+  const nameX = AV_CX + AV_R + 32;
+  const nameY = SPLIT - 21;
 
-  // Stats container background - moved up more for better centering
-  const statsY = height / 2 - 60;
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.6)'; // semi-transparent slate-800
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  ctx.shadowBlur = 20;
-  ctx.shadowOffsetY = 10;
-  roundRect(ctx, 300, statsY, 820, 280, 15);
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.9)';
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 2;
+  ctx.fillStyle = C_CONTENT;
+  ctx.font = 'bold 68px sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
 
-  // Top stats row - main stats with bigger spacing
-  const statsRowY = statsY + 70;
-  const statSpacing = 270; // Increased spacing for bigger text
+  const maxNameW = W - nameX - 50;
+  let displayName = user.username;
+  while (
+    ctx.measureText(displayName).width > maxNameW &&
+    displayName.length > 2
+  ) {
+    displayName = displayName.slice(0, -1);
+  }
+  if (displayName !== user.username) displayName += '…';
+  ctx.fillText(displayName, nameX, nameY);
+  ctx.restore();
 
-  // Level stat
-  drawStat(ctx, 340, statsRowY, 'LEVEL', user.stats.userLevel.toString(), {
-    iconColor: '#3b82f6',
-    iconType: 'level',
+  // 6 ── Stats row ───────────────────────────────────────────────────────────
+  const stats = buildStats(user);
+  const statStartX = AV_CX + AV_R * 2 + 40;
+  const statAreaW = W - statStartX - 36;
+  const colW = statAreaW / stats.length;
+
+  stats.forEach((s, i) => {
+    const cx = statStartX + i * colW + colW / 2;
+
+    // Coloured accent bar
+    const barW = colW * 0.55;
+    ctx.fillStyle = s.color;
+    rrect(ctx, cx - barW / 2, SPLIT + 30, barW, 3, 2);
+    ctx.fill();
+
+    // Value
+    ctx.fillStyle = s.color;
+    ctx.font = `bold ${s.value.length > 7 ? 40 : 50}px sans-serif`;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    ctx.fillText(s.value, cx, SPLIT + 70);
+
+    // Label
+    ctx.fillStyle = C_MUTED;
+    ctx.font = 'bold 17px sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(s.label, cx, SPLIT + 128);
   });
 
-  // Total XP stat
-  drawStat(
-    ctx,
-    340 + statSpacing,
-    statsRowY,
-    'TOTAL XP',
-    formatNumber(user.stats.userXp),
-    { iconColor: '#8b5cf6', iconType: 'xp' }
-  );
-
-  // Streak stat
-  drawStat(
-    ctx,
-    340 + statSpacing * 2,
-    statsRowY,
-    'STREAK',
-    `${user.stats.currentStreak}d`,
-    { iconColor: '#f59e0b', iconType: 'streak' }
-  );
-
-  // Bottom stats row - Reading & Listening levels with more spacing
-  const bottomRowY = statsRowY + 130; // Increased vertical spacing
-
-  // Reading level
-  drawSmallStat(
-    ctx,
-    340,
-    bottomRowY,
-    'READING',
-    `Lv ${user.stats.readingLevel}`,
-    '#10b981'
-  );
-
-  // Listening level - adjust position for new spacing
-  drawSmallStat(
-    ctx,
-    340 + statSpacing,
-    bottomRowY,
-    'LISTENING',
-    `Lv ${user.stats.listeningLevel}`,
-    '#06b6d4'
-  );
-
-  // Branding - moved up slightly for better balance
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.font = 'bold 32px sans-serif';
-  ctx.fillText('NihongoTracker', 50, height - 30);
-
-  // Decorative accent line - moved up slightly
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(50, height - 20);
-  ctx.lineTo(300, height - 20);
-  ctx.stroke();
+  // 7 ── Branding ────────────────────────────────────────────────────────────
+  ctx.fillStyle = 'rgba(255,255,255,0.20)';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'right';
+  ctx.fillText('NihongoTracker', W - 28, H - 18);
+  ctx.textAlign = 'left';
 
   return canvas.toBuffer('image/png');
 }
 
-/**
- * Draw a default avatar circle when user has no avatar
- */
-function drawDefaultAvatar(ctx: any, x: number, y: number, size: number): void {
-  const centerX = x + size / 2;
-  const centerY = y + size / 2;
+// ── Flat dark background + 日 watermark ──────────────────────────────────────
+function drawFlatBg(ctx: any): void {
+  ctx.fillStyle = C_BASE200;
+  ctx.fillRect(0, 0, W, H);
 
-  // Gradient background circle
-  const gradient = ctx.createRadialGradient(
-    centerX,
-    centerY,
-    0,
-    centerX,
-    centerY,
-    size / 2
-  );
-  gradient.addColorStop(0, '#3b82f6');
-  gradient.addColorStop(1, '#1e40af');
-
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, size / 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Simple avatar design with circle (head) and half-circle (body)
-  ctx.fillStyle = '#ffffff';
-
-  // Head circle - positioned in upper half
-  const headRadius = size * 0.15;
-  const headY = centerY - size * 0.15;
-  ctx.beginPath();
-  ctx.arc(centerX, headY, headRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Body half-circle - positioned below head (flat side down) with gap
-  const bodyRadius = size * 0.25;
-  const bodyY = centerY + size * 0.2;
-  ctx.beginPath();
-  ctx.arc(centerX, bodyY, bodyRadius, Math.PI, 0, false); // Half circle with flat side down
-  ctx.fill();
-}
-
-/**
- * Draw a stat box with icon and value
- */
-function drawStat(
-  ctx: any,
-  x: number,
-  y: number,
-  label: string,
-  value: string,
-  options: { iconColor: string; iconType: 'level' | 'xp' | 'streak' }
-): void {
-  // Icon background with subtle gradient
-  const iconGradient = ctx.createRadialGradient(x, y, 0, x, y, 25);
-  iconGradient.addColorStop(0, options.iconColor + '30');
-  iconGradient.addColorStop(1, options.iconColor + '10');
-  ctx.fillStyle = iconGradient;
-  ctx.beginPath();
-  ctx.arc(x, y, 25, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Draw custom icon based on type
+  // 日 watermark pattern
   ctx.save();
-  ctx.fillStyle = options.iconColor;
-  ctx.strokeStyle = options.iconColor;
-
-  switch (options.iconType) {
-    case 'level':
-      // Draw clean upward trending arrow
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Arrow shaft (stepped line going up)
-      ctx.beginPath();
-      ctx.moveTo(x - 8, y + 6);
-      ctx.lineTo(x - 2, y + 6);
-      ctx.lineTo(x - 2, y);
-      ctx.lineTo(x + 4, y);
-      ctx.lineTo(x + 4, y - 6);
-      ctx.stroke();
-
-      // Arrow head
-      ctx.fillStyle = options.iconColor;
-      ctx.beginPath();
-      ctx.moveTo(x + 4, y - 9);
-      ctx.lineTo(x + 9, y - 4);
-      ctx.lineTo(x + 4, y - 4);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(x + 4, y - 9);
-      ctx.lineTo(x - 1, y - 4);
-      ctx.lineTo(x + 4, y - 4);
-      ctx.closePath();
-      ctx.fill();
-      break;
-
-    case 'xp':
-      // Draw polished star
-      ctx.lineWidth = 0;
-      const outerRadius = 11;
-      const innerRadius = 5;
-      const spikes = 5;
-
-      ctx.beginPath();
-      for (let i = 0; i < spikes * 2; i++) {
-        const angle = (i * Math.PI) / spikes - Math.PI / 2;
-        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-        const px = x + Math.cos(angle) * radius;
-        const py = y + Math.sin(angle) * radius;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fill();
-
-      // Add inner highlight for depth
-      ctx.fillStyle = options.iconColor + 'CC';
-      ctx.beginPath();
-      for (let i = 0; i < spikes * 2; i++) {
-        const angle = (i * Math.PI) / spikes - Math.PI / 2;
-        const radius = i % 2 === 0 ? outerRadius * 0.5 : innerRadius * 0.6;
-        const px = x + Math.cos(angle) * radius;
-        const py = y + Math.sin(angle) * radius - 1;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fill();
-      break;
-
-    case 'streak':
-      // Draw stylized flame
-      ctx.fillStyle = options.iconColor;
-
-      // Outer flame
-      ctx.beginPath();
-      ctx.moveTo(x, y - 11);
-      ctx.bezierCurveTo(x - 3, y - 9, x - 6, y - 5, x - 7, y);
-      ctx.bezierCurveTo(x - 7, y + 3, x - 5, y + 6, x - 2, y + 9);
-      ctx.bezierCurveTo(x - 1, y + 5, x, y + 3, x, y);
-      ctx.bezierCurveTo(x, y + 3, x + 1, y + 5, x + 2, y + 9);
-      ctx.bezierCurveTo(x + 5, y + 6, x + 7, y + 3, x + 7, y);
-      ctx.bezierCurveTo(x + 6, y - 5, x + 3, y - 9, x, y - 11);
-      ctx.closePath();
-      ctx.fill();
-
-      // Inner flame highlight
-      ctx.fillStyle = options.iconColor + 'DD';
-      ctx.beginPath();
-      ctx.moveTo(x, y - 7);
-      ctx.bezierCurveTo(x - 2, y - 5, x - 3, y - 2, x - 4, y + 1);
-      ctx.bezierCurveTo(x - 4, y + 3, x - 3, y + 5, x - 1, y + 6);
-      ctx.bezierCurveTo(x - 0.5, y + 3, x, y + 2, x, y);
-      ctx.bezierCurveTo(x, y + 2, x + 0.5, y + 3, x + 1, y + 6);
-      ctx.bezierCurveTo(x + 3, y + 5, x + 4, y + 3, x + 4, y + 1);
-      ctx.bezierCurveTo(x + 3, y - 2, x + 2, y - 5, x, y - 7);
-      ctx.closePath();
-      ctx.fill();
-
-      // Core highlight
-      ctx.fillStyle = '#ffffff';
-      ctx.globalAlpha = 0.4;
-      ctx.beginPath();
-      ctx.moveTo(x, y - 3);
-      ctx.bezierCurveTo(x - 1.5, y - 1, x - 2, y + 1, x - 1, y + 3);
-      ctx.bezierCurveTo(x - 0.5, y + 1, x, y, x, y - 1);
-      ctx.bezierCurveTo(x, y, x + 0.5, y + 1, x + 1, y + 3);
-      ctx.bezierCurveTo(x + 2, y + 1, x + 1.5, y - 1, x, y - 3);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      break;
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = C_CONTENT;
+  ctx.font = 'bold 52px sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  const step = 115;
+  for (let row = 0; row * step < H + step; row++) {
+    const offset = (row % 2) * (step / 2);
+    for (let col = 0; col * step < W + step; col++) {
+      ctx.fillText('日', col * step + offset, row * step);
+    }
   }
-
   ctx.restore();
-
-  // Label
-  ctx.textAlign = 'start';
-  ctx.font = 'bold 20px sans-serif';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-  ctx.fillText(label, x + 40, y - 20);
-
-  // Value - much bigger
-  ctx.font = 'bold 48px sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(value, x + 40, y + 25);
-
-  ctx.textBaseline = 'alphabetic';
 }
 
-/**
- * Draw a smaller stat for secondary information
- */
-function drawSmallStat(
+// ── Initials fallback ─────────────────────────────────────────────────────────
+function drawInitials(
   ctx: any,
-  x: number,
-  y: number,
-  label: string,
-  value: string,
-  color: string
+  username: string,
+  cx: number,
+  cy: number
 ): void {
-  // Label
-  ctx.font = 'bold 18px sans-serif';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  ctx.fillText(label, x, y - 12);
-
-  // Value with color - much bigger
-  ctx.font = 'bold 36px sans-serif';
-  ctx.fillStyle = color;
-  ctx.fillText(value, x, y + 25);
+  const initials = username.slice(0, 2).toUpperCase();
+  ctx.save();
+  ctx.fillStyle = C_CONTENT;
+  ctx.font = `bold ${initials.length === 1 ? 58 : 48}px sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(initials, cx, cy);
+  ctx.restore();
 }
 
-/**
- * Draw a rounded rectangle
- */
-function roundRect(
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function rrect(
   ctx: any,
   x: number,
   y: number,
-  width: number,
-  height: number,
-  radius: number
+  w: number,
+  h: number,
+  r: number
 ): void {
   ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
-  ctx.fill();
 }
 
-/**
- * Format large numbers with K/M suffixes
- */
-function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
-  }
-  return num.toString();
-}
-
-/**
- * Draw default gradient background
- */
-function drawGradientBackground(ctx: any, width: number, height: number): void {
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, '#0f172a'); // slate-900
-  gradient.addColorStop(0.5, '#1e293b'); // slate-800
-  gradient.addColorStop(1, '#334155'); // slate-700
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+function fmtNum(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return n.toString();
 }

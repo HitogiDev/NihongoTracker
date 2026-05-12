@@ -12,6 +12,7 @@ import {
   updateMediaCompletionStatus,
   updateHiddenRecentMedia,
   updateStatsLayout,
+  getGanttData,
 } from '../controllers/users.controller.js';
 import { exportLogsCSV } from '../controllers/export.controller.js';
 import {
@@ -53,6 +54,8 @@ router.get('/:username/dashboard', protect, getDashboardHours);
 router.get('/:username/recentlogs', protect, getRecentLogs);
 
 router.get('/:username/immersionlist', getImmersionList);
+
+router.get('/:username/gantt', getGanttData);
 
 router.put(
   '/',

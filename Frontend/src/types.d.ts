@@ -1004,3 +1004,19 @@ export interface ITextSession {
   createdAt: string;
   updatedAt?: string;
 }
+
+export interface IGanttMediaItem {
+  mediaId: string;
+  type: string;
+  title: string;            // contentTitleNative
+  titleEnglish?: string;   // contentTitleEnglish (optional)
+  contentImage?: string;   // cover thumbnail URL
+  firstLogDate: string;    // ISO 8601 datetime string
+  lastLogDate: string;     // ISO 8601 datetime string
+  isCompleted: boolean;
+  completedAt?: string;    // ISO 8601 datetime string, set when completed
+  logCount: number;
+  totalTime: number;       // total minutes across all logs
+  totalXp: number;
+  activeDates: string[];   // sorted YYYY-MM-DD strings (one per active day)
+}

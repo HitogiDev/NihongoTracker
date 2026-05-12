@@ -2320,3 +2320,149 @@ async function calculateUserMediaStats(
     readingPercentage: null, // Will be set to actual percentage or remain null in main function
   };
 }
+
+export async function getGanttData(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findOne({ username: req.params.username }).lean();
+    if (!user) throw new customError('User not found', 404);
+
+    const typeFilter = req.query.type as string | undefined;
+    const timezone = (req.query.timezone as string) || 'UTC';
+    const startParam = req.query.start as string | undefined; // YYYY-MM-DD
+    const endParam = req.query.end as string | undefined;     // YYYY-MM-DD
+
+    // Build base match — always exclude private logs and logs without a mediaId
+    const baseMatch: Record<string, unknown> = {
+      user: user._id,
+      private: { $ne: true },
+      mediaId: { $ne: null, $exists: true },
+    };
+
+    if (typeFilter && typeFilter !== 'all') {
+      baseMatch.type = typeFilter;
+    }
+
+    // Apply date range filter if provided
+    if (startParam || endParam) {
+      const dateFilter: Record<string, Date> = {};
+      if (startParam) {
+        dateFilter.$gte = new Date(`${startParam}T00:00:00.000Z`);
+      }
+      if (endParam) {
+        dateFilter.$lte = new Date(`${endParam}T23:59:59.999Z`);
+      }
+      baseMatch.date = dateFilter;
+    }
+
+    // Aggregate logs grouped by {mediaId, type}
+    const rawGroups = await Log.aggregate([
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: { mediaId: '$mediaId', type: '$type' },
+          firstLogDate: { $min: '$date' },
+          lastLogDate: { $max: '$date' },
+          logCount: { $sum: 1 },
+          totalTime: { $sum: { $ifNull: ['$time', 0] } },
+          totalXp: { $sum: '$xp' },
+          // Collect all unique day-strings (YYYY-MM-DD in UTC, timezone shift applied below)
+          allDates: { $push: '$date' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'media',
+          let: { mid: '$_id.mediaId', mtype: '$_id.type' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$contentId', '$$mid'] },
+                    { $eq: ['$type', '$$mtype'] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                contentId: 1,
+                type: 1,
+                contentImage: 1,
+                title: 1,
+              },
+            },
+          ],
+          as: 'mediaDetails',
+        },
+      },
+      // Only keep groups that have matching media documents
+      { $match: { 'mediaDetails.0': { $exists: true } } },
+      { $sort: { firstLogDate: 1 } },
+    ]);
+
+    // Fetch completion statuses for this user
+    const mediaStatuses = await UserMediaStatus.find({ user: user._id }).lean();
+    const statusMap = new Map<string, { completed: boolean; completedAt?: Date | null }>();
+    mediaStatuses.forEach((s) => {
+      statusMap.set(`${s.type}:${s.mediaId}`, {
+        completed: s.completed,
+        completedAt: s.completedAt ?? null,
+      });
+    });
+
+    // Helper: convert a UTC Date to a YYYY-MM-DD day key in the user's timezone
+    const toLocalDayKey = (date: Date): string => {
+      try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).formatToParts(date);
+        const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
+        return `${get('year')}-${get('month')}-${get('day')}`;
+      } catch {
+        return date.toISOString().slice(0, 10);
+      }
+    };
+
+    const result = rawGroups.map((group) => {
+      const media = group.mediaDetails[0];
+      const key = `${group._id.type}:${group._id.mediaId}`;
+      const status = statusMap.get(key);
+
+      // Deduplicate active dates and convert to local day keys
+      const activeDaysSet = new Set<string>();
+      (group.allDates as Date[]).forEach((d) => {
+        activeDaysSet.add(toLocalDayKey(new Date(d)));
+      });
+      const activeDates = Array.from(activeDaysSet).sort();
+
+      return {
+        mediaId: group._id.mediaId as string,
+        type: group._id.type as string,
+        title: (media?.title?.contentTitleNative as string) ?? group._id.mediaId,
+        titleEnglish: (media?.title?.contentTitleEnglish as string | undefined) ?? undefined,
+        contentImage: (media?.contentImage as string | undefined) ?? undefined,
+        firstLogDate: (group.firstLogDate as Date).toISOString(),
+        lastLogDate: (group.lastLogDate as Date).toISOString(),
+        isCompleted: status?.completed ?? false,
+        completedAt: status?.completedAt ? (status.completedAt as Date).toISOString() : undefined,
+        logCount: group.logCount as number,
+        totalTime: group.totalTime as number,
+        totalXp: group.totalXp as number,
+        activeDates,
+      };
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
