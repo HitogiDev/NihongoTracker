@@ -185,9 +185,15 @@ const swaggerDocument = {
               'tv show',
             ],
           },
-          mediaId: { type: 'string' },
+          mediaId: {
+            type: 'string',
+            description:
+              'For video logs, set this to the YouTube channelId. The backend will resolve channel metadata and create the channel media if needed.',
+          },
           mediaData: {
             type: 'object',
+            description:
+              'Optional metadata for non-video media creation. Ignored for video logs.',
             properties: {
               contentId: { type: 'string' },
               contentTitleNative: { type: 'string' },
@@ -2125,7 +2131,11 @@ const swaggerDocument = {
               schema: {
                 type: 'object',
                 properties: {
-                  mediaId: { type: 'string' },
+                  mediaId: {
+                    type: 'string',
+                    description:
+                      'For video media, this must be the YouTube channelId. The backend resolves the channel and creates it if needed.',
+                  },
                   mediaType: { type: 'string' },
                   title: { type: 'string' },
                   startDate: { type: 'string', format: 'date-time' },

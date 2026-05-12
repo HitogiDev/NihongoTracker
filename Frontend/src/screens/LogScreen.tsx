@@ -564,15 +564,7 @@ function LogScreen() {
     // Prepare media data based on log type
     let mediaData = undefined;
 
-    if (logData.type === 'video' && logData.youtubeChannelInfo) {
-      // YouTube video logging
-      mediaData = {
-        channelId: logData.youtubeChannelInfo.channelId,
-        channelTitle: logData.youtubeChannelInfo.channelTitle,
-        channelImage: logData.youtubeChannelInfo.channelImage,
-        channelDescription: logData.youtubeChannelInfo.channelDescription,
-      };
-    } else if (logData.type !== 'video' && logData.type !== 'audio') {
+    if (logData.type !== 'video' && logData.type !== 'audio') {
       // Regular AniList content
       mediaData = {
         contentId: logData.mediaId,

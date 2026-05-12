@@ -21,6 +21,7 @@ import {
   updateVotingStatusesForClub,
 } from '../services/clubMediaVoting.js';
 import { calculateLevel } from '../services/calculateLevel.js';
+import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 
 type PatreonTier = 'donator' | 'enthusiast' | 'consumer' | null | undefined;
 
@@ -984,29 +985,22 @@ export async function addClubMedia(
     }
 
     // Create media if it doesn't exist and we have media data
-    if (createMedia && mediaData && mediaId) {
-      if (mediaType === 'video' && mediaData.youtubeChannelInfo) {
-        // Handle YouTube video media creation
-        const channelMedia = await MediaBase.create({
-          contentId: mediaData.youtubeChannelInfo.channelId,
-          title: {
-            contentTitleNative: mediaData.youtubeChannelInfo.channelTitle,
-            contentTitleEnglish: mediaData.youtubeChannelInfo.channelTitle,
-          },
-          contentImage: mediaData.youtubeChannelInfo.channelImage,
-          coverImage: mediaData.youtubeChannelInfo.channelImage,
-          description: [
-            {
-              description:
-                mediaData.youtubeChannelInfo.channelDescription || '',
-              language: 'eng',
-            },
-          ],
-          type: 'video',
-          isAdult: false,
-        });
-        existingMedia = channelMedia;
-      } else if (mediaType !== 'audio' && mediaType !== 'other') {
+    if (createMedia && mediaId) {
+      if (mediaType === 'video') {
+        const channelInfo = await getYouTubeChannelInfo(mediaId);
+        if (channelInfo) {
+          const channelMedia = await MediaBase.create({
+            contentId: channelInfo.contentId,
+            title: channelInfo.title,
+            contentImage: channelInfo.contentImage,
+            coverImage: channelInfo.contentImage,
+            description: channelInfo.description,
+            type: 'video',
+            isAdult: false,
+          });
+          existingMedia = channelMedia;
+        }
+      } else if (mediaData && mediaType !== 'audio' && mediaType !== 'other') {
         // Handle regular AniList content
         const createdMedia = await MediaBase.create({
           contentId: mediaId,

@@ -35,7 +35,7 @@ import {
   updateClubWithFilesFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
-import { IMediaDocument, IClubMedia } from '../types.d';
+import { IMediaDocument, IClubMedia, youtubeChannelInfo } from '../types.d';
 import { useUserDataStore } from '../store/userData';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
@@ -428,40 +428,51 @@ function ClubDetailScreen() {
   };
 
   // Handle selecting media from search results
-  const handleSelectResult = (result: IMediaDocument) => {
-    const title =
-      result.title.contentTitleEnglish ||
-      result.title.contentTitleRomaji ||
-      result.title.contentTitleNative;
+  const handleSelectResult = (
+    result: IMediaDocument & { __youtubeChannelInfo?: youtubeChannelInfo }
+  ) => {
+    const isVideoChannel =
+      mediaForm.mediaType === 'video' && result.__youtubeChannelInfo;
+    const title = isVideoChannel
+      ? result.__youtubeChannelInfo.channelTitle
+      : result.title.contentTitleEnglish ||
+        result.title.contentTitleRomaji ||
+        result.title.contentTitleNative;
 
     // Get description from the first available description
-    const description = result.description?.[0]?.description || '';
+    const description = isVideoChannel
+      ? result.__youtubeChannelInfo.channelDescription
+      : result.description?.[0]?.description || '';
     const cleanDescription = description
       .replace(/<[^>]*>/g, '')
       .substring(0, 200);
 
     setMediaForm((prev) => ({
       ...prev,
-      mediaId: result.contentId,
+      mediaId: isVideoChannel
+        ? result.__youtubeChannelInfo.channelId
+        : result.contentId,
       title,
       description: cleanDescription ? cleanDescription + '...' : '',
       // Store full media data for potential creation
-      mediaData: {
-        contentId: result.contentId,
-        contentTitleNative: result.title.contentTitleNative,
-        contentTitleEnglish: result.title.contentTitleEnglish,
-        contentTitleRomaji: result.title.contentTitleRomaji,
-        contentImage: result.contentImage,
-        coverImage: result.coverImage,
-        episodes: result.episodes,
-        episodeDuration: result.episodeDuration,
-        runtime: result.runtime,
-        chapters: result.chapters,
-        volumes: result.volumes,
-        isAdult: result.isAdult,
-        description: result.description,
-        synonyms: result.synonyms,
-      },
+      mediaData: isVideoChannel
+        ? undefined
+        : {
+            contentId: result.contentId,
+            contentTitleNative: result.title.contentTitleNative,
+            contentTitleEnglish: result.title.contentTitleEnglish,
+            contentTitleRomaji: result.title.contentTitleRomaji,
+            contentImage: result.contentImage,
+            coverImage: result.coverImage,
+            episodes: result.episodes,
+            episodeDuration: result.episodeDuration,
+            runtime: result.runtime,
+            chapters: result.chapters,
+            volumes: result.volumes,
+            isAdult: result.isAdult,
+            description: result.description,
+            synonyms: result.synonyms,
+          },
     }));
     setSearchQuery(title);
     setShowResults(false);

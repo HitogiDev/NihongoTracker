@@ -141,6 +141,60 @@ export async function getYouTubeVideoInfo(videoUrl: string): Promise<{
   }
 }
 
+export async function getYouTubeChannelInfo(
+  channelId: string
+): Promise<MediaDocument | null> {
+  try {
+    if (!channelId) return null;
+
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) {
+      throw new Error('YouTube API key not configured');
+    }
+
+    const channelResponse = await axios.get(
+      'https://www.googleapis.com/youtube/v3/channels',
+      {
+        params: {
+          part: 'snippet',
+          id: channelId,
+          key: apiKey,
+        },
+      }
+    );
+
+    if (!channelResponse.data.items?.length) return null;
+
+    const channelData: YouTubeChannelData = channelResponse.data.items[0];
+
+    return {
+      contentId: channelData.id,
+      title: {
+        contentTitleNative: channelData.snippet.title,
+        contentTitleEnglish: channelData.snippet.title,
+      },
+      contentImage:
+        channelData.snippet.thumbnails.high?.url ||
+        channelData.snippet.thumbnails.medium?.url,
+      description: [
+        {
+          description: channelData.snippet.description || '',
+          language: 'eng',
+        },
+      ],
+      type: 'video',
+      isAdult: false,
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('❌ Error in getYouTubeChannelInfo:', error.response?.data);
+    } else {
+      console.error('❌ Error in getYouTubeChannelInfo:', error);
+    }
+    return null;
+  }
+}
+
 function extractVideoId(url: string): string | null {
   const normalizeVideoId = (
     value: string | null | undefined

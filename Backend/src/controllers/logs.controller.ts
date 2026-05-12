@@ -22,6 +22,7 @@ import {
 } from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
 import { updateLevelAndXp } from '../services/updateStats.js';
+import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import axios from 'axios';
 import {
   XP_FACTOR_TIME,
@@ -1201,23 +1202,21 @@ export async function createLog(
         createMedia = false;
       }
     }
-    if (type === 'video' && createMedia && mediaData) {
-      const channelMedia = await MediaBase.create({
-        contentId: mediaData.channelId,
-        title: {
-          contentTitleNative: mediaData.channelTitle,
-          contentTitleEnglish: mediaData.channelTitle,
-        },
-        contentImage: mediaData.channelImage,
-        coverImage: mediaData.channelImage,
-        description: [
-          { description: mediaData.channelDescription || '', language: 'eng' },
-        ],
-        type: 'video',
-        isAdult: false,
-      });
+    if (type === 'video' && createMedia && mediaId) {
+      const channelInfo = await getYouTubeChannelInfo(mediaId);
+      if (channelInfo) {
+        const channelMedia = await MediaBase.create({
+          contentId: channelInfo.contentId,
+          title: channelInfo.title,
+          contentImage: channelInfo.contentImage,
+          coverImage: channelInfo.contentImage,
+          description: channelInfo.description,
+          type: 'video',
+          isAdult: false,
+        });
 
-      logMedia = channelMedia;
+        logMedia = channelMedia;
+      }
     } else if (
       createMedia &&
       type !== 'audio' &&
