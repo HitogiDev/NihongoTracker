@@ -813,6 +813,18 @@ function MediaDetails() {
 
     return null;
   })();
+
+  const totalEpisodesWatched = logsArray.reduce(
+    (acc, log) => acc + (log.episodes ?? 0),
+    0
+  );
+  const totalEpisodeCount = mediaDocument?.episodes ?? 0;
+  const isEpisodeProgressCompleted =
+    totalEpisodeCount > 0 && totalEpisodesWatched >= totalEpisodeCount;
+  const episodeProgressPercentage =
+    totalEpisodeCount > 0
+      ? Math.min((totalEpisodesWatched / totalEpisodeCount) * 100, 100)
+      : 0;
   const writeReviewPath = mediaBasePath
     ? `${mediaBasePath}/reviews/write`
     : '#';
@@ -1558,10 +1570,7 @@ function MediaDetails() {
                                 Episodes Watched
                               </h3>
                               <p className="text-3xl font-bold text-accent mt-1">
-                                {logsArray.reduce(
-                                  (acc, log) => acc + (log.episodes ?? 0),
-                                  0
-                                )}
+                                {totalEpisodesWatched}
                               </p>
                             </div>
                             <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
@@ -1580,6 +1589,32 @@ function MediaDetails() {
                               </svg>
                             </div>
                           </div>
+
+                          {totalEpisodeCount > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <progress
+                                className="progress progress-accent w-full"
+                                value={episodeProgressPercentage}
+                                max="100"
+                              ></progress>
+                              {isEpisodeProgressCompleted ? (
+                                <>
+                                  <p className="text-xs text-base-content/60">
+                                    Completed
+                                  </p>
+                                  <p className="text-xs text-base-content/60">
+                                    All caught up
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-xs text-base-content/60">
+                                  {numberWithCommas(totalEpisodesWatched)} /{' '}
+                                  {numberWithCommas(totalEpisodeCount)} episodes
+                                  ({episodeProgressPercentage.toFixed(1)}%)
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

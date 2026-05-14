@@ -477,18 +477,11 @@ export async function searchMedia(
       anime: 'anime',
       manga: 'manga',
       reading: 'reading',
-      'light novel': 'reading',
-      'light novels': 'reading',
-      light_novel: 'reading',
-      'light-novel': 'reading',
       ln: 'reading',
       vn: 'vn',
       movie: 'movie',
-      'tv show': 'tv_show',
       tv_show: 'tv_show',
       game: 'game',
-      'video game': 'game',
-      videogame: 'game',
     };
     const type = normalizedTypeMap[rawType] ?? rawType;
     const page = parseInt(req.query.page as string) || 1;
