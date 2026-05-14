@@ -7,6 +7,7 @@ import { AxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { validateQuickLogData } from '../utils/validation';
+import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 
@@ -326,6 +327,7 @@ function QuickLog({
   const { mutate, isPending } = useMutation({
     mutationFn: createLogFn,
     onSuccess: async () => {
+      const loggedType = logType;
       const pendingVolume = pendingVolumeRef.current;
       if (
         pendingVolume?.mediaId &&
@@ -378,6 +380,7 @@ function QuickLog({
           Array.isArray(query.queryKey) &&
           query.queryKey[0] === 'rankingSummary',
       });
+      invalidateLogScreenQueries(queryClient, loggedType, user?.username);
       toast.success('Log created successfully!');
       if (onLogged) {
         void onLogged();

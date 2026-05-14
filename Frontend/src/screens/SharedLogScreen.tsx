@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { getLogFn, createLogFn } from '../api/trackerApi';
 import { ICreateLog } from '../types';
 import { useUserDataStore } from '../store/userData';
+import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import {
   Book,
   Play,
@@ -125,6 +126,7 @@ function SharedLogScreen() {
         predicate: (query) =>
           ['logs', 'user'].includes(query.queryKey[0] as string),
       });
+      invalidateLogScreenQueries(queryClient, sharedLog?.type, user?.username);
       toast.success('Log created successfully from shared link!');
       navigate(`/user/${user?.username}`);
     },

@@ -19,6 +19,7 @@ import useSearch from '../hooks/useSearch';
 import { DayPicker } from 'react-day-picker';
 import { useUserDataStore } from '../store/userData';
 import { validateLogData } from '../utils/validation';
+import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import MediaStats from '../components/MediaStats';
 import TagSelector from '../components/TagSelector';
 import { Calendar, CircleCheck, CircleX, Info, Search } from 'lucide-react';
@@ -324,6 +325,7 @@ function LogScreen() {
           ),
       });
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      invalidateLogScreenQueries(queryClient, currentType, user?.username);
 
       if (user?.username) {
         try {

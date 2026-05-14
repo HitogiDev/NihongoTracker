@@ -46,6 +46,7 @@ import {
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
 import { numberWithCommas } from '../utils/utils';
+import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import { IMediaDocument, ITextSession } from '../types';
 import { toast, ToastContainer } from 'react-toastify';
 import QuickLog, { QuickLogInitialValues } from '../components/QuickLog';
@@ -1631,6 +1632,7 @@ function TextHooker() {
       triggerLogAnimation(clearSessionLineHistoryAfterLog);
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
+      invalidateLogScreenQueries(queryClient, media?.type, user?.username);
     },
     onError: (error) => {
       pendingHistoryEntryRef.current = null;
