@@ -611,10 +611,10 @@ export default function VotingSystem({
             </div>
             <button
               onClick={() => handleShareVoting(voting)}
-              className="btn btn-ghost btn-sm btn-circle"
+              className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
               title="Share this voting"
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-5 h-5 block" />
             </button>
           </div>
 
@@ -812,10 +812,10 @@ export default function VotingSystem({
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => handleShareVoting(voting)}
-                className="btn btn-ghost btn-sm btn-circle"
+                className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
                 title="Share this voting"
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-5 h-5 block" />
               </button>
               <Hourglass className="w-6 h-6 text-warning" />
             </div>
@@ -924,10 +924,10 @@ export default function VotingSystem({
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => handleShareVoting(voting)}
-                className="btn btn-ghost btn-sm btn-circle"
+                className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
                 title="Share this voting"
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-5 h-5 block" />
               </button>
               <Trophy className="w-6 h-6 text-success" />
             </div>
@@ -1139,10 +1139,10 @@ export default function VotingSystem({
               <div className="flex gap-2">
                 <button
                   onClick={() => handleShareVoting(voting)}
-                  className="btn btn-ghost btn-sm btn-circle"
+                  className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
                   title="Share this voting"
                 >
-                  <Share2 className="w-5 h-5" />
+                  <Share2 className="w-5 h-5 block" />
                 </button>
                 <button
                   onClick={() => onSuggest(voting)}
@@ -1158,12 +1158,13 @@ export default function VotingSystem({
                   Suggest Media
                 </button>
               </div>
-              {voting.candidates.length > 0 && (
-                <span className="text-xs text-center text-base-content/60">
-                  {voting.candidates.length} suggestion
-                  {voting.candidates.length !== 1 ? 's' : ''}
+              className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9"
+              <span className="text-xs text-center text-base-content/60">
+                {voting.candidates.length} suggestion
+                <span className="flex items-center justify-center w-full h-full">
+                  <Share2 className="w-5 h-5" />
                 </span>
-              )}
+              </span>
             </div>
           </div>
 

@@ -247,6 +247,44 @@ async function clubVotingMeta(
   });
 }
 
+async function clubVotingByIdMeta(
+  clubId: string,
+  votingId: string,
+  protocol: string,
+  host: string,
+  urlPath: string
+): Promise<string | null> {
+  const voting = await ClubMediaVoting.findOne({
+    _id: votingId,
+    club: clubId,
+  }).select('title description mediaType status candidates club');
+  if (!voting) return clubMeta(clubId, protocol, host, urlPath);
+
+  const club = await Club.findById(clubId).select('name banner avatar');
+  const clubName = club?.name ?? 'Club';
+
+  const typeLabel = mediaTypeLabel(voting.mediaType);
+  const statusLabel: Record<string, string> = {
+    setup: 'Setting up',
+    suggestions_open: '💬 Suggestions Open',
+    suggestions_closed: 'Suggestions Closed',
+    voting_open: '🗳️ Voting Open Now',
+    voting_closed: 'Voting Closed',
+    completed: '✅ Completed',
+  };
+  const candidates = voting.candidates?.length ?? 0;
+  const status = statusLabel[voting.status] ?? voting.status;
+  const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''} — Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
+
+  return buildTags({
+    title: `${esc(voting.title)} — ${esc(clubName)} Voting`,
+    description,
+    image: club?.banner || club?.avatar || `${protocol}://${host}/og-image.png`,
+    url: `${protocol}://${host}${urlPath}`,
+    themeColor: '#f59e0b',
+  });
+}
+
 async function rankingMeta(
   protocol: string,
   host: string,
@@ -356,20 +394,24 @@ async function generateMetaTags(
   protocol: string,
   host: string
 ): Promise<string> {
-  const parts = urlPath.split('/').filter(Boolean);
   const base = `${protocol}://${host}`;
+  const parsedUrl = new URL(urlPath, base);
+  const normalizedPath = parsedUrl.pathname;
+  const normalizedUrl = `${parsedUrl.pathname}${parsedUrl.search}`;
+  const parts = normalizedPath.split('/').filter(Boolean);
+  const votingId = parsedUrl.searchParams.get('voting');
 
   // /user/:username  (and sub-routes like /user/:username/stats)
   if (parts[0] === 'user' && parts[1]) {
     return (
-      (await userMeta(parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await userMeta(parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
   // /ranking
   if (parts[0] === 'ranking') {
-    return rankingMeta(protocol, host, urlPath);
+    return rankingMeta(protocol, host, normalizedUrl);
   }
 
   // /clubs (list)
@@ -379,7 +421,7 @@ async function generateMetaTags(
       description:
         'Join a Japanese study club on NihongoTracker! Read manga together, watch anime, and compete in group challenges.',
       image: `${base}/og-image.png`,
-      url: `${base}${urlPath}`,
+      url: `${base}${normalizedUrl}`,
       themeColor: '#8b5cf6',
     });
   }
@@ -387,40 +429,53 @@ async function generateMetaTags(
   // /clubs/:clubId/media/:mediaId  (club media page — check before /clubs/:clubId)
   if (parts[0] === 'clubs' && parts[1] && parts[2] === 'media' && parts[3]) {
     return (
-      (await clubMeta(parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await clubMeta(parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
+    );
+  }
+
+  // /clubs/:clubId?voting=... (shared voting)
+  if (parts[0] === 'clubs' && parts[1] && votingId) {
+    return (
+      (await clubVotingByIdMeta(
+        parts[1],
+        votingId,
+        protocol,
+        host,
+        normalizedUrl
+      )) ?? defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
   // /clubs/:clubId/voting  or  /clubs/:clubId  with voting context
   if (parts[0] === 'clubs' && parts[1] && parts[2] === 'voting') {
     return (
-      (await clubVotingMeta(parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await clubVotingMeta(parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
   // /clubs/:clubId
   if (parts[0] === 'clubs' && parts[1]) {
     return (
-      (await clubMeta(parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await clubMeta(parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
   // /shared-log/:logId
   if (parts[0] === 'shared-log' && parts[1]) {
     return (
-      (await sharedLogMeta(parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await sharedLogMeta(parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
   // /review/:reviewId
   if (parts[0] === 'review' && parts[1]) {
     return (
-      (await reviewMeta(parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await reviewMeta(parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
@@ -437,8 +492,8 @@ async function generateMetaTags(
   ]);
   if (parts.length >= 2 && MEDIA_TYPES.has(parts[0])) {
     return (
-      (await mediaMeta(parts[0], parts[1], protocol, host, urlPath)) ??
-      defaultMeta(protocol, host, urlPath)
+      (await mediaMeta(parts[0], parts[1], protocol, host, normalizedUrl)) ??
+      defaultMeta(protocol, host, normalizedUrl)
     );
   }
 
@@ -488,11 +543,11 @@ async function generateMetaTags(
       title: p.title,
       description: p.description,
       image: `${base}/og-image.png`,
-      url: `${base}${urlPath}`,
+      url: `${base}${normalizedUrl}`,
     });
   }
 
-  return defaultMeta(protocol, host, urlPath);
+  return defaultMeta(protocol, host, normalizedUrl);
 }
 
 // ─── middleware ───────────────────────────────────────────────────────────────
@@ -515,7 +570,7 @@ export async function metaTagsMiddleware(
 
   try {
     const metaTags = await generateMetaTags(
-      req.path,
+      req.originalUrl,
       req.protocol,
       req.get('host') || ''
     );
