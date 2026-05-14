@@ -7,7 +7,11 @@ import {
   Calendar1,
   BarChart,
   Calendar,
+  Bookmark,
+  BookmarkX,
+  MoreHorizontal,
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -18,6 +22,7 @@ import { numberWithCommas } from '../utils/utils';
 import { DayPicker } from 'react-day-picker';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 import UserAvatar from '../components/UserAvatar';
+import { useUserDataStore } from '../store/userData';
 
 type RankedUser = {
   username: string;
@@ -37,8 +42,125 @@ type RankedUser = {
   };
 };
 
+type RankingMode = 'global' | 'medium';
+type RankingTimeFilter =
+  | 'all-time'
+  | 'today'
+  | 'week'
+  | 'month'
+  | 'year'
+  | 'custom';
+type RankingDisplayMode = 'xp' | 'hours' | 'chars';
+type RankingMediumType =
+  | 'anime'
+  | 'manga'
+  | 'reading'
+  | 'vn'
+  | 'game'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'audio';
+type RankingMediumMetric = 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+
+type RankingDefaults = {
+  mode?: RankingMode;
+  timeFilter?: RankingTimeFilter;
+  xpFilter?: filterTypes;
+  displayMode?: RankingDisplayMode;
+  mediumType?: RankingMediumType;
+  mediumMetric?: RankingMediumMetric;
+  startDate?: string;
+  endDate?: string;
+};
+
+const RANKING_DEFAULTS_STORAGE_KEY = 'rankingDefaults';
+const VALID_TIME_FILTERS: RankingTimeFilter[] = [
+  'all-time',
+  'today',
+  'week',
+  'month',
+  'year',
+  'custom',
+];
+const VALID_MODES: RankingMode[] = ['global', 'medium'];
+const VALID_SCOPES: filterTypes[] = ['userXp', 'readingXp', 'listeningXp'];
+const VALID_DISPLAY_MODES: RankingDisplayMode[] = ['xp', 'hours', 'chars'];
+const VALID_MEDIUM_TYPES: RankingMediumType[] = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'game',
+  'video',
+  'movie',
+  'tv show',
+  'audio',
+];
+const isOneOf = <T extends string>(
+  value: string | null | undefined,
+  options: readonly T[]
+): value is T => !!value && options.includes(value as T);
+
+const getRankingDefaultsKey = (userId?: string | null) =>
+  userId
+    ? `${RANKING_DEFAULTS_STORAGE_KEY}:${userId}`
+    : RANKING_DEFAULTS_STORAGE_KEY;
+
+const loadRankingDefaults = (userId?: string | null): RankingDefaults => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    const stored = localStorage.getItem(getRankingDefaultsKey(userId));
+    if (!stored) {
+      return {};
+    }
+
+    const parsed = JSON.parse(stored);
+    if (!parsed || typeof parsed !== 'object') {
+      return {};
+    }
+
+    return parsed as RankingDefaults;
+  } catch {
+    return {};
+  }
+};
+
+const saveRankingDefaults = (
+  userId: string | null | undefined,
+  defaults: RankingDefaults
+) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      getRankingDefaultsKey(userId),
+      JSON.stringify(defaults)
+    );
+  } catch {
+    return;
+  }
+};
+
+const removeRankingDefaults = (userId?: string | null) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  localStorage.removeItem(getRankingDefaultsKey(userId));
+};
+
 function RankingScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useUserDataStore();
+  const initialDefaults = loadRankingDefaults(user?._id);
+  const [savedDefaults, setSavedDefaults] =
+    useState<RankingDefaults>(initialDefaults);
   const [limit] = useState(10);
   const modeParam = searchParams.get('mode');
   const scopeParam = searchParams.get('scope');
@@ -49,70 +171,55 @@ function RankingScreen() {
   const startParam = searchParams.get('start');
   const endParam = searchParams.get('end');
 
-  const [xpFilter, setXpFilter] = useState<filterTypes>(() => {
-    if (
-      scopeParam === 'userXp' ||
-      scopeParam === 'readingXp' ||
-      scopeParam === 'listeningXp'
-    ) {
-      return scopeParam;
-    }
-    return 'userXp';
-  });
-  const [timeFilter, setTimeFilter] = useState<string>(() => {
-    if (
-      timeParam === 'all-time' ||
-      timeParam === 'today' ||
-      timeParam === 'week' ||
-      timeParam === 'month' ||
-      timeParam === 'year' ||
-      timeParam === 'custom'
-    ) {
-      return timeParam;
-    }
-    return 'month';
-  });
-  const [displayMode, setDisplayMode] = useState<'xp' | 'hours' | 'chars'>(
-    () => {
-      if (
-        metricParam === 'xp' ||
-        metricParam === 'hours' ||
-        metricParam === 'chars'
-      ) {
-        return metricParam;
-      }
-      return 'xp';
-    }
-  );
-  const [mode, setMode] = useState<'global' | 'medium'>(() =>
-    modeParam === 'medium' ? 'medium' : 'global'
-  );
-  const [mediumType, setMediumType] = useState<
-    | 'anime'
-    | 'manga'
-    | 'reading'
-    | 'vn'
-    | 'game'
-    | 'video'
-    | 'movie'
-    | 'tv show'
-    | 'audio'
-  >(() => {
-    if (
-      mediumTypeParam === 'anime' ||
-      mediumTypeParam === 'manga' ||
-      mediumTypeParam === 'reading' ||
-      mediumTypeParam === 'vn' ||
-      mediumTypeParam === 'game' ||
-      mediumTypeParam === 'video' ||
-      mediumTypeParam === 'movie' ||
-      mediumTypeParam === 'tv show' ||
-      mediumTypeParam === 'audio'
-    ) {
-      return mediumTypeParam;
-    }
-    return 'anime';
-  });
+  const resolvedMode = isOneOf(modeParam, VALID_MODES)
+    ? modeParam
+    : isOneOf(initialDefaults.mode, VALID_MODES)
+      ? initialDefaults.mode
+      : 'global';
+
+  const resolvedScope = isOneOf(scopeParam, VALID_SCOPES)
+    ? scopeParam
+    : isOneOf(initialDefaults.xpFilter, VALID_SCOPES)
+      ? initialDefaults.xpFilter
+      : 'userXp';
+
+  const resolvedDisplayMode = isOneOf(metricParam, VALID_DISPLAY_MODES)
+    ? metricParam
+    : isOneOf(initialDefaults.displayMode, VALID_DISPLAY_MODES)
+      ? initialDefaults.displayMode
+      : 'xp';
+
+  const resolvedTimeFilterCandidate = isOneOf(timeParam, VALID_TIME_FILTERS)
+    ? timeParam
+    : isOneOf(initialDefaults.timeFilter, VALID_TIME_FILTERS)
+      ? initialDefaults.timeFilter
+      : 'month';
+  const resolvedStartCandidate = startParam || initialDefaults.startDate || '';
+  const resolvedEndCandidate = endParam || initialDefaults.endDate || '';
+  const resolvedTimeFilter =
+    resolvedTimeFilterCandidate === 'custom' &&
+    (!resolvedStartCandidate || !resolvedEndCandidate)
+      ? 'month'
+      : resolvedTimeFilterCandidate;
+  const resolvedStartDate =
+    resolvedTimeFilter === 'custom' ? resolvedStartCandidate : '';
+  const resolvedEndDate =
+    resolvedTimeFilter === 'custom' ? resolvedEndCandidate : '';
+
+  const resolvedMediumType = isOneOf(mediumTypeParam, VALID_MEDIUM_TYPES)
+    ? mediumTypeParam
+    : isOneOf(initialDefaults.mediumType, VALID_MEDIUM_TYPES)
+      ? initialDefaults.mediumType
+      : 'anime';
+
+  const [xpFilter, setXpFilter] = useState<filterTypes>(resolvedScope);
+  const [timeFilter, setTimeFilter] =
+    useState<RankingTimeFilter>(resolvedTimeFilter);
+  const [displayMode, setDisplayMode] =
+    useState<RankingDisplayMode>(resolvedDisplayMode);
+  const [mode, setMode] = useState<RankingMode>(resolvedMode);
+  const [mediumType, setMediumType] =
+    useState<RankingMediumType>(resolvedMediumType);
   const mediumMetricOptions: Record<
     | 'anime'
     | 'manga'
@@ -173,61 +280,30 @@ function RankingScreen() {
       ],
     };
   }, []);
-  const [mediumMetric, setMediumMetric] = useState<
-    'xp' | 'time' | 'episodes' | 'chars' | 'pages'
-  >(() => {
-    const allowed = mediumMetricOptions[
-      mediumTypeParam === 'anime' ||
-      mediumTypeParam === 'manga' ||
-      mediumTypeParam === 'reading' ||
-      mediumTypeParam === 'vn' ||
-      mediumTypeParam === 'game' ||
-      mediumTypeParam === 'video' ||
-      mediumTypeParam === 'movie' ||
-      mediumTypeParam === 'tv show' ||
-      mediumTypeParam === 'audio'
-        ? mediumTypeParam
-        : 'anime'
-    ].map((item) => item.value);
+  const [mediumMetric, setMediumMetric] = useState<RankingMediumMetric>(() => {
+    const allowed = mediumMetricOptions[resolvedMediumType].map(
+      (item) => item.value
+    );
 
-    if (
-      mediumMetricParam &&
-      (
-        allowed as Array<'xp' | 'time' | 'episodes' | 'chars' | 'pages'>
-      ).includes(
-        mediumMetricParam as 'xp' | 'time' | 'episodes' | 'chars' | 'pages'
-      )
-    ) {
-      return mediumMetricParam as
-        | 'xp'
-        | 'time'
-        | 'episodes'
-        | 'chars'
-        | 'pages';
+    if (isOneOf(mediumMetricParam, allowed)) {
+      return mediumMetricParam;
     }
 
-    return mediumMetricOptions[
-      mediumTypeParam === 'anime' ||
-      mediumTypeParam === 'manga' ||
-      mediumTypeParam === 'reading' ||
-      mediumTypeParam === 'vn' ||
-      mediumTypeParam === 'game' ||
-      mediumTypeParam === 'video' ||
-      mediumTypeParam === 'movie' ||
-      mediumTypeParam === 'tv show' ||
-      mediumTypeParam === 'audio'
-        ? mediumTypeParam
-        : 'anime'
-    ][0].value;
+    if (isOneOf(initialDefaults.mediumMetric, allowed)) {
+      return initialDefaults.mediumMetric;
+    }
+
+    return mediumMetricOptions[resolvedMediumType][0].value;
   });
   const { timezone } = useTimezone(); // Get user's timezone
-  const [startDate, setStartDate] = useState<string>(startParam || ''); // YYYY-MM-DD
-  const [endDate, setEndDate] = useState<string>(endParam || ''); // YYYY-MM-DD
+  const [startDate, setStartDate] = useState<string>(resolvedStartDate); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState<string>(resolvedEndDate); // YYYY-MM-DD
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(
-    () => (startParam ? new Date(`${startParam}T00:00:00`) : undefined)
+    () =>
+      resolvedStartDate ? new Date(`${resolvedStartDate}T00:00:00`) : undefined
   );
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(() =>
-    endParam ? new Date(`${endParam}T00:00:00`) : undefined
+    resolvedEndDate ? new Date(`${resolvedEndDate}T00:00:00`) : undefined
   );
   const startBtnRef = useRef<HTMLDivElement | null>(null);
   const endBtnRef = useRef<HTMLDivElement | null>(null);
@@ -236,6 +312,58 @@ function RankingScreen() {
     d
       ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       : '';
+
+  const currentDefaults: RankingDefaults = {
+    mode,
+    timeFilter,
+    xpFilter,
+    displayMode,
+    mediumType,
+    mediumMetric,
+    startDate: timeFilter === 'custom' ? startDate : undefined,
+    endDate: timeFilter === 'custom' ? endDate : undefined,
+  };
+
+  const savedStartDate =
+    savedDefaults.timeFilter === 'custom'
+      ? (savedDefaults.startDate ?? '')
+      : '';
+  const savedEndDate =
+    savedDefaults.timeFilter === 'custom' ? (savedDefaults.endDate ?? '') : '';
+  const currentStartDate = timeFilter === 'custom' ? startDate : '';
+  const currentEndDate = timeFilter === 'custom' ? endDate : '';
+  const hasSavedDefaults = Object.keys(savedDefaults).length > 0;
+  const isDefaultMatch =
+    hasSavedDefaults &&
+    savedDefaults.mode === currentDefaults.mode &&
+    savedDefaults.timeFilter === currentDefaults.timeFilter &&
+    savedDefaults.xpFilter === currentDefaults.xpFilter &&
+    savedDefaults.displayMode === currentDefaults.displayMode &&
+    savedDefaults.mediumType === currentDefaults.mediumType &&
+    savedDefaults.mediumMetric === currentDefaults.mediumMetric &&
+    savedStartDate === currentStartDate &&
+    savedEndDate === currentEndDate;
+
+  const handleSaveDefaults = () => {
+    if (timeFilter === 'custom' && (!startDate || !endDate)) {
+      toast.error('Select a start and end date for the custom range.');
+      return;
+    }
+
+    saveRankingDefaults(user?._id, currentDefaults);
+    setSavedDefaults(currentDefaults);
+    toast.success('Default ranking filters saved.');
+  };
+
+  const handleRemoveDefaults = () => {
+    removeRankingDefaults(user?._id);
+    setSavedDefaults({});
+    toast.success('Default ranking filters removed.');
+  };
+
+  useEffect(() => {
+    setSavedDefaults(loadRankingDefaults(user?._id));
+  }, [user?._id]);
 
   // Get the actual filter to send to backend based on display mode
   const getBackendFilter = () => {
@@ -435,7 +563,7 @@ function RankingScreen() {
       value: 'year',
       icon: <Calendar className="w-4 h-4" />,
     },
-  ];
+  ] as const;
 
   // Get display value based on mode
   const getDisplayValue = (user: {
@@ -594,15 +722,15 @@ function RankingScreen() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-          <div className="join">
+          <div className="join w-full sm:w-auto">
             <button
-              className={`btn join-item ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
+              className={`btn join-item flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('global')}
             >
               Global
             </button>
             <button
-              className={`btn join-item ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
+              className={`btn join-item flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('medium')}
             >
               By Medium
@@ -611,124 +739,79 @@ function RankingScreen() {
 
           {/* Combined scope+metric dropdown (Global mode only) */}
 
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-outline gap-2">
-              {getTimeFilterIcon()}
-              {getTimeFilterLabel()}
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:gap-4">
+            <div className="dropdown dropdown-end w-full sm:w-auto">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-outline gap-2 w-full sm:w-auto"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                ></path>
-              </svg>
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-72 border border-base-300"
-            >
-              {timeFilterOptions.map((option) => (
-                <li key={option.value}>
-                  <button
-                    className={`gap-3 ${timeFilter === option.value ? 'active' : ''}`}
-                    onClick={() => {
-                      setTimeFilter(option.value);
-                      if (option.value !== 'custom') {
+                {getTimeFilterIcon()}
+                {getTimeFilterLabel()}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-72 border border-base-300"
+              >
+                {timeFilterOptions.map((option) => (
+                  <li key={option.value}>
+                    <button
+                      className={`gap-3 ${timeFilter === option.value ? 'active' : ''}`}
+                      onClick={() => {
+                        setTimeFilter(option.value);
                         setStartDate('');
                         setEndDate('');
                         setCustomStartDate(undefined);
                         setCustomEndDate(undefined);
-                      }
-                    }}
-                  >
-                    {option.icon}
-                    {option.label}
-                  </button>
-                </li>
-              ))}
-              <li className="menu-title px-2 mt-2">Custom range</li>
-              <li className="px-2 py-2">
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col gap-2 w-full">
-                    <div className="dropdown dropdown-bottom">
-                      <div
-                        tabIndex={0}
-                        role="button"
-                        className="btn btn-outline btn-sm w-full"
-                        ref={startBtnRef}
-                      >
-                        {customStartDate
-                          ? formatDateOnly(customStartDate)
-                          : 'Start Date'}
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 ml-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                      }}
+                    >
+                      {option.icon}
+                      {option.label}
+                    </button>
+                  </li>
+                ))}
+                <li className="menu-title px-2 mt-2">Custom range</li>
+                <li className="px-2 py-2">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="dropdown dropdown-bottom">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline btn-sm w-full"
+                          ref={startBtnRef}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </div>
-                      <div
-                        tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
-                      >
-                        <DayPicker
-                          className="react-day-picker mx-auto"
-                          mode="single"
-                          selected={customStartDate}
-                          onSelect={(date) => {
-                            setCustomStartDate(date ?? undefined);
-                            if (customEndDate && date && customEndDate < date) {
-                              setCustomEndDate(undefined);
-                            }
-                            // Move focus back to the trigger to close only this picker and keep the main dropdown open
-                            startBtnRef.current?.focus();
-                          }}
-                          disabled={() => false}
-                        />
-                      </div>
-                    </div>
-                    <span className="text-center text-base-content/50">to</span>
-
-                    <div className="dropdown dropdown-bottom">
-                      <div
-                        tabIndex={0}
-                        role="button"
-                        className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
-                        ref={endBtnRef}
-                      >
-                        {customEndDate
-                          ? formatDateOnly(customEndDate)
-                          : 'End Date'}
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 ml-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </div>
-                      {customStartDate && (
+                          {customStartDate
+                            ? formatDateOnly(customStartDate)
+                            : 'Start Date'}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
                         <div
                           tabIndex={0}
                           className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
@@ -736,110 +819,224 @@ function RankingScreen() {
                           <DayPicker
                             className="react-day-picker mx-auto"
                             mode="single"
-                            selected={customEndDate}
+                            selected={customStartDate}
                             onSelect={(date) => {
-                              setCustomEndDate(date ?? undefined);
+                              setCustomStartDate(date ?? undefined);
+                              if (
+                                customEndDate &&
+                                date &&
+                                customEndDate < date
+                              ) {
+                                setCustomEndDate(undefined);
+                              }
                               // Move focus back to the trigger to close only this picker and keep the main dropdown open
-                              endBtnRef.current?.focus();
+                              startBtnRef.current?.focus();
                             }}
-                            disabled={(date) => {
-                              const startD = customStartDate;
-                              return startD && date < startD;
-                            }}
+                            disabled={() => false}
                           />
                         </div>
-                      )}
+                      </div>
+                      <span className="text-center text-base-content/50">
+                        to
+                      </span>
+
+                      <div className="dropdown dropdown-bottom">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
+                          ref={endBtnRef}
+                        >
+                          {customEndDate
+                            ? formatDateOnly(customEndDate)
+                            : 'End Date'}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        {customStartDate && (
+                          <div
+                            tabIndex={0}
+                            className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                          >
+                            <DayPicker
+                              className="react-day-picker mx-auto"
+                              mode="single"
+                              selected={customEndDate}
+                              onSelect={(date) => {
+                                setCustomEndDate(date ?? undefined);
+                                // Move focus back to the trigger to close only this picker and keep the main dropdown open
+                                endBtnRef.current?.focus();
+                              }}
+                              disabled={(date) => {
+                                const startD = customStartDate;
+                                return startD && date < startD;
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="btn btn-sm btn-primary"
+                        onClick={() => {
+                          setStartDate(formatDateOnly(customStartDate));
+                          setEndDate(formatDateOnly(customEndDate));
+                          setTimeFilter('custom');
+                        }}
+                        disabled={!customStartDate || !customEndDate}
+                      >
+                        Apply
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        onClick={() => {
+                          setStartDate('');
+                          setEndDate('');
+                          setCustomStartDate(undefined);
+                          setCustomEndDate(undefined);
+                          setTimeFilter('all-time');
+                        }}
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-2">
+                </li>
+              </ul>
+            </div>
+
+            <div
+              className="dropdown dropdown-end w-full sm:w-auto"
+              hidden={mode !== 'global'}
+            >
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-primary gap-2 w-full sm:w-auto"
+              >
+                {getFilterIcon()}
+                {getFilterLabel()}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
+              >
+                <li className="menu-title px-2">Scope</li>
+                {scopeOptions.map((option) => (
+                  <li key={option.value}>
                     <button
-                      className="btn btn-sm btn-primary"
+                      className={`gap-3 ${xpFilter === option.value ? 'active' : ''}`}
                       onClick={() => {
-                        setStartDate(formatDateOnly(customStartDate));
-                        setEndDate(formatDateOnly(customEndDate));
-                        setTimeFilter('custom');
+                        setXpFilter(option.value as filterTypes);
+                        if (
+                          option.value === 'listeningXp' &&
+                          displayMode === 'chars'
+                        ) {
+                          setDisplayMode('xp');
+                        }
                       }}
-                      disabled={!customStartDate || !customEndDate}
                     >
-                      Apply
+                      {option.icon}
+                      {option.label}
                     </button>
+                  </li>
+                ))}
+                <li className="menu-title px-2 mt-2">Metric</li>
+                {allowedMetricOptions().map((m) => (
+                  <li key={m.value}>
                     <button
-                      className="btn btn-sm"
-                      onClick={() => {
-                        setStartDate('');
-                        setEndDate('');
-                        setCustomStartDate(undefined);
-                        setCustomEndDate(undefined);
-                        setTimeFilter('all-time');
-                      }}
+                      className={`gap-3 ${displayMode === m.value ? 'active' : ''}`}
+                      onClick={() => setDisplayMode(m.value)}
                     >
-                      Clear
+                      {m.label}
                     </button>
-                  </div>
-                </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={isDefaultMatch ? handleRemoveDefaults : handleSaveDefaults}
+            className={`btn w-full sm:hidden justify-start gap-2 ${isDefaultMatch ? 'btn-error' : 'btn-outline'}`}
+          >
+            {isDefaultMatch ? (
+              <BookmarkX className="w-4 h-4" />
+            ) : (
+              <Bookmark className="w-4 h-4" />
+            )}
+            {isDefaultMatch ? 'Remove default' : 'Save as default'}
+          </button>
+
+          <div className="dropdown dropdown-end hidden sm:block">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-circle"
+              aria-label="Ranking defaults"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-56 border border-base-300"
+            >
+              <li>
+                <button
+                  type="button"
+                  onClick={
+                    isDefaultMatch ? handleRemoveDefaults : handleSaveDefaults
+                  }
+                  className={`gap-2 ${isDefaultMatch ? 'text-error hover:text-error hover:bg-error/10' : ''}`}
+                >
+                  {isDefaultMatch ? (
+                    <BookmarkX className="w-4 h-4" />
+                  ) : (
+                    <Bookmark className="w-4 h-4" />
+                  )}
+                  {isDefaultMatch ? 'Remove default' : 'Save as default'}
+                </button>
               </li>
             </ul>
           </div>
 
-          <div className="dropdown dropdown-end" hidden={mode !== 'global'}>
-            <div tabIndex={0} role="button" className="btn btn-primary gap-2">
-              {getFilterIcon()}
-              {getFilterLabel()}
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                ></path>
-              </svg>
-            </div>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
-            >
-              <li className="menu-title px-2">Scope</li>
-              {scopeOptions.map((option) => (
-                <li key={option.value}>
-                  <button
-                    className={`gap-3 ${xpFilter === option.value ? 'active' : ''}`}
-                    onClick={() => {
-                      setXpFilter(option.value as filterTypes);
-                      if (
-                        option.value === 'listeningXp' &&
-                        displayMode === 'chars'
-                      ) {
-                        setDisplayMode('xp');
-                      }
-                    }}
-                  >
-                    {option.icon}
-                    {option.label}
-                  </button>
-                </li>
-              ))}
-              <li className="menu-title px-2 mt-2">Metric</li>
-              {allowedMetricOptions().map((m) => (
-                <li key={m.value}>
-                  <button
-                    className={`gap-3 ${displayMode === m.value ? 'active' : ''}`}
-                    onClick={() => setDisplayMode(m.value)}
-                  >
-                    {m.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Medium filters */}
-          <div className="dropdown dropdown-end" hidden={mode !== 'medium'}>
-            <div tabIndex={0} role="button" className="btn btn-primary gap-2">
+          <div
+            className="dropdown dropdown-end w-full sm:w-auto"
+            hidden={mode !== 'medium'}
+          >
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-primary gap-2 w-full sm:w-auto"
+            >
               {getMediumTypeLabel(mediumType)}
               <svg
                 className="w-4 h-4"
@@ -886,8 +1083,15 @@ function RankingScreen() {
             </ul>
           </div>
 
-          <div className="dropdown dropdown-end" hidden={mode !== 'medium'}>
-            <div tabIndex={0} role="button" className="btn btn-outline gap-2">
+          <div
+            className="dropdown dropdown-end w-full sm:w-auto"
+            hidden={mode !== 'medium'}
+          >
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-outline gap-2 w-full sm:w-auto"
+            >
               {
                 mediumMetricOptions[mediumType].find(
                   (o) => o.value === mediumMetric
