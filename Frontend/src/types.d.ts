@@ -261,11 +261,29 @@ export interface IRankingParams {
 export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
   mediaId?: string;
   search?: string;
+  mediaTitle?: string;
   start?: string;
   end?: string;
   type?: ILog['type'] | ILog['type'][];
   sortBy?: 'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time';
   sortDirection?: 'asc' | 'desc';
+  tags?: string[] | string;
+  tagsMode?: 'any' | 'all';
+  volume?: number;
+  volumeMin?: number;
+  volumeMax?: number;
+  episodes?: number;
+  episodesMin?: number;
+  episodesMax?: number;
+  pages?: number;
+  pagesMin?: number;
+  pagesMax?: number;
+  chars?: number;
+  charsMin?: number;
+  charsMax?: number;
+  time?: number;
+  timeMin?: number;
+  timeMax?: number;
 }
 
 // Add interface for MatchMedia logs (minimal required fields)

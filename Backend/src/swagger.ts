@@ -705,9 +705,45 @@ const swaggerDocument = {
         summary: 'Get medium-specific rankings',
         parameters: [
           {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
             name: 'type',
             in: 'query',
             schema: { type: 'string' },
+          },
+          {
+            name: 'metric',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Metric to rank by (xp, time, episodes, chars, pages)',
+          },
+          {
+            name: 'timeFilter',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'timezone',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
           },
         ],
         responses: {
@@ -782,6 +818,132 @@ const swaggerDocument = {
             name: 'type',
             in: 'query',
             schema: { type: 'string' },
+          },
+          {
+            name: 'mediaId',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'mediaTitle',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'search',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            schema: { type: 'string', format: 'date-time' },
+          },
+          {
+            name: 'sortBy',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: ['date', 'xp', 'episodes', 'chars', 'pages', 'time'],
+            },
+          },
+          {
+            name: 'sortDirection',
+            in: 'query',
+            schema: { type: 'string', enum: ['asc', 'desc'] },
+          },
+          {
+            name: 'tags',
+            in: 'query',
+            schema: {
+              type: 'string',
+              description: 'Comma-separated tag IDs or repeated tags params',
+            },
+          },
+          {
+            name: 'tagsMode',
+            in: 'query',
+            schema: { type: 'string', enum: ['any', 'all'] },
+          },
+          {
+            name: 'volume',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'volumeMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'volumeMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'episodes',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'episodesMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'episodesMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'pages',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'pagesMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'pagesMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'chars',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'charsMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'charsMax',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'time',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'timeMin',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+          {
+            name: 'timeMax',
+            in: 'query',
+            schema: { type: 'integer' },
           },
         ],
         responses: {

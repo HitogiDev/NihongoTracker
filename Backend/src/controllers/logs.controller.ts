@@ -614,7 +614,14 @@ interface IInitialMatch {
     $lte?: Date;
   };
   description?: { $regex: string; $options: string };
+  mediaTitle?: { $regex: string; $options: string };
   mediaId?: string;
+  tags?: { $in: Types.ObjectId[] } | { $all: Types.ObjectId[] };
+  volume?: number | { $gte?: number; $lte?: number };
+  episodes?: number | { $gte?: number; $lte?: number };
+  pages?: number | { $gte?: number; $lte?: number };
+  chars?: number | { $gte?: number; $lte?: number };
+  time?: number | { $gte?: number; $lte?: number };
 }
 
 export async function getUserLogs(
@@ -647,6 +654,55 @@ export async function getUserLogs(
     if (!req.params.username) {
       throw new customError('Username is required', 400);
     }
+
+    const parseNumberParam = (value: unknown): number | null => {
+      if (Array.isArray(value)) {
+        return parseNumberParam(value[0]);
+      }
+
+      if (value === undefined || value === null || value === '') {
+        return null;
+      }
+
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const buildRangeFilter = (
+      field: string,
+      minValue: number | null,
+      maxValue: number | null
+    ) => {
+      if (minValue === null && maxValue === null) {
+        return null;
+      }
+
+      if (minValue !== null && maxValue !== null && minValue > maxValue) {
+        throw new customError(
+          `${field}Min cannot be greater than ${field}Max`,
+          400
+        );
+      }
+
+      return {
+        ...(minValue !== null ? { $gte: minValue } : {}),
+        ...(maxValue !== null ? { $lte: maxValue } : {}),
+      };
+    };
+
+    const parseTagIds = (value: unknown): Types.ObjectId[] => {
+      const rawTags = Array.isArray(value)
+        ? value
+        : typeof value === 'string'
+          ? value.split(',')
+          : [];
+
+      return rawTags
+        .map((tag) => (typeof tag === 'string' ? tag.trim() : ''))
+        .filter((tag) => tag.length > 0)
+        .filter((tag) => Types.ObjectId.isValid(tag))
+        .map((tag) => new Types.ObjectId(tag));
+    };
 
     const userExists = await User.findOne({
       username: req.params.username,
@@ -685,8 +741,85 @@ export async function getUserLogs(
       initialMatch.description = { $regex: search, $options: 'i' };
     }
 
+    if (req.query.mediaTitle && typeof req.query.mediaTitle === 'string') {
+      const mediaTitle = req.query.mediaTitle.trim();
+      if (mediaTitle.length > 0) {
+        initialMatch.mediaTitle = { $regex: mediaTitle, $options: 'i' };
+      }
+    }
+
     if (req.query.mediaId && typeof req.query.mediaId === 'string') {
       initialMatch.mediaId = req.query.mediaId;
+    }
+
+    const tagsMode =
+      typeof req.query.tagsMode === 'string'
+        ? req.query.tagsMode.toLowerCase()
+        : 'any';
+    const tagIds = parseTagIds(req.query.tags);
+    if (tagIds.length > 0) {
+      initialMatch.tags =
+        tagsMode === 'all' ? { $all: tagIds } : { $in: tagIds };
+    }
+
+    const volumeExact = parseNumberParam(req.query.volume);
+    const volumeRange = buildRangeFilter(
+      'volume',
+      parseNumberParam(req.query.volumeMin),
+      parseNumberParam(req.query.volumeMax)
+    );
+    if (volumeExact !== null) {
+      initialMatch.volume = volumeExact;
+    } else if (volumeRange) {
+      initialMatch.volume = volumeRange;
+    }
+
+    const episodesExact = parseNumberParam(req.query.episodes);
+    const episodesRange = buildRangeFilter(
+      'episodes',
+      parseNumberParam(req.query.episodesMin),
+      parseNumberParam(req.query.episodesMax)
+    );
+    if (episodesExact !== null) {
+      initialMatch.episodes = episodesExact;
+    } else if (episodesRange) {
+      initialMatch.episodes = episodesRange;
+    }
+
+    const pagesExact = parseNumberParam(req.query.pages);
+    const pagesRange = buildRangeFilter(
+      'pages',
+      parseNumberParam(req.query.pagesMin),
+      parseNumberParam(req.query.pagesMax)
+    );
+    if (pagesExact !== null) {
+      initialMatch.pages = pagesExact;
+    } else if (pagesRange) {
+      initialMatch.pages = pagesRange;
+    }
+
+    const charsExact = parseNumberParam(req.query.chars);
+    const charsRange = buildRangeFilter(
+      'chars',
+      parseNumberParam(req.query.charsMin),
+      parseNumberParam(req.query.charsMax)
+    );
+    if (charsExact !== null) {
+      initialMatch.chars = charsExact;
+    } else if (charsRange) {
+      initialMatch.chars = charsRange;
+    }
+
+    const timeExact = parseNumberParam(req.query.time);
+    const timeRange = buildRangeFilter(
+      'time',
+      parseNumberParam(req.query.timeMin),
+      parseNumberParam(req.query.timeMax)
+    );
+    if (timeExact !== null) {
+      initialMatch.time = timeExact;
+    } else if (timeRange) {
+      initialMatch.time = timeRange;
     }
 
     // Create sort object based on sortBy parameter and direction
@@ -799,7 +932,7 @@ export async function getUserLogs(
 
     const logs = await Log.aggregate(pipeline);
 
-    if (!logs.length) return res.sendStatus(204);
+    if (!logs.length) return res.status(200).json([]);
 
     const normalizedLogs = logs.map((log) => ({
       ...log,

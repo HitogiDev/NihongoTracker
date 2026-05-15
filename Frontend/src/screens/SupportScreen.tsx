@@ -44,7 +44,7 @@ function SupportScreen() {
       color: 'badge-secondary',
       icon: <Award className="w-5 h-5" />,
       benefits: [
-        'Animated GIF Avatars',
+        'Animated GIF avatars and banners',
         'Custom text in the profile donator badge',
         'Increase maximum log tags to 15',
         'Increase maximum club members to 250',
@@ -192,9 +192,13 @@ function SupportScreen() {
             <span className="badge badge-secondary badge-outline mb-4">
               Patreon Tiers
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-base-content">
+            <h2 className="text-3xl md:text-4xl font-bold text-base-content mb-4">
               Pick the support level that fits you
             </h2>
+            <p className="text-base-content/60 mb-6 max-w-2xl mx-auto">
+              Benefits are cumulative. Higher tiers include all lower tier
+              benefits.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
