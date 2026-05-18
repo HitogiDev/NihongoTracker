@@ -579,6 +579,13 @@ export interface IMediaDocument {
   isCompleted?: boolean;
   completedAt?: string | Date | null;
   autoCompleteSuppressed?: boolean;
+  mediaStatus?:
+    | 'completed'
+    | 'dropped'
+    | 'paused'
+    | 'planning'
+    | 'in_progress'
+    | null;
 }
 
 export interface IAverageColor {

@@ -11,6 +11,9 @@ import {
   getIgdbDumpSyncStatus as getIgdbDumpSyncStatusService,
   startIgdbDumpSync,
 } from '../services/igdbDumpSync.js';
+import UserMediaStatus from '../models/userMediaStatus.model.js';
+import { MediaBase } from '../models/media.model.js';
+import { IMediaDocument } from '../types.js';
 
 export async function getAdminStats(
   _req: Request,
@@ -358,6 +361,175 @@ export async function searchAdminLogs(
       total,
       page,
       totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function markLogsWithoutStatusToInProgress(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // Find distinct user/media/type combos from logs where mediaId exists.
+    // Use the summed log quantity to decide whether the media is completed.
+    const immersionTypes = [
+      'anime',
+      'manga',
+      'reading',
+      'vn',
+      'game',
+      'video',
+      'movie',
+      'tv show',
+    ];
+
+    const combos = await Log.aggregate<any>([
+      {
+        $match: {
+          mediaId: { $exists: true, $nin: [null, ''] },
+          type: { $in: immersionTypes },
+        },
+      },
+      {
+        $group: {
+          _id: { user: '$user', mediaId: '$mediaId', type: '$type' },
+          totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+          totalChars: { $sum: { $ifNull: ['$chars', 0] } },
+        },
+      },
+      {
+        $lookup: {
+          from: 'usermediastatuses',
+          let: { userId: '$_id.user', mediaId: '$_id.mediaId', t: '$_id.type' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$user', '$$userId'] },
+                    { $eq: ['$mediaId', '$$mediaId'] },
+                    { $eq: ['$type', '$$t'] },
+                  ],
+                },
+              },
+            },
+            { $project: { status: 1 } },
+          ],
+          as: 'statusDocs',
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $eq: [{ $size: '$statusDocs' }, 0] },
+              { $eq: [{ $arrayElemAt: ['$statusDocs.status', 0] }, null] },
+            ],
+          },
+        },
+      },
+    ]).allowDiskUse(true);
+
+    const mediaIds = [
+      ...new Set(combos.map((combo) => String(combo._id.mediaId))),
+    ];
+    const mediaDocs = await MediaBase.find({ contentId: { $in: mediaIds } })
+      .select('contentId type episodes')
+      .lean();
+    const mediaById = new Map(
+      mediaDocs.map((media) => [media.contentId, media])
+    );
+
+    let created = 0;
+    let updated = 0;
+    let completed = 0;
+    let inProgress = 0;
+
+    for (const c of combos) {
+      const userId = c._id.user;
+      const mediaId = String(c._id.mediaId);
+      const type = String(c._id.type).toLowerCase();
+      const media = mediaById.get(mediaId);
+
+      const statusToSet = (() => {
+        if (type === 'anime' || type === 'tv show') {
+          const totalEpisodes = Number(media?.episodes);
+          if (!Number.isFinite(totalEpisodes) || totalEpisodes <= 0) {
+            return 'in_progress' as const;
+          }
+          return Number(c.totalEpisodes || 0) >= totalEpisodes
+            ? ('completed' as const)
+            : ('in_progress' as const);
+        }
+
+        if (type === 'vn') {
+          const totalCharacters = Number(
+            (media as (IMediaDocument & { characters?: number }) | undefined)
+              ?.characters
+          );
+          if (!Number.isFinite(totalCharacters) || totalCharacters <= 0) {
+            return 'in_progress' as const;
+          }
+          return Number(c.totalChars || 0) >= totalCharacters
+            ? ('completed' as const)
+            : ('in_progress' as const);
+        }
+
+        return 'in_progress' as const;
+      })();
+
+      const existing = await UserMediaStatus.findOne({
+        user: userId,
+        mediaId,
+        type,
+      }).lean();
+      if (!existing) {
+        try {
+          await UserMediaStatus.create({
+            user: userId,
+            mediaId,
+            type,
+            status: statusToSet,
+            completed: statusToSet === 'completed',
+            completedAt: statusToSet === 'completed' ? new Date() : null,
+            autoCompleteSuppressed: true,
+          });
+          created++;
+          if (statusToSet === 'completed') completed++;
+          else inProgress++;
+        } catch (err) {
+          // ignore duplicate key races
+        }
+      } else if (
+        existing &&
+        (existing.status === null || existing.status === undefined)
+      ) {
+        await UserMediaStatus.updateOne(
+          { _id: existing._id },
+          {
+            $set: {
+              status: statusToSet,
+              completed: statusToSet === 'completed',
+              completedAt: statusToSet === 'completed' ? new Date() : null,
+              autoCompleteSuppressed: true,
+            },
+          }
+        );
+        updated++;
+        if (statusToSet === 'completed') completed++;
+        else inProgress++;
+      }
+    }
+
+    return res.json({
+      created,
+      updated,
+      completed,
+      inProgress,
+      totalAffected: combos.length,
     });
   } catch (error) {
     return next(error as customError);

@@ -336,7 +336,16 @@ export async function importLogsFn() {
 
 export async function getImmersionListFn(
   username: string,
-  params?: { completed?: 'completed' | 'incomplete' }
+  params?: {
+    completed?: 'completed';
+    status?:
+      | 'completed'
+      | 'dropped'
+      | 'paused'
+      | 'planning'
+      | 'all'
+      | 'in_progress';
+  }
 ) {
   const { data } = await api.get<IImmersionList>(
     `users/${username}/immersionlist`,
@@ -348,13 +357,21 @@ export async function getImmersionListFn(
 export async function updateMediaCompletionStatusFn(payload: {
   mediaId: string;
   type: IMediaDocument['type'];
-  completed: boolean;
+  completed?: boolean;
+  status?: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress';
   source?: 'manual' | 'auto';
 }) {
   const { data } = await api.post(`users/media/status`, payload);
   return data as {
     mediaId: string;
     type: IMediaDocument['type'];
+    status:
+      | 'completed'
+      | 'dropped'
+      | 'paused'
+      | 'planning'
+      | 'in_progress'
+      | null;
     isCompleted: boolean;
     completedAt: string | null;
     autoCompleteSuppressed: boolean;
@@ -858,6 +875,17 @@ export async function adminUpdateUserFn(
 ) {
   const { data } = await api.put(`admin/users/${userId}`, payload);
   return data;
+}
+
+export async function adminMarkUntrackedToInProgressFn() {
+  const { data } = await api.post('admin/logs/mark-untracked-inprogress');
+  return data as {
+    created: number;
+    updated: number;
+    completed: number;
+    inProgress: number;
+    totalAffected: number;
+  };
 }
 
 export async function adminResetPasswordFn(

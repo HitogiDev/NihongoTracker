@@ -16,6 +16,7 @@ import {
   recalculateUserStreakByUsername,
   triggerIgdbDumpSync,
   getIgdbDumpSyncStatus,
+  markLogsWithoutStatusToInProgress,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -52,6 +53,13 @@ router.delete(
   protect,
   checkPermission(userRoles.admin),
   adminDeleteLog
+);
+
+router.post(
+  '/logs/mark-untracked-inprogress',
+  protect,
+  checkPermission(userRoles.admin),
+  markLogsWithoutStatusToInProgress
 );
 router.put<ParamsDictionary, any, ILog>(
   '/logs/:id',

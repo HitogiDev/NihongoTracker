@@ -117,6 +117,13 @@ export interface IUserMediaStatus extends Document {
     | 'movie'
     | 'tv show'
     | 'game';
+  status?:
+    | 'completed'
+    | 'dropped'
+    | 'paused'
+    | 'planning'
+    | 'in_progress'
+    | null;
   completed: boolean;
   completedAt?: Date | null;
   autoCompleteSuppressed?: boolean;
@@ -370,6 +377,13 @@ export interface IMediaDocument {
   isCompleted?: boolean;
   completedAt?: Date | null;
   autoCompleteSuppressed?: boolean;
+  mediaStatus?:
+    | 'completed'
+    | 'dropped'
+    | 'paused'
+    | 'planning'
+    | 'in_progress'
+    | null;
 }
 
 export interface IImportLogs {

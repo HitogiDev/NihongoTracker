@@ -19,6 +19,11 @@ const UserMediaStatusSchema = new Schema<IUserMediaStatus>(
         'game',
       ],
     },
+    status: {
+      type: String,
+      enum: ['completed', 'dropped', 'paused', 'planning', 'in_progress'],
+      default: null,
+    },
     completed: { type: Boolean, default: false },
     completedAt: { type: Date, default: null },
     autoCompleteSuppressed: { type: Boolean, default: false },

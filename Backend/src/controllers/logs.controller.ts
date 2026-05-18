@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { MediaBase, Anime, Manga, Reading } from '../models/media.model.js';
+import UserMediaStatus from '../models/userMediaStatus.model.js';
 import {
   ILog,
   IEditedFields,
@@ -1426,8 +1427,48 @@ export async function createLog(
       await updateStreakWithLog(res.locals.user._id, savedLog.date);
     }
 
-    // If this media was hidden from recent media, unhide it since user is actively logging it
     const finalMediaId = logMedia ? logMedia.contentId : mediaId;
+    const statusType = String(logMedia?.type ?? type).toLowerCase();
+    const immersionMediaTypes = new Set([
+      'anime',
+      'manga',
+      'reading',
+      'vn',
+      'game',
+      'video',
+      'movie',
+      'tv show',
+    ]);
+
+    if (finalMediaId && immersionMediaTypes.has(statusType)) {
+      await UserMediaStatus.findOneAndUpdate(
+        {
+          user: res.locals.user._id,
+          mediaId: String(finalMediaId),
+          type: statusType,
+          completed: { $ne: true },
+          $or: [{ status: { $exists: false } }, { status: null }],
+        },
+        {
+          $set: {
+            status: 'in_progress',
+            completed: false,
+            completedAt: null,
+            autoCompleteSuppressed: true,
+          },
+          $setOnInsert: {
+            user: res.locals.user._id,
+            mediaId: String(finalMediaId),
+            type: statusType,
+          },
+        },
+        {
+          upsert: true,
+        }
+      );
+    }
+
+    // If this media was hidden from recent media, unhide it since user is actively logging it
     if (finalMediaId) {
       const userDoc = await User.findById(res.locals.user._id);
       if (userDoc?.settings?.hiddenRecentMedia?.includes(finalMediaId)) {

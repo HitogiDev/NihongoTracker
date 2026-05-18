@@ -4,7 +4,7 @@ import { resetPasswordFn } from '../api/trackerApi';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, TriangleAlert, CircleCheck } from 'lucide-react';
 
 function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
@@ -94,7 +94,7 @@ function ResetPasswordScreen() {
       <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
         <div className="card w-full max-w-md bg-base-100 shadow-sm">
           <div className="card-body text-center">
-            <div className="text-6xl mb-4">⚠️</div>
+            <TriangleAlert className="w-16 h-16 mx-auto mb-4 text-warning" />
             <h2 className="card-title justify-center text-2xl mb-4">
               Invalid Reset Link
             </h2>
@@ -117,7 +117,7 @@ function ResetPasswordScreen() {
       <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
         <div className="card w-full max-w-md bg-base-100 shadow-sm">
           <div className="card-body text-center">
-            <div className="text-6xl mb-4">✅</div>
+            <CircleCheck className="w-16 h-16 mx-auto mb-4 text-success" />
             <h2 className="card-title justify-center text-2xl mb-4">
               Password Reset Successfully
             </h2>

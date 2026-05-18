@@ -1748,19 +1748,44 @@ export async function getImmersionList(
     const user = await User.findOne({ username: req.params.username });
     if (!user) throw new customError('User not found', 404);
 
-    type CompletionFilter = 'all' | 'completed' | 'incomplete';
+    type StatusFilter =
+      | 'all'
+      | 'completed'
+      | 'incomplete'
+      | 'in_progress'
+      | 'dropped'
+      | 'paused'
+      | 'planning';
+
     const completionQuery = (
       req.query.completed as string | undefined
     )?.toLowerCase();
-    let completionFilter: CompletionFilter = 'all';
+    const statusQuery = (
+      req.query.status as string | undefined
+    )?.toLowerCase() as StatusFilter | undefined;
 
-    if (completionQuery === 'true' || completionQuery === 'completed') {
-      completionFilter = 'completed';
+    // statusQuery takes precedence over the legacy completionQuery
+    let statusFilter: StatusFilter = 'all';
+    if (
+      statusQuery &&
+      [
+        'completed',
+        'incomplete',
+        'in_progress',
+        'dropped',
+        'paused',
+        'planning',
+        'all',
+      ].includes(statusQuery)
+    ) {
+      statusFilter = statusQuery;
+    } else if (completionQuery === 'true' || completionQuery === 'completed') {
+      statusFilter = 'completed';
     } else if (
       completionQuery === 'false' ||
       completionQuery === 'incomplete'
     ) {
-      completionFilter = 'incomplete';
+      statusFilter = 'incomplete';
     }
 
     // Update your interface definition
@@ -1827,29 +1852,38 @@ export async function getImmersionList(
       'tv show': [],
     };
 
-    const matchesCompletionFilter = (isCompleted: boolean) => {
-      if (completionFilter === 'completed') {
-        return isCompleted;
-      }
-
-      if (completionFilter === 'incomplete') {
-        return !isCompleted;
-      }
-
-      return true;
-    };
-
     const statusMap = new Map<
       string,
-      { completed: boolean; completedAt?: Date | null }
+      {
+        completed: boolean;
+        completedAt?: Date | null;
+        status?:
+          | 'completed'
+          | 'dropped'
+          | 'paused'
+          | 'planning'
+          | 'in_progress'
+          | null;
+      }
     >();
-    mediaStatuses.forEach((status) => {
-      const key = `${status.type}:${status.mediaId}`;
+    mediaStatuses.forEach((s) => {
+      const key = `${s.type}:${s.mediaId}`;
       statusMap.set(key, {
-        completed: status.completed,
-        completedAt: status.completedAt ?? null,
+        completed: s.completed,
+        completedAt: s.completedAt ?? null,
+        status: s.status ?? null,
       });
     });
+
+    const matchesStatusFilter = (
+      mediaStatus: string | null | undefined,
+      isCompleted: boolean
+    ) => {
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'completed') return isCompleted;
+      if (statusFilter === 'incomplete') return !isCompleted && !mediaStatus;
+      return mediaStatus === statusFilter;
+    };
 
     const mediaKeysFromLogs = new Set<string>();
 
@@ -1859,32 +1893,34 @@ export async function getImmersionList(
         .map((media) => {
           const key = `${mediaType}:${media.contentId}`;
           mediaKeysFromLogs.add(key);
-          const status = statusMap.get(key);
+          const s = statusMap.get(key);
           return {
             ...media,
-            isCompleted: status?.completed ?? false,
-            completedAt: status?.completedAt ?? null,
+            isCompleted: s?.completed ?? false,
+            completedAt: s?.completedAt ?? null,
+            mediaStatus: s?.status ?? null,
           };
         })
-        .filter((media) => matchesCompletionFilter(media.isCompleted ?? false));
+        .filter((media) =>
+          matchesStatusFilter(media.mediaStatus, media.isCompleted ?? false)
+        );
 
       result[mediaType] = mediaWithStatus;
     });
 
-    const completedStatusesWithoutLogs = mediaStatuses.filter((status) => {
-      const key = `${status.type}:${status.mediaId}`;
-      return status.completed && !mediaKeysFromLogs.has(key);
+    // Items with any explicit status (not just completed) but no logs
+
+    const statusesWithoutLogs = mediaStatuses.filter((s) => {
+      const key = `${s.type}:${s.mediaId}`;
+      return !!s.status && !mediaKeysFromLogs.has(key);
     });
 
-    if (
-      completedStatusesWithoutLogs.length > 0 &&
-      completionFilter !== 'incomplete'
-    ) {
+    if (statusesWithoutLogs.length > 0 && statusFilter !== 'incomplete') {
       const missingMediaMatchers = Array.from(
         new Map(
-          completedStatusesWithoutLogs.map((status) => [
-            `${status.type}:${status.mediaId}`,
-            { contentId: status.mediaId, type: status.type },
+          statusesWithoutLogs.map((s) => [
+            `${s.type}:${s.mediaId}`,
+            { contentId: s.mediaId, type: s.type },
           ])
         ).values()
       );
@@ -1902,19 +1938,23 @@ export async function getImmersionList(
           );
         });
 
-        completedStatusesWithoutLogs.forEach((status) => {
-          const mediaType = status.type as ImmersionMediaType;
-          const key = `${mediaType}:${status.mediaId}`;
+        statusesWithoutLogs.forEach((s) => {
+          const mediaType = s.type as ImmersionMediaType;
+          const key = `${mediaType}:${s.mediaId}`;
           const media = missingMediaMap.get(key);
 
-          if (!media || !matchesCompletionFilter(true)) {
+          if (
+            !media ||
+            !matchesStatusFilter(s.status ?? null, s.status === 'completed')
+          ) {
             return;
           }
 
           result[mediaType].push({
             ...media,
-            isCompleted: true,
-            completedAt: status.completedAt ?? null,
+            isCompleted: s.status === 'completed',
+            completedAt: s.completedAt ?? null,
+            mediaStatus: s.status ?? null,
           });
         });
       }
@@ -1946,13 +1986,20 @@ export async function updateMediaCompletionStatus(
       throw new customError('Not authorized', 401);
     }
 
-    const { mediaId, type, completed, completedAt, source } = req.body as {
-      mediaId?: string | number;
-      type?: string;
-      completed?: boolean;
-      completedAt?: string | Date;
-      source?: string;
-    };
+    const { mediaId, type, completed, completedAt, source, status } =
+      req.body as {
+        mediaId?: string | number;
+        type?: string;
+        completed?: boolean;
+        completedAt?: string | Date;
+        source?: string;
+        status?:
+          | 'completed'
+          | 'dropped'
+          | 'paused'
+          | 'planning'
+          | 'in_progress';
+      };
 
     if (!mediaId || !type) {
       throw new customError('Media ID and type are required', 400);
@@ -1984,6 +2031,17 @@ export async function updateMediaCompletionStatus(
       throw new customError('Invalid source', 400);
     }
 
+    const validStatuses = [
+      'completed',
+      'dropped',
+      'paused',
+      'planning',
+      'in_progress',
+    ];
+    if (status && !validStatuses.includes(status)) {
+      throw new customError('Invalid status value', 400);
+    }
+
     const completionSource = (normalizedSource ?? 'manual') as
       | 'manual'
       | 'auto';
@@ -1997,42 +2055,49 @@ export async function updateMediaCompletionStatus(
       throw new customError('Media not found', 404);
     }
 
-    const shouldComplete = completed ?? true;
+    // Determine the effective status to write
+    let effectiveStatus:
+      | 'completed'
+      | 'dropped'
+      | 'paused'
+      | 'planning'
+      | 'in_progress'
+      | null = null;
+    let effectiveCompleted: boolean;
+    let effectiveCompletedAt: Date | null = null;
+    let effectiveAutoCompleteSuppressed: boolean;
 
-    if (!shouldComplete) {
-      const status = await UserMediaStatus.findOneAndUpdate(
-        {
-          user: res.locals.user._id,
-          mediaId: normalizedMediaId,
-          type: normalizedType,
-        },
-        {
-          user: res.locals.user._id,
-          mediaId: normalizedMediaId,
-          type: normalizedType,
-          completed: false,
-          completedAt: null,
-          autoCompleteSuppressed: completionSource !== 'auto',
-        },
-        {
-          new: true,
-          upsert: true,
-          setDefaultsOnInsert: true,
-        }
-      );
-
-      return res.status(200).json({
-        mediaId: normalizedMediaId,
-        type: normalizedType,
-        isCompleted: false,
-        completedAt: null,
-        autoCompleteSuppressed: status?.autoCompleteSuppressed ?? true,
-      });
+    if (completionSource === 'auto') {
+      // Auto-complete from logging always writes completed
+      effectiveStatus = 'completed';
+      effectiveCompleted = true;
+      effectiveCompletedAt = completedAt ? new Date(completedAt) : new Date();
+      effectiveAutoCompleteSuppressed = false;
+    } else if (status) {
+      // Explicit status from user
+      effectiveStatus = status;
+      effectiveCompleted = status === 'completed';
+      effectiveCompletedAt =
+        status === 'completed'
+          ? completedAt
+            ? new Date(completedAt)
+            : new Date()
+          : null;
+      effectiveAutoCompleteSuppressed = status !== 'completed';
+    } else {
+      // Legacy path: only `completed` boolean provided
+      const shouldComplete = completed ?? true;
+      effectiveStatus = shouldComplete ? 'completed' : null;
+      effectiveCompleted = shouldComplete;
+      effectiveCompletedAt = shouldComplete
+        ? completedAt
+          ? new Date(completedAt)
+          : new Date()
+        : null;
+      effectiveAutoCompleteSuppressed = !shouldComplete;
     }
 
-    const completionDate = completedAt ? new Date(completedAt) : new Date();
-
-    const status = await UserMediaStatus.findOneAndUpdate(
+    const savedStatus = await UserMediaStatus.findOneAndUpdate(
       {
         user: res.locals.user._id,
         mediaId: normalizedMediaId,
@@ -2042,9 +2107,10 @@ export async function updateMediaCompletionStatus(
         user: res.locals.user._id,
         mediaId: normalizedMediaId,
         type: normalizedType,
-        completed: true,
-        completedAt: completionDate,
-        autoCompleteSuppressed: false,
+        status: effectiveStatus,
+        completed: effectiveCompleted,
+        completedAt: effectiveCompletedAt,
+        autoCompleteSuppressed: effectiveAutoCompleteSuppressed,
       },
       {
         new: true,
@@ -2056,9 +2122,11 @@ export async function updateMediaCompletionStatus(
     return res.status(200).json({
       mediaId: normalizedMediaId,
       type: normalizedType,
-      isCompleted: status?.completed ?? true,
-      completedAt: status?.completedAt ?? completionDate,
-      autoCompleteSuppressed: status?.autoCompleteSuppressed ?? false,
+      status: savedStatus?.status ?? effectiveStatus,
+      isCompleted: savedStatus?.completed ?? effectiveCompleted,
+      completedAt: savedStatus?.completedAt ?? effectiveCompletedAt,
+      autoCompleteSuppressed:
+        savedStatus?.autoCompleteSuppressed ?? effectiveAutoCompleteSuppressed,
     });
   } catch (error) {
     return next(error as customError);

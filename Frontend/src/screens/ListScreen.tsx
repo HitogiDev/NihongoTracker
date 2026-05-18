@@ -6,17 +6,18 @@ import {
   updateUserFn,
   updateMediaCompletionStatusFn,
 } from '../api/trackerApi';
-import { useState, MouseEvent, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
+
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
 import DOMPurify from 'dompurify';
 
 import {
   Search,
-  Funnel,
   ListFilter,
   LayoutGrid,
   LayoutList,
+  Layers,
   TrendingUp,
   Bookmark,
   Play,
@@ -30,42 +31,63 @@ import {
   X,
   CircleCheck,
   Circle,
+  Clock,
+  Ban,
+  Sparkles,
+  ChevronDown,
   Plus,
+  Filter,
+  Check,
 } from 'lucide-react';
 
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
+import { getMediaTypeColor } from '../constants/mediaColors';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
-type FilterOption =
+
+type StatusFilter =
   | 'all'
-  | 'anime'
-  | 'manga'
-  | 'reading'
-  | 'vn'
-  | 'game'
-  | 'video'
-  | 'movie'
-  | 'tv show';
+  | 'completed'
+  | 'in_progress'
+  | 'dropped'
+  | 'paused'
+  | 'planning';
 
-type CompletionFilter = 'all' | 'completed' | 'incomplete';
-
-type MediaCompletionPayload = {
+type MediaStatusPayload = {
   mediaId: string;
   type: IMediaDocument['type'];
-  completed: boolean;
+  status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress';
+};
+
+const STATUS_CONFIG: Record<
+  'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
+  { label: string; badgeClass: string; icon: React.FC<{ className?: string }> }
+> = {
+  completed: {
+    label: 'Completed',
+    badgeClass: 'badge-success',
+    icon: CircleCheck,
+  },
+  dropped: { label: 'Dropped', badgeClass: 'badge-error', icon: Ban },
+  paused: { label: 'Paused', badgeClass: 'badge-warning', icon: Clock },
+  planning: { label: 'Planning', badgeClass: 'badge-info', icon: Sparkles },
+  in_progress: {
+    label: 'In Progress',
+    badgeClass: 'badge-primary',
+    icon: Play,
+  },
 };
 
 function ListScreen() {
   const { username } = useParams<{ username: string }>();
   const { user, setUser } = useUserDataStore();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
-  const filterOptions: FilterOption[] = [
-    'all',
+  const MEDIA_TYPES = [
     'anime',
     'manga',
     'reading',
@@ -77,24 +99,28 @@ function ListScreen() {
   ];
   const sortOptions: SortOption[] = ['title', 'type', 'recent'];
   const viewOptions: ViewMode[] = ['grid', 'list'];
-  const completionOptions: CompletionFilter[] = [
+  const statusOptions: StatusFilter[] = [
     'all',
     'completed',
-    'incomplete',
+    'in_progress',
+    'planning',
+    'paused',
+    'dropped',
   ];
 
   const initialQuery = searchParams.get('q') ?? '';
-  const initialFilter = searchParams.get('type');
   const initialSort = searchParams.get('sort');
   const initialView = searchParams.get('view');
   const initialProgress = searchParams.get('progress');
+  const initialGrouped = searchParams.get('grouped');
+
+  const initialFilterStr = searchParams.get('type');
+  const initialTypes = initialFilterStr
+    ? initialFilterStr.split(',').filter((t) => MEDIA_TYPES.includes(t))
+    : MEDIA_TYPES;
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [selectedFilter, setSelectedFilter] = useState<FilterOption>(
-    filterOptions.includes(initialFilter as FilterOption)
-      ? (initialFilter as FilterOption)
-      : 'all'
-  );
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(initialTypes);
   const [sortBy, setSortBy] = useState<SortOption>(
     sortOptions.includes(initialSort as SortOption)
       ? (initialSort as SortOption)
@@ -105,11 +131,13 @@ function ListScreen() {
       ? (initialView as ViewMode)
       : 'grid'
   );
-  const [completionFilter, setCompletionFilter] = useState<CompletionFilter>(
-    completionOptions.includes(initialProgress as CompletionFilter)
-      ? (initialProgress as CompletionFilter)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    statusOptions.includes(initialProgress as StatusFilter)
+      ? (initialProgress as StatusFilter)
       : 'all'
   );
+  const [grouped, setGrouped] = useState<boolean>(initialGrouped !== 'false');
+  const [isPendingGroup, startGroupTransition] = useTransition();
   const [showHideAlertModal, setShowHideAlertModal] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState<string | null>(null);
 
@@ -123,8 +151,11 @@ function ListScreen() {
     if (searchQuery.trim()) {
       params.set('q', searchQuery);
     }
-    if (selectedFilter !== 'all') {
-      params.set('type', selectedFilter);
+    if (
+      selectedTypes.length > 0 &&
+      selectedTypes.length !== MEDIA_TYPES.length
+    ) {
+      params.set('type', selectedTypes.join(','));
     }
     if (sortBy !== 'title') {
       params.set('sort', sortBy);
@@ -132,33 +163,35 @@ function ListScreen() {
     if (viewMode !== 'grid') {
       params.set('view', viewMode);
     }
-    if (completionFilter !== 'all') {
-      params.set('progress', completionFilter);
+    if (statusFilter !== 'all') {
+      params.set('progress', statusFilter);
+    }
+    if (!grouped) {
+      params.set('grouped', 'false');
     }
 
-    setSearchParams(params, { replace: true });
-  }, [
-    searchQuery,
-    selectedFilter,
-    sortBy,
-    viewMode,
-    completionFilter,
-    setSearchParams,
-  ]);
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.replace(/^\?/, '');
+    if (newSearch !== currentSearch) {
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}`
+      );
+    }
+  }, [searchQuery, selectedTypes, sortBy, viewMode, statusFilter, grouped]);
 
   const isOwnProfile = user?.username === username;
-  const completionParams =
-    completionFilter === 'all' ? undefined : { completed: completionFilter };
 
   const {
     data: immersionList,
     isLoading,
     error,
   } = useQuery<IImmersionList>({
-    queryKey: ['ImmersionList', username, completionFilter],
-    queryFn: () => getImmersionListFn(username!, completionParams),
+    queryKey: ['ImmersionList', username],
+    queryFn: () => getImmersionListFn(username!),
     enabled: !!username,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
   });
 
   const { data: untrackedLogs } = useQuery({
@@ -180,9 +213,9 @@ function ListScreen() {
     },
   });
 
-  const toggleCompletionMutation = useMutation({
+  const updateStatusMutation = useMutation({
     mutationFn: updateMediaCompletionStatusFn,
-    onMutate: ({ mediaId, type }: MediaCompletionPayload) => {
+    onMutate: ({ mediaId, type }: MediaStatusPayload) => {
       setPendingToggleId(`${type}:${mediaId}`);
     },
     onSuccess: () => {
@@ -192,19 +225,22 @@ function ListScreen() {
       }
     },
     onError: (mutationError) => {
-      console.error('Failed to update media completion status:', mutationError);
+      console.error('Failed to update media status:', mutationError);
     },
     onSettled: () => {
       setPendingToggleId(null);
     },
   });
 
-  const handleToggleCompletion = (media: IMediaDocument) => {
+  const handleSetStatus = (
+    media: IMediaDocument,
+    newStatus: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+  ) => {
     if (!isOwnProfile) return;
-    toggleCompletionMutation.mutate({
+    updateStatusMutation.mutate({
       mediaId: media.contentId,
       type: media.type,
-      completed: !media.isCompleted,
+      status: newStatus,
     });
   };
 
@@ -260,8 +296,17 @@ function ListScreen() {
       );
     }
 
-    if (selectedFilter !== 'all') {
-      filtered = filtered.filter((item) => item.type === selectedFilter);
+    if (selectedTypes.length !== MEDIA_TYPES.length) {
+      filtered = filtered.filter((item) => selectedTypes.includes(item.type));
+    }
+
+    // Client-side status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((item) => {
+        const ms = item.mediaStatus;
+        if (statusFilter === 'completed') return item.isCompleted === true;
+        return ms === statusFilter;
+      });
     }
 
     filtered.sort((a, b) => {
@@ -273,7 +318,6 @@ function ListScreen() {
         case 'type':
           return a.type.localeCompare(b.type);
         case 'recent': {
-          // Sort by lastLogDate, most recent first
           const dateA = a.lastLogDate ? new Date(a.lastLogDate).getTime() : 0;
           const dateB = b.lastLogDate ? new Date(b.lastLogDate).getTime() : 0;
           return dateB - dateA;
@@ -287,7 +331,8 @@ function ListScreen() {
   })();
 
   const groupedMedia = (() => {
-    const shouldGroup = selectedFilter === 'all' && !searchQuery.trim();
+    // Ungrouped: user toggled off, or a search filter is active
+    const shouldGroup = grouped && !searchQuery.trim();
 
     if (!shouldGroup) {
       return { ungrouped: filteredAndSortedMedia };
@@ -313,27 +358,6 @@ function ListScreen() {
       groups[item.type].push(item);
     });
 
-    // Sort each group according to the selected sortBy option
-    Object.keys(groups).forEach((type) => {
-      groups[type].sort((a, b) => {
-        switch (sortBy) {
-          case 'title':
-            return (a.title.contentTitleNative || '').localeCompare(
-              b.title.contentTitleNative || ''
-            );
-          case 'type':
-            return a.type.localeCompare(b.type);
-          case 'recent': {
-            const dateA = a.lastLogDate ? new Date(a.lastLogDate).getTime() : 0;
-            const dateB = b.lastLogDate ? new Date(b.lastLogDate).getTime() : 0;
-            return dateB - dateA;
-          }
-          default:
-            return 0;
-        }
-      });
-    });
-
     const orderedGroups: Record<
       string,
       (IMediaDocument & { category: string })[]
@@ -349,17 +373,8 @@ function ListScreen() {
 
   const stats = (() => {
     const totalCount = allMedia.length;
-    const typeCount = {
-      anime: immersionList?.anime.length || 0,
-      manga: immersionList?.manga.length || 0,
-      reading: immersionList?.reading.length || 0,
-      vn: immersionList?.vn.length || 0,
-      game: immersionList?.game.length || 0,
-      video: immersionList?.video.length || 0,
-      movie: immersionList?.movie?.length || 0,
-      'tv show': immersionList?.['tv show']?.length || 0,
-    };
-    return { totalCount, typeCount };
+    const filteredCount = filteredAndSortedMedia.length;
+    return { totalCount, filteredCount };
   })();
 
   const handleHideUnmatchedAlert = () => {
@@ -380,10 +395,68 @@ function ListScreen() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="text-lg">Loading your immersion library...</p>
+      <div className="min-h-screen bg-base-200">
+        {/* Skeleton header area */}
+        <div className="bg-base-100 border-b border-base-300 sticky top-0 z-30">
+          <div className="container mx-auto px-4 py-4">
+            <div className="skeleton h-8 w-48 mb-3 rounded-lg" />
+            <div className="flex gap-2">
+              <div className="skeleton h-10 flex-1 rounded-lg" />
+              <div className="skeleton h-10 w-24 rounded-lg" />
+              <div className="skeleton h-10 w-24 rounded-lg" />
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton grid */}
+        <div className="container mx-auto px-4 py-6">
+          {/* Group header skeleton */}
+          <div className="flex items-center gap-3 pb-2 mb-4 border-b border-base-300">
+            <div className="skeleton w-9 h-9 rounded-lg" />
+            <div>
+              <div className="skeleton h-5 w-20 rounded mb-1" />
+              <div className="skeleton h-3 w-14 rounded" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mb-10">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="card bg-base-100 shadow-sm border border-base-300"
+              >
+                <div className="skeleton aspect-[3/4] w-full rounded-t-2xl rounded-b-none" />
+                <div className="p-3 space-y-2">
+                  <div className="skeleton h-4 w-full rounded" />
+                  <div className="skeleton h-3 w-2/3 rounded" />
+                  <div className="skeleton h-4 w-14 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Second group skeleton */}
+          <div className="flex items-center gap-3 pb-2 mb-4 border-b border-base-300">
+            <div className="skeleton w-9 h-9 rounded-lg" />
+            <div>
+              <div className="skeleton h-5 w-16 rounded mb-1" />
+              <div className="skeleton h-3 w-12 rounded" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="card bg-base-100 shadow-sm border border-base-300"
+              >
+                <div className="skeleton aspect-[3/4] w-full rounded-t-2xl rounded-b-none" />
+                <div className="p-3 space-y-2">
+                  <div className="skeleton h-4 w-full rounded" />
+                  <div className="skeleton h-3 w-1/2 rounded" />
+                  <div className="skeleton h-4 w-14 rounded-full" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -535,42 +608,103 @@ function ListScreen() {
                         role="button"
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
-                        <Funnel className="w-4 h-4" />
-                        Filter:{' '}
-                        {selectedFilter === 'all'
-                          ? 'All Types'
-                          : selectedFilter.charAt(0).toUpperCase() +
-                            selectedFilter.slice(1)}
+                        <Filter className="w-4 h-4" />
+                        {selectedTypes.length === 0
+                          ? 'No Types'
+                          : selectedTypes.length === MEDIA_TYPES.length
+                            ? 'All Types'
+                            : selectedTypes.length === 1
+                              ? selectedTypes[0] === 'vn'
+                                ? 'Visual Novel'
+                                : selectedTypes[0] === 'game'
+                                  ? 'Video Game'
+                                  : selectedTypes[0] === 'tv show'
+                                    ? 'TV Show'
+                                    : selectedTypes[0].charAt(0).toUpperCase() +
+                                      selectedTypes[0].slice(1)
+                              : `${selectedTypes.length} Types`}
+                        <ChevronDown className="w-4 h-4 ml-1 hidden sm:block" />
                       </div>
-                      <ul
+                      <div
                         tabIndex={0}
-                        className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
+                        className="dropdown-content p-3 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 z-50 mt-1"
                       >
-                        {[
-                          { value: 'all', label: 'All Types' },
-                          { value: 'anime', label: 'Anime' },
-                          { value: 'manga', label: 'Manga' },
-                          { value: 'reading', label: 'Reading' },
-                          { value: 'vn', label: 'Visual Novels' },
-                          { value: 'game', label: 'Video Games' },
-                          { value: 'video', label: 'Video' },
-                          { value: 'movie', label: 'Movies' },
-                          { value: 'tv show', label: 'TV Shows' },
-                        ].map((option) => (
-                          <li key={option.value}>
-                            <button
-                              className={
-                                selectedFilter === option.value ? 'active' : ''
-                              }
-                              onClick={() =>
-                                setSelectedFilter(option.value as FilterOption)
-                              }
-                            >
-                              {option.label}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+                        <div className="flex gap-2 pb-3">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                            onClick={() => setSelectedTypes(MEDIA_TYPES)}
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                            onClick={() => setSelectedTypes([])}
+                          >
+                            Select None
+                          </button>
+                        </div>
+                        <div className="divider my-1"></div>
+                        <div className="flex flex-col gap-1 max-h-[60vh] overflow-y-auto pr-1">
+                          {MEDIA_TYPES.map((type) => {
+                            const selected = selectedTypes.includes(type);
+                            const color = getMediaTypeColor(type);
+                            const label =
+                              type === 'vn'
+                                ? 'Visual Novel'
+                                : type === 'game'
+                                  ? 'Video Game'
+                                  : type === 'tv show'
+                                    ? 'TV Show'
+                                    : type.charAt(0).toUpperCase() +
+                                      type.slice(1);
+
+                            return (
+                              <button
+                                type="button"
+                                key={type}
+                                className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                                  selected
+                                    ? 'bg-base-200 font-medium'
+                                    : 'hover:bg-base-200/50'
+                                }`}
+                                onClick={() =>
+                                  setSelectedTypes((prev) =>
+                                    prev.includes(type)
+                                      ? prev.filter((t) => t !== type)
+                                      : [...prev, type]
+                                  )
+                                }
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span
+                                    className="w-3 h-3 rounded-full shrink-0"
+                                    style={{ backgroundColor: color }}
+                                  />
+                                  <span className="text-sm">{label}</span>
+                                </div>
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                                    selected
+                                      ? 'border-transparent'
+                                      : 'border-base-content/20'
+                                  }`}
+                                  style={
+                                    selected
+                                      ? { backgroundColor: color }
+                                      : undefined
+                                  }
+                                >
+                                  {selected && (
+                                    <Check className="w-3 h-3 text-white" />
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
@@ -580,35 +714,54 @@ function ListScreen() {
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
                         <CircleCheck className="w-4 h-4" />
-                        Progress:{' '}
-                        {completionFilter === 'completed'
-                          ? 'Completed'
-                          : completionFilter === 'incomplete'
+                        Status:{' '}
+                        {statusFilter === 'all'
+                          ? 'All'
+                          : statusFilter === 'in_progress'
                             ? 'In Progress'
-                            : 'All'}
+                            : statusFilter.charAt(0).toUpperCase() +
+                              statusFilter.slice(1)}
                       </div>
                       <ul
                         tabIndex={0}
                         className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-60"
                       >
                         {[
-                          { value: 'all', label: 'All progress' },
-                          { value: 'completed', label: 'Completed only' },
-                          { value: 'incomplete', label: 'In progress' },
+                          {
+                            value: 'all',
+                            label: 'All statuses',
+                            icon: undefined,
+                          },
+                          {
+                            value: 'completed',
+                            label: 'Completed',
+                            icon: CircleCheck,
+                          },
+                          {
+                            value: 'in_progress',
+                            label: 'In Progress',
+                            icon: Play,
+                          },
+                          {
+                            value: 'planning',
+                            label: 'Planning',
+                            icon: Sparkles,
+                          },
+                          { value: 'paused', label: 'Paused', icon: Clock },
+                          { value: 'dropped', label: 'Dropped', icon: Ban },
                         ].map((option) => (
                           <li key={option.value}>
                             <button
                               className={
-                                completionFilter === option.value
-                                  ? 'active'
-                                  : ''
+                                statusFilter === option.value ? 'active' : ''
                               }
                               onClick={() =>
-                                setCompletionFilter(
-                                  option.value as CompletionFilter
-                                )
+                                setStatusFilter(option.value as StatusFilter)
                               }
                             >
+                              {option.icon && (
+                                <option.icon className="w-4 h-4 mr-1" />
+                              )}
                               {option.label}
                             </button>
                           </li>
@@ -656,21 +809,39 @@ function ListScreen() {
                     </div>
                   </div>
 
-                  {/* View Mode Toggle */}
-                  <div className="join w-full sm:w-auto">
+                  {/* View Mode + Group Toggle */}
+                  <div className="flex gap-2">
+                    <div className="join flex-1 sm:flex-none">
+                      <button
+                        className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
+                        onClick={() => setViewMode('grid')}
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                        <span className="sm:hidden ml-2">Grid</span>
+                      </button>
+                      <button
+                        className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
+                        onClick={() => setViewMode('list')}
+                      >
+                        <LayoutList className="w-4 h-4" />
+                        <span className="sm:hidden ml-2">List</span>
+                      </button>
+                    </div>
                     <button
-                      className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
-                      onClick={() => setViewMode('grid')}
+                      className={`btn flex-1 sm:flex-none gap-2 ${grouped ? 'btn-active' : 'btn-outline'}`}
+                      onClick={() =>
+                        startGroupTransition(() => setGrouped((prev) => !prev))
+                      }
+                      title={grouped ? 'Ungroup by type' : 'Group by type'}
                     >
-                      <LayoutGrid className="w-4 h-4" />
-                      <span className="sm:hidden ml-2">Grid</span>
-                    </button>
-                    <button
-                      className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
-                      onClick={() => setViewMode('list')}
-                    >
-                      <LayoutList className="w-4 h-4" />
-                      <span className="sm:hidden ml-2">List</span>
+                      {isPendingGroup ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : (
+                        <Layers className="w-4 h-4" />
+                      )}
+                      <span className="hidden sm:inline">
+                        {grouped ? 'Grouped' : 'Ungrouped'}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -678,29 +849,81 @@ function ListScreen() {
 
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <p className="text-sm text-base-content/70">
-                  Showing{' '}
-                  {Object.keys(groupedMedia).includes('ungrouped')
-                    ? groupedMedia.ungrouped?.length || 0
-                    : Object.values(groupedMedia).reduce(
-                        (acc, group) => acc + group.length,
-                        0
-                      )}{' '}
-                  of {stats.totalCount} items
+                  Showing {stats.filteredCount} of {stats.totalCount} items
                   {searchQuery && ` for "${searchQuery}"`}
                 </p>
-                {Object.keys(groupedMedia).includes('ungrouped')
-                  ? (groupedMedia.ungrouped?.length || 0) > 0
-                  : Object.values(groupedMedia).some(
-                      (group) => group.length > 0
-                    )}
               </div>
             </div>
           </div>
         </div>
 
         <div className="container mx-auto px-4 py-4">
-          {Object.keys(groupedMedia).includes('ungrouped') ? (
-            groupedMedia.ungrouped && groupedMedia.ungrouped.length === 0 ? (
+          <div
+            className={`relative transition-opacity duration-200 ${isPendingGroup ? 'opacity-50 pointer-events-none' : ''}`}
+          >
+            {isPendingGroup && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <span className="loading loading-spinner loading-md text-primary" />
+              </div>
+            )}
+            {Object.keys(groupedMedia).includes('ungrouped') ? (
+              groupedMedia.ungrouped && groupedMedia.ungrouped.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="max-w-md mx-auto space-y-4">
+                    <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
+                      <Bookmark className="w-12 h-12 text-base-content/40" />
+                    </div>
+                    <h3 className="text-2xl font-bold">No media found</h3>
+                    <p className="text-base-content/70">
+                      {searchQuery
+                        ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
+                        : selectedTypes.length !== MEDIA_TYPES.length
+                          ? `No media matches the selected types.`
+                          : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                    </p>
+                    {(searchQuery ||
+                      selectedTypes.length !== MEDIA_TYPES.length) && (
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSelectedTypes(MEDIA_TYPES);
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : viewMode === 'grid' ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+                  {groupedMedia.ungrouped?.map((item) => (
+                    <MediaCard
+                      key={item.contentId}
+                      media={item}
+                      isOwnProfile={!!isOwnProfile}
+                      onSetStatus={handleSetStatus}
+                      pendingToggleId={pendingToggleId}
+                      onLogMedia={handleOpenQuickLog}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {groupedMedia.ungrouped?.map((item) => (
+                    <MediaListItem
+                      key={item.contentId}
+                      media={item}
+                      isOwnProfile={!!isOwnProfile}
+                      onSetStatus={handleSetStatus}
+                      pendingToggleId={pendingToggleId}
+                      onLogMedia={handleOpenQuickLog}
+                    />
+                  ))}
+                </div>
+              )
+            ) : // Grouped view
+            Object.keys(groupedMedia).length === 0 ? (
               <div className="text-center py-20">
                 <div className="max-w-md mx-auto space-y-4">
                   <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
@@ -708,83 +931,30 @@ function ListScreen() {
                   </div>
                   <h3 className="text-2xl font-bold">No media found</h3>
                   <p className="text-base-content/70">
-                    {searchQuery
-                      ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
-                      : selectedFilter !== 'all'
-                        ? `No ${selectedFilter} media in your library yet.`
-                        : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                    Your immersion library is empty. Start logging your Japanese
+                    learning activities!
                   </p>
-                  {(searchQuery || selectedFilter !== 'all') && (
-                    <button
-                      className="btn btn-outline"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSelectedFilter('all');
-                      }}
-                    >
-                      Clear filters
-                    </button>
-                  )}
                 </div>
-              </div>
-            ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {groupedMedia.ungrouped?.map((item) => (
-                  <MediaCard
-                    key={item.contentId}
-                    media={item}
-                    isOwnProfile={!!isOwnProfile}
-                    onToggleCompletion={handleToggleCompletion}
-                    pendingToggleId={pendingToggleId}
-                    onLogMedia={handleOpenQuickLog}
-                  />
-                ))}
               </div>
             ) : (
-              <div className="space-y-3">
-                {groupedMedia.ungrouped?.map((item) => (
-                  <MediaListItem
-                    key={item.contentId}
-                    media={item}
+              <div className="space-y-8">
+                {Object.entries(groupedMedia).map(([type, mediaList]) => (
+                  <MediaGroup
+                    key={type}
+                    type={type}
+                    mediaList={mediaList}
+                    viewMode={viewMode}
+                    count={mediaList.length}
                     isOwnProfile={!!isOwnProfile}
-                    onToggleCompletion={handleToggleCompletion}
+                    onSetStatus={handleSetStatus}
                     pendingToggleId={pendingToggleId}
                     onLogMedia={handleOpenQuickLog}
                   />
                 ))}
               </div>
-            )
-          ) : // Grouped view (no filters applied)
-          Object.keys(groupedMedia).length === 0 ? (
-            <div className="text-center py-20">
-              <div className="max-w-md mx-auto space-y-4">
-                <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
-                  <Bookmark className="w-12 h-12 text-base-content/40" />
-                </div>
-                <h3 className="text-2xl font-bold">No media found</h3>
-                <p className="text-base-content/70">
-                  Your immersion library is empty. Start logging your Japanese
-                  learning activities!
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {Object.entries(groupedMedia).map(([type, mediaList]) => (
-                <MediaGroup
-                  key={type}
-                  type={type}
-                  mediaList={mediaList}
-                  viewMode={viewMode}
-                  count={mediaList.length}
-                  isOwnProfile={!!isOwnProfile}
-                  onToggleCompletion={handleToggleCompletion}
-                  pendingToggleId={pendingToggleId}
-                  onLogMedia={handleOpenQuickLog}
-                />
-              ))}
-            </div>
-          )}
+            )}
+          </div>
+          {/* end pending overlay wrapper */}
         </div>
       </div>
     </>
@@ -797,7 +967,7 @@ function MediaGroup({
   viewMode,
   count,
   isOwnProfile,
-  onToggleCompletion,
+  onSetStatus,
   pendingToggleId,
   onLogMedia,
 }: {
@@ -806,7 +976,10 @@ function MediaGroup({
   viewMode: ViewMode;
   count: number;
   isOwnProfile: boolean;
-  onToggleCompletion: (media: IMediaDocument) => void;
+  onSetStatus: (
+    media: IMediaDocument,
+    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+  ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
 }) {
@@ -879,7 +1052,7 @@ function MediaGroup({
               key={item.contentId}
               media={item}
               isOwnProfile={isOwnProfile}
-              onToggleCompletion={onToggleCompletion}
+              onSetStatus={onSetStatus}
               pendingToggleId={pendingToggleId}
               onLogMedia={onLogMedia}
             />
@@ -892,7 +1065,7 @@ function MediaGroup({
               key={item.contentId}
               media={item}
               isOwnProfile={isOwnProfile}
-              onToggleCompletion={onToggleCompletion}
+              onSetStatus={onSetStatus}
               pendingToggleId={pendingToggleId}
               onLogMedia={onLogMedia}
             />
@@ -906,13 +1079,16 @@ function MediaGroup({
 function MediaCard({
   media,
   isOwnProfile,
-  onToggleCompletion,
+  onSetStatus,
   pendingToggleId,
   onLogMedia,
 }: {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
-  onToggleCompletion: (media: IMediaDocument) => void;
+  onSetStatus: (
+    media: IMediaDocument,
+    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+  ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
 }) {
@@ -926,11 +1102,6 @@ function MediaCard({
 
   const toggleKey = `${media.type}:${media.contentId}`;
   const isToggling = pendingToggleId === toggleKey;
-
-  const handleToggleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onToggleCompletion(media);
-  };
 
   const typeConfig = {
     anime: {
@@ -985,6 +1156,9 @@ function MediaCard({
 
   const config = typeConfig[media.type as keyof typeof typeConfig];
   const TypeIcon = config.icon;
+  const currentStatus =
+    media.mediaStatus ?? (media.isCompleted ? 'completed' : null);
+  const statusCfg = currentStatus ? STATUS_CONFIG[currentStatus] : null;
 
   return (
     <div
@@ -992,24 +1166,49 @@ function MediaCard({
       onClick={handleCardClick}
     >
       <figure className="relative aspect-[3/4] overflow-hidden">
+        {/* Status dropdown button — top right */}
         {isOwnProfile && (
-          <button
-            type="button"
-            className={`btn btn-circle btn-xs absolute top-2 right-2 z-20 ${media.isCompleted ? 'btn-success' : 'btn-ghost bg-base-100/80 border-base-300'}`}
-            onClick={handleToggleClick}
-            disabled={isToggling}
-            aria-label={
-              media.isCompleted ? 'Mark as in progress' : 'Mark as completed'
-            }
+          <div
+            className="dropdown dropdown-end absolute top-2 right-2 z-20"
+            onClick={(e) => e.stopPropagation()}
           >
-            {isToggling ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : media.isCompleted ? (
-              <CircleCheck className="w-4 h-4" />
-            ) : (
-              <Circle className="w-4 h-4" />
-            )}
-          </button>
+            <button
+              type="button"
+              tabIndex={0}
+              className={`btn btn-circle btn-xs ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
+              disabled={isToggling}
+              aria-label="Set status"
+            >
+              {isToggling ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : statusCfg ? (
+                <statusCfg.icon className="w-4 h-4" />
+              ) : (
+                <Circle className="w-4 h-4" />
+              )}
+            </button>
+            <ul
+              tabIndex={0}
+              className="dropdown-content z-50 menu p-1 shadow-lg bg-base-100 rounded-box w-36 text-sm"
+            >
+              {(
+                Object.entries(STATUS_CONFIG) as [
+                  keyof typeof STATUS_CONFIG,
+                  (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
+                ][]
+              ).map(([key, cfg]) => (
+                <li key={key}>
+                  <button
+                    className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
+                    onClick={() => onSetStatus(media, key)}
+                  >
+                    <cfg.icon className="w-3 h-3" />
+                    {cfg.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {media.contentImage || media.coverImage ? (
@@ -1027,10 +1226,11 @@ function MediaCard({
           </div>
         )}
 
-        {media.isCompleted && (
+        {/* Status badge — bottom left */}
+        {statusCfg && (
           <div className="absolute bottom-2 left-2">
-            <div className="badge badge-success badge-sm gap-1">
-              <CircleCheck className="w-3 h-3" /> Completed
+            <div className={`badge ${statusCfg.badgeClass} badge-sm gap-1`}>
+              <statusCfg.icon className="w-3 h-3" /> {statusCfg.label}
             </div>
           </div>
         )}
@@ -1106,13 +1306,16 @@ function MediaCard({
 function MediaListItem({
   media,
   isOwnProfile,
-  onToggleCompletion,
+  onSetStatus,
   pendingToggleId,
   onLogMedia,
 }: {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
-  onToggleCompletion: (media: IMediaDocument) => void;
+  onSetStatus: (
+    media: IMediaDocument,
+    status: 'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress'
+  ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
 }) {
@@ -1185,17 +1388,8 @@ function MediaListItem({
     navigate(`/${media.type}/${media.contentId}/${username}`);
   };
 
-  const handleToggleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onToggleCompletion(media);
-  };
-
   const typeConfig = {
-    anime: {
-      icon: Play,
-      color: 'text-[#26b2f2]',
-      bg: 'bg-[#26b2f2]/10',
-    },
+    anime: { icon: Play, color: 'text-[#26b2f2]', bg: 'bg-[#26b2f2]/10' },
     manga: { icon: Book, color: 'text-[#ee4466]', bg: 'bg-[#ee4466]/10' },
     reading: { icon: Book, color: 'text-[#b34ce6]', bg: 'bg-[#b34ce6]/10' },
     vn: { icon: Gamepad, color: 'text-[#3a70e4]', bg: 'bg-[#3a70e4]/10' },
@@ -1215,6 +1409,9 @@ function MediaListItem({
 
   const config = typeConfig[media.type as keyof typeof typeConfig];
   const TypeIcon = config.icon;
+  const currentStatus =
+    media.mediaStatus ?? (media.isCompleted ? 'completed' : null);
+  const statusCfg = currentStatus ? STATUS_CONFIG[currentStatus] : null;
 
   return (
     <div
@@ -1248,9 +1445,11 @@ function MediaListItem({
                   <h3 className="font-bold text-lg leading-tight">
                     {media.title.contentTitleNative}
                   </h3>
-                  {media.isCompleted && (
-                    <span className="badge badge-success badge-sm gap-1 shrink-0">
-                      <CircleCheck className="w-3 h-3" /> Completed
+                  {statusCfg && (
+                    <span
+                      className={`badge ${statusCfg.badgeClass} badge-sm gap-1 shrink-0`}
+                    >
+                      <statusCfg.icon className="w-3 h-3" /> {statusCfg.label}
                     </span>
                   )}
                 </div>
@@ -1299,37 +1498,68 @@ function MediaListItem({
                   <div className="badge badge-error badge-sm">18+</div>
                 )}
 
-                <div className="flex flex-col gap-1 items-end">
-                  {isOwnProfile && (
-                    <>
+                {isOwnProfile && (
+                  <div
+                    className="flex flex-col gap-1 items-end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-primary gap-1 w-36 justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLogMedia(media);
+                      }}
+                      title="Quick Log"
+                    >
+                      <Plus className="w-3 h-3" /> Log
+                    </button>
+                    {/* Status dropdown */}
+                    <div className="dropdown dropdown-end">
                       <button
                         type="button"
-                        className="btn btn-xs btn-primary gap-1 w-36 justify-center"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLogMedia(media);
-                        }}
-                        title="Quick Log"
-                      >
-                        <Plus className="w-3 h-3" /> Log
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-xs w-36 justify-center ${media.isCompleted ? 'btn-success' : 'btn-outline'}`}
-                        onClick={handleToggleClick}
+                        tabIndex={0}
                         disabled={isToggling}
+                        className={`btn btn-xs w-36 justify-between gap-1 ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-outline'}`}
                       >
                         {isToggling ? (
                           <span className="loading loading-spinner loading-xs" />
-                        ) : media.isCompleted ? (
-                          'Mark in progress'
+                        ) : statusCfg ? (
+                          <>
+                            <statusCfg.icon className="w-3 h-3" />{' '}
+                            {statusCfg.label}
+                          </>
                         ) : (
-                          'Mark completed'
+                          <>
+                            <Circle className="w-3 h-3" /> Set status
+                          </>
                         )}
+                        <ChevronDown className="w-3 h-3 ml-auto" />
                       </button>
-                    </>
-                  )}
-                </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content z-50 menu p-1 shadow-lg bg-base-100 rounded-box w-36 text-sm"
+                      >
+                        {(
+                          Object.entries(STATUS_CONFIG) as [
+                            keyof typeof STATUS_CONFIG,
+                            (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
+                          ][]
+                        ).map(([key, cfg]) => (
+                          <li key={key}>
+                            <button
+                              className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
+                              onClick={() => onSetStatus(media, key)}
+                            >
+                              <cfg.icon className="w-3 h-3" />
+                              {cfg.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-1 justify-end">
                   {media.episodes ? (

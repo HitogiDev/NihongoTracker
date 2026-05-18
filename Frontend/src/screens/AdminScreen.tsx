@@ -17,6 +17,7 @@ import {
   adminSetPatreonStatusFn,
   syncPatreonMembersFn,
   searchAdminLogsFn,
+  adminMarkUntrackedToInProgressFn,
   adminUpdateLogFn,
   adminDeleteLogFn,
   getPatronStatsFn,
@@ -26,7 +27,7 @@ import {
   deleteChangelogFn,
   type IIgdbDumpSyncStatus,
 } from '../api/trackerApi';
-import { Users } from 'lucide-react';
+import { Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
 
 type AdminUserRow = {
@@ -220,6 +221,18 @@ function AdminScreen() {
       queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
     },
     onError: () => toast.error('Failed to sync Manabe IDs'),
+  });
+
+  const markUntrackedMutation = useMutation({
+    mutationFn: () => adminMarkUntrackedToInProgressFn(),
+    onSuccess: (data) => {
+      toast.success(
+        `Created ${data.created}, updated ${data.updated}, ${data.completed} completed, ${data.inProgress} in progress`
+      );
+      queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+    },
+    onError: () => toast.error('Failed to mark untracked logs'),
   });
 
   const syncMeilisearchMutation = useMutation({
@@ -1320,15 +1333,15 @@ function AdminScreen() {
                     value={logEnd}
                     onChange={(e) => setLogEnd(e.target.value)}
                   />
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-sm sm:btn-md"
                       onClick={() => setLogPage(1)}
                     >
                       Search
                     </button>
                     <button
-                      className="btn btn-ghost"
+                      className="btn btn-ghost btn-sm sm:btn-md"
                       onClick={() => {
                         setLogSearch('');
                         setLogUsername('');
@@ -1339,6 +1352,21 @@ function AdminScreen() {
                       }}
                     >
                       Reset
+                    </button>
+                    <button
+                      className="btn btn-sm btn-warning whitespace-nowrap"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'Convert logs with media to in_progress or completed based on totals?'
+                          )
+                        ) {
+                          markUntrackedMutation.mutate();
+                        }
+                      }}
+                    >
+                      <Play className="h-4 w-4" />
+                      <span className="hidden sm:inline">Mark Progress</span>
                     </button>
                   </div>
                 </div>
