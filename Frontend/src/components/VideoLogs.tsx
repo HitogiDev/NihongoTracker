@@ -181,6 +181,80 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     },
   });
 
+  const [pasteUrl, setPasteUrl] = useState<string>('');
+  const [isMatchingPaste, setIsMatchingPaste] = useState(false);
+
+  const handlePasteMatch = useCallback(async () => {
+    const entries = Object.entries(filteredGroupedLogs);
+    const hasSelected = selectedLogs && selectedLogs.length > 0;
+    const group =
+      selectedGroup !== null && entries[selectedGroup]
+        ? (entries[selectedGroup][1] as ILog[])
+        : null;
+
+    const logsToAssign: ILog[] | null = hasSelected
+      ? selectedLogs
+      : group && group.length
+        ? group
+        : null;
+
+    if (!logsToAssign || logsToAssign.length === 0) {
+      toast.info('Select one or more logs or open a group to match');
+      return;
+    }
+
+    const videoId = extractYouTubeVideoId(pasteUrl || '');
+    if (!videoId) {
+      toast.error('Please paste a valid YouTube URL or ID');
+      return;
+    }
+
+    const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    setIsMatchingPaste(true);
+    try {
+      const result = await searchYouTubeVideoFn(normalizedUrl);
+      if (!result || !result.channel) {
+        toast.error('Could not find YouTube channel for the provided link');
+        return;
+      }
+
+      const payload = [
+        {
+          logsId: logsToAssign.map((l) => l._id),
+          contentMedia: {
+            contentId: result.channel.contentId,
+            contentImage: result.channel.contentImage,
+            coverImage: result.channel.contentImage,
+            description: result.channel.description,
+            type: 'video' as const,
+            title: result.channel.title,
+            isAdult: result.channel.isAdult,
+          } as IMediaDocument,
+        },
+      ];
+
+      assignMedia(payload, {
+        onError: (err) => {
+          console.error('Paste match assign error', err);
+        },
+      });
+    } catch (error) {
+      console.error('Paste match error', error);
+      toast.error('Error matching pasted URL');
+    } finally {
+      setIsMatchingPaste(false);
+      setPasteUrl('');
+    }
+  }, [
+    pasteUrl,
+    selectedLogs,
+    selectedGroup,
+    filteredGroupedLogs,
+    assignMedia,
+    extractYouTubeVideoId,
+  ]);
+
   const handleAutoMatch = useCallback(async () => {
     if (logsWithYouTubeUrls.length === 0) {
       toast.info('No video logs with YouTube URLs found to auto-match');
@@ -464,6 +538,48 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         <div className="card-body p-4">
           <h2 className="card-title">Manual Video Log Groups</h2>
           <div className="divider my-1"></div>
+
+          <div className="mb-4 flex gap-2 items-center">
+            {(() => {
+              const entries = Object.entries(filteredGroupedLogs);
+              const hasTargetLogs =
+                selectedLogs.length > 0 ||
+                (selectedGroup !== null &&
+                  !!entries[selectedGroup] &&
+                  Array.isArray(entries[selectedGroup][1]) &&
+                  (entries[selectedGroup][1] as ILog[]).length > 0);
+
+              return (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Paste YouTube URL or video ID"
+                    className="input input-sm flex-grow"
+                    value={pasteUrl}
+                    onChange={(e) => setPasteUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handlePasteMatch();
+                      }
+                    }}
+                    disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
+                  />
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    onClick={handlePasteMatch}
+                    disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
+                  >
+                    {isMatchingPaste ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : (
+                      'Match Link'
+                    )}
+                  </button>
+                </>
+              );
+            })()}
+          </div>
 
           {Object.keys(filteredGroupedLogs).length > 0 ? (
             <div className="overflow-y-auto max-h-[60vh]">
