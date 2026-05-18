@@ -584,6 +584,9 @@ function TextHooker() {
       localStorage.getItem('texthooker_preventGlobalDuplicates') === 'true'
     );
   });
+  const [pauseOnDisconnect, setPauseOnDisconnect] = useState(() => {
+    return localStorage.getItem('texthooker_pauseOnDisconnect') === 'true';
+  });
 
   useEffect(() => {
     linesRef.current = lines;
@@ -1017,6 +1020,19 @@ function TextHooker() {
       String(preventGlobalDuplicates)
     );
   }, [preventGlobalDuplicates]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_pauseOnDisconnect',
+      String(pauseOnDisconnect)
+    );
+  }, [pauseOnDisconnect]);
+
+  useEffect(() => {
+    if (pauseOnDisconnect && connectionStatus === 'disconnected') {
+      setIsTimerActive(false);
+    }
+  }, [pauseOnDisconnect, connectionStatus]);
 
   useEffect(() => {
     localStorage.setItem('texthooker_customCss', customCss);
@@ -3084,6 +3100,21 @@ function TextHooker() {
                         onChange={(e) =>
                           setContinuousReconnect(e.target.checked)
                         }
+                      />
+                    </label>
+
+                    <label
+                      className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer"
+                      title="Pause the running timer when the websocket connection is lost"
+                    >
+                      <span className="text-sm">
+                        Pause timer when disconnected
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="toggle toggle-primary toggle-sm"
+                        checked={pauseOnDisconnect}
+                        onChange={(e) => setPauseOnDisconnect(e.target.checked)}
                       />
                     </label>
 
