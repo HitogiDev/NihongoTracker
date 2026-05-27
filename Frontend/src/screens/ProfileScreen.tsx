@@ -3,7 +3,7 @@ import LogCard from '../components/LogCard';
 import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
@@ -26,6 +26,8 @@ function ProfileScreen() {
   const { user, username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedUser } = useUserDataStore();
   const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
+  const [showFullAbout, setShowFullAbout] = useState(false);
+  const aboutContentRef = useRef<HTMLDivElement | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<
     | 'all'
@@ -53,12 +55,46 @@ function ProfileScreen() {
     'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time' | 'readingSpeed'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const aboutHtml = (() => {
-    if (!user?.about || !user.about.trim()) {
-      return '';
+  const aboutText = user?.about?.trim() ?? '';
+  const aboutHtml = aboutText ? renderMarkdownWithSpoilers(aboutText) : '';
+  const [shouldCollapseAbout, setShouldCollapseAbout] = useState(false);
+  const showAboutPreview = shouldCollapseAbout && !showFullAbout;
+  const aboutPreviewHeight = 224;
+
+  useEffect(() => {
+    setShowFullAbout(false);
+  }, [username, aboutText]);
+
+  useEffect(() => {
+    const content = aboutContentRef.current;
+
+    if (!content || !aboutHtml) {
+      setShouldCollapseAbout(false);
+      return;
     }
-    return renderMarkdownWithSpoilers(user.about);
-  })();
+
+    const updateShouldCollapse = () => {
+      const contentHeight = content.scrollHeight;
+      const nextValue = contentHeight > aboutPreviewHeight + 1;
+      setShouldCollapseAbout((current) =>
+        current === nextValue ? current : nextValue
+      );
+    };
+
+    updateShouldCollapse();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateShouldCollapse();
+    });
+
+    observer.observe(content);
+
+    return () => observer.disconnect();
+  }, [aboutHtml]);
 
   const isValidLogType = (
     value: string
@@ -257,10 +293,39 @@ function ProfileScreen() {
                   )}
                 </div>
                 {aboutHtml ? (
-                  <div
-                    className="prose prose-sm max-w-none text-base-content/90"
-                    dangerouslySetInnerHTML={{ __html: aboutHtml }}
-                  />
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <div
+                        ref={aboutContentRef}
+                        className={`prose prose-sm max-w-none text-base-content/90 ${
+                          showAboutPreview ? 'max-h-56 overflow-hidden' : ''
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                      />
+                      {showAboutPreview && (
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base-100 via-base-100/90 to-transparent" />
+                      )}
+                    </div>
+                    {shouldCollapseAbout && (
+                      <div className="flex justify-center">
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          className="link link-hover link-primary text-sm"
+                          onClick={() => setShowFullAbout((value) => !value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setShowFullAbout((value) => !value);
+                            }
+                          }}
+                          aria-expanded={showFullAbout}
+                        >
+                          {showFullAbout ? 'Show less' : 'Read more'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-base-content/70 text-sm">
                     {username === loggedUser?.username

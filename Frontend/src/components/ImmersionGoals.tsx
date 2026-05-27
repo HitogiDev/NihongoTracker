@@ -280,24 +280,28 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   return (
                     <div
                       key={goal._id}
-                      className={`stat bg-base-200 rounded-lg p-4 relative ${
+                      className={`rounded-lg bg-base-200 p-4 pr-16 relative ${
                         isCompleted ? 'border-2 border-success' : ''
                       }`}
                     >
-                      <div className="stat-figure absolute right-4 top-4">
+                      <div className="absolute right-4 top-4 shrink-0">
                         {isCompleted ? (
                           <CircleCheck className="w-8 h-8 text-success" />
                         ) : (
                           <Icon className={`w-8 h-8 ${config.color}`} />
                         )}
                       </div>
-                      <div className="stat-title text-xs">{config.label}</div>
+                      <div className="text-xs font-medium text-base-content/70">
+                        {config.label}
+                      </div>
                       <div
-                        className={`stat-value text-lg ${isCompleted ? 'text-success' : config.color}`}
+                        className={`mt-1 text-lg font-bold tabular-nums leading-tight break-words ${
+                          isCompleted ? 'text-success' : config.color
+                        }`}
                       >
                         {formatProgress(current, goal.type)}
                       </div>
-                      <div className="stat-desc">
+                      <div className="mt-1 text-sm text-base-content/70 break-words">
                         of {formatProgress(goal.target, goal.type)}{' '}
                         {goal.type !== 'time' ? config.unit : ''}
                       </div>
