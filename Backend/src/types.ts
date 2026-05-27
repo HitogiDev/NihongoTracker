@@ -368,6 +368,7 @@ export interface IMediaDocument {
   episodeDuration?: number;
   genres?: string[];
   chapters?: number;
+  characters?: number;
   volumes?: number;
   seasons?: number;
   runtime?: number;
@@ -531,6 +532,7 @@ export interface IContentMedia {
   episodes?: number;
   episodeDuration?: number;
   chapters?: number;
+  characters?: number;
   volumes?: number;
   runtime?: number;
   igdbUpdatedAt?: number;

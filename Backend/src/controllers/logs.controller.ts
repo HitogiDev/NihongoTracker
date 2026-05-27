@@ -25,6 +25,7 @@ import { searchAnilist } from '../services/searchAnilist.js';
 import { updateLevelAndXp } from '../services/updateStats.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import axios from 'axios';
+import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
 import {
   XP_FACTOR_TIME,
   XP_FACTOR_CHARS,
@@ -1086,6 +1087,19 @@ export async function deleteLog(
       await recalculateStreaksForUser(res.locals.user._id);
     }
 
+    // Re-evaluate auto-complete after deletion
+    try {
+      if (deletedLog?.mediaId) {
+        await evaluateAutoCompleteForUserMedia(
+          res.locals.user._id,
+          String(deletedLog.mediaId),
+          String(deletedLog.type)
+        );
+      }
+    } catch (err) {
+      console.error('auto-complete evaluation failed after deleteLog', err);
+    }
+
     return res.sendStatus(204);
   } catch (error) {
     return next(error as customError);
@@ -1197,6 +1211,19 @@ export async function updateLog(
       await recalculateStreaksForUser(res.locals.user._id);
     }
 
+    // Re-evaluate auto-complete after an updated log
+    try {
+      if (updatedLog.mediaId) {
+        await evaluateAutoCompleteForUserMedia(
+          res.locals.user._id,
+          String(updatedLog.mediaId),
+          String(updatedLog.type)
+        );
+      }
+    } catch (err) {
+      console.error('auto-complete evaluation failed after updateLog', err);
+    }
+
     return res.status(200).json(updatedLog);
   } catch (error) {
     return next(error as customError);
@@ -1282,6 +1309,22 @@ export async function adminUpdateLog(
     // If the date changed, recalc streaks for the log owner
     if (originalDate?.toISOString() !== updatedLog.date?.toISOString()) {
       await recalculateStreaksForUser(updatedLog.user as any);
+    }
+
+    // Re-evaluate auto-complete after admin updated a log
+    try {
+      if (updatedLog.mediaId) {
+        await evaluateAutoCompleteForUserMedia(
+          updatedLog.user as any,
+          String(updatedLog.mediaId),
+          String(updatedLog.type)
+        );
+      }
+    } catch (err) {
+      console.error(
+        'auto-complete evaluation failed after adminUpdateLog',
+        err
+      );
     }
 
     return res.status(200).json(updatedLog);
@@ -1459,7 +1502,7 @@ export async function createLog(
             status: 'in_progress',
             completed: false,
             completedAt: null,
-            autoCompleteSuppressed: true,
+            autoCompleteSuppressed: false,
           });
         } catch (error) {
           const mongoError = error as { code?: number };
@@ -1478,7 +1521,7 @@ export async function createLog(
                 status: 'in_progress',
                 completed: false,
                 completedAt: null,
-                autoCompleteSuppressed: true,
+                autoCompleteSuppressed: false,
               },
             }
           );
@@ -1489,10 +1532,23 @@ export async function createLog(
             status: 'in_progress',
             completed: false,
             completedAt: null,
-            autoCompleteSuppressed: true,
+            autoCompleteSuppressed: false,
           },
         });
       }
+    }
+
+    // Evaluate auto-complete now that the new log exists
+    try {
+      if (finalMediaId && immersionMediaTypes.has(statusType)) {
+        await evaluateAutoCompleteForUserMedia(
+          res.locals.user._id,
+          String(finalMediaId),
+          statusType
+        );
+      }
+    } catch (err) {
+      console.error('auto-complete evaluation failed after createLog', err);
     }
 
     // If this media was hidden from recent media, unhide it since user is actively logging it

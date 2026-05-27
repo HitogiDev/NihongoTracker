@@ -55,6 +55,7 @@ const Anime = MediaBase.discriminator('anime', AnimeSchema);
 
 const MangaSchema = new Schema({
   chapters: { type: Number, default: null },
+  characters: { type: Number, default: null },
   volumes: { type: Number, default: null },
 });
 
@@ -90,8 +91,20 @@ const VideoGameSchema = new Schema({
 const VideoGame = MediaBase.discriminator('game', VideoGameSchema);
 
 /** isAdultImage: true when the cover image has a VNDB sexual avg >= 100 (suggestive+) */
-const VnSchema = new Schema({});
+const VnSchema = new Schema({
+  characters: { type: Number, default: null },
+});
 
 const Vn = MediaBase.discriminator('vn', VnSchema);
 
-export { MediaBase, Anime, Manga, Reading, Video, Movie, TVShow, VideoGame, Vn };
+export {
+  MediaBase,
+  Anime,
+  Manga,
+  Reading,
+  Video,
+  Movie,
+  TVShow,
+  VideoGame,
+  Vn,
+};

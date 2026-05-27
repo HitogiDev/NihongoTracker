@@ -187,6 +187,7 @@ export async function getMedia(
       isCompleted: false,
       completedAt: null as Date | null,
       autoCompleteSuppressed: false,
+      mediaStatus: null as string | null,
     };
 
     if (requestedUsername) {
@@ -200,13 +201,14 @@ export async function getMedia(
           mediaId: String(contentId),
           type: normalizedMediaType,
         })
-          .select('completed completedAt autoCompleteSuppressed')
+          .select('completed completedAt autoCompleteSuppressed status')
           .lean();
 
         completionStatus.isCompleted = status?.completed ?? false;
         completionStatus.completedAt = status?.completedAt ?? null;
         completionStatus.autoCompleteSuppressed =
           status?.autoCompleteSuppressed ?? false;
+        completionStatus.mediaStatus = status?.status ?? null;
       }
     }
 

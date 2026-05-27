@@ -441,7 +441,7 @@ export async function markLogsWithoutStatusToInProgress(
       ...new Set(combos.map((combo) => String(combo._id.mediaId))),
     ];
     const mediaDocs = await MediaBase.find({ contentId: { $in: mediaIds } })
-      .select('contentId type episodes')
+      .select('contentId type episodes characters')
       .lean();
     const mediaById = new Map(
       mediaDocs.map((media) => [media.contentId, media])
@@ -469,7 +469,7 @@ export async function markLogsWithoutStatusToInProgress(
             : ('in_progress' as const);
         }
 
-        if (type === 'vn') {
+        if (type === 'vn' || type === 'manga' || type === 'reading') {
           const totalCharacters = Number(
             (media as (IMediaDocument & { characters?: number }) | undefined)
               ?.characters

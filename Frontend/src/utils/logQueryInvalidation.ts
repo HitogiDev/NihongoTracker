@@ -30,4 +30,16 @@ export const invalidateLogScreenQueries = (
       },
     });
   });
+
+  // Invalidate immersion list so completion status from backend auto-complete is reflected
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      Array.isArray(query.queryKey) && query.queryKey[0] === 'ImmersionList',
+  });
+
+  // Invalidate media queries so the media details page picks up new isCompleted status
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      Array.isArray(query.queryKey) && query.queryKey[0] === 'media',
+  });
 };

@@ -679,10 +679,17 @@ function MediaDetails() {
     readingPercentage >= 100;
   const isAutoCompleteSuppressed =
     mediaDocument?.autoCompleteSuppressed ?? false;
+  const totalEpisodesWatched = logsArray.reduce(
+    (acc, log) => acc + (log.episodes ?? 0),
+    0
+  );
+  const totalEpisodeCount = mediaDocument?.episodes ?? 0;
+  const isEpisodeProgressCompleted =
+    totalEpisodeCount > 0 && totalEpisodesWatched >= totalEpisodeCount;
   const shouldAutoCompleteMedia =
     !mediaDocument?.isCompleted &&
-    !isAutoCompleteSuppressed &&
-    (isLastVolumeCompleted || isCharacterProgressCompleted);
+    (!isAutoCompleteSuppressed || mediaDocument?.mediaStatus === 'in_progress') &&
+    (isLastVolumeCompleted || isCharacterProgressCompleted || isEpisodeProgressCompleted);
   const effectiveIsCompleted =
     !!mediaDocument?.isCompleted || shouldAutoCompleteMedia;
   const isOwnProfile =
@@ -856,13 +863,6 @@ function MediaDetails() {
     return null;
   })();
 
-  const totalEpisodesWatched = logsArray.reduce(
-    (acc, log) => acc + (log.episodes ?? 0),
-    0
-  );
-  const totalEpisodeCount = mediaDocument?.episodes ?? 0;
-  const isEpisodeProgressCompleted =
-    totalEpisodeCount > 0 && totalEpisodesWatched >= totalEpisodeCount;
   const episodeProgressPercentage =
     totalEpisodeCount > 0
       ? Math.min((totalEpisodesWatched / totalEpisodeCount) * 100, 100)
