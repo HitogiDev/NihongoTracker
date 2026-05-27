@@ -82,6 +82,7 @@ export interface IPatreonData {
   customBadgeText?: string;
   badgeColor?: string;
   badgeTextColor?: string;
+  memberSince?: Date;
   lastChecked?: Date;
   isActive?: boolean;
   /** Set when tier was granted manually by an admin; auto-expires at this date */
@@ -263,6 +264,7 @@ export interface IPatreonIncludedMember {
   attributes: {
     patron_status: 'active_patron' | 'former_patron' | string | null;
     currently_entitled_amount_cents: number | null;
+    pledge_relationship_start?: string | Date | null;
   };
   relationships?: {
     campaign: {

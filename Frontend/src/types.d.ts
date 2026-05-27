@@ -58,6 +58,7 @@ export interface IUser {
     badgeColor?: string;
     badgeTextColor?: string;
     isActive: boolean;
+    memberSince?: Date | string | null;
     lastChecked?: Date;
   };
   moderation?: {

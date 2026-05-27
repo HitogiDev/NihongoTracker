@@ -820,7 +820,8 @@ export async function checkPatreonMembershipForUser(userId: string): Promise<{
         headers: { Authorization: `Bearer ${accessToken}` },
         params: {
           'fields[user]': 'email',
-          'fields[member]': 'patron_status,currently_entitled_amount_cents',
+          'fields[member]':
+            'patron_status,currently_entitled_amount_cents,pledge_relationship_start',
           'fields[tier]': 'title,amount_cents',
           include:
             'memberships,memberships.currently_entitled_tiers,memberships.campaign',
@@ -873,6 +874,10 @@ export async function checkPatreonMembershipForUser(userId: string): Promise<{
 
     user.patreon.tier = tier;
     user.patreon.isActive = isActive;
+    user.patreon.memberSince = activeMembership?.attributes
+      ?.pledge_relationship_start
+      ? new Date(activeMembership.attributes.pledge_relationship_start)
+      : user.patreon.memberSince;
     user.patreon.lastChecked = new Date();
     await user.save();
 

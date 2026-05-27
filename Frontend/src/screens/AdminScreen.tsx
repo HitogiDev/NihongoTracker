@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
@@ -69,12 +70,34 @@ type PatronStatsResponse = {
     users: Array<{
       _id: string;
       username: string;
-      patreon: { tier: string };
+      patreon: {
+        tier: 'donator' | 'enthusiast' | 'consumer' | null;
+        memberSince?: string | Date | null;
+        lastChecked?: string | Date | null;
+        isActive?: boolean;
+      };
       stats: { userXp: number };
       createdAt: Date;
     }>;
   };
 };
+
+const PATRON_TIER_LABELS = {
+  consumer: 'Consumer',
+  enthusiast: 'Enthusiast',
+  donator: 'Donator',
+} as const;
+
+function formatAdminDate(value?: string | Date | null): string {
+  if (!value) return 'Unknown';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -117,6 +140,9 @@ function AdminScreen() {
     'donator' | 'enthusiast' | 'consumer' | ''
   >('');
   const [grantDays, setGrantDays] = useState('');
+  const [selectedPatronTier, setSelectedPatronTier] = useState<
+    'consumer' | 'enthusiast' | 'donator' | null
+  >(null);
 
   // Logs tab state
   const [logPage, setLogPage] = useState(1);
@@ -188,6 +214,11 @@ function AdminScreen() {
     enabled: isAdmin,
     staleTime: 30_000,
   }) as { data: PatronStatsResponse | undefined };
+
+  const selectedPatronUsers =
+    patronStats?.data?.users?.filter(
+      (member) => member.patreon?.tier === selectedPatronTier
+    ) ?? [];
 
   const { data: changelogs, isLoading: changelogsLoading } = useQuery({
     queryKey: ['adminChangelogs'],
@@ -581,6 +612,111 @@ function AdminScreen() {
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-base-content/70">
+                        {selectedPatronTier ? (
+                          <dialog className="modal modal-open">
+                            <div className="modal-box max-w-6xl">
+                              <div className="flex items-start justify-between gap-4 mb-4">
+                                <div>
+                                  <h3 className="text-xl font-bold">
+                                    {PATRON_TIER_LABELS[selectedPatronTier]}{' '}
+                                    Members
+                                  </h3>
+                                  <p className="text-sm text-base-content/60">
+                                    {numberWithCommas(
+                                      selectedPatronUsers.length
+                                    )}{' '}
+                                    active supporter
+                                    {selectedPatronUsers.length === 1
+                                      ? ''
+                                      : 's'}
+                                  </p>
+                                </div>
+                                <button
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={() => setSelectedPatronTier(null)}
+                                >
+                                  Close
+                                </button>
+                              </div>
+
+                              <div className="overflow-x-auto">
+                                <table className="table table-zebra">
+                                  <thead>
+                                    <tr>
+                                      <th>User</th>
+                                      <th>Member Since</th>
+                                      <th>Account Created</th>
+                                      <th>XP</th>
+                                      <th>Status</th>
+                                      <th>Last Checked</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {selectedPatronUsers.length > 0 ? (
+                                      selectedPatronUsers.map((member) => (
+                                        <tr key={member._id}>
+                                          <td className="font-medium">
+                                            <Link
+                                              to={`/user/${member.username}`}
+                                              className="link link-primary"
+                                            >
+                                              {member.username}
+                                            </Link>
+                                          </td>
+                                          <td>
+                                            {formatAdminDate(
+                                              member.patreon?.memberSince ??
+                                                null
+                                            )}
+                                          </td>
+                                          <td>
+                                            {formatAdminDate(member.createdAt)}
+                                          </td>
+                                          <td>
+                                            {numberWithCommas(
+                                              member.stats?.userXp ?? 0
+                                            )}
+                                          </td>
+                                          <td>
+                                            <span
+                                              className={`badge ${member.patreon?.isActive ? 'badge-success' : 'badge-ghost'}`}
+                                            >
+                                              {member.patreon?.isActive
+                                                ? 'Active'
+                                                : 'Inactive'}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            {formatAdminDate(
+                                              member.patreon?.lastChecked ??
+                                                null
+                                            )}
+                                          </td>
+                                        </tr>
+                                      ))
+                                    ) : (
+                                      <tr>
+                                        <td
+                                          colSpan={6}
+                                          className="text-center py-8 text-base-content/60"
+                                        >
+                                          No members found in this tier.
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                            <form method="dialog" className="modal-backdrop">
+                              <button
+                                onClick={() => setSelectedPatronTier(null)}
+                              >
+                                close
+                              </button>
+                            </form>
+                          </dialog>
+                        ) : null}
                         Total Users
                       </h3>
                       <p className="text-2xl font-bold">
@@ -766,7 +902,11 @@ function AdminScreen() {
                         Sync Patreon Members
                       </button>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between p-3 bg-base-200 rounded-lg text-left transition hover:bg-base-300 cursor-pointer"
+                      onClick={() => setSelectedPatronTier('consumer')}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold">
                           C
@@ -778,8 +918,12 @@ function AdminScreen() {
                           patronStats?.data?.byTier?.consumer || 0
                         )}
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between p-3 bg-base-200 rounded-lg text-left transition hover:bg-base-300 cursor-pointer"
+                      onClick={() => setSelectedPatronTier('enthusiast')}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 text-white font-bold">
                           E
@@ -791,8 +935,12 @@ function AdminScreen() {
                           patronStats?.data?.byTier?.enthusiast || 0
                         )}
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between p-3 bg-base-200 rounded-lg text-left transition hover:bg-base-300 cursor-pointer"
+                      onClick={() => setSelectedPatronTier('donator')}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500 text-white font-bold">
                           D
@@ -804,7 +952,7 @@ function AdminScreen() {
                           patronStats?.data?.byTier?.donator || 0
                         )}
                       </span>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>

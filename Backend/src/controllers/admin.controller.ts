@@ -562,6 +562,7 @@ export async function adminSetPatreonStatus(
         tier: null,
         isActive: false,
         manualTierExpiry: undefined,
+        memberSince: undefined,
         lastChecked: new Date(),
       };
     } else {
@@ -574,6 +575,7 @@ export async function adminSetPatreonStatus(
         tier,
         isActive: true,
         manualTierExpiry: expiry,
+        memberSince: user.patreon?.memberSince ?? new Date(),
         lastChecked: new Date(),
       };
     }
@@ -854,7 +856,9 @@ export async function getPatronStats(
     const paidUsers = await User.find({
       'patreon.tier': { $in: ['donator', 'enthusiast', 'consumer'] },
     })
-      .select('username patreon.tier stats.userXp createdAt')
+      .select(
+        'username patreon.tier patreon.memberSince patreon.lastChecked stats.userXp createdAt'
+      )
       .sort({ 'stats.userXp': -1 })
       .lean();
 
