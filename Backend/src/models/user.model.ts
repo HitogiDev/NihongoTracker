@@ -19,6 +19,9 @@ const SettingsSchema = new Schema<IUserSettings>(
     timezone: { type: String, default: 'UTC' },
     hiddenRecentMedia: { type: [String], default: [] },
     statsLayout: { type: [Schema.Types.Mixed], default: [] },
+    notificationsLastViewedAt: { type: Date, default: null },
+    dismissedNotificationClubIds: { type: [String], default: [] },
+    dismissedNotificationClubAt: { type: Schema.Types.Mixed, default: {} },
   },
   { _id: false }
 );

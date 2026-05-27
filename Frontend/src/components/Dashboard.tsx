@@ -286,10 +286,14 @@ function Dashboard() {
         contentTitleEnglish: media.title?.contentTitleEnglish,
         contentTitleRomaji: media.title?.contentTitleRomaji,
       },
-      contentImage: media.contentImage,
-      coverImage: (media as IMediaDocument)?.coverImage ?? media.contentImage,
+      contentImage: media.contentImage ?? undefined,
+      coverImage:
+        (media as IMediaDocument)?.coverImage ??
+        media.contentImage ??
+        undefined,
       type: (media.type as IMediaDocument['type']) ?? 'anime',
       isAdult: (media as IMediaDocument)?.isAdult ?? false,
+      isAdultImage: (media as IMediaDocument)?.isAdultImage ?? false,
     };
   }
 
@@ -593,10 +597,11 @@ function Dashboard() {
                       (log.media as IMediaDocument | undefined)?.type ??
                       log.type;
                     const mediaContentId = log.media?.contentId;
-                    const feedIsAdult =
-                      log.isAdult ||
-                      (log.media as IMediaDocument | undefined)?.isAdult ||
-                      false;
+                    const mediaDoc = log.media as IMediaDocument | undefined;
+                    const shouldBlurAdult =
+                      user?.settings?.blurAdultContent ?? true;
+                    const feedIsAdultImage = mediaDoc?.isAdultImage ?? false;
+                    const blurAdult = shouldBlurAdult && feedIsAdultImage;
                     const mediaLink =
                       mediaType && mediaContentId
                         ? `/${mediaType}/${mediaContentId}`
@@ -684,7 +689,7 @@ function Dashboard() {
                                 src={image}
                                 alt={log.media?.title?.contentTitleNative}
                                 className={`w-full h-full object-cover ${
-                                  feedIsAdult ? 'blur-sm scale-110' : ''
+                                  blurAdult ? 'blur-sm scale-110' : ''
                                 }`}
                               />
                             </Link>
@@ -694,7 +699,7 @@ function Dashboard() {
                                 src={image}
                                 alt={log.media?.title?.contentTitleNative}
                                 className={`w-full h-full object-cover ${
-                                  feedIsAdult ? 'blur-sm scale-110' : ''
+                                  blurAdult ? 'blur-sm scale-110' : ''
                                 }`}
                               />
                             </div>
@@ -920,8 +925,11 @@ function RecentMediaRailTile({
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
   const mediaId = log.media?.contentId;
-  const isAdult =
-    log.isAdult || (log.media as IMediaDocument | undefined)?.isAdult || false;
+  const mediaDoc = log.media as IMediaDocument | undefined;
+  const isVn = log.type === 'vn' || mediaDoc?.type === 'vn';
+  const isAdult = isVn
+    ? (mediaDoc?.isAdultImage ?? false)
+    : log.isAdult || mediaDoc?.isAdult || false;
 
   function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
@@ -994,8 +1002,11 @@ function RecentMediaTile({
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
   const mediaId = log.media?.contentId;
-  const isAdult =
-    log.isAdult || (log.media as IMediaDocument | undefined)?.isAdult || false;
+  const mediaDoc = log.media as IMediaDocument | undefined;
+  const isVn = log.type === 'vn' || mediaDoc?.type === 'vn';
+  const isAdult = isVn
+    ? (mediaDoc?.isAdultImage ?? false)
+    : log.isAdult || mediaDoc?.isAdult || false;
 
   const { data: averageColorData } = useQuery({
     queryKey: ['recentMediaAverageColor', image],

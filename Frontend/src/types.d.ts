@@ -48,6 +48,7 @@ export interface IUser {
   email?: string;
   verified?: boolean;
   clubs?: string[];
+  clubGoals?: IClubGoal[];
   discordId?: string;
   patreon?: {
     patreonId?: string;
@@ -86,6 +87,9 @@ export interface IUser {
     hideUnmatchedLogsAlert?: boolean;
     timezone?: string;
     statsLayout?: StatsGroupLayout[];
+    notificationsLastViewedAt?: string | Date | null;
+    dismissedNotificationClubIds?: string[];
+    dismissedNotificationClubAt?: Record<string, string | Date>;
   };
   statsLayout?: StatsGroupLayout[];
   matchPassword: (enteredPassword: string) => Promise<boolean>;
@@ -360,6 +364,7 @@ export interface IContentMedia {
   volumes?: number;
   synonyms?: string[] | null;
   isAdult: boolean;
+  isAdultImage?: boolean;
   date?: Date | null;
   // YouTube specific fields
   channelId?: string;
@@ -422,15 +427,20 @@ export interface ILog {
   xp: number;
   mediaId?: string;
   manabeId?: string;
-  media?: {
-    contentId: string;
+  media?: Pick<
+    IContentMedia,
+    | 'contentId'
+    | 'contentImage'
+    | 'coverImage'
+    | 'type'
+    | 'isAdult'
+    | 'isAdultImage'
+  > & {
     title: {
       contentTitleNative: string;
-      contentTitleEnglish?: string;
       contentTitleRomaji?: string;
+      contentTitleEnglish: string;
     };
-    contentImage?: string;
-    type: string;
   };
   tags?: ITag[] | string[];
   private: boolean;
@@ -575,6 +585,7 @@ export interface IMediaDocument {
   volumes?: number;
   synonyms?: string[] | null;
   isAdult: boolean;
+  isAdultImage?: boolean;
   lastLogDate?: string;
   isCompleted?: boolean;
   completedAt?: string | Date | null;
@@ -887,6 +898,7 @@ export interface IClubMediaCandidate {
   addedAt?: Date;
   votes: string[];
   isAdult?: boolean;
+  isAdultImage?: boolean;
 }
 
 export interface IClubMediaVoting {
@@ -933,9 +945,21 @@ export interface IClubMediaVoting {
     description?: string;
     image?: string;
     isAdult?: boolean;
+    isAdultImage?: boolean;
   };
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface IClubGoal {
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  target: number;
+  period: 'weekly' | 'monthly' | 'custom' | 'indefinite';
+  currentProgress: number;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
 }
 
 export interface IClub {
@@ -949,6 +973,7 @@ export interface IClub {
   totalXp: number;
   members: IClubMember[];
   currentMedia: IClubMedia[];
+  clubGoals: IClubGoal[];
   tags: string[];
   memberLimit: number;
   rules?: string;
@@ -992,6 +1017,23 @@ export interface INotificationSummaryResponse {
   sections: INotificationSummarySection[];
 }
 
+export interface INotificationListItem {
+  id: string;
+  label: string;
+  count: number;
+  isRead: boolean;
+  createdAt: string;
+  meta?: Record<string, string>;
+}
+
+export interface INotificationListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  items: INotificationListItem[];
+}
+
 export interface ICreateClubRequest {
   name: string;
   description?: string;
@@ -999,6 +1041,7 @@ export interface ICreateClubRequest {
   tags?: string[];
   rules?: string;
   memberLimit?: number;
+  clubGoals?: IClubGoal[];
 }
 
 type OptionalExceptFor<T, TRequired extends keyof T> = Partial<T> &

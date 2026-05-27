@@ -49,14 +49,28 @@ function MediaWriteReview() {
   const reviewTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const bypassUnsavedPromptRef = useRef(false);
 
+  const clubSearchParams = new URLSearchParams(window.location.search);
+  const clubIdParam = clubSearchParams.get('clubId');
+  const clubMediaIdParam = clubSearchParams.get('clubMediaId');
   const mediaBasePath = useMemo(() => {
     if (!mediaDocument?.type || !mediaDocument?.contentId) {
       return '';
     }
+    if (clubIdParam && clubMediaIdParam) {
+      return `/${mediaDocument.type}/${mediaDocument.contentId}?clubId=${encodeURIComponent(
+        clubIdParam
+      )}&clubMediaId=${encodeURIComponent(clubMediaIdParam)}`;
+    }
     return username
       ? `/${mediaDocument.type}/${mediaDocument.contentId}/${username}`
       : `/${mediaDocument.type}/${mediaDocument.contentId}`;
-  }, [mediaDocument?.type, mediaDocument?.contentId, username]);
+  }, [
+    clubIdParam,
+    clubMediaIdParam,
+    mediaDocument?.type,
+    mediaDocument?.contentId,
+    username,
+  ]);
 
   const reviewsPath = mediaBasePath ? `${mediaBasePath}/reviews` : '/';
 

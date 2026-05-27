@@ -2104,13 +2104,17 @@ export async function updateMediaCompletionStatus(
         type: normalizedType,
       },
       {
-        user: res.locals.user._id,
-        mediaId: normalizedMediaId,
-        type: normalizedType,
-        status: effectiveStatus,
-        completed: effectiveCompleted,
-        completedAt: effectiveCompletedAt,
-        autoCompleteSuppressed: effectiveAutoCompleteSuppressed,
+        $set: {
+          status: effectiveStatus,
+          completed: effectiveCompleted,
+          completedAt: effectiveCompletedAt,
+          autoCompleteSuppressed: effectiveAutoCompleteSuppressed,
+        },
+        $setOnInsert: {
+          user: res.locals.user._id,
+          mediaId: normalizedMediaId,
+          type: normalizedType,
+        },
       },
       {
         new: true,

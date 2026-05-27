@@ -30,6 +30,7 @@ const MEDIA_INDEX_SETTINGS = {
     'contentImage',
     'coverImage',
     'isAdult',
+    'isAdultImage',
     'synonyms',
     'type',
   ],
@@ -89,7 +90,9 @@ async function syncIndexes(indexNames: readonly string[]) {
     if (!dbType) continue;
 
     const media = await MediaBase.find({ type: dbType })
-      .select('contentId title contentImage coverImage isAdult synonyms type')
+      .select(
+        'contentId title contentImage coverImage isAdult isAdultImage synonyms type'
+      )
       .lean();
 
     if (media.length === 0) continue;
@@ -101,6 +104,7 @@ async function syncIndexes(indexNames: readonly string[]) {
       contentImage: doc.contentImage,
       coverImage: doc.coverImage,
       isAdult: doc.isAdult,
+      isAdultImage: (doc as { isAdultImage?: boolean }).isAdultImage ?? false,
       synonyms: doc.synonyms || [],
       type: doc.type,
     }));

@@ -13,6 +13,7 @@ import {
   IClubListResponse,
   IClub,
   IClubMember,
+  IClubGoal,
 } from '../types.js';
 import {
   completeVotingDocument,
@@ -22,6 +23,7 @@ import {
 } from '../services/clubMediaVoting.js';
 import { calculateLevel } from '../services/calculateLevel.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
+import { recalculateClubGoalsProgress } from '../services/clubGoals.js';
 
 type PatreonTier = 'donator' | 'enthusiast' | 'consumer' | null | undefined;
 
@@ -77,6 +79,76 @@ function buildClubMemberLimitExceededMessage(maxAllowedLimit: number): string {
   }
 
   return `Your current Patreon tier allows up to ${maxAllowedLimit} club members. Upgrade your Patreon tier for a higher club member cap.`;
+}
+
+function parseClubGoalsInput(value: unknown): IClubGoal[] {
+  const rawValue = typeof value === 'string' ? JSON.parse(value) : value;
+
+  if (!Array.isArray(rawValue)) {
+    throw new Error('clubGoals must be an array');
+  }
+
+  return rawValue.map((goal, index) => {
+    const type = goal?.type;
+    const period = goal?.period;
+    const target = Number(goal?.target);
+    const hasStartDate =
+      goal?.startDate !== undefined &&
+      goal?.startDate !== null &&
+      goal?.startDate !== '';
+    const hasEndDate =
+      goal?.endDate !== undefined &&
+      goal?.endDate !== null &&
+      goal?.endDate !== '';
+    const startDate = hasStartDate ? new Date(goal?.startDate) : undefined;
+    const endDate = hasEndDate ? new Date(goal?.endDate) : undefined;
+
+    if (!['time', 'chars', 'episodes', 'pages'].includes(type)) {
+      throw new Error(`Invalid club goal type at position ${index + 1}`);
+    }
+
+    if (!['weekly', 'monthly', 'custom', 'indefinite'].includes(period)) {
+      throw new Error(`Invalid club goal period at position ${index + 1}`);
+    }
+
+    if (!Number.isFinite(target) || target <= 0) {
+      throw new Error(
+        `Goal target must be a positive number at position ${index + 1}`
+      );
+    }
+
+    if (period === 'custom') {
+      if (!startDate || !endDate) {
+        throw new Error(
+          `Custom goals require start and end dates at position ${index + 1}`
+        );
+      }
+
+      if (
+        Number.isNaN(startDate.getTime()) ||
+        Number.isNaN(endDate.getTime())
+      ) {
+        throw new Error(`Goal dates are invalid at position ${index + 1}`);
+      }
+
+      if (endDate < startDate) {
+        throw new Error(
+          `Goal end date must be after start date at position ${index + 1}`
+        );
+      }
+    }
+
+    return {
+      type,
+      target: Math.floor(target),
+      period,
+      currentProgress: 0,
+      isActive: goal?.isActive !== false,
+      startDate,
+      endDate,
+      createdAt: goal?.createdAt ? new Date(goal.createdAt) : new Date(),
+    } satisfies IClubGoal;
+  });
 }
 
 export async function getClubs(
@@ -208,6 +280,7 @@ export async function getClub(
 
     // Auto-update voting statuses based on current date
     await updateVotingStatusesForClub(club);
+    await recalculateClubGoalsProgress(clubId);
 
     // Refresh club data after potential status updates
     const updatedClub = await Club.findById(clubId)
@@ -265,6 +338,16 @@ export async function createClub(
     // Convert string numbers back to numbers
     if (typeof clubData.memberLimit === 'string') {
       clubData.memberLimit = parseInt(clubData.memberLimit, 10);
+    }
+
+    if (clubData.clubGoals !== undefined) {
+      try {
+        clubData.clubGoals = parseClubGoalsInput(clubData.clubGoals);
+      } catch (error) {
+        return res.status(400).json({
+          message: (error as Error).message,
+        });
+      }
     }
 
     // Convert string booleans back to booleans
@@ -621,6 +704,16 @@ export async function updateClub(
       updateData.isPublic = updateData.isPublic === 'true';
     }
 
+    if (updateData.clubGoals !== undefined) {
+      try {
+        updateData.clubGoals = parseClubGoalsInput(updateData.clubGoals);
+      } catch (error) {
+        return res.status(400).json({
+          message: (error as Error).message,
+        });
+      }
+    }
+
     if (updateData.memberLimit !== undefined) {
       if (
         !Number.isInteger(updateData.memberLimit) ||
@@ -705,6 +798,7 @@ export async function updateClub(
       'memberLimit',
       'avatar',
       'banner',
+      'clubGoals',
     ];
 
     allowedFields.forEach((field) => {
@@ -715,7 +809,13 @@ export async function updateClub(
 
     await club.save();
 
-    return res.status(200).json(club);
+    await recalculateClubGoalsProgress(clubId);
+
+    const updatedClub = await Club.findById(clubId)
+      .populate('members.user', 'username avatar level totalXp')
+      .populate('currentMedia.addedBy', 'username');
+
+    return res.status(200).json(updatedClub || club);
   } catch (error) {
     return next(error as customError);
   }
@@ -1171,9 +1271,28 @@ export async function getClubMedia(
     }
 
     const isActiveFilter = active === 'true';
-    const filteredMedia = club.currentMedia.filter(
-      (media) => media.isActive === isActiveFilter
-    );
+
+    // Compute active state from start/end dates to avoid stale stored flags
+    const now = new Date();
+    const filteredMedia = club.currentMedia.filter((media) => {
+      const start = media.startDate ? new Date(media.startDate) : null;
+      const end = media.endDate ? new Date(media.endDate) : null;
+
+      let computedIsActive: boolean;
+
+      if (start && end) {
+        computedIsActive = now >= start && now <= end;
+      } else if (start && !end) {
+        computedIsActive = now >= start;
+      } else if (!start && end) {
+        computedIsActive = now <= end;
+      } else {
+        // Fallback to stored flag when dates are missing
+        computedIsActive = Boolean(media.isActive);
+      }
+
+      return computedIsActive === isActiveFilter;
+    });
 
     // Enhance media with actual media documents for images and metadata
     const enhancedMedia = await Promise.all(
@@ -1184,8 +1303,21 @@ export async function getClubMedia(
             type: media.mediaType,
           });
 
+          const obj = (media as any).toObject();
+
+          // Respect computed active state (in case stored flag is stale)
+          const start = media.startDate ? new Date(media.startDate) : null;
+          const end = media.endDate ? new Date(media.endDate) : null;
+          if (start && end) {
+            obj.isActive = now >= start && now <= end;
+          } else if (start && !end) {
+            obj.isActive = now >= start;
+          } else if (!start && end) {
+            obj.isActive = now <= end;
+          }
+
           return {
-            ...(media as any).toObject(),
+            ...obj,
             mediaDocument: mediaDocument || null,
           };
         } catch (error) {

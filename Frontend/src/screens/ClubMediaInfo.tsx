@@ -1,6 +1,6 @@
 import { useOutletContext, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getClubMediaStatsFn } from '../api/clubApi';
+import { getClubMediaLogsFn, getClubMediaStatsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
 import {
@@ -14,7 +14,7 @@ import {
   ChartLine,
 } from 'lucide-react';
 import BarChart from '../components/BarChart';
-import ProgressChart from '../components/ProgressChart';
+import LineChart from '../components/LineChart';
 
 export default function ClubMediaInfo() {
   const { club, clubMedia } = useOutletContext<OutletClubMediaContextType>();
@@ -28,6 +28,19 @@ export default function ClubMediaInfo() {
     queryKey: ['clubMediaStats', clubId, mediaId, period],
     queryFn: () => getClubMediaStatsFn(clubId!, mediaId!, period),
     enabled: !!clubId && !!mediaId && !!clubMedia,
+  });
+
+  const { data: clubLogsData, isLoading: isLogsLoading } = useQuery({
+    queryKey: ['clubMediaLogs', clubId, mediaId],
+    queryFn: () => {
+      if (!clubId || !mediaId) {
+        throw new Error('Missing club media parameters');
+      }
+
+      return getClubMediaLogsFn(clubId, mediaId, { limit: 1000 });
+    },
+    enabled: !!clubId && !!mediaId && !!clubMedia,
+    staleTime: 60 * 1000,
   });
 
   if (!club || !clubMedia) {
@@ -115,6 +128,71 @@ export default function ClubMediaInfo() {
 
   const typeSpecificStats = getMediaTypeSpecificStats();
   const mediaType = mediaStats?.mediaInfo.mediaType;
+
+  const clubMemberNames = new Map(
+    (club?.members ?? [])
+      .filter((member) => member.status === 'active')
+      .map((member) => [member.user._id, member.user.username] as const)
+  );
+
+  const memberChartData = (() => {
+    const logs = clubLogsData?.logs ?? [];
+
+    if (!logs.length) {
+      return null;
+    }
+
+    const dayKeys = Array.from(
+      new Set(logs.map((log) => new Date(log.date).toISOString().slice(0, 10)))
+    ).sort();
+
+    const logsByMember = new Map<string, Map<string, number>>();
+
+    for (const log of logs) {
+      const userId = log.user._id;
+      if (!clubMemberNames.has(userId)) {
+        continue;
+      }
+
+      const dayKey = new Date(log.date).toISOString().slice(0, 10);
+      if (!logsByMember.has(userId)) {
+        logsByMember.set(userId, new Map<string, number>());
+      }
+
+      const memberDays = logsByMember.get(userId)!;
+      memberDays.set(dayKey, (memberDays.get(dayKey) || 0) + (log.xp || 0));
+    }
+
+    const colors = [
+      '#3b82f6',
+      '#10b981',
+      '#f59e0b',
+      '#ef4444',
+      '#8b5cf6',
+      '#06b6d4',
+      '#ec4899',
+      '#22c55e',
+    ];
+
+    const datasets = Array.from(logsByMember.entries()).map(
+      ([userId, dayMap], index) => ({
+        label: clubMemberNames.get(userId) || 'Member',
+        data: dayKeys.map((dayKey) => dayMap.get(dayKey) || 0),
+        fill: false,
+        tension: 0.35,
+        borderWidth: 3,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length],
+      })
+    );
+
+    return {
+      labels: dayKeys.map((dayKey) => new Date(dayKey).toLocaleDateString()),
+      datasets,
+    };
+  })();
 
   // Helper function to determine if consumption period is greater than 30 days
   const isConsumptionPeriodLongerThanMonth = () => {
@@ -413,38 +491,17 @@ export default function ClubMediaInfo() {
 
               <div className="w-full" style={{ height: '450px' }}>
                 {chartView === 'progress' ? (
-                  <ProgressChart
-                    statsData={[
-                      {
-                        type: 'all',
-                        count: mediaStats.total.logs,
-                        totalXp: mediaStats.total.xp,
-                        totalTimeMinutes: mediaStats.total.minutes,
-                        totalTimeHours: mediaStats.total.hours,
-                        untrackedCount: 0,
-                        dates: [
-                          {
-                            date: new Date(
-                              mediaStats.total.firstLogDate || new Date()
-                            ),
-                            xp: mediaStats.thisWeek.xp,
-                            time: mediaStats.thisWeek.minutes,
-                            episodes: mediaStats.thisWeek.episodes,
-                          },
-                          {
-                            date: new Date(
-                              mediaStats.total.lastLogDate || new Date()
-                            ),
-                            xp: mediaStats.thisMonth.xp,
-                            time: mediaStats.thisMonth.minutes,
-                            episodes: mediaStats.thisMonth.episodes,
-                          },
-                        ],
-                      },
-                    ]}
-                    selectedType="all"
-                    timeframe="total"
-                  />
+                  isLogsLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <span className="loading loading-spinner loading-lg text-primary"></span>
+                    </div>
+                  ) : memberChartData ? (
+                    <LineChart data={memberChartData} />
+                  ) : (
+                    <div className="alert alert-info mx-4">
+                      <span>No club member logs found for this media yet.</span>
+                    </div>
+                  )
                 ) : (
                   <BarChart
                     data={(() => {

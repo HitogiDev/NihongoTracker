@@ -10,9 +10,26 @@ function MediaNavbar({
   mediaId: string | undefined;
   username: string | undefined;
 }) {
-  const basePath = username
-    ? `/${mediaType}/${mediaId}/${username}`
-    : `/${mediaType}/${mediaId}`;
+  const searchParams = new URLSearchParams(window.location.search);
+  const clubId = searchParams.get('clubId');
+  const clubMediaId = searchParams.get('clubMediaId');
+
+  const buildPath = (section?: 'reviews' | 'social') => {
+    const pathname = username
+      ? `/${mediaType}/${mediaId}/${username}${section ? `/${section}` : ''}`
+      : `/${mediaType}/${mediaId}${section ? `/${section}` : ''}`;
+
+    if (clubId && clubMediaId) {
+      const search = new URLSearchParams({
+        clubId,
+        clubMediaId,
+      }).toString();
+
+      return { pathname, search: `?${search}` };
+    }
+
+    return pathname;
+  };
 
   const activeTabClass = 'active bg-primary text-primary-content';
 
@@ -22,7 +39,7 @@ function MediaNavbar({
         <ul className="menu menu-horizontal gap-5">
           <li>
             <NavLink
-              to={basePath}
+              to={buildPath()}
               end
               className={({ isActive }) => (isActive ? activeTabClass : '')}
             >
@@ -31,7 +48,7 @@ function MediaNavbar({
           </li>
           <li>
             <NavLink
-              to={`${basePath}/reviews`}
+              to={buildPath('reviews')}
               className={({ isActive }) => (isActive ? activeTabClass : '')}
             >
               Reviews
@@ -39,7 +56,7 @@ function MediaNavbar({
           </li>
           <li>
             <NavLink
-              to={`${basePath}/social`}
+              to={buildPath('social')}
               className={({ isActive }) => (isActive ? activeTabClass : '')}
             >
               Social

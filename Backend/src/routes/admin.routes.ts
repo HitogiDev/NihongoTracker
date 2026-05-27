@@ -17,6 +17,8 @@ import {
   triggerIgdbDumpSync,
   getIgdbDumpSyncStatus,
   markLogsWithoutStatusToInProgress,
+  triggerVndbDumpSync,
+  getVndbDumpSyncStatus,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -177,6 +179,20 @@ router.get(
   protect,
   checkPermission(userRoles.admin),
   getIgdbDumpSyncStatus
+);
+
+router.post(
+  '/vndb-dump/sync',
+  protect,
+  checkPermission(userRoles.admin),
+  triggerVndbDumpSync
+);
+
+router.get(
+  '/vndb-dump/status',
+  protect,
+  checkPermission(userRoles.admin),
+  getVndbDumpSyncStatus
 );
 
 export default router;

@@ -85,6 +85,20 @@ export default function ClubMediaHeader() {
     void getAvgColor();
   }, [media]);
 
+  // Redirect legacy club-media routes to unified MediaDetails route
+  useEffect(() => {
+    if (!media) return;
+    const contentId = media.mediaDocument?.contentId || media.mediaId;
+    if (!contentId || !media.mediaType) return;
+
+    navigate(
+      `/${media.mediaType}/${contentId}?clubId=${encodeURIComponent(
+        String(clubId!)
+      )}&clubMediaId=${encodeURIComponent(String(media._id))}`,
+      { replace: true }
+    );
+  }, [media, navigate, clubId]);
+
   if (clubLoading || clubMediaLoading) return <Loader />;
 
   if (!club) {
@@ -121,6 +135,12 @@ export default function ClubMediaHeader() {
 
   const canAddReview = club.isUserMember && club.userStatus === 'active';
 
+  const shouldBlur = media?.mediaDocument
+    ? (media.mediaType === 'vn' || media.mediaDocument.type === 'vn'
+        ? (media.mediaDocument.isAdultImage ?? false)
+        : media.mediaDocument.isAdult) && user?.settings?.blurAdultContent
+    : false;
+
   return (
     <div className="flex flex-col justify-center bg-base-200 text-base-content">
       {/* Banner Background */}
@@ -136,7 +156,7 @@ export default function ClubMediaHeader() {
         {media?.mediaDocument?.coverImage ? (
           <div
             className={`flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover ${
-              media.mediaDocument.isAdult && user?.settings?.blurAdultContent
+              shouldBlur
                 ? 'blur-sm'
                 : ''
             }`}
@@ -158,8 +178,7 @@ export default function ClubMediaHeader() {
                     src={media.mediaDocument.contentImage}
                     alt={media.title}
                     className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${
-                      media.mediaDocument.isAdult &&
-                      user?.settings?.blurAdultContent
+                      shouldBlur
                         ? 'blur-sm'
                         : ''
                     }`}
@@ -251,7 +270,13 @@ export default function ClubMediaHeader() {
       </div>
 
       {/* Navigation */}
-      <ClubMediaNavbar clubId={clubId!} mediaId={mediaId!} />
+      <ClubMediaNavbar
+        clubId={clubId!}
+        mediaId={mediaId!}
+        mediaType={media.mediaType}
+        contentId={media.mediaDocument?.contentId || media.mediaId}
+        clubMediaId={media._id}
+      />
 
       {/* Outlet for the content */}
       <Outlet

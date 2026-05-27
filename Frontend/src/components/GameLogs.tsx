@@ -408,7 +408,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left panel - Log groups */}
-        <div className="card bg-base-200 shadow-lg">
+        <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
             <h2 className="card-title">Unassigned Logs</h2>
             <div className="divider my-1"></div>
@@ -493,7 +493,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         </div>
 
         {/* Right panel - Game search */}
-        <div className="card bg-base-200 shadow-lg">
+        <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
             <h2 className="card-title">Find Matching Video Games</h2>
             <div className="divider my-1"></div>

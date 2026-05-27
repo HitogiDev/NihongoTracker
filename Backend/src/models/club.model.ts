@@ -1,5 +1,28 @@
 import { Schema, model } from 'mongoose';
-import { IClub, IClubMember, IClubMedia } from '../types.js';
+import { IClub, IClubMember, IClubMedia, IClubGoal } from '../types.js';
+
+// Club Goal Schema
+const ClubGoalSchema = new Schema<IClubGoal>(
+  {
+    type: {
+      type: String,
+      enum: ['time', 'chars', 'episodes', 'pages'],
+      required: true,
+    },
+    target: { type: Number, required: true },
+    period: {
+      type: String,
+      enum: ['weekly', 'monthly', 'custom', 'indefinite'],
+      required: true,
+    },
+    currentProgress: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+    startDate: { type: Date },
+    endDate: { type: Date },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
 
 // Club Member Schema
 const ClubMemberSchema = new Schema<IClubMember>(
@@ -20,7 +43,7 @@ const ClubMemberSchema = new Schema<IClubMember>(
   { _id: false }
 );
 
-// Club Media Schema (for club reading/watching challenges)
+// Club Media Schema
 const ClubMediaSchema = new Schema<IClubMedia>(
   {
     mediaId: { type: String },
@@ -57,6 +80,7 @@ const ClubSchema = new Schema<IClub>(
     totalXp: { type: Number, default: 0 },
     members: [ClubMemberSchema],
     currentMedia: [ClubMediaSchema],
+    clubGoals: [ClubGoalSchema],
     tags: [{ type: String, maxlength: 30 }], // For filtering (e.g., "beginner", "advanced", "anime-focused")
     memberLimit: { type: Number, default: 100 },
     rules: { type: String, maxlength: 1000 },

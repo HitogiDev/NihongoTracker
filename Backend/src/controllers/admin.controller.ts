@@ -11,6 +11,10 @@ import {
   getIgdbDumpSyncStatus as getIgdbDumpSyncStatusService,
   startIgdbDumpSync,
 } from '../services/igdbDumpSync.js';
+import {
+  getVndbDumpSyncStatus as getVndbDumpSyncStatusService,
+  startVndbDumpSync,
+} from '../services/vndbDumpSync.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IMediaDocument } from '../types.js';
@@ -900,6 +904,41 @@ export async function getIgdbDumpSyncStatus(
 ) {
   try {
     const status = await getIgdbDumpSyncStatusService();
+    return res.status(200).json(status);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerVndbDumpSync(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const forceFromBody = Boolean((req.body as { force?: boolean })?.force);
+    const forceQuery = String(req.query.force || '')
+      .trim()
+      .toLowerCase();
+    const forceFromQuery = ['1', 'true', 'yes', 'on'].includes(forceQuery);
+
+    const result = await startVndbDumpSync('manual', {
+      force: forceFromBody || forceFromQuery,
+    });
+
+    return res.status(result.started ? 202 : 200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getVndbDumpSyncStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const status = await getVndbDumpSyncStatusService();
     return res.status(200).json(status);
   } catch (error) {
     return next(error as customError);

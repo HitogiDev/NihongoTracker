@@ -25,7 +25,10 @@ import {
   createChangelogFn,
   updateChangelogFn,
   deleteChangelogFn,
+  getVndbDumpSyncStatusFn,
+  triggerVndbDumpSyncFn,
   type IIgdbDumpSyncStatus,
+  type IVndbDumpSyncStatus,
 } from '../api/trackerApi';
 import { Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
@@ -204,6 +207,17 @@ function AdminScreen() {
     },
   });
 
+  const { data: vndbDumpStatus, isLoading: vndbDumpStatusLoading } = useQuery({
+    queryKey: ['adminVndbDumpStatus'],
+    queryFn: getVndbDumpSyncStatusFn,
+    enabled: isAdmin && selectedTab === 'system',
+    staleTime: 5_000,
+    refetchInterval: (query) => {
+      const status = query.state.data as IVndbDumpSyncStatus | undefined;
+      return status?.isRunning ? 5_000 : 30_000;
+    },
+  });
+
   // Mutations
   const recalcMutation = useMutation({
     mutationFn: recalculateStatsFn,
@@ -251,6 +265,16 @@ function AdminScreen() {
       queryClient.invalidateQueries({ queryKey: ['adminIgdbDumpStatus'] });
     },
     onError: () => toast.error('Failed to start IGDB dump sync'),
+  });
+
+  const triggerVndbDumpSyncMutation = useMutation({
+    mutationFn: ({ force = false }: { force?: boolean } = {}) =>
+      triggerVndbDumpSyncFn(force),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ['adminVndbDumpStatus'] });
+    },
+    onError: () => toast.error('Failed to start VNDB dump sync'),
   });
 
   const deleteUserMutation = useMutation({
@@ -537,7 +561,7 @@ function AdminScreen() {
         {selectedTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -566,7 +590,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
@@ -595,7 +619,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center">
@@ -624,7 +648,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
@@ -655,7 +679,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -687,7 +711,7 @@ function AdminScreen() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <h3 className="card-title mb-4">Top Users</h3>
                   <div className="space-y-3">
@@ -726,7 +750,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <h3 className="card-title mb-4">Paid Users Breakdown</h3>
                   <div className="space-y-3">
@@ -784,7 +808,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <h3 className="card-title mb-4">System Health</h3>
                   <div className="space-y-4">
@@ -862,7 +886,7 @@ function AdminScreen() {
         {selectedTab === 'users' && (
           <>
             <div className="space-y-6">
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
                     <div className="form-control w-full max-w-md">
@@ -913,7 +937,7 @@ function AdminScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <div className="overflow-x-auto">
                     <table className="table">
@@ -1288,7 +1312,7 @@ function AdminScreen() {
         {/* Logs Tab */}
         {selectedTab === 'logs' && (
           <div className="space-y-6">
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h3 className="card-title mb-4">Log Management</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -1373,7 +1397,7 @@ function AdminScreen() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="overflow-x-auto">
                   <table className="table">
@@ -1690,7 +1714,7 @@ function AdminScreen() {
               </button>
             </div>
 
-            <div className="card bg-base-100 shadow-lg">
+            <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 {changelogsLoading ? (
                   <div className="text-center py-8">
@@ -2089,7 +2113,7 @@ function AdminScreen() {
         {selectedTab === 'system' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <h3 className="card-title mb-4">System Actions</h3>
                   <div className="space-y-3">
@@ -2232,7 +2256,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-lg">
+              <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
                   <h3 className="card-title mb-4">Database Stats</h3>
                   <div className="stats stats-vertical shadow w-full">
@@ -2252,7 +2276,7 @@ function AdminScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-lg lg:col-span-2">
+              <div className="card bg-base-100 shadow-sm lg:col-span-2">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="card-title">IGDB Dump Sync Status</h3>
@@ -2371,6 +2395,152 @@ function AdminScreen() {
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* VNDB Dump Sync Status */}
+              <div className="card bg-base-100 shadow-sm lg:col-span-2">
+                <div className="card-body">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="card-title">VNDB Dump Sync Status</h3>
+                    {vndbDumpStatusLoading ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : vndbDumpStatus?.isRunning ? (
+                      <span className="badge badge-warning">Running</span>
+                    ) : vndbDumpStatus?.lastError ? (
+                      <span className="badge badge-error">Last Run Failed</span>
+                    ) : (
+                      <span className="badge badge-success">Idle</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() =>
+                        triggerVndbDumpSyncMutation.mutate({ force: false })
+                      }
+                      disabled={
+                        triggerVndbDumpSyncMutation.isPending ||
+                        Boolean(vndbDumpStatus?.isRunning)
+                      }
+                    >
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      {triggerVndbDumpSyncMutation.isPending
+                        ? 'Starting...'
+                        : vndbDumpStatus?.isRunning
+                          ? 'Running...'
+                          : 'Run VNDB Dump Sync'}
+                    </button>
+                    <button
+                      className="btn btn-warning"
+                      onClick={() =>
+                        triggerVndbDumpSyncMutation.mutate({ force: true })
+                      }
+                      disabled={
+                        triggerVndbDumpSyncMutation.isPending ||
+                        Boolean(vndbDumpStatus?.isRunning)
+                      }
+                    >
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 6v12m-6-6h12"
+                        />
+                      </svg>
+                      {triggerVndbDumpSyncMutation.isPending
+                        ? 'Starting Force Sync...'
+                        : vndbDumpStatus?.isRunning
+                          ? 'Running...'
+                          : 'Force VNDB Full Resync'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <span className="font-semibold">Message: </span>
+                        {vndbDumpStatus?.currentMessage ||
+                          'No status available'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Current phase: </span>
+                        {vndbDumpStatus?.currentPhase || 'idle'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last trigger: </span>
+                        {vndbDumpStatus?.lastTrigger || 'unknown'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last dump file: </span>
+                        {vndbDumpStatus?.lastDumpFileName || 'None'}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last started: </span>
+                        {formatDateTime(vndbDumpStatus?.lastStartedAt)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last finished: </span>
+                        {formatDateTime(vndbDumpStatus?.lastFinishedAt)}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Last successful: </span>
+                        {formatDateTime(vndbDumpStatus?.lastSuccessfulAt)}
+                      </p>
+                      {vndbDumpStatus?.lastError ? (
+                        <p className="text-error">
+                          <span className="font-semibold">Last error: </span>
+                          {vndbDumpStatus.lastError}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="stats stats-vertical shadow w-full">
+                      <div className="stat">
+                        <div className="stat-title">Rows Scanned</div>
+                        <div className="stat-value text-lg">
+                          {vndbDumpStatus?.counters?.scanned || 0}
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-title">Rows Upserted</div>
+                        <div className="stat-value text-lg text-success">
+                          {vndbDumpStatus?.counters?.upserted || 0}
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-title">Rows Skipped</div>
+                        <div className="stat-value text-lg text-info">
+                          {vndbDumpStatus?.counters?.skipped || 0}
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div className="stat-title">Rows Failed</div>
+                        <div className="stat-value text-lg text-error">
+                          {vndbDumpStatus?.counters?.failed || 0}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -378,6 +378,7 @@ export async function getGlobalFeed(
             coverImage: '$media.coverImage',
             type: '$media.type',
             isAdult: '$media.isAdult',
+            isAdultImage: '$media.isAdultImage',
           },
         },
       },
@@ -1441,31 +1442,57 @@ export async function createLog(
     ]);
 
     if (finalMediaId && immersionMediaTypes.has(statusType)) {
-      await UserMediaStatus.findOneAndUpdate(
-        {
-          user: res.locals.user._id,
-          mediaId: String(finalMediaId),
-          type: statusType,
-          completed: { $ne: true },
-          $or: [{ status: { $exists: false } }, { status: null }],
-        },
-        {
+      const statusFilter = {
+        user: res.locals.user._id,
+        mediaId: String(finalMediaId),
+        type: statusType,
+      };
+
+      const existingStatus = await UserMediaStatus.findOne(statusFilter)
+        .select('status completed')
+        .lean();
+
+      if (!existingStatus) {
+        try {
+          await UserMediaStatus.create({
+            ...statusFilter,
+            status: 'in_progress',
+            completed: false,
+            completedAt: null,
+            autoCompleteSuppressed: true,
+          });
+        } catch (error) {
+          const mongoError = error as { code?: number };
+          if (mongoError.code !== 11000) {
+            throw error;
+          }
+
+          await UserMediaStatus.updateOne(
+            {
+              ...statusFilter,
+              completed: { $ne: true },
+              $or: [{ status: { $exists: false } }, { status: null }],
+            },
+            {
+              $set: {
+                status: 'in_progress',
+                completed: false,
+                completedAt: null,
+                autoCompleteSuppressed: true,
+              },
+            }
+          );
+        }
+      } else if (!existingStatus.completed && !existingStatus.status) {
+        await UserMediaStatus.updateOne(statusFilter, {
           $set: {
             status: 'in_progress',
             completed: false,
             completedAt: null,
             autoCompleteSuppressed: true,
           },
-          $setOnInsert: {
-            user: res.locals.user._id,
-            mediaId: String(finalMediaId),
-            type: statusType,
-          },
-        },
-        {
-          upsert: true,
-        }
-      );
+        });
+      }
     }
 
     // If this media was hidden from recent media, unhide it since user is actively logging it

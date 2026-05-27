@@ -123,6 +123,7 @@ function QuickLog({
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [coverImage, setCoverImage] = useState<string | undefined>(undefined);
   const [isAdultMedia, setIsAdultMedia] = useState<boolean>(false);
+  const [isAdultImageMedia, setIsAdultImageMedia] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [defaultDuration, setDefaultDuration] = useState<number>(0);
   const [customDuration, setCustomDuration] = useState<number | undefined>(
@@ -193,6 +194,7 @@ function QuickLog({
       setContentId(media.contentId);
       setCoverImage(media.contentImage);
       setIsAdultMedia(media.isAdult);
+      setIsAdultImageMedia(media.isAdultImage ?? false);
       setSeriesVolumes(media.volumes);
 
       if (
@@ -410,6 +412,7 @@ function QuickLog({
     setContentId(undefined);
     setCoverImage(undefined);
     setIsAdultMedia(false);
+    setIsAdultImageMedia(false);
     setDefaultDuration(0);
     setCustomDuration(undefined);
     setShowTime(false);
@@ -506,6 +509,7 @@ function QuickLog({
         group.contentImage || group.__youtubeChannelInfo.channelImage
       );
       setIsAdultMedia(group.isAdult);
+      setIsAdultImageMedia(group.isAdultImage ?? false);
 
       // Auto-fill duration if available
       if (group.episodeDuration) {
@@ -523,6 +527,7 @@ function QuickLog({
       setContentId(group.contentId);
       setCoverImage(group.coverImage || group.contentImage);
       setIsAdultMedia(group.isAdult);
+      setIsAdultImageMedia(group.isAdultImage ?? false);
       setSeriesVolumes(group.volumes);
 
       if ((logType === 'manga' || logType === 'reading') && group.contentId) {
@@ -963,7 +968,7 @@ function QuickLog({
                           src={coverImage}
                           alt="Cover"
                           className={`w-full h-full object-cover ${
-                            isAdultMedia ? 'blur-sm scale-110' : ''
+                            (logType === 'vn' ? isAdultImageMedia : isAdultMedia) ? 'blur-sm scale-110' : ''
                           }`}
                         />
                       </Link>

@@ -47,6 +47,7 @@ interface Candidate {
   description?: string;
   image?: string;
   isAdult?: boolean;
+  isAdultImage?: boolean;
 }
 
 const MEDIA_TYPES = [
@@ -102,6 +103,7 @@ export default function CreateVotingWizard({
     description: '',
     image: '',
     isAdult: false,
+    isAdultImage: false,
   });
 
   // Use the search hook for media search
@@ -190,6 +192,7 @@ export default function CreateVotingWizard({
       description: '',
       image: '',
       isAdult: false,
+      isAdultImage: false,
     });
     setSearchQuery('');
     setShowResults(false);
@@ -222,6 +225,7 @@ export default function CreateVotingWizard({
       description: cleanDescription ? cleanDescription + '...' : '',
       image: result.contentImage || '',
       isAdult: result.isAdult || false,
+      isAdultImage: result.isAdultImage || false,
     });
     setSearchQuery(title);
     setShowResults(false);
@@ -1037,7 +1041,9 @@ export default function CreateVotingWizard({
                                 src={candidate.image}
                                 alt={candidate.title}
                                 className={`w-12 h-16 object-cover rounded ${
-                                  candidate.isAdult &&
+                                  (votingData.mediaType === 'vn'
+                                    ? candidate.isAdultImage
+                                    : candidate.isAdult) &&
                                   user?.settings?.blurAdultContent
                                     ? 'blur-sm'
                                     : ''

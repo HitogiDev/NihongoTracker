@@ -143,7 +143,7 @@ export default function MediaSocial() {
         </div>
 
         {/* Stats */}
-        <div className="card bg-base-100 shadow-lg mb-6">
+        <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body">
             <h3 className="card-title text-lg mb-2">Media-wide stats</h3>
             {statsError && (
@@ -238,7 +238,7 @@ export default function MediaSocial() {
         </div>
 
         {/* Compare with a friend */}
-        <div className="card bg-base-100 shadow-lg mb-6">
+        <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body">
             <div className="flex items-center justify-between gap-4 mb-3">
               <h3 className="card-title text-lg">Compare with a friend</h3>
@@ -354,7 +354,7 @@ export default function MediaSocial() {
         </div>
 
         {/* Global recent activity for this media */}
-        <div className="card bg-base-100 shadow-lg mb-6">
+        <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body">
             <div className="flex items-center justify-between mb-4">
               <h3 className="card-title text-lg">Recent activity (everyone)</h3>

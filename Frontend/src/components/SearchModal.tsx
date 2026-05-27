@@ -100,27 +100,38 @@ function getMediaMatchScore(query: string, media: SearchResultType): number {
 function MediaResultRow({
   media,
   isSelected,
+  isHovered,
   onSelect,
   blurAdult,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   media: SearchResultType;
   isSelected: boolean;
+  isHovered: boolean;
   onSelect: () => void;
   blurAdult: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }) {
   const config = MEDIA_TYPE_CONFIG[media.type] || MEDIA_TYPE_CONFIG.anime;
   const TypeIcon = config.icon;
-  const shouldBlur = media.isAdult && blurAdult;
+  const shouldBlur =
+    (media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) &&
+    blurAdult;
+  const isActive = isHovered || isSelected;
 
   return (
     <button
-      data-selected={isSelected}
+      data-selected={isActive}
       className={`group/row relative w-full flex items-center gap-3 px-4 py-3 overflow-hidden cursor-pointer transition-all duration-200 ${
-        isSelected
+        isActive
           ? 'bg-primary/15 border-l-3 border-primary pl-3.5'
           : 'hover:bg-base-content/5'
       }`}
       onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* Background banner image (coverImage preferred, contentImage fallback) */}
       {(media.coverImage || media.contentImage) && (
@@ -132,7 +143,7 @@ function MediaResultRow({
           />
           <div
             className={`absolute inset-0 bg-gradient-to-r ${
-              isSelected
+              isActive
                 ? 'from-primary/30 via-base-100/70 to-base-100/50'
                 : 'from-base-100/95 via-base-100/80 to-base-100/60'
             }`}
@@ -176,7 +187,7 @@ function MediaResultRow({
         {/* Type badge */}
         <span
           className={`badge badge-sm gap-1 flex-shrink-0 ${
-            isSelected ? 'badge-primary' : 'badge-ghost'
+            isActive ? 'badge-primary' : 'badge-ghost'
           }`}
         >
           <TypeIcon className="w-3 h-3" />
@@ -190,21 +201,31 @@ function MediaResultRow({
 function UserResultRow({
   user,
   isSelected,
+  isHovered,
   onSelect,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   user: UserResult;
   isSelected: boolean;
+  isHovered: boolean;
   onSelect: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }) {
+  const isActive = isHovered || isSelected;
+
   return (
     <button
-      data-selected={isSelected}
+      data-selected={isActive}
       className={`group/row relative w-full flex items-center gap-3 px-4 py-3 overflow-hidden cursor-pointer transition-all duration-200 ${
-        isSelected
+        isActive
           ? 'bg-primary/15 border-l-3 border-primary pl-3.5'
           : 'hover:bg-base-content/5'
       }`}
       onClick={onSelect}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* Background from banner (preferred) or avatar */}
       {(user.banner || user.avatar) && (
@@ -216,7 +237,7 @@ function UserResultRow({
           />
           <div
             className={`absolute inset-0 bg-gradient-to-r ${
-              isSelected
+              isActive
                 ? 'from-primary/30 via-base-100/70 to-base-100/50'
                 : 'from-base-100/95 via-base-100/80 to-base-100/60'
             }`}
@@ -263,6 +284,9 @@ function SearchModal({
   const [mediaResults, setMediaResults] = useState<SearchResultType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [keyboardSelectionVisible, setKeyboardSelectionVisible] =
+    useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -278,6 +302,8 @@ function SearchModal({
       setUserResults([]);
       setMediaResults([]);
       setSelectedIndex(0);
+      setHoveredIndex(null);
+      setKeyboardSelectionVisible(false);
       setActiveTab('all');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -423,20 +449,22 @@ function SearchModal({
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
+          setKeyboardSelectionVisible(true);
           setSelectedIndex((prev) =>
             prev < results.length - 1 ? prev + 1 : 0
           );
           break;
         case 'ArrowUp':
           e.preventDefault();
+          setKeyboardSelectionVisible(true);
           setSelectedIndex((prev) =>
             prev > 0 ? prev - 1 : results.length - 1
           );
           break;
         case 'Enter':
           e.preventDefault();
-          if (results[selectedIndex]) {
-            handleSelect(results[selectedIndex]);
+          if (results[hoveredIndex ?? selectedIndex]) {
+            handleSelect(results[hoveredIndex ?? selectedIndex]);
           }
           break;
         case 'Escape':
@@ -453,14 +481,22 @@ function SearchModal({
   // Reset selection when results change
   useEffect(() => {
     setSelectedIndex(0);
+    setHoveredIndex(null);
+    setKeyboardSelectionVisible(false);
   }, [allResults]);
 
   // Scroll selected item into view
   useEffect(() => {
-    if (!resultsRef.current) return;
+    if (
+      !resultsRef.current ||
+      !keyboardSelectionVisible ||
+      hoveredIndex != null
+    ) {
+      return;
+    }
     const selected = resultsRef.current.querySelector('[data-selected="true"]');
     selected?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex]);
+  }, [selectedIndex, hoveredIndex, keyboardSelectionVisible]);
 
   if (!isOpen) return null;
 
@@ -542,28 +578,38 @@ function SearchModal({
               {allResults.map((result, index) => {
                 if (result.type === 'user') {
                   const user = result.data as UserResult;
+                  const isKeyboardSelected =
+                    keyboardSelectionVisible && index === selectedIndex;
                   return (
                     <UserResultRow
                       key={user._id}
                       user={user}
-                      isSelected={index === selectedIndex}
+                      isSelected={isKeyboardSelected}
+                      isHovered={index === hoveredIndex}
                       onSelect={() =>
                         handleSelect({ type: 'user', data: user })
                       }
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
                     />
                   );
                 }
 
                 const media = result.data as SearchResultType;
+                const isKeyboardSelected =
+                  keyboardSelectionVisible && index === selectedIndex;
                 return (
                   <MediaResultRow
                     key={`${media.type}-${media.contentId}`}
                     media={media}
-                    isSelected={index === selectedIndex}
+                    isSelected={isKeyboardSelected}
+                    isHovered={index === hoveredIndex}
                     blurAdult={blurAdult}
                     onSelect={() =>
                       handleSelect({ type: 'media', data: media })
                     }
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(null)}
                   />
                 );
               })}

@@ -43,6 +43,7 @@ import { useDateFormatting } from '../hooks/useDateFormatting';
 import EditReviewModal from '../components/EditReviewModal';
 import MediaReviewCard from '../components/MediaReviewCard';
 import ReviewRatingSummary from '../components/ReviewRatingSummary';
+import { getClubFn, getClubMediaStatsFn } from '../api/clubApi';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -752,11 +753,52 @@ function MediaDetails() {
   const userReview = mediaReviews.find(
     (review) => review.user._id === currentUser?._id
   );
+
+  // Club-linked view: parse query params and fetch club data/stats/logs
+  const searchParams = new URLSearchParams(window.location.search);
+  const clubIdParam = searchParams.get('clubId');
+  const clubMediaIdParam = searchParams.get('clubMediaId');
+
+  const { data: clubData } = useQuery({
+    queryKey: ['club', clubIdParam],
+    queryFn: () => {
+      if (!clubIdParam) throw new Error('clubId is required');
+      return getClubFn(clubIdParam);
+    },
+    enabled: !!clubIdParam,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: clubMediaStatsData } = useQuery({
+    queryKey: ['clubMediaStats', clubIdParam, clubMediaIdParam],
+    queryFn: () => {
+      if (!clubIdParam || !clubMediaIdParam)
+        throw new Error('clubId and clubMediaId are required');
+      return getClubMediaStatsFn(clubIdParam, clubMediaIdParam);
+    },
+    enabled: !!clubIdParam && !!clubMediaIdParam,
+  });
+
+  const clubMemberUserIds = new Set<string>(
+    clubData?.members?.map((m) => String(m.user?._id)) ?? []
+  );
+
+  const isClubLinkedView = !!clubIdParam && !!clubMediaIdParam;
+
+  const clubMediaReviews = isClubLinkedView
+    ? mediaReviews.filter((r) => clubMemberUserIds.has(String(r.user._id)))
+    : mediaReviews;
+
+  const displayedReviews = clubMediaReviews;
   const mediaBasePath =
     mediaDocument?.type && mediaDocument?.contentId
-      ? username
-        ? `/${mediaDocument.type}/${mediaDocument.contentId}/${username}`
-        : `/${mediaDocument.type}/${mediaDocument.contentId}`
+      ? clubIdParam && clubMediaIdParam
+        ? `/${mediaDocument.type}/${mediaDocument.contentId}?clubId=${encodeURIComponent(
+            clubIdParam
+          )}&clubMediaId=${encodeURIComponent(clubMediaIdParam)}`
+        : username
+          ? `/${mediaDocument.type}/${mediaDocument.contentId}/${username}`
+          : `/${mediaDocument.type}/${mediaDocument.contentId}`
       : '';
   const igdbGameUrl = (() => {
     if (!mediaDocument || mediaDocument.type !== 'game') {
@@ -1467,9 +1509,35 @@ function MediaDetails() {
             </div>
 
             <ReviewRatingSummary
-              reviews={mediaReviews}
+              reviews={displayedReviews}
               reviewsTabPath={reviewsTabPath}
             />
+
+            {isClubLinkedView && clubData && (
+              <div className="card bg-base-100 shadow-sm my-4">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">Club: {clubData.name}</h3>
+                  {clubData.description && (
+                    <p className="text-sm text-base-content/70 mb-2">
+                      {clubData.description}
+                    </p>
+                  )}
+                  {clubMediaStatsData?.total && (
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div className="text-sm">
+                        Logs: {clubMediaStatsData.total.logs}
+                      </div>
+                      <div className="text-sm">
+                        Members: {clubMediaStatsData.total.members}
+                      </div>
+                      <div className="text-sm">
+                        XP: {numberWithCommas(clubMediaStatsData.total.xp)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
@@ -2044,7 +2112,7 @@ function MediaDetails() {
                   </div>
                 ) : mediaReviews.length > 0 ? (
                   <div className="space-y-4">
-                    {mediaReviews.map((review) => (
+                    {displayedReviews.map((review) => (
                       <MediaReviewCard
                         key={review._id}
                         review={review}

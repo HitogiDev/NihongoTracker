@@ -824,6 +824,44 @@ export async function getIgdbDumpSyncStatusFn(): Promise<IIgdbDumpSyncStatus> {
   return data;
 }
 
+export interface IVndbDumpSyncStatus {
+  isRunning: boolean;
+  currentPhase: string;
+  currentMessage: string;
+  lastTrigger: 'manual' | 'scheduled' | 'unknown';
+  lastStartedAt: string | null;
+  lastFinishedAt: string | null;
+  lastSuccessfulAt: string | null;
+  lastFailedAt: string | null;
+  lastError: string;
+  lastDumpFileName: string;
+  counters: {
+    scanned: number;
+    upserted: number;
+    skipped: number;
+    failed: number;
+  };
+  updatedAt: string | null;
+}
+
+export interface ITriggerVndbDumpSyncResponse {
+  started: boolean;
+  message: string;
+  status: IVndbDumpSyncStatus;
+}
+
+export async function triggerVndbDumpSyncFn(
+  force: boolean = false
+): Promise<ITriggerVndbDumpSyncResponse> {
+  const { data } = await api.post('admin/vndb-dump/sync', { force });
+  return data;
+}
+
+export async function getVndbDumpSyncStatusFn(): Promise<IVndbDumpSyncStatus> {
+  const { data } = await api.get('admin/vndb-dump/status');
+  return data;
+}
+
 // Admin: logs management
 export async function searchAdminLogsFn(params: {
   page?: number;

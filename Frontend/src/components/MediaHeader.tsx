@@ -53,7 +53,11 @@ export default function MediaHeader() {
   const { user } = useUserDataStore();
   const { formatDateOnly } = useDateFormatting();
   const queryClient = useQueryClient();
-  const targetUsername = username || user?.username;
+  const { search } = useLocation();
+  const searchParams = new URLSearchParams(search);
+  const isClubContext =
+    searchParams.has('clubId') && searchParams.has('clubMediaId');
+  const targetUsername = isClubContext ? undefined : username || user?.username;
   const isOwnProfile =
     !!user?.username && !!targetUsername && user.username === targetUsername;
 
@@ -302,6 +306,11 @@ export default function MediaHeader() {
     void getAvgColor();
   }, [media]);
 
+  const shouldBlur = media
+    ? (media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) &&
+      user?.settings?.blurAdultContent
+    : false;
+
   return (
     <div className="flex flex-col justify-center bg-base-200 text-base-content">
       <QuickLog
@@ -313,7 +322,7 @@ export default function MediaHeader() {
         className={`h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
           isLoadingMedia ? 'skeleton' : ''
         } ${
-          media?.isAdult && user?.settings?.blurAdultContent ? 'blur-sm' : ''
+          shouldBlur ? 'blur-sm' : ''
         }`}
         style={{
           backgroundImage: `url(${!isLoadingMedia ? media?.coverImage : ''})`,
@@ -339,9 +348,7 @@ export default function MediaHeader() {
                     src={media.contentImage}
                     alt={media.title.contentTitleNative}
                     className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${
-                      media.isAdult && user?.settings?.blurAdultContent
-                        ? 'blur-sm'
-                        : ''
+                      shouldBlur ? 'blur-sm' : ''
                     }`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -470,7 +477,7 @@ export default function MediaHeader() {
       <MediaNavbar
         mediaType={mediaType}
         mediaId={mediaId as string}
-        username={username || user?.username}
+        username={isClubContext ? undefined : username || user?.username}
       />
       <Outlet
         context={

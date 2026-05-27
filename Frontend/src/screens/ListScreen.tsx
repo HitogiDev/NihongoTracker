@@ -179,7 +179,15 @@ function ListScreen() {
         `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}`
       );
     }
-  }, [searchQuery, selectedTypes, sortBy, viewMode, statusFilter, grouped]);
+  }, [
+    searchQuery,
+    selectedTypes,
+    sortBy,
+    viewMode,
+    statusFilter,
+    grouped,
+    MEDIA_TYPES.length,
+  ]);
 
   const isOwnProfile = user?.username === username;
 
@@ -548,7 +556,7 @@ function ListScreen() {
             <div className="container mx-auto px-4 pt-4">
               <div
                 role="alert"
-                className="alert alert-warning shadow-lg alert-vertical sm:alert-horizontal"
+                className="alert alert-warning shadow-sm alert-vertical sm:alert-horizontal"
               >
                 <TriangleAlert className="h-6 w-6 flex-shrink-0" />
                 <div>
@@ -664,7 +672,7 @@ function ListScreen() {
                               <button
                                 type="button"
                                 key={type}
-                                className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                                className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                                   selected
                                     ? 'bg-base-200 font-medium'
                                     : 'hover:bg-base-200/50'
@@ -1215,7 +1223,7 @@ function MediaCard({
           <img
             src={media.contentImage || media.coverImage}
             alt={media.title.contentTitleNative}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${media.isAdult && user?.settings?.blurAdultContent ? 'filter blur-sm' : ''}`}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${(media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) && user?.settings?.blurAdultContent ? 'filter blur-sm' : ''}`}
             loading="lazy"
           />
         ) : (
@@ -1235,11 +1243,11 @@ function MediaCard({
           </div>
         )}
 
-        {media.isAdult && (
+        {/* {media.isAdult && (
           <div className="absolute top-2 left-2">
             <div className="badge badge-error badge-sm">18+</div>
           </div>
-        )}
+        )} */}
 
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none">
           <div className="text-white text-center p-4">
@@ -1494,9 +1502,9 @@ function MediaListItem({
                             media.type.slice(1)}
                 </div>
 
-                {media.isAdult && (
+                {/* {media.isAdult && (
                   <div className="badge badge-error badge-sm">18+</div>
-                )}
+                )} */}
 
                 {isOwnProfile && (
                   <div

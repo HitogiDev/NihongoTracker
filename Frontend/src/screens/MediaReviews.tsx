@@ -288,11 +288,18 @@ function MediaReviews() {
     (review) => review.user._id === currentUser?._id
   );
 
+  const clubSearchParams = new URLSearchParams(window.location.search);
+  const clubIdParam = clubSearchParams.get('clubId');
+  const clubMediaIdParam = clubSearchParams.get('clubMediaId');
   const mediaBasePath =
     mediaDocument?.type && mediaDocument?.contentId
-      ? username
-        ? `/${mediaDocument.type}/${mediaDocument.contentId}/${username}`
-        : `/${mediaDocument.type}/${mediaDocument.contentId}`
+      ? clubIdParam && clubMediaIdParam
+        ? `/${mediaDocument.type}/${mediaDocument.contentId}?clubId=${encodeURIComponent(
+            clubIdParam
+          )}&clubMediaId=${encodeURIComponent(clubMediaIdParam)}`
+        : username
+          ? `/${mediaDocument.type}/${mediaDocument.contentId}/${username}`
+          : `/${mediaDocument.type}/${mediaDocument.contentId}`
       : '';
 
   const writeReviewPath = mediaBasePath

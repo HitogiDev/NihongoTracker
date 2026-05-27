@@ -107,7 +107,6 @@ function normalizeGame(game: IgdbGame): IMediaDocument | null {
       ? [{ description: game.summary, language: 'eng' as const }]
       : undefined,
     type: 'game',
-    igdbId: game.id,
     platforms: game.platforms?.map((platform) => platform.name) || [],
     genres: game.genres?.map((g) => g.name) || [],
     synonyms: game.alternative_names?.map((alt) => alt.name) || [],

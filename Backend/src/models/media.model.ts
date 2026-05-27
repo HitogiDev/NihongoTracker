@@ -39,6 +39,7 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
     genres: { type: [String], default: [] },
     synonyms: { type: [String], default: [] },
     isAdult: { type: Boolean, default: false },
+    isAdultImage: { type: Boolean, default: false },
   },
   { discriminatorKey: 'type', collection: 'media' }
 );
@@ -82,11 +83,15 @@ const TVShowSchema = new Schema({
 const TVShow = MediaBase.discriminator('tv show', TVShowSchema);
 
 const VideoGameSchema = new Schema({
-  igdbId: { type: Number, default: null },
   igdbUpdatedAt: { type: Number, default: 0 },
   platforms: { type: [String], default: [] },
 });
 
 const VideoGame = MediaBase.discriminator('game', VideoGameSchema);
 
-export { MediaBase, Anime, Manga, Reading, Video, Movie, TVShow, VideoGame };
+/** isAdultImage: true when the cover image has a VNDB sexual avg >= 100 (suggestive+) */
+const VnSchema = new Schema({});
+
+const Vn = MediaBase.discriminator('vn', VnSchema);
+
+export { MediaBase, Anime, Manga, Reading, Video, Movie, TVShow, VideoGame, Vn };

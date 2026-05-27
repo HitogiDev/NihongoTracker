@@ -1,6 +1,10 @@
 # 1. Use Node.js base image
 FROM node:22
 
+# Install system dependencies
+# zstd: required for tar --zstd to extract VNDB dump archives
+RUN apt-get update && apt-get install -y --no-install-recommends zstd && rm -rf /var/lib/apt/lists/*
+
 # 2. Set working directory
 WORKDIR /app
 

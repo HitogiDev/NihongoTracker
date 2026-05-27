@@ -5,6 +5,7 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useMemo,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -40,6 +41,7 @@ import ImageCropDialog, {
 } from '../components/ImageCropDialog';
 import Wheel from '@uiw/react-color-wheel';
 import { getUserTimezone } from '../utils/timezone';
+import { renderMarkdownWithSpoilers } from '../utils/markdown';
 import {
   Bold,
   CloudDownload,
@@ -79,6 +81,8 @@ import {
   Check,
   Trash2,
   Plus,
+  Eye,
+  SplitSquareHorizontal,
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
@@ -192,6 +196,7 @@ type AboutEditorProps = {
   initialValue?: string; // Used to trigger re-sync when user data changes
   onSave?: () => void;
   isSaving?: boolean;
+  onPreviewChange?: (text: string) => void;
 };
 
 export type AboutEditorHandle = {
@@ -202,7 +207,15 @@ export type AboutEditorHandle = {
 
 const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
   function AboutEditor(
-    { aboutRef, maxLength, onSelectionChange, initialValue, onSave, isSaving },
+    {
+      aboutRef,
+      maxLength,
+      onSelectionChange,
+      initialValue,
+      onSave,
+      isSaving,
+      onPreviewChange,
+    },
     ref
   ) {
     const [length, setLength] = useState(aboutRef.current.length);
@@ -218,6 +231,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
         setLength(initialValue.length);
         aboutRef.current = initialValue;
         setIsDirty(false);
+        onPreviewChange?.(initialValue);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialValue, aboutRef]);
@@ -264,6 +278,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
         setValue(newValue);
         aboutRef.current = newValue;
         setLength(newValue.length);
+        onPreviewChange?.(newValue);
 
         // Set cursor position after React re-renders
         requestAnimationFrame(() => {
@@ -273,7 +288,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
           textarea.setSelectionRange(startPos, endPos);
         });
       },
-      [value, maxLength, aboutRef]
+      [value, maxLength, aboutRef, onPreviewChange]
     );
 
     useImperativeHandle(
@@ -289,7 +304,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
     return (
       <>
         <textarea
-          className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-32"
+          className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-48 font-mono text-sm"
           placeholder="Share a bit about your immersion journey (Markdown supported)"
           value={value}
           maxLength={maxLength}
@@ -299,6 +314,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
             setValue(newValue);
             aboutRef.current = newValue;
             setIsDirty(newValue !== (initialValue || ''));
+            onPreviewChange?.(newValue);
             if (lengthTimeoutRef.current === null) {
               lengthTimeoutRef.current = window.setTimeout(() => {
                 setLength(newValue.length);
@@ -349,11 +365,31 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
   }
 );
 
+type SettingsTab =
+  | 'profile'
+  | 'account'
+  | 'preferences'
+  | 'patreon'
+  | 'advanced';
+
+const TAB_CONFIG: {
+  id: SettingsTab;
+  label: string;
+  icon: React.ElementType;
+}[] = [
+  { id: 'profile', label: 'Profile', icon: UserRound },
+  { id: 'account', label: 'Account & Security', icon: ShieldCheck },
+  { id: 'preferences', label: 'Preferences', icon: Settings2 },
+  { id: 'patreon', label: 'Patreon', icon: Heart },
+  { id: 'advanced', label: 'Data Management', icon: CloudDownload },
+];
+
 function SettingsScreen() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
   const detectedTimezone = getUserTimezone();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
     isActive: false,
   });
@@ -366,6 +402,10 @@ function SettingsScreen() {
   const [username, setUsername] = useState(user?.username || '');
   const [discordId, setDiscordId] = useState(user?.discordId || '');
   const aboutRef = useRef(user?.about || '');
+  const [aboutPreviewText, setAboutPreviewText] = useState(user?.about || '');
+  const [aboutViewMode, setAboutViewMode] = useState<
+    'edit' | 'preview' | 'split'
+  >('split');
   const [customBadgeText, setCustomBadgeText] = useState(
     user?.patreon?.customBadgeText || ''
   );
@@ -438,6 +478,7 @@ function SettingsScreen() {
   const passwordRef = useRef<HTMLInputElement>(null);
   const newPasswordRef = useRef<HTMLInputElement>(null);
   const newPasswordConfirmRef = useRef<HTMLInputElement>(null);
+  const discordPasswordRef = useRef<HTMLInputElement>(null);
 
   const hasPatreonMediaAccess =
     user?.patreon?.isActive &&
@@ -462,13 +503,17 @@ function SettingsScreen() {
 
   const { mutate: updateUser, isPending } = useMutation({
     mutationFn: updateUserFn,
-    onSuccess: (data: ILoginResponse) => {
-      // Check if email was changed
-      const currentEmail = emailRef.current?.value || '';
-      const emailWasChanged = currentEmail !== (user?.email || '');
+    onSuccess: (data: ILoginResponse, variables: FormData) => {
+      const submittedEmail = variables.get('email');
+      const normalizedSubmittedEmail =
+        typeof submittedEmail === 'string' ? submittedEmail.trim() : null;
+      const normalizedCurrentEmail = user?.email?.trim() || '';
+      const emailWasChanged =
+        normalizedSubmittedEmail !== null &&
+        normalizedSubmittedEmail !== normalizedCurrentEmail;
 
       if (emailWasChanged) {
-        setEmailSentTo(currentEmail);
+        setEmailSentTo(normalizedSubmittedEmail);
         setShowEmailSentModal(true);
         setResendCooldown(60); // Start cooldown immediately after sending verification email
       } else {
@@ -1202,7 +1247,21 @@ function SettingsScreen() {
     if (currentNewPasswordConfirm.trim())
       formData.append('newPasswordConfirm', currentNewPasswordConfirm);
 
+    updateUser(formData);
+  }
+
+  async function handleUpdateDiscord(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData();
+    const pwd = discordPasswordRef.current?.value || '';
+    if (pwd.trim()) formData.append('password', pwd);
     formData.append('discordId', discordId);
+    updateUser(formData);
+  }
+
+  async function handleUpdateProfile(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData();
 
     const storedAbout = user?.about ?? '';
     if (aboutRef.current !== storedAbout) {
@@ -1448,14 +1507,6 @@ function SettingsScreen() {
     setCroppedAvatarFile(null);
     setAvatarCropMetadata(null);
     setAvatarMimeType(null);
-    if (avatarPreviewCanvasRef.current) {
-      const canvas = avatarPreviewCanvasRef.current;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      canvas.classList.add('hidden');
-    }
     if (avatarInputRef.current) {
       avatarInputRef.current.value = '';
     }
@@ -1474,125 +1525,62 @@ function SettingsScreen() {
     setCroppedBannerFile(null);
     setBannerCropMetadata(null);
     setBannerMimeType(null);
-    if (bannerPreviewCanvasRef.current) {
-      const canvas = bannerPreviewCanvasRef.current;
-      const context = canvas.getContext('2d');
-      if (context) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      canvas.classList.add('hidden');
-    }
     if (bannerInputRef.current) {
       bannerInputRef.current.value = '';
     }
   }, []);
 
-  async function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
+  function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      if (file.size > avatarMaxSizeBytes) {
-        toast.error(
-          `Avatar file size exceeds ${avatarMaxSizeMb} MB for your account tier.`
-        );
-        if (avatarInputRef.current) {
-          avatarInputRef.current.value = '';
-        }
-        return;
-      }
-
-      if (isGifUploadFile(file) && !hasPatreonMediaAccess) {
-        toast.error(
-          'Animated GIF avatars are only available for Enthusiast and Consumer Patreon tiers.'
-        );
-        if (avatarInputRef.current) {
-          avatarInputRef.current.value = '';
-        }
-        return;
-      }
-
-      setAvatarFileName(file.name);
-      setAvatarOriginalFileName(file.name);
-      setAvatarMimeType(file.type || null);
-      setCroppedAvatarFile(null);
-      setAvatarCropMetadata(null);
-      if (avatarPreviewCanvasRef.current) {
-        const canvas = avatarPreviewCanvasRef.current;
-        const context = canvas.getContext('2d');
-        if (context) {
-          context.clearRect(0, 0, canvas.width, canvas.height);
-        }
-        canvas.classList.add('hidden');
-      }
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setAvatarSrc(reader.result?.toString() || '');
-        setShowAvatarCrop(true);
-      });
-      reader.readAsDataURL(file);
+    if (file.size > avatarMaxSizeBytes) {
+      toast.error(`Avatar must be smaller than ${avatarMaxSizeMb}MB`);
+      e.target.value = '';
+      return;
     }
+
+    setAvatarFileName(file.name);
+    setAvatarOriginalFileName(file.name);
+    setAvatarMimeType(file.type);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarSrc(reader.result as string);
+      setShowAvatarCrop(true);
+    };
+    reader.readAsDataURL(file);
   }
 
-  async function onSelectBannerFile(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
+  function onSelectBannerFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      if (file.size > bannerMaxSizeBytes) {
-        toast.error(
-          `Banner file size exceeds ${bannerMaxSizeMb} MB for your account tier.`
-        );
-        if (bannerInputRef.current) {
-          bannerInputRef.current.value = '';
-        }
-        return;
-      }
-
-      if (isGifUploadFile(file) && !hasPatreonMediaAccess) {
-        toast.error(
-          'Animated GIF banners are only available for Enthusiast and Consumer Patreon tiers.'
-        );
-        if (bannerInputRef.current) {
-          bannerInputRef.current.value = '';
-        }
-        return;
-      }
-
-      setBannerFileName(file.name);
-      setBannerOriginalFileName(file.name);
-      setBannerMimeType(file.type || null);
-      setCroppedBannerFile(null);
-      setBannerCropMetadata(null);
-      if (bannerPreviewCanvasRef.current) {
-        const canvas = bannerPreviewCanvasRef.current;
-        const context = canvas.getContext('2d');
-        if (context) {
-          context.clearRect(0, 0, canvas.width, canvas.height);
-        }
-        canvas.classList.add('hidden');
-      }
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setBannerSrc(reader.result?.toString() || '');
-        setShowBannerCrop(true);
-      });
-      reader.readAsDataURL(file);
+    if (file.size > bannerMaxSizeBytes) {
+      toast.error(`Banner must be smaller than ${bannerMaxSizeMb}MB`);
+      e.target.value = '';
+      return;
     }
+
+    setBannerFileName(file.name);
+    setBannerOriginalFileName(file.name);
+    setBannerMimeType(file.type);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setBannerSrc(reader.result as string);
+      setShowBannerCrop(true);
+    };
+    reader.readAsDataURL(file);
   }
 
   const badgeHexInputValue = (() => {
-    if (pendingBadgeColor !== null) {
-      return isPresetBackground(pendingBadgeColor) ? '' : pendingBadgeColor;
-    }
-    return isPresetBackground(badgeColor) ? '' : badgeColor;
+    if (isPresetBackground(pendingBadgeColor ?? badgeColor)) return '';
+    return pendingBadgeColor ?? badgeColor;
   })();
 
   const badgeInputBackgroundColor = (() => {
-    const candidate =
-      pendingBadgeColor !== null ? pendingBadgeColor : badgeColor;
-    if (!candidate || isPresetBackground(candidate)) {
-      return undefined;
-    }
-    return sanitizeHex(candidate) ?? undefined;
+    const value = pendingBadgeColor ?? badgeColor;
+    if (isPresetBackground(value)) return undefined;
+    return sanitizeHex(value) ?? undefined;
   })();
 
   const badgeInputTextColor = (() => {
@@ -1600,30 +1588,20 @@ function SettingsScreen() {
   })();
 
   const badgeWheelColor = (() => {
-    const candidate =
-      pendingBadgeColor !== null ? pendingBadgeColor : badgeColor;
-    if (!candidate || isPresetBackground(candidate)) {
-      return '#ff69b4';
-    }
-    return sanitizeHex(candidate) ?? '#ff69b4';
+    const value = pendingBadgeColor ?? badgeColor;
+    if (isPresetBackground(value)) return DEFAULT_BADGE_COLOR;
+    return sanitizeHex(value) ?? DEFAULT_BADGE_COLOR;
   })();
 
   const badgeTextHexInputValue = (() => {
-    if (pendingBadgeTextColor !== null) {
-      return isPresetTextColor(pendingBadgeTextColor)
-        ? ''
-        : pendingBadgeTextColor;
-    }
-    return isPresetTextColor(badgeTextColor) ? '' : badgeTextColor;
+    if (isPresetTextColor(pendingBadgeTextColor ?? badgeTextColor)) return '';
+    return pendingBadgeTextColor ?? badgeTextColor;
   })();
 
   const badgeTextInputBackgroundColor = (() => {
-    const candidate =
-      pendingBadgeTextColor !== null ? pendingBadgeTextColor : badgeTextColor;
-    if (!candidate || isPresetTextColor(candidate)) {
-      return undefined;
-    }
-    return sanitizeHex(candidate) ?? undefined;
+    const value = pendingBadgeTextColor ?? badgeTextColor;
+    if (isPresetTextColor(value)) return undefined;
+    return sanitizeHex(value) ?? undefined;
   })();
 
   const badgeTextInputTextColor = (() => {
@@ -1631,61 +1609,211 @@ function SettingsScreen() {
   })();
 
   const badgeTextWheelColor = (() => {
-    const candidate =
-      pendingBadgeTextColor !== null ? pendingBadgeTextColor : badgeTextColor;
-    if (!candidate || isPresetTextColor(candidate)) {
-      return '#ffffff';
-    }
-    return sanitizeHex(candidate) ?? '#ffffff';
+    const value = pendingBadgeTextColor ?? badgeTextColor;
+    if (isPresetTextColor(value)) return DEFAULT_BADGE_TEXT_COLOR;
+    return sanitizeHex(value) ?? DEFAULT_BADGE_TEXT_COLOR;
   })();
 
-  return (
-    <div className="min-h-screen bg-base-200 mt-16">
-      <dialog
-        id="clear_data_modal"
-        className="modal modal-bottom sm:modal-middle"
+  const renderedAboutPreview = useMemo(() => {
+    if (!aboutPreviewText.trim()) return '';
+    return renderMarkdownWithSpoilers(aboutPreviewText);
+  }, [aboutPreviewText]);
+
+  // ——— Markdown toolbar ———
+  const MarkdownToolbar = (
+    <div className="flex flex-wrap gap-1 mb-2 p-2 bg-base-200 rounded-t-lg border border-base-300 border-b-0">
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => insertHeading(1)}
+        title="Heading 1"
+        aria-label="Insert heading level 1"
       >
+        <Heading1 className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => insertHeading(2)}
+        title="Heading 2"
+        aria-label="Insert heading level 2"
+      >
+        <Heading2 className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => insertHeading(3)}
+        title="Heading 3"
+        aria-label="Insert heading level 3"
+      >
+        <Heading3 className="w-4 h-4" />
+      </button>
+      <div
+        className="w-px bg-base-300/60 self-stretch"
+        aria-hidden="true"
+      ></div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertBold}
+        title="Bold"
+        aria-label="Insert bold text"
+      >
+        <Bold className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertItalic}
+        title="Italic"
+        aria-label="Insert italic text"
+      >
+        <Italic className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertInlineCode}
+        title="Inline code"
+        aria-label="Insert inline code"
+      >
+        <Type className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertCodeBlock}
+        title="Code block"
+        aria-label="Insert code block"
+      >
+        <Code className="w-4 h-4" />
+      </button>
+      <div
+        className="w-px bg-base-300/60 self-stretch"
+        aria-hidden="true"
+      ></div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => insertListItem(false)}
+        title="Bulleted list"
+        aria-label="Insert bulleted list"
+      >
+        <List className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => insertListItem(true)}
+        title="Numbered list"
+        aria-label="Insert numbered list"
+      >
+        <ListOrdered className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertQuote}
+        title="Quote"
+        aria-label="Insert quote"
+      >
+        <Quote className="w-4 h-4" />
+      </button>
+      <div
+        className="w-px bg-base-300/60 self-stretch"
+        aria-hidden="true"
+      ></div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertLink}
+        title="Link"
+        aria-label="Insert link"
+      >
+        <LinkIcon className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={insertSpoiler}
+        title="Spoiler"
+        aria-label="Insert spoiler"
+      >
+        <EyeOff className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => {
+          setImageUrl('');
+          setImageAlt('');
+          setIsImageModalOpen(true);
+        }}
+        title="Image"
+        aria-label="Insert image"
+      >
+        <ImageIcon className="w-4 h-4" />
+      </button>
+
+      {/* View mode switcher */}
+      <div className="ml-auto flex items-center gap-1">
+        <button
+          type="button"
+          className={`btn btn-xs ${aboutViewMode === 'edit' ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => setAboutViewMode('edit')}
+          title="Edit only"
+        >
+          <Code className="w-3 h-3" />
+        </button>
+        <button
+          type="button"
+          className={`btn btn-xs ${aboutViewMode === 'split' ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => setAboutViewMode('split')}
+          title="Split view"
+        >
+          <SplitSquareHorizontal className="w-3 h-3" />
+        </button>
+        <button
+          type="button"
+          className={`btn btn-xs ${aboutViewMode === 'preview' ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => setAboutViewMode('preview')}
+          title="Preview only"
+        >
+          <Eye className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-base-200/40 pt-16">
+      {/* Clear Data Modal */}
+      <dialog id="clear_data_modal" className="modal">
         <div className="modal-box">
-          <h3 className="font-bold text-lg text-error">
-            Confirm Data Deletion
-          </h3>
-          <div className="divider"></div>
-          <p className="py-4">
-            This will permanently delete all your logs, statistics, and goals.
-            This action cannot be undone.
+          <h3 className="font-bold text-lg text-error mb-2">Clear All Data</h3>
+          <p className="text-base-content/70 mb-4">
+            This will permanently delete all your logs and statistics. This
+            action{' '}
+            <span className="font-bold text-error">cannot be undone</span>.
           </p>
-
-          <label className="input input-bordered flex items-center gap-2 w-full">
-            <span className="label">Type your username to confirm:</span>
-            <input
-              ref={confirmUsernameRef}
-              type="text"
-              placeholder={user?.username || ''}
-              onChange={(e) =>
-                setIsUsernameMatch(e.target.value === user?.username)
-              }
-              className="grow"
-            />
-          </label>
-
+          <p className="text-base-content/70 mb-4">
+            To confirm, type your username:{' '}
+            <span className="font-bold">{user?.username}</span>
+          </p>
+          <input
+            type="text"
+            className="input input-bordered w-full mb-4"
+            placeholder="Enter your username"
+            ref={confirmUsernameRef}
+            onChange={(e) => {
+              setIsUsernameMatch(e.target.value === user?.username);
+            }}
+          />
           <div className="modal-action">
-            <button
-              className="btn btn-error"
-              onClick={handleClearData}
-              disabled={isClearDataPending || !isUsernameMatch}
-            >
-              {isClearDataPending ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Clearing...
-                </>
-              ) : (
-                'Delete All Data'
-              )}
-            </button>
             <form method="dialog">
               <button
-                className="btn btn-outline"
+                className="btn btn-ghost"
                 onClick={() => {
                   if (confirmUsernameRef.current) {
                     confirmUsernameRef.current.value = '';
@@ -1696,6 +1824,20 @@ function SettingsScreen() {
                 Cancel
               </button>
             </form>
+            <button
+              className="btn btn-error"
+              onClick={handleClearData}
+              disabled={!isUsernameMatch || isClearDataPending}
+            >
+              {isClearDataPending ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Clear All Data
+                </>
+              )}
+            </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
@@ -1740,211 +1882,720 @@ function SettingsScreen() {
         getInitialCrop={getInitialBannerCrop}
       />
 
-      <div className="bg-base-100 shadow-sm border-b border-base-300">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-base-content mb-2">
-              Settings
-            </h1>
-            <p className="text-base-content/70 text-lg">
-              Manage your account and preferences
-            </p>
-          </div>
+      {/* Page Header */}
+      <div className="bg-base-100 border-b border-base-300">
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-base-content">Settings</h1>
+          <p className="text-base-content/60 mt-1">
+            Manage your account and preferences
+          </p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <div className="xl:col-span-2 space-y-6">
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <UserRound className="h-6 w-6 text-primary" />
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar Navigation */}
+          <aside className="lg:w-64 flex-shrink-0">
+            <div className="card bg-base-100 shadow-sm border border-base-300/50 sticky top-6">
+              <div className="card-body p-2">
+                <nav className="flex flex-row lg:flex-col gap-1">
+                  {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      id={`settings-tab-${id}`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 text-left w-full cursor-pointer
+                        ${
+                          activeTab === id
+                            ? 'bg-primary text-primary-content shadow-sm'
+                            : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+                        }`}
+                      onClick={() => setActiveTab(id)}
+                    >
+                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <span className="hidden sm:block">{label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1 min-w-0 space-y-6">
+            {/* ── PROFILE TAB ── */}
+            {activeTab === 'profile' && (
+              <div className="space-y-6">
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <UserRound className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">Profile</h2>
+                        <p className="text-base-content/70">
+                          Update your avatar, banner and about me
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleUpdateProfile} className="space-y-8">
+                      {/* About Me with real-time preview */}
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium text-base">
+                            About Me
+                          </span>
+                          <span className="label-text-alt text-base-content/50 text-xs">
+                            Markdown supported
+                          </span>
+                        </label>
+
+                        {MarkdownToolbar}
+
+                        {/* Editor + Preview area */}
+                        <div
+                          className={`border border-base-300 rounded-b-lg overflow-hidden ${aboutViewMode === 'split' ? 'grid grid-cols-2 divide-x divide-base-300' : ''}`}
+                        >
+                          {/* Editor pane */}
+                          {(aboutViewMode === 'edit' ||
+                            aboutViewMode === 'split') && (
+                            <div
+                              className={aboutViewMode === 'split' ? '' : ''}
+                            >
+                              <AboutEditor
+                                ref={aboutEditorRef}
+                                aboutRef={aboutRef}
+                                maxLength={ABOUT_MAX_LENGTH}
+                                initialValue={user?.about}
+                                onSave={handleSaveAbout}
+                                isSaving={isSavingAbout}
+                                onPreviewChange={setAboutPreviewText}
+                              />
+                            </div>
+                          )}
+
+                          {/* Preview pane */}
+                          {(aboutViewMode === 'preview' ||
+                            aboutViewMode === 'split') && (
+                            <div className="p-4 min-h-48 bg-base-50">
+                              {aboutViewMode === 'split' && (
+                                <div className="text-xs text-base-content/40 font-medium uppercase tracking-wide mb-3 flex items-center gap-1">
+                                  <Eye className="w-3 h-3" />
+                                  Preview
+                                </div>
+                              )}
+                              {renderedAboutPreview ? (
+                                <div
+                                  className="prose prose-sm max-w-none"
+                                  dangerouslySetInnerHTML={{
+                                    __html: renderedAboutPreview,
+                                  }}
+                                />
+                              ) : (
+                                <p className="text-base-content/30 text-sm italic">
+                                  {aboutViewMode === 'preview'
+                                    ? 'Nothing to preview yet. Start typing in the editor.'
+                                    : 'Preview will appear here...'}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Avatar */}
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium">Avatar</span>
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-4 items-start">
+                          <div className="flex-1 w-full">
+                            <input
+                              type="file"
+                              id="avatar"
+                              ref={avatarInputRef}
+                              className="file-input file-input-bordered file-input-primary w-full"
+                              accept={
+                                hasPatreonMediaAccess
+                                  ? 'image/*'
+                                  : 'image/jpeg,image/jpg,image/png,image/webp'
+                              }
+                              onChange={onSelectAvatarFile}
+                            />
+                            <label className="label pt-1 flex flex-col items-start gap-1">
+                              <span className="label-text-alt text-base-content/60 leading-relaxed">
+                                Allowed Formats: JPEG, PNG, WebP
+                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
+                                size: {avatarMaxSizeMb} MB. Optimal dimensions:
+                                230x230
+                              </span>
+                              {(croppedAvatarFile || avatarCropMetadata) && (
+                                <span className="label-text-alt text-success">
+                                  Cropped avatar ready to upload
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                          {user?.avatar ||
+                          croppedAvatarFile ||
+                          avatarCropMetadata ? (
+                            <div className="flex flex-col items-center gap-2">
+                              {user?.avatar && !croppedAvatarFile && (
+                                <img
+                                  src={user.avatar}
+                                  alt="Current avatar"
+                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
+                                  style={{
+                                    width: 120,
+                                    height: 120,
+                                  }}
+                                />
+                              )}
+                              <canvas
+                                ref={avatarPreviewCanvasRef}
+                                className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
+                                style={{
+                                  objectFit: 'contain',
+                                  width: 120,
+                                  height: 120,
+                                }}
+                              />
+                              {avatarCropMetadata && !croppedAvatarFile && (
+                                <span className="text-xs text-success text-center max-w-[120px]">
+                                  GIF crop will be applied when you save
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* Banner */}
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium">Banner</span>
+                        </label>
+                        <div className="flex flex-col gap-4">
+                          <div className="w-full">
+                            <input
+                              type="file"
+                              id="banner"
+                              ref={bannerInputRef}
+                              className="file-input file-input-bordered file-input-primary w-full"
+                              accept={
+                                hasPatreonMediaAccess
+                                  ? 'image/*'
+                                  : 'image/jpeg,image/jpg,image/png,image/webp'
+                              }
+                              onChange={onSelectBannerFile}
+                            />
+                            <label className="label pt-1 flex flex-col items-start gap-1">
+                              <span className="label-text-alt text-base-content/60 leading-relaxed">
+                                Allowed Formats: JPEG, PNG, WebP
+                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
+                                size: {bannerMaxSizeMb} MB. Optimal dimensions:
+                                1700x330
+                              </span>
+                              {(croppedBannerFile || bannerCropMetadata) && (
+                                <span className="label-text-alt text-success">
+                                  Cropped banner ready to upload
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                          {user?.banner ||
+                          croppedBannerFile ||
+                          bannerCropMetadata ? (
+                            <>
+                              {user?.banner && !croppedBannerFile && (
+                                <img
+                                  src={user.banner}
+                                  alt="Current banner"
+                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
+                                  style={{
+                                    maxHeight: 150,
+                                  }}
+                                />
+                              )}
+                              <canvas
+                                ref={bannerPreviewCanvasRef}
+                                className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
+                                style={{
+                                  objectFit: 'contain',
+                                  maxHeight: 150,
+                                }}
+                              />
+                              {bannerCropMetadata && !croppedBannerFile && (
+                                <span className="text-xs text-success">
+                                  GIF crop will be applied when you save
+                                </span>
+                              )}
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="card-actions justify-end pt-2">
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          disabled={isPending}
+                        >
+                          {isPending ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4" />
+                              Save Profile
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Profile Information</h2>
-                    <p className="text-base-content/70">
-                      Update your basic profile details
-                    </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── ACCOUNT & SECURITY TAB ── */}
+            {activeTab === 'account' && (
+              <div className="space-y-6">
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-secondary/10 rounded-lg">
+                        <ShieldCheck className="h-6 w-6 text-secondary" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">
+                          Account & Security
+                        </h2>
+                        <p className="text-base-content/70">
+                          Update username, email and password. Your current
+                          password is required to confirm sensitive changes.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Current password context banner */}
+                    <div className="alert alert-info alert-soft mb-6">
+                      <ShieldCheck className="h-5 w-5 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-sm">
+                          Password verification required
+                        </p>
+                        <p className="text-xs">
+                          Changing your username, email or password requires
+                          your current password to confirm your identity.
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleUpdateUser} className="space-y-6">
+                      {/* Current Password — shown prominently at top */}
+                      <div className="form-control w-full p-4 bg-base-200/60 rounded-xl border border-base-300">
+                        <label className="label pt-0">
+                          <span className="label-text font-semibold flex items-center gap-2">
+                            <Lock className="h-4 w-4 text-secondary" />
+                            Current Password
+                          </span>
+                          <span className="label-text-alt text-base-content/50">
+                            Required for changes below
+                          </span>
+                        </label>
+                        <input
+                          ref={passwordRef}
+                          name="settings_current_password"
+                          type="password"
+                          autoComplete="new-password"
+                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          placeholder="Enter your current password to confirm changes"
+                          onChange={(e) =>
+                            setHasPassword(e.target.value.trim().length > 0)
+                          }
+                        />
+                      </div>
+
+                      <div className="divider text-xs text-base-content/40">
+                        ACCOUNT DETAILS
+                      </div>
+
+                      {/* Username */}
+                      <div className="form-control w-full">
+                        <label className="label">
+                          <span className="label-text font-medium">
+                            Username
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          placeholder={user?.username || 'Enter username'}
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                        />
+                        <label className="label">
+                          <span className="label-text-alt text-base-content/60">
+                            Current: {user?.username || 'Not set'}
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Email */}
+                      <div className="form-control w-full">
+                        <label className="label">
+                          <span className="label-text font-medium">
+                            Email Address (optional)
+                          </span>
+                          {user?.email && (
+                            <span
+                              className={`badge badge-sm ${
+                                user.verified
+                                  ? 'badge-success'
+                                  : 'badge-warning'
+                              }`}
+                            >
+                              {user.verified ? 'Verified' : 'Not Verified'}
+                            </span>
+                          )}
+                        </label>
+                        <input
+                          ref={emailRef}
+                          name="settings_email"
+                          type="email"
+                          autoComplete="off"
+                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          placeholder="Enter your email address"
+                          defaultValue={user?.email || ''}
+                          onChange={(e) => {
+                            const emailValue = e.target.value;
+                            setIsEmailChanged(
+                              emailValue !== (user?.email || '')
+                            );
+                          }}
+                        />
+
+                        {user?.email && !user.verified && (
+                          <div className="mt-3 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                            <p className="text-sm text-warning mb-2">
+                              📧 Verification email sent to your inbox. Check
+                              your spam folder if needed.
+                            </p>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-warning"
+                              onClick={() => resendVerificationEmail()}
+                              disabled={resendCooldown > 0 || isResendingEmail}
+                            >
+                              {isResendingEmail ? (
+                                <>
+                                  <span className="loading loading-spinner loading-sm"></span>
+                                  Sending...
+                                </>
+                              ) : resendCooldown > 0 ? (
+                                <>
+                                  <Clock3 className="w-4 h-4" />
+                                  Resend in {resendCooldown}s
+                                </>
+                              ) : (
+                                <>
+                                  <Mail className="w-4 h-4" />
+                                  Resend Verification Email
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {!user?.email && (
+                          <label className="label">
+                            <span className="label-text-alt text-base-content/60">
+                              Recommended for account recovery
+                            </span>
+                          </label>
+                        )}
+                      </div>
+
+                      <div className="divider text-xs text-base-content/40">
+                        CHANGE PASSWORD
+                      </div>
+
+                      {/* New Password */}
+                      <div className="form-control w-full">
+                        <label className="label">
+                          <span className="label-text font-medium">
+                            New Password (optional)
+                          </span>
+                        </label>
+                        <input
+                          ref={newPasswordRef}
+                          type="password"
+                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          placeholder="Enter new password"
+                          onChange={(e) => {
+                            const newPwd = e.target.value;
+                            setHasNewPassword(newPwd.trim().length > 0);
+                            const confirmPwd =
+                              newPasswordConfirmRef.current?.value || '';
+                            setPasswordsMatch(!newPwd || newPwd === confirmPwd);
+                          }}
+                        />
+                        <label className="label">
+                          <span className="label-text-alt text-base-content/60">
+                            Leave blank to keep current password
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Confirm New Password */}
+                      <div className="form-control w-full">
+                        <label className="label">
+                          <span className="label-text font-medium">
+                            Confirm New Password
+                          </span>
+                        </label>
+                        <input
+                          ref={newPasswordConfirmRef}
+                          type="password"
+                          className={`input input-bordered focus:input-secondary transition-colors w-full ${!passwordsMatch ? 'input-error' : ''}`}
+                          placeholder="Confirm new password"
+                          onChange={(e) => {
+                            const confirmPwd = e.target.value;
+                            const newPwd = newPasswordRef.current?.value || '';
+                            setPasswordsMatch(!newPwd || newPwd === confirmPwd);
+                          }}
+                        />
+                        {!passwordsMatch && (
+                          <label className="label">
+                            <span className="label-text-alt text-error">
+                              Passwords do not match
+                            </span>
+                          </label>
+                        )}
+                      </div>
+
+                      <div className="card-actions justify-end pt-4">
+                        <button
+                          type="submit"
+                          className="btn btn-secondary"
+                          disabled={
+                            isPending ||
+                            !hasPassword ||
+                            (!isEmailChanged &&
+                              !hasNewPassword &&
+                              username.trim() === (user?.username || '')) ||
+                            (hasNewPassword && !passwordsMatch)
+                          }
+                        >
+                          {isPending ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <KeyRound className="h-4 w-4" />
+                              Update Account
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
 
-                <form onSubmit={handleUpdateUser} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="form-control w-full">
-                      <label className="label">
-                        <span className="label-text font-medium">Username</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="input input-bordered focus:input-primary transition-colors w-full"
-                        placeholder={user?.username || 'Enter username'}
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                      <label className="label">
-                        <span className="label-text-alt text-base-content/60">
-                          Current: {user?.username || 'Not set'}
-                        </span>
-                      </label>
-                    </div>
-
-                    <div className="form-control md:col-span-2">
-                      <label className="label">
-                        <span className="label-text font-medium">About Me</span>
-                      </label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => insertHeading(1)}
-                          title="Heading 1"
-                          aria-label="Insert heading level 1"
-                        >
-                          <Heading1 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => insertHeading(2)}
-                          title="Heading 2"
-                          aria-label="Insert heading level 2"
-                        >
-                          <Heading2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => insertHeading(3)}
-                          title="Heading 3"
-                          aria-label="Insert heading level 3"
-                        >
-                          <Heading3 className="w-4 h-4" />
-                        </button>
-                        <div
-                          className="w-px bg-base-300/60 self-stretch"
-                          aria-hidden="true"
-                        ></div>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertBold}
-                          title="Bold"
-                          aria-label="Insert bold text"
-                        >
-                          <Bold className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertItalic}
-                          title="Italic"
-                          aria-label="Insert italic text"
-                        >
-                          <Italic className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertInlineCode}
-                          title="Inline code"
-                          aria-label="Insert inline code"
-                        >
-                          <Type className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertCodeBlock}
-                          title="Code block"
-                          aria-label="Insert code block"
-                        >
-                          <Code className="w-4 h-4" />
-                        </button>
-                        <div
-                          className="w-px bg-base-300/60 self-stretch"
-                          aria-hidden="true"
-                        ></div>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => insertListItem(false)}
-                          title="Bulleted list"
-                          aria-label="Insert bulleted list"
-                        >
-                          <List className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => insertListItem(true)}
-                          title="Numbered list"
-                          aria-label="Insert numbered list"
-                        >
-                          <ListOrdered className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertQuote}
-                          title="Quote"
-                          aria-label="Insert quote"
-                        >
-                          <Quote className="w-4 h-4" />
-                        </button>
-                        <div
-                          className="w-px bg-base-300/60 self-stretch"
-                          aria-hidden="true"
-                        ></div>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertLink}
-                          title="Link"
-                          aria-label="Insert link"
-                        >
-                          <LinkIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={insertSpoiler}
-                          title="Spoiler"
-                          aria-label="Insert spoiler"
-                        >
-                          <EyeOff className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => {
-                            setImageUrl('');
-                            setImageAlt('');
-                            setIsImageModalOpen(true);
-                          }}
-                          title="Image"
-                          aria-label="Insert image"
-                        >
-                          <ImageIcon className="w-4 h-4" />
-                        </button>
+                {/* Danger Zone */}
+                <div className="card bg-error/5 border border-error/20 shadow-sm">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-error/10 rounded-lg">
+                        <TriangleAlert className="h-6 w-6 text-error" />
                       </div>
-                      <AboutEditor
-                        ref={aboutEditorRef}
-                        aboutRef={aboutRef}
-                        maxLength={ABOUT_MAX_LENGTH}
-                        initialValue={user?.about}
-                        onSave={handleSaveAbout}
-                        isSaving={isSavingAbout}
-                      />
+                      <div>
+                        <h2 className="text-xl font-bold text-error">
+                          Danger Zone
+                        </h2>
+                        <p className="text-error/70 text-sm">
+                          Irreversible actions
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text font-medium">
-                          Patreon Account
-                        </span>
-                      </label>
+                    <div className="alert alert-error alert-soft mb-4">
+                      <XCircle className="stroke-current shrink-0 h-6 w-6" />
+                      <div>
+                        <h3 className="font-bold">Warning!</h3>
+                        <div className="text-xs">
+                          This action cannot be undone and will permanently
+                          delete all your data.
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      className="btn btn-error w-full"
+                      onClick={() =>
+                        (
+                          document.getElementById(
+                            'clear_data_modal'
+                          ) as HTMLDialogElement
+                        )?.showModal()
+                      }
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      Clear All Data
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── PREFERENCES TAB ── */}
+            {activeTab === 'preferences' && (
+              <div className="space-y-6">
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-accent/10 rounded-lg">
+                        <Settings2 className="h-6 w-6 text-accent" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">Preferences</h2>
+                        <p className="text-base-content/70">
+                          Customize your experience
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium">Theme</span>
+                        </label>
+                        <ThemeSwitcher />
+                      </div>
+
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium">
+                            Timezone
+                          </span>
+                          {isPreferencesPending && (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          )}
+                        </label>
+                        <TimezonePicker
+                          value={timezone}
+                          onChange={setTimezone}
+                          disabled={isPending || isPreferencesPending}
+                        />
+                        <label className="label">
+                          <span className="label-text-alt text-base-content/60 text-wrap">
+                            All dates and times will be displayed in your
+                            selected timezone
+                          </span>
+                        </label>
+                      </div>
+
+                      <div className="form-control">
+                        <label className="label cursor-pointer">
+                          <div>
+                            <span className="label-text font-medium">
+                              Blur Adult Content
+                            </span>
+                            <p className="text-sm text-base-content/60">
+                              Hide explicit content by default
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isPreferencesPending && (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            )}
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-accent"
+                              checked={blurAdult}
+                              onChange={(e) => setBlurAdult(e.target.checked)}
+                              disabled={isPreferencesPending}
+                            />
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="form-control">
+                        <label className="label cursor-pointer">
+                          <div>
+                            <span className="label-text font-medium">
+                              Hide Unmatched Logs Alert
+                            </span>
+                            <p className="text-sm text-base-content/60">
+                              Don't show alerts about unmatched logs
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isPreferencesPending && (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            )}
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-accent"
+                              checked={hideUnmatchedAlert}
+                              onChange={(e) =>
+                                setHideUnmatchedAlert(e.target.checked)
+                              }
+                              disabled={isPreferencesPending}
+                            />
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-accent/10 rounded-lg">
+                        <Tag className="h-6 w-6 text-accent" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">Tags</h2>
+                        <p className="text-base-content/70">
+                          Create and manage tags to organize your logs
+                        </p>
+                      </div>
+                    </div>
+                    <TagManager />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── PATREON TAB ── */}
+            {activeTab === 'patreon' && (
+              <div className="space-y-6">
+                {/* Patreon connection */}
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <Heart className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">Patreon</h2>
+                        <p className="text-base-content/70">
+                          Link your Patreon account to unlock supporter perks
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
                       {patreonStatus.patreonId ? (
                         <div className="space-y-4">
                           {/* Connected Status */}
@@ -2034,1192 +2685,756 @@ function SettingsScreen() {
                       )}
                     </div>
                   </div>
-
-                  {/* Custom Badge Text - Enthusiast+ Only */}
-                  {patreonStatus.patreonId &&
-                    (patreonStatus.tier === 'enthusiast' ||
-                      patreonStatus.tier === 'consumer') && (
-                      <div className="space-y-4 mt-6">
-                        <div className="divider">
-                          <span className="text-base-content/70 font-medium">
-                            Badge Customization
-                          </span>
-                        </div>
-
-                        <div className="card bg-base-200/50 border border-base-300">
-                          <div className="card-body">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <label className="label">
-                                  <span className="label-text font-medium">
-                                    Custom Badge Text
-                                  </span>
-                                  <span className="label-text-alt badge badge-ghost badge-sm">
-                                    {customBadgeText.length}/20
-                                  </span>
-                                </label>
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    className="input input-bordered focus:input-primary transition-colors flex-1"
-                                    placeholder="Enter custom text"
-                                    value={customBadgeText}
-                                    onChange={(e) =>
-                                      setCustomBadgeText(
-                                        e.target.value.slice(0, 20)
-                                      )
-                                    }
-                                    maxLength={20}
-                                  />
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={() =>
-                                      updateBadgeText(customBadgeText)
-                                    }
-                                    disabled={isUpdatingBadge}
-                                  >
-                                    {isUpdatingBadge ? (
-                                      <span className="loading loading-spinner loading-sm"></span>
-                                    ) : (
-                                      <>
-                                        <Check className="h-4 w-4" />
-                                        Save
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                <label className="label">
-                                  <span className="label-text-alt text-base-content/60">
-                                    Leave empty to use default tier name
-                                  </span>
-                                </label>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                  <div className="space-y-6">
-                    <div className="divider">
-                      <span className="text-base-content/70 font-medium">
-                        Media & Appearance
-                      </span>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">Avatar</span>
-                        </label>
-                        <div className="flex flex-col sm:flex-row gap-4 items-start">
-                          <div className="flex-1 w-full">
-                            <input
-                              type="file"
-                              id="avatar"
-                              ref={avatarInputRef}
-                              className="file-input file-input-bordered file-input-primary w-full"
-                              accept={
-                                hasPatreonMediaAccess
-                                  ? 'image/*'
-                                  : 'image/jpeg,image/jpg,image/png,image/webp'
-                              }
-                              onChange={onSelectAvatarFile}
-                            />
-                            <label className="label pt-1 flex flex-col items-start gap-1">
-                              <span className="label-text-alt text-base-content/60 leading-relaxed">
-                                Allowed Formats: JPEG, PNG, WebP
-                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
-                                size: {avatarMaxSizeMb} MB. Optimal dimensions:
-                                230x230
-                              </span>
-                              {(croppedAvatarFile || avatarCropMetadata) && (
-                                <span className="label-text-alt text-success">
-                                  Cropped avatar ready to upload
-                                </span>
-                              )}
-                            </label>
-                          </div>
-                          {user?.avatar ||
-                          croppedAvatarFile ||
-                          avatarCropMetadata ? (
-                            <div className="flex flex-col items-center gap-2">
-                              {user?.avatar && !croppedAvatarFile && (
-                                <img
-                                  src={user.avatar}
-                                  alt="Current avatar"
-                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
-                                  style={{
-                                    width: 120,
-                                    height: 120,
-                                  }}
-                                />
-                              )}
-                              <canvas
-                                ref={avatarPreviewCanvasRef}
-                                className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
-                                style={{
-                                  objectFit: 'contain',
-                                  width: 120,
-                                  height: 120,
-                                }}
-                              />
-                              {avatarCropMetadata && !croppedAvatarFile && (
-                                <span className="text-xs text-success text-center max-w-[120px]">
-                                  GIF crop will be applied when you save
-                                </span>
-                              )}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">Banner</span>
-                        </label>
-                        <div className="flex flex-col gap-4">
-                          <div className="w-full">
-                            <input
-                              type="file"
-                              id="banner"
-                              ref={bannerInputRef}
-                              className="file-input file-input-bordered file-input-primary w-full"
-                              accept={
-                                hasPatreonMediaAccess
-                                  ? 'image/*'
-                                  : 'image/jpeg,image/jpg,image/png,image/webp'
-                              }
-                              onChange={onSelectBannerFile}
-                            />
-                            <label className="label pt-1 flex flex-col items-start gap-1">
-                              <span className="label-text-alt text-base-content/60 leading-relaxed">
-                                Allowed Formats: JPEG, PNG, WebP
-                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
-                                size: {bannerMaxSizeMb} MB. Optimal dimensions:
-                                1700x330
-                              </span>
-                              {(croppedBannerFile || bannerCropMetadata) && (
-                                <span className="label-text-alt text-success">
-                                  Cropped banner ready to upload
-                                </span>
-                              )}
-                            </label>
-                          </div>
-                          {user?.banner ||
-                          croppedBannerFile ||
-                          bannerCropMetadata ? (
-                            <>
-                              {user?.banner && !croppedBannerFile && (
-                                <img
-                                  src={user.banner}
-                                  alt="Current banner"
-                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
-                                  style={{
-                                    maxHeight: 150,
-                                  }}
-                                />
-                              )}
-                              <canvas
-                                ref={bannerPreviewCanvasRef}
-                                className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
-                                style={{
-                                  objectFit: 'contain',
-                                  maxHeight: 150,
-                                }}
-                              />
-                              {bannerCropMetadata && !croppedBannerFile && (
-                                <span className="text-xs text-success">
-                                  GIF crop will be applied when you save
-                                </span>
-                              )}
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="card-actions justify-end pt-4">
-                    <button
-                      type="submit"
-                      className="btn btn-primary btn-lg"
-                      disabled={isPending}
-                    >
-                      {isPending ? (
-                        <>
-                          <span className="loading loading-spinner loading-sm"></span>
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-5 w-5" />
-                          Update Profile
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            {/* Tag Management Section */}
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-accent/10 rounded-lg">
-                    <Tag className="h-6 w-6 text-accent" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Tags</h2>
-                    <p className="text-base-content/70">
-                      Create and manage tags to organize your logs
-                    </p>
-                  </div>
-                </div>
-                <TagManager />
-              </div>
-            </div>
-
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-secondary/10 rounded-lg">
-                    <ShieldCheck className="h-6 w-6 text-secondary" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Security</h2>
-                    <p className="text-base-content/70">
-                      Update your password and security settings
-                    </p>
-                  </div>
                 </div>
 
-                <form onSubmit={handleUpdateUser} className="space-y-6">
-                  <div className="form-control w-full">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        Email Address (optional)
-                      </span>
-                      {user?.email && (
-                        <span
-                          className={`badge badge-sm ${
-                            user.verified ? 'badge-success' : 'badge-warning'
-                          }`}
-                        >
-                          {user.verified ? 'Verified' : 'Not Verified'}
-                        </span>
-                      )}
-                    </label>
-                    <input
-                      ref={emailRef}
-                      name="settings_email"
-                      type="email"
-                      autoComplete="off"
-                      className="input input-bordered focus:input-secondary transition-colors w-full"
-                      placeholder="Enter your email address"
-                      defaultValue={user?.email || ''}
-                      onChange={(e) => {
-                        const emailValue = e.target.value;
-                        setIsEmailChanged(emailValue !== (user?.email || ''));
-                      }}
-                    />
-
-                    {user?.email && !user.verified && (
-                      <div className="mt-3 p-3 bg-warning/10 rounded-lg border border-warning/20">
-                        <p className="text-sm text-warning mb-2">
-                          📧 Verification email sent to your inbox. Check your
-                          spam folder if needed.
-                        </p>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-warning"
-                          onClick={() => resendVerificationEmail()}
-                          disabled={resendCooldown > 0 || isResendingEmail}
-                        >
-                          {isResendingEmail ? (
-                            <>
+                {/* Custom Badge Text - Enthusiast+ Only */}
+                {patreonStatus.patreonId &&
+                  (patreonStatus.tier === 'enthusiast' ||
+                    patreonStatus.tier === 'consumer') && (
+                    <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                      <div className="card-body">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="p-3 bg-primary/10 rounded-lg">
+                            <Tag className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold">
+                              Custom Badge Text
+                            </h3>
+                            <p className="text-base-content/70 text-sm">
+                              Enthusiast+ exclusive
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="input input-bordered focus:input-primary transition-colors flex-1"
+                            placeholder="Enter custom text"
+                            value={customBadgeText}
+                            onChange={(e) =>
+                              setCustomBadgeText(e.target.value.slice(0, 20))
+                            }
+                            maxLength={20}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => updateBadgeText(customBadgeText)}
+                            disabled={isUpdatingBadge}
+                          >
+                            {isUpdatingBadge ? (
                               <span className="loading loading-spinner loading-sm"></span>
-                              Sending...
-                            </>
-                          ) : resendCooldown > 0 ? (
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4" />
+                                Save
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <label className="label">
+                          <span className="label-text-alt text-base-content/60">
+                            {customBadgeText.length}/20 · Leave empty to use
+                            default tier name
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Badge Color Customization - Consumer Only */}
+                <div className="card bg-base-100 shadow-sm border border-base-300/50 relative overflow-hidden">
+                  {/* Lock Overlay for non-Consumer tiers */}
+                  {!(
+                    patreonStatus.isActive && patreonStatus.tier === 'consumer'
+                  ) && (
+                    <div className="absolute inset-0 bg-base-300/70 backdrop-blur-sm rounded-xl z-10 flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <div className="p-4 bg-base-100/80 rounded-lg inline-block">
+                          <Lock className="h-12 w-12 text-primary mx-auto mb-3" />
+                          <h3 className="text-xl font-bold mb-2">
+                            Consumer Tier Only
+                          </h3>
+                          {patreonStatus.patreonId ? (
                             <>
-                              <Clock3 className="w-4 h-4" />
-                              Resend in {resendCooldown}s
+                              <p className="text-sm text-base-content/70 mb-4">
+                                Become a Consumer patron to unlock custom badge
+                                colors
+                              </p>
+                              <a
+                                href="https://www.patreon.com/nihongotracker"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-primary btn-sm gap-2"
+                              >
+                                <HeartHandshake className="w-4 h-4" />
+                                Pledge on Patreon
+                              </a>
                             </>
                           ) : (
                             <>
-                              <Mail className="w-4 h-4" />
-                              Resend Verification Email
+                              <p className="text-sm text-base-content/70 mb-4">
+                                Unlock custom badge colors by becoming a
+                                Consumer patron
+                              </p>
+                              <button
+                                className="btn btn-primary btn-sm gap-2"
+                                onClick={handlePatreonOAuth}
+                                disabled={isInitiatingOAuth}
+                              >
+                                <HeartHandshake className="size-5" />
+                                Support on Patreon
+                              </button>
                             </>
                           )}
-                        </button>
-                      </div>
-                    )}
-
-                    {!user?.email && (
-                      <label className="label">
-                        <span className="label-text-alt text-base-content/60">
-                          Recommended for account recovery
-                        </span>
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="form-control w-full">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        Current Password
-                      </span>
-                    </label>
-                    <input
-                      ref={passwordRef}
-                      name="settings_current_password"
-                      type="password"
-                      autoComplete="new-password"
-                      className="input input-bordered focus:input-secondary transition-colors w-full"
-                      placeholder="Enter current password"
-                      onChange={(e) =>
-                        setHasPassword(e.target.value.trim().length > 0)
-                      }
-                    />
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/60">
-                        Required to verify your identity
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="form-control w-full">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        New Password (optional)
-                      </span>
-                    </label>
-                    <input
-                      ref={newPasswordRef}
-                      type="password"
-                      className="input input-bordered focus:input-secondary transition-colors w-full"
-                      placeholder="Enter new password"
-                      onChange={(e) => {
-                        const newPwd = e.target.value;
-                        setHasNewPassword(newPwd.trim().length > 0);
-                        const confirmPwd =
-                          newPasswordConfirmRef.current?.value || '';
-                        setPasswordsMatch(!newPwd || newPwd === confirmPwd);
-                      }}
-                    />
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/60">
-                        Leave blank to keep current password
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="form-control w-full">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        Confirm New Password
-                      </span>
-                    </label>
-                    <input
-                      ref={newPasswordConfirmRef}
-                      type="password"
-                      className="input input-bordered focus:input-secondary transition-colors w-full"
-                      placeholder="Confirm new password"
-                      onChange={(e) => {
-                        const confirmPwd = e.target.value;
-                        const newPwd = newPasswordRef.current?.value || '';
-                        setPasswordsMatch(!newPwd || newPwd === confirmPwd);
-                      }}
-                    />
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/60">
-                        Required only if changing password
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="card-actions justify-end pt-4">
-                    <button
-                      type="submit"
-                      className="btn btn-secondary btn-lg"
-                      disabled={
-                        isPending ||
-                        !hasPassword ||
-                        (!isEmailChanged && !hasNewPassword) ||
-                        (hasNewPassword && !passwordsMatch)
-                      }
-                    >
-                      {isPending ? (
-                        <>
-                          <span className="loading loading-spinner loading-sm"></span>
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <KeyRound className="h-5 w-5" />
-                          Update Security Settings
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            {/* Badge Customization Card - Always visible, locked for non-Consumer */}
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body relative">
-                {/* Lock Overlay for non-Consumer tiers */}
-                {!(
-                  patreonStatus.isActive && patreonStatus.tier === 'consumer'
-                ) && (
-                  <div className="absolute inset-0 bg-base-300/70 backdrop-blur-sm rounded-xl z-10 flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <div className="p-4 bg-base-100/80 rounded-lg inline-block">
-                        <Lock className="h-12 w-12 text-primary mx-auto mb-3" />
-                        <h3 className="text-xl font-bold mb-2">
-                          Consumer Tier Only
-                        </h3>
-                        {patreonStatus.patreonId ? (
-                          <>
-                            <p className="text-sm text-base-content/70 mb-4">
-                              Become a Consumer patron to unlock custom badge
-                              colors
-                            </p>
-                            <a
-                              href="https://www.patreon.com/nihongotracker"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-primary btn-sm gap-2"
-                            >
-                              <HeartHandshake className="w-4 h-4" />
-                              Pledge on Patreon
-                            </a>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-sm text-base-content/70 mb-4">
-                              Unlock custom badge colors by becoming a Consumer
-                              patron
-                            </p>
-                            <button
-                              className="btn btn-primary btn-sm gap-2"
-                              onClick={handlePatreonOAuth}
-                              disabled={isInitiatingOAuth}
-                            >
-                              <HeartHandshake className="size-5" />
-                              Support on Patreon
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <Heart className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">
-                      Badge Color Customization
-                    </h2>
-                    <p className="text-base-content/70">
-                      Personalize your Consumer tier badge colors
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Badge Preview */}
-                  <div className="flex items-center justify-center p-6 bg-base-200 rounded-lg">
-                    <div
-                      className={`badge badge-lg gap-2 px-4 py-3 font-bold ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'badge-primary' : badgeColor === 'secondary' ? 'badge-secondary' : ''}`}
-                      style={
-                        badgeColor !== 'rainbow' &&
-                        badgeColor !== 'primary' &&
-                        badgeColor !== 'secondary'
-                          ? {
-                              backgroundColor: badgeColor,
-                              color:
-                                badgeTextColor === 'primary-content'
-                                  ? undefined
-                                  : badgeTextColor === 'secondary-content'
-                                    ? undefined
-                                    : badgeTextColor,
-                              border: 'none',
-                            }
-                          : {
-                              color:
-                                badgeTextColor === 'primary-content' ||
-                                badgeTextColor === 'secondary-content'
-                                  ? undefined
-                                  : badgeTextColor,
-                            }
-                      }
-                    >
-                      <Heart className="inline-block w-4 h-4" />
-                      <span className="font-bold">
-                        {user?.patreon?.customBadgeText || 'Consumer'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Color Selectors */}
-                  <div className="flex items-center justify-center gap-4">
-                    {/* Background Color */}
-                    <button
-                      type="button"
-                      className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
-                      onClick={openBadgeColorModal}
-                    >
-                      <div
-                        className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'bg-primary' : badgeColor === 'secondary' ? 'bg-secondary' : ''}`}
-                        style={
-                          badgeColor !== 'rainbow' &&
-                          badgeColor !== 'primary' &&
-                          badgeColor !== 'secondary'
-                            ? { backgroundColor: badgeColor }
-                            : undefined
-                        }
-                      />
-                      <span className="text-xs text-base-content/70">
-                        Background
-                      </span>
-                    </button>
-
-                    {/* Text Color */}
-                    <button
-                      type="button"
-                      className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
-                      onClick={openBadgeTextColorModal}
-                    >
-                      <div
-                        className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeTextColor === 'primary-content' ? 'bg-primary-content' : badgeTextColor === 'secondary-content' ? 'bg-secondary-content' : ''}`}
-                        style={
-                          badgeTextColor !== 'primary-content' &&
-                          badgeTextColor !== 'secondary-content'
-                            ? { backgroundColor: badgeTextColor }
-                            : undefined
-                        }
-                      />
-                      <span className="text-xs text-base-content/70">Text</span>
-                    </button>
-                  </div>
-
-                  {/* Save Button */}
-                  <button
-                    type="button"
-                    className="btn btn-primary w-full"
-                    onClick={() => updateBadgeColors()}
-                    disabled={isUpdatingColors}
-                  >
-                    {isUpdatingColors ? (
-                      <>
-                        <span className="loading loading-spinner loading-sm"></span>
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-5 w-5" />
-                        Save Badge Colors
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-accent/10 rounded-lg">
-                    <Settings2 className="h-6 w-6 text-accent" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Preferences</h2>
-                    <p className="text-base-content/70 text-sm">
-                      Customize your experience
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium">Theme</span>
-                    </label>
-                    <ThemeSwitcher />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium">Timezone</span>
-                      {isPreferencesPending && (
-                        <span className="loading loading-spinner loading-sm"></span>
-                      )}
-                    </label>
-                    <TimezonePicker
-                      value={timezone}
-                      onChange={setTimezone}
-                      disabled={isPending || isPreferencesPending}
-                    />
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/60 text-wrap">
-                        All dates and times will be displayed in your selected
-                        timezone
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label cursor-pointer">
-                      <div>
-                        <span className="label-text font-medium">
-                          Blur Adult Content
-                        </span>
-                        <p className="text-sm text-base-content/60">
-                          Hide explicit content by default
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isPreferencesPending && (
-                          <span className="loading loading-spinner loading-sm"></span>
-                        )}
-                        <input
-                          type="checkbox"
-                          className="toggle toggle-accent"
-                          checked={blurAdult}
-                          onChange={(e) => setBlurAdult(e.target.checked)}
-                          disabled={isPreferencesPending}
-                        />
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label cursor-pointer">
-                      <div>
-                        <span className="label-text font-medium">
-                          Hide Unmatched Logs Alert
-                        </span>
-                        <p className="text-sm text-base-content/60">
-                          Don't show alerts about unmatched logs
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isPreferencesPending && (
-                          <span className="loading loading-spinner loading-sm"></span>
-                        )}
-                        <input
-                          type="checkbox"
-                          className="toggle toggle-accent"
-                          checked={hideUnmatchedAlert}
-                          onChange={(e) =>
-                            setHideUnmatchedAlert(e.target.checked)
-                          }
-                          disabled={isPreferencesPending}
-                        />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-info/10 rounded-lg">
-                    <CloudDownload className="h-6 w-6 text-info" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Data Management</h2>
-                    <p className="text-base-content/70 text-sm">
-                      Import, sync, and manage your data
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold mb-3 text-base-content">
-                      Import from File
-                    </h3>
-                    <form onSubmit={handleFileImport} className="space-y-3">
-                      <input
-                        type="file"
-                        id="logFileImport"
-                        className="file-input file-input-bordered file-input-info w-full"
-                        accept=".csv,.tsv,.jsonl"
-                      />
-                      <div className="dropdown dropdown-center w-full">
-                        <div
-                          tabIndex={0}
-                          role="button"
-                          className="btn btn-outline w-full gap-2"
-                        >
-                          {importType
-                            ? IMPORT_TYPE_LABELS[importType]
-                            : 'Choose the file format'}
                         </div>
-                        <ul
-                          tabIndex={0}
-                          className="dropdown-content menu bg-base-300 rounded-box z-1 w-full p-2 shadow-sm"
-                        >
-                          <li>
-                            <button
-                              type="button"
-                              className={`hover:bg-base-200 ${importType === 'tmw' ? 'active' : ''}`}
-                              onClick={() => {
-                                setImportType('tmw');
-                                (document.activeElement as HTMLElement)?.blur();
-                              }}
-                            >
-                              TheMoeWay
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
-                              className={`hover:bg-base-200 ${importType === 'manabe' ? 'active' : ''}`}
-                              onClick={() => {
-                                setImportType('manabe');
-                                (document.activeElement as HTMLElement)?.blur();
-                              }}
-                            >
-                              Manabe
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
-                              className={`hover:bg-base-200 ${importType === 'vncr' ? 'active' : ''}`}
-                              onClick={() => {
-                                setImportType('vncr');
-                                (document.activeElement as HTMLElement)?.blur();
-                              }}
-                            >
-                              VN Club Resurrection
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
-                              className={`hover:bg-base-200 ${importType === 'kechimochi' ? 'active' : ''}`}
-                              onClick={() => {
-                                setImportType('kechimochi');
-                                (document.activeElement as HTMLElement)?.blur();
-                              }}
-                            >
-                              Kechimochi
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              type="button"
-                              className={`hover:bg-base-200 ${importType === 'other' ? 'active' : ''}`}
-                              onClick={() => {
-                                setImportType('other');
-                                (document.activeElement as HTMLElement)?.blur();
-                              }}
-                            >
-                              NihongoTracker | Other
-                            </button>
-                          </li>
-                        </ul>
                       </div>
-                      {(importType === 'other' ||
-                        importType === 'kechimochi') && (
+                    </div>
+                  )}
+
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <Heart className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">
+                          Badge Color Customization
+                        </h2>
+                        <p className="text-base-content/70">
+                          Personalize your Consumer tier badge colors
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Badge Preview */}
+                      <div className="flex items-center justify-center p-6 bg-base-200 rounded-lg">
+                        <div
+                          className={`badge badge-lg gap-2 px-4 py-3 font-bold ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'badge-primary' : badgeColor === 'secondary' ? 'badge-secondary' : ''}`}
+                          style={
+                            badgeColor !== 'rainbow' &&
+                            badgeColor !== 'primary' &&
+                            badgeColor !== 'secondary'
+                              ? {
+                                  backgroundColor: badgeColor,
+                                  color:
+                                    badgeTextColor === 'primary-content'
+                                      ? undefined
+                                      : badgeTextColor === 'secondary-content'
+                                        ? undefined
+                                        : badgeTextColor,
+                                  border: 'none',
+                                }
+                              : {
+                                  color:
+                                    badgeTextColor === 'primary-content' ||
+                                    badgeTextColor === 'secondary-content'
+                                      ? undefined
+                                      : badgeTextColor,
+                                }
+                          }
+                        >
+                          <Heart className="inline-block w-4 h-4" />
+                          <span className="font-bold">
+                            {user?.patreon?.customBadgeText || 'Consumer'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Color Selectors */}
+                      <div className="flex items-center justify-center gap-4">
+                        {/* Background Color */}
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm gap-1 text-info self-start"
-                          onClick={() =>
-                            (
-                              document.getElementById(
-                                importType === 'other'
-                                  ? 'other_csv_help_modal'
-                                  : 'kechimochi_csv_help_modal'
-                              ) as HTMLDialogElement
-                            ).showModal()
-                          }
+                          className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
+                          onClick={openBadgeColorModal}
                         >
-                          <HelpCircle className="w-4 h-4" />
-                          {importType === 'other'
-                            ? 'CSV Format Help'
-                            : 'Kechimochi Import Help'}
+                          <div
+                            className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'bg-primary' : badgeColor === 'secondary' ? 'bg-secondary' : ''}`}
+                            style={
+                              badgeColor !== 'rainbow' &&
+                              badgeColor !== 'primary' &&
+                              badgeColor !== 'secondary'
+                                ? { backgroundColor: badgeColor }
+                                : undefined
+                            }
+                          />
+                          <span className="text-xs text-base-content/70">
+                            Background
+                          </span>
                         </button>
-                      )}
-                      <button
-                        type="submit"
-                        className="btn btn-info w-full"
-                        disabled={isImportPending}
-                      >
-                        {isImportPending ? (
-                          <>
-                            <span className="loading loading-spinner loading-sm"></span>
-                            Importing...
-                          </>
-                        ) : (
-                          <>
-                            <CloudUpload className="h-5 w-5" />
-                            Import File
-                          </>
-                        )}
-                      </button>
-                    </form>
-                  </div>
 
-                  <div>
-                    <h3 className="font-semibold mb-3 text-base-content">
-                      Export Data
-                    </h3>
-                    <p className="text-base-content/70 text-sm mb-3">
-                      Download all your logs as a CSV file that can be
-                      re-imported later.
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-success w-full"
-                      disabled={isExportPending}
-                      onClick={() => exportLogs()}
-                    >
-                      {isExportPending ? (
-                        <>
-                          <span className="loading loading-spinner loading-sm"></span>
-                          Exporting...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-5 w-5" />
-                          Export as CSV
-                        </>
-                      )}
-                    </button>
-                  </div>
+                        {/* Text Color */}
+                        <button
+                          type="button"
+                          className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity"
+                          onClick={openBadgeTextColorModal}
+                        >
+                          <div
+                            className={`w-16 h-16 rounded-lg border-2 border-base-300 cursor-pointer hover:border-primary transition-colors ${badgeTextColor === 'primary-content' ? 'bg-primary-content' : badgeTextColor === 'secondary-content' ? 'bg-secondary-content' : ''}`}
+                            style={
+                              badgeTextColor !== 'primary-content' &&
+                              badgeTextColor !== 'secondary-content'
+                                ? { backgroundColor: badgeTextColor }
+                                : undefined
+                            }
+                          />
+                          <span className="text-xs text-base-content/70">
+                            Text
+                          </span>
+                        </button>
+                      </div>
 
-                  <div>
-                    <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
-                      <Key className="h-4 w-4" />
-                      API Keys
-                    </h3>
-                    <p className="text-base-content/70 text-sm mb-3">
-                      Generate API keys to interact with the NihongoTracker API
-                      programmatically. Use the{' '}
-                      <a
-                        href="/api/docs"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="link link-primary"
-                      >
-                        API documentation
-                      </a>{' '}
-                      to explore available endpoints.
-                    </p>
-
-                    {/* New key creation */}
-                    <div className="flex gap-2 mb-4">
-                      <input
-                        type="text"
-                        className="input input-bordered focus:input-primary transition-colors flex-1"
-                        placeholder="Key name (e.g. My Script)"
-                        value={apiKeyName}
-                        maxLength={100}
-                        onChange={(e) => setApiKeyName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && apiKeyName.trim()) {
-                            generateApiKey({ name: apiKeyName.trim() });
-                          }
-                        }}
-                      />
+                      {/* Save Button */}
                       <button
                         type="button"
-                        className="btn btn-primary"
-                        disabled={!apiKeyName.trim() || isGeneratingKey}
-                        onClick={() =>
-                          generateApiKey({ name: apiKeyName.trim() })
-                        }
+                        className="btn btn-primary w-full"
+                        onClick={() => updateBadgeColors()}
+                        disabled={isUpdatingColors}
                       >
-                        {isGeneratingKey ? (
-                          <span className="loading loading-spinner loading-sm"></span>
+                        {isUpdatingColors ? (
+                          <>
+                            <span className="loading loading-spinner loading-sm"></span>
+                            Saving...
+                          </>
                         ) : (
-                          <Plus className="h-4 w-4" />
+                          <>
+                            <Check className="h-5 w-5" />
+                            Save Badge Colors
+                          </>
                         )}
-                        Generate
                       </button>
                     </div>
-
-                    {/* Newly created key banner */}
-                    {newlyCreatedKey && (
-                      <div className="alert alert-success mb-4 max-w-full overflow-hidden">
-                        <div className="w-full min-w-0 space-y-2">
-                          <p className="font-semibold text-sm leading-snug">
-                            Key created — copy it now, it won&apos;t be shown
-                            again!
-                          </p>
-
-                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 min-w-0">
-                            <div className="min-w-0">
-                              <code className="block w-full text-xs bg-success-content/10 rounded px-2 py-2 overflow-x-auto whitespace-nowrap select-all">
-                                {newlyCreatedKey.key}
-                              </code>
-                            </div>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-ghost shrink-0"
-                              onClick={() => {
-                                void navigator.clipboard.writeText(
-                                  newlyCreatedKey.key
-                                );
-                                setCopiedKeyId('new');
-                                setTimeout(() => setCopiedKeyId(null), 2000);
-                              }}
-                            >
-                              {copiedKeyId === 'new' ? (
-                                <Check className="h-4 w-4 text-success" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </button>
-                          </div>
-
-                          <div className="flex justify-end">
-                            <button
-                              type="button"
-                              className="btn btn-ghost btn-xs"
-                              onClick={() => setNewlyCreatedKey(null)}
-                            >
-                              Dismiss
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Existing keys list */}
-                    {isLoadingApiKeys ? (
-                      <div className="flex justify-center py-4">
-                        <span className="loading loading-spinner loading-md"></span>
-                      </div>
-                    ) : apiKeys.length === 0 ? (
-                      <p className="text-base-content/50 text-sm text-center py-4">
-                        No API keys yet.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {apiKeys.map((key) => (
-                          <div
-                            key={key._id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-base-200 border border-base-300"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">
-                                {key.name}
-                              </p>
-                              <p className="text-xs text-base-content/50 font-mono">
-                                {key.keyPrefix}••••••••
-                              </p>
-                              <p className="text-xs text-base-content/40 mt-0.5">
-                                Created{' '}
-                                {new Date(key.createdAt).toLocaleDateString()}
-                                {key.lastUsedAt && (
-                                  <>
-                                    {' '}
-                                    · Last used{' '}
-                                    {new Date(
-                                      key.lastUsedAt
-                                    ).toLocaleDateString()}
-                                  </>
-                                )}
-                                {key.expiresAt && (
-                                  <>
-                                    {' '}
-                                    · Expires{' '}
-                                    {new Date(
-                                      key.expiresAt
-                                    ).toLocaleDateString()}
-                                  </>
-                                )}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-ghost text-error hover:bg-error/10"
-                              disabled={isDeletingKey}
-                              onClick={() => deleteApiKey(key._id)}
-                              title="Revoke key"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
+                </div>
+              </div>
+            )}
 
-                  <div className="divider"></div>
+            {/* ── ADVANCED TAB ── */}
+            {activeTab === 'advanced' && (
+              <div className="space-y-6">
+                {/* Data Management */}
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-info/10 rounded-lg">
+                        <CloudDownload className="h-6 w-6 text-info" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">Data Management</h2>
+                        <p className="text-base-content/70">
+                          Import, sync, and export your data
+                        </p>
+                      </div>
+                    </div>
 
-                  <details
-                    ref={advancedOptionsRef}
-                    className="collapse collapse-arrow bg-base-200 border border-base-300"
-                    onToggle={handleAdvancedOptionsToggle}
-                  >
-                    <summary className="collapse-title font-semibold text-base-content">
-                      Advanced Options
-                    </summary>
-                    <div className="collapse-content space-y-4">
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            Discord ID
-                          </span>
-                        </label>
-                        <div className="relative w-full">
+                    <div className="space-y-8">
+                      {/* Import */}
+                      <div>
+                        <h3 className="font-semibold mb-3 text-base-content flex items-center gap-2">
+                          <CloudUpload className="h-4 w-4 text-info" />
+                          Import from File
+                        </h3>
+                        <form onSubmit={handleFileImport} className="space-y-3">
                           <input
-                            type="text"
-                            className="input input-bordered focus:input-primary transition-colors w-full pr-10"
-                            placeholder="Discord ID (e.g., 123456789012345678)"
-                            value={discordId}
-                            onChange={(e) => setDiscordId(e.target.value)}
+                            type="file"
+                            id="logFileImport"
+                            className="file-input file-input-bordered file-input-info w-full"
+                            accept=".csv,.tsv,.jsonl"
                           />
-                          {discordId && (
+                          <div className="dropdown dropdown-center w-full">
+                            <div
+                              tabIndex={0}
+                              role="button"
+                              className="btn btn-outline w-full gap-2"
+                            >
+                              {importType
+                                ? IMPORT_TYPE_LABELS[importType]
+                                : 'Choose the file format'}
+                            </div>
+                            <ul
+                              tabIndex={0}
+                              className="dropdown-content menu bg-base-300 rounded-box z-1 w-full p-2 shadow-sm"
+                            >
+                              <li>
+                                <button
+                                  type="button"
+                                  className={`hover:bg-base-200 ${importType === 'tmw' ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setImportType('tmw');
+                                    (
+                                      document.activeElement as HTMLElement
+                                    )?.blur();
+                                  }}
+                                >
+                                  TheMoeWay
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  type="button"
+                                  className={`hover:bg-base-200 ${importType === 'manabe' ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setImportType('manabe');
+                                    (
+                                      document.activeElement as HTMLElement
+                                    )?.blur();
+                                  }}
+                                >
+                                  Manabe
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  type="button"
+                                  className={`hover:bg-base-200 ${importType === 'vncr' ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setImportType('vncr');
+                                    (
+                                      document.activeElement as HTMLElement
+                                    )?.blur();
+                                  }}
+                                >
+                                  VN Club Resurrection
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  type="button"
+                                  className={`hover:bg-base-200 ${importType === 'kechimochi' ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setImportType('kechimochi');
+                                    (
+                                      document.activeElement as HTMLElement
+                                    )?.blur();
+                                  }}
+                                >
+                                  Kechimochi
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  type="button"
+                                  className={`hover:bg-base-200 ${importType === 'other' ? 'active' : ''}`}
+                                  onClick={() => {
+                                    setImportType('other');
+                                    (
+                                      document.activeElement as HTMLElement
+                                    )?.blur();
+                                  }}
+                                >
+                                  NihongoTracker | Other
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                          {(importType === 'other' ||
+                            importType === 'kechimochi') && (
                             <button
                               type="button"
-                              aria-label="Clear Discord ID"
-                              className="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-error"
-                              onClick={() => setDiscordId('')}
+                              className="btn btn-ghost btn-sm gap-1 text-info self-start"
+                              onClick={() =>
+                                (
+                                  document.getElementById(
+                                    importType === 'other'
+                                      ? 'other_csv_help_modal'
+                                      : 'kechimochi_csv_help_modal'
+                                  ) as HTMLDialogElement
+                                ).showModal()
+                              }
                             >
-                              <XCircle className="h-4 w-4" />
+                              <HelpCircle className="w-4 h-4" />
+                              {importType === 'other'
+                                ? 'CSV Format Help'
+                                : 'Kechimochi Import Help'}
                             </button>
                           )}
-                        </div>
-                        <label className="label flex-col items-start gap-1">
-                          <span className="label-text-alt text-base-content/60 break-all">
-                            {user?.discordId
-                              ? `Current: ${user.discordId}`
-                              : null}
-                          </span>
-                          <span className="label-text-alt text-base-content/60">
-                            Leave empty and save to unlink
-                          </span>
-                        </label>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold mb-3 text-base-content">
-                          Sync External Data
-                        </h3>
-                        <form onSubmit={handleSyncLogs}>
                           <button
                             type="submit"
-                            className="btn btn-warning w-full"
-                            disabled={isSyncPending}
+                            className="btn btn-info w-full"
+                            disabled={isImportPending}
                           >
-                            {isSyncPending ? (
+                            {isImportPending ? (
                               <>
                                 <span className="loading loading-spinner loading-sm"></span>
-                                Syncing...
+                                Importing...
                               </>
                             ) : (
                               <>
-                                <RefreshCw className="h-5 w-5" />
-                                Sync Logs
+                                <CloudUpload className="h-5 w-5" />
+                                Import File
                               </>
                             )}
                           </button>
                         </form>
                       </div>
+
+                      <div className="divider"></div>
+
+                      {/* Export */}
+                      <div>
+                        <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
+                          <Download className="h-4 w-4 text-success" />
+                          Export Data
+                        </h3>
+                        <p className="text-base-content/70 text-sm mb-3">
+                          Download all your logs as a CSV file that can be
+                          re-imported later.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-success w-full"
+                          disabled={isExportPending}
+                          onClick={() => exportLogs()}
+                        >
+                          {isExportPending ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Exporting...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-5 w-5" />
+                              Export as CSV
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="divider"></div>
+
+                      {/* API Keys */}
+                      <div>
+                        <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
+                          <Key className="h-4 w-4" />
+                          API Keys
+                        </h3>
+                        <p className="text-base-content/70 text-sm mb-3">
+                          Generate API keys to interact with the NihongoTracker
+                          API programmatically. Use the{' '}
+                          <a
+                            href="/api/docs"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="link link-primary"
+                          >
+                            API documentation
+                          </a>{' '}
+                          to explore available endpoints.
+                        </p>
+
+                        {/* New key creation */}
+                        <div className="flex gap-2 mb-4">
+                          <input
+                            type="text"
+                            className="input input-bordered focus:input-primary transition-colors flex-1"
+                            placeholder="Key name (e.g. My Script)"
+                            value={apiKeyName}
+                            maxLength={100}
+                            onChange={(e) => setApiKeyName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && apiKeyName.trim()) {
+                                generateApiKey({ name: apiKeyName.trim() });
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={!apiKeyName.trim() || isGeneratingKey}
+                            onClick={() =>
+                              generateApiKey({ name: apiKeyName.trim() })
+                            }
+                          >
+                            {isGeneratingKey ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                            Generate
+                          </button>
+                        </div>
+
+                        {/* Newly created key banner */}
+                        {newlyCreatedKey && (
+                          <div className="alert alert-success mb-4 max-w-full overflow-hidden">
+                            <div className="w-full min-w-0 space-y-2">
+                              <p className="font-semibold text-sm leading-snug">
+                                Key created — copy it now, it won&apos;t be
+                                shown again!
+                              </p>
+
+                              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 min-w-0">
+                                <div className="min-w-0">
+                                  <code className="block w-full text-xs bg-success-content/10 rounded px-2 py-2 overflow-x-auto whitespace-nowrap select-all">
+                                    {newlyCreatedKey.key}
+                                  </code>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-ghost shrink-0"
+                                  onClick={() => {
+                                    void navigator.clipboard.writeText(
+                                      newlyCreatedKey.key
+                                    );
+                                    setCopiedKeyId('new');
+                                    setTimeout(
+                                      () => setCopiedKeyId(null),
+                                      2000
+                                    );
+                                  }}
+                                >
+                                  {copiedKeyId === 'new' ? (
+                                    <Check className="h-4 w-4 text-success" />
+                                  ) : (
+                                    <Copy className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+
+                              <div className="flex justify-end">
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-xs"
+                                  onClick={() => setNewlyCreatedKey(null)}
+                                >
+                                  Dismiss
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Existing keys list */}
+                        {isLoadingApiKeys ? (
+                          <div className="flex justify-center py-4">
+                            <span className="loading loading-spinner loading-md"></span>
+                          </div>
+                        ) : apiKeys.length === 0 ? (
+                          <p className="text-base-content/50 text-sm text-center py-4">
+                            No API keys yet.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {apiKeys.map((key) => (
+                              <div
+                                key={key._id}
+                                className="flex items-center gap-3 p-3 rounded-lg bg-base-200 border border-base-300"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {key.name}
+                                  </p>
+                                  <p className="text-xs text-base-content/50 font-mono">
+                                    {key.keyPrefix}••••••••
+                                  </p>
+                                  <p className="text-xs text-base-content/40 mt-0.5">
+                                    Created{' '}
+                                    {new Date(
+                                      key.createdAt
+                                    ).toLocaleDateString()}
+                                    {key.lastUsedAt && (
+                                      <>
+                                        {' '}
+                                        · Last used{' '}
+                                        {new Date(
+                                          key.lastUsedAt
+                                        ).toLocaleDateString()}
+                                      </>
+                                    )}
+                                    {key.expiresAt && (
+                                      <>
+                                        {' '}
+                                        · Expires{' '}
+                                        {new Date(
+                                          key.expiresAt
+                                        ).toLocaleDateString()}
+                                      </>
+                                    )}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-ghost text-error hover:bg-error/10"
+                                  disabled={isDeletingKey}
+                                  onClick={() => deleteApiKey(key._id)}
+                                  title="Revoke key"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="divider"></div>
+
+                      {/* Sync External Data */}
+                      <details
+                        ref={advancedOptionsRef}
+                        className="collapse collapse-arrow bg-base-200 border border-base-300"
+                        onToggle={handleAdvancedOptionsToggle}
+                      >
+                        <summary className="collapse-title font-semibold text-base-content">
+                          Advanced Options
+                        </summary>
+                        <div className="collapse-content space-y-6 pt-2">
+                          {/* Discord ID */}
+                          <form
+                            onSubmit={handleUpdateDiscord}
+                            className="space-y-4"
+                          >
+                            <h3 className="font-semibold text-base-content flex items-center gap-2">
+                              Discord ID
+                            </h3>
+                            <div className="form-control w-full">
+                              <label className="label pt-0">
+                                <span className="label-text">Discord ID</span>
+                              </label>
+                              <div className="relative w-full">
+                                <input
+                                  type="text"
+                                  className="input input-bordered focus:input-primary transition-colors w-full pr-10"
+                                  placeholder="Discord ID (e.g., 123456789012345678)"
+                                  value={discordId}
+                                  onChange={(e) => setDiscordId(e.target.value)}
+                                />
+                                {discordId && (
+                                  <button
+                                    type="button"
+                                    aria-label="Clear Discord ID"
+                                    className="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-error"
+                                    onClick={() => setDiscordId('')}
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                              <label className="label flex-col items-start gap-1">
+                                <span className="label-text-alt text-base-content/60 break-all">
+                                  {user?.discordId
+                                    ? `Current: ${user.discordId}`
+                                    : null}
+                                </span>
+                                <span className="label-text-alt text-base-content/60">
+                                  Leave empty and save to unlink
+                                </span>
+                              </label>
+                            </div>
+                            <div className="form-control w-full">
+                              <label className="label">
+                                <span className="label-text flex items-center gap-2">
+                                  <Lock className="h-4 w-4 text-base-content/60" />
+                                  Current Password
+                                </span>
+                                <span className="label-text-alt text-base-content/50">
+                                  Required to save changes
+                                </span>
+                              </label>
+                              <input
+                                ref={discordPasswordRef}
+                                type="password"
+                                autoComplete="new-password"
+                                className="input input-bordered focus:input-primary transition-colors w-full"
+                                placeholder="Enter your password to confirm"
+                              />
+                            </div>
+                            <div className="flex justify-end">
+                              <button
+                                type="submit"
+                                className="btn btn-primary btn-sm"
+                                disabled={
+                                  isPending ||
+                                  discordId === (user?.discordId || '')
+                                }
+                              >
+                                {isPending ? (
+                                  <span className="loading loading-spinner loading-sm"></span>
+                                ) : (
+                                  <>
+                                    <Check className="h-4 w-4" />
+                                    Save Discord ID
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </form>
+
+                          <div className="divider my-1"></div>
+
+                          {/* Sync External Data */}
+                          <div>
+                            <h3 className="font-semibold mb-3 text-base-content">
+                              Sync External Data
+                            </h3>
+                            <form onSubmit={handleSyncLogs}>
+                              <button
+                                type="submit"
+                                className="btn btn-warning w-full"
+                                disabled={isSyncPending}
+                              >
+                                {isSyncPending ? (
+                                  <>
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                    Syncing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="h-5 w-5" />
+                                    Sync Logs
+                                  </>
+                                )}
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                      </details>
                     </div>
-                  </details>
-                </div>
-              </div>
-            </div>
-
-            <div className="card bg-base-100 shadow-sm border border-base-300/50">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-warning/10 rounded-lg">
-                    <Link2 className="h-6 w-6 text-warning" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Log Management</h2>
-                    <p className="text-base-content/70 text-sm">
-                      Match untracked logs with media
-                    </p>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="alert alert-info">
-                    <Info className="stroke-current shrink-0 h-6 w-6" />
-                    <div>
-                      <h3 className="font-bold">Match Media</h3>
-                      <div className="text-xs">
-                        Link your untracked logs to the correct media type.
+                {/* Log Management */}
+                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-warning/10 rounded-lg">
+                        <Link2 className="h-6 w-6 text-warning" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold">Log Management</h2>
+                        <p className="text-base-content/70 text-sm">
+                          Match untracked logs with media
+                        </p>
                       </div>
                     </div>
-                  </div>
 
-                  <button
-                    className="btn btn-warning w-full"
-                    onClick={() => navigate('/matchmedia')}
-                  >
-                    <Link2 className="h-5 w-5" />
-                    Go to Match Media
-                  </button>
-                </div>
-              </div>
-            </div>
+                    <div className="space-y-4">
+                      <div className="alert alert-info">
+                        <Info className="stroke-current shrink-0 h-6 w-6" />
+                        <div>
+                          <h3 className="font-bold">Match Media</h3>
+                          <div className="text-xs">
+                            Link your untracked logs to the correct media type.
+                          </div>
+                        </div>
+                      </div>
 
-            <div className="card bg-error/5 border border-error/20 shadow-sm">
-              <div className="card-body">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-error/10 rounded-lg">
-                    <TriangleAlert className="h-6 w-6 text-error" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-error">
-                      Danger Zone
-                    </h2>
-                    <p className="text-error/70 text-sm">
-                      Irreversible actions
-                    </p>
-                  </div>
-                </div>
-
-                <div className="alert alert-error alert-soft mb-4">
-                  <XCircle className="stroke-current shrink-0 h-6 w-6" />
-                  <div>
-                    <h3 className="font-bold">Warning!</h3>
-                    <div className="text-xs">
-                      This action cannot be undone and will permanently delete
-                      all your data.
+                      <button
+                        className="btn btn-warning w-full"
+                        onClick={() => navigate('/matchmedia')}
+                      >
+                        <Link2 className="h-5 w-5" />
+                        Go to Match Media
+                      </button>
                     </div>
                   </div>
                 </div>
-
-                <button
-                  className="btn btn-error w-full"
-                  onClick={() =>
-                    (
-                      document.getElementById(
-                        'clear_data_modal'
-                      ) as HTMLDialogElement
-                    )?.showModal()
-                  }
-                >
-                  <Trash2 className="h-5 w-5" />
-                  Clear All Data
-                </button>
               </div>
-            </div>
-          </div>
+            )}
+          </main>
         </div>
       </div>
 

@@ -43,6 +43,7 @@ interface logDataType {
   customDuration?: number;
   synonyms: string[];
   isAdult: boolean;
+  isAdultImage?: boolean;
   watchedEpisodes: number;
   time: number;
   chars: number;
@@ -85,6 +86,7 @@ const createInitialLogState = (
   customDuration: undefined,
   synonyms: [],
   isAdult: false,
+  isAdultImage: false,
   watchedEpisodes: 0,
   time: 0,
   chars: 0,
@@ -475,6 +477,7 @@ function LogScreen() {
       handleInputChange('cover', group.coverImage);
       handleInputChange('description', group.title.contentTitleNative);
       handleInputChange('isAdult', group.isAdult);
+      handleInputChange('isAdultImage', group.isAdultImage ?? false);
       handleInputChange(
         'mediaDescription',
         group.description
@@ -1482,7 +1485,7 @@ function LogScreen() {
                             src={logData.img}
                             alt="Selected Media"
                             className={`max-h-64 mx-auto rounded-lg shadow-lg mb-4 ${
-                              logData.isAdult &&
+                              (logData.type === 'vn' ? (logData.isAdultImage ?? false) : logData.isAdult) &&
                               user?.settings?.blurAdultContent
                                 ? 'blur-sm'
                                 : ''

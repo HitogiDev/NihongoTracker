@@ -16,6 +16,7 @@ import {
   Clapperboard,
   MonitorPlay,
   Plus,
+  Clock,
   X,
   Vote,
   BarChart,
@@ -32,14 +33,21 @@ import {
   manageMembershipRequestFn,
   kickClubMemberFn,
   transferLeadershipFn,
+  updateClubFn,
   updateClubWithFilesFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
-import { IMediaDocument, IClubMedia, youtubeChannelInfo } from '../types.d';
+import {
+  IMediaDocument,
+  IClubMedia,
+  IClubGoal,
+  youtubeChannelInfo,
+} from '../types.d';
 import { useUserDataStore } from '../store/userData';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
 import ClubRankingsTab from '../components/club/ClubRankingsTab';
+import ClubGoalsCard from '../components/club/ClubGoalsCard';
 import EditClubMediaModal from '../components/club/EditClubMediaModal';
 import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
@@ -49,6 +57,88 @@ import {
   getMaxClubMemberLimitForUser,
   getClubMemberLimitValidationMessage,
 } from '../utils/patreonClubLimits';
+
+type ClubGoalDraft = {
+  type: IClubGoal['type'];
+  period: IClubGoal['period'];
+  targetValue: number;
+  targetHours: number;
+  targetMinutes: number;
+  currentProgress: number;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+};
+
+function formatDateInputValue(value: string | Date): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function createClubGoalDraft(goal?: Partial<IClubGoal>): ClubGoalDraft {
+  const target = goal?.target || 0;
+  const isTimeGoal = goal?.type === 'time';
+  const startDate = goal?.startDate
+    ? formatDateInputValue(goal.startDate)
+    : undefined;
+  const endDate = goal?.endDate
+    ? formatDateInputValue(goal.endDate)
+    : undefined;
+  const createdAt = goal?.createdAt
+    ? formatDateInputValue(goal.createdAt)
+    : undefined;
+  const targetHours = isTimeGoal ? Math.floor(target / 60) : 0;
+  const targetMinutes = isTimeGoal ? target % 60 : 0;
+
+  return {
+    type: goal?.type || 'time',
+    period: goal?.period || 'monthly',
+    targetValue: isTimeGoal ? target : goal?.target || 1000,
+    targetHours,
+    targetMinutes,
+    currentProgress: goal?.currentProgress || 0,
+    isActive: goal?.isActive ?? true,
+    startDate:
+      goal?.period === 'custom'
+        ? startDate || formatDateInputValue(new Date())
+        : startDate,
+    endDate:
+      goal?.period === 'custom'
+        ? endDate ||
+          formatDateInputValue(
+            new Date(new Date().setMonth(new Date().getMonth() + 1))
+          )
+        : endDate,
+    createdAt: createdAt || formatDateInputValue(new Date()),
+  };
+}
+
+function clubGoalToDraft(goal: IClubGoal): ClubGoalDraft {
+  return createClubGoalDraft(goal);
+}
+
+function serializeClubGoalDraft(goal: ClubGoalDraft): IClubGoal {
+  const target =
+    goal.type === 'time'
+      ? goal.targetHours * 60 + goal.targetMinutes
+      : goal.targetValue;
+
+  return {
+    type: goal.type,
+    target: Math.max(1, Math.floor(target)),
+    period: goal.period,
+    currentProgress: 0,
+    isActive: goal.isActive,
+    startDate: goal.period === 'custom' ? goal.startDate : undefined,
+    endDate: goal.period === 'custom' ? goal.endDate : undefined,
+    createdAt: goal.createdAt,
+  };
+}
 
 function ClubDetailScreen() {
   const { clubId } = useParams<{ clubId: string }>();
@@ -69,11 +159,20 @@ function ClubDetailScreen() {
     enabled: !!clubId,
   });
 
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
   // Fetch club media
   const { data: clubMedia, isLoading: isMediaLoading } = useQuery({
     queryKey: ['clubMedia', clubId],
     queryFn: () => getClubMediaFn(clubId!, true),
     enabled: !!clubId && !!club?.isUserMember,
+  });
+
+  // Fetch past media for history modal (only when opened)
+  const { data: pastMedia, isLoading: isPastLoading } = useQuery({
+    queryKey: ['clubMedia', clubId, 'history'],
+    queryFn: () => getClubMediaFn(clubId!, false),
+    enabled: !!clubId && isHistoryOpen,
   });
 
   // Join club mutation
@@ -144,6 +243,7 @@ function ClubDetailScreen() {
     useState(false);
   const [showVotingManagement, setShowVotingManagement] = useState(false);
   const [isEditClubModalOpen, setIsEditClubModalOpen] = useState(false);
+  const [isClubGoalsModalOpen, setIsClubGoalsModalOpen] = useState(false);
   const [logModalOpen, setLogModalOpen] = useState(false);
 
   // Confirmation modal states
@@ -265,6 +365,8 @@ function ClubDetailScreen() {
     return club?.userRole === 'leader' || club?.userRole === 'moderator';
   })();
 
+  const canEditClubSettings = club?.userRole === 'leader';
+
   // Pending membership requests (leaders only)
   const { data: pendingRequests, refetch: refetchPending } = useQuery({
     queryKey: ['clubPending', clubId],
@@ -343,6 +445,8 @@ function ClubDetailScreen() {
     memberLimit: 100,
   });
 
+  const [clubGoalsForm, setClubGoalsForm] = useState<ClubGoalDraft[]>([]);
+
   // File upload state for edit
   const [editFiles, setEditFiles] = useState<{
     avatar?: File;
@@ -367,7 +471,6 @@ function ClubDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
       toast.success('Club updated successfully!');
       setIsEditClubModalOpen(false);
-      // Clear file selections
       setEditFiles({});
       setEditPreviews({});
     },
@@ -389,13 +492,13 @@ function ClubDetailScreen() {
         rules: club.rules || '',
         memberLimit: club.memberLimit,
       });
+      setClubGoalsForm((club.clubGoals || []).map(clubGoalToDraft));
     }
   }, [club]);
 
   const canLeaveClub = (() => {
     if (!club?.isUserMember) return false;
 
-    // If user is leader and there are other members, they can't leave without transferring leadership
     if (club.userRole === 'leader' && club.memberCount > 1) return false;
 
     return true;
@@ -417,31 +520,73 @@ function ClubDetailScreen() {
   const handleLeaveClick = () => {
     if (!club) return;
 
-    // Show confirmation for leaders disbanding the club
     if (club.userRole === 'leader' && club.memberCount === 1) {
       setIsDisbandConfirmModalOpen(true);
       return;
     }
 
-    // Show confirmation for regular members
     setIsLeaveConfirmModalOpen(true);
   };
+
+  const buildClubGoalsPayload = (goals: ClubGoalDraft[]) =>
+    goals.map((goal) => {
+      if (
+        goal.type === 'time' &&
+        goal.targetHours * 60 + goal.targetMinutes <= 0
+      ) {
+        throw new Error('Time goals need at least 1 minute');
+      }
+
+      if (goal.type !== 'time' && goal.targetValue <= 0) {
+        throw new Error('Goal targets must be greater than 0');
+      }
+
+      if (goal.period === 'custom') {
+        if (!goal.startDate || !goal.endDate) {
+          throw new Error('Custom goals need both start and end dates');
+        }
+
+        if (new Date(goal.endDate) < new Date(goal.startDate)) {
+          throw new Error('Custom goal end date must be after the start date');
+        }
+      }
+
+      return serializeClubGoalDraft(goal);
+    });
+
+  const clubGoalsMutation = useMutation({
+    mutationFn: (goals: ClubGoalDraft[]) => {
+      return updateClubFn(clubId!, {
+        clubGoals: buildClubGoalsPayload(goals),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['club', clubId] });
+      toast.success('Club goals updated successfully!');
+      setIsClubGoalsModalOpen(false);
+    },
+    onError: (error: unknown) => {
+      let errorMessage = 'Failed to update club goals';
+      if (error instanceof Error) errorMessage = error.message;
+      toast.error(errorMessage);
+    },
+  });
 
   // Handle selecting media from search results
   const handleSelectResult = (
     result: IMediaDocument & { __youtubeChannelInfo?: youtubeChannelInfo }
   ) => {
     const isVideoChannel =
-      mediaForm.mediaType === 'video' && result.__youtubeChannelInfo;
+      mediaForm.mediaType === 'video' && !!result.__youtubeChannelInfo;
     const title = isVideoChannel
-      ? result.__youtubeChannelInfo.channelTitle
+      ? result.__youtubeChannelInfo?.channelTitle || ''
       : result.title.contentTitleEnglish ||
         result.title.contentTitleRomaji ||
         result.title.contentTitleNative;
 
     // Get description from the first available description
     const description = isVideoChannel
-      ? result.__youtubeChannelInfo.channelDescription
+      ? result.__youtubeChannelInfo?.channelDescription || ''
       : result.description?.[0]?.description || '';
     const cleanDescription = description
       .replace(/<[^>]*>/g, '')
@@ -450,7 +595,7 @@ function ClubDetailScreen() {
     setMediaForm((prev) => ({
       ...prev,
       mediaId: isVideoChannel
-        ? result.__youtubeChannelInfo.channelId
+        ? result.__youtubeChannelInfo?.channelId || result.contentId
         : result.contentId,
       title,
       description: cleanDescription ? cleanDescription + '...' : '',
@@ -567,6 +712,28 @@ function ClubDetailScreen() {
       delete newPreviews[type];
       return newPreviews;
     });
+  };
+
+  const updateClubGoalDraft = (
+    index: number,
+    field: keyof ClubGoalDraft,
+    value: string | number | boolean
+  ) => {
+    setClubGoalsForm((prev) =>
+      prev.map((goal, goalIndex) =>
+        goalIndex === index ? { ...goal, [field]: value } : goal
+      )
+    );
+  };
+
+  const addClubGoalDraft = () => {
+    setClubGoalsForm((prev) => [...prev, createClubGoalDraft()]);
+  };
+
+  const removeClubGoalDraft = (index: number) => {
+    setClubGoalsForm((prev) =>
+      prev.filter((_, goalIndex) => goalIndex !== index)
+    );
   };
 
   const getMediaTypeIcon = (type: string) => {
@@ -704,7 +871,7 @@ function ClubDetailScreen() {
               <div className="flex gap-2 justify-center sm:justify-end mt-4 sm:mt-0">
                 {user && club.isUserMember && club.userStatus === 'active' ? (
                   <>
-                    {canManageClub && (
+                    {canEditClubSettings && (
                       <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setIsEditClubModalOpen(true)}
@@ -831,32 +998,8 @@ function ClubDetailScreen() {
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Club Info */}
+            {/* Left Column - Club Info (now contains Activity Feed and Voting) */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Description */}
-              {club.description && (
-                <div className="card bg-base-100 shadow-sm">
-                  <div className="card-body">
-                    <h2 className="card-title text-lg mb-4">About</h2>
-                    <p className="text-base-content/80 whitespace-pre-wrap">
-                      {club.description}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Rules */}
-              {club.rules && (
-                <div className="card bg-base-100 shadow-sm">
-                  <div className="card-body">
-                    <h2 className="card-title text-lg mb-4">Rules</h2>
-                    <p className="text-base-content/80 whitespace-pre-wrap">
-                      {club.rules}
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* Media Voting Section */}
               <div className="card bg-base-100 shadow-sm">
                 <div className="card-body">
@@ -902,15 +1045,59 @@ function ClubDetailScreen() {
                   />
                 </div>
               </div>
+              {/* Recent Activity (Activity Feed) */}
+              {club.isUserMember && club.userStatus === 'active' && (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-2">Activity Feed</h2>
+                    <p className="text-sm text-base-content/60 mb-4">
+                      What members are logging and recent club activity.
+                    </p>
+                    <RecentActivity clubId={club._id} />
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Column - Tags and Recent Activity */}
+            {/* Right Column - Sidebar: About, Rules, Tags */}
             <div className="space-y-6">
+              {canEditClubSettings && (
+                <ClubGoalsCard
+                  clubGoals={club.clubGoals}
+                  canManage={canEditClubSettings}
+                  onManage={() => setIsClubGoalsModalOpen(true)}
+                />
+              )}
+
+              {/* About */}
+              {club.description && (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-2">About</h2>
+                    <p className="text-base-content/80 whitespace-pre-wrap text-sm">
+                      {club.description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Rules */}
+              {club.rules && (
+                <div className="card bg-base-100 shadow-sm">
+                  <div className="card-body">
+                    <h2 className="card-title text-lg mb-2">Rules</h2>
+                    <p className="text-base-content/80 whitespace-pre-wrap text-sm">
+                      {club.rules}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Tags */}
               {club.tags && club.tags.length > 0 && (
                 <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
-                    <h2 className="card-title text-lg mb-4">Tags</h2>
+                    <h2 className="card-title text-lg mb-2">Tags</h2>
                     <div className="flex flex-wrap gap-2">
                       {club.tags.map((tag) => (
                         <span key={tag} className="badge badge-outline">
@@ -921,13 +1108,75 @@ function ClubDetailScreen() {
                   </div>
                 </div>
               )}
-
-              {/* Recent Activity */}
-              {club.isUserMember && club.userStatus === 'active' && (
-                <RecentActivity clubId={club._id} />
-              )}
             </div>
           </div>
+        )}
+
+        {isHistoryOpen && (
+          <dialog open className="modal modal-open">
+            <div className="modal-box w-11/12 max-w-4xl">
+              <h3 className="font-bold text-lg mb-4">Past Media</h3>
+
+              {isPastLoading ? (
+                <div className="flex justify-center py-8">
+                  <span className="loading loading-spinner loading-md"></span>
+                </div>
+              ) : pastMedia?.media && pastMedia.media.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {pastMedia.media.map((m) => {
+                    const contentId = m.mediaDocument?.contentId || m.mediaId;
+                    const url = `/${m.mediaType}/${encodeURIComponent(
+                      String(contentId)
+                    )}?clubId=${encodeURIComponent(String(clubId!))}&clubMediaId=${encodeURIComponent(
+                      String(m._id)
+                    )}`;
+
+                    return (
+                      <div
+                        key={m._id}
+                        className="flex items-center justify-between p-3 rounded border border-base-300 bg-base-100"
+                      >
+                        <div>
+                          <div className="font-medium">{m.title}</div>
+                          <div className="text-xs text-base-content/60">
+                            {new Date(m.startDate).toLocaleDateString()} —{' '}
+                            {new Date(m.endDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {m.mediaDocument && (
+                            <Link
+                              to={url}
+                              className="btn btn-outline btn-sm"
+                              onClick={() => setIsHistoryOpen(false)}
+                            >
+                              View
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-base-content/60">
+                  <p>No past media found</p>
+                </div>
+              )}
+
+              <div className="modal-action">
+                <form method="dialog" className="modal-backdrop">
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setIsHistoryOpen(false)}
+                  >
+                    Close
+                  </button>
+                </form>
+              </div>
+            </div>
+          </dialog>
         )}
 
         {/* Media Tab */}
@@ -937,15 +1186,26 @@ function ClubDetailScreen() {
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="card-title text-lg">Club Media</h2>
-                  {canManageClub && (
+                  <div className="flex items-center gap-2">
                     <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => setIsAddMediaModalOpen(true)}
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setIsHistoryOpen(true)}
+                      title="View past media"
                     >
-                      <Plus className="text-lg" />
-                      <span className="hidden sm:inline">Add Media</span>
+                      <Clock className="w-4 h-4" />
+                      <span className="hidden sm:inline ml-1">History</span>
                     </button>
-                  )}
+
+                    {canManageClub && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setIsAddMediaModalOpen(true)}
+                      >
+                        <Plus className="text-lg" />
+                        <span className="hidden sm:inline">Add Media</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {isMediaLoading ? (
@@ -970,7 +1230,9 @@ function ClubDetailScreen() {
                               }
                               alt={media.title}
                               className={`w-full h-full object-cover ${
-                                media.mediaDocument.isAdult &&
+                                (media.mediaType === 'vn' || media.mediaDocument.type === 'vn'
+                                  ? (media.mediaDocument.isAdultImage ?? false)
+                                  : media.mediaDocument.isAdult) &&
                                 user?.settings?.blurAdultContent
                                   ? 'blur-sm'
                                   : ''
@@ -1045,16 +1307,23 @@ function ClubDetailScreen() {
                           {club.isUserMember &&
                             club.userStatus === 'active' && (
                               <div className="card-actions justify-between">
-                                <button
-                                  className="btn btn-outline btn-sm flex-1"
-                                  onClick={() =>
-                                    navigate(
-                                      `/clubs/${clubId}/media/${media._id}`
-                                    )
-                                  }
-                                >
-                                  View Details
-                                </button>
+                                {media.mediaDocument && (
+                                  <Link
+                                    to={`/${media.mediaType}/${encodeURIComponent(
+                                      String(
+                                        media.mediaDocument?.contentId ||
+                                          media.mediaId
+                                      )
+                                    )}?clubId=${encodeURIComponent(
+                                      String(clubId!)
+                                    )}&clubMediaId=${encodeURIComponent(
+                                      String(media._id)
+                                    )}`}
+                                    className="btn btn-outline btn-sm flex-1"
+                                  >
+                                    View Details
+                                  </Link>
+                                )}
 
                                 <div className="flex gap-2">
                                   {canManageClub && (
@@ -1632,6 +1901,17 @@ function ClubDetailScreen() {
                   return;
                 }
 
+                try {
+                  buildClubGoalsPayload(clubGoalsForm);
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : 'Invalid club goal configuration'
+                  );
+                  return;
+                }
+
                 updateClubMutation.mutate(editForm);
               }}
               className="space-y-4"
@@ -1924,6 +2204,356 @@ function ClubDetailScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Club Goals Modal */}
+      {isClubGoalsModalOpen && club && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-3xl">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="font-bold text-lg">Club Goals</h3>
+                <p className="text-sm text-base-content/60">
+                  Create shared goals that reset by period, use a custom date
+                  range, or stay active indefinitely.
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                onClick={() => setIsClubGoalsModalOpen(false)}
+              >
+                <X className="text-lg" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="text-sm text-base-content/70">
+                {clubGoalsForm.length === 0
+                  ? 'No goals yet. Add one to get started.'
+                  : 'Adjust the goals below and save when ready.'}
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={addClubGoalDraft}
+              >
+                <Plus className="w-4 h-4" />
+                Add Goal
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-4">
+              {clubGoalsForm.length === 0 ? (
+                <div className="rounded-[2rem] border-2 border-dashed border-base-300 bg-base-200/30 p-8 text-center min-h-[280px] flex flex-col items-center justify-center gap-5">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-base-content/90">
+                    <Plus
+                      className="h-14 w-14 text-base-content/90"
+                      strokeWidth={2.4}
+                    />
+                  </div>
+                  <div className="space-y-1 max-w-sm">
+                    <p className="text-xl font-semibold text-base-content">
+                      Add a club goal
+                    </p>
+                    <p className="text-sm text-base-content/70">
+                      Club goals can make club members be more consistent.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                clubGoalsForm.map((goal, index) => (
+                  <div
+                    key={`${goal.type}-${goal.period}-${index}`}
+                    className="rounded-lg border border-base-300 bg-base-200/30 p-4 space-y-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-primary badge-sm">
+                          Goal {index + 1}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm text-error"
+                        onClick={() => removeClubGoalDraft(index)}
+                      >
+                        <X className="w-4 h-4" />
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">
+                          <span className="label-text">Type</span>
+                        </label>
+                        <select
+                          className="select select-bordered w-full"
+                          value={goal.type}
+                          onChange={(e) => {
+                            const nextType = e.target
+                              .value as ClubGoalDraft['type'];
+                            setClubGoalsForm((prev) =>
+                              prev.map((item, goalIndex) => {
+                                if (goalIndex !== index) return item;
+
+                                if (nextType === 'time') {
+                                  const fallbackMinutes = Math.max(
+                                    item.targetValue,
+                                    0
+                                  );
+
+                                  return {
+                                    ...item,
+                                    type: nextType,
+                                    targetHours: Math.floor(
+                                      fallbackMinutes / 60
+                                    ),
+                                    targetMinutes: fallbackMinutes % 60,
+                                  };
+                                }
+
+                                return {
+                                  ...item,
+                                  type: nextType,
+                                  targetValue:
+                                    item.targetHours * 60 +
+                                      item.targetMinutes ||
+                                    item.targetValue ||
+                                    1000,
+                                };
+                              })
+                            );
+                          }}
+                        >
+                          <option value="time">Time</option>
+                          <option value="chars">Characters</option>
+                          <option value="episodes">Episodes</option>
+                          <option value="pages">Pages</option>
+                        </select>
+                      </div>
+
+                      {goal.type === 'time' ? (
+                        <div className="grid grid-cols-2 gap-3 md:col-span-1">
+                          <div>
+                            <label className="label">
+                              <span className="label-text">Hours</span>
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              className="input input-bordered w-full"
+                              value={goal.targetHours}
+                              onChange={(e) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'targetHours',
+                                  Math.max(parseInt(e.target.value, 10) || 0, 0)
+                                )
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="label">
+                              <span className="label-text">Minutes</span>
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={59}
+                              className="input input-bordered w-full"
+                              value={goal.targetMinutes}
+                              onChange={(e) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'targetMinutes',
+                                  Math.min(
+                                    Math.max(
+                                      parseInt(e.target.value, 10) || 0,
+                                      0
+                                    ),
+                                    59
+                                  )
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="label">
+                            <span className="label-text">Target</span>
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="input input-bordered w-full"
+                            value={goal.targetValue}
+                            onChange={(e) =>
+                              updateClubGoalDraft(
+                                index,
+                                'targetValue',
+                                parseInt(e.target.value, 10) || 0
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="label">
+                          <span className="label-text">Period</span>
+                        </label>
+                        <select
+                          className="select select-bordered w-full"
+                          value={goal.period}
+                          onChange={(e) =>
+                            setClubGoalsForm((prev) =>
+                              prev.map((item, goalIndex) => {
+                                if (goalIndex !== index) return item;
+
+                                const nextPeriod = e.target
+                                  .value as ClubGoalDraft['period'];
+                                if (nextPeriod === 'custom') {
+                                  const today = formatDateInputValue(
+                                    new Date()
+                                  );
+                                  const nextMonth = formatDateInputValue(
+                                    new Date(
+                                      new Date().setMonth(
+                                        new Date().getMonth() + 1
+                                      )
+                                    )
+                                  );
+
+                                  return {
+                                    ...item,
+                                    period: nextPeriod,
+                                    startDate: item.startDate || today,
+                                    endDate: item.endDate || nextMonth,
+                                  };
+                                }
+
+                                return {
+                                  ...item,
+                                  period: nextPeriod,
+                                  startDate: undefined,
+                                  endDate: undefined,
+                                };
+                              })
+                            )
+                          }
+                        >
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                          <option value="custom">Custom</option>
+                          <option value="indefinite">Indefinite</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-end">
+                        <label className="label cursor-pointer gap-3 justify-start w-full">
+                          <span className="label-text">Active</span>
+                          <input
+                            type="checkbox"
+                            className="toggle toggle-primary"
+                            checked={goal.isActive}
+                            onChange={(e) =>
+                              updateClubGoalDraft(
+                                index,
+                                'isActive',
+                                e.target.checked
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      {goal.period === 'custom' ? (
+                        <>
+                          <div>
+                            <label className="label">
+                              <span className="label-text">Start Date</span>
+                            </label>
+                            <input
+                              type="date"
+                              className="input input-bordered w-full"
+                              value={goal.startDate || ''}
+                              onChange={(e) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'startDate',
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+
+                          <div>
+                            <label className="label">
+                              <span className="label-text">End Date</span>
+                            </label>
+                            <input
+                              type="date"
+                              className="input input-bordered w-full"
+                              value={goal.endDate || ''}
+                              onChange={(e) =>
+                                updateClubGoalDraft(
+                                  index,
+                                  'endDate',
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="md:col-span-2 text-xs text-base-content/60 rounded-lg bg-base-200/50 p-3">
+                          {goal.period === 'weekly'
+                            ? 'This goal resets every week.'
+                            : goal.period === 'monthly'
+                              ? 'This goal resets every month.'
+                              : 'This goal stays active until you pause it.'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setIsClubGoalsModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={clubGoalsMutation.isPending}
+                onClick={() => {
+                  try {
+                    buildClubGoalsPayload(clubGoalsForm);
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : 'Invalid club goal configuration'
+                    );
+                    return;
+                  }
+
+                  clubGoalsMutation.mutate(clubGoalsForm);
+                }}
+              >
+                {clubGoalsMutation.isPending ? 'Saving...' : 'Save Goals'}
+              </button>
+            </div>
           </div>
         </div>
       )}

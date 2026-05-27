@@ -67,6 +67,9 @@ export interface IUserSettings {
   timezone?: string;
   hiddenRecentMedia?: string[];
   statsLayout?: StatsGroupLayout[];
+  notificationsLastViewedAt?: Date | null;
+  dismissedNotificationClubIds?: string[];
+  dismissedNotificationClubAt?: Record<string, Date | string>;
 }
 
 export interface IPatreonData {
@@ -368,11 +371,11 @@ export interface IMediaDocument {
   volumes?: number;
   seasons?: number;
   runtime?: number;
-  igdbId?: number;
   igdbUpdatedAt?: number;
   platforms?: string[];
   synonyms?: string[];
   isAdult: boolean;
+  isAdultImage?: boolean;
   lastLogDate?: Date;
   isCompleted?: boolean;
   completedAt?: Date | null;
@@ -530,11 +533,11 @@ export interface IContentMedia {
   chapters?: number;
   volumes?: number;
   runtime?: number;
-  igdbId?: number;
   igdbUpdatedAt?: number;
   platforms?: string[];
   synonyms?: string[] | null;
   isAdult: boolean;
+  isAdultImage?: boolean;
   date?: Date | null;
   // YouTube specific fields
   channelId?: string;
@@ -790,6 +793,17 @@ export interface IClubMedia {
   updatedAt?: Date;
 }
 
+export interface IClubGoal {
+  type: 'time' | 'chars' | 'episodes' | 'pages';
+  target: number;
+  period: 'weekly' | 'monthly' | 'custom' | 'indefinite';
+  currentProgress: number;
+  isActive: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  createdAt?: Date;
+}
+
 export interface IMediaReview extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
@@ -824,6 +838,7 @@ export interface IClub extends Document {
   totalXp: number;
   members: IClubMember[];
   currentMedia: IClubMedia[];
+  clubGoals: IClubGoal[];
   tags: string[];
   memberLimit: number;
   rules?: string;
@@ -841,6 +856,7 @@ export interface ICreateClubRequest {
   tags?: string[];
   rules?: string;
   memberLimit?: number;
+  clubGoals?: IClubGoal[];
 }
 
 export interface IClubResponse {
@@ -854,6 +870,7 @@ export interface IClubResponse {
   totalXp: number;
   members: IClubMember[];
   currentMedia: IClubMedia[];
+  clubGoals: IClubGoal[];
   tags: string[];
   memberLimit: number;
   rules?: string;

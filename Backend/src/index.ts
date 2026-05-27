@@ -21,6 +21,7 @@ import {
 } from './services/meilisearch/mediaIndex.js';
 import meiliClient from './services/meilisearch/meiliClient.js';
 import { initIgdbDumpScheduler } from './services/igdbDumpScheduler.js';
+import { initVndbDumpScheduler } from './services/vndbDumpScheduler.js';
 
 connectDB();
 
@@ -65,6 +66,7 @@ bootstrapMeilisearch().catch((err) =>
 );
 
 initIgdbDumpScheduler();
+initVndbDumpScheduler();
 
 const httpServer = createServer(app);
 

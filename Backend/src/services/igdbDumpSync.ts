@@ -62,7 +62,6 @@ interface INormalizedGameMedia {
   coverImage?: string;
   description?: Array<{ description: string; language: 'eng' }>;
   type: 'game';
-  igdbId: number;
   igdbUpdatedAt: number;
   platforms: string[];
   genres: string[];
@@ -739,7 +738,6 @@ function normalizeGameRow(
       contentTitleEnglish: nameValue,
     },
     type: 'game',
-    igdbId: id,
     igdbUpdatedAt: updatedAt,
     platforms,
     genres,
