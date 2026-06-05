@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ICreateLog,
   ILog,
@@ -11,6 +11,8 @@ import {
   getMediaFn,
   getUserFn,
   getUserLogsFn,
+  searchYouTubePlaylistFn,
+  IPlaylistResult,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -22,9 +24,20 @@ import { validateLogData } from '../utils/validation';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import MediaStats from '../components/MediaStats';
 import TagSelector from '../components/TagSelector';
-import { Calendar, CircleCheck, CircleX, Info, Search } from 'lucide-react';
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  CircleX,
+  Info,
+  Search,
+} from 'lucide-react';
 import XpAnimation from '../components/XpAnimation';
 import LevelUpAnimation from '../components/LevelUpAnimation';
+import PlaylistSelectorModal, {
+  PlaylistVideoWithOverride,
+} from '../components/PlaylistSelectorModal';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -191,6 +204,20 @@ function LogScreen() {
   const [showLevelUpAnimation, setShowLevelUpAnimation] = useState(false);
   const [xpToCurrentLevel, setXpToCurrentLevel] = useState(0);
   const [xpToNextLevel, setXpToNextLevel] = useState(1);
+
+  // ── Playlist state ────────────────────────────────────────────────────────
+  const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const [isFetchingPlaylist, setIsFetchingPlaylist] = useState(false);
+  const [playlistResult, setPlaylistResult] = useState<IPlaylistResult | null>(
+    null
+  );
+  const [isBatchLogging, setIsBatchLogging] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const suggestionRef = useRef<HTMLDivElement>(null);
   const pendingVolumeRef = useRef<{
     type: ILog['type'] | null;
@@ -240,6 +267,126 @@ function LogScreen() {
       return submittedVolume;
     }
   };
+  // ── Playlist helpers ────────────────────────────────────────────────────────
+  // queryClient is declared here so handlePlaylistConfirm can reference it
+  const queryClient = useQueryClient();
+
+  const detectPlaylistUrl = useCallback((value: string): string | null => {
+    try {
+      const parsed = new URL(
+        value.startsWith('http://') || value.startsWith('https://')
+          ? value
+          : `https://${value}`
+      );
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const isYouTubeHost = host.endsWith('youtube.com') || host === 'youtu.be';
+      if (!isYouTubeHost) return null;
+      const list = parsed.searchParams.get('list');
+      if (list && list.length > 2) return value; // return original URL
+    } catch {
+      /* not a URL */
+    }
+    return null;
+  }, []);
+
+  const handlePlaylistPaste = useCallback(async (url: string) => {
+    setPlaylistResult(null);
+    setPlaylistModalOpen(true);
+    setIsFetchingPlaylist(true);
+    try {
+      const result = await searchYouTubePlaylistFn(url);
+      setPlaylistResult(result);
+    } catch (err) {
+      toast.error(
+        err instanceof AxiosError
+          ? (err.response?.data?.message ?? 'Failed to load playlist')
+          : 'Failed to load playlist'
+      );
+      setPlaylistModalOpen(false);
+    } finally {
+      setIsFetchingPlaylist(false);
+    }
+  }, []);
+
+  const handlePlaylistConfirm = useCallback(
+    async (selected: PlaylistVideoWithOverride[]) => {
+      if (!selected.length) return;
+      setIsBatchLogging(true);
+      setBatchProgress({ current: 0, total: selected.length });
+      const playlistBatchId =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `playlist-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      const playlistBatchTitle =
+        playlistResult?.playlistTitle ?? 'YouTube playlist';
+
+      let loggedCount = 0;
+      for (const { playlistVideo, override } of selected) {
+        const { video, channel } = playlistVideo;
+        const totalMinutes = override.durationMinutes;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        try {
+          await createLogFn({
+            type: 'video',
+            description: override.description || video.title.contentTitleNative,
+            playlistBatchId,
+            playlistBatchTitle,
+            mediaId: channel.contentId,
+            mediaData: {
+              contentId: channel.contentId,
+              contentTitleNative: channel.title.contentTitleNative,
+              contentTitleEnglish:
+                channel.title.contentTitleEnglish ??
+                channel.title.contentTitleNative,
+              contentImage: channel.contentImage ?? null,
+              coverImage: channel.contentImage ?? null,
+              description: undefined,
+              isAdult: false,
+            },
+            time: hours * 60 + minutes || undefined,
+            date: override.unknownDate ? undefined : override.date,
+            unknownDate: override.unknownDate,
+            private: false,
+            isAdult: false,
+          } as ICreateLog);
+          loggedCount++;
+        } catch (err) {
+          console.error(
+            'Playlist batch log error for video',
+            video.contentId,
+            err
+          );
+        }
+
+        setBatchProgress((prev) =>
+          prev ? { ...prev, current: prev.current + 1 } : null
+        );
+      }
+
+      setIsBatchLogging(false);
+      setBatchProgress(null);
+      setPlaylistModalOpen(false);
+      setPlaylistResult(null);
+
+      void queryClient.invalidateQueries({
+        predicate: (q) =>
+          ['logs', user?.username, 'user', 'recentLogs', 'dailyGoals'].includes(
+            q.queryKey[0] as string
+          ),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+      invalidateLogScreenQueries(queryClient, 'video', user?.username);
+
+      toast.success(
+        `Logged ${loggedCount} of ${selected.length} playlist video${selected.length !== 1 ? 's' : ''} successfully!`
+      );
+    },
+    [queryClient, user?.username, playlistResult?.playlistTitle]
+  );
+
+  // ── End playlist helpers ────────────────────────────────────────────────────
 
   const {
     data: searchResult,
@@ -252,9 +399,6 @@ function LogScreen() {
     1,
     5
   );
-
-  const queryClient = useQueryClient();
-
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
     onSuccess: async () => {
@@ -792,9 +936,18 @@ function LogScreen() {
                           onBlur={() => {
                             setTimeout(() => setIsSuggestionsOpen(false), 200);
                           }}
-                          onChange={(e) =>
-                            handleFieldChange('mediaName', e.target.value)
-                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (
+                              logData.type === 'video' &&
+                              detectPlaylistUrl(value)
+                            ) {
+                              void handlePlaylistPaste(value);
+                              // Don't populate the field — keep it clean
+                              return;
+                            }
+                            handleFieldChange('mediaName', value);
+                          }}
                           value={logData.mediaName}
                         />
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/50">
@@ -1433,9 +1586,26 @@ function LogScreen() {
                                 className="dropdown-content z-[1000] card card-compact w-72 p-2 shadow bg-base-100 border border-base-300"
                               >
                                 <DayPicker
-                                  className="react-day-picker mx-auto"
+                                  className="rdp-themed"
+                                  components={{
+                                    Chevron: ({
+                                      orientation,
+                                    }: {
+                                      orientation?: string;
+                                    }) => {
+                                      const iconClass =
+                                        'w-4 h-4 text-base-content/60';
+                                      if (orientation === 'left')
+                                        return (
+                                          <ChevronLeft className={iconClass} />
+                                        );
+                                      return (
+                                        <ChevronRight className={iconClass} />
+                                      );
+                                    },
+                                  }}
                                   mode="single"
-                                  selected={logData.date || undefined}
+                                  selected={logData.date ?? new Date()}
                                   onSelect={(date) => {
                                     handleInputChange(
                                       'date',
@@ -1485,7 +1655,9 @@ function LogScreen() {
                             src={logData.img}
                             alt="Selected Media"
                             className={`max-h-64 mx-auto rounded-lg shadow-lg mb-4 ${
-                              (logData.type === 'vn' ? (logData.isAdultImage ?? false) : logData.isAdult) &&
+                              (logData.type === 'vn'
+                                ? (logData.isAdultImage ?? false)
+                                : logData.isAdult) &&
                               user?.settings?.blurAdultContent
                                 ? 'blur-sm'
                                 : ''
@@ -1588,6 +1760,39 @@ function LogScreen() {
           onClick={() => setShowXpAnimation(false)}
         >
           <XpAnimation initialXp={initialXp} finalXp={finalXp} />
+        </div>
+      )}
+
+      {/* ── Playlist selector modal ──────────────────────────────────── */}
+      <PlaylistSelectorModal
+        isOpen={playlistModalOpen}
+        isFetching={isFetchingPlaylist}
+        playlistResult={playlistResult}
+        onClose={() => {
+          if (!isBatchLogging) {
+            setPlaylistModalOpen(false);
+            setPlaylistResult(null);
+          }
+        }}
+        onConfirm={handlePlaylistConfirm}
+        isSubmitting={isBatchLogging}
+      />
+
+      {/* ── Batch-logging progress banner ───────────────────────────── */}
+      {isBatchLogging && batchProgress && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-base-100 border border-base-content/20 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-72">
+          <span className="loading loading-spinner loading-sm text-primary" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold">Logging playlist videos…</p>
+            <progress
+              className="progress progress-primary w-full mt-1"
+              value={batchProgress.current}
+              max={batchProgress.total}
+            />
+            <p className="text-xs text-base-content/60 mt-0.5">
+              {batchProgress.current} / {batchProgress.total}
+            </p>
+          </div>
         </div>
       )}
     </div>

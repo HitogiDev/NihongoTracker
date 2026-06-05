@@ -5,12 +5,17 @@ import {
   assignMediaFn,
   getUserLogsFn,
   searchYouTubeVideoFn,
+  searchYouTubePlaylistFn,
+  IPlaylistResult,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import PlaylistSelectorModal, {
+  PlaylistVideoWithOverride,
+} from './PlaylistSelectorModal';
 
 interface VideoLogsProps {
   username?: string;
@@ -184,6 +189,15 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
   const [pasteUrl, setPasteUrl] = useState<string>('');
   const [isMatchingPaste, setIsMatchingPaste] = useState(false);
 
+  // ── Playlist state ──────────────────────────────────────────────────────
+  const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
+  const [isFetchingPlaylist, setIsFetchingPlaylist] = useState(false);
+  const [playlistResult, setPlaylistResult] = useState<IPlaylistResult | null>(
+    null
+  );
+  const [isBatchAssigning, setIsBatchAssigning] = useState(false);
+  // ───────────────────────────────────────────────────────────────────────
+
   const handlePasteMatch = useCallback(async () => {
     const entries = Object.entries(filteredGroupedLogs);
     const hasSelected = selectedLogs && selectedLogs.length > 0;
@@ -202,6 +216,40 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       toast.info('Select one or more logs or open a group to match');
       return;
     }
+
+    // ── Detect playlist URL first ────────────────────────────────────────
+    try {
+      const parsed = new URL(
+        (pasteUrl || '').startsWith('http') ? pasteUrl : `https://${pasteUrl}`
+      );
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      const isYouTubeHost = host.endsWith('youtube.com') || host === 'youtu.be';
+      const list = parsed.searchParams.get('list');
+      if (isYouTubeHost && list && list.length > 2) {
+        // It's a playlist URL — open the selector modal
+        setPlaylistResult(null);
+        setPlaylistModalOpen(true);
+        setIsFetchingPlaylist(true);
+        try {
+          const result = await searchYouTubePlaylistFn(pasteUrl);
+          setPlaylistResult(result);
+        } catch (err) {
+          toast.error(
+            err instanceof AxiosError
+              ? (err.response?.data?.message ?? 'Failed to load playlist')
+              : 'Failed to load playlist'
+          );
+          setPlaylistModalOpen(false);
+        } finally {
+          setIsFetchingPlaylist(false);
+          setPasteUrl('');
+        }
+        return;
+      }
+    } catch {
+      /* not a URL — fall through to single video */
+    }
+    // ── End playlist detection ───────────────────────────────────────────
 
     const videoId = extractYouTubeVideoId(pasteUrl || '');
     if (!videoId) {
@@ -254,6 +302,71 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     assignMedia,
     extractYouTubeVideoId,
   ]);
+
+  // ── Handle playlist confirm (assign each channel to the selected logs) ──
+  const handlePlaylistConfirm = useCallback(
+    async (selected: PlaylistVideoWithOverride[]) => {
+      if (!selected.length) return;
+
+      const entries = Object.entries(filteredGroupedLogs);
+      const hasSelected = selectedLogs && selectedLogs.length > 0;
+      const group =
+        selectedGroup !== null && entries[selectedGroup]
+          ? (entries[selectedGroup][1] as ILog[])
+          : null;
+      const logsToAssign: ILog[] | null = hasSelected
+        ? selectedLogs
+        : group && group.length
+          ? group
+          : null;
+
+      if (!logsToAssign || logsToAssign.length === 0) {
+        toast.info('Select one or more logs or open a group first');
+        setPlaylistModalOpen(false);
+        return;
+      }
+
+      setIsBatchAssigning(true);
+
+      // Group selected videos by channel so we send one assign call per channel
+      const byChannel = new Map<string, IMediaDocument>();
+      for (const { playlistVideo } of selected) {
+        const ch = playlistVideo.channel;
+        if (!byChannel.has(ch.contentId)) byChannel.set(ch.contentId, ch);
+      }
+
+      const payload = Array.from(byChannel.values()).map((ch) => ({
+        logsId: logsToAssign.map((l) => l._id),
+        contentMedia: {
+          contentId: ch.contentId,
+          contentImage: ch.contentImage ?? null,
+          coverImage: ch.contentImage ?? null,
+          description: ch.description,
+          type: 'video' as const,
+          title: ch.title,
+          isAdult: ch.isAdult,
+        } as IMediaDocument,
+      }));
+
+      try {
+        await new Promise<void>((resolve, reject) =>
+          assignMedia(payload, { onSuccess: resolve, onError: reject })
+        );
+        toast.success(
+          `Assigned ${logsToAssign.length} log${logsToAssign.length !== 1 ? 's' : ''} to ${byChannel.size} channel${byChannel.size !== 1 ? 's' : ''} from playlist`
+        );
+      } catch (err) {
+        console.error('Playlist assign error', err);
+        toast.error('Error assigning playlist channels');
+      } finally {
+        setIsBatchAssigning(false);
+        setPlaylistModalOpen(false);
+        setPlaylistResult(null);
+      }
+    },
+    [selectedLogs, selectedGroup, filteredGroupedLogs, assignMedia]
+  );
+  // ── End playlist confirm ─────────────────────────────────────────────────
 
   const handleAutoMatch = useCallback(async () => {
     if (logsWithYouTubeUrls.length === 0) {
@@ -676,6 +789,21 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
           )}
         </div>
       </div>
+
+      {/* ── Playlist selector modal ──────────────────────────────────────── */}
+      <PlaylistSelectorModal
+        isOpen={playlistModalOpen}
+        isFetching={isFetchingPlaylist}
+        playlistResult={playlistResult}
+        onClose={() => {
+          if (!isBatchAssigning) {
+            setPlaylistModalOpen(false);
+            setPlaylistResult(null);
+          }
+        }}
+        onConfirm={handlePlaylistConfirm}
+        isSubmitting={isBatchAssigning}
+      />
     </div>
   );
 }

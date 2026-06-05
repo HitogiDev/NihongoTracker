@@ -850,12 +850,40 @@ export async function getUserLogs(
         break;
     }
 
+    const sortFieldName = Object.keys(sortObject)[0] || 'date';
+
     let pipeline: PipelineStage[] = [
       {
         $match: initialMatch,
       },
       {
         $sort: sortObject,
+      },
+      {
+        $addFields: {
+          _groupKey: {
+            $cond: {
+              if: {
+                $and: [
+                  { $ifNull: ['$playlistBatchId', false] },
+                  { $ne: ['$playlistBatchId', ''] },
+                ],
+              },
+              then: '$playlistBatchId',
+              else: { $toString: '$_id' },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$_groupKey',
+          logs: { $push: '$$ROOT' },
+          sortValue: { $first: `$${sortFieldName}` },
+        },
+      },
+      {
+        $sort: { sortValue: sortDirection === 'asc' ? 1 : -1 } as any,
       },
     ];
 
@@ -868,6 +896,12 @@ export async function getUserLogs(
     }
 
     pipeline.push(
+      {
+        $unwind: '$logs',
+      },
+      {
+        $replaceRoot: { newRoot: '$logs' },
+      },
       {
         $lookup: {
           from: 'media',
@@ -917,6 +951,8 @@ export async function getUserLogs(
           manabeId: 1,
           xp: 1,
           description: 1,
+          playlistBatchId: 1,
+          playlistBatchTitle: 1,
           episodes: 1,
           volume: 1,
           pages: 1,
@@ -1101,6 +1137,198 @@ export async function deleteLog(
     }
 
     return res.sendStatus(204);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * Bulk-delete multiple logs belonging to the authenticated user.
+ * All logs are deleted first, then stats are recalculated ONCE to avoid
+ * Mongoose VersionError caused by concurrent user-document writes.
+ *
+ * Body: { ids: string[] }
+ */
+export async function deleteLogsBulk(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { ids } = req.body as { ids?: unknown };
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new customError('ids must be a non-empty array', 400);
+    }
+
+    const userId = res.locals.user.id;
+
+    // Delete all requested logs that belong to this user in one query
+    const result = await Log.deleteMany({
+      _id: { $in: ids },
+      user: userId,
+    });
+
+    if (result.deletedCount === 0) {
+      throw new customError('No logs found or not authorized', 404);
+    }
+
+    // Recalculate stats from scratch for the user (single write, no race)
+    const user = await User.findById(userId);
+    if (!user || !user.stats) {
+      throw new customError('User not found', 404);
+    }
+
+    const allUserLogs = await Log.aggregate([
+      { $match: { user: user._id } },
+      {
+        $group: {
+          _id: null,
+          totalXp: { $sum: '$xp' },
+          listeningXp: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    '$type',
+                    ['anime', 'video', 'movie', 'tv show', 'audio'],
+                  ],
+                },
+                '$xp',
+                0,
+              ],
+            },
+          },
+          readingXp: {
+            $sum: {
+              $cond: [
+                { $in: ['$type', ['manga', 'reading', 'vn', 'game']] },
+                '$xp',
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const totals = allUserLogs[0] ?? {
+      totalXp: 0,
+      listeningXp: 0,
+      readingXp: 0,
+    };
+
+    user.stats.userXp = Math.max(0, totals.totalXp);
+    user.stats.listeningXp = Math.max(0, totals.listeningXp);
+    user.stats.readingXp = Math.max(0, totals.readingXp);
+
+    updateLevelAndXp(user.stats, 'user');
+    updateLevelAndXp(user.stats, 'listening');
+    updateLevelAndXp(user.stats, 'reading');
+
+    user.markModified('stats');
+    await user.save();
+
+    // Recalculate streaks once after all deletions
+    await recalculateStreaksForUser(userId);
+
+    return res.status(200).json({ deletedCount: result.deletedCount });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * Admin bulk-delete: delete logs by ID regardless of ownership,
+ * then recalculate the affected user's stats once.
+ *
+ * Body: { ids: string[] }
+ */
+export async function adminDeleteLogsBulk(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { ids } = req.body as { ids?: unknown };
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new customError('ids must be a non-empty array', 400);
+    }
+
+    // Find the logs first to know which user(s) to update stats for
+    const logsToDelete = await Log.find({ _id: { $in: ids } })
+      .select('_id user xp type')
+      .lean();
+
+    if (logsToDelete.length === 0) {
+      throw new customError('No logs found', 404);
+    }
+
+    await Log.deleteMany({ _id: { $in: ids } });
+
+    // Group affected users (usually all the same one)
+    const affectedUserIds = [
+      ...new Set(logsToDelete.map((l) => String(l.user))),
+    ];
+
+    for (const uid of affectedUserIds) {
+      const user = await User.findById(uid);
+      if (!user?.stats) continue;
+
+      const allUserLogs = await Log.aggregate([
+        { $match: { user: user._id } },
+        {
+          $group: {
+            _id: null,
+            totalXp: { $sum: '$xp' },
+            listeningXp: {
+              $sum: {
+                $cond: [
+                  {
+                    $in: [
+                      '$type',
+                      ['anime', 'video', 'movie', 'tv show', 'audio'],
+                    ],
+                  },
+                  '$xp',
+                  0,
+                ],
+              },
+            },
+            readingXp: {
+              $sum: {
+                $cond: [
+                  { $in: ['$type', ['manga', 'reading', 'vn', 'game']] },
+                  '$xp',
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]);
+
+      const totals = allUserLogs[0] ?? {
+        totalXp: 0,
+        listeningXp: 0,
+        readingXp: 0,
+      };
+
+      user.stats.userXp = Math.max(0, totals.totalXp);
+      user.stats.listeningXp = Math.max(0, totals.listeningXp);
+      user.stats.readingXp = Math.max(0, totals.readingXp);
+
+      updateLevelAndXp(user.stats, 'user');
+      updateLevelAndXp(user.stats, 'listening');
+      updateLevelAndXp(user.stats, 'reading');
+
+      user.markModified('stats');
+      await user.save();
+      await recalculateStreaksForUser(user._id as any);
+    }
+
+    return res.status(200).json({ deletedCount: logsToDelete.length });
   } catch (error) {
     return next(error as customError);
   }
@@ -1342,6 +1570,8 @@ export async function createLog(
     type,
     mediaId,
     description,
+    playlistBatchId,
+    playlistBatchTitle,
     pages,
     episodes,
     volume,
@@ -1451,6 +1681,8 @@ export async function createLog(
       volume,
       xp,
       description,
+      playlistBatchId,
+      playlistBatchTitle,
       private: false,
       isAdult: logMedia?.isAdult ?? false,
       time,

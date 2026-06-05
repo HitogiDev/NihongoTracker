@@ -29,6 +29,7 @@ const swaggerDocument = {
     { name: 'Clubs', description: 'Club management & media votings' },
     { name: 'Tags', description: 'User tag management' },
     { name: 'Changelogs', description: 'Application changelogs' },
+    { name: 'Notifications', description: 'User notifications' },
     { name: 'Text Sessions', description: 'TextHooker session management' },
     { name: 'Patreon', description: 'Patreon integration & badges' },
     { name: 'API Keys', description: 'API key generation & management' },
@@ -413,6 +414,84 @@ const swaggerDocument = {
           },
           date: { type: 'string', format: 'date-time' },
           published: { type: 'boolean' },
+        },
+      },
+      NotificationSummaryItem: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          count: { type: 'number' },
+          meta: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+          },
+        },
+      },
+      NotificationSummarySection: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['club_join_requests'] },
+          title: { type: 'string' },
+          items: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/NotificationSummaryItem' },
+          },
+        },
+      },
+      NotificationSummaryResponse: {
+        type: 'object',
+        properties: {
+          totalCount: { type: 'number' },
+          sections: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/NotificationSummarySection' },
+          },
+        },
+      },
+      NotificationListItem: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          label: { type: 'string' },
+          count: { type: 'number' },
+          isRead: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
+          meta: {
+            type: 'object',
+            additionalProperties: { type: 'string' },
+          },
+        },
+      },
+      NotificationListResponse: {
+        type: 'object',
+        properties: {
+          total: { type: 'number' },
+          page: { type: 'number' },
+          limit: { type: 'number' },
+          hasMore: { type: 'boolean' },
+          items: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/NotificationListItem' },
+          },
+        },
+      },
+      GanttEntry: {
+        type: 'object',
+        properties: {
+          mediaId: { type: 'string' },
+          type: { type: 'string' },
+          title: { type: 'string' },
+          titleEnglish: { type: 'string', nullable: true },
+          contentImage: { type: 'string', nullable: true },
+          firstLogDate: { type: 'string', format: 'date-time' },
+          lastLogDate: { type: 'string', format: 'date-time' },
+          isCompleted: { type: 'boolean' },
+          completedAt: { type: 'string', format: 'date-time', nullable: true },
+          logCount: { type: 'number' },
+          totalTime: { type: 'number' },
+          totalXp: { type: 'number' },
+          activeDates: { type: 'array', items: { type: 'string' } },
         },
       },
     },
@@ -1021,6 +1100,58 @@ const swaggerDocument = {
         },
       },
     },
+    '/users/{username}/gantt': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get gantt timeline data for a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            description: 'Filter by media type or use "all"',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'timezone',
+            in: 'query',
+            description: 'IANA timezone for day grouping',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            description: 'Start date (YYYY-MM-DD)',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            description: 'End date (YYYY-MM-DD)',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Gantt data',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/GanttEntry' },
+                },
+              },
+            },
+          },
+          404: { description: 'User not found' },
+        },
+      },
+    },
     '/users/media/status': {
       post: {
         tags: ['Users'],
@@ -1070,6 +1201,49 @@ const swaggerDocument = {
         },
         responses: {
           200: { description: 'Settings updated' },
+        },
+      },
+    },
+    '/users/settings/stats-layout': {
+      patch: {
+        tags: ['Users'],
+        summary: 'Update stats layout settings',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['layout'],
+                properties: {
+                  layout: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        visible: { type: 'boolean' },
+                        cards: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' },
+                              visible: { type: 'boolean' },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Stats layout updated' },
         },
       },
     },
@@ -1427,6 +1601,64 @@ const swaggerDocument = {
         },
       },
     },
+    '/media/anilist/search': {
+      get: {
+        tags: ['Media'],
+        summary: 'Proxy AniList search',
+        parameters: [
+          {
+            name: 'search',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'format',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'ids',
+            in: 'query',
+            description: 'Comma-separated AniList IDs to filter results',
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'AniList search results' },
+          400: { description: 'Invalid query parameters' },
+        },
+      },
+    },
+    '/media/multi-search': {
+      get: {
+        tags: ['Media'],
+        summary: 'Multi-index media search',
+        parameters: [
+          {
+            name: 'search',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'perPage',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+        ],
+        responses: {
+          200: { description: 'Combined search results' },
+          400: { description: 'Search query too short' },
+        },
+      },
+    },
     '/media/utils/avgcolor': {
       get: {
         tags: ['Media'],
@@ -1457,6 +1689,25 @@ const swaggerDocument = {
         ],
         responses: {
           200: { description: 'YouTube video data' },
+        },
+      },
+    },
+    '/media/youtube/playlist': {
+      get: {
+        tags: ['Media'],
+        summary: 'Search for a YouTube playlist',
+        parameters: [
+          {
+            name: 'url',
+            in: 'query',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          200: { description: 'YouTube playlist data' },
+          400: { description: 'Invalid playlist URL' },
+          404: { description: 'Playlist not found or empty' },
         },
       },
     },
@@ -2615,6 +2866,102 @@ const swaggerDocument = {
         ],
         responses: {
           200: { description: 'Voting completed' },
+        },
+      },
+    },
+
+    // ──────────────── Notifications ────────────────
+    '/notifications/summary': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Get notification summary',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'Notification summary',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/NotificationSummaryResponse',
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/list': {
+      get: {
+        tags: ['Notifications'],
+        summary: 'Get paginated notifications',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Notification list',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/NotificationListResponse',
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/read': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Mark notifications as read',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          204: { description: 'Notifications marked as read' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/unread': {
+      patch: {
+        tags: ['Notifications'],
+        summary: 'Mark notifications as unread',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          204: { description: 'Notifications marked as unread' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/notifications/{id}': {
+      delete: {
+        tags: ['Notifications'],
+        summary: 'Dismiss a notification',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          204: { description: 'Notification dismissed' },
+          401: { description: 'Unauthorized' },
+          400: { description: 'Notification id is required' },
         },
       },
     },

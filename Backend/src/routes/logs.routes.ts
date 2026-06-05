@@ -5,6 +5,7 @@ import {
   getLog,
   createLog,
   deleteLog,
+  deleteLogsBulk,
   updateLog,
   importLogs,
   assignMedia,
@@ -68,6 +69,9 @@ router.get('/feed', protect, getGlobalFeed);
 router.post('/manabe-webhook', importManabeLog, calculateXp, importLogs);
 
 router.post('/sync-manabe-ids', protect, syncManabeIds);
+
+// Bulk delete — must be registered BEFORE /:id to avoid route conflict
+router.delete('/bulk', protect, deleteLogsBulk);
 
 router.get('/:id', optionalProtect, getLog);
 

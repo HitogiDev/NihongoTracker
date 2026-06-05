@@ -144,7 +144,15 @@ function extractTagIds(tags?: ILog['tags']): string[] {
     .filter((id): id is string => Boolean(id));
 }
 
-function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
+function LogCard({
+  log,
+  user: logUser,
+  selectionMode = false,
+}: {
+  log: ILog;
+  user?: string;
+  selectionMode?: boolean;
+}) {
   const {
     description,
     xp,
@@ -590,7 +598,7 @@ function LogCard({ log, user: logUser }: { log: ILog; user?: string }) {
               </div>
             </div>
 
-            {canModerateLog && (
+            {canModerateLog && !selectionMode && (
               <div className="dropdown dropdown-end">
                 <button
                   tabIndex={0}

@@ -508,6 +508,8 @@ export interface ILog extends Document {
   private: boolean;
   isAdult: boolean;
   description?: string;
+  playlistBatchId?: string;
+  playlistBatchTitle?: string;
   editedFields?: IEditedFields | null;
   episodes?: number;
   volume?: number;

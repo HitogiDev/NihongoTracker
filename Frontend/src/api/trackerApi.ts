@@ -520,6 +520,27 @@ export async function searchYouTubeVideoFn(url: string) {
   return data;
 }
 
+export interface IPlaylistVideo {
+  video: IMediaDocument;
+  channel: IMediaDocument;
+}
+
+export interface IPlaylistResult {
+  playlistTitle: string;
+  truncated: boolean;
+  videos: IPlaylistVideo[];
+}
+
+export async function searchYouTubePlaylistFn(
+  url: string
+): Promise<IPlaylistResult> {
+  const { data } = await api.get<IPlaylistResult>(`media/youtube/playlist`, {
+    params: { url },
+  });
+  return data;
+}
+
+
 export async function getDailyGoalsFn(username: string | undefined) {
   if (!username) return null;
   const { data } = await api.get<IDailyGoalsResponse>(
@@ -906,6 +927,22 @@ export async function adminDeleteLogFn(logId: string) {
   const { data } = await api.delete(`admin/logs/${logId}`);
   return data;
 }
+
+export async function deleteLogsBulkFn(ids: string[]) {
+  const { data } = await api.delete<{ deletedCount: number }>('logs/bulk', {
+    data: { ids },
+  });
+  return data;
+}
+
+export async function adminDeleteLogsBulkFn(ids: string[]) {
+  const { data } = await api.delete<{ deletedCount: number }>(
+    'admin/logs/bulk',
+    { data: { ids } }
+  );
+  return data;
+}
+
 
 export async function adminUpdateUserFn(
   userId: string,

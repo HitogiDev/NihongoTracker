@@ -285,3 +285,221 @@ export async function searchYouTubeVideo(
     return next(error as customError);
   }
 }
+
+// ─── Playlist support ────────────────────────────────────────────────────────
+
+export function extractPlaylistId(url: string): string | null {
+  try {
+    const parsed = new URL(
+      url.startsWith('http://') || url.startsWith('https://')
+        ? url
+        : `https://${url}`
+    );
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const isYouTubeHost = host.endsWith('youtube.com') || host === 'youtu.be';
+    if (!isYouTubeHost) return null;
+
+    // Dedicated playlist page or shared video URL with a list= query param.
+    const list = parsed.searchParams.get('list');
+    if (list && list.length > 2) return list;
+  } catch {
+    // ignore parse errors
+  }
+  return null;
+}
+
+const PLAYLIST_MAX_VIDEOS = 200;
+
+export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
+  playlistTitle: string;
+  truncated: boolean;
+  videos: Array<{ video: MediaDocument; channel: MediaDocument }>;
+} | null> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) throw new Error('YouTube API key not configured');
+
+  // Step 1 — collect video IDs from playlistItems (paginated, max 200)
+  const videoIds: string[] = [];
+  const channelIdsByVideoId = new Map<string, string>();
+  let pageToken: string | undefined;
+  let playlistTitle = '';
+  let truncated = false;
+
+  do {
+    const params: Record<string, string | number> = {
+      part: 'snippet',
+      playlistId,
+      maxResults: 50,
+      key: apiKey,
+    };
+    if (pageToken) params.pageToken = pageToken;
+
+    const itemsRes = await axios.get(
+      'https://www.googleapis.com/youtube/v3/playlistItems',
+      { params }
+    );
+
+    const items = itemsRes.data.items ?? [];
+    if (!playlistTitle && itemsRes.data.pageInfo) {
+      // Get the playlist title from the first page
+      const firstItem = items[0];
+      if (firstItem?.snippet?.playlistId) {
+        // We'll fetch the playlist title separately below
+      }
+    }
+
+    for (const item of items) {
+      const videoId: string | undefined = item.snippet?.resourceId?.videoId;
+      const channelId: string | undefined = item.snippet?.channelId;
+      if (videoId) {
+        if (videoIds.length >= PLAYLIST_MAX_VIDEOS) {
+          truncated = true;
+          break;
+        }
+        videoIds.push(videoId);
+        if (channelId) channelIdsByVideoId.set(videoId, channelId);
+      }
+    }
+
+    pageToken = truncated
+      ? undefined
+      : (itemsRes.data.nextPageToken as string | undefined);
+  } while (pageToken);
+
+  if (videoIds.length === 0) return null;
+
+  // Step 2 — fetch playlist snippet for title
+  try {
+    const plRes = await axios.get(
+      'https://www.googleapis.com/youtube/v3/playlists',
+      { params: { part: 'snippet', id: playlistId, key: apiKey } }
+    );
+    playlistTitle = plRes.data.items?.[0]?.snippet?.title ?? 'YouTube Playlist';
+  } catch {
+    playlistTitle = 'YouTube Playlist';
+  }
+
+  // Step 3 — batch fetch video details (snippet + contentDetails) in groups of 50
+  const videoDetails = new Map<string, YouTubeVideoData>();
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const batch = videoIds.slice(i, i + 50);
+    const vRes = await axios.get(
+      'https://www.googleapis.com/youtube/v3/videos',
+      {
+        params: {
+          part: 'snippet,contentDetails',
+          id: batch.join(','),
+          key: apiKey,
+        },
+      }
+    );
+    for (const item of vRes.data.items ?? []) {
+      videoDetails.set(item.id, item);
+    }
+  }
+
+  // Step 4 — batch fetch unique channel details
+  const uniqueChannelIds = [...new Set(channelIdsByVideoId.values())];
+  const channelDetails = new Map<string, YouTubeChannelData>();
+  for (let i = 0; i < uniqueChannelIds.length; i += 50) {
+    const batch = uniqueChannelIds.slice(i, i + 50);
+    const cRes = await axios.get(
+      'https://www.googleapis.com/youtube/v3/channels',
+      { params: { part: 'snippet', id: batch.join(','), key: apiKey } }
+    );
+    for (const item of cRes.data.items ?? []) {
+      channelDetails.set(item.id, item);
+    }
+  }
+
+  // Step 5 — assemble result
+  const videos: Array<{ video: MediaDocument; channel: MediaDocument }> = [];
+
+  for (const videoId of videoIds) {
+    const vd = videoDetails.get(videoId);
+    if (!vd) continue;
+
+    const duration = parseDuration(vd.contentDetails?.duration ?? 'PT0S');
+    const channelId = vd.snippet.channelId;
+    const cd = channelDetails.get(channelId);
+
+    const video: MediaDocument = {
+      contentId: vd.id,
+      title: {
+        contentTitleNative: vd.snippet.title,
+        contentTitleEnglish: vd.snippet.title,
+      },
+      contentImage:
+        vd.snippet.thumbnails?.high?.url ?? vd.snippet.thumbnails?.medium?.url,
+      description: [
+        { description: vd.snippet.description ?? '', language: 'eng' },
+      ],
+      type: 'video',
+      episodeDuration: duration,
+      isAdult: false,
+    };
+
+    const channel: MediaDocument = cd
+      ? {
+          contentId: cd.id,
+          title: {
+            contentTitleNative: cd.snippet.title,
+            contentTitleEnglish: cd.snippet.title,
+          },
+          contentImage:
+            cd.snippet.thumbnails?.high?.url ??
+            cd.snippet.thumbnails?.medium?.url,
+          description: [
+            { description: cd.snippet.description ?? '', language: 'eng' },
+          ],
+          type: 'video',
+          isAdult: false,
+        }
+      : {
+          contentId: channelId,
+          title: {
+            contentTitleNative: vd.snippet.channelTitle,
+            contentTitleEnglish: vd.snippet.channelTitle,
+          },
+          contentImage: undefined,
+          description: [],
+          type: 'video',
+          isAdult: false,
+        };
+
+    videos.push({ video, channel });
+  }
+
+  return { playlistTitle, truncated, videos };
+}
+
+export async function searchYouTubePlaylist(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { url } = req.query;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ message: 'URL is required' });
+    }
+
+    const playlistId = extractPlaylistId(url);
+    if (!playlistId) {
+      return res
+        .status(400)
+        .json({ message: 'Not a valid YouTube playlist URL' });
+    }
+
+    const result = await getYouTubePlaylistInfo(playlistId);
+    if (!result) {
+      return res
+        .status(404)
+        .json({ message: 'Playlist not found or is empty' });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}

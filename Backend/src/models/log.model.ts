@@ -49,6 +49,8 @@ const LogSchema = new Schema<ILog>(
       trim: true,
       default: '',
     },
+    playlistBatchId: { type: String },
+    playlistBatchTitle: { type: String, trim: true },
     editedFields: { type: editedFieldsSchema, default: null },
     episodes: {
       type: Number,

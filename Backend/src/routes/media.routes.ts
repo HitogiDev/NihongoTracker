@@ -14,7 +14,7 @@ import {
 } from '../controllers/media.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
-import { searchYouTubeVideo } from '../services/searchYoutube.js';
+import { searchYouTubeVideo, searchYouTubePlaylist } from '../services/searchYoutube.js';
 
 const router = Router();
 
@@ -23,6 +23,7 @@ router.get('/anilist/search', anilistSearchProxy);
 router.get('/search', searchMedia);
 router.get('/multi-search', multiSearchMedia);
 router.get('/youtube/video', searchYouTubeVideo);
+router.get('/youtube/playlist', searchYouTubePlaylist);
 router.get('/reviews/:reviewId', getMediaReviewById);
 router.get('/:mediaType/:contentId/reviews', getMediaReviews);
 router.post('/:mediaType/:contentId/reviews', protect, addMediaReview);

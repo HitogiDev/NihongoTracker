@@ -24,7 +24,7 @@ export async function evaluateAutoCompleteForUserMedia(
     const agg = await Log.aggregate([
       {
         $match: {
-          user: Types.ObjectId(String(userId)),
+          user: new Types.ObjectId(String(userId)),
           mediaId: String(mediaId),
           type: normalizedType,
         },
@@ -75,18 +75,24 @@ export async function evaluateAutoCompleteForUserMedia(
                 { validateStatus: (s) => s === 200 || s === 404 }
               );
               if (detail.status === 200 && detail.data) {
+                const parsedCount = Number(
+                  detail.data?.data?.mainDeck?.characterCount
+                );
                 mediaCharTotal =
-                  Number(detail.data?.data?.mainDeck?.characterCount) || null;
-                if (!Number.isFinite(mediaCharTotal) || mediaCharTotal <= 0) {
-                  mediaCharTotal = null;
-                }
+                  Number.isFinite(parsedCount) && parsedCount > 0
+                    ? parsedCount
+                    : null;
               }
             }
           }
         }
       } catch (err) {
-        // Ignore Jiten errors - absence of chars means we can't auto-complete by chars
-        console.debug('Jiten lookup failed for', mediaId, err?.message ?? err);
+        // Ignore Jiten errors, absence of chars means we can't auto-complete by chars
+        console.debug(
+          'Jiten lookup failed for',
+          mediaId,
+          (err as any)?.message ?? err
+        );
       }
     }
 
@@ -109,7 +115,7 @@ export async function evaluateAutoCompleteForUserMedia(
     }
 
     const statusFilter = {
-      user: Types.ObjectId(String(userId)),
+      user: new Types.ObjectId(String(userId)),
       mediaId: String(mediaId),
       type: normalizedType,
     };
@@ -136,7 +142,7 @@ export async function evaluateAutoCompleteForUserMedia(
             autoCompleteSuppressed: false,
           },
           $setOnInsert: {
-            user: Types.ObjectId(String(userId)),
+            user: new Types.ObjectId(String(userId)),
             mediaId: String(mediaId),
             type: normalizedType,
           },

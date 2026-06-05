@@ -353,6 +353,7 @@ export interface IUpdateLogRequest {
 
 export interface IContentMedia {
   contentId: string;
+  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'game';
   contentImage: string | null;
   coverImage: string | null;
   contentTitleNative: string;
@@ -418,6 +419,8 @@ export interface ILog {
     | 'audio'
     | 'other';
   description: string;
+  playlistBatchId?: string;
+  playlistBatchTitle?: string;
   episodes?: number;
   volume?: number;
   pages?: number;

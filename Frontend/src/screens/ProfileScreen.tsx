@@ -1,9 +1,10 @@
 import { Link, useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
+import PlaylistBatchCard from '../components/PlaylistBatchCard';
 import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
@@ -244,7 +245,13 @@ function ProfileScreen() {
         sortDirection: backendSortDirection,
       }),
     getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage || lastPage.length < limit) return undefined;
+      if (!lastPage || lastPage.length === 0) return undefined;
+      // Backend paginates by groups (playlist batches = 1 group).
+      // Count unique groups in this page to check if we got a full page.
+      const groupKeys = new Set(
+        lastPage.map((log) => log.playlistBatchId?.trim() || `single:${log._id}`)
+      );
+      if (groupKeys.size < limit) return undefined;
       return allPages ? allPages.length + 1 : 2;
     },
     initialPageParam: 1,
@@ -273,6 +280,36 @@ function ProfileScreen() {
         return sortDirection === 'asc' ? speedA - speedB : speedB - speedA;
       });
   })();
+
+  // Group logs by playlistBatchId — playlist batches become single entries
+  type LogGroup = {
+    key: string;
+    logs: typeof displayedLogs;
+    isPlaylistGroup: boolean;
+  };
+
+  const groupedLogs = useMemo<LogGroup[]>(() => {
+    const grouped = new Map<string, typeof displayedLogs>();
+    const order: string[] = [];
+
+    for (const log of displayedLogs) {
+      const key = log.playlistBatchId?.trim() || `single:${log._id}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+        order.push(key);
+      }
+      grouped.get(key)!.push(log);
+    }
+
+    return order.map((key) => {
+      const logs = grouped.get(key) ?? [];
+      return {
+        key,
+        logs,
+        isPlaylistGroup: Boolean(logs[0]?.playlistBatchId),
+      };
+    });
+  }, [displayedLogs]);
 
   return (
     <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
@@ -847,9 +884,21 @@ function ProfileScreen() {
             </div>
 
             {logs?.pages ? (
-              displayedLogs.map((log) => (
-                <LogCard key={log._id} log={log} user={username} />
-              ))
+              groupedLogs.map((entry) =>
+                entry.isPlaylistGroup ? (
+                  <PlaylistBatchCard
+                    key={entry.key}
+                    logs={entry.logs}
+                    user={username}
+                  />
+                ) : (
+                  <LogCard
+                    key={entry.logs[0]._id}
+                    log={entry.logs[0]}
+                    user={username}
+                  />
+                )
+              )
             ) : (
               <div className="card w-full bg-base-100 shadow-sm p-4">
                 <p className="text-center">No logs available</p>

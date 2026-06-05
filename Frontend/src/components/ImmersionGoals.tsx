@@ -265,7 +265,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Today's Progress</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
                 {activeGoals.map((goal) => {
                   const current = goalsData?.todayProgress[goal.type] || 0;
                   const isCompleted =
@@ -295,7 +295,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                         {config.label}
                       </div>
                       <div
-                        className={`mt-1 text-lg font-bold tabular-nums leading-tight break-words ${
+                        className={`mt-1 text-lg font-bold tabular-nums leading-tight whitespace-nowrap ${
                           isCompleted ? 'text-success' : config.color
                         }`}
                       >

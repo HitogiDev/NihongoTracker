@@ -204,3 +204,107 @@ html {
 .spoiler.revealed * {
   color: inherit !important;
 }
+
+/* ─── react-day-picker DaisyUI theme ─────────────────────────────────────────
+   Scoped to .rdp-themed so only explicitly opted-in calendars are affected.
+   Overrides rdp's default CSS variables and class styles for dark/light mode. */
+
+.rdp-themed.rdp-root {
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  --rdp-day-height: 2.5rem;
+  --rdp-day-width: 2.5rem;
+  --rdp-day_button-height: 2.25rem;
+  --rdp-day_button-width: 2.25rem;
+  --rdp-day_button-border-radius: 0.5rem;
+  --rdp-day_button-border: 2px solid transparent;
+  --rdp-selected-border: 2px solid var(--color-primary);
+  --rdp-today-color: var(--color-primary);
+  --rdp-outside-opacity: 0.35;
+  --rdp-disabled-opacity: 0.25;
+  --rdp-weekday-opacity: 0.55;
+  --rdp-nav_button-height: 2rem;
+  --rdp-nav_button-width: 2rem;
+  --rdp-nav-height: 2.75rem;
+  color: var(--color-base-content);
+}
+
+/* Month caption */
+.rdp-themed .rdp-month_caption {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-base-content);
+}
+
+/* Weekday header */
+.rdp-themed .rdp-weekday {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+}
+
+/* Day button base hover */
+.rdp-themed .rdp-day_button {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.rdp-themed .rdp-day:not(.rdp-selected):not(.rdp-today):not(.rdp-outside):not(.rdp-disabled) .rdp-day_button:hover {
+  background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+/* Today: primary outline only (no fill) */
+.rdp-themed .rdp-today:not(.rdp-outside) {
+  color: var(--color-base-content);
+}
+
+.rdp-themed .rdp-today:not(.rdp-outside) .rdp-day_button {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Selected: filled primary */
+.rdp-themed .rdp-selected .rdp-day_button {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 3px 0 oklch(0% 0 0 / 0.2);
+}
+
+/* When today is also selected, selected (filled) wins */
+.rdp-themed .rdp-today.rdp-selected .rdp-day_button {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+/* Nav buttons (prev/next) */
+.rdp-themed .rdp-button_previous,
+.rdp-themed .rdp-button_next {
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+
+.rdp-themed .rdp-button_previous:hover,
+.rdp-themed .rdp-button_next:hover {
+  background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+  color: var(--color-base-content);
+}
+
+/* Override the default SVG chevron fill since we use Lucide stroke icons */
+.rdp-themed .rdp-chevron {
+  fill: none;
+}
+
+/* Disabled days */
+.rdp-themed .rdp-disabled .rdp-day_button {
+  color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+}
+
+/* Outside (other month) days */
+.rdp-themed .rdp-outside .rdp-day_button {
+  color: color-mix(in oklab, var(--color-base-content) 35%, transparent);
+}

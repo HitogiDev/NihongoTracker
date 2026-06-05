@@ -22,6 +22,7 @@ import {
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
+  adminDeleteLogsBulk,
   recalculateStreaks,
   recalculateXp,
   adminUpdateLog,
@@ -49,12 +50,19 @@ router.get(
 
 router.get('/users', protect, checkPermission(userRoles.admin), getAdminUsers);
 
-// Log routes
+// Admin log routes
 router.delete(
   '/logs/:id',
   protect,
   checkPermission(userRoles.admin),
   adminDeleteLog
+);
+
+router.delete(
+  '/logs/bulk',
+  protect,
+  checkPermission(userRoles.admin),
+  adminDeleteLogsBulk
 );
 
 router.post(

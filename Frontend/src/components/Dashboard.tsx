@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -51,6 +51,12 @@ const logTypeIcons: { [key: string]: React.ElementType } = {
 
 type FeedType = ILog['type'] | 'all';
 type FeedTimeRange = 'day' | 'week' | 'month' | 'year' | 'all';
+type GlobalFeedGroup = {
+  key: string;
+  logs: ILog[];
+  representative: ILog;
+  isPlaylistGroup: boolean;
+};
 
 const feedTypeOptions: Array<{ label: string; value: FeedType }> = [
   { label: 'All types', value: 'all' },
@@ -171,6 +177,32 @@ function Dashboard() {
     enabled: !!username,
     staleTime: 1000 * 60 * 2,
   });
+
+  const groupedGlobalFeed = useMemo<GlobalFeedGroup[]>(() => {
+    const feedLogs = globalFeed ?? [];
+    const grouped = new Map<string, ILog[]>();
+    const order: string[] = [];
+
+    for (const log of feedLogs) {
+      const key = log.playlistBatchId?.trim() || `single:${log._id}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+        order.push(key);
+      }
+      grouped.get(key)!.push(log);
+    }
+
+    return order.map((key) => {
+      const logs = grouped.get(key) ?? [];
+      const representative = logs[0];
+      return {
+        key,
+        logs,
+        representative,
+        isPlaylistGroup: Boolean(representative?.playlistBatchId),
+      };
+    });
+  }, [globalFeed]);
 
   const immersionStats = (() => {
     if (!hours) {
@@ -585,8 +617,9 @@ function Dashboard() {
                       className="skeleton h-20 w-full rounded-2xl"
                     />
                   ))
-                ) : globalFeed && globalFeed.length > 0 ? (
-                  globalFeed.map((log) => {
+                ) : groupedGlobalFeed.length > 0 ? (
+                  groupedGlobalFeed.map((entry) => {
+                    const log = entry.representative;
                     const Icon = logTypeIcons[log.type] || Book;
                     const mediaCover = (log.media as IMediaDocument | undefined)
                       ?.coverImage;
@@ -603,12 +636,18 @@ function Dashboard() {
                     const feedIsAdultImage = mediaDoc?.isAdultImage ?? false;
                     const blurAdult = shouldBlurAdult && feedIsAdultImage;
                     const mediaLink =
-                      mediaType && mediaContentId
+                      !entry.isPlaylistGroup && mediaType && mediaContentId
                         ? `/${mediaType}/${mediaContentId}`
                         : undefined;
+                    const playlistTitle =
+                      log.playlistBatchTitle ?? 'Playlist batch';
+                    const playlistXp = entry.logs.reduce(
+                      (sum, playlistLog) => sum + playlistLog.xp,
+                      0
+                    );
                     return (
                       <div
-                        key={log._id}
+                        key={entry.key}
                         className="flex items-center gap-4 p-4 rounded-2xl bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
                       >
                         {log.user?.username ? (
@@ -658,7 +697,11 @@ function Dashboard() {
                               tracked
                             </span>
                             <Icon className="text-primary w-4 h-4" />
-                            {mediaLink ? (
+                            {entry.isPlaylistGroup ? (
+                              <span className="font-medium">
+                                {playlistTitle}
+                              </span>
+                            ) : mediaLink ? (
                               <Link
                                 to={mediaLink}
                                 className="font-medium hover:underline"
@@ -672,13 +715,28 @@ function Dashboard() {
                                   log.description}
                               </span>
                             )}
+                            {entry.isPlaylistGroup && (
+                              <span className="badge badge-secondary badge-sm">
+                                {entry.logs.length} videos
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-base-content/70">
                             {formatRelativeDate(log.date)} · +
-                            {numberWithCommas(log.xp)} XP
+                            {numberWithCommas(
+                              entry.isPlaylistGroup ? playlistXp : log.xp
+                            )}{' '}
+                            XP
                           </p>
+                          {entry.isPlaylistGroup && (
+                            <p className="text-xs text-base-content/60 mt-1">
+                              Logged {entry.logs.length} videos from this
+                              playlist
+                            </p>
+                          )}
                         </div>
-                        {image &&
+                        {!entry.isPlaylistGroup &&
+                          image &&
                           (mediaLink ? (
                             <Link
                               to={mediaLink}
