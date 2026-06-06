@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   useInfiniteQuery,
   useMutation,
-  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import {
@@ -18,11 +17,11 @@ import { useUserDataStore } from '../store/userData';
 import {
   deleteNotificationFn,
   getNotificationListFn,
-  getNotificationSummaryFn,
   markNotificationsAsReadFn,
 } from '../api/notificationsApi';
 import UserAvatar from './UserAvatar';
 import { INotificationListItem } from '../types';
+import { useNotificationCount } from '../hooks/useNotificationCount';
 
 const MAX_BADGE_COUNT = 99;
 const DROPDOWN_PAGE_SIZE = 5;
@@ -75,27 +74,22 @@ function NotificationBell() {
     [dropdownQuery.data]
   );
 
-  const { data } = useQuery({
-    queryKey: ['notifications', 'summary'],
-    queryFn: getNotificationSummaryFn,
-    enabled: isLoggedIn,
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 60,
-  });
-
   const markNotificationsAsReadMutation = useMutation({
     mutationFn: markNotificationsAsReadFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'summary'] });
+      queryClient.refetchQueries({
+        queryKey: ['notifications', 'list'],
+        exact: false,
+      });
     },
   });
 
   const deleteNotificationMutation = useMutation({
     mutationFn: deleteNotificationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'summary'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'list'] });
     },
   });
 
@@ -126,7 +120,7 @@ function NotificationBell() {
     setDeleteConfirmDontShowAgain(false);
   };
 
-  const totalCount = data?.totalCount ?? 0;
+  const totalCount = useNotificationCount();
 
   useEffect(() => {
     const scrollContainer = listScrollRef.current;

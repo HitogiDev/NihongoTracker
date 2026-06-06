@@ -1024,6 +1024,7 @@ export interface INotificationSummaryResponse {
 export interface INotificationListItem {
   id: string;
   label: string;
+  type?: 'club_join_requests' | 'changelog';
   count: number;
   isRead: boolean;
   createdAt: string;

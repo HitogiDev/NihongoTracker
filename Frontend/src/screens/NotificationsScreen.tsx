@@ -5,7 +5,15 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Bell, Check, Clock3, ChevronRight, Inbox, Trash2 } from 'lucide-react';
+import {
+  ScrollText,
+  Bell,
+  Check,
+  Clock3,
+  ChevronRight,
+  Inbox,
+  Trash2,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useUserDataStore } from '../store/userData';
 import UserAvatar from '../components/UserAvatar';
@@ -53,24 +61,26 @@ function NotificationsScreen() {
   const markNotificationsAsReadMutation = useMutation({
     mutationFn: markNotificationsAsReadFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'summary'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'list'] });
     },
   });
 
   const markNotificationsAsUnreadMutation = useMutation({
     mutationFn: markNotificationsAsUnreadFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'summary'] });
+      queryClient.refetchQueries({ queryKey: ['notifications', 'list'] });
     },
   });
 
   const deleteNotificationMutation = useMutation({
     mutationFn: deleteNotificationFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'summary'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'list'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['notifications', 'summary'] }),
+        queryClient.refetchQueries({ queryKey: ['notifications', 'list'] }),
+      ]);
     },
   });
 
@@ -146,9 +156,11 @@ function NotificationsScreen() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const renderNotificationItem = (item: INotificationListItem) => {
+  function renderNotificationItem(item: INotificationListItem) {
     const clubId = item.meta?.clubId || item.id;
-    const link = `/clubs/${clubId}?tab=members`;
+    const type = item.type || 'club_join_requests';
+    const link =
+      type === 'changelog' ? `/changelog` : `/clubs/${clubId}?tab=members`;
     const requesterName =
       item.meta?.username ?? item.label.split(' ')[0] ?? 'U';
     const requesterAvatar = item.meta?.avatar;
@@ -158,10 +170,10 @@ function NotificationsScreen() {
     });
 
     return (
-      <div key={item.id} className="group relative overflow-hidden rounded-xl">
+      <div key={item.id} className="group relative overflow-hidden rounded-lg">
         <button
           type="button"
-          className="absolute inset-y-0 left-0 w-12 rounded-l-xl rounded-r-none bg-error text-error-content -translate-x-full transition-all duration-300 ease-out cursor-pointer hover:bg-error/90 group-hover:translate-x-0 group-hover:pointer-events-auto pointer-events-none flex items-center justify-center"
+          className="absolute inset-y-0 left-0 w-12 rounded-l-lg rounded-r-none bg-error text-error-content border-r-4 border-r-primary -translate-x-full transition-transform duration-300 ease-out cursor-pointer hover:bg-error/90 group-hover:translate-x-0 group-hover:pointer-events-auto pointer-events-none flex items-center justify-center z-10"
           title="Delete notification"
           onClick={(event) => {
             event.preventDefault();
@@ -174,21 +186,27 @@ function NotificationsScreen() {
 
         <Link
           to={link}
-          className={`card w-full bg-base-100 border shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 ease-out border-l-4 pr-14 group-hover:translate-x-12 group-hover:w-[calc(100%-3rem)] group-hover:rounded-l-none ${
+          className={`card w-full bg-base-100 border shadow-sm hover:shadow-md group-hover:border-primary/30 transition-[padding] duration-300 ease-out border-l-4 pr-12 group-hover:pl-12 rounded-lg ${
             isUnread ? 'border-l-primary' : 'border-l-base-300 opacity-80'
           }`}
         >
           <div className="card-body py-3.5 px-4">
             <div className="flex items-start gap-4">
               <div className="avatar shrink-0">
-                <UserAvatar
-                  username={requesterName}
-                  avatar={requesterAvatar}
-                  containerClassName="w-11 h-11 rounded-lg"
-                  imageClassName="w-full h-full rounded-lg object-cover"
-                  fallbackClassName="w-full h-full rounded-lg bg-base-300 flex items-center justify-center"
-                  textClassName="text-sm font-semibold text-base-content/70"
-                />
+                {type === 'changelog' ? (
+                  <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <ScrollText className="w-5 h-5" />
+                  </div>
+                ) : (
+                  <UserAvatar
+                    username={requesterName}
+                    avatar={requesterAvatar}
+                    containerClassName="w-11 h-11 rounded-lg"
+                    imageClassName="w-full h-full rounded-lg object-cover"
+                    fallbackClassName="w-full h-full rounded-lg bg-base-300 flex items-center justify-center"
+                    textClassName="text-sm font-semibold text-base-content/70"
+                  />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -232,7 +250,7 @@ function NotificationsScreen() {
         </Link>
       </div>
     );
-  };
+  }
 
   return (
     <div className="min-h-screen pt-16 bg-base-200">
@@ -271,7 +289,9 @@ function NotificationsScreen() {
                 <button
                   className="btn btn-primary btn-sm gap-2 w-full"
                   disabled={unreadCount === 0}
-                  onClick={() => markNotificationsAsReadMutation.mutate()}
+                  onClick={() => {
+                    markNotificationsAsReadMutation.mutate();
+                  }}
                   title={
                     unreadCount === 0
                       ? 'No unread notifications'

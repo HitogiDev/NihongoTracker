@@ -22,6 +22,7 @@ const SettingsSchema = new Schema<IUserSettings>(
     notificationsLastViewedAt: { type: Date, default: null },
     dismissedNotificationClubIds: { type: [String], default: [] },
     dismissedNotificationClubAt: { type: Schema.Types.Mixed, default: {} },
+    lastSeenChangelogAt: { type: Date, default: null },
   },
   { _id: false }
 );

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import { Club } from '../models/club.model.js';
+import Changelog from '../models/changelog.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import {
   IUser,
@@ -26,6 +27,7 @@ type NotificationListItem = {
   count: number;
   isRead: boolean;
   createdAt: string;
+  type: 'club_join_requests' | 'changelog';
   meta: Record<string, string>;
 };
 
@@ -48,6 +50,39 @@ function normalizeDismissedClubDates(
       new Date(value),
     ])
   );
+}
+
+async function getLatestChangelogNotificationItem(
+  lastSeenChangelogAt?: Date | null
+): Promise<NotificationListItem | null> {
+  const latest = await Changelog.findOne({ published: true })
+    .sort({ date: -1 })
+    .select('_id version title date')
+    .lean();
+
+  if (!latest) {
+    return null;
+  }
+
+  const latestDate = new Date(latest.date);
+
+  if (lastSeenChangelogAt && latestDate <= new Date(lastSeenChangelogAt)) {
+    return null;
+  }
+
+  return {
+    id: latest._id.toString(),
+    label: `Version ${latest.version} is now available`,
+    count: 1,
+    isRead: false,
+    type: 'changelog',
+    createdAt: latestDate.toISOString(),
+    meta: {
+      changelogId: latest._id.toString(),
+      version: latest.version,
+      title: latest.title,
+    },
+  };
 }
 
 async function getDismissedClubDates(
@@ -149,6 +184,7 @@ function buildClubNotificationItems(
             : `You have new join requests in ${club.name}`,
         count: club.pendingCount,
         isRead,
+        type: 'club_join_requests',
         createdAt: (latestPendingAt ?? new Date()).toISOString(),
         meta: {
           clubId: club._id.toString(),
@@ -258,8 +294,9 @@ export async function getNotificationSummary(
     }
 
     const dismissedClubDates = await getDismissedClubDates(res.locals.user);
-    const leaderId = new Types.ObjectId(userId.toString());
+    const leaderId = Types.ObjectId.createFromHexString(userId.toString());
     const lastViewedAt = res.locals.user?.settings?.notificationsLastViewedAt;
+    const lastSeenChangelogAt = res.locals.user?.settings?.lastSeenChangelogAt;
     const clubsWithPending = await getClubPendingSummaries(leaderId);
     const items = buildClubNotificationItems(
       clubsWithPending,
@@ -278,7 +315,19 @@ export async function getNotificationSummary(
       });
     }
 
-    const totalCount = unreadItems.reduce((sum, item) => sum + item.count, 0);
+    const changelogItem =
+      await getLatestChangelogNotificationItem(lastSeenChangelogAt);
+    if (changelogItem) {
+      sections.push({
+        type: 'changelog',
+        title: 'New Update',
+        items: [changelogItem],
+      });
+    }
+
+    const totalCount =
+      unreadItems.reduce((sum, item) => sum + item.count, 0) +
+      (changelogItem ? 1 : 0);
 
     return res.status(200).json({ totalCount, sections });
   } catch (error) {
@@ -300,8 +349,9 @@ export async function markNotificationsAsRead(
 
     user.settings = user.settings ?? {};
     user.settings.notificationsLastViewedAt = new Date();
+    user.settings.lastSeenChangelogAt = new Date();
     await user.save();
-
+    console.log('Notifications marked as read for user:', user._id.toString());
     return res.sendStatus(204);
   } catch (error) {
     return next(error as customError);
@@ -322,6 +372,7 @@ export async function markNotificationsAsUnread(
 
     user.settings = user.settings ?? {};
     user.settings.notificationsLastViewedAt = null;
+    user.settings.lastSeenChangelogAt = null;
     await user.save();
 
     return res.sendStatus(204);
@@ -348,6 +399,22 @@ export async function deleteNotification(
     }
 
     user.settings = user.settings ?? {};
+
+    // Check if this is a changelog notification dismissal
+    const matchedChangelog = await Changelog.findOne({
+      _id: notificationId,
+      published: true,
+    })
+      .select('_id')
+      .lean();
+
+    if (matchedChangelog) {
+      user.settings.lastSeenChangelogAt = new Date();
+      await user.save();
+      return res.sendStatus(204);
+    }
+
+    // Otherwise treat it as a club notification dismissal
     const dismissedClubDates = normalizeDismissedClubDates(
       user.settings.dismissedNotificationClubAt
     );
@@ -381,14 +448,24 @@ export async function getNotificationList(
     const skip = (page - 1) * limit;
     const leaderId = new Types.ObjectId(userId.toString());
     const lastViewedAt = res.locals.user?.settings?.notificationsLastViewedAt;
+    const lastSeenChangelogAt = res.locals.user?.settings?.lastSeenChangelogAt;
     const dismissedClubDates = await getDismissedClubDates(res.locals.user);
 
     const clubsWithPending = await getClubPendingSummaries(leaderId);
-    const items = buildClubNotificationItems(
+    const clubItems = buildClubNotificationItems(
       clubsWithPending,
       lastViewedAt,
       dismissedClubDates
     );
+
+    const changelogItem =
+      await getLatestChangelogNotificationItem(lastSeenChangelogAt);
+
+    const items: NotificationListItem[] = [
+      ...(changelogItem ? [changelogItem] : []),
+      ...clubItems,
+    ];
+
     const total = items.length;
     const paginatedItems = items.slice(skip, skip + limit);
 

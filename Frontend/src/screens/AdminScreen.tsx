@@ -1940,9 +1940,7 @@ function AdminScreen() {
                                         description:
                                           changelog.description || '',
                                         changes: changelog.changes,
-                                        date: new Date(changelog.date)
-                                          .toISOString()
-                                          .split('T')[0],
+                                        date: new Date().toISOString(),
                                         published: changelog.published,
                                       });
                                       setChangelogModalOpen(true);
@@ -2034,7 +2032,14 @@ function AdminScreen() {
                         <input
                           type="date"
                           className="input input-bordered"
-                          value={selectedChangelog.date}
+                          value={
+                            selectedChangelog.date &&
+                            selectedChangelog.date.length === 10
+                              ? selectedChangelog.date
+                              : new Date(selectedChangelog.date)
+                                  .toISOString()
+                                  .split('T')[0]
+                          }
                           onChange={(e) =>
                             setSelectedChangelog({
                               ...selectedChangelog,

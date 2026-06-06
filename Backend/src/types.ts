@@ -70,6 +70,7 @@ export interface IUserSettings {
   notificationsLastViewedAt?: Date | null;
   dismissedNotificationClubIds?: string[];
   dismissedNotificationClubAt?: Record<string, Date | string>;
+  lastSeenChangelogAt?: Date | null;
 }
 
 export interface IPatreonData {
@@ -896,12 +897,13 @@ export interface IClubListResponse {
   limit: number;
 }
 
-export type NotificationSectionType = 'club_join_requests';
+export type NotificationSectionType = 'club_join_requests' | 'changelog';
 
 export interface INotificationSummaryItem {
   id: string;
   label: string;
   count: number;
+  type: 'club_join_requests' | 'changelog';
   meta?: Record<string, string>;
 }
 

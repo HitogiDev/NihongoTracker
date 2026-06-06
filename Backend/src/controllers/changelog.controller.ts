@@ -72,11 +72,11 @@ export const getChangelog = async (
 };
 
 // Create new changelog (admin only)
-export const createChangelog = async (
+export async function createChangelog(
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+) {
   try {
     const { version, title, description, changes, date, published } = req.body;
     const userId = res.locals.user._id;
@@ -119,7 +119,7 @@ export const createChangelog = async (
       title,
       description,
       changes,
-      date: date || new Date(),
+      date: date ? new Date(date) : new Date().toISOString(),
       createdBy: userId,
       published: published || false,
     });
@@ -135,7 +135,7 @@ export const createChangelog = async (
   } catch (error) {
     return next(error as customError);
   }
-};
+}
 
 // Update changelog (admin only)
 export const updateChangelog = async (

@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
   SunMoon,
+  Bell,
 } from 'lucide-react';
 
 import { useUserDataStore } from '../store/userData';
@@ -31,6 +32,7 @@ import { logoutResponseType } from '../types';
 import Loader from './Loader';
 import SearchModal from './SearchModal';
 import NotificationBell from './NotificationBell';
+import { useNotificationCount } from '../hooks/useNotificationCount';
 
 type ThemeMode = 'dark' | 'light' | 'system';
 
@@ -69,6 +71,17 @@ function Header() {
 
     return 'system';
   });
+
+  const MAX_BADGE_COUNT = 99;
+  const totalCount = useNotificationCount();
+  const formatBadgeCount = (count: number): string => {
+    if (count > MAX_BADGE_COUNT) {
+      return `${MAX_BADGE_COUNT}+`;
+    }
+
+    return `${count}`;
+  };
+
   const isAdmin = Array.isArray(user?.roles)
     ? (user?.roles as string[]).includes('admin')
     : user?.roles === 'admin';
@@ -426,7 +439,26 @@ function Header() {
             </span>
           </button>
 
-          <NotificationBell />
+          <>
+            {/* Móvil */}
+            <Link
+              to="/notifications"
+              className="btn btn-ghost btn-sm sm:btn-md btn-circle md:hidden relative"
+              aria-label="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {totalCount > 0 && (
+                <span className="badge badge-primary absolute -top-1 -right-1">
+                  {formatBadgeCount(totalCount)}
+                </span>
+              )}
+            </Link>
+
+            {/* Desktop */}
+            <div className="hidden md:block">
+              <NotificationBell />
+            </div>
+          </>
 
           {user ? (
             <>
