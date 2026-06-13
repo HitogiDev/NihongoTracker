@@ -154,7 +154,9 @@ function NotificationBell() {
 
   const renderNotificationItem = (item: INotificationListItem) => {
     const clubId = item.meta?.clubId || item.id;
-    const link = `/clubs/${clubId}?tab=members`;
+    const type = item.type || 'club_join_requests';
+    const link =
+      type === 'changelog' ? `/changelog` : `/clubs/${clubId}?tab=members`;
     const requesterName =
       item.meta?.username ?? item.label.split(' ')[0] ?? 'U';
     const requesterAvatar = item.meta?.avatar;
