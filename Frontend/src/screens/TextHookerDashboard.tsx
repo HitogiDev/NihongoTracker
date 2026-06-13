@@ -18,6 +18,7 @@ import {
   ChevronDown,
   Search,
   Clock,
+  Gamepad2,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
@@ -39,6 +40,7 @@ function TextHookerDashboard() {
   const [roomError, setRoomError] = useState<string | null>(null);
 
   // Media search state
+  const [mediaSessionType, setMediaSessionType] = useState<'vn' | 'game'>('vn');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResultType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -53,26 +55,29 @@ function TextHookerDashboard() {
   });
 
   // Debounced search
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  const handleSearch = useCallback(
+    async (query: string, type: 'vn' | 'game') => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        return;
+      }
 
-    setIsSearching(true);
-    try {
-      const results = await searchMediaFn({
-        type: 'vn',
-        search: query,
-        perPage: 10,
-      });
-      setSearchResults(results);
-    } catch (error) {
-      toast.error('Failed to search media');
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
+      setIsSearching(true);
+      try {
+        const results = await searchMediaFn({
+          type,
+          search: query,
+          perPage: 10,
+        });
+        setSearchResults(results);
+      } catch (error) {
+        toast.error('Failed to search media');
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -81,7 +86,7 @@ function TextHookerDashboard() {
 
     if (searchQuery.trim()) {
       searchTimeoutRef.current = setTimeout(() => {
-        handleSearch(searchQuery);
+        handleSearch(searchQuery, mediaSessionType);
       }, 300);
     } else {
       setSearchResults([]);
@@ -92,7 +97,7 @@ function TextHookerDashboard() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery, handleSearch]);
+  }, [searchQuery, mediaSessionType, handleSearch]);
 
   const handleStartMediaSession = () => {
     if (selectedMedia) {
@@ -105,6 +110,7 @@ function TextHookerDashboard() {
     setSearchQuery('');
     setSearchResults([]);
     setSelectedMedia(null);
+    setMediaSessionType('vn');
   };
 
   const deleteMutation = useMutation({
@@ -535,7 +541,72 @@ function TextHookerDashboard() {
             </button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
+            {/* Media Type Selector */}
+            <div className="form-control">
+              <label className="label mb-2">
+                <span className="label-text font-semibold">Media Type</span>
+              </label>
+              <div className="flex gap-2">
+                <label
+                  className={`label cursor-pointer border rounded-lg p-3 flex-1 transition-colors ${
+                    mediaSessionType === 'vn'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-300 hover:border-primary'
+                  }`}
+                >
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <BookOpen size={16} className="text-primary" />
+                      <span className="label-text font-medium">
+                        Visual Novel
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="media-session-type"
+                    className="radio radio-primary radio-sm"
+                    value="vn"
+                    checked={mediaSessionType === 'vn'}
+                    onChange={() => {
+                      setMediaSessionType('vn');
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setSelectedMedia(null);
+                    }}
+                  />
+                </label>
+                <label
+                  className={`label cursor-pointer border rounded-lg px-3 flex-1 transition-colors ${
+                    mediaSessionType === 'game'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-base-300 hover:border-primary'
+                  }`}
+                >
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Gamepad2 size={16} className="text-primary" />
+                      <span className="label-text font-medium">Video Game</span>
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="media-session-type"
+                    className="radio radio-primary radio-sm"
+                    value="game"
+                    checked={mediaSessionType === 'game'}
+                    onChange={() => {
+                      setMediaSessionType('game');
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setSelectedMedia(null);
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
             {/* Search Input */}
             <div className="form-control">
               <label className="input w-full flex items-center gap-2">
@@ -545,7 +616,7 @@ function TextHookerDashboard() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="grow"
-                  placeholder="Search for a visual novel..."
+                  placeholder={`Search for a ${mediaSessionType === 'vn' ? 'visual novel' : 'video game'}...`}
                 />
                 {isSearching && (
                   <span className="loading loading-spinner loading-sm"></span>
@@ -604,8 +675,16 @@ function TextHookerDashboard() {
                 </div>
               ) : !searchQuery.trim() ? (
                 <div className="text-center py-8 text-base-content/50">
-                  <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p>Search for a visual novel to start</p>
+                  {mediaSessionType === 'vn' ? (
+                    <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  ) : (
+                    <Gamepad2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  )}
+                  <p>
+                    Search for a{' '}
+                    {mediaSessionType === 'vn' ? 'visual novel' : 'video game'}{' '}
+                    to start
+                  </p>
                 </div>
               ) : null}
             </div>
