@@ -66,9 +66,19 @@ async function getLatestChangelogNotificationItem(
 
   const latestDate = new Date(latest.date);
 
-  if (lastSeenChangelogAt && latestDate <= new Date(lastSeenChangelogAt)) {
-    return null;
+  if (lastSeenChangelogAt) {
+    // Compare using the document's actual creation time (encoded in the
+    // ObjectId) rather than its display date. The display date is stored as
+    // UTC midnight which causes off-by-one day issues for users in negative
+    // UTC offset timezones (e.g. UTC-4: local June 11 = UTC June 12 00:xx,
+    // so markAsRead lands on "UTC June 12" while the changelog date is
+    // "UTC June 11" and gets wrongly suppressed).
+    const createdAt = latest._id.getTimestamp();
+    if (createdAt <= new Date(lastSeenChangelogAt)) {
+      return null;
+    }
   }
+
 
   return {
     id: latest._id.toString(),

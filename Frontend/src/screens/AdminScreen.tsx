@@ -403,6 +403,8 @@ function AdminScreen() {
       setChangelogModalOpen(false);
       setSelectedChangelog(null);
       queryClient.invalidateQueries({ queryKey: ['adminChangelogs'] });
+      queryClient.invalidateQueries({ queryKey: ['changelogs'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: () => toast.error('Failed to create changelog'),
   });
@@ -421,6 +423,7 @@ function AdminScreen() {
       setSelectedChangelog(null);
       queryClient.invalidateQueries({ queryKey: ['adminChangelogs'] });
       queryClient.invalidateQueries({ queryKey: ['changelogs'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: () => toast.error('Failed to update changelog'),
   });
@@ -430,6 +433,8 @@ function AdminScreen() {
     onSuccess: () => {
       toast.success('Changelog deleted');
       queryClient.invalidateQueries({ queryKey: ['adminChangelogs'] });
+      queryClient.invalidateQueries({ queryKey: ['changelogs'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: () => toast.error('Failed to delete changelog'),
   });
@@ -1839,7 +1844,7 @@ function AdminScreen() {
                     title: '',
                     description: '',
                     changes: [{ type: 'feature', description: '' }],
-                    date: new Date().toISOString().split('T')[0],
+                    date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
                     published: false,
                   });
                   setChangelogModalOpen(true);
@@ -1909,7 +1914,7 @@ function AdminScreen() {
                                 {changelog.title}
                               </td>
                               <td>
-                                {new Date(changelog.date).toLocaleDateString()}
+                                {new Date(changelog.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}
                               </td>
                               <td>
                                 <span className="text-sm text-base-content/70">
@@ -1940,7 +1945,7 @@ function AdminScreen() {
                                         description:
                                           changelog.description || '',
                                         changes: changelog.changes,
-                                        date: new Date().toISOString(),
+                                        date: new Date(changelog.date).toISOString().split('T')[0],
                                         published: changelog.published,
                                       });
                                       setChangelogModalOpen(true);
