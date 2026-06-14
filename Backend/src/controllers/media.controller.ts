@@ -483,6 +483,7 @@ export async function searchMedia(
       vn: 'vn',
       movie: 'movie',
       tv_show: 'tv_show',
+      'tv show': 'tv_show',
       game: 'game',
     };
     const type = normalizedTypeMap[rawType] ?? rawType;
