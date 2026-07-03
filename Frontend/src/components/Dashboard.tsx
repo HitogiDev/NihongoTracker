@@ -35,6 +35,7 @@ import ClubRanking from './club/ClubRanking';
 import QuickLog from './QuickLog';
 import XpAnimation from './XpAnimation';
 import UserAvatar from './UserAvatar';
+import GlobalAchievementFeed from './achievements/GlobalAchievementFeed';
 import { IMediaDocument, ILog, ILoginResponse } from '../types';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
@@ -786,6 +787,8 @@ function Dashboard() {
           </div>
 
           <ClubRanking username={user.username} />
+
+          <GlobalAchievementFeed />
         </div>
       </div>
 

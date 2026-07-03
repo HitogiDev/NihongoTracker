@@ -5,8 +5,8 @@ import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { getUserLogsFn } from '../api/trackerApi';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { getUserLogsFn, getUserAchievementsFn } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
@@ -430,6 +430,14 @@ function ProfileScreen() {
 
             {username === loggedUser?.username && (
               <ImmersionGoals username={username} />
+            )}
+
+            {/* Achievement Showcase */}
+            {username && (
+              <AchievementShowcaseWidget
+                username={username}
+                isOwner={username === loggedUser?.username}
+              />
             )}
           </div>
 
@@ -941,6 +949,107 @@ function ProfileScreen() {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Achievement Showcase Widget ─────────────────────────────────────────────
+
+function AchievementShowcaseWidget({
+  username,
+  isOwner,
+}: {
+  username: string;
+  isOwner: boolean;
+}) {
+  const { data: achievements, isLoading } = useQuery({
+    queryKey: ['userAchievements', username],
+    queryFn: () => getUserAchievementsFn(username),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const earned = achievements?.filter((a) => a.isEarned) ?? [];
+  const topAchievements = [...earned]
+    .sort((a, b) => {
+      const rarityOrder = { secret: 0, legendary: 1, epic: 2, rare: 3, common: 4 };
+      return (rarityOrder[a.rarity] ?? 5) - (rarityOrder[b.rarity] ?? 5);
+    })
+    .slice(0, 5);
+
+  if (!isLoading && earned.length === 0) return null;
+
+  const rarityColors: Record<string, string> = {
+    common: '#9ca3af',
+    rare: '#60a5fa',
+    epic: '#a855f7',
+    legendary: '#fbbf24',
+    secret: '#7c3aed',
+  };
+
+  return (
+    <div className="card w-full bg-base-100 shadow-sm">
+      <div className="card-body w-full p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="card-title text-base">Achievements</h2>
+          <Link
+            to={`/user/${username}/achievements`}
+            className="btn btn-xs btn-ghost opacity-60 hover:opacity-100"
+          >
+            View all
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="flex gap-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="skeleton h-10 w-10 rounded-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {topAchievements.map((a) => (
+              <div
+                key={a._id}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 border transition-all"
+                style={{
+                  borderColor: rarityColors[a.rarity] + '30',
+                  background: rarityColors[a.rarity] + '08',
+                }}
+              >
+                {a.iconSlug ? (
+                  <img
+                    src={`https://game-icons.net/icons/ffffff/000000/1x1/${a.iconSlug}.png`}
+                    alt=""
+                    width={20}
+                    height={20}
+                    style={{ filter: 'invert(1) sepia(1) saturate(2)', opacity: 0.8 }}
+                  />
+                ) : (
+                  <span className="text-sm">🏆</span>
+                )}
+                <span className="text-xs font-semibold flex-1 truncate" style={{ color: rarityColors[a.rarity] }}>
+                  {a.name ?? '???'}
+                </span>
+                <span
+                  className="text-xs capitalize opacity-60 shrink-0"
+                  style={{ color: rarityColors[a.rarity] }}
+                >
+                  {a.rarity}
+                </span>
+              </div>
+            ))}
+            {isOwner && earned.length === 0 && (
+              <p className="text-xs opacity-40">Log some immersion to start earning achievements!</p>
+            )}
+          </div>
+        )}
+
+        {earned.length > 0 && (
+          <p className="text-xs opacity-40 mt-2">
+            {earned.length} achievement{earned.length !== 1 ? 's' : ''} earned
+          </p>
+        )}
       </div>
     </div>
   );

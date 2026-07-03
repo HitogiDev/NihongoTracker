@@ -106,6 +106,9 @@ const TextHookerDashboard = lazy(
 const ProfileModerationScreen = lazy(
   () => import('./screens/ProfileModerationScreen.tsx')
 );
+const AchievementsScreen = lazy(
+  () => import('./screens/AchievementsScreen.tsx')
+);
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -150,6 +153,7 @@ const router = createBrowserRouter(
           <Route path="list" element={<ListScreen />} />
           <Route path="goals" element={<GoalsScreen />} />
           <Route path="moderation" element={<ProfileModerationScreen />} />
+          <Route path="achievements" element={<AchievementsScreen />} />
         </Route>
         <Route path="review/:reviewId" element={<ReviewDetailScreen />} />
         <Route element={<ProtectedRoutes />}>
@@ -157,6 +161,7 @@ const router = createBrowserRouter(
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route path="notifications" element={<NotificationsScreen />} />
           <Route path="settings" element={<SettingsScreen />} />
+          <Route path="achievements" element={<AchievementsScreen />} />
           <Route
             path=":mediaType/:mediaId/texthooker"
             element={<TextHooker />}

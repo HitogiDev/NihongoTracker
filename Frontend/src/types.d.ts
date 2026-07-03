@@ -1101,3 +1101,61 @@ export interface IGanttMediaItem {
   totalXp: number;
   activeDates: string[]; // sorted YYYY-MM-DD strings (one per active day)
 }
+
+// ─── Achievement System ──────────────────────────────────────────────────────
+
+export type AchievementRarity =
+  | 'common'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'secret';
+
+export type AchievementCategory =
+  | 'streaks'
+  | 'immersion'
+  | 'social'
+  | 'milestone'
+  | 'secret';
+
+export interface IAchievement {
+  _id: string;
+  key: string;
+  name?: string;           // undefined for hidden secrets
+  description?: string;    // undefined for hidden secrets
+  hint?: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  iconSlug?: string;
+  isSecret: boolean;
+  isHidden: boolean;
+  condition?: {
+    type: string;
+    threshold?: number;
+    mediaType?: string;
+    stat?: string;
+  };
+  points: number;
+  order?: number;
+  rarityPercent?: number;
+  isEarned?: boolean;
+  unlockedAt?: string | null;
+  progress?: number;
+}
+
+export interface IUserAchievement {
+  _id: string;
+  user: string;
+  achievement: IAchievement;
+  unlockedAt: string;
+  progress: number;
+  notified: boolean;
+}
+
+export interface IPendingAchievement {
+  userAchievementId: string;
+  unlockedAt: string;
+  achievement: IAchievement;
+  rarityPercent: number;
+}
+

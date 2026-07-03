@@ -220,3 +220,326 @@
 .stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
 .stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
 .stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ACHIEVEMENT SYSTEM ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Rare: blue shimmer sweep ─── */
+@keyframes achievement-shimmer-rare {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.achievement-shimmer-rare {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.15) 45%,
+    rgba(147, 197, 253, 0.35) 50%,
+    rgba(59, 130, 246, 0.15) 55%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: achievement-shimmer-rare 2.5s ease-in-out infinite;
+}
+
+/* ─── Epic: purple glow pulse ─── */
+@keyframes achievement-glow-epic {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(168, 85, 247, 0.4),
+      0 0 20px rgba(168, 85, 247, 0.15),
+      inset 0 0 12px rgba(168, 85, 247, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 16px rgba(168, 85, 247, 0.7),
+      0 0 40px rgba(168, 85, 247, 0.3),
+      inset 0 0 20px rgba(168, 85, 247, 0.1);
+  }
+}
+
+.achievement-glow-epic {
+  animation: achievement-glow-epic 2s ease-in-out infinite;
+}
+
+/* ─── Legendary: warm gold glow ─── */
+@keyframes achievement-glow-legendary {
+  0%, 100% {
+    box-shadow:
+      0 0 12px rgba(251, 191, 36, 0.5),
+      0 0 30px rgba(251, 191, 36, 0.2),
+      0 0 60px rgba(245, 158, 11, 0.1),
+      inset 0 0 15px rgba(251, 191, 36, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(251, 191, 36, 0.8),
+      0 0 50px rgba(251, 191, 36, 0.4),
+      0 0 80px rgba(245, 158, 11, 0.2),
+      inset 0 0 25px rgba(251, 191, 36, 0.15);
+  }
+}
+
+@keyframes achievement-shimmer-legendary {
+  0% { background-position: -300% center; }
+  100% { background-position: 300% center; }
+}
+
+.achievement-glow-legendary {
+  animation: achievement-glow-legendary 2.2s ease-in-out infinite;
+}
+
+.achievement-shimmer-legendary {
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(251, 191, 36, 0.08) 40%,
+    rgba(253, 230, 138, 0.4) 50%,
+    rgba(251, 191, 36, 0.08) 60%,
+    transparent 100%
+  );
+  background-size: 300% 100%;
+  animation: achievement-shimmer-legendary 3s ease-in-out infinite;
+}
+
+/* ─── Secret: dark deep-purple pulse ─── */
+@keyframes achievement-glow-secret {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(109, 40, 217, 0.5),
+      0 0 25px rgba(109, 40, 217, 0.2),
+      inset 0 0 10px rgba(109, 40, 217, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(109, 40, 217, 0.8),
+      0 0 50px rgba(109, 40, 217, 0.4),
+      inset 0 0 20px rgba(109, 40, 217, 0.15);
+  }
+}
+
+.achievement-glow-secret {
+  animation: achievement-glow-secret 3s ease-in-out infinite;
+}
+
+/* ─── 3D Card flip for reveal modal ─── */
+.achievement-flip-scene {
+  perspective: 1000px;
+}
+
+.achievement-flip-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.achievement-flip-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.achievement-flip-front,
+.achievement-flip-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: inherit;
+}
+
+.achievement-flip-back {
+  transform: rotateY(180deg);
+}
+
+/* ─── Reveal flash overlay ─── */
+@keyframes achievement-flash {
+  0% { opacity: 0; }
+  15% { opacity: 0.25; }
+  100% { opacity: 0; }
+}
+
+.achievement-flash-common {
+  animation: achievement-flash 0.6s ease-out forwards;
+  background: rgba(156, 163, 175, 0.6);
+}
+
+.achievement-flash-rare {
+  animation: achievement-flash 0.7s ease-out forwards;
+  background: rgba(59, 130, 246, 0.5);
+}
+
+.achievement-flash-epic {
+  animation: achievement-flash 0.8s ease-out forwards;
+  background: rgba(168, 85, 247, 0.5);
+}
+
+.achievement-flash-legendary {
+  animation: achievement-flash 1s ease-out forwards;
+  background: rgba(251, 191, 36, 0.5);
+}
+
+.achievement-flash-secret {
+  animation: achievement-flash 1s ease-out forwards;
+  background: rgba(109, 40, 217, 0.6);
+}
+
+/* ─── Particle shimmer overlay for legendary ─── */
+@keyframes achievement-particles {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.achievement-particles-legendary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    -45deg,
+    transparent,
+    rgba(251, 191, 36, 0.05),
+    rgba(253, 230, 138, 0.1),
+    transparent,
+    rgba(251, 191, 36, 0.05)
+  );
+  background-size: 400% 400%;
+  animation: achievement-particles 4s ease infinite;
+  pointer-events: none;
+}
+
+/* ─── Earned badge glow ─── */
+.achievement-earned-glow-rare {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4),
+              0 2px 12px rgba(59, 130, 246, 0.2);
+}
+.achievement-earned-glow-epic {
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.4),
+              0 2px 12px rgba(168, 85, 247, 0.25);
+}
+.achievement-earned-glow-legendary {
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5),
+              0 2px 16px rgba(251, 191, 36, 0.3);
+}
+.achievement-earned-glow-secret {
+  box-shadow: 0 0 0 1px rgba(109, 40, 217, 0.5),
+              0 2px 16px rgba(109, 40, 217, 0.3);
+}
+
+/* ─── Holographic Card Effect ─────────────────────────────────────────── */
+/* Driven by --rx, --ry, --mx, --my, --hyp set via JavaScript             */
+
+.achievement-holo-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  --hyp: 0;
+  transform: perspective(600px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.15s ease;
+  will-change: transform;
+}
+
+/* Glare — on all earned cards */
+.achievement-holo-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--mx) var(--my),
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 10;
+  opacity: calc(var(--hyp) * 0.9 + 0.12);
+  transition: opacity 0.3s ease;
+}
+
+/* Rainbow foil — rare, epic, legendary */
+.achievement-holo-foil-rainbow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      hsl(0,   100%, 55%) 0%,
+      hsl(30,  100%, 55%) 8.33%,
+      hsl(60,  100%, 55%) 16.66%,
+      hsl(90,  100%, 55%) 24.99%,
+      hsl(120, 100%, 55%) 33.32%,
+      hsl(150, 100%, 55%) 41.65%,
+      hsl(180, 100%, 55%) 49.98%,
+      hsl(210, 100%, 55%) 58.31%,
+      hsl(240, 100%, 55%) 66.64%,
+      hsl(270, 100%, 55%) 74.97%,
+      hsl(300, 100%, 55%) 83.30%,
+      hsl(330, 100%, 55%) 91.63%,
+      hsl(360, 100%, 55%) 100%
+    ),
+    radial-gradient(
+      farthest-corner at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.85) 10%,
+      rgba(255, 255, 255, 0.55) 25%,
+      rgba(0, 0, 0, 0.5) 90%
+    );
+  background-size: 200% 700%, 200% 200%;
+  background-position:
+    calc(var(--mx) / -2) calc(var(--my) / -3),
+    var(--mx) var(--my);
+  background-blend-mode: screen, overlay;
+  mix-blend-mode: color-dodge;
+  filter: brightness(0.85) contrast(1.4) saturate(1.8);
+  opacity: calc(var(--hyp) * 0.55 + 0.06);
+  pointer-events: none;
+  z-index: 9;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Legendary — cranked up */
+.achievement-holo-foil-legendary {
+  filter: brightness(1.05) contrast(1.9) saturate(2.6);
+  opacity: calc(var(--hyp) * 0.75 + 0.14);
+}
+
+/* Secret — dark violet holo */
+.achievement-holo-foil-secret {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      hsl(260, 100%, 42%) 0%,
+      hsl(280, 100%, 52%) 16%,
+      hsl(300, 100%, 42%) 33%,
+      hsl(270, 100%, 52%) 50%,
+      hsl(250, 100%, 42%) 66%,
+      hsl(290, 100%, 52%) 83%,
+      hsl(260, 100%, 42%) 100%
+    ),
+    radial-gradient(
+      farthest-corner at var(--mx) var(--my),
+      rgba(200, 120, 255, 0.9) 10%,
+      rgba(100, 0, 200, 0.5) 40%,
+      rgba(0, 0, 0, 0.7) 90%
+    );
+  background-size: 200% 700%, 200% 200%;
+  background-position:
+    calc(var(--mx) / -2) calc(var(--my) / -3),
+    var(--mx) var(--my);
+  background-blend-mode: screen, overlay;
+  mix-blend-mode: color-dodge;
+  filter: brightness(0.9) contrast(1.7) saturate(2.4);
+  opacity: calc(var(--hyp) * 0.6 + 0.06);
+  pointer-events: none;
+  z-index: 9;
+  transition: opacity 0.3s ease;
+}
+

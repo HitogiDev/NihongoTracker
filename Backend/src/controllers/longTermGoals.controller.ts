@@ -355,9 +355,16 @@ async function calculateLongTermGoalProgress(
     }
   }
 
-  // Check if on track
-  const isOnTrack =
-    remainingTarget <= 0 || (remainingDays > 0 && requiredPerTimeframe > 0);
+  // Check if on track using linear pacing
+  const startDate = new Date(goal.startDate);
+  const totalDurationMs = targetDate.getTime() - startDate.getTime();
+  const elapsedDurationMs = now.getTime() - startDate.getTime();
+
+  const expectedProgress = totalDurationMs > 0
+    ? goal.totalTarget * Math.min(1, Math.max(0, elapsedDurationMs / totalDurationMs))
+    : 0;
+
+  const isOnTrack = remainingTarget <= 0 || totalProgress >= expectedProgress;
 
   return {
     goalId: goal._id,

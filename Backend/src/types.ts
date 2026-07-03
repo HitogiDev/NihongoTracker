@@ -1052,3 +1052,87 @@ export interface IApiKey extends Document {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+// ─── Achievement System ──────────────────────────────────────────────────────
+
+export type AchievementRarity =
+  | 'common'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'secret';
+
+export type AchievementCategory =
+  | 'streaks'
+  | 'immersion'
+  | 'social'
+  | 'milestone'
+  | 'secret';
+
+export type AchievementConditionType =
+  | 'streak'
+  | 'totalXp'
+  | 'logCount'
+  | 'mediaType'
+  | 'level'
+  | 'totalHours'
+  | 'mediaTypeHours'
+  | 'achievementCount'
+  | 'logTimeRange'
+  | 'logOnDate'
+  | 'singleDayHours'
+  | 'weeklyHours'
+  | 'sessionsInDay'
+  | 'platformAge'
+  | 'manualGrant';
+
+export interface IAchievementCondition {
+  type: AchievementConditionType;
+  threshold?: number;
+  /** For mediaType / mediaTypeHours conditions */
+  mediaType?: string;
+  /** For level conditions — which stat (userLevel, readingLevel, listeningLevel) */
+  stat?: string;
+  /** For logTimeRange — UTC hour range [startHour, endHour) */
+  startHour?: number;
+  endHour?: number;
+  /** For logOnDate — MM-DD pattern (e.g. '07-07' for Tanabata) */
+  datePattern?: string;
+}
+
+export interface IAchievement extends Document {
+  _id: Types.ObjectId;
+  key: string;
+  name: string;
+  description: string;
+  hint?: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  iconSlug: string;
+  isSecret: boolean;
+  isHidden: boolean;
+  condition: IAchievementCondition;
+  points: number;
+  isActive: boolean;
+  order: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IUserAchievement extends Document {
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
+  achievement: Types.ObjectId;
+  unlockedAt: Date;
+  progress: number;
+  notified: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IAchievementCheckContext {
+  trigger: 'log' | 'streak' | 'levelup' | 'manual';
+  log?: ILog;
+  streakValue?: number;
+  levelValue?: number;
+}

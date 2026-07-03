@@ -15,6 +15,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/roboto": "^5.0.12",
+    "@iconify-json/game-icons": "^1.2.4",
+    "@iconify/react": "^6.0.2",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "^4.1.5",
     "@tanstack/react-query": "^5.90.20",

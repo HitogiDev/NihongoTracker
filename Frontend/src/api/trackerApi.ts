@@ -28,6 +28,8 @@ import {
   ITextSessionHistoryEntry,
   StatsGroupLayout,
   IGanttMediaItem,
+  IAchievement,
+  IPendingAchievement,
 } from '../types';
 
 const api = axiosInstance;
@@ -1346,6 +1348,101 @@ export async function getGanttDataFn(
 ): Promise<IGanttMediaItem[]> {
   const { data } = await api.get<IGanttMediaItem[]>(`users/${username}/gantt`, {
     params,
+  });
+  return data;
+}
+
+// ─── Achievement API ──────────────────────────────────────────────────────────
+
+export async function getAchievementsFn(): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>('achievements');
+  return data;
+}
+
+export async function getMyAchievementsFn(): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>('achievements/me');
+  return data;
+}
+
+export async function getUserAchievementsFn(
+  username: string
+): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>(
+    `achievements/user/${username}`
+  );
+  return data;
+}
+
+export async function getPendingAchievementsFn(): Promise<
+  IPendingAchievement[]
+> {
+  const { data } = await api.get<IPendingAchievement[]>(
+    'achievements/me/pending'
+  );
+  return data;
+}
+
+export async function getShowcaseFn(): Promise<IPendingAchievement[]> {
+  const { data } = await api.get<IPendingAchievement[]>(
+    'achievements/me/showcase'
+  );
+  return data;
+}
+
+export async function updateShowcaseFn(showcaseIds: string[]) {
+  const { data } = await api.put('achievements/me/showcase', { showcaseIds });
+  return data;
+}
+
+export async function getAchievementFeedFn(limit = 20): Promise<IPendingAchievement[]> {
+  const { data } = await api.get<IPendingAchievement[]>('achievements/feed', {
+    params: { limit },
+  });
+  return data;
+}
+
+// Admin
+export async function adminGetAchievementsFn(): Promise<IAchievement[]> {
+  const { data } = await api.get<IAchievement[]>('achievements/admin');
+  return data;
+}
+
+export async function adminCreateAchievementFn(achievement: Partial<IAchievement>) {
+  const { data } = await api.post('achievements/admin', achievement);
+  return data;
+}
+
+export async function adminUpdateAchievementFn(
+  id: string,
+  achievement: Partial<IAchievement>
+) {
+  const { data } = await api.put(`achievements/admin/${id}`, achievement);
+  return data;
+}
+
+export async function adminDeleteAchievementFn(id: string) {
+  const { data } = await api.delete(`achievements/admin/${id}`);
+  return data;
+}
+
+export async function adminGrantAchievementFn(
+  username: string,
+  achievementKey: string
+) {
+  const { data } = await api.post('achievements/admin/grant', {
+    username,
+    achievementKey,
+  });
+  return data;
+}
+
+export async function adminRevokeAchievementFn(
+  username: string,
+  achievementKey: string
+) {
+  const { data } = await api.post('achievements/admin/revoke', {
+    username,
+    achievementKey,
   });
   return data;
 }

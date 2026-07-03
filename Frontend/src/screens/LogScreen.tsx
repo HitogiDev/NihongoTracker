@@ -38,6 +38,7 @@ import LevelUpAnimation from '../components/LevelUpAnimation';
 import PlaylistSelectorModal, {
   PlaylistVideoWithOverride,
 } from '../components/PlaylistSelectorModal';
+import { useAchievementReveal } from '../hooks/useAchievementReveal';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -204,6 +205,8 @@ function LogScreen() {
   const [showLevelUpAnimation, setShowLevelUpAnimation] = useState(false);
   const [xpToCurrentLevel, setXpToCurrentLevel] = useState(0);
   const [xpToNextLevel, setXpToNextLevel] = useState(1);
+  const { triggerCheck: triggerAchievementCheck, RevealModal: AchievementRevealModal } =
+    useAchievementReveal();
 
   // ── Playlist state ────────────────────────────────────────────────────────
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
@@ -401,7 +404,12 @@ function LogScreen() {
   );
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
-    onSuccess: async () => {
+    onSuccess: async (responseData) => {
+      // Trigger achievement reveal if any were granted
+      const inlineAchievements = (responseData as any)?.newAchievements;
+      if (inlineAchievements?.length > 0) {
+        await triggerAchievementCheck(inlineAchievements);
+      }
       const pendingVolume = pendingVolumeRef.current;
       if (
         pendingVolume?.mediaId &&
@@ -847,6 +855,7 @@ function LogScreen() {
   }, [autoCalculatedTime]);
 
   return (
+    <>
     <div className="pt-24 pb-16 px-4 flex justify-center items-start bg-base-200 min-h-screen">
       <div className="w-full max-w-6xl">
         <form onSubmit={logSubmit} className="space-y-8">
@@ -1796,6 +1805,8 @@ function LogScreen() {
         </div>
       )}
     </div>
+    {AchievementRevealModal && <AchievementRevealModal />}
+    </>
   );
 }
 

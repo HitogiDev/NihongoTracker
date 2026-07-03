@@ -75,6 +75,18 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
               Goals
             </Link>
           </li>
+          <li>
+            <Link
+              to={`/user/${username}/achievements`}
+              className={
+                isActive(`/user/${username}/achievements`)
+                  ? 'active bg-primary text-primary-content'
+                  : ''
+              }
+            >
+              Achievements
+            </Link>
+          </li>
           {showModerationTab && (
             <li>
               <Link

@@ -33,6 +33,7 @@ import {
   XP_FACTOR_PAGES,
 } from '../middlewares/calculateXp.js';
 import { addDocuments } from '../services/meilisearch/meiliSearch.js';
+import { checkAchievements } from '../services/achievements/achievementEngine.js';
 
 interface IMediaTitleFallback {
   contentTitleNative?: string;
@@ -1703,6 +1704,20 @@ export async function createLog(
       await updateStreakWithLog(res.locals.user._id, savedLog.date);
     }
 
+    // Check achievements after stats + streak are updated
+    const newAchievements = await checkAchievements(
+      res.locals.user._id,
+      { trigger: 'log', log: savedLog }
+    );
+    // Also check streak-triggered achievements if streak was updated
+    if (!savedLog.unknownDate) {
+      const streakAchievements = await checkAchievements(
+        res.locals.user._id,
+        { trigger: 'streak' }
+      );
+      newAchievements.push(...streakAchievements);
+    }
+
     const finalMediaId = logMedia ? logMedia.contentId : mediaId;
     const statusType = String(logMedia?.type ?? type).toLowerCase();
     const immersionMediaTypes = new Set([
@@ -1795,7 +1810,7 @@ export async function createLog(
       }
     }
 
-    return res.status(200).json(savedLog);
+    return res.status(200).json({ ...savedLog.toObject(), newAchievements });
   } catch (error) {
     return next(error as customError);
   }

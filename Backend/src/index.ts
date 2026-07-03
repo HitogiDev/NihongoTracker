@@ -22,6 +22,7 @@ import {
 import meiliClient from './services/meilisearch/meiliClient.js';
 import { initIgdbDumpScheduler } from './services/igdbDumpScheduler.js';
 import { initVndbDumpScheduler } from './services/vndbDumpScheduler.js';
+import { initAchievementCronScheduler } from './services/achievements/cronAchievements.service.js';
 
 connectDB();
 
@@ -67,6 +68,7 @@ bootstrapMeilisearch().catch((err) =>
 
 initIgdbDumpScheduler();
 initVndbDumpScheduler();
+initAchievementCronScheduler();
 
 const httpServer = createServer(app);
 
