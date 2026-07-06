@@ -17,7 +17,10 @@
     "backfill:achievements": "tsx src/scripts/backfillAchievements.ts",
     "build:frontend": "cd ../Frontend && npm run build && if not exist ..\\Backend\\dist mkdir ..\\Backend\\dist && xcopy dist ..\\Backend\\dist /E /I /Y",
     "test:meta": "npm run build:frontend && curl -A \"Discordbot\" http://localhost:3000/user/hitogi",
-    "test:meta:twitter": "curl -A \"Twitterbot\" http://localhost:3000/user/hitogi"
+    "test:meta:twitter": "curl -A \"Twitterbot\" http://localhost:3000/user/hitogi",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "author": "ElaxDev",
   "license": "ISC",
@@ -29,6 +32,7 @@
     "@types/multer": "^1.4.11",
     "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/parser": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -36,7 +40,8 @@
     "morgan": "^1.10.0",
     "prettier": "^3.2.5",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.2",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
