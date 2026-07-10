@@ -4,6 +4,7 @@ import {
   getAchievements,
   getMyAchievements,
   getUserAchievementsByUsername,
+  getUserAchievementActivity,
   getPendingAchievements,
   getShowcase,
   updateShowcase,
@@ -14,6 +15,7 @@ import {
   adminDeleteAchievement,
   adminGrantAchievement,
   adminRevokeAchievement,
+  adminBackfillAchievementsForAllUsers,
 } from '../controllers/achievement.controller.js';
 import { checkPermission } from '../middlewares/checkPermission.js';
 import { userRoles } from '../types.js';
@@ -24,6 +26,7 @@ const router = Router();
 router.get('/', optionalProtect, getAchievements);
 router.get('/feed', getAchievementFeed);
 router.get('/user/:username', getUserAchievementsByUsername);
+router.get('/user/:username/recent', getUserAchievementActivity);
 
 // ─── Authenticated user ───────────────────────────────────────────────────────
 router.get('/me', protect, getMyAchievements);
@@ -67,6 +70,12 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   adminRevokeAchievement
+);
+router.post(
+  '/admin/backfill-all',
+  protect,
+  checkPermission(userRoles.admin),
+  adminBackfillAchievementsForAllUsers
 );
 
 export default router;

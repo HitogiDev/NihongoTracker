@@ -28,6 +28,7 @@ import {
   deleteChangelogFn,
   getVndbDumpSyncStatusFn,
   triggerVndbDumpSyncFn,
+  adminBackfillAchievementsFn,
   type IIgdbDumpSyncStatus,
   type IVndbDumpSyncStatus,
 } from '../api/trackerApi';
@@ -437,6 +438,14 @@ function AdminScreen() {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: () => toast.error('Failed to delete changelog'),
+  });
+
+  const backfillAchievementsMutation = useMutation({
+    mutationFn: adminBackfillAchievementsFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: () => toast.error('Failed to backfill achievements'),
   });
 
   const formatUptime = (days: number) => {
@@ -2314,6 +2323,36 @@ function AdminScreen() {
                         />
                       </svg>
                       Recalculate All XP
+                    </button>
+                    <button
+                      className="btn btn-success w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This will check all achievement conditions for every user and grant any that were previously missed. This may take a while. Continue?'
+                          )
+                        ) {
+                          backfillAchievementsMutation.mutate();
+                        }
+                      }}
+                      disabled={backfillAchievementsMutation.isPending}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {backfillAchievementsMutation.isPending
+                        ? 'Backfilling Achievements...'
+                        : 'Backfill All Achievements'}
                     </button>
                     <button className="btn btn-secondary w-full">
                       <svg

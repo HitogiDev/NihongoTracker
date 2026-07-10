@@ -430,116 +430,315 @@
 }
 
 /* ─── Holographic Card Effect ─────────────────────────────────────────── */
-/* Driven by --rx, --ry, --mx, --my, --hyp set via JavaScript             */
+/* Pokemon-card-style effects. CSS vars set by JS on pointermove:          */
+/* --pointer-x, --pointer-y, --background-x, --background-y,              */
+/* --pointer-from-center, --card-opacity, --rotate-x, --rotate-y          */
 
-.achievement-holo-card {
-  --rx: 0deg;
-  --ry: 0deg;
-  --mx: 50%;
-  --my: 50%;
-  --hyp: 0;
-  transform: perspective(600px) rotateX(var(--rx)) rotateY(var(--ry));
+/* ── Click-to-open flip animations ─────────────────────────────────────── */
+
+/* Small card spins a full 360° on the Y axis, peaking at 1.12× scale      */
+@keyframes ac-flip-exit {
+  0%   { transform: perspective(600px) rotateY(0deg)   scale(1); }
+  30%  { transform: perspective(600px) rotateY(108deg) scale(1.12); }
+  60%  { transform: perspective(600px) rotateY(216deg) scale(1.12); }
+  100% { transform: perspective(600px) rotateY(360deg) scale(1); }
+}
+
+/* Backdrop fades in */
+@keyframes ac-backdrop-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Modal card rises from slightly below with a springy overshoot            */
+@keyframes ac-modal-card-enter {
+  0%   { transform: perspective(1200px) rotateY(-20deg) translateY(30px) scale(0.88); opacity: 0; }
+  55%  { transform: perspective(1200px) rotateY(6deg)   translateY(-8px) scale(1.02); opacity: 1; }
+  78%  { transform: perspective(1200px) rotateY(-2deg)  translateY(3px)  scale(0.99); }
+  100% { transform: perspective(1200px) rotateY(0deg)   translateY(0px)  scale(1);    opacity: 1; }
+}
+
+/* Applied to the card element while it's mid-flip */
+.ac-card.ac-flipping {
+  animation: ac-flip-exit 0.52s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 50;
+  position: relative;
+}
+
+/* Applied to the modal wrapper to animate the backdrop */
+.ac-modal-backdrop {
+  animation: ac-backdrop-enter 0.22s ease-out forwards;
+}
+
+/* Applied to the card inside the modal on first render */
+.ac-modal-card-entering {
+  animation: ac-modal-card-enter 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+}
+
+:root {
+  --sp-1: hsl(2,   100%, 73%);
+  --sp-2: hsl(53,  100%, 69%);
+  --sp-3: hsl(93,  100%, 69%);
+  --sp-4: hsl(176, 100%, 76%);
+  --sp-5: hsl(228, 100%, 74%);
+  --sp-6: hsl(283, 100%, 73%);
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --background-x: 50%;
+  --background-y: 50%;
+  --pointer-from-center: 0;
+  --card-opacity: 0;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
+}
+
+.ac-card {
+  position: relative;
+  overflow: hidden;
+  transform:
+    perspective(600px)
+    rotateX(var(--rotate-x))
+    rotateY(var(--rotate-y));
+  transform-style: preserve-3d;
   transition: transform 0.15s ease;
   will-change: transform;
+  isolation: isolate;
 }
 
-/* Glare — on all earned cards */
-.achievement-holo-glare {
+.ac-shine,
+.ac-glare {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(
-    circle at var(--mx) var(--my),
-    rgba(255, 255, 255, 0.22) 0%,
-    rgba(255, 255, 255, 0.06) 40%,
-    rgba(0, 0, 0, 0.22) 100%
+  pointer-events: none;
+}
+
+.ac-glare {
+  background-image: radial-gradient(
+    farthest-corner circle at var(--pointer-x) var(--pointer-y),
+    hsla(0, 0%, 100%, 0.8)  10%,
+    hsla(0, 0%, 100%, 0.65) 20%,
+    hsla(0, 0%,   0%, 0.5)  90%
   );
   mix-blend-mode: overlay;
-  pointer-events: none;
-  z-index: 10;
-  opacity: calc(var(--hyp) * 0.9 + 0.12);
-  transition: opacity 0.3s ease;
+  opacity: var(--card-opacity);
+  z-index: 4;
+  will-change: opacity;
 }
 
-/* Rainbow foil — rare, epic, legendary */
-.achievement-holo-foil-rainbow {
+/* ── 1. HOLOFOIL RARE (rare) ─────────────────────────────────────────────── */
+.ac-holo-rare .ac-shine {
+  background-image:
+    /* Diagonal rainbow shift — moves with mouse */
+    repeating-linear-gradient(
+      110deg,
+      hsla(283,80%,70%,0.28) 0%,
+      hsla(228,90%,72%,0.28) 8%,
+      hsla(176,80%,72%,0.28) 16%,
+      hsla(93, 85%,68%,0.28) 24%,
+      hsla(53, 90%,68%,0.28) 32%,
+      hsla(2,  80%,70%,0.28) 40%,
+      hsla(283,80%,70%,0.28) 48%,
+      hsla(228,90%,72%,0.28) 56%,
+      hsla(176,80%,72%,0.28) 64%,
+      hsla(93, 85%,68%,0.28) 72%,
+      hsla(53, 90%,68%,0.28) 80%,
+      hsla(2,  80%,70%,0.28) 88%,
+      hsla(283,80%,70%,0.28) 100%
+    );
+  background-position:
+    calc(((50% - var(--background-x)) * 2.6) + 50%)
+    calc(((50% - var(--background-y)) * 3.5) + 50%);
+  background-size: 400% 400%;
+  filter: brightness(1.1) contrast(1.05) saturate(1.3);
+  mix-blend-mode: soft-light;
+  opacity: calc(var(--card-opacity) * 0.9 + 0.08);
+  z-index: 2;
+  will-change: background-position, opacity;
+}
+
+.ac-holo-rare .ac-glare {
+  opacity: calc(var(--card-opacity) * 0.6);
+  filter: brightness(0.9) contrast(1.3);
+  mix-blend-mode: overlay;
+}
+
+
+/* ── 2. TRAINER GALLERY HOLOFOIL (epic) ─────────────────────────────────── */
+.ac-holo-epic .ac-shine {
+  background-image:
+    repeating-linear-gradient(-22deg,
+      hsla(283,49%,60%,0.75)  5%,
+      hsla(2,  74%,59%,0.75) 10%,
+      hsla(53, 67%,53%,0.75) 15%,
+      hsla(93, 56%,52%,0.75) 20%,
+      hsla(176,38%,50%,0.75) 25%,
+      hsla(228,100%,77%,0.75) 30%,
+      hsla(283,49%,61%,0.75) 35%
+    );
+  background-size: 300% 400%;
+  background-position: 0% calc(var(--background-y) * 1);
+  background-blend-mode: color-dodge;
+  filter: brightness(calc(var(--pointer-from-center) * 0.3 + 0.5))
+          contrast(2.3) saturate(1);
+  mix-blend-mode: color-dodge;
+  opacity: var(--card-opacity);
+  z-index: 2;
+  will-change: background-position, filter, opacity;
+}
+
+.ac-holo-epic .ac-glare {
+  background-image: radial-gradient(
+    farthest-corner circle at var(--pointer-x) var(--pointer-y),
+    hsla(0,0%,100%,1)    10%,
+    hsla(0,0%,100%,0.6)  35%,
+    hsla(180,11%,35%,1)  60%
+  );
+  mix-blend-mode: soft-light;
+}
+
+/* ── 3. POKEMON V FULL ART (legendary) ──────────────────────────────────── */
+.ac-holo-legendary .ac-shine {
+  background-image:
+    repeating-linear-gradient(0deg,
+      var(--sp-1)  5%, var(--sp-2) 10%, var(--sp-3) 15%,
+      var(--sp-4) 20%, var(--sp-5) 25%, var(--sp-6) 30%, var(--sp-1) 35%
+    ),
+    repeating-linear-gradient(133deg,
+      #0e152e 0%, hsl(180,10%,60%) 3.8%, hsl(180,29%,66%) 4.5%,
+      hsl(180,10%,60%) 5.2%, #0e152e 10%, #0e152e 12%
+    ),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0,0%,0%,0.1) 12%, hsla(0,0%,0%,0.15) 20%, hsla(0,0%,0%,0.25) 120%
+    );
+  background-blend-mode: soft-light, hue, hard-light;
+  background-size: 200% 700%, 300% 100%, 200% 100%;
+  background-position:
+    0% var(--background-y),
+    calc(var(--background-x) + (var(--background-y) * 0.2)) var(--background-y),
+    var(--background-x) var(--background-y);
+  filter: brightness(calc(var(--pointer-from-center) * 0.4 + 0.4))
+          contrast(1.4) saturate(2.25);
+  mix-blend-mode: color-dodge;
+  opacity: var(--card-opacity);
+  z-index: 2;
+  will-change: background-position, filter, opacity;
+}
+
+.ac-holo-legendary .ac-shine::before {
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background-image:
-    repeating-linear-gradient(
-      0deg,
-      hsl(0,   100%, 55%) 0%,
-      hsl(30,  100%, 55%) 8.33%,
-      hsl(60,  100%, 55%) 16.66%,
-      hsl(90,  100%, 55%) 24.99%,
-      hsl(120, 100%, 55%) 33.32%,
-      hsl(150, 100%, 55%) 41.65%,
-      hsl(180, 100%, 55%) 49.98%,
-      hsl(210, 100%, 55%) 58.31%,
-      hsl(240, 100%, 55%) 66.64%,
-      hsl(270, 100%, 55%) 74.97%,
-      hsl(300, 100%, 55%) 83.30%,
-      hsl(330, 100%, 55%) 91.63%,
-      hsl(360, 100%, 55%) 100%
+    repeating-linear-gradient(0deg,
+      var(--sp-1)  5%, var(--sp-2) 10%, var(--sp-3) 15%,
+      var(--sp-4) 20%, var(--sp-5) 25%, var(--sp-6) 30%, var(--sp-1) 35%
+    ),
+    repeating-linear-gradient(133deg,
+      #0e152e 0%, hsl(180,10%,60%) 3.8%, hsl(180,29%,66%) 4.5%,
+      hsl(180,10%,60%) 5.2%, #0e152e 10%, #0e152e 12%
     ),
     radial-gradient(
-      farthest-corner at var(--mx) var(--my),
-      rgba(255, 255, 255, 0.85) 10%,
-      rgba(255, 255, 255, 0.55) 25%,
-      rgba(0, 0, 0, 0.5) 90%
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0,0%,0%,0.1) 12%, hsla(0,0%,0%,0.15) 20%, hsla(0,0%,0%,0.25) 120%
     );
-  background-size: 200% 700%, 200% 200%;
+  background-blend-mode: exclusion, hue, hard-light;
+  background-size: 200% 400%, 195% 100%, 200% 100%;
   background-position:
-    calc(var(--mx) / -2) calc(var(--my) / -3),
-    var(--mx) var(--my);
-  background-blend-mode: screen, overlay;
+    0% var(--background-y),
+    calc((var(--background-x) + var(--background-y) * 0.2) * -1)
+    calc(var(--background-y) * -1),
+    var(--background-x) var(--background-y);
+  filter: brightness(calc(var(--pointer-from-center) * 0.4 + 0.8))
+          contrast(1.5) saturate(1.25);
+  mix-blend-mode: exclusion;
+  opacity: var(--card-opacity);
+}
+
+.ac-holo-legendary .ac-glare {
+  background-image: radial-gradient(
+    farthest-corner circle at var(--pointer-x) var(--pointer-y),
+    hsl(0,0%,75%)    5%,
+    hsl(200,5%,35%)  60%,
+    hsl(320,40%,10%) 150%
+  );
+  background-size: 120% 150%;
+  background-position: center;
+  mix-blend-mode: hard-light;
+  filter: brightness(1) contrast(1.2) saturate(1);
+  opacity: calc(var(--card-opacity) * 0.75);
+}
+
+/* ── 4. SECRET RARE GOLD (secret — earned) ──────────────────────────────── */
+.ac-holo-secret .ac-shine {
+  background-image:
+    radial-gradient(circle at 30% 40%, hsla(51,100%,75%,0.9) 1px, transparent 1px),
+    radial-gradient(circle at 70% 65%, hsla(45,100%,80%,0.8) 1px, transparent 1px),
+    conic-gradient(var(--sp-4), var(--sp-5), var(--sp-6), var(--sp-1), var(--sp-4)),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(150,0%,0%,0.98) 10%, hsla(0,0%,95%,0.15) 90%
+    );
+  background-size: 3px 3px, 3px 3px, cover, cover;
+  background-position: 45% 45%, 55% 55%, center, center;
+  background-blend-mode: soft-light, hard-light, overlay;
   mix-blend-mode: color-dodge;
-  filter: brightness(0.85) contrast(1.4) saturate(1.8);
-  opacity: calc(var(--hyp) * 0.55 + 0.06);
-  pointer-events: none;
-  z-index: 9;
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  filter: brightness(calc(0.4 + var(--pointer-from-center) * 0.2))
+          contrast(1) saturate(2.7);
+  opacity: var(--card-opacity);
+  z-index: 2;
+  will-change: filter, opacity;
 }
 
-/* Legendary — cranked up */
-.achievement-holo-foil-legendary {
-  filter: brightness(1.05) contrast(1.9) saturate(2.6);
-  opacity: calc(var(--hyp) * 0.75 + 0.14);
-}
-
-/* Secret — dark violet holo */
-.achievement-holo-foil-secret {
+.ac-holo-secret .ac-shine::before {
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background-image:
-    repeating-linear-gradient(
-      0deg,
-      hsl(260, 100%, 42%) 0%,
-      hsl(280, 100%, 52%) 16%,
-      hsl(300, 100%, 42%) 33%,
-      hsl(270, 100%, 52%) 50%,
-      hsl(250, 100%, 42%) 66%,
-      hsl(290, 100%, 52%) 83%,
-      hsl(260, 100%, 42%) 100%
-    ),
+    linear-gradient(45deg, hsl(46,95%,50%), hsl(52,100%,69%)),
     radial-gradient(
-      farthest-corner at var(--mx) var(--my),
-      rgba(200, 120, 255, 0.9) 10%,
-      rgba(100, 0, 200, 0.5) 40%,
-      rgba(0, 0, 0, 0.7) 90%
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(10,20%,90%,0.95) 10%, hsl(0,0%,0%) 70%
     );
-  background-size: 200% 700%, 200% 200%;
-  background-position:
-    calc(var(--mx) / -2) calc(var(--my) / -3),
-    var(--mx) var(--my);
-  background-blend-mode: screen, overlay;
-  mix-blend-mode: color-dodge;
-  filter: brightness(0.9) contrast(1.7) saturate(2.4);
-  opacity: calc(var(--hyp) * 0.6 + 0.06);
-  pointer-events: none;
-  z-index: 9;
-  transition: opacity 0.3s ease;
+  background-size: cover, cover;
+  background-blend-mode: multiply;
+  mix-blend-mode: lighten;
+  filter: brightness(1.25) contrast(1.25) saturate(0.35);
+  opacity: calc(var(--card-opacity) * 0.8);
 }
+
+.ac-holo-secret .ac-glare {
+  background-image: radial-gradient(
+    farthest-corner circle at var(--pointer-x) var(--pointer-y),
+    hsla(45,8%,80%,0.3) 0%, hsl(22,15%,12%) 180%
+  );
+  filter: brightness(1.3) contrast(1.5);
+  mix-blend-mode: hard-light;
+}
+
+/* ── Glow & box-shadow on earned cards ───────────────────────────────────── */
+.ac-card.ac-earned {
+  box-shadow: 0 8px 20px -4px rgba(0,0,0,0.6);
+  transition: transform 0.15s ease, box-shadow 0.4s ease;
+}
+
+.ac-card.ac-earned:hover {
+  box-shadow:
+    0 0  4px -1px white,
+    0 0  4px  1px var(--ac-glow, rgba(255,255,255,0.4)),
+    0 0 14px  2px var(--ac-glow, rgba(255,255,255,0.15)),
+    0 8px 24px -4px rgba(0,0,0,0.8),
+    0 0 50px -20px var(--ac-glow, rgba(255,255,255,0.1));
+}
+
+.ac-holo-rare      { --ac-glow: hsl(210,100%,70%); }
+.ac-holo-epic      { --ac-glow: hsl(283,49%,70%); }
+.ac-holo-legendary { --ac-glow: hsl(51,100%,70%); }
+.ac-holo-secret    { --ac-glow: hsl(46,95%,60%); }
+
+
 

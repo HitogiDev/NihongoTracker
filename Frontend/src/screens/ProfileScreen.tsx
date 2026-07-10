@@ -7,6 +7,8 @@ import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getUserLogsFn, getUserAchievementsFn } from '../api/trackerApi';
+import { Icon } from '@iconify/react';
+import UserAchievementFeed from '../components/achievements/UserAchievementFeed';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
@@ -438,6 +440,16 @@ function ProfileScreen() {
                 username={username}
                 isOwner={username === loggedUser?.username}
               />
+            )}
+
+            {/* Recent achievement activity */}
+            {username && (
+              <div className="card w-full bg-base-100 shadow-sm">
+                <div className="card-body p-4 sm:p-6">
+                  <h2 className="card-title text-base mb-3">Recent Achievements</h2>
+                  <UserAchievementFeed username={username} />
+                </div>
+              </div>
             )}
           </div>
 
@@ -1018,12 +1030,12 @@ function AchievementShowcaseWidget({
                 }}
               >
                 {a.iconSlug ? (
-                  <img
-                    src={`https://game-icons.net/icons/ffffff/000000/1x1/${a.iconSlug}.png`}
-                    alt=""
+                  <Icon
+                    icon={`game-icons:${a.iconSlug}`}
                     width={20}
                     height={20}
-                    style={{ filter: 'invert(1) sepia(1) saturate(2)', opacity: 0.8 }}
+                    color={rarityColors[a.rarity] ?? '#9ca3af'}
+                    style={{ opacity: 0.85, filter: `drop-shadow(0 0 4px ${rarityColors[a.rarity] ?? '#9ca3af'}66)` }}
                   />
                 ) : (
                   <span className="text-sm">🏆</span>

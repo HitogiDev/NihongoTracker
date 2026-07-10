@@ -3,7 +3,8 @@ import Achievement from '../models/achievement.model.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
-import { grantAchievement } from '../services/achievements/achievementEngine.js';
+import { grantAchievement, checkAchievements } from '../services/achievements/achievementEngine.js';
+import { IAchievementCheckContext } from '../types.js';
 import { Types } from 'mongoose';
 
 // ─── Public / User endpoints ──────────────────────────────────────────────────
@@ -533,6 +534,50 @@ export async function adminRevokeAchievement(
 }
 
 /**
+ * POST /api/achievements/admin/backfill-all  (admin)
+ * Checks all achievement conditions for every user and grants any that are
+ * now satisfied but weren't previously awarded.
+ * This is a potentially long-running operation — it processes users sequentially.
+ */
+export async function adminBackfillAchievementsForAllUsers(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const allUsers = await User.find({}).select('_id').lean();
+    const triggers: IAchievementCheckContext['trigger'][] = ['log', 'streak', 'levelup'];
+
+    let totalGranted = 0;
+    let usersProcessed = 0;
+    let usersWithNewAchievements = 0;
+
+    for (const user of allUsers) {
+      const userId = user._id as Types.ObjectId;
+      let userGranted = 0;
+
+      for (const trigger of triggers) {
+        const granted = await checkAchievements(userId, { trigger });
+        userGranted += granted.length;
+      }
+
+      totalGranted += userGranted;
+      usersProcessed++;
+      if (userGranted > 0) usersWithNewAchievements++;
+    }
+
+    return res.status(200).json({
+      message: `Backfill complete: ${totalGranted} achievement(s) granted across ${usersWithNewAchievements} user(s) out of ${usersProcessed} processed.`,
+      totalGranted,
+      usersProcessed,
+      usersWithNewAchievements,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
  * GET /api/achievements/feed  (public)
  * Global feed of recent rare/legendary/secret achievement unlocks.
  */
@@ -548,7 +593,6 @@ export async function getAchievementFeed(
       .populate({
         path: 'achievement',
         match: {
-          rarity: { $in: ['rare', 'epic', 'legendary', 'secret'] },
           isActive: true,
           isHidden: false,
         },
@@ -562,6 +606,48 @@ export async function getAchievementFeed(
     const filtered = feed
       .filter((ua) => ua.achievement !== null)
       .slice(0, limit);
+
+    return res.status(200).json(filtered);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * GET /api/achievements/user/:username/recent  (public)
+ * Returns the most recent achievement unlocks for a user's profile activity feed.
+ */
+export async function getUserAchievementActivity(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+
+    const user = await User.findOne({ username: req.params.username })
+      .select('_id username avatar')
+      .lean();
+    if (!user) throw new customError('User not found', 404);
+
+    const recentUnlocks = await UserAchievement.find({ user: user._id })
+      .populate({
+        path: 'achievement',
+        match: { isActive: true, isHidden: false },
+      })
+      .sort({ unlockedAt: -1 })
+      .limit(limit * 2)
+      .lean();
+
+    const filtered = recentUnlocks
+      .filter((ua) => ua.achievement !== null)
+      .slice(0, limit)
+      .map((ua) => ({
+        userAchievementId: ua._id,
+        achievement: ua.achievement,
+        unlockedAt: ua.unlockedAt,
+        user,
+      }));
 
     return res.status(200).json(filtered);
   } catch (error) {

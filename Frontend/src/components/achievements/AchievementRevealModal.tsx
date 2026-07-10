@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { IPendingAchievement } from '../../types';
-import { getRarityConfig } from './AchievementCard';
+import { BADGE_BG, BADGE_TEXT } from './AchievementCard';
 import { Icon } from '@iconify/react';
 
 interface AchievementRevealModalProps {
@@ -85,7 +85,24 @@ export default function AchievementRevealModal({
 
   if (!a) return null;
 
-  const cfg = getRarityConfig(a.rarity, true);
+  const cardBg: Record<string, string> = {
+    common:    'linear-gradient(135deg, oklch(25% 0.01 250), oklch(30% 0.015 250))',
+    rare:      'linear-gradient(135deg, oklch(20% 0.04 250), oklch(25% 0.06 240))',
+    epic:      'linear-gradient(135deg, oklch(18% 0.06 290), oklch(22% 0.08 280))',
+    legendary: 'linear-gradient(135deg, oklch(20% 0.05 60),  oklch(25% 0.07 50))',
+    secret:    'linear-gradient(135deg, oklch(15% 0.08 295), oklch(20% 0.1 285))',
+  };
+  const cardBorderColor: Record<string, string> = {
+    common:    'rgba(156, 163, 175, 0.35)',
+    rare:      'rgba(59, 130, 246, 0.45)',
+    epic:      'rgba(168, 85, 247, 0.5)',
+    legendary: 'rgba(251, 191, 36, 0.55)',
+    secret:    'rgba(109, 40, 217, 0.6)',
+  };
+  const textColor: Record<string, string> = {
+    common: '#e5e7eb', rare: '#bfdbfe', epic: '#e9d5ff',
+    legendary: '#fef3c7', secret: '#ede9fe',
+  };
 
   const rarityColors: Record<string, string> = {
     common: '#9ca3af',
@@ -156,10 +173,10 @@ export default function AchievementRevealModal({
 
               {/* Back — real achievement */}
               <div
-                className={`achievement-flip-back rounded-2xl border flex items-center justify-center relative overflow-hidden ${cfg.animationClass}`}
+                className={`achievement-flip-back rounded-2xl border flex items-center justify-center relative overflow-hidden`}
                 style={{
-                  background: cfg.cardBg,
-                  borderColor: cfg.borderColor,
+                  background: cardBg[a.rarity] ?? cardBg.common,
+                  borderColor: cardBorderColor[a.rarity] ?? cardBorderColor.common,
                 }}
               >
               {a.iconSlug ? (
@@ -192,18 +209,18 @@ export default function AchievementRevealModal({
                 ref={rarityRef}
                 className="self-center text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full"
                 style={{
-                  background: cfg.badgeBg,
-                  color: cfg.badgeText,
+                  background: BADGE_BG[a.rarity as keyof typeof BADGE_BG] ?? BADGE_BG.common,
+                  color: BADGE_TEXT[a.rarity as keyof typeof BADGE_TEXT] ?? BADGE_TEXT.common,
                   opacity: 0,
                 }}
               >
-                {cfg.label}
+                {a.rarity}
               </span>
 
               <p
                 ref={descRef}
                 className="text-sm opacity-75 mt-1 max-w-xs"
-                style={{ color: cfg.textColor, opacity: 0 }}
+                style={{ color: textColor[a.rarity] ?? textColor.common, opacity: 0 }}
               >
                 {a.description ?? ''}
               </p>
@@ -211,7 +228,7 @@ export default function AchievementRevealModal({
               <div
                 ref={unlockTextRef}
                 className="text-xs opacity-40 mt-2"
-                style={{ color: cfg.textColor, opacity: 0 }}
+                style={{ color: textColor[a.rarity] ?? textColor.common, opacity: 0 }}
               >
                 {a.rarityPercent !== undefined && `${a.rarityPercent}% of users • `}
                 {a.points > 0 && `${a.points} pts`}

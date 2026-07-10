@@ -1401,6 +1401,17 @@ export async function getAchievementFeedFn(limit = 20): Promise<IPendingAchievem
   return data;
 }
 
+export async function getUserAchievementActivityFn(
+  username: string,
+  limit = 10
+): Promise<IPendingAchievement[]> {
+  const { data } = await api.get<IPendingAchievement[]>(
+    `achievements/user/${username}/recent`,
+    { params: { limit } }
+  );
+  return data;
+}
+
 // Admin
 export async function adminGetAchievementsFn(): Promise<IAchievement[]> {
   const { data } = await api.get<IAchievement[]>('achievements/admin');
@@ -1444,5 +1455,15 @@ export async function adminRevokeAchievementFn(
     username,
     achievementKey,
   });
+  return data;
+}
+
+export async function adminBackfillAchievementsFn(): Promise<{
+  message: string;
+  totalGranted: number;
+  usersProcessed: number;
+  usersWithNewAchievements: number;
+}> {
+  const { data } = await api.post('achievements/admin/backfill-all');
   return data;
 }
