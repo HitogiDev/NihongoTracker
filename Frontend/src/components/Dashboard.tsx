@@ -28,6 +28,7 @@ import {
   Play,
   Volume2,
   Minus,
+  LayoutList,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -124,6 +125,7 @@ function Dashboard() {
     mediaId: string;
     title: string;
   } | null>(null);
+  const [feedTab, setFeedTab] = useState<'logs' | 'achievements'>('logs');
 
   const queryClient = useQueryClient();
 
@@ -574,42 +576,71 @@ function Dashboard() {
                     See what the community is immersing in right now
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <select
-                    className="select select-sm select-bordered"
-                    value={feedFilters.type}
-                    onChange={(event) =>
-                      setFeedFilters((prev) => ({
-                        ...prev,
-                        type: event.target.value as FeedType,
-                      }))
-                    }
-                  >
-                    {feedTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="select select-sm select-bordered"
-                    value={feedFilters.timeRange}
-                    onChange={(event) =>
-                      setFeedFilters((prev) => ({
-                        ...prev,
-                        timeRange: event.target.value as FeedTimeRange,
-                      }))
-                    }
-                  >
-                    {feedTimeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Tabs */}
+                  <div className="join">
+                    <button
+                      type="button"
+                      className={`join-item btn btn-sm gap-1.5 ${
+                        feedTab === 'logs' ? 'btn-primary' : 'btn-ghost'
+                      }`}
+                      onClick={() => setFeedTab('logs')}
+                    >
+                      <LayoutList className="w-3.5 h-3.5" />
+                      Logs
+                    </button>
+                    <button
+                      type="button"
+                      className={`join-item btn btn-sm gap-1.5 ${
+                        feedTab === 'achievements' ? 'btn-primary' : 'btn-ghost'
+                      }`}
+                      onClick={() => setFeedTab('achievements')}
+                    >
+                      <Trophy className="w-3.5 h-3.5" />
+                      Achievements
+                    </button>
+                  </div>
+                  {/* Log filters — only visible on Logs tab */}
+                  {feedTab === 'logs' && (
+                    <>
+                      <select
+                        className="select select-sm select-bordered"
+                        value={feedFilters.type}
+                        onChange={(event) =>
+                          setFeedFilters((prev) => ({
+                            ...prev,
+                            type: event.target.value as FeedType,
+                          }))
+                        }
+                      >
+                        {feedTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select select-sm select-bordered"
+                        value={feedFilters.timeRange}
+                        onChange={(event) =>
+                          setFeedFilters((prev) => ({
+                            ...prev,
+                            timeRange: event.target.value as FeedTimeRange,
+                          }))
+                        }
+                      >
+                        {feedTimeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
                 </div>
               </div>
 
+              {feedTab === 'logs' && (
               <div className="space-y-3">
                 {globalFeedLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
@@ -772,6 +803,10 @@ function Dashboard() {
                   </div>
                 )}
               </div>
+              )}
+              {feedTab === 'achievements' && (
+                <GlobalAchievementFeed />
+              )}
             </div>
           </div>
         </div>
@@ -787,8 +822,6 @@ function Dashboard() {
           </div>
 
           <ClubRanking username={user.username} />
-
-          <GlobalAchievementFeed />
         </div>
       </div>
 

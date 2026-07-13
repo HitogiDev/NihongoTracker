@@ -22,6 +22,8 @@ import {
   ListFilter,
   ArrowUp,
   ArrowDown,
+  Trophy,
+  LayoutList,
 } from 'lucide-react';
 
 function ProfileScreen() {
@@ -63,6 +65,7 @@ function ProfileScreen() {
   const [shouldCollapseAbout, setShouldCollapseAbout] = useState(false);
   const showAboutPreview = shouldCollapseAbout && !showFullAbout;
   const aboutPreviewHeight = 224;
+  const [activityTab, setActivityTab] = useState<'logs' | 'achievements'>('logs');
 
   useEffect(() => {
     setShowFullAbout(false);
@@ -283,7 +286,7 @@ function ProfileScreen() {
       });
   })();
 
-  // Group logs by playlistBatchId — playlist batches become single entries
+  // Group logs by playlistBatchId  Eplaylist batches become single entries
   type LogGroup = {
     key: string;
     logs: typeof displayedLogs;
@@ -368,7 +371,7 @@ function ProfileScreen() {
                 ) : (
                   <p className="text-base-content/70 text-sm">
                     {username === loggedUser?.username
-                      ? 'Add a short introduction from Settings → Profile Information.'
+                      ? 'Add a short introduction from Settings ↁEProfile Information.'
                       : 'This user has not added an about section yet.'}
                   </p>
                 )}
@@ -442,21 +445,42 @@ function ProfileScreen() {
               />
             )}
 
-            {/* Recent achievement activity */}
-            {username && (
-              <div className="card w-full bg-base-100 shadow-sm">
-                <div className="card-body p-4 sm:p-6">
-                  <h2 className="card-title text-base mb-3">Recent Achievements</h2>
-                  <UserAchievementFeed username={username} />
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-col gap-4 md:gap-5">
             <div className="flex flex-col gap-3">
-              <h2 className="card-title self-start">Activity Logs</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="card-title self-start">{username}'s Activity</h2>
+                {/* Activity tabs */}
+                <div className="join">
+                  <button
+                    type="button"
+                    className={`join-item btn btn-sm gap-1.5 ${
+                      activityTab === 'logs' ? 'btn-primary' : 'btn-ghost'
+                    }`}
+                    onClick={() => setActivityTab('logs')}
+                  >
+                    <LayoutList className="w-3.5 h-3.5" />
+                    Logs
+                  </button>
+                  <button
+                    type="button"
+                    className={`join-item btn btn-sm gap-1.5 ${
+                      activityTab === 'achievements' ? 'btn-primary' : 'btn-ghost'
+                    }`}
+                    onClick={() => setActivityTab('achievements')}
+                  >
+                    <Trophy className="w-3.5 h-3.5" />
+                    Achievements
+                  </button>
+                </div>
+              </div>
 
+              {activityTab === 'achievements' && username && (
+                <UserAchievementFeed username={username} />
+              )}
+
+              {activityTab === 'logs' && (
               <div className="flex flex-col gap-4">
                 {/* Search Bar and Filter Dropdowns Row */}
                 <div className="flex flex-col lg:flex-row gap-4">
@@ -803,7 +827,7 @@ function ProfileScreen() {
                           onClick={() => setSearchTerm('')}
                           aria-label="Clear search"
                         >
-                          ✕
+                          ✁E
                         </button>
                       </div>
                     )}
@@ -816,7 +840,7 @@ function ProfileScreen() {
                           onClick={() => setFilterType('all')}
                           aria-label="Clear type filter"
                         >
-                          ✕
+                          ✁E
                         </button>
                       </div>
                     )}
@@ -841,7 +865,7 @@ function ProfileScreen() {
                           }}
                           aria-label="Clear date filter"
                         >
-                          ✕
+                          ✁E
                         </button>
                       </div>
                     )}
@@ -854,7 +878,7 @@ function ProfileScreen() {
                           onClick={() => setShowUnknownDates(false)}
                           aria-label="Hide unknown dates"
                         >
-                          ✕
+                          ✁E
                         </button>
                       </div>
                     )}
@@ -878,7 +902,7 @@ function ProfileScreen() {
                           onClick={() => setSortBy('date')}
                           aria-label="Clear sort filter"
                         >
-                          ✕
+                          ✁E
                         </button>
                       </div>
                     )}
@@ -901,9 +925,10 @@ function ProfileScreen() {
                   </div>
                 )}
               </div>
+              )}
             </div>
 
-            {logs?.pages ? (
+            {activityTab === 'logs' && logs?.pages ? (
               groupedLogs.map((entry) =>
                 entry.isPlaylistGroup ? (
                   <PlaylistBatchCard
@@ -925,7 +950,7 @@ function ProfileScreen() {
               </div>
             )}
 
-            {logs?.pages && displayedLogs.length === 0 ? (
+            {activityTab === 'logs' && logs?.pages && displayedLogs.length === 0 ? (
               <div className="card w-full bg-base-100 shadow-sm p-4">
                 <div className="alert alert-info">
                   <svg
@@ -946,6 +971,7 @@ function ProfileScreen() {
               </div>
             ) : null}
 
+            {activityTab === 'logs' && (
             <button
               className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
               onClick={() => fetchNextPage()}
@@ -959,6 +985,7 @@ function ProfileScreen() {
                 'Nothing more to load'
               )}
             </button>
+            )}
           </div>
         </div>
       </div>
