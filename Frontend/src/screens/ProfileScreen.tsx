@@ -6,10 +6,10 @@ import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { getUserLogsFn, getUserAchievementsFn } from '../api/trackerApi';
+import { getUserLogsFn, getUserAchievementsFn, getUserAchievementActivityFn } from '../api/trackerApi';
 import { Icon } from '@iconify/react';
-import UserAchievementFeed from '../components/achievements/UserAchievementFeed';
-import { OutletProfileContextType } from '../types';
+import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
+import { OutletProfileContextType, UnifiedFeedItem, UnifiedFeedFilter, IPendingAchievement } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -22,8 +22,8 @@ import {
   ListFilter,
   ArrowUp,
   ArrowDown,
-  Trophy,
   LayoutList,
+  Trophy,
 } from 'lucide-react';
 
 function ProfileScreen() {
@@ -65,7 +65,8 @@ function ProfileScreen() {
   const [shouldCollapseAbout, setShouldCollapseAbout] = useState(false);
   const showAboutPreview = shouldCollapseAbout && !showFullAbout;
   const aboutPreviewHeight = 224;
-  const [activityTab, setActivityTab] = useState<'logs' | 'achievements'>('logs');
+  const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
+
 
   useEffect(() => {
     setShowFullAbout(false);
@@ -316,6 +317,31 @@ function ProfileScreen() {
     });
   }, [displayedLogs]);
 
+  // Achievement activity for unified feed
+  const { data: achievementActivity } = useQuery({
+    queryKey: ['userAchievementActivity', username],
+    queryFn: () => getUserAchievementActivityFn(username as string, 50),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!username,
+  });
+
+  // Unified chronological feed (achievements + log groups)
+  const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
+    const logItems: UnifiedFeedItem[] = displayedLogs.map((log) => ({
+      kind: 'log',
+      sortDate: new Date(log.date ?? 0),
+      data: log,
+    }));
+    const achievementItems: UnifiedFeedItem[] = (achievementActivity ?? []).map((a) => ({
+      kind: 'achievement',
+      sortDate: new Date(a.unlockedAt),
+      data: a,
+    }));
+    return [...logItems, ...achievementItems].sort(
+      (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
+    );
+  }, [displayedLogs, achievementActivity]);
+
   return (
     <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
       <div className="w-full max-w-7xl">
@@ -451,36 +477,37 @@ function ProfileScreen() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="card-title self-start">{username}'s Activity</h2>
-                {/* Activity tabs */}
+                {/* Kind filter */}
                 <div className="join">
                   <button
                     type="button"
-                    className={`join-item btn btn-sm gap-1.5 ${
-                      activityTab === 'logs' ? 'btn-primary' : 'btn-ghost'
-                    }`}
-                    onClick={() => setActivityTab('logs')}
+                    id="profile-feed-all"
+                    className={`join-item btn btn-sm gap-1.5 ${feedKind === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setFeedKind('all')}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    id="profile-feed-logs"
+                    className={`join-item btn btn-sm gap-1.5 ${feedKind === 'logs' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setFeedKind('logs')}
                   >
                     <LayoutList className="w-3.5 h-3.5" />
                     Logs
                   </button>
                   <button
                     type="button"
-                    className={`join-item btn btn-sm gap-1.5 ${
-                      activityTab === 'achievements' ? 'btn-primary' : 'btn-ghost'
-                    }`}
-                    onClick={() => setActivityTab('achievements')}
+                    id="profile-feed-achievements"
+                    className={`join-item btn btn-sm gap-1.5 ${feedKind === 'achievements' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => setFeedKind('achievements')}
                   >
                     <Trophy className="w-3.5 h-3.5" />
-                    Achievements
+                    Logros
                   </button>
                 </div>
               </div>
 
-              {activityTab === 'achievements' && username && (
-                <UserAchievementFeed username={username} />
-              )}
-
-              {activityTab === 'logs' && (
               <div className="flex flex-col gap-4">
                 {/* Search Bar and Filter Dropdowns Row */}
                 <div className="flex flex-col lg:flex-row gap-4">
@@ -925,66 +952,116 @@ function ProfileScreen() {
                   </div>
                 )}
               </div>
-              )}
             </div>
 
-            {activityTab === 'logs' && logs?.pages ? (
-              groupedLogs.map((entry) =>
-                entry.isPlaylistGroup ? (
-                  <PlaylistBatchCard
-                    key={entry.key}
-                    logs={entry.logs}
-                    user={username}
-                  />
-                ) : (
-                  <LogCard
-                    key={entry.logs[0]._id}
-                    log={entry.logs[0]}
-                    user={username}
-                  />
-                )
-              )
-            ) : (
-              <div className="card w-full bg-base-100 shadow-sm p-4">
-                <p className="text-center">No logs available</p>
-              </div>
-            )}
-
-            {activityTab === 'logs' && logs?.pages && displayedLogs.length === 0 ? (
-              <div className="card w-full bg-base-100 shadow-sm p-4">
-                <div className="alert alert-info">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    className="stroke-current shrink-0 w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  <span>No logs match your search criteria</span>
+            {/* Unified feed: achievements + log cards mixed chronologically */}
+            {feedKind === 'achievements' ? (
+              // Show ONLY achievements
+              (achievementActivity ?? []).length === 0 ? (
+                <div className="card w-full bg-base-100 shadow-sm p-4">
+                  <p className="text-center text-base-content/60">No achievements yet</p>
                 </div>
-              </div>
-            ) : null}
-
-            {activityTab === 'logs' && (
-            <button
-              className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
-              onClick={() => fetchNextPage()}
-              disabled={!hasNextPage || isFetchingNextPage}
-            >
-              {isFetchingNextPage ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : hasNextPage ? (
-                'Load More'
               ) : (
-                'Nothing more to load'
-              )}
-            </button>
+                <div className="flex flex-col gap-3">
+                  {(achievementActivity ?? []).map((item) => (
+                    <AchievementFeedItem
+                      key={String(item.userAchievementId)}
+                      item={item as IPendingAchievement}
+                    />
+                  ))}
+                </div>
+              )
+            ) : feedKind === 'logs' ? (
+              // Show ONLY logs (original log card rendering)
+              <>
+                {logs?.pages ? (
+                  groupedLogs.map((entry) =>
+                    entry.isPlaylistGroup ? (
+                      <PlaylistBatchCard key={entry.key} logs={entry.logs} user={username} />
+                    ) : (
+                      <LogCard key={entry.logs[0]._id} log={entry.logs[0]} user={username} />
+                    )
+                  )
+                ) : (
+                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                    <p className="text-center">No logs available</p>
+                  </div>
+                )}
+                {logs?.pages && displayedLogs.length === 0 ? (
+                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                    <div className="alert alert-info">
+                      <span>No logs match your search criteria</span>
+                    </div>
+                  </div>
+                ) : null}
+                <button
+                  className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
+                  onClick={() => fetchNextPage()}
+                  disabled={!hasNextPage || isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? (
+                    <span className="loading loading-spinner loading-sm"></span>
+                  ) : hasNextPage ? (
+                    'Load More'
+                  ) : (
+                    'Nothing more to load'
+                  )}
+                </button>
+              </>
+            ) : (
+              // Show ALL — unified chronological mix
+              <>
+                {unifiedFeed.length === 0 ? (
+                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                    <p className="text-center text-base-content/60">No activity yet</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {unifiedFeed.map((item) => {
+                      if (item.kind === 'achievement') {
+                        return (
+                          <AchievementFeedItem
+                            key={`ach-${item.data.userAchievementId}`}
+                            item={item.data as IPendingAchievement}
+                          />
+                        );
+                      }
+                      // Log — find group
+                      const log = item.data;
+                      const groupKey = log.playlistBatchId?.trim() || `single:${log._id}`;
+                      const entry = groupedLogs.find((g) => g.key === groupKey);
+                      if (!entry) return null;
+                      // Skip non-representative logs in a group
+                      if (entry.logs[0]._id !== log._id) return null;
+                      return entry.isPlaylistGroup ? (
+                        <PlaylistBatchCard key={entry.key} logs={entry.logs} user={username} />
+                      ) : (
+                        <LogCard key={entry.logs[0]._id} log={entry.logs[0]} user={username} />
+                      );
+                    })}
+                  </div>
+                )}
+                {logs?.pages && displayedLogs.length === 0 && (achievementActivity ?? []).length === 0 ? (
+                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                    <div className="alert alert-info">
+                      <span>No activity matches your search criteria</span>
+                    </div>
+                  </div>
+                ) : null}
+                {hasNextPage && (
+                  <button
+                    className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <span className="loading loading-spinner loading-sm"></span>
+                    ) : (
+                      'Load More Logs'
+                    )}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   getDashboardHoursFn,
   getRecentLogsFn,
   getGlobalFeedFn,
+  getAchievementFeedFn,
   getRankingSummaryFn,
   getUserFn,
   getAverageColorFn,
@@ -19,6 +20,7 @@ import {
   ChevronDown,
   ChevronUp,
   Book,
+  LayoutList,
   GamepadDirectional,
   ChartNoAxesColumn,
   Clapperboard,
@@ -28,7 +30,6 @@ import {
   Play,
   Volume2,
   Minus,
-  LayoutList,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -36,8 +37,8 @@ import ClubRanking from './club/ClubRanking';
 import QuickLog from './QuickLog';
 import XpAnimation from './XpAnimation';
 import UserAvatar from './UserAvatar';
-import GlobalAchievementFeed from './achievements/GlobalAchievementFeed';
-import { IMediaDocument, ILog, ILoginResponse } from '../types';
+import AchievementFeedItem from './achievements/AchievementFeedItem';
+import { IMediaDocument, ILog, ILoginResponse, IPendingAchievement, UnifiedFeedItem, UnifiedFeedFilter } from '../types';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
   reading: Book,
@@ -121,11 +122,12 @@ function Dashboard() {
     type: FeedType;
     timeRange: FeedTimeRange;
   }>({ type: 'all', timeRange: 'day' });
+  const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
   const [mediaToRemove, setMediaToRemove] = useState<{
     mediaId: string;
     title: string;
   } | null>(null);
-  const [feedTab, setFeedTab] = useState<'logs' | 'achievements'>('logs');
+
 
   const queryClient = useQueryClient();
 
@@ -181,29 +183,60 @@ function Dashboard() {
     staleTime: 1000 * 60 * 2,
   });
 
+  const { data: achievementFeed, isLoading: achievementFeedLoading } = useQuery({
+    queryKey: ['achievementFeed', feedFilters.timeRange],
+    queryFn: () => getAchievementFeedFn(20),
+    staleTime: 60_000,
+  });
+
+  // Build unified chronological feed (logs + achievements)
+  const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
+    const logItems: UnifiedFeedItem[] = (globalFeed ?? []).map((log) => ({
+      kind: 'log',
+      sortDate: new Date(log.date ?? 0),
+      data: log,
+    }));
+
+    // Filter achievements by timeRange
+    const now = Date.now();
+    const rangeMs: Record<string, number> = {
+      day:   1 * 24 * 60 * 60 * 1000,
+      week:  7 * 24 * 60 * 60 * 1000,
+      month: 30 * 24 * 60 * 60 * 1000,
+      year:  365 * 24 * 60 * 60 * 1000,
+    };
+    const achievementItems: UnifiedFeedItem[] = (achievementFeed ?? [])
+      .filter((a) => {
+        if (feedFilters.timeRange === 'all') return true;
+        const ms = rangeMs[feedFilters.timeRange];
+        if (!ms) return true;
+        return new Date(a.unlockedAt).getTime() >= now - ms;
+      })
+      .map((a) => ({
+        kind: 'achievement',
+        sortDate: new Date(a.unlockedAt),
+        data: a,
+      }));
+
+    return [...logItems, ...achievementItems].sort(
+      (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
+    );
+  }, [globalFeed, achievementFeed, feedFilters.timeRange]);
+
+  // Group consecutive log entries by playlist batch (for display)
   const groupedGlobalFeed = useMemo<GlobalFeedGroup[]>(() => {
     const feedLogs = globalFeed ?? [];
     const grouped = new Map<string, ILog[]>();
     const order: string[] = [];
-
     for (const log of feedLogs) {
       const key = log.playlistBatchId?.trim() || `single:${log._id}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, []);
-        order.push(key);
-      }
+      if (!grouped.has(key)) { grouped.set(key, []); order.push(key); }
       grouped.get(key)!.push(log);
     }
-
     return order.map((key) => {
       const logs = grouped.get(key) ?? [];
       const representative = logs[0];
-      return {
-        key,
-        logs,
-        representative,
-        isPlaylistGroup: Boolean(representative?.playlistBatchId),
-      };
+      return { key, logs, representative, isPlaylistGroup: Boolean(representative?.playlistBatchId) };
     });
   }, [globalFeed]);
 
@@ -569,7 +602,8 @@ function Dashboard() {
 
           <div className="card bg-base-100 shadow-sm border border-base-200/60">
             <div className="card-body space-y-4">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              {/* Header */}
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Global Feed</h2>
                   <p className={DASHBOARD_CARD_DESCRIPTION_CLASS}>
@@ -577,31 +611,18 @@ function Dashboard() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Tabs */}
-                  <div className="join">
-                    <button
-                      type="button"
-                      className={`join-item btn btn-sm gap-1.5 ${
-                        feedTab === 'logs' ? 'btn-primary' : 'btn-ghost'
-                      }`}
-                      onClick={() => setFeedTab('logs')}
-                    >
-                      <LayoutList className="w-3.5 h-3.5" />
-                      Logs
-                    </button>
-                    <button
-                      type="button"
-                      className={`join-item btn btn-sm gap-1.5 ${
-                        feedTab === 'achievements' ? 'btn-primary' : 'btn-ghost'
-                      }`}
-                      onClick={() => setFeedTab('achievements')}
-                    >
-                      <Trophy className="w-3.5 h-3.5" />
-                      Achievements
-                    </button>
-                  </div>
-                  {/* Log filters — only visible on Logs tab */}
-                  {feedTab === 'logs' && (
+                  {/* Kind filter */}
+                  <select
+                    className="select select-sm select-bordered"
+                    value={feedKind}
+                    onChange={(event) => setFeedKind(event.target.value as typeof feedKind)}
+                  >
+                    <option value="all">All activity</option>
+                    <option value="logs">Logs</option>
+                    <option value="achievements">Achievements</option>
+                  </select>
+                  {/* Log type filter (hidden when showing achievements only) */}
+                  {feedKind !== 'achievements' && (
                     <>
                       <select
                         className="select select-sm select-bordered"
@@ -619,64 +640,91 @@ function Dashboard() {
                           </option>
                         ))}
                       </select>
-                      <select
-                        className="select select-sm select-bordered"
-                        value={feedFilters.timeRange}
-                        onChange={(event) =>
-                          setFeedFilters((prev) => ({
-                            ...prev,
-                            timeRange: event.target.value as FeedTimeRange,
-                          }))
-                        }
-                      >
-                        {feedTimeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
                     </>
                   )}
+
+                  <select
+                    className="select select-sm select-bordered"
+                    value={feedFilters.timeRange}
+                    onChange={(event) =>
+                      setFeedFilters((prev) => ({
+                        ...prev,
+                        timeRange: event.target.value as FeedTimeRange,
+                      }))
+                    }
+                  >
+                    {feedTimeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {feedTab === 'logs' && (
+              {/* Feed items */}
               <div className="space-y-3">
-                {globalFeedLoading ? (
+                {(globalFeedLoading || achievementFeedLoading) ? (
                   Array.from({ length: 5 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="skeleton h-20 w-full rounded-2xl"
-                    />
+                    <div key={index} className="skeleton h-16 w-full rounded-2xl" />
                   ))
-                ) : groupedGlobalFeed.length > 0 ? (
-                  groupedGlobalFeed.map((entry) => {
-                    const log = entry.representative;
+                ) : (() => {
+                  const items = unifiedFeed.filter((item) => {
+                    if (feedKind === 'logs') return item.kind === 'log';
+                    if (feedKind === 'achievements') return item.kind === 'achievement';
+                    return true;
+                  });
+
+                  if (items.length === 0) {
+                    return (
+                      <div className="text-base-content/70 text-sm">
+                        No hay actividad para los filtros seleccionados.
+                      </div>
+                    );
+                  }
+
+                  return items.map((item) => {
+                    if (item.kind === 'achievement') {
+                      return (
+                        <AchievementFeedItem
+                          key={`ach-${item.data.userAchievementId}`}
+                          item={item.data as IPendingAchievement}
+                          showUser
+                          relativeDate={formatRelativeDate(item.data.unlockedAt)}
+                        />
+                      );
+                    }
+
+                    // Log item — find its group
+                    const log = item.data;
+                    const groupKey = log.playlistBatchId?.trim() || `single:${log._id}`;
+                    const entry = groupedGlobalFeed.find((g) => g.key === groupKey);
+                    if (!entry) return null;
+
+                    // Skip if not the representative (avoid duplicates from grouped playlists)
+                    if (entry.representative._id !== log._id) return null;
+
                     const Icon = logTypeIcons[log.type] || Book;
-                    const mediaCover = (log.media as IMediaDocument | undefined)
-                      ?.coverImage;
+                    const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
                     const image = log.media?.contentImage || mediaCover;
                     const feedUsername = log.user?.username ?? 'Someone';
                     const userAvatar = log.user?.avatar;
-                    const mediaType =
-                      (log.media as IMediaDocument | undefined)?.type ??
-                      log.type;
+                    const mediaType = (log.media as IMediaDocument | undefined)?.type ?? log.type;
                     const mediaContentId = log.media?.contentId;
                     const mediaDoc = log.media as IMediaDocument | undefined;
-                    const shouldBlurAdult =
-                      user?.settings?.blurAdultContent ?? true;
+                    const shouldBlurAdult = user?.settings?.blurAdultContent ?? true;
                     const feedIsAdultImage = mediaDoc?.isAdultImage ?? false;
                     const blurAdult = shouldBlurAdult && feedIsAdultImage;
                     const mediaLink =
                       !entry.isPlaylistGroup && mediaType && mediaContentId
                         ? `/${mediaType}/${mediaContentId}`
                         : undefined;
-                    const playlistTitle =
-                      log.playlistBatchTitle ?? 'Playlist batch';
+                    const playlistTitle = log.playlistBatchTitle ?? 'Playlist batch';
                     const playlistXp = entry.logs.reduce(
                       (sum, playlistLog) => sum + playlistLog.xp,
                       0
                     );
+
                     return (
                       <div
                         key={entry.key}
@@ -721,30 +769,19 @@ function Dashboard() {
                                 {log.user.username}
                               </Link>
                             ) : (
-                              <span className="font-semibold">
-                                {feedUsername}
-                              </span>
+                              <span className="font-semibold">{feedUsername}</span>
                             )}
-                            <span className="text-base-content/60">
-                              tracked
-                            </span>
+                            <span className="text-base-content/60">tracked</span>
                             <Icon className="text-primary w-4 h-4" />
                             {entry.isPlaylistGroup ? (
-                              <span className="font-medium">
-                                {playlistTitle}
-                              </span>
+                              <span className="font-medium">{playlistTitle}</span>
                             ) : mediaLink ? (
-                              <Link
-                                to={mediaLink}
-                                className="font-medium hover:underline"
-                              >
-                                {log.media?.title?.contentTitleNative ??
-                                  log.description}
+                              <Link to={mediaLink} className="font-medium hover:underline">
+                                {log.media?.title?.contentTitleNative ?? log.description}
                               </Link>
                             ) : (
                               <span className="font-medium">
-                                {log.media?.title?.contentTitleNative ??
-                                  log.description}
+                                {log.media?.title?.contentTitleNative ?? log.description}
                               </span>
                             )}
                             {entry.isPlaylistGroup && (
@@ -762,8 +799,7 @@ function Dashboard() {
                           </p>
                           {entry.isPlaylistGroup && (
                             <p className="text-xs text-base-content/60 mt-1">
-                              Logged {entry.logs.length} videos from this
-                              playlist
+                              Logged {entry.logs.length} videos from this playlist
                             </p>
                           )}
                         </div>
@@ -778,9 +814,7 @@ function Dashboard() {
                               <img
                                 src={image}
                                 alt={log.media?.title?.contentTitleNative}
-                                className={`w-full h-full object-cover ${
-                                  blurAdult ? 'blur-sm scale-110' : ''
-                                }`}
+                                className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
                               />
                             </Link>
                           ) : (
@@ -788,25 +822,15 @@ function Dashboard() {
                               <img
                                 src={image}
                                 alt={log.media?.title?.contentTitleNative}
-                                className={`w-full h-full object-cover ${
-                                  blurAdult ? 'blur-sm scale-110' : ''
-                                }`}
+                                className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
                               />
                             </div>
                           ))}
                       </div>
                     );
-                  })
-                ) : (
-                  <div className="text-base-content/70 text-sm">
-                    No public logs match the current filters.
-                  </div>
-                )}
+                  });
+                })()}
               </div>
-              )}
-              {feedTab === 'achievements' && (
-                <GlobalAchievementFeed />
-              )}
             </div>
           </div>
         </div>

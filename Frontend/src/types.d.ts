@@ -1157,5 +1157,15 @@ export interface IPendingAchievement {
   unlockedAt: string;
   achievement: IAchievement;
   rarityPercent: number;
+  user?: { username: string; avatar?: string };
 }
+
+// ─── Unified Feed ─────────────────────────────────────────────────────────────
+
+export type UnifiedFeedItem =
+  | { kind: 'log';         sortDate: Date; data: ILog }
+  | { kind: 'achievement'; sortDate: Date; data: IPendingAchievement };
+
+export type UnifiedFeedFilter = 'all' | 'logs' | 'achievements';
+
 
