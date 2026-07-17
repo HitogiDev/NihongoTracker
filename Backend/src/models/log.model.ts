@@ -71,7 +71,7 @@ const LogSchema = new Schema<ILog>(
         const hasChars = hasPositiveValue(this.chars);
         const hasTime = hasPositiveValue(this.time);
         return (
-          (!hasChars && this.type === 'manga') ||
+          (!hasChars && !hasTime && this.type === 'manga') ||
           (!hasChars && !hasTime && this.type === 'reading')
         );
       },
@@ -100,7 +100,7 @@ const LogSchema = new Schema<ILog>(
         return (
           (!hasTime && this.type === 'vn') ||
           (!hasTime && !hasPages && this.type === 'reading') ||
-          (!hasPages && this.type === 'manga')
+          (!hasTime && !hasPages && this.type === 'manga')
         );
       },
     },

@@ -780,7 +780,7 @@ function LogScreen() {
           : undefined,
       time: totalMinutes || undefined,
       chars: logData.readChars || undefined,
-      pages: logData.readPages,
+      pages: logData.readPages || undefined,
       date: logData.unknownDate ? undefined : logData.date,
       unknownDate: logData.unknownDate,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
