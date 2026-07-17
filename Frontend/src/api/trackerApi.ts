@@ -1222,6 +1222,15 @@ export async function getTextSessionFn(
   return data;
 }
 
+export async function createBlankTextSessionFn(
+  name: string
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>('texthooker/blank', {
+    name,
+  });
+  return data;
+}
+
 export async function updateSessionTimerFn(
   contentId: string,
   timerSeconds: number

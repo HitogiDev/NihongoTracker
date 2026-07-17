@@ -5,6 +5,7 @@ import {
   deleteTextSessionFn,
   checkRoomExistsFn,
   searchMediaFn,
+  createBlankTextSessionFn,
 } from '../api/trackerApi';
 import Loader from '../components/Loader';
 import { IMediaDocument, SearchResultType } from '../types';
@@ -19,6 +20,7 @@ import {
   Search,
   Clock,
   Gamepad2,
+  FileText,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
@@ -29,6 +31,8 @@ function TextHookerDashboard() {
   const navigate = useNavigate();
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [isBlankModalOpen, setIsBlankModalOpen] = useState(false);
+  const [blankSessionName, setBlankSessionName] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<{
     contentId: string;
@@ -111,6 +115,24 @@ function TextHookerDashboard() {
     setSearchResults([]);
     setSelectedMedia(null);
     setMediaSessionType('vn');
+  };
+
+  const createBlankSessionMutation = useMutation({
+    mutationFn: createBlankTextSessionFn,
+    onSuccess: (session) => {
+      setIsBlankModalOpen(false);
+      setBlankSessionName('');
+      navigate(`/texthooker/${session.blankId}`);
+    },
+    onError: () => {
+      toast.error('Failed to create session');
+    },
+  });
+
+  const handleCreateBlankSession = () => {
+    const trimmed = blankSessionName.trim();
+    if (!trimmed) return;
+    createBlankSessionMutation.mutate(trimmed);
   };
 
   const deleteMutation = useMutation({
@@ -254,10 +276,10 @@ function TextHookerDashboard() {
               </summary>
               <ul className="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow-sm mt-1">
                 <li>
-                  <Link to="/texthooker/session">
+                  <button onClick={() => setIsBlankModalOpen(true)}>
                     <Type size={16} />
                     Blank Session
-                  </Link>
+                  </button>
                 </li>
                 <li>
                   <button onClick={() => setIsMediaModalOpen(true)}>
@@ -272,44 +294,63 @@ function TextHookerDashboard() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {sessions?.map((session) => {
-            const media = session.mediaId as IMediaDocument;
-            if (!media) return null;
-            const totalChars = session.lines.reduce(
-              (sum, lines) => sum + (lines.charsCount || 0),
+            const media = (session.mediaId as IMediaDocument) || null;
+            const isBlank = !media;
+            if (isBlank && !session.blankId) return null;
+
+            const sessionKey = media ? media.contentId : session.blankId!;
+            const title = media
+              ? media.title.contentTitleNative
+              : session.name || 'Untitled Session';
+
+            // Logging a session clears session.lines, so per-card totals
+            // must include past logged history, not just the live buffer.
+            const loggedLines = (session.sessionHistory ?? []).reduce(
+              (sum, entry) => sum + (entry.linesLogged || 0),
               0
             );
+            const loggedChars = (session.sessionHistory ?? []).reduce(
+              (sum, entry) => sum + (entry.charactersLogged || 0),
+              0
+            );
+            const unloggedChars = session.lines.reduce(
+              (sum, line) => sum + (line.charsCount || 0),
+              0
+            );
+            const totalLines = loggedLines + session.lines.length;
+            const totalChars = loggedChars + unloggedChars;
             return (
               <Link
                 key={session._id}
-                to={`/texthooker/${media.contentId}`}
+                to={`/texthooker/${sessionKey}`}
                 className="group relative"
               >
                 <div className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 h-full group-hover:scale-105">
                   <figure className="px-2 pt-2 relative">
-                    <img
-                      src={media.contentImage || media.coverImage}
-                      alt={media.title.contentTitleNative}
-                      className="rounded-lg w-full aspect-[2/3] object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        if (
-                          target.src !== media.coverImage &&
-                          media.coverImage
-                        ) {
-                          target.src = media.coverImage;
-                        } else {
-                          target.style.display = 'none';
-                        }
-                      }}
-                    />
+                    {media ? (
+                      <img
+                        src={media.contentImage || media.coverImage}
+                        alt={title}
+                        className="rounded-lg w-full aspect-[2/3] object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (
+                            target.src !== media.coverImage &&
+                            media.coverImage
+                          ) {
+                            target.src = media.coverImage;
+                          } else {
+                            target.style.display = 'none';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="rounded-lg w-full aspect-[2/3] bg-base-200 flex items-center justify-center">
+                        <FileText className="w-10 h-10 text-base-content/30" />
+                      </div>
+                    )}
                     <button
-                      onClick={(e) =>
-                        handleDelete(
-                          e,
-                          media.contentId,
-                          media.title.contentTitleNative
-                        )
-                      }
+                      onClick={(e) => handleDelete(e, sessionKey, title)}
                       className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
                       title="Delete Session"
                     >
@@ -319,14 +360,14 @@ function TextHookerDashboard() {
                   <div className="card-body p-3">
                     <h3
                       className="font-semibold text-sm line-clamp-2"
-                      title={media.title.contentTitleNative}
+                      title={title}
                     >
-                      {media.title.contentTitleNative}
+                      {title}
                     </h3>
                     <div className="text-xs text-base-content/70 space-y-1">
                       <div className="flex items-center gap-1">
                         <List className="w-3 h-3" />
-                        <span>{session.lines.length} lines</span>
+                        <span>{numberWithCommas(totalLines)} lines</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Type className="w-3 h-3" />
@@ -361,9 +402,12 @@ function TextHookerDashboard() {
               Start a TextHooker session from a media page or launch a blank
               session anytime.
             </p>
-            <Link to="/texthooker/session" className="btn btn-primary">
+            <button
+              className="btn btn-primary"
+              onClick={() => setIsBlankModalOpen(true)}
+            >
               Launch Blank Session
-            </Link>
+            </button>
           </div>
         )}
       </div>
@@ -711,6 +755,85 @@ function TextHookerDashboard() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button onClick={resetMediaModal}>close</button>
+        </form>
+      </dialog>
+
+      {/* Blank Session Modal */}
+      <dialog className={`modal ${isBlankModalOpen ? 'modal-open' : ''}`}>
+        <div className="modal-box max-w-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <Type className="w-5 h-5 text-primary" />
+              Name Your Session
+            </h3>
+            <button
+              onClick={() => {
+                setIsBlankModalOpen(false);
+                setBlankSessionName('');
+              }}
+              className="btn btn-sm btn-circle btn-ghost"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="form-control gap-2">
+              <span className="text-sm font-semibold leading-none">
+                Session Name
+              </span>
+              <input
+                type="text"
+                autoFocus
+                value={blankSessionName}
+                onChange={(e) => setBlankSessionName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateBlankSession();
+                }}
+                maxLength={100}
+                className="input input-bordered w-full"
+                placeholder="e.g. Random reading practice"
+                aria-label="Session name"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end mt-6">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setIsBlankModalOpen(false);
+                  setBlankSessionName('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={
+                  !blankSessionName.trim() || createBlankSessionMutation.isPending
+                }
+                onClick={handleCreateBlankSession}
+              >
+                {createBlankSessionMutation.isPending ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  'Start Session'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button
+            onClick={() => {
+              setIsBlankModalOpen(false);
+              setBlankSessionName('');
+            }}
+          >
+            close
+          </button>
         </form>
       </dialog>
 

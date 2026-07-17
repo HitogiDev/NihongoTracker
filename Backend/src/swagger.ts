@@ -3092,6 +3092,28 @@ const swaggerDocument = {
         },
       },
     },
+    '/texthooker/blank': {
+      post: {
+        tags: ['Text Sessions'],
+        summary: 'Create a blank (media-less), user-named session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: { name: { type: 'string' } },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Blank session created' },
+        },
+      },
+    },
     '/texthooker/room/{roomId}/exists': {
       get: {
         tags: ['Text Sessions'],

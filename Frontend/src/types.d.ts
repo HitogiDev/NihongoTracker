@@ -1079,6 +1079,8 @@ export interface ITextSession {
   roomId?: string;
   userId?: string;
   mediaId?: string | IMediaDocument;
+  blankId?: string;
+  name?: string;
   timerSeconds?: number;
   lines: ITextLine[];
   sessionHistory?: ITextSessionHistoryEntry[];

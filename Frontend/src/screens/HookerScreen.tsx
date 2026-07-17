@@ -796,11 +796,17 @@ function TextHooker() {
       return;
     }
 
+    if (sessionData?.name) {
+      document.title = `${sessionData.name} • TextHooker • NihongoTracker`;
+      return;
+    }
+
     document.title = 'TextHooker • NihongoTracker';
   }, [
     media?.title?.contentTitleEnglish,
     media?.title?.contentTitleRomaji,
     media?.title?.contentTitleNative,
+    sessionData?.name,
   ]);
 
   useEffect(() => {
