@@ -928,7 +928,15 @@ const swaggerDocument = {
             in: 'query',
             schema: {
               type: 'string',
-              enum: ['date', 'xp', 'episodes', 'chars', 'pages', 'time'],
+              enum: [
+                'date',
+                'xp',
+                'episodes',
+                'chars',
+                'pages',
+                'time',
+                'readingSpeed',
+              ],
             },
           },
           {

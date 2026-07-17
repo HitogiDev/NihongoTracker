@@ -270,7 +270,14 @@ export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
   start?: string;
   end?: string;
   type?: ILog['type'] | ILog['type'][];
-  sortBy?: 'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time';
+  sortBy?:
+    | 'date'
+    | 'xp'
+    | 'episodes'
+    | 'chars'
+    | 'pages'
+    | 'time'
+    | 'readingSpeed';
   sortDirection?: 'asc' | 'desc';
   tags?: string[] | string;
   tagsMode?: 'any' | 'all';

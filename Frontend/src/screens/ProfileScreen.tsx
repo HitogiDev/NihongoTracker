@@ -34,6 +34,7 @@ import {
   Trophy,
   Sparkles,
   Tag,
+  X,
 } from 'lucide-react';
 
 const RARITY_ORDER: Record<AchievementRarity, number> = {
@@ -121,27 +122,40 @@ function ProfileScreen() {
           { value: 'rarity', label: 'Rarity' },
           { value: 'points', label: 'Points' },
         ]
-      : [
-          { value: 'date', label: 'Date' },
-          { value: 'xp', label: 'XP' },
-          { value: 'episodes', label: 'Episodes' },
-          { value: 'chars', label: 'Characters' },
-          { value: 'pages', label: 'Pages' },
-          { value: 'time', label: 'Time' },
-          { value: 'readingSpeed', label: 'Reading Speed' },
-        ];
+      : feedKind === 'logs'
+        ? [
+            { value: 'date', label: 'Date' },
+            { value: 'xp', label: 'XP' },
+            { value: 'episodes', label: 'Episodes' },
+            { value: 'chars', label: 'Characters' },
+            { value: 'pages', label: 'Pages' },
+            { value: 'time', label: 'Time' },
+            { value: 'readingSpeed', label: 'Reading Speed' },
+          ]
+        : [
+            { value: 'date', label: 'Date' },
+            { value: 'xp', label: 'XP' },
+            { value: 'episodes', label: 'Episodes' },
+            { value: 'chars', label: 'Characters' },
+            { value: 'pages', label: 'Pages' },
+            { value: 'time', label: 'Time' },
+            { value: 'readingSpeed', label: 'Reading Speed' },
+            { value: 'rarity', label: 'Rarity' },
+            { value: 'points', label: 'Points' },
+          ];
 
   useEffect(() => {
     setShowFullAbout(false);
   }, [username, aboutText]);
 
   // Sort options differ by feed kind — reset to a value valid for the newly selected kind.
+  // "all" supports every field (items missing it sort to the end), so it never needs a reset.
   useEffect(() => {
-    const achievementSorts = ['date', 'rarity', 'points'];
-    const isAchievementSort = achievementSorts.includes(sortBy);
-    if (feedKind === 'achievements' && !isAchievementSort) {
+    const logOnlyFields = ['xp', 'episodes', 'chars', 'pages', 'time', 'readingSpeed'];
+    const achievementOnlyFields = ['rarity', 'points'];
+    if (feedKind === 'achievements' && logOnlyFields.includes(sortBy)) {
       setSortBy('date');
-    } else if (feedKind !== 'achievements' && (sortBy === 'rarity' || sortBy === 'points')) {
+    } else if (feedKind === 'logs' && achievementOnlyFields.includes(sortBy)) {
       setSortBy('date');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,7 +307,7 @@ function ProfileScreen() {
   const readingProgressPercentage =
     (readingProgressXP / totalReadingXpToLevelUp) * 100;
 
-  const isLogSortValue = sortBy !== 'readingSpeed' && sortBy !== 'rarity' && sortBy !== 'points';
+  const isLogSortValue = sortBy !== 'rarity' && sortBy !== 'points';
   const backendSortBy = isLogSortValue ? sortBy : 'date';
   const backendSortDirection = isLogSortValue ? sortDirection : 'desc';
 
@@ -345,24 +359,12 @@ function ProfileScreen() {
     const flattened = pages.flatMap((page) =>
       Array.isArray(page) ? page : []
     );
-    const baseLogs = showUnknownDates
+    return showUnknownDates
       ? flattened
       : flattened.filter((log) => !log.unknownDate);
-
-    if (sortBy !== 'readingSpeed') {
-      return baseLogs;
-    }
-
-    return baseLogs
-      .filter((log) => (log.time ?? 0) > 0 && (log.chars ?? 0) > 0)
-      .sort((a, b) => {
-        const speedA = ((a.chars ?? 0) / (a.time ?? 1)) * 60;
-        const speedB = ((b.chars ?? 0) / (b.time ?? 1)) * 60;
-        return sortDirection === 'asc' ? speedA - speedB : speedB - speedA;
-      });
   })();
 
-  // Group logs by playlistBatchId  Eplaylist batches become single entries
+  // Group logs by playlistBatchId  - playlist batches become single entries
   type LogGroup = {
     key: string;
     logs: typeof displayedLogs;
@@ -447,7 +449,9 @@ function ProfileScreen() {
     return sorted;
   }, [achievementActivity, achievementCategory, searchTerm, dateRange, sortBy, sortDirection]);
 
-  // Unified chronological feed (achievements + log groups)
+  // Unified feed (achievements + log groups). Sorting by a field only one
+  // kind has (e.g. XP on logs, Rarity on achievements) pushes the other
+  // kind's items — which lack that field — to the end, in chronological order.
   const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
     const logItems: UnifiedFeedItem[] = displayedLogs.map((log) => ({
       kind: 'log',
@@ -459,10 +463,55 @@ function ProfileScreen() {
       sortDate: new Date(a.unlockedAt),
       data: a,
     }));
-    return [...logItems, ...achievementItems].sort(
-      (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
-    );
-  }, [displayedLogs, filteredAchievements]);
+
+    const getSortValue = (item: UnifiedFeedItem): number | null => {
+      if (sortBy === 'date') return item.sortDate.getTime();
+
+      if (item.kind === 'log') {
+        switch (sortBy) {
+          case 'xp':
+            return item.data.xp ?? null;
+          case 'episodes':
+            return item.data.episodes ?? null;
+          case 'chars':
+            return item.data.chars ?? null;
+          case 'pages':
+            return item.data.pages ?? null;
+          case 'time':
+            return item.data.time ?? null;
+          case 'readingSpeed':
+            return (item.data.time ?? 0) > 0 && (item.data.chars ?? 0) > 0
+              ? ((item.data.chars ?? 0) / (item.data.time ?? 1)) * 60
+              : null;
+          default:
+            return null;
+        }
+      }
+
+      switch (sortBy) {
+        case 'rarity':
+          return RARITY_ORDER[item.data.achievement.rarity] ?? null;
+        case 'points':
+          return item.data.achievement.points ?? null;
+        default:
+          return null;
+      }
+    };
+
+    return [...logItems, ...achievementItems].sort((a, b) => {
+      const valueA = getSortValue(a);
+      const valueB = getSortValue(b);
+
+      if (valueA === null && valueB === null) {
+        return b.sortDate.getTime() - a.sortDate.getTime();
+      }
+      if (valueA === null) return 1;
+      if (valueB === null) return -1;
+
+      const diff = valueB - valueA;
+      return sortDirection === 'asc' ? -diff : diff;
+    });
+  }, [displayedLogs, filteredAchievements, sortBy, sortDirection]);
 
   return (
     <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
@@ -519,7 +568,7 @@ function ProfileScreen() {
                 ) : (
                   <p className="text-base-content/70 text-sm">
                     {username === loggedUser?.username
-                      ? 'Add a short introduction from Settings ↁEProfile Information.'
+                      ? 'Add a short introduction from Settings → Profile Information.'
                       : 'This user has not added an about section yet.'}
                   </p>
                 )}
@@ -637,9 +686,9 @@ function ProfileScreen() {
 
               <div className="flex flex-col gap-4">
                 {/* Search Bar and Filter Dropdowns Row */}
-                <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex flex-col lg:flex-row lg:flex-wrap gap-4">
                   {/* Search Bar */}
-                  <div className="flex-1 lg:max-w-md">
+                  <div className="flex-1 min-w-[180px] lg:max-w-md">
                     <label className="input input-bordered flex items-center gap-2">
                       <Search className="w-5 h-5 opacity-70" />
                       <input
@@ -653,7 +702,7 @@ function ProfileScreen() {
                   </div>
 
                   {/* Filter Dropdowns */}
-                  <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
                     {/* Type Filter Dropdown (logs only) */}
                     {feedKind !== 'achievements' && (
                       <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
@@ -808,70 +857,68 @@ function ProfileScreen() {
                       </ul>
                     </div>
 
-                    {/* Combined Sort Filter Dropdown (hidden for the mixed "all" feed, which is always chronological) */}
-                    {feedKind !== 'all' && (
-                      <div className="dropdown dropdown-end flex-1 sm:flex-none">
-                        <div
-                          tabIndex={0}
-                          role="button"
-                          className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
-                        >
-                          <ListFilter className="w-4 h-4" />
-                          Sort:{' '}
-                          {sortFieldOptions.find((o) => o.value === sortBy)?.label ?? 'Date'}{' '}
-                          {sortDirection === 'desc' ? (
-                            <ArrowDown className="w-3 h-3" />
-                          ) : (
-                            <ArrowUp className="w-3 h-3" />
-                          )}
-                          <ChevronDown className="w-4 h-4 ml-auto" />
-                        </div>
-                        <ul
-                          tabIndex={0}
-                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
-                        >
-                          <li className="menu-title">
-                            <span>Sort Field</span>
-                          </li>
-                          {sortFieldOptions.map((option) => (
-                            <li key={option.value}>
-                              <a
-                                className={
-                                  sortBy === option.value ? 'active' : ''
-                                }
-                                onClick={() => {
-                                  setSortBy(option.value as typeof sortBy);
-                                }}
-                              >
-                                {option.label}
-                              </a>
-                            </li>
-                          ))}
-                          <div className="divider my-1"></div>
-                          <li className="menu-title">
-                            <span>Sort Direction</span>
-                          </li>
-                          <li>
-                            <a
-                              className={sortDirection === 'desc' ? 'active' : ''}
-                              onClick={() => setSortDirection('desc')}
-                            >
-                              <ArrowDown className="w-4 h-4" />
-                              Highest to Lowest
-                            </a>
-                          </li>
-                          <li>
-                            <a
-                              className={sortDirection === 'asc' ? 'active' : ''}
-                              onClick={() => setSortDirection('asc')}
-                            >
-                              <ArrowUp className="w-4 h-4" />
-                              Lowest to Highest
-                            </a>
-                          </li>
-                        </ul>
+                    {/* Combined Sort Filter Dropdown */}
+                    <div className="dropdown dropdown-end flex-1 sm:flex-none">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                      >
+                        <ListFilter className="w-4 h-4" />
+                        Sort:{' '}
+                        {sortFieldOptions.find((o) => o.value === sortBy)?.label ?? 'Date'}{' '}
+                        {sortDirection === 'desc' ? (
+                          <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUp className="w-3 h-3" />
+                        )}
+                        <ChevronDown className="w-4 h-4 ml-auto" />
                       </div>
-                    )}
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
+                      >
+                        <li className="menu-title">
+                          <span>Sort Field</span>
+                        </li>
+                        {sortFieldOptions.map((option) => (
+                          <li key={option.value}>
+                            <a
+                              className={
+                                sortBy === option.value ? 'active' : ''
+                              }
+                              onClick={() => {
+                                setSortBy(option.value as typeof sortBy);
+                              }}
+                            >
+                              {option.label}
+                            </a>
+                          </li>
+                        ))}
+                        <div className="divider my-1"></div>
+                        <li className="menu-title">
+                          <span>Sort Direction</span>
+                        </li>
+                        <li>
+                          <a
+                            className={sortDirection === 'desc' ? 'active' : ''}
+                            onClick={() => setSortDirection('desc')}
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                            {sortBy === 'date' ? 'Newest First' : 'Highest to Lowest'}
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            className={sortDirection === 'asc' ? 'active' : ''}
+                            onClick={() => setSortDirection('asc')}
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                            {sortBy === 'date' ? 'Oldest First' : 'Lowest to Highest'}
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
 
@@ -984,7 +1031,9 @@ function ProfileScreen() {
                   (feedKind !== 'achievements' && filterType !== 'all') ||
                   (feedKind !== 'logs' && achievementCategory !== 'all') ||
                   searchTerm ||
-                  showUnknownDates) && (
+                  showUnknownDates ||
+                  sortBy !== 'date' ||
+                  sortDirection !== 'desc') && (
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-xs text-base-content/60">
                       Active filters:
@@ -998,7 +1047,7 @@ function ProfileScreen() {
                           onClick={() => setSearchTerm('')}
                           aria-label="Clear search"
                         >
-                          ✁E
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}
@@ -1011,7 +1060,7 @@ function ProfileScreen() {
                           onClick={() => setFilterType('all')}
                           aria-label="Clear type filter"
                         >
-                          ✁E
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}
@@ -1025,7 +1074,7 @@ function ProfileScreen() {
                           onClick={() => setAchievementCategory('all')}
                           aria-label="Clear category filter"
                         >
-                          ✁E
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}
@@ -1050,7 +1099,7 @@ function ProfileScreen() {
                           }}
                           aria-label="Clear date filter"
                         >
-                          ✁E
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}
@@ -1063,21 +1112,28 @@ function ProfileScreen() {
                           onClick={() => setShowUnknownDates(false)}
                           aria-label="Hide unknown dates"
                         >
-                          ✁E
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}
 
-                    {feedKind !== 'all' && sortBy !== 'date' && (
+                    {(sortBy !== 'date' || sortDirection !== 'desc') && (
                       <div className="badge badge-info badge-sm gap-1">
                         Sort:{' '}
-                        {sortFieldOptions.find((o) => o.value === sortBy)?.label}
+                        {sortBy !== 'date'
+                          ? sortFieldOptions.find((o) => o.value === sortBy)?.label
+                          : sortDirection === 'asc'
+                            ? 'Oldest First'
+                            : 'Newest First'}
                         <button
                           className="ml-1 hover:bg-info-focus rounded-full"
-                          onClick={() => setSortBy('date')}
+                          onClick={() => {
+                            setSortBy('date');
+                            setSortDirection('desc');
+                          }}
                           aria-label="Clear sort filter"
                         >
-                          ✁E
+                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     )}

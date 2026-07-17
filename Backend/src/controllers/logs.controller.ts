@@ -845,6 +845,9 @@ export async function getUserLogs(
       case 'time':
         sortObject.time = sortValue;
         break;
+      case 'readingSpeed':
+        sortObject.readingSpeed = sortValue;
+        break;
       case 'date':
       default:
         sortObject.date = sortValue;
@@ -857,6 +860,20 @@ export async function getUserLogs(
       {
         $match: initialMatch,
       },
+      {
+        $addFields: {
+          readingSpeed: {
+            $cond: [
+              { $and: [{ $gt: ['$chars', 0] }, { $gt: ['$time', 0] }] },
+              { $multiply: [{ $divide: ['$chars', '$time'] }, 60] },
+              null,
+            ],
+          },
+        },
+      },
+      ...(sortBy === 'readingSpeed'
+        ? [{ $match: { readingSpeed: { $ne: null } } } as PipelineStage]
+        : []),
       {
         $sort: sortObject,
       },
