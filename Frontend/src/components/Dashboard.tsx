@@ -20,7 +20,6 @@ import {
   ChevronDown,
   ChevronUp,
   Book,
-  LayoutList,
   GamepadDirectional,
   ChartNoAxesColumn,
   Clapperboard,

@@ -9,6 +9,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getUserLogsFn, getUserAchievementsFn, getUserAchievementActivityFn } from '../api/trackerApi';
 import { Icon } from '@iconify/react';
 import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
+import { RARITY_COLOR } from '../components/achievements/rarity';
 import { OutletProfileContextType, UnifiedFeedItem, UnifiedFeedFilter, IPendingAchievement } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
@@ -1095,14 +1096,6 @@ function AchievementShowcaseWidget({
 
   if (!isLoading && earned.length === 0) return null;
 
-  const rarityColors: Record<string, string> = {
-    common: '#9ca3af',
-    rare: '#60a5fa',
-    epic: '#a855f7',
-    legendary: '#fbbf24',
-    secret: '#7c3aed',
-  };
-
   return (
     <div className="card w-full bg-base-100 shadow-sm">
       <div className="card-body w-full p-4 sm:p-6">
@@ -1127,29 +1120,24 @@ function AchievementShowcaseWidget({
             {topAchievements.map((a) => (
               <div
                 key={a._id}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 border transition-all"
-                style={{
-                  borderColor: rarityColors[a.rarity] + '30',
-                  background: rarityColors[a.rarity] + '08',
-                }}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-base-200/60 border border-base-300 transition-all"
               >
                 {a.iconSlug ? (
                   <Icon
                     icon={`game-icons:${a.iconSlug}`}
                     width={20}
                     height={20}
-                    color={rarityColors[a.rarity] ?? '#9ca3af'}
-                    style={{ opacity: 0.85, filter: `drop-shadow(0 0 4px ${rarityColors[a.rarity] ?? '#9ca3af'}66)` }}
+                    color={RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common}
                   />
                 ) : (
                   <span className="text-sm">🏆</span>
                 )}
-                <span className="text-xs font-semibold flex-1 truncate" style={{ color: rarityColors[a.rarity] }}>
+                <span className="text-xs font-semibold flex-1 truncate">
                   {a.name ?? '???'}
                 </span>
                 <span
-                  className="text-xs capitalize opacity-60 shrink-0"
-                  style={{ color: rarityColors[a.rarity] }}
+                  className="text-xs capitalize shrink-0"
+                  style={{ color: RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common }}
                 >
                   {a.rarity}
                 </span>
