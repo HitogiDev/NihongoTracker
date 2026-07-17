@@ -1696,7 +1696,11 @@ function StatsScreen() {
                         const c = r + l;
                         if (c <= 0) return '0:0';
                         const rr = Math.round((r / c) * 10);
-                        return `${rr}:${10 - rr}`;
+                        const ll = 10 - rr;
+                        const gcd = (a: number, b: number): number =>
+                          b === 0 ? a : gcd(b, a % b);
+                        const d = gcd(rr, ll) || 1;
+                        return `${rr / d}:${ll / d}`;
                       })()}
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
