@@ -486,6 +486,12 @@ export interface IRankingSummary extends IRankingSummaryDetails {
   monthly: IRankingSummaryDetails;
 }
 
+export interface IRankingHistoryPoint {
+  date: string;
+  globalPosition: number;
+  monthlyPosition: number;
+}
+
 export interface AnilistSearchResult {
   Page: {
     pageInfo: {

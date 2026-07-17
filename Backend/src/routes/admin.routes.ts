@@ -19,6 +19,7 @@ import {
   markLogsWithoutStatusToInProgress,
   triggerVndbDumpSync,
   getVndbDumpSyncStatus,
+  backfillRankingHistory,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -201,6 +202,13 @@ router.get(
   protect,
   checkPermission(userRoles.admin),
   getVndbDumpSyncStatus
+);
+
+router.post(
+  '/ranking-history/backfill',
+  protect,
+  checkPermission(userRoles.admin),
+  backfillRankingHistory
 );
 
 export default router;

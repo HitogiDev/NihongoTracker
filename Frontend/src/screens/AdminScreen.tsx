@@ -29,6 +29,7 @@ import {
   getVndbDumpSyncStatusFn,
   triggerVndbDumpSyncFn,
   adminBackfillAchievementsFn,
+  adminBackfillRankingHistoryFn,
   type IIgdbDumpSyncStatus,
   type IVndbDumpSyncStatus,
 } from '../api/trackerApi';
@@ -473,6 +474,14 @@ function AdminScreen() {
       toast.success(data.message);
     },
     onError: () => toast.error('Failed to backfill achievements'),
+  });
+
+  const backfillRankingHistoryMutation = useMutation({
+    mutationFn: adminBackfillRankingHistoryFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: () => toast.error('Failed to backfill ranking history'),
   });
 
   const formatUptime = (days: number) => {
@@ -2383,6 +2392,36 @@ function AdminScreen() {
                       {backfillAchievementsMutation.isPending
                         ? 'Backfilling Achievements...'
                         : 'Backfill All Achievements'}
+                    </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This reconstructs weekly global + monthly ranking snapshots from all historical logs. Run this once to seed the ranking-over-time graph. This may take a while. Continue?'
+                          )
+                        ) {
+                          backfillRankingHistoryMutation.mutate();
+                        }
+                      }}
+                      disabled={backfillRankingHistoryMutation.isPending}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                        />
+                      </svg>
+                      {backfillRankingHistoryMutation.isPending
+                        ? 'Backfilling Ranking History...'
+                        : 'Backfill Ranking History'}
                     </button>
                     <button className="btn btn-secondary w-full">
                       <svg

@@ -9,6 +9,7 @@ import {
   getImmersionList,
   compareUserStats,
   getRankingSummary,
+  getRankingHistory,
   updateMediaCompletionStatus,
   updateHiddenRecentMedia,
   updateStatsLayout,
@@ -40,6 +41,7 @@ router.get('/compare', compareUserStats);
 router.get('/ranking', getRanking);
 router.get('/ranking/media', getMediumRanking);
 router.get('/:username/ranking-summary', getRankingSummary);
+router.get('/:username/ranking-history', getRankingHistory);
 
 router.get('/:username', optionalProtect, getUser);
 
