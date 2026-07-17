@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import { getMyAchievementsFn, getUserAchievementsFn } from '../api/trackerApi';
 import AchievementCard from '../components/achievements/AchievementCard';
+import { RARITY_COLOR, rarityTint } from '../components/achievements/rarity';
 import { AchievementRarity, AchievementCategory } from '../types';
 import {
   Lock,
@@ -117,14 +118,6 @@ export default function AchievementsScreen() {
     );
   }
 
-  const rarityColors: Record<string, string> = {
-    common: '#9ca3af',
-    rare: '#60a5fa',
-    epic: '#a855f7',
-    legendary: '#fbbf24',
-    secret: '#7c3aed',
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
       {/* Header */}
@@ -140,19 +133,19 @@ export default function AchievementsScreen() {
       {/* Stats summary bar */}
       {achievements && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl p-4 border bg-base-200/50">
+          <div className="rounded-xl p-4 border border-base-300 bg-base-200/50">
             <p className="text-2xl font-extrabold">{earned.length}</p>
             <p className="text-xs opacity-50 mt-0.5">Earned</p>
           </div>
-          <div className="rounded-xl p-4 border bg-base-200/50">
+          <div className="rounded-xl p-4 border border-base-300 bg-base-200/50">
             <p className="text-2xl font-extrabold">{visible.length}</p>
             <p className="text-xs opacity-50 mt-0.5">Total</p>
           </div>
-          <div className="rounded-xl p-4 border bg-base-200/50">
+          <div className="rounded-xl p-4 border border-base-300 bg-base-200/50">
             <p className="text-2xl font-extrabold">{totalPoints.toLocaleString()}</p>
             <p className="text-xs opacity-50 mt-0.5">Points</p>
           </div>
-          <div className="rounded-xl p-4 border bg-base-200/50">
+          <div className="rounded-xl p-4 border border-base-300 bg-base-200/50">
             <p className="text-2xl font-extrabold">
               {visible.length > 0 ? Math.round((earned.length / visible.length) * 100) : 0}%
             </p>
@@ -170,9 +163,9 @@ export default function AchievementsScreen() {
                 key={rarity}
                 className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border"
                 style={{
-                  borderColor: rarityColors[rarity] + '40',
-                  color: rarityColors[rarity],
-                  background: rarityColors[rarity] + '10',
+                  borderColor: rarityTint(rarity, '40'),
+                  color: RARITY_COLOR[rarity],
+                  background: rarityTint(rarity, '10'),
                 }}
               >
                 <span className="capitalize">{rarity}</span>

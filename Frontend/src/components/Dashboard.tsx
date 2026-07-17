@@ -30,6 +30,9 @@ import {
   Play,
   Volume2,
   Minus,
+  Funnel,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -60,6 +63,12 @@ type GlobalFeedGroup = {
   representative: ILog;
   isPlaylistGroup: boolean;
 };
+
+const feedKindOptions: Array<{ label: string; value: UnifiedFeedFilter; icon: React.ElementType }> = [
+  { label: 'All activity', value: 'all', icon: Sparkles },
+  { label: 'Logs', value: 'logs', icon: LayoutList },
+  { label: 'Achievements', value: 'achievements', icon: Trophy },
+];
 
 const feedTypeOptions: Array<{ label: string; value: FeedType }> = [
   { label: 'All types', value: 'all' },
@@ -612,53 +621,111 @@ function Dashboard() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Kind filter */}
-                  <select
-                    className="select select-sm select-bordered"
-                    value={feedKind}
-                    onChange={(event) => setFeedKind(event.target.value as typeof feedKind)}
-                  >
-                    <option value="all">All activity</option>
-                    <option value="logs">Logs</option>
-                    <option value="achievements">Achievements</option>
-                  </select>
+                  <div className="dropdown dropdown-end">
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      className="btn btn-sm btn-outline gap-2 justify-start"
+                    >
+                      {(() => {
+                        const Icon = feedKindOptions.find((o) => o.value === feedKind)?.icon;
+                        return Icon ? <Icon className="w-3.5 h-3.5" /> : null;
+                      })()}
+                      {feedKindOptions.find((o) => o.value === feedKind)?.label}
+                      <ChevronDown className="w-3.5 h-3.5 ml-auto" />
+                    </div>
+                    <ul
+                      tabIndex={0}
+                      className="dropdown-content menu bg-base-100 rounded-box z-[1] w-48 p-2 shadow-lg"
+                    >
+                      {feedKindOptions.map((option) => {
+                        const Icon = option.icon;
+                        return (
+                          <li key={option.value}>
+                            <a
+                              className={feedKind === option.value ? 'active' : ''}
+                              onClick={() => setFeedKind(option.value)}
+                            >
+                              <Icon className="w-4 h-4" />
+                              {option.label}
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
                   {/* Log type filter (hidden when showing achievements only) */}
                   {feedKind !== 'achievements' && (
-                    <>
-                      <select
-                        className="select select-sm select-bordered"
-                        value={feedFilters.type}
-                        onChange={(event) =>
-                          setFeedFilters((prev) => ({
-                            ...prev,
-                            type: event.target.value as FeedType,
-                          }))
-                        }
+                    <div className="dropdown dropdown-end">
+                      <div
+                        tabIndex={0}
+                        role="button"
+                        className="btn btn-sm btn-outline gap-2"
+                      >
+                        <Funnel className="w-3.5 h-3.5" />
+                        {feedTypeOptions.find((o) => o.value === feedFilters.type)?.label}
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </div>
+                      <ul
+                        tabIndex={0}
+                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-44 p-2 shadow-lg"
                       >
                         {feedTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
+                          <li key={option.value}>
+                            <a
+                              className={
+                                feedFilters.type === option.value ? 'active' : ''
+                              }
+                              onClick={() =>
+                                setFeedFilters((prev) => ({
+                                  ...prev,
+                                  type: option.value,
+                                }))
+                              }
+                            >
+                              {option.label}
+                            </a>
+                          </li>
                         ))}
-                      </select>
-                    </>
+                      </ul>
+                    </div>
                   )}
 
-                  <select
-                    className="select select-sm select-bordered"
-                    value={feedFilters.timeRange}
-                    onChange={(event) =>
-                      setFeedFilters((prev) => ({
-                        ...prev,
-                        timeRange: event.target.value as FeedTimeRange,
-                      }))
-                    }
-                  >
-                    {feedTimeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Time range filter */}
+                  <div className="dropdown dropdown-end">
+                    <div
+                      tabIndex={0}
+                      role="button"
+                      className="btn btn-sm btn-outline gap-2"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      {feedTimeOptions.find((o) => o.value === feedFilters.timeRange)?.label}
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </div>
+                    <ul
+                      tabIndex={0}
+                      className="dropdown-content menu bg-base-100 rounded-box z-[1] w-44 p-2 shadow-lg"
+                    >
+                      {feedTimeOptions.map((option) => (
+                        <li key={option.value}>
+                          <a
+                            className={
+                              feedFilters.timeRange === option.value ? 'active' : ''
+                            }
+                            onClick={() =>
+                              setFeedFilters((prev) => ({
+                                ...prev,
+                                timeRange: option.value,
+                              }))
+                            }
+                          >
+                            {option.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
 
@@ -678,7 +745,7 @@ function Dashboard() {
                   if (items.length === 0) {
                     return (
                       <div className="text-base-content/70 text-sm">
-                        No hay actividad para los filtros seleccionados.
+                        No activity for the selected filters.
                       </div>
                     );
                   }

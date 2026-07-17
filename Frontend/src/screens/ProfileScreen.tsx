@@ -9,7 +9,15 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getUserLogsFn, getUserAchievementsFn, getUserAchievementActivityFn } from '../api/trackerApi';
 import { Icon } from '@iconify/react';
 import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
-import { OutletProfileContextType, UnifiedFeedItem, UnifiedFeedFilter, IPendingAchievement } from '../types';
+import { RARITY_COLOR } from '../components/achievements/rarity';
+import {
+  OutletProfileContextType,
+  UnifiedFeedItem,
+  UnifiedFeedFilter,
+  IPendingAchievement,
+  AchievementCategory,
+  AchievementRarity,
+} from '../types';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -24,7 +32,29 @@ import {
   ArrowDown,
   LayoutList,
   Trophy,
+  Sparkles,
+  Tag,
 } from 'lucide-react';
+
+const RARITY_ORDER: Record<AchievementRarity, number> = {
+  common: 0,
+  rare: 1,
+  epic: 2,
+  legendary: 3,
+  secret: 4,
+};
+
+const achievementCategoryOptions: Array<{
+  value: 'all' | AchievementCategory;
+  label: string;
+}> = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'streaks', label: 'Streaks' },
+  { value: 'immersion', label: 'Immersion' },
+  { value: 'social', label: 'Social' },
+  { value: 'milestone', label: 'Milestone' },
+  { value: 'secret', label: 'Secret' },
+];
 
 function ProfileScreen() {
   const limit = 10;
@@ -46,6 +76,9 @@ function ProfileScreen() {
     | 'audio'
     | 'other'
   >('all');
+  const [achievementCategory, setAchievementCategory] = useState<
+    'all' | AchievementCategory
+  >('all');
   const [dateFilter, setDateFilter] = useState<
     'all' | 'today' | 'week' | 'month' | 'year' | 'custom'
   >('all');
@@ -57,7 +90,15 @@ function ProfileScreen() {
     undefined
   );
   const [sortBy, setSortBy] = useState<
-    'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time' | 'readingSpeed'
+    | 'date'
+    | 'xp'
+    | 'episodes'
+    | 'chars'
+    | 'pages'
+    | 'time'
+    | 'readingSpeed'
+    | 'rarity'
+    | 'points'
   >('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const aboutText = user?.about?.trim() ?? '';
@@ -67,10 +108,44 @@ function ProfileScreen() {
   const aboutPreviewHeight = 224;
   const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
 
+  const feedKindOptions: Array<{ label: string; value: UnifiedFeedFilter; icon: React.ElementType }> = [
+    { label: 'All activity', value: 'all', icon: Sparkles },
+    { label: 'Logs', value: 'logs', icon: LayoutList },
+    { label: 'Achievements', value: 'achievements', icon: Trophy },
+  ];
+
+  const sortFieldOptions =
+    feedKind === 'achievements'
+      ? [
+          { value: 'date', label: 'Date' },
+          { value: 'rarity', label: 'Rarity' },
+          { value: 'points', label: 'Points' },
+        ]
+      : [
+          { value: 'date', label: 'Date' },
+          { value: 'xp', label: 'XP' },
+          { value: 'episodes', label: 'Episodes' },
+          { value: 'chars', label: 'Characters' },
+          { value: 'pages', label: 'Pages' },
+          { value: 'time', label: 'Time' },
+          { value: 'readingSpeed', label: 'Reading Speed' },
+        ];
 
   useEffect(() => {
     setShowFullAbout(false);
   }, [username, aboutText]);
+
+  // Sort options differ by feed kind — reset to a value valid for the newly selected kind.
+  useEffect(() => {
+    const achievementSorts = ['date', 'rarity', 'points'];
+    const isAchievementSort = achievementSorts.includes(sortBy);
+    if (feedKind === 'achievements' && !isAchievementSort) {
+      setSortBy('date');
+    } else if (feedKind !== 'achievements' && (sortBy === 'rarity' || sortBy === 'points')) {
+      setSortBy('date');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedKind]);
 
   useEffect(() => {
     const content = aboutContentRef.current;
@@ -218,9 +293,9 @@ function ProfileScreen() {
   const readingProgressPercentage =
     (readingProgressXP / totalReadingXpToLevelUp) * 100;
 
-  const backendSortBy = sortBy === 'readingSpeed' ? 'date' : sortBy;
-  const backendSortDirection =
-    sortBy === 'readingSpeed' ? 'desc' : sortDirection;
+  const isLogSortValue = sortBy !== 'readingSpeed' && sortBy !== 'rarity' && sortBy !== 'points';
+  const backendSortBy = isLogSortValue ? sortBy : 'date';
+  const backendSortDirection = isLogSortValue ? sortDirection : 'desc';
 
   const {
     data: logs,
@@ -325,6 +400,53 @@ function ProfileScreen() {
     enabled: !!username,
   });
 
+  // Apply the search/category/date/sort filters to achievements too (client-side,
+  // since a user's unlocked achievements are a small bounded set already fetched in full).
+  const filteredAchievements = useMemo(() => {
+    let items = achievementActivity ?? [];
+
+    if (achievementCategory !== 'all') {
+      items = items.filter((a) => a.achievement.category === achievementCategory);
+    }
+
+    const term = searchTerm.trim().toLowerCase();
+    if (term) {
+      items = items.filter(
+        (a) =>
+          a.achievement.name?.toLowerCase().includes(term) ||
+          a.achievement.description?.toLowerCase().includes(term)
+      );
+    }
+
+    if (dateRange) {
+      items = items.filter((a) => {
+        const unlockedAt = new Date(a.unlockedAt);
+        return unlockedAt >= dateRange.startDate && unlockedAt <= dateRange.endDate;
+      });
+    }
+
+    const sorted = [...items];
+    if (sortBy === 'rarity') {
+      sorted.sort((a, b) => {
+        const diff =
+          RARITY_ORDER[b.achievement.rarity] - RARITY_ORDER[a.achievement.rarity];
+        return sortDirection === 'asc' ? -diff : diff;
+      });
+    } else if (sortBy === 'points') {
+      sorted.sort((a, b) => {
+        const diff = b.achievement.points - a.achievement.points;
+        return sortDirection === 'asc' ? -diff : diff;
+      });
+    } else {
+      sorted.sort((a, b) => {
+        const diff = new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime();
+        return sortDirection === 'asc' ? -diff : diff;
+      });
+    }
+
+    return sorted;
+  }, [achievementActivity, achievementCategory, searchTerm, dateRange, sortBy, sortDirection]);
+
   // Unified chronological feed (achievements + log groups)
   const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
     const logItems: UnifiedFeedItem[] = displayedLogs.map((log) => ({
@@ -332,7 +454,7 @@ function ProfileScreen() {
       sortDate: new Date(log.date ?? 0),
       data: log,
     }));
-    const achievementItems: UnifiedFeedItem[] = (achievementActivity ?? []).map((a) => ({
+    const achievementItems: UnifiedFeedItem[] = filteredAchievements.map((a) => ({
       kind: 'achievement',
       sortDate: new Date(a.unlockedAt),
       data: a,
@@ -340,7 +462,7 @@ function ProfileScreen() {
     return [...logItems, ...achievementItems].sort(
       (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
     );
-  }, [displayedLogs, achievementActivity]);
+  }, [displayedLogs, filteredAchievements]);
 
   return (
     <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
@@ -478,33 +600,38 @@ function ProfileScreen() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="card-title self-start">{username}'s Activity</h2>
                 {/* Kind filter */}
-                <div className="join">
-                  <button
-                    type="button"
-                    id="profile-feed-all"
-                    className={`join-item btn btn-sm gap-1.5 ${feedKind === 'all' ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => setFeedKind('all')}
+                <div className="dropdown dropdown-end">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="btn btn-outline gap-2 justify-start"
                   >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    id="profile-feed-logs"
-                    className={`join-item btn btn-sm gap-1.5 ${feedKind === 'logs' ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => setFeedKind('logs')}
+                    {(() => {
+                      const Icon = feedKindOptions.find((o) => o.value === feedKind)?.icon;
+                      return Icon ? <Icon className="w-4 h-4" /> : null;
+                    })()}
+                    {feedKindOptions.find((o) => o.value === feedKind)?.label}
+                    <ChevronDown className="w-4 h-4 ml-auto" />
+                  </div>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu bg-base-100 rounded-box z-[1] w-48 p-2 shadow-lg"
                   >
-                    <LayoutList className="w-3.5 h-3.5" />
-                    Logs
-                  </button>
-                  <button
-                    type="button"
-                    id="profile-feed-achievements"
-                    className={`join-item btn btn-sm gap-1.5 ${feedKind === 'achievements' ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => setFeedKind('achievements')}
-                  >
-                    <Trophy className="w-3.5 h-3.5" />
-                    Logros
-                  </button>
+                    {feedKindOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <li key={option.value}>
+                          <a
+                            className={feedKind === option.value ? 'active' : ''}
+                            onClick={() => setFeedKind(option.value)}
+                          >
+                            <Icon className="w-4 h-4" />
+                            {option.label}
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               </div>
 
@@ -527,54 +654,88 @@ function ProfileScreen() {
 
                   {/* Filter Dropdowns */}
                   <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
-                    {/* Type Filter Dropdown */}
-                    <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
-                      <div
-                        tabIndex={0}
-                        role="button"
-                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
-                      >
-                        <Funnel className="w-4 h-4" />
-                        {filterType === 'all'
-                          ? 'All Types'
-                          : filterType.charAt(0).toUpperCase() +
-                            filterType.slice(1)}
-                        <ChevronDown className="w-4 h-4 ml-auto" />
-                      </div>
-                      <ul
-                        tabIndex={0}
-                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
-                      >
-                        {[
-                          { value: 'all', label: 'All Types' },
-                          { value: 'anime', label: 'Anime' },
-                          { value: 'manga', label: 'Manga' },
-                          { value: 'reading', label: 'Reading' },
-                          { value: 'vn', label: 'Visual Novel' },
-                          { value: 'game', label: 'Video Game' },
-                          { value: 'video', label: 'Video' },
-                          { value: 'movie', label: 'Movie' },
-                          { value: 'audio', label: 'Audio' },
-                          { value: 'other', label: 'Other' },
-                        ].map((option) => (
-                          <li key={option.value}>
-                            <a
-                              className={
-                                filterType === option.value ? 'active' : ''
-                              }
-                              onClick={() => {
-                                const value = option.value;
-                                if (value === 'all' || isValidLogType(value)) {
-                                  setFilterType(value as typeof filterType);
+                    {/* Type Filter Dropdown (logs only) */}
+                    {feedKind !== 'achievements' && (
+                      <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                        >
+                          <Funnel className="w-4 h-4" />
+                          {filterType === 'all'
+                            ? 'All Types'
+                            : filterType.charAt(0).toUpperCase() +
+                              filterType.slice(1)}
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                        >
+                          {[
+                            { value: 'all', label: 'All Types' },
+                            { value: 'anime', label: 'Anime' },
+                            { value: 'manga', label: 'Manga' },
+                            { value: 'reading', label: 'Reading' },
+                            { value: 'vn', label: 'Visual Novel' },
+                            { value: 'game', label: 'Video Game' },
+                            { value: 'video', label: 'Video' },
+                            { value: 'movie', label: 'Movie' },
+                            { value: 'audio', label: 'Audio' },
+                            { value: 'other', label: 'Other' },
+                          ].map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  filterType === option.value ? 'active' : ''
                                 }
-                              }}
-                            >
-                              {option.label}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                                onClick={() => {
+                                  const value = option.value;
+                                  if (value === 'all' || isValidLogType(value)) {
+                                    setFilterType(value as typeof filterType);
+                                  }
+                                }}
+                              >
+                                {option.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Category Filter Dropdown (achievements only) */}
+                    {feedKind !== 'logs' && (
+                      <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                        >
+                          <Tag className="w-4 h-4" />
+                          {achievementCategoryOptions.find((o) => o.value === achievementCategory)?.label}
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                        >
+                          {achievementCategoryOptions.map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  achievementCategory === option.value ? 'active' : ''
+                                }
+                                onClick={() => setAchievementCategory(option.value)}
+                              >
+                                {option.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                     {/* Date Filter Dropdown */}
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none">
@@ -647,88 +808,70 @@ function ProfileScreen() {
                       </ul>
                     </div>
 
-                    {/* Combined Sort Filter Dropdown */}
-                    <div className="dropdown dropdown-end flex-1 sm:flex-none">
-                      <div
-                        tabIndex={0}
-                        role="button"
-                        className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
-                      >
-                        <ListFilter className="w-4 h-4" />
-                        Sort:{' '}
-                        {sortBy === 'date'
-                          ? 'Date'
-                          : sortBy === 'xp'
-                            ? 'XP'
-                            : sortBy === 'episodes'
-                              ? 'Episodes'
-                              : sortBy === 'chars'
-                                ? 'Characters'
-                                : sortBy === 'pages'
-                                  ? 'Pages'
-                                  : sortBy === 'readingSpeed'
-                                    ? 'Reading Speed'
-                                    : 'Time'}{' '}
-                        {sortDirection === 'desc' ? (
-                          <ArrowDown className="w-3 h-3" />
-                        ) : (
-                          <ArrowUp className="w-3 h-3" />
-                        )}
-                        <ChevronDown className="w-4 h-4 ml-auto" />
-                      </div>
-                      <ul
-                        tabIndex={0}
-                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
-                      >
-                        <li className="menu-title">
-                          <span>Sort Field</span>
-                        </li>
-                        {[
-                          { value: 'date', label: 'Date' },
-                          { value: 'xp', label: 'XP' },
-                          { value: 'episodes', label: 'Episodes' },
-                          { value: 'chars', label: 'Characters' },
-                          { value: 'pages', label: 'Pages' },
-                          { value: 'time', label: 'Time' },
-                          { value: 'readingSpeed', label: 'Reading Speed' },
-                        ].map((option) => (
-                          <li key={option.value}>
+                    {/* Combined Sort Filter Dropdown (hidden for the mixed "all" feed, which is always chronological) */}
+                    {feedKind !== 'all' && (
+                      <div className="dropdown dropdown-end flex-1 sm:flex-none">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
+                        >
+                          <ListFilter className="w-4 h-4" />
+                          Sort:{' '}
+                          {sortFieldOptions.find((o) => o.value === sortBy)?.label ?? 'Date'}{' '}
+                          {sortDirection === 'desc' ? (
+                            <ArrowDown className="w-3 h-3" />
+                          ) : (
+                            <ArrowUp className="w-3 h-3" />
+                          )}
+                          <ChevronDown className="w-4 h-4 ml-auto" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
+                        >
+                          <li className="menu-title">
+                            <span>Sort Field</span>
+                          </li>
+                          {sortFieldOptions.map((option) => (
+                            <li key={option.value}>
+                              <a
+                                className={
+                                  sortBy === option.value ? 'active' : ''
+                                }
+                                onClick={() => {
+                                  setSortBy(option.value as typeof sortBy);
+                                }}
+                              >
+                                {option.label}
+                              </a>
+                            </li>
+                          ))}
+                          <div className="divider my-1"></div>
+                          <li className="menu-title">
+                            <span>Sort Direction</span>
+                          </li>
+                          <li>
                             <a
-                              className={
-                                sortBy === option.value ? 'active' : ''
-                              }
-                              onClick={() => {
-                                setSortBy(option.value as typeof sortBy);
-                              }}
+                              className={sortDirection === 'desc' ? 'active' : ''}
+                              onClick={() => setSortDirection('desc')}
                             >
-                              {option.label}
+                              <ArrowDown className="w-4 h-4" />
+                              Highest to Lowest
                             </a>
                           </li>
-                        ))}
-                        <div className="divider my-1"></div>
-                        <li className="menu-title">
-                          <span>Sort Direction</span>
-                        </li>
-                        <li>
-                          <a
-                            className={sortDirection === 'desc' ? 'active' : ''}
-                            onClick={() => setSortDirection('desc')}
-                          >
-                            <ArrowDown className="w-4 h-4" />
-                            Highest to Lowest
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            className={sortDirection === 'asc' ? 'active' : ''}
-                            onClick={() => setSortDirection('asc')}
-                          >
-                            <ArrowUp className="w-4 h-4" />
-                            Lowest to Highest
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
+                          <li>
+                            <a
+                              className={sortDirection === 'asc' ? 'active' : ''}
+                              onClick={() => setSortDirection('asc')}
+                            >
+                              <ArrowUp className="w-4 h-4" />
+                              Lowest to Highest
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -838,7 +981,8 @@ function ProfileScreen() {
 
                 {/* Active Filters - Now below everything else */}
                 {(dateFilter !== 'all' ||
-                  filterType !== 'all' ||
+                  (feedKind !== 'achievements' && filterType !== 'all') ||
+                  (feedKind !== 'logs' && achievementCategory !== 'all') ||
                   searchTerm ||
                   showUnknownDates) && (
                   <div className="flex flex-wrap gap-2 items-center">
@@ -859,13 +1003,27 @@ function ProfileScreen() {
                       </div>
                     )}
 
-                    {filterType !== 'all' && (
+                    {feedKind !== 'achievements' && filterType !== 'all' && (
                       <div className="badge badge-secondary badge-sm gap-1">
                         Type: {filterType}
                         <button
                           className="ml-1 hover:bg-secondary-focus rounded-full"
                           onClick={() => setFilterType('all')}
                           aria-label="Clear type filter"
+                        >
+                          ✁E
+                        </button>
+                      </div>
+                    )}
+
+                    {feedKind !== 'logs' && achievementCategory !== 'all' && (
+                      <div className="badge badge-secondary badge-sm gap-1">
+                        Category:{' '}
+                        {achievementCategoryOptions.find((o) => o.value === achievementCategory)?.label}
+                        <button
+                          className="ml-1 hover:bg-secondary-focus rounded-full"
+                          onClick={() => setAchievementCategory('all')}
+                          aria-label="Clear category filter"
                         >
                           ✁E
                         </button>
@@ -910,20 +1068,10 @@ function ProfileScreen() {
                       </div>
                     )}
 
-                    {sortBy !== 'date' && (
+                    {feedKind !== 'all' && sortBy !== 'date' && (
                       <div className="badge badge-info badge-sm gap-1">
                         Sort:{' '}
-                        {sortBy === 'xp'
-                          ? 'XP'
-                          : sortBy === 'episodes'
-                            ? 'Episodes'
-                            : sortBy === 'chars'
-                              ? 'Characters'
-                              : sortBy === 'pages'
-                                ? 'Pages'
-                                : sortBy === 'readingSpeed'
-                                  ? 'Reading Speed'
-                                  : 'Time'}
+                        {sortFieldOptions.find((o) => o.value === sortBy)?.label}
                         <button
                           className="ml-1 hover:bg-info-focus rounded-full"
                           onClick={() => setSortBy('date')}
@@ -939,6 +1087,7 @@ function ProfileScreen() {
                       onClick={() => {
                         setSearchTerm('');
                         setFilterType('all');
+                        setAchievementCategory('all');
                         setDateFilter('all');
                         setCustomStartDate(undefined);
                         setCustomEndDate(undefined);
@@ -957,13 +1106,17 @@ function ProfileScreen() {
             {/* Unified feed: achievements + log cards mixed chronologically */}
             {feedKind === 'achievements' ? (
               // Show ONLY achievements
-              (achievementActivity ?? []).length === 0 ? (
+              filteredAchievements.length === 0 ? (
                 <div className="card w-full bg-base-100 shadow-sm p-4">
-                  <p className="text-center text-base-content/60">No achievements yet</p>
+                  <p className="text-center text-base-content/60">
+                    {(achievementActivity ?? []).length === 0
+                      ? 'No achievements yet'
+                      : 'No achievements match your filters'}
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {(achievementActivity ?? []).map((item) => (
+                  {filteredAchievements.map((item) => (
                     <AchievementFeedItem
                       key={String(item.userAchievementId)}
                       item={item as IPendingAchievement}
@@ -1041,7 +1194,7 @@ function ProfileScreen() {
                     })}
                   </div>
                 )}
-                {logs?.pages && displayedLogs.length === 0 && (achievementActivity ?? []).length === 0 ? (
+                {logs?.pages && displayedLogs.length === 0 && filteredAchievements.length === 0 ? (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
                     <div className="alert alert-info">
                       <span>No activity matches your search criteria</span>
@@ -1095,14 +1248,6 @@ function AchievementShowcaseWidget({
 
   if (!isLoading && earned.length === 0) return null;
 
-  const rarityColors: Record<string, string> = {
-    common: '#9ca3af',
-    rare: '#60a5fa',
-    epic: '#a855f7',
-    legendary: '#fbbf24',
-    secret: '#7c3aed',
-  };
-
   return (
     <div className="card w-full bg-base-100 shadow-sm">
       <div className="card-body w-full p-4 sm:p-6">
@@ -1127,29 +1272,24 @@ function AchievementShowcaseWidget({
             {topAchievements.map((a) => (
               <div
                 key={a._id}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 border transition-all"
-                style={{
-                  borderColor: rarityColors[a.rarity] + '30',
-                  background: rarityColors[a.rarity] + '08',
-                }}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-base-200/60 border border-base-300 transition-all"
               >
                 {a.iconSlug ? (
                   <Icon
                     icon={`game-icons:${a.iconSlug}`}
                     width={20}
                     height={20}
-                    color={rarityColors[a.rarity] ?? '#9ca3af'}
-                    style={{ opacity: 0.85, filter: `drop-shadow(0 0 4px ${rarityColors[a.rarity] ?? '#9ca3af'}66)` }}
+                    color={RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common}
                   />
                 ) : (
                   <span className="text-sm">🏆</span>
                 )}
-                <span className="text-xs font-semibold flex-1 truncate" style={{ color: rarityColors[a.rarity] }}>
+                <span className="text-xs font-semibold flex-1 truncate">
                   {a.name ?? '???'}
                 </span>
                 <span
-                  className="text-xs capitalize opacity-60 shrink-0"
-                  style={{ color: rarityColors[a.rarity] }}
+                  className="text-xs capitalize shrink-0"
+                  style={{ color: RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common }}
                 >
                   {a.rarity}
                 </span>
