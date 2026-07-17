@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
@@ -22,9 +22,21 @@ import {
   Users,
   Zap,
   Eye,
+  Circle,
+  Crown,
 } from 'lucide-react';
 
 const RARITY_ORDER: AchievementRarity[] = ['common', 'rare', 'epic', 'legendary', 'secret'];
+const RARITY_CONFIG: Record<
+  AchievementRarity,
+  { label: string; icon: React.FC<{ className?: string }> }
+> = {
+  common: { label: 'Common', icon: Circle },
+  rare: { label: 'Rare', icon: Star },
+  epic: { label: 'Epic', icon: Zap },
+  legendary: { label: 'Legendary', icon: Crown },
+  secret: { label: 'Secret', icon: Eye },
+};
 const CATEGORIES: { value: AchievementCategory | 'all'; label: string }[] = [
   { value: 'all',       label: 'All' },
   { value: 'milestone', label: 'Milestones' },
@@ -53,6 +65,8 @@ export default function AchievementsScreen() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'earned' | 'locked'>('all');
   const [sortBy, setSortBy] = useState<'order' | 'rarity' | 'earned'>('order');
   const [search, setSearch] = useState('');
+  const [grouped, setGrouped] = useState(true);
+  const [isPendingGroup, startGroupTransition] = useTransition();
 
   // Update document title
   useEffect(() => {
@@ -109,6 +123,23 @@ export default function AchievementsScreen() {
     }
     return (a.order ?? 99) - (b.order ?? 99);
   });
+
+  const groupedAchievements = (() => {
+    const shouldGroup = grouped && !search.trim();
+    if (!shouldGroup) return { ungrouped: filtered };
+
+    const groups: Partial<Record<AchievementRarity, typeof filtered>> = {};
+    filtered.forEach((a) => {
+      if (!groups[a.rarity]) groups[a.rarity] = [];
+      groups[a.rarity]!.push(a);
+    });
+
+    const ordered: Record<string, typeof filtered> = {};
+    RARITY_ORDER.forEach((r) => {
+      if (groups[r]?.length) ordered[r] = groups[r]!;
+    });
+    return ordered;
+  })();
 
   if (error) {
     return (
@@ -299,6 +330,25 @@ export default function AchievementsScreen() {
               ))}
             </ul>
           </div>
+
+          {/* Group toggle */}
+          <button
+            type="button"
+            className={`btn gap-2 ${grouped ? 'btn-active' : 'btn-outline'}`}
+            onClick={() =>
+              startGroupTransition(() => setGrouped((prev) => !prev))
+            }
+            title={grouped ? 'Ungroup by rarity' : 'Group by rarity'}
+          >
+            {isPendingGroup ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <Layers className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">
+              {grouped ? 'Grouped' : 'Ungrouped'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -315,10 +365,50 @@ export default function AchievementsScreen() {
           <p className="text-sm">No achievements match your filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {filtered.map((a) => (
-            <AchievementCard key={a._id} achievement={a} />
-          ))}
+        <div
+          className={`transition-opacity duration-200 ${isPendingGroup ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          {'ungrouped' in groupedAchievements ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {groupedAchievements.ungrouped.map((a) => (
+                <AchievementCard key={a._id} achievement={a} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {Object.entries(groupedAchievements).map(([rarity, items]) => {
+                const config = RARITY_CONFIG[rarity as AchievementRarity];
+                const RarityIcon = config.icon;
+                const earnedCount = items.filter((a) => a.isEarned).length;
+                return (
+                  <div key={rarity} className="space-y-4">
+                    <div className="flex items-center gap-3 pb-2 border-b border-base-300">
+                      <div
+                        className="p-2 rounded-lg"
+                        style={{
+                          color: RARITY_COLOR[rarity as AchievementRarity],
+                          background: rarityTint(rarity as AchievementRarity, '1a'),
+                        }}
+                      >
+                        <RarityIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold">{config.label}</h2>
+                        <p className="text-sm text-base-content/60">
+                          {earnedCount}/{items.length} earned
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {items.map((a) => (
+                        <AchievementCard key={a._id} achievement={a} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
