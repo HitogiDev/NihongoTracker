@@ -13,6 +13,10 @@ import {
   CircleCheck,
   Circle,
   Gamepad2,
+  ChevronDown,
+  Clock,
+  Ban,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
@@ -43,6 +47,32 @@ const getMediaTypeIcon = (type: string) => {
   }
 };
 
+type MediaStatusValue =
+  | 'completed'
+  | 'dropped'
+  | 'paused'
+  | 'planning'
+  | 'in_progress';
+
+const STATUS_CONFIG: Record<
+  MediaStatusValue,
+  { label: string; badgeClass: string; icon: React.FC<{ className?: string }> }
+> = {
+  completed: {
+    label: 'Completed',
+    badgeClass: 'btn-success',
+    icon: CircleCheck,
+  },
+  dropped: { label: 'Dropped', badgeClass: 'btn-error', icon: Ban },
+  paused: { label: 'Paused', badgeClass: 'btn-warning', icon: Clock },
+  planning: { label: 'Planning', badgeClass: 'btn-info', icon: Sparkles },
+  in_progress: {
+    label: 'In progress',
+    badgeClass: 'btn-primary',
+    icon: Play,
+  },
+};
+
 export default function MediaHeader() {
   const { mediaType, mediaId, username } = useParams<{
     mediaType: IMediaDocument['type'] | undefined;
@@ -68,6 +98,7 @@ export default function MediaHeader() {
   const [completionStatus, setCompletionStatus] = useState({
     isCompleted: false,
     completedAt: null as string | null,
+    status: null as MediaStatusValue | null,
   });
 
   // Reset scroll when navigating to a new media
@@ -126,8 +157,11 @@ export default function MediaHeader() {
     setCompletionStatus({
       isCompleted: media?.isCompleted ?? false,
       completedAt: completedAtString,
+      status:
+        (media?.mediaStatus as MediaStatusValue | null | undefined) ??
+        (media?.isCompleted ? 'completed' : null),
     });
-  }, [media?.isCompleted, media?.completedAt]);
+  }, [media?.isCompleted, media?.completedAt, media?.mediaStatus]);
 
   useEffect(() => {
     if (!media) return;
@@ -152,16 +186,16 @@ export default function MediaHeader() {
     media?.title.contentTitleNative,
   ]);
 
-  const { mutate: toggleCompletionStatus, isPending: isUpdatingCompletion } =
+  const { mutate: setMediaStatus, isPending: isUpdatingCompletion } =
     useMutation({
-      mutationFn: (completed: boolean) => {
+      mutationFn: (status: MediaStatusValue) => {
         if (!media?.contentId || !media?.type) {
           throw new Error('Missing media information');
         }
         return updateMediaCompletionStatusFn({
           mediaId: media.contentId,
           type: media.type,
-          completed,
+          status,
           source: 'manual',
         });
       },
@@ -169,6 +203,7 @@ export default function MediaHeader() {
         setCompletionStatus({
           isCompleted: data.isCompleted,
           completedAt: data.completedAt,
+          status: data.status,
         });
 
         queryClient.setQueryData<IMediaDocument | undefined>(
@@ -180,6 +215,7 @@ export default function MediaHeader() {
                   isCompleted: data.isCompleted,
                   completedAt: data.completedAt,
                   autoCompleteSuppressed: data.autoCompleteSuppressed,
+                  mediaStatus: data.status,
                 }
               : prev
         );
@@ -193,7 +229,9 @@ export default function MediaHeader() {
           });
         }
         toast.success(
-          data.isCompleted ? 'Marked as completed.' : 'Marked as in progress.'
+          data.status
+            ? `Marked as ${STATUS_CONFIG[data.status].label.toLowerCase()}.`
+            : 'Status cleared.'
         );
       },
       onError: (error) => {
@@ -400,36 +438,69 @@ export default function MediaHeader() {
                             : undefined
                         }
                       >
-                        <button
-                          type="button"
-                          className={`btn gap-2 w-full ${
-                            completionStatus.isCompleted
-                              ? 'btn-success'
-                              : 'btn-outline'
-                          } ${
-                            completionStatus.completedAt ? 'cursor-help' : ''
-                          }`}
-                          onClick={() =>
-                            toggleCompletionStatus(
-                              !completionStatus.isCompleted
-                            )
-                          }
-                          disabled={isUpdatingCompletion}
-                        >
-                          {isUpdatingCompletion ? (
-                            <span className="loading loading-spinner loading-sm" />
-                          ) : completionStatus.isCompleted ? (
-                            <>
-                              <CircleCheck className="w-4 h-4" />
-                              <span>Mark as in progress</span>
-                            </>
-                          ) : (
-                            <>
-                              <Circle className="w-4 h-4" />
-                              <span>Mark as completed</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="dropdown dropdown-bottom w-full">
+                          <button
+                            type="button"
+                            tabIndex={0}
+                            className={`btn gap-2 w-full justify-between ${
+                              completionStatus.status
+                                ? STATUS_CONFIG[completionStatus.status]
+                                    .badgeClass
+                                : 'btn-outline'
+                            } ${
+                              completionStatus.completedAt ? 'cursor-help' : ''
+                            }`}
+                            disabled={isUpdatingCompletion}
+                          >
+                            <span className="flex items-center gap-2">
+                              {isUpdatingCompletion ? (
+                                <span className="loading loading-spinner loading-sm" />
+                              ) : completionStatus.status ? (
+                                (() => {
+                                  const StatusIcon =
+                                    STATUS_CONFIG[completionStatus.status]
+                                      .icon;
+                                  return <StatusIcon className="w-4 h-4" />;
+                                })()
+                              ) : (
+                                <Circle className="w-4 h-4" />
+                              )}
+                              <span>
+                                {completionStatus.status
+                                  ? STATUS_CONFIG[completionStatus.status]
+                                      .label
+                                  : 'Set status'}
+                              </span>
+                            </span>
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                          <ul
+                            tabIndex={0}
+                            className="dropdown-content z-20 menu p-1 shadow-lg bg-base-100 rounded-box w-full border border-base-300 text-sm"
+                          >
+                            {(
+                              Object.entries(STATUS_CONFIG) as [
+                                MediaStatusValue,
+                                (typeof STATUS_CONFIG)[MediaStatusValue],
+                              ][]
+                            ).map(([key, cfg]) => (
+                              <li key={key}>
+                                <button
+                                  type="button"
+                                  className={`gap-2 ${
+                                    completionStatus.status === key
+                                      ? 'active'
+                                      : ''
+                                  }`}
+                                  onClick={() => setMediaStatus(key)}
+                                >
+                                  <cfg.icon className="w-4 h-4" />
+                                  {cfg.label}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   )}
