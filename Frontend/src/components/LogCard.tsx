@@ -133,6 +133,26 @@ type EditLogFormState = {
   tags: string[];
 };
 
+// `dateOnly` comes from a native <input type="date"> ("YYYY-MM-DD"). Parsing
+// that directly with `new Date()` reads it as UTC midnight, which rolls back
+// to the previous day once rendered in a timezone behind UTC. Building the
+// date from components keeps it anchored to local midnight instead, and
+// carries over the original time-of-day so only the calendar day changes.
+function buildEditedDate(dateOnly: string, referenceDate: Date | string): Date {
+  const [year, month, day] = dateOnly.split('-').map(Number);
+  const reference =
+    typeof referenceDate === 'string' ? new Date(referenceDate) : referenceDate;
+  return new Date(
+    year,
+    month - 1,
+    day,
+    reference.getHours(),
+    reference.getMinutes(),
+    reference.getSeconds(),
+    reference.getMilliseconds()
+  );
+}
+
 function extractTagIds(tags?: ILog['tags']): string[] {
   if (!tags) return [];
 
@@ -315,9 +335,12 @@ function LogCard({
     const updateData: IUpdateLogRequest = {
       description: editData.description,
       type: editData.type,
-      // Only include date if it was changed, and preserve original time by using the original date object
+      // Only include date if it was changed; keep the original time-of-day and
+      // just move the calendar day (built in local time, not UTC — see buildEditedDate).
       date:
-        hasDateChanged && editData.date ? new Date(editData.date) : undefined,
+        hasDateChanged && editData.date
+          ? buildEditedDate(editData.date, date ?? new Date())
+          : undefined,
       time: totalMinutes || undefined,
       episodes: editData.episodes || undefined,
       volume: editData.volume || undefined,
