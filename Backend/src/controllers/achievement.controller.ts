@@ -147,10 +147,12 @@ async function getUserAchievementsById(
     );
 
     const earnedMap = new Map(
-      userAchievements.map((ua) => [
-        ua.achievement._id?.toString() ?? ua.achievement.toString(),
-        ua,
-      ])
+      userAchievements
+        .filter((ua) => ua.achievement)
+        .map((ua) => [
+          (ua.achievement as any)._id?.toString() ?? ua.achievement.toString(),
+          ua,
+        ])
     );
 
     const result = achievements.map((a) => {
@@ -240,22 +242,25 @@ export async function getPendingAchievements(
       return res.status(200).json([]);
     }
 
-    // Mark as notified
+    // Mark as notified — only the ones actually fetched, so unlocks that
+    // land between the find and this update are not silently swallowed
     await UserAchievement.updateMany(
-      { user: userId, notified: false },
+      { _id: { $in: pending.map((ua) => ua._id) } },
       { $set: { notified: true } }
     );
 
-    const result = pending.map((ua) => {
-      const a = ua.achievement as any;
-      const rarityPercent = 0; // will be computed on the client from the main list
-      return {
-        userAchievementId: ua._id,
-        unlockedAt: ua.unlockedAt,
-        achievement: a,
-        rarityPercent,
-      };
-    });
+    const result = pending
+      .filter((ua) => ua.achievement)
+      .map((ua) => {
+        const a = ua.achievement as any;
+        const rarityPercent = 0; // will be computed on the client from the main list
+        return {
+          userAchievementId: ua._id,
+          unlockedAt: ua.unlockedAt,
+          achievement: a,
+          rarityPercent,
+        };
+      });
 
     return res.status(200).json(result);
   } catch (error) {
@@ -278,7 +283,9 @@ export async function getShowcase(
       .select('settings')
       .lean();
 
-    const showcaseIds: string[] = (user?.settings as any)?.achievementShowcase ?? [];
+    const showcaseIds: string[] = (
+      (user?.settings as any)?.achievementShowcase ?? []
+    ).filter((id: unknown) => typeof id === 'string' && Types.ObjectId.isValid(id));
 
     if (showcaseIds.length === 0) {
       return res.status(200).json([]);
@@ -293,10 +300,12 @@ export async function getShowcase(
 
     // Preserve showcase order
     const earnedMap = new Map(
-      earned.map((ua) => [
-        ua.achievement._id?.toString() ?? ua.achievement.toString(),
-        ua,
-      ])
+      earned
+        .filter((ua) => ua.achievement)
+        .map((ua) => [
+          (ua.achievement as any)._id?.toString() ?? ua.achievement.toString(),
+          ua,
+        ])
     );
     const ordered = showcaseIds
       .map((id) => earnedMap.get(id))
@@ -326,6 +335,16 @@ export async function updateShowcase(
     }
     if (showcaseIds.length > 5) {
       throw new customError('Maximum 5 achievements in showcase', 400);
+    }
+    if (
+      showcaseIds.some(
+        (id) => typeof id !== 'string' || !Types.ObjectId.isValid(id)
+      )
+    ) {
+      throw new customError('showcaseIds must be valid achievement ids', 400);
+    }
+    if (new Set(showcaseIds).size !== showcaseIds.length) {
+      throw new customError('showcaseIds must not contain duplicates', 400);
     }
 
     // Validate that all provided IDs are achievements the user has earned
@@ -422,9 +441,15 @@ export async function adminUpdateAchievement(
   next: NextFunction
 ) {
   try {
+    if (!Types.ObjectId.isValid(req.params.id)) {
+      throw new customError('Invalid achievement id', 400);
+    }
+    const update = { ...req.body };
+    delete update._id;
+
     const achievement = await Achievement.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: update },
       { new: true, runValidators: true }
     );
     if (!achievement) throw new customError('Achievement not found', 404);
@@ -440,6 +465,9 @@ export async function adminDeleteAchievement(
   next: NextFunction
 ) {
   try {
+    if (!Types.ObjectId.isValid(req.params.id)) {
+      throw new customError('Invalid achievement id', 400);
+    }
     // Soft delete
     const achievement = await Achievement.findByIdAndUpdate(
       req.params.id,
@@ -587,7 +615,10 @@ export async function getAchievementFeed(
   next: NextFunction
 ) {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string) || 20, 1),
+      50
+    );
 
     const feed = await UserAchievement.find({})
       .populate({
@@ -623,7 +654,10 @@ export async function getUserAchievementActivity(
   next: NextFunction
 ) {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit as string) || 10, 1),
+      50
+    );
 
     const user = await User.findOne({ username: req.params.username })
       .select('_id username avatar')

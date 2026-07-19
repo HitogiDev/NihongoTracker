@@ -1,4 +1,5 @@
 import ProfileNavbar from './ProfileNavbar';
+import ProfileStatsBand from './ProfileStatsBand';
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { getUserFn } from '../api/trackerApi';
@@ -102,6 +103,7 @@ export default function ProfileHeader() {
           </div>
         </div>
       </div>
+      {username && <ProfileStatsBand username={username} />}
       <ProfileNavbar username={user?.username} />
       <Outlet context={{ user, username } satisfies OutletProfileContextType} />
     </div>

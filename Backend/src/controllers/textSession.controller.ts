@@ -1,8 +1,44 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
+import { Types } from 'mongoose';
 import TextSession from '../models/textSession.model.js';
 import { MediaBase as Media } from '../models/media.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import axios from 'axios';
+
+// Blank (media-less, user-named) sessions are keyed by a generated id in
+// this format instead of a media contentId, so the existing :contentId
+// routes can serve both kinds of sessions without a separate route tree.
+const BLANK_SESSION_ID_PREFIX = 'session-';
+
+function isBlankSessionId(contentId: string) {
+  return contentId.startsWith(BLANK_SESSION_ID_PREFIX);
+}
+
+/**
+ * Resolves the :contentId route param to either a media-backed session
+ * filter or a blank-session filter, depending on its shape.
+ */
+async function resolveSessionContext(userId: Types.ObjectId, contentId: string) {
+  if (isBlankSessionId(contentId)) {
+    return {
+      filter: { userId, blankId: contentId },
+      isBlank: true as const,
+      media: null,
+    };
+  }
+
+  const media = await Media.findOne({ contentId });
+  if (!media) {
+    throw new customError('Media not found', 404);
+  }
+
+  return {
+    filter: { userId, mediaId: media._id },
+    isBlank: false as const,
+    media,
+  };
+}
 
 export const checkRoomExists = async (
   req: Request,
@@ -146,6 +182,36 @@ export const getRecentSessions = async (
   }
 };
 
+export const createBlankSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = res.locals.user._id;
+    const { name } = req.body as { name?: string };
+    const trimmedName = typeof name === 'string' ? name.trim() : '';
+
+    if (!trimmedName) {
+      throw new customError('Session name is required', 400);
+    }
+    if (trimmedName.length > 100) {
+      throw new customError('Session name must be 100 characters or fewer', 400);
+    }
+
+    const session = await TextSession.create({
+      userId,
+      blankId: `${BLANK_SESSION_ID_PREFIX}${randomUUID()}`,
+      name: trimmedName,
+      lines: [],
+    });
+
+    res.status(201).json(session);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getSessionByContentId = async (
   req: Request,
   res: Response,
@@ -155,20 +221,31 @@ export const getSessionByContentId = async (
     const userId = res.locals.user._id;
     const { contentId } = req.params;
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
+    const { filter, isBlank, media } = await resolveSessionContext(
+      userId,
+      contentId
+    );
+
+    if (isBlank) {
+      const session = await TextSession.findOne(filter);
+      if (!session) {
+        throw new customError('Session not found', 404);
+      }
+      res.status(200).json(session);
+      return;
     }
 
-    let session = await TextSession.findOne({
-      userId,
-      mediaId: media._id,
-    }).populate('mediaId', 'title coverImage contentImage contentId type');
+    const mediaDoc = media!;
+
+    let session = await TextSession.findOne(filter).populate(
+      'mediaId',
+      'title coverImage contentImage contentId type'
+    );
 
     if (!session) {
       session = await TextSession.create({
         userId,
-        mediaId: media._id,
+        mediaId: mediaDoc._id,
         lines: [],
       });
       await session.populate(
@@ -181,10 +258,11 @@ export const getSessionByContentId = async (
     const jitenURL = process.env.JITEN_API_URL;
     let jitenData = null;
 
-    if (jitenURL && ['vn', 'manga', 'reading'].includes(media.type)) {
+    if (jitenURL && ['vn', 'manga', 'reading'].includes(mediaDoc.type)) {
       try {
-        const LinkType: number | null = media.type
-          ? (LinkTypeObject[media.type as keyof typeof LinkTypeObject] ?? null)
+        const LinkType: number | null = mediaDoc.type
+          ? (LinkTypeObject[mediaDoc.type as keyof typeof LinkTypeObject] ??
+            null)
           : null;
 
         if (LinkType) {
@@ -242,13 +320,10 @@ export const updateSessionTimer = async (
       throw new customError('Invalid timerSeconds value', 400);
     }
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
-    }
+    const { filter } = await resolveSessionContext(userId, contentId);
 
     const session = await TextSession.findOneAndUpdate(
-      { userId, mediaId: media._id },
+      filter,
       {
         $set: { timerSeconds, updatedAt: new Date() },
       },
@@ -275,17 +350,13 @@ export const addLinesToSession = async (
       throw new customError('Invalid lines data', 400);
     }
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
-    }
+    const { filter } = await resolveSessionContext(userId, contentId);
 
     const session = await TextSession.findOneAndUpdate(
-      { userId, mediaId: media._id },
+      filter,
       {
         $setOnInsert: {
-          userId,
-          mediaId: media._id,
+          ...filter,
           lines: [],
         },
       },
@@ -360,13 +431,10 @@ export const removeLinesFromSession = async (
       throw new customError('Invalid lineIds data', 400);
     }
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
-    }
+    const { filter } = await resolveSessionContext(userId, contentId);
 
     const session = await TextSession.findOneAndUpdate(
-      { userId, mediaId: media._id },
+      filter,
       {
         $pull: { lines: { id: { $in: lineIds } } },
         $set: { updatedAt: new Date() },
@@ -393,13 +461,10 @@ export const clearSessionLines = async (
     const userId = res.locals.user._id;
     const { contentId } = req.params;
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
-    }
+    const { filter } = await resolveSessionContext(userId, contentId);
 
     const session = await TextSession.findOneAndUpdate(
-      { userId, mediaId: media._id },
+      filter,
       {
         $set: { lines: [], updatedAt: new Date() },
       },
@@ -452,10 +517,7 @@ export const addSessionHistoryEntry = async (
       throw new customError('Invalid session history metrics', 400);
     }
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
-    }
+    const { filter } = await resolveSessionContext(userId, contentId);
 
     const historyEntry = {
       loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
@@ -471,7 +533,7 @@ export const addSessionHistoryEntry = async (
     };
 
     const session = await TextSession.findOneAndUpdate(
-      { userId, mediaId: media._id },
+      filter,
       {
         $push: { sessionHistory: historyEntry },
         $set: { updatedAt: new Date() },
@@ -494,15 +556,9 @@ export const deleteSession = async (
     const userId = res.locals.user._id;
     const { contentId } = req.params;
 
-    const media = await Media.findOne({ contentId });
-    if (!media) {
-      throw new customError('Media not found', 404);
-    }
+    const { filter } = await resolveSessionContext(userId, contentId);
 
-    const session = await TextSession.findOneAndDelete({
-      userId,
-      mediaId: media._id,
-    });
+    const session = await TextSession.findOneAndDelete(filter);
 
     if (!session) {
       throw new customError('Session not found', 404);

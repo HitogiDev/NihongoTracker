@@ -42,6 +42,7 @@ import {
   Edit3,
   HelpCircle,
   Undo2,
+  ExternalLink,
 } from 'lucide-react';
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
@@ -252,6 +253,10 @@ function TextHooker() {
   const [isClassHelpOpen, setIsClassHelpOpen] = useState(false);
   const settingsPanelRef = useRef<HTMLDivElement | null>(null);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const topbarRef = useRef<HTMLDivElement | null>(null);
+  const [isTopbarVertical, setIsTopbarVertical] = useState(false);
+  const isTopbarVerticalRef = useRef(false);
+  const topbarNaturalWidthRef = useRef(0);
   const [timerEditHours, setTimerEditHours] = useState(0);
   const [timerEditMinutes, setTimerEditMinutes] = useState(0);
   const [timerEditSeconds, setTimerEditSeconds] = useState(0);
@@ -796,11 +801,17 @@ function TextHooker() {
       return;
     }
 
+    if (sessionData?.name) {
+      document.title = `${sessionData.name} • TextHooker • NihongoTracker`;
+      return;
+    }
+
     document.title = 'TextHooker • NihongoTracker';
   }, [
     media?.title?.contentTitleEnglish,
     media?.title?.contentTitleRomaji,
     media?.title?.contentTitleNative,
+    sessionData?.name,
   ]);
 
   useEffect(() => {
@@ -1481,6 +1492,15 @@ function TextHooker() {
     }
   }, [timerEditHours, timerEditMinutes, timerEditSeconds, contentId]);
 
+  const handleOpenPopup = useCallback(() => {
+    const url = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    window.open(
+      url,
+      'texthooker-popup',
+      'popup=yes,width=480,height=720,resizable=yes'
+    );
+  }, []);
+
   const handleDeleteLast = useCallback(() => {
     setLines((prev) => {
       if (prev.length === 0) return prev;
@@ -2118,6 +2138,45 @@ function TextHooker() {
     };
   }, [isSettingsOpen]);
 
+  useEffect(() => {
+    isTopbarVerticalRef.current = isTopbarVertical;
+  }, [isTopbarVertical]);
+
+  useEffect(() => {
+    const checkLayout = () => {
+      const el = topbarRef.current;
+      if (!el) return;
+
+      // Only trust scrollWidth as the "natural" row width while actually
+      // laid out as a row; once vertical, the row width shrinks to the
+      // widest single item, so keep the last known row width instead.
+      if (!isTopbarVerticalRef.current) {
+        topbarNaturalWidthRef.current = el.scrollWidth;
+      }
+
+      const availableWidth = window.innerWidth - 16;
+      const shouldBeVertical =
+        topbarNaturalWidthRef.current > availableWidth;
+
+      if (shouldBeVertical !== isTopbarVerticalRef.current) {
+        setIsTopbarVertical(shouldBeVertical);
+      }
+    };
+
+    checkLayout();
+    window.addEventListener('resize', checkLayout);
+    const interval = setInterval(checkLayout, 500);
+
+    return () => {
+      window.removeEventListener('resize', checkLayout);
+      clearInterval(interval);
+    };
+  }, [topbarMetrics.length, isRoomConnected]);
+
+  const topbarIconBtnClass = isTopbarVertical
+    ? 'btn btn-xs btn-ghost w-full justify-start'
+    : 'btn btn-xs btn-ghost btn-square';
+
   const effectiveHookerTheme =
     hookerTheme === 'system'
       ? resolvedSystemHookerTheme
@@ -2131,7 +2190,14 @@ function TextHooker() {
       {customCss.trim() && <style>{customCss}</style>}
       <ToastContainer autoClose={2000} position="bottom-right" />
       {/* Top Bar */}
-      <div className="fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center gap-3 th-topbar">
+      <div
+        ref={topbarRef}
+        className={`fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center th-topbar ${
+          isTopbarVertical
+            ? 'flex-col items-stretch gap-2'
+            : 'flex-row gap-3'
+        }`}
+      >
         {topbarMetrics.map((metric, index) => (
           <Fragment key={metric.key}>
             <div
@@ -2141,19 +2207,27 @@ function TextHooker() {
               {metric.content}
             </div>
             {index < topbarMetrics.length - 1 && (
-              <div className="w-px h-4 bg-base-content/20"></div>
+              <div
+                className={`bg-base-content/20 ${
+                  isTopbarVertical ? 'w-full h-px' : 'w-px h-4'
+                }`}
+              ></div>
             )}
           </Fragment>
         ))}
 
         {topbarMetrics.length > 0 && (
-          <div className="w-px h-4 bg-base-content/20 mx-1"></div>
+          <div
+            className={`bg-base-content/20 ${
+              isTopbarVertical ? 'w-full h-px my-1' : 'w-px h-4 mx-1'
+            }`}
+          ></div>
         )}
 
         <button
           type="button"
           onClick={toggleSocket}
-          className={`btn btn-xs btn-ghost btn-square transition-colors duration-300 ${
+          className={`${topbarIconBtnClass} transition-colors duration-300 ${
             connectionStatus === 'connected'
               ? 'text-success'
               : connectionStatus === 'error'
@@ -2174,7 +2248,7 @@ function TextHooker() {
         <button
           type="button"
           onClick={toggleTimer}
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title={isTimerActive ? 'Pause Timer' : 'Resume Timer'}
         >
           {isTimerActive ? <Pause size={16} /> : <Play size={16} />}
@@ -2183,7 +2257,7 @@ function TextHooker() {
         <button
           type="button"
           onClick={handleRequestResetTimer}
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title="Reset Timer"
         >
           <RotateCcw size={16} />
@@ -2192,7 +2266,7 @@ function TextHooker() {
         <button
           type="button"
           onClick={handleOpenTimerEdit}
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title="Set Timer"
         >
           <Edit3 size={16} />
@@ -2201,7 +2275,7 @@ function TextHooker() {
         <button
           type="button"
           onClick={handleDeleteLast}
-          className="btn btn-xs btn-ghost btn-square text-error"
+          className={`${topbarIconBtnClass} text-error`}
           title="Delete last line"
         >
           <Trash2 size={16} />
@@ -2211,7 +2285,7 @@ function TextHooker() {
           type="button"
           onClick={handleUndo}
           disabled={undoStack.length === 0}
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title="Undo delete"
         >
           <Undo2 size={16} />
@@ -2220,7 +2294,7 @@ function TextHooker() {
         <button
           type="button"
           onClick={() => setIsStatsOpen(true)}
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title="View Stats"
         >
           <BarChart2 size={16} />
@@ -2230,17 +2304,30 @@ function TextHooker() {
           ref={settingsButtonRef}
           type="button"
           onClick={() => setIsSettingsOpen((prev) => !prev)}
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title="Settings"
         >
           <Settings size={16} />
         </button>
 
-        <div className="w-px h-4 bg-base-content/20 mx-1"></div>
+        <button
+          type="button"
+          onClick={handleOpenPopup}
+          className={topbarIconBtnClass}
+          title="Open in popup window"
+        >
+          <ExternalLink size={16} />
+        </button>
+
+        <div
+          className={`bg-base-content/20 ${
+            isTopbarVertical ? 'w-full h-px my-1' : 'w-px h-4 mx-1'
+          }`}
+        ></div>
 
         <RouterLink
           to="/texthooker"
-          className="btn btn-xs btn-ghost btn-square"
+          className={topbarIconBtnClass}
           title="Back to Dashboard"
         >
           <Home size={16} />
@@ -2251,7 +2338,7 @@ function TextHooker() {
             <button
               type="button"
               tabIndex={0}
-              className="btn btn-xs btn-ghost btn-square"
+              className={topbarIconBtnClass}
               title="Connected Members"
             >
               <Users size={16} />

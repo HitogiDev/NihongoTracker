@@ -270,7 +270,14 @@ export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
   start?: string;
   end?: string;
   type?: ILog['type'] | ILog['type'][];
-  sortBy?: 'date' | 'xp' | 'episodes' | 'chars' | 'pages' | 'time';
+  sortBy?:
+    | 'date'
+    | 'xp'
+    | 'episodes'
+    | 'chars'
+    | 'pages'
+    | 'time'
+    | 'readingSpeed';
   sortDirection?: 'asc' | 'desc';
   tags?: string[] | string;
   tagsMode?: 'any' | 'all';
@@ -477,6 +484,12 @@ export interface IRankingSummaryDetails {
 
 export interface IRankingSummary extends IRankingSummaryDetails {
   monthly: IRankingSummaryDetails;
+}
+
+export interface IRankingHistoryPoint {
+  date: string;
+  globalPosition: number;
+  monthlyPosition: number;
 }
 
 export interface AnilistSearchResult {
@@ -1079,6 +1092,8 @@ export interface ITextSession {
   roomId?: string;
   userId?: string;
   mediaId?: string | IMediaDocument;
+  blankId?: string;
+  name?: string;
   timerSeconds?: number;
   lines: ITextLine[];
   sessionHistory?: ITextSessionHistoryEntry[];

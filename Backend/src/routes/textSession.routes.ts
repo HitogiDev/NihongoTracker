@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
 import {
   getRecentSessions,
+  createBlankSession,
   getSessionByContentId,
   addLinesToSession,
   removeLinesFromSession,
@@ -15,6 +16,7 @@ import {
 const router = Router();
 
 router.get('/recent', protect, getRecentSessions);
+router.post('/blank', protect, createBlankSession);
 router.get('/room/:roomId/exists', protect, checkRoomExists);
 router.get('/:contentId', protect, getSessionByContentId);
 router.post('/:contentId/lines', protect, addLinesToSession);

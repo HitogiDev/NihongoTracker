@@ -928,7 +928,15 @@ const swaggerDocument = {
             in: 'query',
             schema: {
               type: 'string',
-              enum: ['date', 'xp', 'episodes', 'chars', 'pages', 'time'],
+              enum: [
+                'date',
+                'xp',
+                'episodes',
+                'chars',
+                'pages',
+                'time',
+                'readingSpeed',
+              ],
             },
           },
           {
@@ -3089,6 +3097,28 @@ const swaggerDocument = {
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         responses: {
           200: { description: 'Recent sessions' },
+        },
+      },
+    },
+    '/texthooker/blank': {
+      post: {
+        tags: ['Text Sessions'],
+        summary: 'Create a blank (media-less), user-named session',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: { name: { type: 'string' } },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Blank session created' },
         },
       },
     },

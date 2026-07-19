@@ -149,6 +149,7 @@ export default function GanttChart({
 }: GanttChartProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const headerScrollRef = useRef<HTMLDivElement>(null);
   const tooltipHoverRef = useRef(false);
   const tooltipCloseTimeoutRef = useRef<number | null>(null);
   const isPanningRef = useRef(false);
@@ -560,7 +561,10 @@ export default function GanttChart({
       )}
 
       {hasResults ? (
-        <div className="relative" style={{ overflow: 'hidden' }}>
+        // No `overflow: hidden` on this wrapper — a non-visible overflow
+        // ancestor would become the sticky containing block and keep the date
+        // header from sticking to the viewport.
+        <div className="relative">
           {/* ── Fixed left label panel (opaque, covers headers + bars) ── */}
           <div
             className="absolute top-0 left-0 bottom-0"
@@ -674,21 +678,17 @@ export default function GanttChart({
             </div>
           </div>
 
-          {/* ── Scrollable timeline area ─────────────────────────────────── */}
-          <div
-            ref={scrollRef}
-            className="overflow-x-auto overflow-y-visible"
-            style={{
-              WebkitOverflowScrolling: 'touch',
-              marginLeft: LABEL_WIDTH,
-            }}
-            onMouseDown={handlePanStart}
-          >
-            <div style={{ minWidth: totalW }}>
-              {/* ── Month/day header ──────────────────────────────────────── */}
-              <div
-                className="flex sticky top-0 z-20 bg-base-100"
-              >
+          {/* ── Timeline area: sticky header + horizontally-scrollable body ─ */}
+          <div style={{ marginLeft: LABEL_WIDTH }}>
+            {/* Month/day header — sticky to the page; an `overflow-x-auto`
+                ancestor can't have a sticky child stick to the viewport (it
+                becomes the sticky containing block instead), so the header
+                lives outside the scrolling body and mirrors its scrollLeft. */}
+            <div
+              ref={headerScrollRef}
+              className="sticky top-0 z-20 bg-base-100 overflow-hidden"
+            >
+              <div className="flex" style={{ width: totalW }}>
                 {columns.map((col) => (
                   <div
                     key={col.key}
@@ -709,7 +709,24 @@ export default function GanttChart({
                   </div>
                 ))}
               </div>
+            </div>
 
+            {/* ── Scrollable timeline body (bars only) ────────────────────── */}
+            <div
+              ref={scrollRef}
+              className="overflow-x-auto overflow-y-visible"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+              }}
+              onMouseDown={handlePanStart}
+              onScroll={() => {
+                if (headerScrollRef.current && scrollRef.current) {
+                  headerScrollRef.current.scrollLeft =
+                    scrollRef.current.scrollLeft;
+                }
+              }}
+            >
+            <div style={{ minWidth: totalW }}>
               {/* ── Rows (bar area only, no labels) ──────────────────────── */}
               <div style={{ position: 'relative', height: totalH }}>
                 {/* Grid lines */}
@@ -852,6 +869,7 @@ export default function GanttChart({
                   );
                 })}
               </div>
+            </div>
             </div>
           </div>
         </div>

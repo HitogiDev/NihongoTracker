@@ -980,6 +980,8 @@ export interface ITextSession extends Document {
   hostToken?: string;
   userId?: Types.ObjectId;
   mediaId?: Types.ObjectId;
+  blankId?: string;
+  name?: string;
   timerSeconds: number;
   lines: ITextLine[];
   sessionHistory: ITextSessionHistoryEntry[];

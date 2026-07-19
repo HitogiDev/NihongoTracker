@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import axios from 'axios';
 import qs from 'qs';
 import { IPatreonIdentityResponse } from '../types.js';
+import { containsOffensiveText } from '../constants/profanityFilter.js';
 
 function normalizeBaseUrl(value?: string): string {
   if (!value) {
@@ -198,6 +199,16 @@ export async function updateCustomBadgeText(
     if (customBadgeText && customBadgeText.length > 20) {
       return next(
         new customError('Custom badge text must be 20 characters or less', 400)
+      );
+    }
+
+    // Reject slurs / strong profanity in the public-facing badge text
+    if (customBadgeText && containsOffensiveText(customBadgeText)) {
+      return next(
+        new customError(
+          'Custom badge text contains language that is not allowed',
+          400
+        )
       );
     }
 

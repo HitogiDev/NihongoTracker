@@ -135,7 +135,10 @@
 
 html, body {
   height: 100%;
-  overflow-x: hidden;
+  /* `clip` prevents horizontal overflow like `hidden`, but without turning
+     body into a scroll container — `hidden` here silently breaks every
+     position: sticky descendant (they stick to body, which never scrolls). */
+  overflow-x: clip;
 }
 
 #root {

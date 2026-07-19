@@ -24,6 +24,7 @@ import Log from '../../models/log.model.js';
 import Achievement from '../../models/achievement.model.js';
 import UserAchievement from '../../models/userAchievement.model.js';
 import WeeklyRankSnapshot from '../../models/weeklyRankSnapshot.model.js';
+import { recordCurrentRankSnapshot } from '../rankSnapshot.service.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -443,6 +444,14 @@ export async function runWeeklyCronAchievements(): Promise<void> {
       } catch (err) {
         console.error(`[cron:weekly] Error for user ${userId}:`, err);
       }
+    }
+
+    // Record global + monthly rank snapshot for the ranking-over-time graph
+    try {
+      const count = await recordCurrentRankSnapshot();
+      console.log(`📈 [cron:weekly] Recorded ${count} rank snapshots.`);
+    } catch (err) {
+      console.error('[cron:weekly] Rank snapshot failed:', err);
     }
 
     console.log(`🏆 [cron:weekly] Done — ${granted} achievements granted.`);

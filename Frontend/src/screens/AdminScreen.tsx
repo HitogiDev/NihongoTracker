@@ -29,11 +29,39 @@ import {
   getVndbDumpSyncStatusFn,
   triggerVndbDumpSyncFn,
   adminBackfillAchievementsFn,
+  adminBackfillRankingHistoryFn,
   type IIgdbDumpSyncStatus,
   type IVndbDumpSyncStatus,
 } from '../api/trackerApi';
 import { Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
+
+// Format a Date as the local "YYYY-MM-DD" a native <input type="date"> expects.
+// `toISOString()` would convert to UTC first, which can shift the calendar
+// day for timezones behind UTC.
+function toLocalDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// `dateOnly` ("YYYY-MM-DD") from a native date input parses as UTC midnight
+// with a bare `new Date()` call, rolling back a day once shown in a timezone
+// behind UTC. Build it from components instead so it lands on local midnight,
+// and keep `reference`'s time-of-day so only the calendar day changes.
+function buildLocalDateWithTime(dateOnly: string, reference: Date): Date {
+  const [year, month, day] = dateOnly.split('-').map(Number);
+  return new Date(
+    year,
+    month - 1,
+    day,
+    reference.getHours(),
+    reference.getMinutes(),
+    reference.getSeconds(),
+    reference.getMilliseconds()
+  );
+}
 
 type AdminUserRow = {
   _id: string;
@@ -446,6 +474,14 @@ function AdminScreen() {
       toast.success(data.message);
     },
     onError: () => toast.error('Failed to backfill achievements'),
+  });
+
+  const backfillRankingHistoryMutation = useMutation({
+    mutationFn: adminBackfillRankingHistoryFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: () => toast.error('Failed to backfill ranking history'),
   });
 
   const formatUptime = (days: number) => {
@@ -1696,20 +1732,23 @@ function AdminScreen() {
                         className="input input-bordered"
                         value={
                           selectedLog.date
-                            ? new Date(selectedLog.date)
-                                .toISOString()
-                                .slice(0, 10)
+                            ? toLocalDateInputValue(new Date(selectedLog.date))
                             : ''
                         }
                         onChange={(e) =>
-                          setSelectedLog((l) =>
-                            l
-                              ? {
-                                  ...l,
-                                  date: new Date(e.target.value).toISOString(),
-                                }
-                              : l
-                          )
+                          setSelectedLog((l) => {
+                            if (!l) return l;
+                            const reference = l.date
+                              ? new Date(l.date)
+                              : new Date();
+                            return {
+                              ...l,
+                              date: buildLocalDateWithTime(
+                                e.target.value,
+                                reference
+                              ).toISOString(),
+                            };
+                          })
                         }
                       />
                     </label>
@@ -2353,6 +2392,36 @@ function AdminScreen() {
                       {backfillAchievementsMutation.isPending
                         ? 'Backfilling Achievements...'
                         : 'Backfill All Achievements'}
+                    </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This reconstructs weekly global + monthly ranking snapshots from all historical logs. Run this once to seed the ranking-over-time graph. This may take a while. Continue?'
+                          )
+                        ) {
+                          backfillRankingHistoryMutation.mutate();
+                        }
+                      }}
+                      disabled={backfillRankingHistoryMutation.isPending}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+                        />
+                      </svg>
+                      {backfillRankingHistoryMutation.isPending
+                        ? 'Backfilling Ranking History...'
+                        : 'Backfill Ranking History'}
                     </button>
                     <button className="btn btn-secondary w-full">
                       <svg

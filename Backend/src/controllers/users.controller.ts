@@ -1,5 +1,6 @@
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
+import RankSnapshot from '../models/rankSnapshot.model.js';
 import Tag from '../models/tag.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
@@ -1398,6 +1399,36 @@ export async function getRankingSummary(
         nextUser: monthlyNextUser,
       },
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// Historical global + monthly ranking positions for a user (for the profile graph)
+export async function getRankingHistory(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { username } = req.params;
+    const userDoc = await User.findOne({ username }).select('_id').lean();
+    if (!userDoc) {
+      throw new customError('User not found', 404);
+    }
+
+    const snapshots = await RankSnapshot.find({ userId: userDoc._id })
+      .sort({ date: 1 })
+      .select('date globalPosition monthlyPosition -_id')
+      .lean();
+
+    return res.status(200).json(
+      snapshots.map((s) => ({
+        date: s.date,
+        globalPosition: s.globalPosition,
+        monthlyPosition: s.monthlyPosition,
+      }))
+    );
   } catch (error) {
     return next(error as customError);
   }

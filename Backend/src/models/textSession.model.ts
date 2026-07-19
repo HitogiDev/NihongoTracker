@@ -6,6 +6,8 @@ const TextSessionSchema = new Schema<ITextSession>({
   hostToken: { type: String },
   userId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   mediaId: { type: Schema.Types.ObjectId, ref: 'Media', index: true },
+  blankId: { type: String, index: true },
+  name: { type: String, trim: true, maxlength: 100 },
   timerSeconds: { type: Number, default: 0 },
   lines: [
     {
@@ -33,6 +35,10 @@ const TextSessionSchema = new Schema<ITextSession>({
 
 TextSessionSchema.index(
   { userId: 1, mediaId: 1 },
+  { unique: true, sparse: true }
+);
+TextSessionSchema.index(
+  { userId: 1, blankId: 1 },
   { unique: true, sparse: true }
 );
 

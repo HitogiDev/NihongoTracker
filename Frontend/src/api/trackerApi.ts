@@ -23,6 +23,7 @@ import {
   ITag,
   SearchResultType,
   IRankingSummary,
+  IRankingHistoryPoint,
   ITextSession,
   ITextLine,
   ITextSessionHistoryEntry,
@@ -447,6 +448,15 @@ export async function getRankingSummaryFn(username: string, timezone?: string) {
   const { data } = await api.get<IRankingSummary>(
     `users/${username}/ranking-summary`,
     { params }
+  );
+  return data;
+}
+
+export async function getRankingHistoryFn(
+  username: string
+): Promise<IRankingHistoryPoint[]> {
+  const { data } = await api.get<IRankingHistoryPoint[]>(
+    `users/${username}/ranking-history`
   );
   return data;
 }
@@ -1222,6 +1232,15 @@ export async function getTextSessionFn(
   return data;
 }
 
+export async function createBlankTextSessionFn(
+  name: string
+): Promise<ITextSession> {
+  const { data } = await api.post<ITextSession>('texthooker/blank', {
+    name,
+  });
+  return data;
+}
+
 export async function updateSessionTimerFn(
   contentId: string,
   timerSeconds: number
@@ -1465,5 +1484,14 @@ export async function adminBackfillAchievementsFn(): Promise<{
   usersWithNewAchievements: number;
 }> {
   const { data } = await api.post('achievements/admin/backfill-all');
+  return data;
+}
+
+export async function adminBackfillRankingHistoryFn(): Promise<{
+  message: string;
+  weeks: number;
+  snapshots: number;
+}> {
+  const { data } = await api.post('admin/ranking-history/backfill');
   return data;
 }
