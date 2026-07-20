@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
+import AddToListModal from '../components/AddToListModal';
 import { useUserDataStore } from '../store/userData';
 import MediaNavbar from './MediaNavbar';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -95,6 +96,7 @@ export default function MediaHeader() {
   const { pathname } = useLocation();
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [addToListOpen, setAddToListOpen] = useState(false);
   const [completionStatus, setCompletionStatus] = useState({
     isCompleted: false,
     completedAt: null as string | null,
@@ -356,6 +358,14 @@ export default function MediaHeader() {
         onClose={() => setLogModalOpen(false)}
         media={media}
       />
+      {media?.contentId && media?.type && (
+        <AddToListModal
+          open={addToListOpen}
+          mediaId={media.contentId}
+          mediaType={media.type}
+          onClose={() => setAddToListOpen(false)}
+        />
+      )}
       <div
         className={`h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
           isLoadingMedia ? 'skeleton' : ''
@@ -411,6 +421,14 @@ export default function MediaHeader() {
                   >
                     Log
                   </button>
+                  {user && media?.contentId && media?.type && (
+                    <button
+                      className="btn btn-outline w-full"
+                      onClick={() => setAddToListOpen(true)}
+                    >
+                      Add to list
+                    </button>
+                  )}
                   {isOwnProfile &&
                     (media?.type === 'reading' || media?.type === 'vn') && (
                       <button

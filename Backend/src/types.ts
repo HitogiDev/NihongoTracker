@@ -1186,3 +1186,46 @@ export interface IAchievementCheckContext {
   streakValue?: number;
   levelValue?: number;
 }
+
+export type MediaListMediaType =
+  | 'anime'
+  | 'manga'
+  | 'reading'
+  | 'vn'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'game';
+
+export interface IMediaListEntry {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+  addedAt?: Date;
+}
+
+export interface IMediaList extends Document {
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
+  title: string;
+  description?: string;
+  isRanked: boolean;
+  isPublic: boolean;
+  entries: IMediaListEntry[];
+  likes: Types.ObjectId[];
+  commentCount: number;
+  clonedFrom?: Types.ObjectId;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface IMediaListComment extends Document {
+  _id: Types.ObjectId;
+  list: Types.ObjectId;
+  user: Types.ObjectId;
+  content: string;
+  editedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}

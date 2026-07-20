@@ -113,6 +113,13 @@ const AchievementsScreen = lazy(
 const MediaRequestScreen = lazy(
   () => import('./screens/MediaRequestScreen.tsx')
 );
+const ListsDiscoverScreen = lazy(
+  () => import('./screens/ListsDiscoverScreen.tsx')
+);
+const MediaListDetailScreen = lazy(
+  () => import('./screens/MediaListDetailScreen.tsx')
+);
+const UserListsScreen = lazy(() => import('./screens/UserListsScreen.tsx'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -141,6 +148,8 @@ const router = createBrowserRouter(
           <Route path="activity" element={<ClubMediaActivity />} />
           <Route path="rankings" element={<ClubMediaRankings />} />
         </Route>
+        <Route path="lists" element={<ListsDiscoverScreen />} />
+        <Route path="lists/:listId" element={<MediaListDetailScreen />} />
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
         <Route path="support" element={<SupportScreen />} />
@@ -155,6 +164,7 @@ const router = createBrowserRouter(
           <Route index element={<ProfileScreen />} />
           <Route path="stats" element={<StatsScreen />} />
           <Route path="list" element={<ListScreen />} />
+          <Route path="lists" element={<UserListsScreen />} />
           <Route path="goals" element={<GoalsScreen />} />
           <Route path="moderation" element={<ProfileModerationScreen />} />
           <Route path="achievements" element={<AchievementsScreen />} />

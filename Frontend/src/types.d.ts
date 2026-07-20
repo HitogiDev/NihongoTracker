@@ -1236,4 +1236,51 @@ export type UnifiedFeedItem =
 
 export type UnifiedFeedFilter = 'all' | 'logs' | 'achievements';
 
+// ─── Media Lists ──────────────────────────────────────────────────────────────
+
+export type MediaListMediaType = IMediaDocument['type'];
+
+export interface IMediaListEntry {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+  addedAt?: string;
+  media: IMediaDocument | null;
+}
+
+export interface IMediaList {
+  _id: string;
+  user: IUser;
+  title: string;
+  description?: string;
+  isRanked: boolean;
+  isPublic: boolean;
+  entryCount: number;
+  /** Entry count per media type, e.g. { vn: 30 }. */
+  entryTypeCounts?: Partial<Record<MediaListMediaType, number>>;
+  likeCount: number;
+  isLiked: boolean;
+  commentCount: number;
+  clonedFrom?: { _id: string; title: string; user: string } | string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  /** Only present on list detail responses. */
+  entries?: IMediaListEntry[];
+  /** Only present on browse/profile card responses. */
+  preview?: IMediaDocument[];
+  /** Only present on the "my lists" response when a media query is given. */
+  containsMedia?: boolean;
+}
+
+export interface IMediaListComment {
+  _id: string;
+  list: string;
+  user: IUser;
+  content: string;
+  editedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 

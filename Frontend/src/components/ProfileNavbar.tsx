@@ -65,6 +65,18 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
           </li>
           <li>
             <Link
+              to={`/user/${username}/lists`}
+              className={
+                isActive(`/user/${username}/lists`)
+                  ? 'active bg-primary text-primary-content'
+                  : ''
+              }
+            >
+              Lists
+            </Link>
+          </li>
+          <li>
+            <Link
               to={`/user/${username}/goals`}
               className={
                 isActive(`/user/${username}/goals`)

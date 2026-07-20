@@ -22,6 +22,7 @@ import {
   SunMoon,
   Bell,
   FilePlus,
+  Layers,
 } from 'lucide-react';
 
 import { useUserDataStore } from '../store/userData';
@@ -232,6 +233,15 @@ function Header() {
                 </li>
                 <li>
                   <Link
+                    to="/lists"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    <Layers className="w-4 h-4" />
+                    Lists
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/calculator"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
@@ -372,6 +382,14 @@ function Header() {
                   to="/clubs"
                 >
                   Clubs
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/lists"
+                >
+                  Lists
                 </Link>
               </li>
               <li>

@@ -112,6 +112,12 @@ function getTitle(pathname: string) {
     return `Club • ${APP_NAME}`;
   }
 
+  if (segments[0] === 'lists') {
+    return segments.length > 1
+      ? `List • ${APP_NAME}`
+      : `Lists • ${APP_NAME}`;
+  }
+
   if (segments[0] === 'calculator') return `Calculator • ${APP_NAME}`;
   if (segments[0] === 'features') return `Features • ${APP_NAME}`;
   if (segments[0] === 'about') return `About • ${APP_NAME}`;
@@ -147,7 +153,9 @@ function getTitle(pathname: string) {
         ? 'Stats'
         : sectionKey === 'list'
           ? 'Immersion List'
-          : sectionKey === 'goals'
+          : sectionKey === 'lists'
+            ? 'Lists'
+            : sectionKey === 'goals'
             ? 'Goals'
             : sectionKey === 'moderation'
               ? 'Moderation'
