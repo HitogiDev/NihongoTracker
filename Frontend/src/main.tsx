@@ -4,6 +4,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import 'react-image-crop/dist/ReactCrop.css';
+import 'react-toastify/dist/ReactToastify.css';
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import {

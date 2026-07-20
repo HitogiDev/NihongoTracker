@@ -43,6 +43,8 @@ import {
   HelpCircle,
   Undo2,
   ExternalLink,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
@@ -255,6 +257,14 @@ function TextHooker() {
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const topbarRef = useRef<HTMLDivElement | null>(null);
   const [isTopbarVertical, setIsTopbarVertical] = useState(false);
+  const [forceTopbarVertical, setForceTopbarVertical] = useState(() => {
+    return localStorage.getItem('texthooker_forceTopbarVertical') === 'true';
+  });
+  const effectiveTopbarVertical = forceTopbarVertical || isTopbarVertical;
+  const [isTopbarHidden, setIsTopbarHidden] = useState(() => {
+    return localStorage.getItem('texthooker_topbarHidden') === 'true';
+  });
+  const [isPopupOpened, setIsPopupOpened] = useState(false);
   const isTopbarVerticalRef = useRef(false);
   const topbarNaturalWidthRef = useRef(0);
   const [timerEditHours, setTimerEditHours] = useState(0);
@@ -968,6 +978,21 @@ function TextHooker() {
   }, [hookerTheme]);
 
   useEffect(() => {
+    localStorage.setItem('texthooker_topbarHidden', String(isTopbarHidden));
+  }, [isTopbarHidden]);
+
+  useEffect(() => {
+    if (!effectiveTopbarVertical) setIsTopbarHidden(false);
+  }, [effectiveTopbarVertical]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_forceTopbarVertical',
+      String(forceTopbarVertical)
+    );
+  }, [forceTopbarVertical]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const onSystemThemeChange = () => {
       setResolvedSystemHookerTheme(mediaQuery.matches ? 'dark' : 'light');
@@ -1494,11 +1519,14 @@ function TextHooker() {
 
   const handleOpenPopup = useCallback(() => {
     const url = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    window.open(
+    const popup = window.open(
       url,
       'texthooker-popup',
       'popup=yes,width=480,height=720,resizable=yes'
     );
+    if (popup) {
+      setIsPopupOpened(true);
+    }
   }, []);
 
   const handleDeleteLast = useCallback(() => {
@@ -2145,14 +2173,17 @@ function TextHooker() {
   useEffect(() => {
     const checkLayout = () => {
       const el = topbarRef.current;
-      if (!el) return;
 
       // Only trust scrollWidth as the "natural" row width while actually
       // laid out as a row; once vertical, the row width shrinks to the
       // widest single item, so keep the last known row width instead.
-      if (!isTopbarVerticalRef.current) {
+      // el is null while the bar is hidden (unmounted) — fall back to the
+      // last known natural width so it can still flip back to horizontal.
+      if (el && !isTopbarVerticalRef.current) {
         topbarNaturalWidthRef.current = el.scrollWidth;
       }
+
+      if (topbarNaturalWidthRef.current === 0) return;
 
       const availableWidth = window.innerWidth - 16;
       const shouldBeVertical =
@@ -2173,8 +2204,8 @@ function TextHooker() {
     };
   }, [topbarMetrics.length, isRoomConnected]);
 
-  const topbarIconBtnClass = isTopbarVertical
-    ? 'btn btn-xs btn-ghost w-full justify-start'
+  const topbarIconBtnClass = effectiveTopbarVertical
+    ? 'btn btn-xs btn-ghost w-full justify-center'
     : 'btn btn-xs btn-ghost btn-square';
 
   const effectiveHookerTheme =
@@ -2189,15 +2220,57 @@ function TextHooker() {
     >
       {customCss.trim() && <style>{customCss}</style>}
       <ToastContainer autoClose={2000} position="bottom-right" />
+
+      {isPopupOpened && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-base-300/90 backdrop-blur-sm text-base-content">
+          <div className="max-w-sm text-center px-6">
+            <ExternalLink size={40} className="mx-auto mb-4 opacity-70" />
+            <h2 className="text-lg font-bold mb-2">Opened in a popup window</h2>
+            <p className="text-base-content/70 mb-6">
+              Your session continues in the popup window. You can close this
+              tab.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsPopupOpened(false)}
+              className="btn btn-ghost btn-sm"
+            >
+              Keep using this tab instead
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
+      {isTopbarHidden && effectiveTopbarVertical ? (
+        <button
+          type="button"
+          onClick={() => setIsTopbarHidden(false)}
+          className="fixed top-1/2 right-0 -translate-y-1/2 w-4 h-10 flex items-center justify-center bg-base-100 rounded-l-md shadow-md z-50 text-base-content"
+          title="Show controls"
+        >
+          <ChevronLeft size={14} />
+        </button>
+      ) : (
       <div
         ref={topbarRef}
         className={`fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center th-topbar ${
-          isTopbarVertical
+          effectiveTopbarVertical
             ? 'flex-col items-stretch gap-2'
             : 'flex-row gap-3'
         }`}
       >
+        {effectiveTopbarVertical && (
+          <button
+            type="button"
+            onClick={() => setIsTopbarHidden(true)}
+            className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 w-4 h-10 flex items-center justify-center bg-base-100 rounded-l-md shadow-md text-base-content"
+            title="Hide controls"
+          >
+            <ChevronRight size={14} />
+          </button>
+        )}
+
         {topbarMetrics.map((metric, index) => (
           <Fragment key={metric.key}>
             <div
@@ -2209,7 +2282,7 @@ function TextHooker() {
             {index < topbarMetrics.length - 1 && (
               <div
                 className={`bg-base-content/20 ${
-                  isTopbarVertical ? 'w-full h-px' : 'w-px h-4'
+                  effectiveTopbarVertical ? 'w-full h-px' : 'w-px h-4'
                 }`}
               ></div>
             )}
@@ -2219,7 +2292,7 @@ function TextHooker() {
         {topbarMetrics.length > 0 && (
           <div
             className={`bg-base-content/20 ${
-              isTopbarVertical ? 'w-full h-px my-1' : 'w-px h-4 mx-1'
+              effectiveTopbarVertical ? 'w-full h-px my-1' : 'w-px h-4 mx-1'
             }`}
           ></div>
         )}
@@ -2321,7 +2394,7 @@ function TextHooker() {
 
         <div
           className={`bg-base-content/20 ${
-            isTopbarVertical ? 'w-full h-px my-1' : 'w-px h-4 mx-1'
+            effectiveTopbarVertical ? 'w-full h-px my-1' : 'w-px h-4 mx-1'
           }`}
         ></div>
 
@@ -2402,6 +2475,7 @@ function TextHooker() {
           </div>
         )}
       </div>
+      )}
 
       {/* Timer Edit Modal */}
       <dialog className={`modal ${isTimerEditOpen ? 'modal-open' : ''}`}>
@@ -2579,22 +2653,22 @@ function TextHooker() {
             </div>
           </div>
 
-          <div className="modal-action">
+          <div className="modal-action flex-col items-stretch">
             <button
               type="button"
-              className="btn btn-ghost"
-              onClick={handleContinueCurrentSession}
-            >
-              Continue current session
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
+              className="btn btn-primary w-full"
               onClick={() => {
                 void handleStartNewMediaSession();
               }}
             >
               Start new session
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost w-full"
+              onClick={handleContinueCurrentSession}
+            >
+              Continue current session
             </button>
           </div>
         </div>
@@ -2921,6 +2995,20 @@ function TextHooker() {
                       className="toggle toggle-primary toggle-sm"
                       checked={vertical}
                       onChange={toggleVertical}
+                    />
+                  </label>
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">Always vertical control bar</span>
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-primary toggle-sm"
+                      checked={forceTopbarVertical}
+                      onChange={(e) =>
+                        setForceTopbarVertical(e.target.checked)
+                      }
                     />
                   </label>
                 </div>
