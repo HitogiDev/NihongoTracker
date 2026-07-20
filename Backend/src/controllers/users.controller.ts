@@ -119,7 +119,7 @@ export async function updateUser(
         throw new customError('Passwords do not match', 403);
       }
       if (!(await user.matchPassword(password))) {
-        throw new customError('Incorrect password', 401);
+        throw new customError('Incorrect password', 403);
       }
 
       user.password = newPassword;
@@ -145,7 +145,7 @@ export async function updateUser(
         throw new customError('Password is required', 400);
       }
       if (!(await user.matchPassword(password))) {
-        throw new customError('Incorrect password', 401);
+        throw new customError('Incorrect password', 403);
       }
 
       if (user.username !== username) user.username = username;
@@ -175,7 +175,7 @@ export async function updateUser(
           throw new customError('Password is required', 400);
         }
         if (!(await user.matchPassword(password))) {
-          throw new customError('Incorrect password', 401);
+          throw new customError('Incorrect password', 403);
         }
 
         // If email is being changed, mark as unverified
