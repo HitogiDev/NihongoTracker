@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
 
-// XP calculation constants (matching backend)
-const XP_FACTOR_TIME = 5;
-const XP_FACTOR_PAGES = 1.23;
-const XP_FACTOR_CHARS = 5;
-const XP_FACTOR_EPISODES = XP_FACTOR_TIME * 24;
+// XP formula v2 constants (matching Backend/src/services/xp.ts).
+// Base rate: 135 XP/hour. Chars/pages are converted to time at the
+// reference reading speed; the difficulty bonus is not included here.
+const XP_PER_MINUTE = 2.25;
+const REFERENCE_SPEED_CPH = 9450;
+const CHARS_PER_PAGE = 250;
+const EPISODE_MINUTES = 24;
+const XP_PER_CHAR = (60 / REFERENCE_SPEED_CPH) * XP_PER_MINUTE; // = 1/70
+const XP_PER_PAGE = CHARS_PER_PAGE * XP_PER_CHAR;
+const XP_PER_EPISODE = EPISODE_MINUTES * XP_PER_MINUTE;
 
 interface XpToImmersionResult {
   targetXp: number;
@@ -38,14 +43,12 @@ const ImmersionCalculator: React.FC = () => {
   // Calculate immersion needed for target XP
   const calculateImmersionFromXp = React.useCallback(
     (targetXp: number): XpToImmersionResult => {
-      const episodes = Math.ceil((targetXp * 100) / (45 * XP_FACTOR_EPISODES));
-      const timeMinutesTotal = Math.ceil(
-        (targetXp * 100) / (45 * XP_FACTOR_TIME)
-      );
+      const episodes = Math.ceil(targetXp / XP_PER_EPISODE);
+      const timeMinutesTotal = Math.ceil(targetXp / XP_PER_MINUTE);
       const timeHours = Math.floor(timeMinutesTotal / 60);
       const timeMinutes = timeMinutesTotal % 60;
-      const characters = Math.ceil((targetXp * 350) / XP_FACTOR_CHARS);
-      const pages = Math.ceil(targetXp / XP_FACTOR_PAGES);
+      const characters = Math.ceil(targetXp / XP_PER_CHAR);
+      const pages = Math.ceil(targetXp / XP_PER_PAGE);
 
       return {
         targetXp,
@@ -67,19 +70,19 @@ const ImmersionCalculator: React.FC = () => {
 
       switch (type) {
         case 'time':
-          xpGained = Math.floor(((value * 45) / 100) * XP_FACTOR_TIME);
+          xpGained = Math.floor(value * XP_PER_MINUTE);
           inputLabel = 'minutes';
           break;
         case 'characters':
-          xpGained = Math.floor((value / 350) * XP_FACTOR_CHARS);
+          xpGained = Math.floor(value * XP_PER_CHAR);
           inputLabel = 'characters';
           break;
         case 'pages':
-          xpGained = Math.floor(value * XP_FACTOR_PAGES);
+          xpGained = Math.floor(value * XP_PER_PAGE);
           inputLabel = 'pages';
           break;
         case 'episodes':
-          xpGained = Math.floor(((value * 45) / 100) * XP_FACTOR_EPISODES);
+          xpGained = Math.floor(value * XP_PER_EPISODE);
           inputLabel = 'episodes';
           break;
       }

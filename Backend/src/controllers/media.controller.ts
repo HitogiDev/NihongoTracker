@@ -256,6 +256,26 @@ export async function getMedia(
 
     const media = await MediaBase.findOne(mediaQuery);
 
+    // Lazily cache the Jiten difficulty on the media doc so the XP engine can
+    // apply the difficulty multiplier without live Jiten calls.
+    if (media && jitenResponse?.data?.mainDeck) {
+      const fetchedDifficulty = jitenResponse.data.mainDeck.difficulty;
+      if (
+        typeof fetchedDifficulty === 'number' &&
+        fetchedDifficulty >= 0 &&
+        media.jitenDifficulty !== fetchedDifficulty
+      ) {
+        MediaBase.updateOne(
+          { _id: media._id },
+          { jitenDifficulty: fetchedDifficulty, jitenSyncedAt: new Date() }
+        )
+          .exec()
+          .catch((err) =>
+            console.warn('Failed to cache Jiten difficulty:', err)
+          );
+      }
+    }
+
     // Backfill missing AniList metadata on existing records so details pages
     // don't keep showing Unknown for fields like volumes/episodes.
     if (

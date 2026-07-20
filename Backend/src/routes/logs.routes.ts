@@ -16,6 +16,7 @@ import {
   getRecentMediaLogs,
   getGlobalFeed,
   syncManabeIds,
+  previewLogXp,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
 import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
@@ -53,6 +54,9 @@ router.post<ParamsDictionary, any, ICreateLog>(
   calculateXp,
   createLog
 );
+
+// XP preview for the log form — computes without persisting
+router.post('/preview-xp', protect, calculateXp, previewLogXp);
 
 router.get('/untrackedlogs', protect, getUntrackedLogs);
 

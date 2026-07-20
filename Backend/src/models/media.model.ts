@@ -40,6 +40,8 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
     synonyms: { type: [String], default: [] },
     isAdult: { type: Boolean, default: false },
     isAdultImage: { type: Boolean, default: false },
+    jitenDifficulty: { type: Number, default: null },
+    jitenSyncedAt: { type: Date, default: null },
   },
   { discriminatorKey: 'type', collection: 'media' }
 );

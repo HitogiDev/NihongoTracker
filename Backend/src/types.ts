@@ -380,6 +380,9 @@ export interface IMediaDocument {
   synonyms?: string[];
   isAdult: boolean;
   isAdultImage?: boolean;
+  /** Native Jiten difficulty (0-6 scale), lazily cached from the Jiten API. */
+  jitenDifficulty?: number | null;
+  jitenSyncedAt?: Date | null;
   lastLogDate?: Date;
   isCompleted?: boolean;
   completedAt?: Date | null;
@@ -489,6 +492,17 @@ export interface ITag extends Document {
   updatedAt?: Date;
 }
 
+export interface IXpBreakdown {
+  baseXp: number;
+  timeCreditedMin: number;
+  difficulty: number | null;
+  categoryLevelAt: number;
+  /** Effective comfort point (0-100) used for the multiplier. */
+  comfortAt?: number | null;
+  multiplier: number;
+  version: number;
+}
+
 export interface ILog extends Document {
   user: Types.ObjectId;
   type:
@@ -512,6 +526,7 @@ export interface ILog extends Document {
   playlistBatchId?: string;
   playlistBatchTitle?: string;
   editedFields?: IEditedFields | null;
+  xpBreakdown?: IXpBreakdown | null;
   episodes?: number;
   volume?: number;
   pages?: number;
