@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { ILog, IEditedFields } from '../types.js';
+import { ILog, IEditedFields, IXpBreakdown } from '../types.js';
 
 const hasPositiveValue = (value?: number | null) =>
   typeof value === 'number' && value > 0;
@@ -12,6 +12,19 @@ const editedFieldsSchema = new Schema<IEditedFields>(
     chars: { type: Number },
     time: { type: Number },
     xp: { type: Number },
+  },
+  { _id: false }
+);
+
+const xpBreakdownSchema = new Schema<IXpBreakdown>(
+  {
+    baseXp: { type: Number, required: true },
+    timeCreditedMin: { type: Number, required: true },
+    difficulty: { type: Number, default: null },
+    categoryLevelAt: { type: Number, required: true },
+    comfortAt: { type: Number, default: null },
+    multiplier: { type: Number, required: true },
+    version: { type: Number, required: true },
   },
   { _id: false }
 );
@@ -52,6 +65,7 @@ const LogSchema = new Schema<ILog>(
     playlistBatchId: { type: String },
     playlistBatchTitle: { type: String, trim: true },
     editedFields: { type: editedFieldsSchema, default: null },
+    xpBreakdown: { type: xpBreakdownSchema, default: null },
     episodes: {
       type: Number,
       required: function (this: ILog) {

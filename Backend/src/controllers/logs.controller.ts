@@ -26,12 +26,7 @@ import { updateLevelAndXp } from '../services/updateStats.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import axios from 'axios';
 import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
-import {
-  XP_FACTOR_TIME,
-  XP_FACTOR_CHARS,
-  XP_FACTOR_EPISODES,
-  XP_FACTOR_PAGES,
-} from '../middlewares/calculateXp.js';
+import { recalculateAllUsersXpV2 } from '../services/xpMigration.js';
 import { addDocuments } from '../services/meilisearch/meiliSearch.js';
 import { checkAchievements } from '../services/achievements/achievementEngine.js';
 
@@ -1002,6 +997,25 @@ export async function getUserLogs(
   }
 }
 
+/**
+ * Returns the XP a log would earn without saving it. The calculateXp
+ * middleware has already computed xp/xpBreakdown into req.body.
+ */
+export async function previewLogXp(
+  req: Request<ParamsDictionary, any, ILog>,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    return res.status(200).json({
+      xp: req.body.xp,
+      xpBreakdown: req.body.xpBreakdown ?? null,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function getLog(req: Request, res: Response, next: NextFunction) {
   try {
     const logAggregation = await Log.aggregate([
@@ -1442,6 +1456,7 @@ export async function updateLog(
     log.chars = chars !== undefined ? chars : log.chars;
     log.type = type !== undefined ? type : log.type;
     log.xp = xp !== undefined ? xp : log.xp;
+    log.xpBreakdown = req.body.xpBreakdown ?? log.xpBreakdown;
     log.tags = tags !== undefined ? tags : log.tags;
     log.editedFields = editedFields;
 
@@ -1535,6 +1550,7 @@ export async function adminUpdateLog(
     log.chars = chars !== undefined ? chars : log.chars;
     log.type = type !== undefined ? type : log.type;
     log.xp = xp !== undefined ? xp : log.xp;
+    log.xpBreakdown = req.body.xpBreakdown ?? log.xpBreakdown;
     log.editedFields = editedFields;
 
     const updatedLog = await log.save();
@@ -1698,6 +1714,7 @@ export async function createLog(
       episodes,
       volume,
       xp,
+      xpBreakdown: req.body.xpBreakdown ?? null,
       description,
       playlistBatchId,
       playlistBatchTitle,
@@ -2725,7 +2742,7 @@ export async function getUserStats(
 }
 
 export async function recalculateXp(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
@@ -2734,149 +2751,11 @@ export async function recalculateXp(
       return res.status(403).json({ message: 'Admin permission required' });
     }
 
-    const users = await User.find({});
-
-    if (!users.length) {
-      return res.status(404).json({ message: 'No users found' });
-    }
-
-    const results = {
-      totalUsers: users.length,
-      processedUsers: 0,
-      updatedLogs: 0,
-      errors: [] as string[],
-    };
-
-    for (const user of users) {
-      try {
-        if (user.stats) {
-          user.stats.readingXp = 0;
-          user.stats.listeningXp = 0;
-          user.stats.userXp = 0;
-        }
-
-        const logs = await Log.find({ user: user._id });
-
-        if (!logs.length) {
-          continue;
-        }
-
-        for (const log of logs) {
-          const timeXp = log.time
-            ? Math.floor(((log.time * 45) / 100) * XP_FACTOR_TIME)
-            : 0;
-          const charsXp = log.chars
-            ? Math.floor((log.chars / 350) * XP_FACTOR_CHARS)
-            : 0;
-          const readingPagesXp = log.pages
-            ? Math.floor(log.pages * XP_FACTOR_CHARS)
-            : 0;
-          const pagesXp = log.pages
-            ? Math.floor(log.pages * XP_FACTOR_PAGES)
-            : 0;
-          const episodesXp = log.episodes
-            ? Math.floor(((log.episodes * 45) / 100) * XP_FACTOR_EPISODES)
-            : 0;
-
-          const oldXp = log.xp;
-
-          switch (log.type) {
-            case 'anime':
-              if (timeXp) {
-                log.xp = timeXp;
-              } else if (episodesXp) {
-                log.xp = episodesXp;
-              } else {
-                log.xp = 0;
-              }
-              break;
-            case 'tv show':
-              if (timeXp) {
-                log.xp = timeXp;
-              } else {
-                log.xp = 0;
-              }
-              break;
-            case 'vn':
-            case 'video':
-            case 'movie':
-            case 'audio':
-              if (timeXp > 0) {
-                log.xp = Math.max(timeXp, pagesXp, charsXp, 0);
-              } else {
-                log.xp = Math.max(timeXp, pagesXp, charsXp, episodesXp, 0);
-              }
-              break;
-            case 'reading':
-              if (charsXp) {
-                log.xp = Math.max(charsXp, timeXp);
-              } else if (timeXp) {
-                log.xp = timeXp;
-              } else if (readingPagesXp) {
-                log.xp = readingPagesXp;
-              } else {
-                log.xp = 0;
-              }
-              break;
-            case 'manga':
-              if (charsXp) {
-                log.xp = Math.max(charsXp, timeXp, 0);
-              } else if (pagesXp) {
-                log.xp = Math.max(pagesXp, timeXp, 0);
-              } else if (timeXp) {
-                log.xp = timeXp;
-              } else {
-                log.xp = 0;
-              }
-              break;
-            case 'game': {
-              const gameTimeXp = log.time
-                ? Math.floor(((log.time * 45) / 100) * XP_FACTOR_TIME * 0.75)
-                : 0;
-              const gameCharsXp = log.chars
-                ? Math.floor((log.chars / 350) * XP_FACTOR_CHARS)
-                : 0;
-              log.xp = Math.max(gameTimeXp, gameCharsXp, 0);
-              break;
-            }
-            case 'other':
-              log.xp = 0;
-              break;
-          }
-
-          if (log.xp !== oldXp) {
-            await log.save();
-            results.updatedLogs++;
-          }
-
-          if (user.stats) {
-            if (['anime', 'video', 'movie', 'audio'].includes(log.type)) {
-              user.stats.listeningXp += log.xp;
-            } else if (['reading', 'manga', 'vn', 'game'].includes(log.type)) {
-              user.stats.readingXp += log.xp;
-            }
-            user.stats.userXp += log.xp;
-          }
-        }
-
-        if (user.stats) {
-          updateLevelAndXp(user.stats, 'reading');
-          updateLevelAndXp(user.stats, 'listening');
-          updateLevelAndXp(user.stats, 'user');
-
-          await user.save();
-        }
-        results.processedUsers++;
-      } catch (error) {
-        const customError = error as customError;
-        results.errors.push(
-          `Error processing user ${user.username}: ${customError.message}`
-        );
-      }
-    }
+    const dryRun = req.query.dryRun === 'true';
+    const results = await recalculateAllUsersXpV2({ dryRun });
 
     return res.status(200).json({
-      message: `Recalculated stats for ${results.processedUsers} users (${results.updatedLogs} logs updated)`,
+      message: `${dryRun ? '[dry run] Would recalculate' : 'Recalculated'} stats for ${results.processedUsers} users (${results.updatedLogs} logs ${dryRun ? 'would change' : 'updated'})`,
       results,
     });
   } catch (error) {

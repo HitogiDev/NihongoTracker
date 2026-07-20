@@ -364,6 +364,30 @@ export default function AchievementsScreen() {
           <Lock className="text-4xl mb-3 mx-auto" />
           <p className="text-sm">No achievements match your filters.</p>
         </div>
+      ) : sortBy === 'rarity' ? (
+        <div className="space-y-6">
+          {RARITY_ORDER.map((rarity) => {
+            const group = filtered.filter((a) => a.rarity === rarity);
+            if (group.length === 0) return null;
+            return (
+              <div key={rarity}>
+                <div
+                  className="flex items-center gap-2 mb-3 text-sm font-bold capitalize"
+                  style={{ color: RARITY_COLOR[rarity] }}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {rarity}
+                  <span className="opacity-50 font-normal">({group.length})</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {group.map((a) => (
+                    <AchievementCard key={a._id} achievement={a} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div
           className={`transition-opacity duration-200 ${isPendingGroup ? 'opacity-50 pointer-events-none' : ''}`}
