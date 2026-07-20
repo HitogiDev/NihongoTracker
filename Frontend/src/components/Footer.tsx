@@ -1,7 +1,10 @@
-import { Heart } from 'lucide-react';
+import { FilePlus, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useUserDataStore } from '../store/userData';
 
 function Footer() {
+  const { user } = useUserDataStore();
+
   return (
     <footer className="bg-base-100 text-base-content border-t border-base-300/60 mt-auto">
       <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -51,6 +54,15 @@ function Footer() {
             >
               Refund Policy
             </Link>
+            {user && (
+              <Link
+                to="/media-request"
+                className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
+              >
+                <FilePlus className="w-4 h-4" />
+                <span>Request Media</span>
+              </Link>
+            )}
             <Link
               to="/changelog"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"

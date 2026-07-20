@@ -22,6 +22,10 @@ import {
   updateVotingStatusesForClub,
 } from '../services/clubMediaVoting.js';
 import { calculateLevel } from '../services/calculateLevel.js';
+import {
+  createNotification,
+  createNotifications,
+} from '../services/notifications.service.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import { recalculateClubGoalsProgress } from '../services/clubGoals.js';
 
@@ -903,12 +907,36 @@ export async function manageJoinRequests(
         $push: { clubs: clubId },
       });
       await club.save();
+
+      await createNotification({
+        recipient: memberId,
+        actor: userId,
+        type: 'club_join_approved',
+        title: `You were accepted into ${club.name}`,
+        link: `/clubs/${clubId}`,
+        image: club.avatar,
+        entityType: 'club',
+        entityId: clubId,
+      });
+
       return res.status(200).json({ message: 'Member approved' });
     } else if (action === 'reject') {
       club.members = club.members.filter(
         (member) => !member.user.equals(memberId)
       );
       await club.save();
+
+      await createNotification({
+        recipient: memberId,
+        actor: userId,
+        type: 'club_join_rejected',
+        title: `Your request to join ${club.name} was declined`,
+        link: '/clubs',
+        image: club.avatar,
+        entityType: 'club',
+        entityId: clubId,
+      });
+
       return res.status(200).json({ message: 'Member rejected' });
     } else {
       return res.status(400).json({ message: 'Invalid action' });
@@ -986,6 +1014,17 @@ export async function kickClubMember(
 
     await User.findByIdAndUpdate(memberId, {
       $pull: { clubs: clubId },
+    });
+
+    await createNotification({
+      recipient: memberId,
+      actor: actorId,
+      type: 'club_member_removed',
+      title: `You were removed from ${club.name}`,
+      link: '/clubs',
+      image: club.avatar,
+      entityType: 'club',
+      entityId: clubId,
     });
 
     return res.status(200).json({ message: 'Member removed from club' });
@@ -1149,6 +1188,26 @@ export async function addClubMedia(
 
     club.currentMedia.push(newMedia);
     await club.save();
+
+    // Tell every active member except the one who added it.
+    await createNotifications(
+      club.members
+        .filter(
+          (member) =>
+            member.status === 'active' &&
+            member.user.toString() !== userId.toString()
+        )
+        .map((member) => member.user),
+      {
+        actor: userId,
+        type: 'club_media_added',
+        title: `${title} was added to ${club.name}`,
+        link: `/clubs/${club._id.toString()}`,
+        image: existingMedia?.contentImage,
+        entityType: 'club',
+        entityId: club._id.toString(),
+      }
+    );
 
     return res
       .status(201)

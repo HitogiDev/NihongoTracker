@@ -406,8 +406,8 @@ function LogScreen() {
     mutationFn: createLogFn,
     onSuccess: async (responseData) => {
       // Trigger achievement reveal if any were granted
-      const inlineAchievements = (responseData as any)?.newAchievements;
-      if (inlineAchievements?.length > 0) {
+      const inlineAchievements = responseData?.newAchievements;
+      if (inlineAchievements && inlineAchievements.length > 0) {
         await triggerAchievementCheck(inlineAchievements);
       }
       const pendingVolume = pendingVolumeRef.current;

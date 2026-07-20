@@ -16,6 +16,7 @@ import { evaluateSingleDayHours } from './conditions/singleDayHours.condition.js
 import { evaluateWeeklyHours } from './conditions/weeklyHours.condition.js';
 import { evaluateSessionsInDay } from './conditions/sessionsInDay.condition.js';
 import { evaluatePlatformAge } from './conditions/platformAge.condition.js';
+import { createNotification } from '../notifications.service.js';
 
 /**
  * Evaluate a single achievement condition for a given user.
@@ -159,6 +160,17 @@ export async function checkAchievements(
             { upsert: true, new: false }
           );
           newlyGranted.push(achievement as unknown as IAchievement);
+
+          await createNotification({
+            recipient: userId,
+            type: 'achievement_unlocked',
+            title: `Achievement unlocked: ${achievement.name}`,
+            body: achievement.description,
+            link: '/achievements',
+            entityType: 'achievement',
+            entityId: achievement._id.toString(),
+            meta: { iconSlug: achievement.iconSlug },
+          });
         } else if (progress > 0) {
           // Update progress for countable achievements (non-blocking)
           UserAchievement.findOneAndUpdate(
@@ -201,6 +213,24 @@ export async function grantAchievement(
     progress: 0,
     notified: false,
   });
+
+  const achievement = await Achievement.findById(achievementId)
+    .select('name description iconSlug')
+    .lean();
+
+  if (achievement) {
+    await createNotification({
+      recipient: userId,
+      type: 'achievement_unlocked',
+      title: `Achievement unlocked: ${achievement.name}`,
+      body: achievement.description,
+      link: '/achievements',
+      entityType: 'achievement',
+      entityId: achievementId.toString(),
+      meta: { iconSlug: achievement.iconSlug },
+    });
+  }
+
   return true;
 }
 

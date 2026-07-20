@@ -945,13 +945,78 @@ export interface IClubListResponse {
   limit: number;
 }
 
-export type NotificationSectionType = 'club_join_requests' | 'changelog';
+/**
+ * Every notification kind the platform can emit. Adding a new kind is a
+ * one-line change here plus a `createNotification` call at the event source —
+ * the API, the bell and the notifications page are all type-agnostic.
+ */
+export const NOTIFICATION_TYPES = [
+  // Social
+  'review_like',
+  'review_comment',
+  'comment_reply',
+  'comment_like',
+  'mention',
+  'follow',
+  // Clubs
+  'club_join_request',
+  'club_join_approved',
+  'club_join_rejected',
+  'club_member_removed',
+  'club_media_added',
+  'club_voting_started',
+  'club_voting_finished',
+  'club_leadership_transferred',
+  // Media requests
+  'media_request_approved',
+  'media_request_rejected',
+  // Progression
+  'achievement_unlocked',
+  'level_up',
+  'goal_completed',
+  'streak_lost',
+  // Platform
+  'changelog',
+  'system',
+] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+/**
+ * Legacy derived sections (computed on read, not stored). Stored notifications
+ * are grouped under `activity`.
+ */
+export type NotificationSectionType =
+  | 'club_join_requests'
+  | 'changelog'
+  | 'activity';
+
+export interface INotification extends Document {
+  _id: Types.ObjectId;
+  recipient: Types.ObjectId;
+  actor?: Types.ObjectId | null;
+  type: NotificationType;
+  title: string;
+  body?: string;
+  link?: string;
+  image?: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  meta?: Map<string, string>;
+  groupKey?: string | null;
+  count: number;
+  isRead: boolean;
+  readAt?: Date | null;
+  expireAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface INotificationSummaryItem {
   id: string;
   label: string;
   count: number;
-  type: 'club_join_requests' | 'changelog';
+  type: NotificationType | 'club_join_requests';
   meta?: Record<string, string>;
 }
 

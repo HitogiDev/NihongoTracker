@@ -13,6 +13,7 @@ import {
 } from '../models/media.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import { createNotification } from '../services/notifications.service.js';
 import {
   IMediaDescription,
   IMediaDocument,
@@ -256,6 +257,19 @@ export async function reviewMediaRequest(
       request.reviewNote =
         typeof reviewNote === 'string' ? reviewNote.trim() : undefined;
       await request.save();
+
+      await createNotification({
+        recipient: request.user,
+        actor: reviewerId,
+        type: 'media_request_rejected',
+        title: `Your media request "${request.title.contentTitleNative}" was rejected`,
+        body: request.reviewNote,
+        link: '/media-request',
+        image: request.coverImage,
+        entityType: 'mediaRequest',
+        entityId: request._id.toString(),
+      });
+
       return res
         .status(200)
         .json({ message: 'Request rejected', request });
@@ -300,6 +314,18 @@ export async function reviewMediaRequest(
     request.createdMediaContentId = contentId;
     request.createdMediaType = request.type;
     await request.save();
+
+    await createNotification({
+      recipient: request.user,
+      actor: reviewerId,
+      type: 'media_request_approved',
+      title: `Your media request "${request.title.contentTitleNative}" was approved`,
+      body: request.reviewNote,
+      link: `/${request.type}/${contentId}`,
+      image: request.coverImage,
+      entityType: 'mediaRequest',
+      entityId: request._id.toString(),
+    });
 
     return res.status(200).json({
       message: 'Request approved and media created',

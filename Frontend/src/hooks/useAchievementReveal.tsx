@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { IPendingAchievement } from '../types';
+import { IAchievement, IPendingAchievement } from '../types';
 import AchievementRevealModal from '../components/achievements/AchievementRevealModal';
 import { getPendingAchievementsFn } from '../api/trackerApi';
 
@@ -12,30 +12,33 @@ export function useAchievementReveal() {
   const [pendingQueue, setPendingQueue] = useState<IPendingAchievement[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const triggerCheck = useCallback(async (inlineAchievements?: any[]) => {
-    if (inlineAchievements && inlineAchievements.length > 0) {
-      const queue: IPendingAchievement[] = inlineAchievements.map((a) => ({
-        userAchievementId: a._id ?? String(Math.random()),
-        unlockedAt: new Date().toISOString(),
-        achievement: a,
-        rarityPercent: a.rarityPercent ?? 0,
-      }));
-      setPendingQueue(queue);
-      setModalOpen(true);
-      return;
-    }
-
-    // Fallback: poll the pending endpoint
-    try {
-      const pending = await getPendingAchievementsFn();
-      if (pending.length > 0) {
-        setPendingQueue(pending);
+  const triggerCheck = useCallback(
+    async (inlineAchievements?: IAchievement[]) => {
+      if (inlineAchievements && inlineAchievements.length > 0) {
+        const queue: IPendingAchievement[] = inlineAchievements.map((a) => ({
+          userAchievementId: a._id ?? String(Math.random()),
+          unlockedAt: new Date().toISOString(),
+          achievement: a,
+          rarityPercent: a.rarityPercent ?? 0,
+        }));
+        setPendingQueue(queue);
         setModalOpen(true);
+        return;
       }
-    } catch {
-      // Silently fail — achievement display is non-critical
-    }
-  }, []);
+
+      // Fallback: poll the pending endpoint
+      try {
+        const pending = await getPendingAchievementsFn();
+        if (pending.length > 0) {
+          setPendingQueue(pending);
+          setModalOpen(true);
+        }
+      } catch {
+        // Silently fail — achievement display is non-critical
+      }
+    },
+    []
+  );
 
   const handleClose = useCallback(() => {
     setModalOpen(false);

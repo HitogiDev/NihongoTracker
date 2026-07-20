@@ -22,6 +22,13 @@ import {
 import UserAvatar from './UserAvatar';
 import { INotificationListItem } from '../types';
 import { useNotificationCount } from '../hooks/useNotificationCount';
+import {
+  getNotificationAccent,
+  getNotificationAvatar,
+  getNotificationBadgeAccent,
+  getNotificationIcon,
+  getNotificationLink,
+} from '../utils/notifications';
 
 const MAX_BADGE_COUNT = 99;
 const DROPDOWN_PAGE_SIZE = 5;
@@ -153,13 +160,11 @@ function NotificationBell() {
   ]);
 
   const renderNotificationItem = (item: INotificationListItem) => {
-    const clubId = item.meta?.clubId || item.id;
-    const type = item.type || 'club_join_requests';
-    const link =
-      type === 'changelog' ? `/changelog` : `/clubs/${clubId}?tab=members`;
-    const requesterName =
-      item.meta?.username ?? item.label.split(' ')[0] ?? 'U';
-    const requesterAvatar = item.meta?.avatar;
+    const link = getNotificationLink(item);
+    const actor = getNotificationAvatar(item);
+    const Icon = getNotificationIcon(item.type);
+    const accent = getNotificationAccent(item.type);
+    const badgeAccent = getNotificationBadgeAccent(item.type);
     const isUnread = !item.isRead;
 
     return (
@@ -186,15 +191,38 @@ function NotificationBell() {
           }`}
         >
           <div className="flex items-start gap-3">
-            <div className="avatar shrink-0">
-              <UserAvatar
-                username={requesterName}
-                avatar={requesterAvatar}
-                containerClassName="w-9 h-9 rounded-lg"
-                imageClassName="w-full h-full rounded-lg object-cover"
-                fallbackClassName="w-full h-full rounded-lg bg-base-300 flex items-center justify-center"
-                textClassName="text-xs font-semibold text-base-content/70"
-              />
+            <div className="relative shrink-0">
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt=""
+                  className="w-9 h-9 rounded-lg object-cover"
+                />
+              ) : actor ? (
+                <UserAvatar
+                  username={actor.username}
+                  avatar={actor.avatar}
+                  loading="eager"
+                  containerClassName="w-9 h-9 rounded-lg"
+                  imageClassName="w-full h-full rounded-lg object-cover"
+                  fallbackClassName="w-full h-full rounded-lg bg-base-300 flex items-center justify-center"
+                  textClassName="text-xs font-semibold text-base-content/70"
+                />
+              ) : (
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${accent}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+              )}
+
+              {(item.image || actor) && (
+                <span
+                  className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-base-100 shadow-sm ${badgeAccent}`}
+                >
+                  <Icon className="w-2.5 h-2.5" strokeWidth={2.5} />
+                </span>
+              )}
             </div>
 
             <div className="flex-1 min-w-0 text-left">
@@ -216,6 +244,11 @@ function NotificationBell() {
                   {isUnread ? 'Unread' : 'Read'}
                 </span>
               </div>
+              {item.body && (
+                <p className="mt-0.5 text-xs text-base-content/60 line-clamp-1">
+                  {item.body}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">

@@ -1067,12 +1067,44 @@ export interface IClubListResponse {
   limit: number;
 }
 
-export type NotificationSectionType = 'club_join_requests';
+/**
+ * Mirrors NOTIFICATION_TYPES in Backend/src/types.ts. Keep both in sync when
+ * adding a new notification kind.
+ */
+export type NotificationType =
+  | 'review_like'
+  | 'review_comment'
+  | 'comment_reply'
+  | 'comment_like'
+  | 'mention'
+  | 'follow'
+  | 'club_join_request'
+  | 'club_join_approved'
+  | 'club_join_rejected'
+  | 'club_member_removed'
+  | 'club_media_added'
+  | 'club_voting_started'
+  | 'club_voting_finished'
+  | 'club_leadership_transferred'
+  | 'media_request_approved'
+  | 'media_request_rejected'
+  | 'achievement_unlocked'
+  | 'level_up'
+  | 'goal_completed'
+  | 'streak_lost'
+  | 'changelog'
+  | 'system';
+
+export type NotificationSectionType =
+  | 'club_join_requests'
+  | 'changelog'
+  | 'activity';
 
 export interface INotificationSummaryItem {
   id: string;
   label: string;
   count: number;
+  type?: NotificationType | 'club_join_requests';
   meta?: Record<string, string>;
 }
 
@@ -1090,10 +1122,15 @@ export interface INotificationSummaryResponse {
 export interface INotificationListItem {
   id: string;
   label: string;
-  type?: 'club_join_requests' | 'changelog';
+  body?: string;
+  type?: NotificationType | 'club_join_requests';
   count: number;
   isRead: boolean;
   createdAt: string;
+  /** Route to open. Present on stored notifications; derived ones fall back. */
+  link?: string;
+  /** Image override (media cover, club icon…). Falls back to actor avatar. */
+  image?: string;
   meta?: Record<string, string>;
 }
 

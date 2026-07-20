@@ -29,7 +29,7 @@ export default function GlobalAchievementFeed() {
         const a = item.achievement;
         const rarity = a.rarity ?? 'common';
         const rarityColor = RARITY_COLOR[rarity] ?? RARITY_COLOR.common;
-        const user = (item as any).user;
+        const user = item.user;
 
         return (
           <div

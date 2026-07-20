@@ -21,6 +21,11 @@ import {
   searchDocuments,
   multiSearchDocuments,
 } from '../services/meilisearch/meiliSearch.js';
+import {
+  createNotification,
+  decrementNotification,
+  removeNotifications,
+} from '../services/notifications.service.js';
 
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
 const REVIEW_SUMMARY_MAX_LENGTH = 150;
@@ -830,6 +835,31 @@ export async function toggleMediaReviewLike(
 
     await review.save();
 
+    const likeGroupKey = `review_like:${review._id.toString()}`;
+
+    if (isLiked) {
+      await decrementNotification(review.user, likeGroupKey);
+    } else {
+      const liker = res.locals.user;
+      await createNotification({
+        recipient: review.user,
+        actor: userId,
+        type: 'review_like',
+        title:
+          review.likes.length > 1
+            ? `${liker?.username ?? 'Someone'} and ${review.likes.length - 1} other${
+                review.likes.length - 1 === 1 ? '' : 's'
+              } liked your review`
+            : `${liker?.username ?? 'Someone'} liked your review`,
+        body: review.summary,
+        link: `/review/${review._id.toString()}`,
+        entityType: 'mediaReview',
+        entityId: review._id.toString(),
+        groupKey: likeGroupKey,
+        meta: { mediaType: review.mediaType, contentId: review.mediaContentId },
+      });
+    }
+
     return res.status(200).json({
       message: isLiked ? 'Review unliked' : 'Review liked',
       liked: !isLiked,
@@ -868,6 +898,12 @@ export async function deleteMediaReview(
         .status(404)
         .json({ message: 'Review not found or you are not the author' });
     }
+
+    // Drop notifications that pointed at a review that no longer exists.
+    await removeNotifications({
+      entityType: 'mediaReview',
+      entityId: review._id.toString(),
+    });
 
     return res.status(200).json({ message: 'Review deleted successfully' });
   } catch (error) {

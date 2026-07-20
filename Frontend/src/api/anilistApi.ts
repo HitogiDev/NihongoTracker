@@ -11,7 +11,7 @@ export async function searchAnilist(
 ): Promise<IMediaDocument[]> {
   if (!type) return [];
 
-  const params: Record<string, any> = {
+  const params: Record<string, string | number> = {
     search,
     type,
     page,

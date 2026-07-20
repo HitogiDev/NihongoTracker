@@ -327,7 +327,10 @@ export async function createLogFn(logValues: ICreateLog) {
         : logValues.date
       : new Date().toISOString(),
   };
-  const { data } = await api.post<ILog>(`logs`, logData);
+  const { data } = await api.post<ILog & { newAchievements?: IAchievement[] }>(
+    `logs`,
+    logData
+  );
   return data;
 }
 

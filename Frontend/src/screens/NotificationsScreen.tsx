@@ -6,7 +6,6 @@ import {
 } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  ScrollText,
   Bell,
   Check,
   Clock3,
@@ -24,6 +23,13 @@ import {
   markNotificationsAsUnreadFn,
 } from '../api/notificationsApi';
 import { INotificationListItem } from '../types';
+import {
+  getNotificationAccent,
+  getNotificationAvatar,
+  getNotificationBadgeAccent,
+  getNotificationIcon,
+  getNotificationLink,
+} from '../utils/notifications';
 
 const PAGE_SIZE = 15;
 const MAX_BADGE_COUNT = 99;
@@ -157,13 +163,11 @@ function NotificationsScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   function renderNotificationItem(item: INotificationListItem) {
-    const clubId = item.meta?.clubId || item.id;
-    const type = item.type || 'club_join_requests';
-    const link =
-      type === 'changelog' ? `/changelog` : `/clubs/${clubId}?tab=members`;
-    const requesterName =
-      item.meta?.username ?? item.label.split(' ')[0] ?? 'U';
-    const requesterAvatar = item.meta?.avatar;
+    const link = getNotificationLink(item);
+    const actor = getNotificationAvatar(item);
+    const Icon = getNotificationIcon(item.type);
+    const accent = getNotificationAccent(item.type);
+    const badgeAccent = getNotificationBadgeAccent(item.type);
     const isUnread = !item.isRead;
     const timeLabel = formatDistanceToNow(new Date(item.createdAt), {
       addSuffix: true,
@@ -192,20 +196,37 @@ function NotificationsScreen() {
         >
           <div className="card-body py-3.5 px-4">
             <div className="flex items-start gap-4">
-              <div className="avatar shrink-0">
-                {type === 'changelog' ? (
-                  <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                    <ScrollText className="w-5 h-5" />
-                  </div>
-                ) : (
+              <div className="relative shrink-0">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt=""
+                    className="w-11 h-11 rounded-lg object-cover"
+                  />
+                ) : actor ? (
                   <UserAvatar
-                    username={requesterName}
-                    avatar={requesterAvatar}
+                    username={actor.username}
+                    avatar={actor.avatar}
+                    loading="eager"
                     containerClassName="w-11 h-11 rounded-lg"
                     imageClassName="w-full h-full rounded-lg object-cover"
                     fallbackClassName="w-full h-full rounded-lg bg-base-300 flex items-center justify-center"
                     textClassName="text-sm font-semibold text-base-content/70"
                   />
+                ) : (
+                  <div
+                    className={`w-11 h-11 rounded-lg flex items-center justify-center ${accent}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                )}
+
+                {(item.image || actor) && (
+                  <span
+                    className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-base-100 shadow-sm ${badgeAccent}`}
+                  >
+                    <Icon className="w-3 h-3" strokeWidth={2.5} />
+                  </span>
                 )}
               </div>
 
@@ -226,6 +247,12 @@ function NotificationsScreen() {
                     {isUnread ? 'Unread' : 'Read'}
                   </span>
                 </div>
+
+                {item.body && (
+                  <p className="mt-1 text-sm text-base-content/60 line-clamp-2">
+                    {item.body}
+                  </p>
+                )}
 
                 <div className="flex items-center gap-2 mt-1 text-xs text-base-content/50">
                   <Clock3 className="w-3 h-3" />

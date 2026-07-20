@@ -13,7 +13,18 @@ import { Types } from 'mongoose';
 // ─── Mock all models ──────────────────────────────────────────────────────────
 
 vi.mock('../../models/achievement.model.js', () => ({
-  default: { find: vi.fn() },
+  default: {
+    find: vi.fn(),
+    findById: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(null),
+    })),
+  },
+}));
+
+// Notification delivery is a side effect of unlocking; keep it out of these tests.
+vi.mock('../../services/notifications.service.js', () => ({
+  createNotification: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../models/userAchievement.model.js', () => ({

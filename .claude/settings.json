@@ -5,5 +5,8 @@
       "Bash(npx eslint *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173)"
     ]
+  },
+    "worktree": {
+    "bgIsolation": "none"
   }
 }

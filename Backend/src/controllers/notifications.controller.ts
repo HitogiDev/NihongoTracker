@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import { Club } from '../models/club.model.js';
 import Changelog from '../models/changelog.model.js';
+import Notification from '../models/notification.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import {
   IUser,
   IUserSettings,
   INotificationSummaryResponse,
   INotificationSummarySection,
+  NotificationType,
 } from '../types.js';
 
 type ClubPendingSummary = {
@@ -24,10 +26,16 @@ type ClubPendingSummary = {
 type NotificationListItem = {
   id: string;
   label: string;
+  /** Optional secondary line (stored notifications only). */
+  body?: string;
   count: number;
   isRead: boolean;
   createdAt: string;
-  type: 'club_join_requests' | 'changelog';
+  type: NotificationType | 'club_join_requests';
+  /** Route the client should navigate to. Derived items fall back client-side. */
+  link?: string;
+  /** Image override (media cover, club icon…). */
+  image?: string;
   meta: Record<string, string>;
 };
 
@@ -292,6 +300,74 @@ async function getClubPendingSummaries(
   ]);
 }
 
+type PopulatedActor = {
+  _id: Types.ObjectId;
+  username?: string;
+  avatar?: string;
+};
+
+/**
+ * Stored notifications (the generic system). Anything emitted through
+ * `services/notifications.service.ts` shows up here without controller changes.
+ */
+async function getStoredNotificationItems(
+  recipient: Types.ObjectId,
+  { limit, unreadOnly = false }: { limit: number; unreadOnly?: boolean }
+): Promise<NotificationListItem[]> {
+  const query: Record<string, unknown> = { recipient };
+  if (unreadOnly) {
+    query.isRead = false;
+  }
+
+  const notifications = await Notification.find(query)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .populate<{ actor: PopulatedActor | null }>('actor', 'username avatar')
+    .lean();
+
+  return notifications.map((notification) => {
+    const actor = notification.actor;
+    const meta: Record<string, string> = {
+      ...Object.fromEntries(
+        Object.entries(
+          (notification.meta as unknown as Record<string, string>) ?? {}
+        )
+      ),
+    };
+
+    if (actor?.username) meta.username = actor.username;
+    if (actor?.avatar) meta.avatar = actor.avatar;
+    if (notification.entityId) meta.entityId = notification.entityId;
+    if (notification.entityType) meta.entityType = notification.entityType;
+
+    return {
+      id: notification._id.toString(),
+      label: notification.title,
+      ...(notification.body ? { body: notification.body } : {}),
+      count: notification.count ?? 1,
+      isRead: Boolean(notification.isRead),
+      createdAt: new Date(notification.createdAt).toISOString(),
+      type: notification.type,
+      ...(notification.link ? { link: notification.link } : {}),
+      ...(notification.image ? { image: notification.image } : {}),
+      meta,
+    } satisfies NotificationListItem;
+  });
+}
+
+function sortByUnreadThenDate(
+  left: NotificationListItem,
+  right: NotificationListItem
+): number {
+  if (left.isRead !== right.isRead) {
+    return Number(left.isRead) - Number(right.isRead);
+  }
+
+  return (
+    new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+  );
+}
+
 export async function getNotificationSummary(
   _req: Request,
   res: Response,
@@ -325,6 +401,19 @@ export async function getNotificationSummary(
       });
     }
 
+    const storedUnread = await getStoredNotificationItems(leaderId, {
+      limit: 10,
+      unreadOnly: true,
+    });
+
+    if (storedUnread.length > 0) {
+      sections.push({
+        type: 'activity',
+        title: 'Activity',
+        items: storedUnread,
+      });
+    }
+
     const changelogItem =
       await getLatestChangelogNotificationItem(lastSeenChangelogAt);
     if (changelogItem) {
@@ -335,8 +424,14 @@ export async function getNotificationSummary(
       });
     }
 
+    const storedUnreadCount = await Notification.countDocuments({
+      recipient: leaderId,
+      isRead: false,
+    });
+
     const totalCount =
       unreadItems.reduce((sum, item) => sum + item.count, 0) +
+      storedUnreadCount +
       (changelogItem ? 1 : 0);
 
     return res.status(200).json({ totalCount, sections });
@@ -361,7 +456,12 @@ export async function markNotificationsAsRead(
     user.settings.notificationsLastViewedAt = new Date();
     user.settings.lastSeenChangelogAt = new Date();
     await user.save();
-    console.log('Notifications marked as read for user:', user._id.toString());
+
+    await Notification.updateMany(
+      { recipient: user._id, isRead: false },
+      { $set: { isRead: true, readAt: new Date() } }
+    );
+
     return res.sendStatus(204);
   } catch (error) {
     return next(error as customError);
@@ -384,6 +484,11 @@ export async function markNotificationsAsUnread(
     user.settings.notificationsLastViewedAt = null;
     user.settings.lastSeenChangelogAt = null;
     await user.save();
+
+    await Notification.updateMany(
+      { recipient: user._id },
+      { $set: { isRead: false, readAt: null } }
+    );
 
     return res.sendStatus(204);
   } catch (error) {
@@ -409,6 +514,18 @@ export async function deleteNotification(
     }
 
     user.settings = user.settings ?? {};
+
+    // Stored notifications own their id, so try them first.
+    if (Types.ObjectId.isValid(notificationId)) {
+      const deleted = await Notification.findOneAndDelete({
+        _id: notificationId,
+        recipient: user._id,
+      });
+
+      if (deleted) {
+        return res.sendStatus(204);
+      }
+    }
 
     // Check if this is a changelog notification dismissal
     const matchedChangelog = await Changelog.findOne({
@@ -471,12 +588,23 @@ export async function getNotificationList(
     const changelogItem =
       await getLatestChangelogNotificationItem(lastSeenChangelogAt);
 
-    const items: NotificationListItem[] = [
+    // Derived items (club requests + changelog) are few, so they are merged
+    // in full with the current window of stored notifications and re-sorted.
+    const storedTotal = await Notification.countDocuments({
+      recipient: leaderId,
+    });
+    const storedItems = await getStoredNotificationItems(leaderId, {
+      limit: skip + limit,
+    });
+
+    const derivedItems: NotificationListItem[] = [
       ...(changelogItem ? [changelogItem] : []),
       ...clubItems,
     ];
 
-    const total = items.length;
+    const items = [...derivedItems, ...storedItems].sort(sortByUnreadThenDate);
+
+    const total = derivedItems.length + storedTotal;
     const paginatedItems = items.slice(skip, skip + limit);
 
     return res.status(200).json({
