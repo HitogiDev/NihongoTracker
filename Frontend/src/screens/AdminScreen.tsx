@@ -35,6 +35,8 @@ import {
 } from '../api/trackerApi';
 import { Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
+import MediaRequestQueue from '../components/MediaRequestQueue';
+import MediaEditPanel from '../components/MediaEditPanel';
 
 // Format a Date as the local "YYYY-MM-DD" a native <input type="date"> expects.
 // `toISOString()` would convert to UTC first, which can shift the calendar
@@ -148,7 +150,13 @@ function AdminScreen() {
 
   // Tabs and filters
   const [selectedTab, setSelectedTab] = useState<
-    'overview' | 'users' | 'logs' | 'changelogs' | 'system'
+    | 'overview'
+    | 'users'
+    | 'logs'
+    | 'requests'
+    | 'media'
+    | 'changelogs'
+    | 'system'
   >('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [userPage, setUserPage] = useState(1);
@@ -593,6 +601,44 @@ function AdminScreen() {
             Logs
           </button>
           <button
+            className={`tab tab-lg ${selectedTab === 'requests' ? 'tab-active' : ''}`}
+            onClick={() => setSelectedTab('requests')}
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Requests
+          </button>
+          <button
+            className={`tab tab-lg ${selectedTab === 'media' ? 'tab-active' : ''}`}
+            onClick={() => setSelectedTab('media')}
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Media
+          </button>
+          <button
             className={`tab tab-lg ${selectedTab === 'changelogs' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('changelogs')}
           >
@@ -637,6 +683,12 @@ function AdminScreen() {
             System
           </button>
         </div>
+
+        {/* Requests Tab */}
+        {selectedTab === 'requests' && <MediaRequestQueue />}
+
+        {/* Media Tab */}
+        {selectedTab === 'media' && <MediaEditPanel />}
 
         {/* Overview Tab */}
         {selectedTab === 'overview' && (

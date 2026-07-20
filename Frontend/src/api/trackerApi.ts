@@ -31,6 +31,10 @@ import {
   IGanttMediaItem,
   IAchievement,
   IPendingAchievement,
+  IMediaRequest,
+  ICreateMediaRequest,
+  IMediaRequestListResponse,
+  MediaRequestStatus,
 } from '../types';
 
 const api = axiosInstance;
@@ -1493,5 +1497,46 @@ export async function adminBackfillRankingHistoryFn(): Promise<{
   snapshots: number;
 }> {
   const { data } = await api.post('admin/ranking-history/backfill');
+  return data;
+}
+
+// ---- Media requests ----
+
+export async function createMediaRequestFn(
+  payload: ICreateMediaRequest
+): Promise<{ message: string; request: IMediaRequest }> {
+  const { data } = await api.post('media-requests', payload);
+  return data;
+}
+
+export async function getMyMediaRequestsFn(): Promise<{
+  requests: IMediaRequest[];
+}> {
+  const { data } = await api.get('media-requests/mine');
+  return data;
+}
+
+export async function getMediaRequestsFn(params: {
+  page?: number;
+  limit?: number;
+  status?: MediaRequestStatus;
+}): Promise<IMediaRequestListResponse> {
+  const { data } = await api.get('media-requests', { params });
+  return data;
+}
+
+export async function reviewMediaRequestFn(
+  id: string,
+  payload: { action: 'approve' | 'reject'; reviewNote?: string }
+): Promise<{ message: string; request: IMediaRequest }> {
+  const { data } = await api.patch(`media-requests/${id}/review`, payload);
+  return data;
+}
+
+export async function adminUpdateMediaFn(
+  id: string,
+  payload: Partial<IMediaDocument>
+): Promise<{ message: string; media: IMediaDocument }> {
+  const { data } = await api.patch(`admin/media/${id}`, payload);
   return data;
 }

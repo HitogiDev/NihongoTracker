@@ -122,6 +122,37 @@ async function syncIndexes(indexNames: readonly string[]) {
   return totalDocs;
 }
 
+// Add (or update) a single media document in its type's search index. Used
+// when media is created outside the startup sync (e.g. approved user requests).
+export async function addMediaToIndex(doc: {
+  _id: unknown;
+  contentId: string;
+  title: unknown;
+  contentImage?: string;
+  coverImage?: string;
+  isAdult?: boolean;
+  isAdultImage?: boolean;
+  synonyms?: string[];
+  type: string;
+}): Promise<void> {
+  const indexName = TYPE_TO_INDEX[doc.type];
+  if (!indexName) return;
+
+  await addDocuments(indexName, [
+    {
+      _id: String(doc._id),
+      contentId: doc.contentId,
+      title: doc.title,
+      contentImage: doc.contentImage,
+      coverImage: doc.coverImage,
+      isAdult: doc.isAdult ?? false,
+      isAdultImage: doc.isAdultImage ?? false,
+      synonyms: doc.synonyms || [],
+      type: doc.type,
+    },
+  ]);
+}
+
 export async function syncAllMedia() {
   try {
     // Check if any index is empty — only sync those

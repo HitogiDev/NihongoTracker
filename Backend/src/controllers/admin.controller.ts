@@ -19,6 +19,8 @@ import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IMediaDocument } from '../types.js';
 import { backfillRankHistory } from '../services/rankSnapshot.service.js';
+import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import { Types } from 'mongoose';
 
 export async function getAdminStats(
   _req: Request,
@@ -961,6 +963,115 @@ export async function backfillRankingHistory(
       message: `Backfilled ${result.snapshots} rank snapshots across ${result.weeks} weeks.`,
       ...result,
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+// PATCH /api/admin/media/:id — admin/mod edits a media document's fields.
+// Uses findById so the correct discriminator is hydrated and type-specific
+// fields (episodes, volumes, platforms, …) can be set.
+export async function adminUpdateMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      throw new customError('Invalid media id', 400);
+    }
+
+    const media = await MediaBase.findById(id);
+    if (!media) throw new customError('Media not found', 404);
+
+    const body = req.body as Partial<IMediaDocument>;
+
+    // Title (merge with existing so partial updates keep other fields).
+    if (body.title && typeof body.title === 'object') {
+      const native =
+        typeof body.title.contentTitleNative === 'string'
+          ? body.title.contentTitleNative.trim()
+          : media.title.contentTitleNative;
+      if (!native) throw new customError('Native title cannot be empty', 400);
+      media.title = {
+        contentTitleNative: native,
+        contentTitleRomaji:
+          typeof body.title.contentTitleRomaji === 'string'
+            ? body.title.contentTitleRomaji.trim() || null
+            : media.title.contentTitleRomaji,
+        contentTitleEnglish:
+          typeof body.title.contentTitleEnglish === 'string'
+            ? body.title.contentTitleEnglish.trim() || null
+            : media.title.contentTitleEnglish,
+      } as typeof media.title;
+    }
+
+    if (typeof body.coverImage === 'string')
+      media.coverImage = body.coverImage.trim() || undefined;
+    if (typeof body.contentImage === 'string')
+      media.contentImage = body.contentImage.trim() || undefined;
+    if (typeof body.isAdult === 'boolean') media.isAdult = body.isAdult;
+    if (Array.isArray(body.genres))
+      media.genres = body.genres.map((g) => String(g).trim()).filter(Boolean);
+    if (Array.isArray(body.synonyms))
+      media.synonyms = body.synonyms
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    if (Array.isArray(body.description)) media.description = body.description;
+
+    // Type-specific numeric fields. Assigned dynamically; only ones present in
+    // the hydrated discriminator's schema are persisted by Mongoose.
+    const numericFields: (keyof IMediaDocument)[] = [
+      'episodes',
+      'episodeDuration',
+      'chapters',
+      'volumes',
+      'characters',
+      'seasons',
+      'runtime',
+    ];
+    const mediaRecord = media as unknown as Record<string, unknown>;
+    for (const field of numericFields) {
+      if (body[field] === null) {
+        mediaRecord[field] = null;
+      } else if (body[field] !== undefined) {
+        const value = Number(body[field]);
+        if (Number.isNaN(value)) {
+          throw new customError(`${field} must be a number`, 400);
+        }
+        mediaRecord[field] = value;
+      }
+    }
+
+    if (Array.isArray(body.platforms)) {
+      mediaRecord.platforms = body.platforms
+        .map((p) => String(p).trim())
+        .filter(Boolean);
+    }
+
+    await media.save();
+
+    // Keep the search index in sync with the edited document.
+    try {
+      await addMediaToIndex({
+        _id: media._id,
+        contentId: media.contentId,
+        title: media.title,
+        contentImage: media.contentImage,
+        coverImage: media.coverImage,
+        isAdult: media.isAdult,
+        isAdultImage: media.isAdultImage,
+        synonyms: media.synonyms,
+        type: media.type,
+      });
+    } catch (indexError) {
+      console.warn('Failed to re-index edited media:', indexError);
+    }
+
+    return res
+      .status(200)
+      .json({ message: 'Media updated', media: media.toObject() });
   } catch (error) {
     return next(error as customError);
   }

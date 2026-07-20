@@ -110,6 +110,9 @@ const ProfileModerationScreen = lazy(
 const AchievementsScreen = lazy(
   () => import('./screens/AchievementsScreen.tsx')
 );
+const MediaRequestScreen = lazy(
+  () => import('./screens/MediaRequestScreen.tsx')
+);
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -162,6 +165,7 @@ const router = createBrowserRouter(
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route path="notifications" element={<NotificationsScreen />} />
           <Route path="settings" element={<SettingsScreen />} />
+          <Route path="media-request" element={<MediaRequestScreen />} />
           <Route path="achievements" element={<AchievementsScreen />} />
           <Route
             path=":mediaType/:mediaId/texthooker"

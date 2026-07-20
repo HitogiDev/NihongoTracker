@@ -20,6 +20,7 @@ import {
   triggerVndbDumpSync,
   getVndbDumpSyncStatus,
   backfillRankingHistory,
+  adminUpdateMedia,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -29,7 +30,10 @@ import {
   adminUpdateLog,
 } from '../controllers/logs.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
-import { checkPermission } from '../middlewares/checkPermission.js';
+import {
+  checkPermission,
+  checkAnyPermission,
+} from '../middlewares/checkPermission.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
 import {
   deleteMeiliSearchIndex,
@@ -209,6 +213,14 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   backfillRankingHistory
+);
+
+// Media editing (admin or mod — pairs with the media-request approval flow)
+router.patch(
+  '/media/:id',
+  protect,
+  checkAnyPermission(userRoles.admin, userRoles.mod),
+  adminUpdateMedia
 );
 
 export default router;

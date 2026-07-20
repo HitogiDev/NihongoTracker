@@ -557,6 +557,56 @@ export interface IMediaTitle {
   contentTitleEnglish?: string;
 }
 
+export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export type MediaRequestType =
+  | 'anime'
+  | 'manga'
+  | 'reading'
+  | 'vn'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'game';
+
+export interface IMediaRequest {
+  _id: string;
+  user: { _id: string; username: string; avatar?: string } | string;
+  title: IMediaTitle;
+  type: MediaRequestType;
+  description?: IMediaDescription[];
+  referenceUrl?: string;
+  coverImage?: string;
+  isAdult: boolean;
+  note?: string;
+  status: MediaRequestStatus;
+  reviewedBy?: { _id: string; username: string } | string | null;
+  reviewNote?: string;
+  reviewedAt?: string | null;
+  createdMediaContentId?: string | null;
+  createdMediaType?: MediaRequestType | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICreateMediaRequest {
+  title: IMediaTitle;
+  type: MediaRequestType;
+  description?: IMediaDescription[];
+  referenceUrl?: string;
+  coverImage?: string;
+  isAdult?: boolean;
+  note?: string;
+}
+
+export interface IMediaRequestListResponse {
+  requests: IMediaRequest[];
+  page: number;
+  totalPages: number;
+  total: number;
+  pendingCount: number;
+}
+
 export interface IImmersionList {
   anime: IMediaDocument[];
   manga: IMediaDocument[];
@@ -600,6 +650,9 @@ export interface IMediaDocument {
   seasons?: number;
   chapters?: number;
   volumes?: number;
+  characters?: number;
+  genres?: string[];
+  platforms?: string[];
   synonyms?: string[] | null;
   isAdult: boolean;
   isAdultImage?: boolean;

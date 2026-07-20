@@ -21,6 +21,7 @@ import {
   Moon,
   SunMoon,
   Bell,
+  FilePlus,
 } from 'lucide-react';
 
 import { useUserDataStore } from '../store/userData';
@@ -256,6 +257,15 @@ function Header() {
                     Texthooker
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/media-request"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    <FilePlus className="w-4 h-4" />
+                    Request Media
+                  </Link>
+                </li>
 
                 {/* Account Section */}
                 <li>
@@ -386,6 +396,14 @@ function Header() {
                   to="/texthooker"
                 >
                   Texthooker
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
+                  to="/media-request"
+                >
+                  Request Media
                 </Link>
               </li>
             </ul>

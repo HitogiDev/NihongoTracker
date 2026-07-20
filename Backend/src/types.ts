@@ -346,7 +346,7 @@ export interface IMediaTitle {
   contentTitleEnglish?: string;
 }
 
-interface IMediaDescription {
+export interface IMediaDescription {
   description: string;
   language: 'eng' | 'jpn' | 'spa';
 }
@@ -399,6 +399,39 @@ export interface IMediaDocument {
 export interface IImportLogs {
   forced: boolean;
   logs: ILog[];
+}
+
+export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export type MediaRequestType =
+  | 'anime'
+  | 'manga'
+  | 'reading'
+  | 'vn'
+  | 'video'
+  | 'movie'
+  | 'tv show'
+  | 'game';
+
+export interface IMediaRequest {
+  _id?: Types.ObjectId;
+  user: Types.ObjectId;
+  title: IMediaTitle;
+  type: MediaRequestType;
+  description?: IMediaDescription[];
+  referenceUrl?: string;
+  coverImage?: string;
+  isAdult: boolean;
+  note?: string;
+  status: MediaRequestStatus;
+  reviewedBy?: Types.ObjectId | null;
+  reviewNote?: string;
+  reviewedAt?: Date | null;
+  /** Set when approved: the contentId/type of the Media doc that was created. */
+  createdMediaContentId?: string | null;
+  createdMediaType?: MediaRequestType | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IStats {

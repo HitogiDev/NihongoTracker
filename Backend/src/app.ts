@@ -13,6 +13,7 @@ import logsRoutes from './routes/logs.routes.js';
 import userRoutes from './routes/user.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import mediaRoutes from './routes/media.routes.js';
+import mediaRequestRoutes from './routes/mediaRequest.routes.js';
 import goalsRoutes from './routes/goals.routes.js';
 import clubRoutes from './routes/club.routes.js';
 import notificationsRoutes from './routes/notifications.routes.js';
@@ -58,6 +59,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/media-requests', mediaRequestRoutes);
 app.use('/api/logs', logsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/texthooker', textSessionRoutes);
