@@ -1,8 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import gsap from 'gsap';
+import { confetti } from '@tsparticles/confetti';
 import { IPendingAchievement } from '../../types';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
+import { playAchievement } from '../../utils/sfx';
+
+/** Per-rarity particle intensity for the flip-reveal burst. */
+const RARITY_BURST: Record<string, number> = {
+  common: 40,
+  rare: 70,
+  epic: 110,
+  legendary: 180,
+  secret: 130,
+};
 
 interface AchievementRevealModalProps {
   achievements: IPendingAchievement[];
@@ -18,53 +29,108 @@ export default function AchievementRevealModal({
   const [showContent, setShowContent] = useState(false);
 
   const overlayRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
   const rarityRef = useRef<HTMLSpanElement>(null);
   const unlockTextRef = useRef<HTMLDivElement>(null);
+  const isFirstCardRef = useRef(true);
 
   const current = achievements[currentIndex];
   const a = current?.achievement;
 
   const isLast = currentIndex === achievements.length - 1;
 
+  // Overlay fades in once — not again on every card.
+  useEffect(() => {
+    gsap.fromTo(overlayRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  }, []);
+
+  // Per-card timing: hold the face-down card, flip it, then reveal the text.
   useEffect(() => {
     if (!a) return;
 
     setIsFlipped(false);
     setShowContent(false);
 
-    // Animate overlay in
-    const tl = gsap.timeline();
-    tl.fromTo(
-      overlayRef.current,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.3 }
+    const tl = gsap.timeline({ delay: isFirstCardRef.current ? 0.3 : 0 });
+    isFirstCardRef.current = false;
+
+    const cardRarity = a.rarity ?? 'common';
+
+    tl.call(() => setIsFlipped(true), [], '+=0.6');
+    // Mid-flip (the face becomes visible around halfway through the 0.8s
+    // CSS transition): sound + particle burst scaled by rarity.
+    tl.call(
+      () => {
+        playAchievement(cardRarity);
+        navigator.vibrate?.(35);
+
+        const color = RARITY_COLOR[cardRarity] ?? RARITY_COLOR.common;
+        void confetti({
+          particleCount: RARITY_BURST[cardRarity] ?? 40,
+          spread: cardRarity === 'legendary' ? 360 : 90,
+          startVelocity: cardRarity === 'legendary' ? 45 : 30,
+          origin: { y: 0.42 },
+          colors: [color, '#ffffff'],
+          zIndex: 10000,
+        });
+
+        // Legendary gets a full-screen flash on top of the burst.
+        if (cardRarity === 'legendary' && flashRef.current) {
+          gsap.fromTo(
+            flashRef.current,
+            { opacity: 0.55 },
+            { opacity: 0, duration: 0.7, ease: 'power2.out' }
+          );
+        }
+      },
+      [],
+      '+=0.4'
+    );
+    // After the flip completes (0.8s CSS transition)
+    tl.call(() => setShowContent(true), [], '+=0.6');
+
+    return () => {
+      tl.kill();
+    };
+  }, [currentIndex, a]);
+
+  // Text intro runs in its own effect so it fires after the elements are
+  // actually mounted — animating straight from the timeline callback hit the
+  // refs while they were still null, leaving the text stuck at opacity 0.
+  useEffect(() => {
+    if (!showContent) return;
+
+    const elements = [
+      titleRef.current,
+      rarityRef.current,
+      descRef.current,
+      unlockTextRef.current,
+    ].filter(Boolean);
+
+    if (elements.length === 0) return;
+
+    const tween = gsap.fromTo(
+      elements,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
     );
 
-    // Brief pause, then flip
-    tl.call(() => {
-      setIsFlipped(true);
-    }, [], '+=0.6');
-
-    // After flip completes (0.8s CSS transition), show content
-    tl.call(() => {
-      setShowContent(true);
-
-      // Animate text elements in
-      gsap.fromTo(
-        [titleRef.current, rarityRef.current, descRef.current, unlockTextRef.current],
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
-      );
-    }, [], '+=1.0');
-  }, [currentIndex, a?._id]);
+    return () => {
+      tween.kill();
+    };
+  }, [showContent, currentIndex]);
 
   const handleNext = () => {
     if (isLast) {
       handleDismiss();
       return;
     }
+    // Reset in the same batch as the index so the next card renders face-down
+    // from its very first frame.
+    setIsFlipped(false);
+    setShowContent(false);
     setCurrentIndex((i) => i + 1);
   };
 
@@ -90,6 +156,13 @@ export default function AchievementRevealModal({
         if (e.target === e.currentTarget) handleDismiss();
       }}
     >
+      {/* Legendary reveal flash */}
+      <div
+        ref={flashRef}
+        className="pointer-events-none absolute inset-0 bg-white"
+        style={{ opacity: 0 }}
+      />
+
       {/* Count indicator */}
       {achievements.length > 1 && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2">
@@ -113,7 +186,13 @@ export default function AchievementRevealModal({
 
         {/* 3D flip card */}
         <div className="achievement-flip-scene w-48 h-48">
-          <div className={`achievement-flip-card ${isFlipped ? 'flipped' : ''}`}>
+          {/* Keyed on the index so advancing mounts a fresh card: reusing the
+              node would play the 0.8s flip in reverse, briefly showing the next
+              achievement's icon before it flipped away again. */}
+          <div
+            key={currentIndex}
+            className={`achievement-flip-card ${isFlipped ? 'flipped' : ''}`}
+          >
             {/* Front — unrevealed ? card */}
             <div className="achievement-flip-front rounded-2xl border border-base-300 bg-base-200 flex items-center justify-center">
               <span className="text-7xl font-black text-base-content/20">?</span>
@@ -121,8 +200,15 @@ export default function AchievementRevealModal({
 
             {/* Back — real achievement */}
             <div
-              className="achievement-flip-back rounded-2xl border bg-base-100 flex items-center justify-center"
-              style={{ borderColor: rarityTint(rarity, '66') }}
+              className={`achievement-flip-back rounded-2xl border bg-base-100 flex items-center justify-center ${
+                isFlipped ? 'achievement-glow' : ''
+              }`}
+              style={
+                {
+                  borderColor: rarityTint(rarity, '66'),
+                  '--rarity-glow': rarityTint(rarity, '59'),
+                } as CSSProperties
+              }
             >
               {a.iconSlug ? (
                 <Icon

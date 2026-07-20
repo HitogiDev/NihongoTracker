@@ -1257,6 +1257,40 @@ export interface IUserAchievement {
   notified: boolean;
 }
 
+declare global {
+  interface Window {
+    /**
+     * Replays the achievement reveal modal with demo data.
+     * Optional rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'secret'.
+     */
+    previewAchievementReveal?: (rarity?: string) => void;
+    /** Replays the post-log celebration overlay with demo data. */
+    previewLogCelebration?: (overrides?: Partial<ILogCelebration>) => void;
+  }
+}
+
+/**
+ * Mirror of Backend/src/types.ts ILogCelebration — post-log feedback payload
+ * returned inline by POST /logs.
+ */
+export interface ILogCelebration {
+  xpGained: number;
+  streak: number;
+  levelUp?: { from: number; to: number };
+  xp: {
+    current: number;
+    toCurrentLevel: number;
+    toNextLevel: number;
+    level: number;
+  };
+  rank?: {
+    timeframe: 'month';
+    rank: number;
+    previousRank: number;
+    overtaken: { username: string; avatar?: string; xp: number }[];
+  };
+}
+
 export interface IPendingAchievement {
   userAchievementId: string;
   unlockedAt: string;

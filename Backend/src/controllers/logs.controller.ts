@@ -8,6 +8,7 @@ import {
   ICreateLog,
   IMediaDocument,
   IManabeLogs,
+  ILogCelebration,
   IUser,
   userRoles,
 } from '../types.js';
@@ -29,6 +30,8 @@ import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
 import { recalculateAllUsersXpV2 } from '../services/xpMigration.js';
 import { addDocuments } from '../services/meilisearch/meiliSearch.js';
 import { checkAchievements } from '../services/achievements/achievementEngine.js';
+import UserAchievement from '../models/userAchievement.model.js';
+import { computeMonthlyOvertakes } from '../services/overtake.service.js';
 
 interface IMediaTitleFallback {
   contentTitleNative?: string;
@@ -1730,6 +1733,8 @@ export async function createLog(
     const savedLog = await newLog.save();
     if (!savedLog) throw new customError('Log could not be saved', 500);
 
+    const levelBeforeLog: number = res.locals.user.stats?.userLevel ?? 1;
+
     res.locals.log = savedLog;
     await updateStats(res, next);
 
@@ -1750,6 +1755,18 @@ export async function createLog(
         { trigger: 'streak' }
       );
       newAchievements.push(...streakAchievements);
+    }
+
+    // These are returned inline and revealed by the client right away, so mark
+    // them notified — otherwise the /me/pending drain would replay them later.
+    if (newAchievements.length > 0) {
+      await UserAchievement.updateMany(
+        {
+          user: res.locals.user._id,
+          achievement: { $in: newAchievements.map((a) => a._id) },
+        },
+        { $set: { notified: true } }
+      );
     }
 
     const finalMediaId = logMedia ? logMedia.contentId : mediaId;
@@ -1844,7 +1861,43 @@ export async function createLog(
       }
     }
 
-    return res.status(200).json({ ...savedLog.toObject(), newAchievements });
+    // Celebration payload the client plays back after logging (XP roll-up,
+    // level up, monthly-rank overtakes). Best-effort — never fails the log.
+    let celebration: ILogCelebration | undefined;
+    try {
+      const freshUser = await User.findById(res.locals.user._id).select(
+        'stats'
+      );
+      if (freshUser?.stats) {
+        const stats = freshUser.stats;
+        celebration = {
+          xpGained: savedLog.xp ?? 0,
+          streak: stats.currentStreak ?? 0,
+          xp: {
+            current: stats.userXp,
+            toCurrentLevel: stats.userXpToCurrentLevel,
+            toNextLevel: stats.userXpToNextLevel,
+            level: stats.userLevel,
+          },
+        };
+        if (stats.userLevel > levelBeforeLog) {
+          celebration.levelUp = { from: levelBeforeLog, to: stats.userLevel };
+        }
+        if (!savedLog.private && !savedLog.unknownDate) {
+          const rank = await computeMonthlyOvertakes(
+            res.locals.user._id,
+            savedLog.xp ?? 0
+          );
+          if (rank) celebration.rank = rank;
+        }
+      }
+    } catch (err) {
+      console.error('celebration payload failed after createLog', err);
+    }
+
+    return res
+      .status(200)
+      .json({ ...savedLog.toObject(), newAchievements, celebration });
   } catch (error) {
     return next(error as customError);
   }
@@ -2037,6 +2090,13 @@ export async function importLogs(
 
     // After bulk import, recalculate streaks for this user
     await recalculateStreaksForUser(res.locals.user._id);
+
+    // Grant achievements earned by the imported logs. Left unnotified on
+    // purpose — the client drains /me/pending on its next load and reveals them.
+    if (insertedLogs.length > 0) {
+      await checkAchievements(res.locals.user._id, { trigger: 'log' });
+      await checkAchievements(res.locals.user._id, { trigger: 'streak' });
+    }
 
     let statusMessage = `${insertedLogs.length} log${
       insertedLogs.length > 1 ? 's' : ''

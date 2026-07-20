@@ -33,12 +33,9 @@ import {
   Info,
   Search,
 } from 'lucide-react';
-import XpAnimation from '../components/XpAnimation';
-import LevelUpAnimation from '../components/LevelUpAnimation';
 import PlaylistSelectorModal, {
   PlaylistVideoWithOverride,
 } from '../components/PlaylistSelectorModal';
-import { useAchievementReveal } from '../hooks/useAchievementReveal';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -197,16 +194,6 @@ function LogScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
-  const [initialXp, setInitialXp] = useState(0);
-  const [finalXp, setFinalXp] = useState(0);
-  const [showXpAnimation, setShowXpAnimation] = useState(false);
-  const [initialLevel, setInitialLevel] = useState(0);
-  const [finalLevel, setFinalLevel] = useState(0);
-  const [showLevelUpAnimation, setShowLevelUpAnimation] = useState(false);
-  const [xpToCurrentLevel, setXpToCurrentLevel] = useState(0);
-  const [xpToNextLevel, setXpToNextLevel] = useState(1);
-  const { triggerCheck: triggerAchievementCheck, RevealModal: AchievementRevealModal } =
-    useAchievementReveal();
 
   // ── Playlist state ────────────────────────────────────────────────────────
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
@@ -404,12 +391,7 @@ function LogScreen() {
   );
   const { mutate: createLog, isPending: isLogCreating } = useMutation({
     mutationFn: createLogFn,
-    onSuccess: async (responseData) => {
-      // Trigger achievement reveal if any were granted
-      const inlineAchievements = responseData?.newAchievements;
-      if (inlineAchievements && inlineAchievements.length > 0) {
-        await triggerAchievementCheck(inlineAchievements);
-      }
+    onSuccess: async () => {
       const pendingVolume = pendingVolumeRef.current;
       if (
         pendingVolume?.mediaId &&
@@ -481,27 +463,12 @@ function LogScreen() {
       void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       invalidateLogScreenQueries(queryClient, currentType, user?.username);
 
+      // Refresh the stored user so the rest of the UI (header, profile)
+      // reflects the new stats. The celebration overlay itself is driven
+      // globally from the createLog response (see LogCelebrationHost).
       if (user?.username) {
         try {
           const updatedUser = await getUserFn(user.username);
-
-          if (updatedUser.stats?.userXp) {
-            setFinalXp(updatedUser.stats.userXp);
-          }
-          // cache thresholds for the new level to avoid stale store reads
-          if (updatedUser.stats) {
-            setXpToCurrentLevel(updatedUser.stats.userXpToCurrentLevel ?? 0);
-            setXpToNextLevel(updatedUser.stats.userXpToNextLevel ?? 1);
-          }
-
-          // Determine if user leveled up
-          const newLevel = updatedUser.stats?.userLevel ?? initialLevel;
-          setFinalLevel(newLevel);
-          if (newLevel > initialLevel) {
-            setShowLevelUpAnimation(true);
-          } else if (updatedUser.stats?.userXp) {
-            setShowXpAnimation(true);
-          }
 
           const loginResponse: ILoginResponse = {
             _id: updatedUser._id || user._id,
@@ -738,21 +705,6 @@ function LogScreen() {
         isAdult: logData.isAdult,
         synonyms: logData.synonyms,
       };
-    }
-
-    // Ensure initial XP baseline is fresh (handles cases after deletions)
-    if (user?.username) {
-      try {
-        const baseline = await getUserFn(user.username);
-        if (baseline.stats?.userXp != null) setInitialXp(baseline.stats.userXp);
-        if (baseline.stats?.userLevel != null)
-          setInitialLevel(baseline.stats.userLevel);
-      } catch (err) {
-        // fallback to store if fetch fails; no-op
-        if (user?.stats?.userXp != null) setInitialXp(user.stats.userXp);
-        if (user?.stats?.userLevel != null)
-          setInitialLevel(user.stats.userLevel);
-      }
     }
 
     pendingVolumeRef.current = {
@@ -1746,32 +1698,6 @@ function LogScreen() {
         </form>
       </div>
 
-      {/* Level Up Animation Overlay */}
-      {showLevelUpAnimation && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 animate-fade-in"
-          onClick={() => setShowLevelUpAnimation(false)}
-        >
-          <LevelUpAnimation
-            initialLevel={initialLevel}
-            finalLevel={finalLevel}
-            xpCurrentLevel={xpToCurrentLevel}
-            xpNextLevel={xpToNextLevel}
-            finalXp={finalXp}
-          />
-        </div>
-      )}
-
-      {/* XP Animation Overlay */}
-      {showXpAnimation && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 animate-fade-in"
-          onClick={() => setShowXpAnimation(false)}
-        >
-          <XpAnimation initialXp={initialXp} finalXp={finalXp} />
-        </div>
-      )}
-
       {/* ── Playlist selector modal ──────────────────────────────────── */}
       <PlaylistSelectorModal
         isOpen={playlistModalOpen}
@@ -1805,7 +1731,6 @@ function LogScreen() {
         </div>
       )}
     </div>
-    {AchievementRevealModal && <AchievementRevealModal />}
     </>
   );
 }

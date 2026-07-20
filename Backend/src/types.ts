@@ -452,6 +452,29 @@ export interface IStats {
   lastStreakDate: Date | null;
 }
 
+/**
+ * Post-log celebration payload returned inline by createLog so the client can
+ * play the full feedback sequence (XP roll-up, level up, rank overtakes)
+ * without refetching the user.
+ */
+export interface ILogCelebration {
+  xpGained: number;
+  streak: number;
+  levelUp?: { from: number; to: number };
+  xp: {
+    current: number;
+    toCurrentLevel: number;
+    toNextLevel: number;
+    level: number;
+  };
+  rank?: {
+    timeframe: 'month';
+    rank: number;
+    previousRank: number;
+    overtaken: { username: string; avatar?: string; xp: number }[];
+  };
+}
+
 export interface SearchAnilistArgs {
   search?: string | null;
   ids?: number[] | null;

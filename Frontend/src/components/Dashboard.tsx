@@ -38,7 +38,6 @@ import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import ClubRanking from './club/ClubRanking';
 import QuickLog from './QuickLog';
-import XpAnimation from './XpAnimation';
 import UserAvatar from './UserAvatar';
 import AchievementFeedItem from './achievements/AchievementFeedItem';
 import { IMediaDocument, ILog, ILoginResponse, IPendingAchievement, UnifiedFeedItem, UnifiedFeedFilter } from '../types';
@@ -124,9 +123,6 @@ function Dashboard() {
   const [selectedMedia, setSelectedMedia] = useState<
     IMediaDocument | undefined
   >();
-  const [initialXp, setInitialXp] = useState(0);
-  const [finalXp, setFinalXp] = useState(0);
-  const [showXpAnimation, setShowXpAnimation] = useState(false);
   const [feedFilters, setFeedFilters] = useState<{
     type: FeedType;
     timeRange: FeedTimeRange;
@@ -379,14 +375,13 @@ function Dashboard() {
     setQuickLogOpen(true);
   }
 
+  // XP/level feedback itself comes from the global LogCelebrationHost —
+  // here we only refresh the stored user so the dashboard numbers update.
   async function handleQuickLogSuccess() {
     if (!user?.username) return;
-    const previousXp = user.stats?.userXp ?? 0;
-    setInitialXp(previousXp);
 
     try {
       const updatedUser = await getUserFn(user.username);
-      const updatedXp = updatedUser.stats?.userXp ?? previousXp;
 
       const loginResponse: ILoginResponse = {
         _id: updatedUser._id || user._id,
@@ -405,11 +400,6 @@ function Dashboard() {
       };
 
       setUser(loginResponse);
-
-      if (updatedXp > previousXp) {
-        setFinalXp(updatedXp);
-        setShowXpAnimation(true);
-      }
     } catch (error) {
       console.error('Failed to refresh user data after quick log', error);
     }
@@ -915,15 +905,6 @@ function Dashboard() {
           <ClubRanking username={user.username} />
         </div>
       </div>
-
-      {showXpAnimation && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 animate-fade-in"
-          onClick={() => setShowXpAnimation(false)}
-        >
-          <XpAnimation initialXp={initialXp} finalXp={finalXp} />
-        </div>
-      )}
 
       <dialog
         className="modal modal-bottom sm:modal-middle"

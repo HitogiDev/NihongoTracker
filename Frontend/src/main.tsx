@@ -13,6 +13,7 @@ import {
   Route,
   RouterProvider,
 } from 'react-router-dom';
+import RootLayout from './components/RootLayout.tsx';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
@@ -123,7 +124,7 @@ const UserListsScreen = lazy(() => import('./screens/UserListsScreen.tsx'));
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" errorElement={<RouteErrorBoundary />}>
+    <Route path="/" element={<RootLayout />} errorElement={<RouteErrorBoundary />}>
       <Route element={<ProtectedRoutes />}>
         <Route path=":mediaType/:mediaId/texthooker" element={<TextHooker />} />
         <Route path="texthooker/:contentId" element={<TextHooker />} />

@@ -1,4 +1,6 @@
 import axiosInstance from './axiosConfig';
+import { revealAchievements } from '../store/achievementReveal';
+import { celebrateLog } from '../store/logCelebration';
 import {
   ILoginResponse,
   IRegisterInput,
@@ -30,6 +32,7 @@ import {
   StatsGroupLayout,
   IGanttMediaItem,
   IAchievement,
+  ILogCelebration,
   IPendingAchievement,
   IMediaRequest,
   ICreateMediaRequest,
@@ -327,10 +330,17 @@ export async function createLogFn(logValues: ICreateLog) {
         : logValues.date
       : new Date().toISOString(),
   };
-  const { data } = await api.post<ILog & { newAchievements?: IAchievement[] }>(
-    `logs`,
-    logData
-  );
+  const { data } = await api.post<
+    ILog & {
+      newAchievements?: IAchievement[];
+      celebration?: ILogCelebration;
+    }
+  >(`logs`, logData);
+  // Celebrate/reveal here rather than per-caller so every log entry point
+  // (log screen, quick log, texthooker, shared log, playlist batches) gets
+  // the full feedback sequence.
+  celebrateLog(data?.celebration);
+  revealAchievements(data?.newAchievements);
   return data;
 }
 

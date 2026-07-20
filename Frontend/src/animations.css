@@ -233,3 +233,19 @@
 .achievement-flip-back {
   transform: rotateY(180deg);
 }
+
+/* Pulsing rarity glow on the revealed card face. Color comes from the
+   component via the --rarity-glow custom property. */
+.achievement-glow {
+  animation: achievement-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes achievement-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 18px 2px var(--rarity-glow, rgba(255, 255, 255, 0.2));
+  }
+  50% {
+    box-shadow: 0 0 34px 8px var(--rarity-glow, rgba(255, 255, 255, 0.35));
+  }
+}
