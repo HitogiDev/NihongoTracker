@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { confetti } from '@tsparticles/confetti';
-import { Volume2, VolumeX, TrendingUp } from 'lucide-react';
+import { Volume2, VolumeX, TrendingUp, Flame } from 'lucide-react';
 import { ILogCelebration } from '../types';
 import LevelUpAnimation from './LevelUpAnimation';
 import {
@@ -175,8 +175,8 @@ export default function LogCelebration({
     // Rank swap: old rank slides away, new rank punches in.
     tl.fromTo(
       rankFromRef.current,
-      { opacity: 1, y: 0 },
-      { opacity: 0.35, y: -6, duration: 0.35, delay: 0.25 }
+      { opacity: 1 },
+      { opacity: 0.35, duration: 0.35, delay: 0.25 }
     ).fromTo(
       rankToRef.current,
       { scale: 0.6, opacity: 0 },
@@ -309,7 +309,8 @@ export default function LogCelebration({
                 className="flex items-center gap-1.5 rounded-full bg-orange-500/15 border border-orange-400/30 px-4 py-1.5 text-orange-300 font-bold"
                 style={{ opacity: 0 }}
               >
-                🔥 {streak} day{streak === 1 ? '' : 's'} streak
+                <Flame size={18} className="fill-orange-400 text-orange-500" />
+                {streak} day{streak === 1 ? '' : 's'} streak
               </div>
             )}
           </>
@@ -373,11 +374,11 @@ export default function LogCelebration({
             </div>
 
             {/* Rank change */}
-            <div className="flex items-center gap-3 text-3xl font-black">
+            <div className="flex items-baseline gap-3 text-3xl font-black">
               <span ref={rankFromRef} className="text-base-content/40">
                 #{rank.previousRank}
               </span>
-              <span className="text-primary text-2xl">→</span>
+              <span className="text-primary text-2xl self-center">→</span>
               <span ref={rankToRef} className="text-primary" style={{ opacity: 0 }}>
                 #{rank.rank}
               </span>
