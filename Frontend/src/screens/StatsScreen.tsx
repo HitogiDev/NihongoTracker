@@ -26,9 +26,11 @@ import {
   Pencil,
   PieChart as PieChartIcon,
   Scale,
+  Search,
   Star,
   Timer,
   TrendingUp,
+  X,
   Zap,
 } from 'lucide-react';
 import {
@@ -453,6 +455,7 @@ function StatsScreen() {
   const [ganttSort, setGanttSort] = useState<GanttSortOption>('title-asc');
   const [ganttMinLogs, setGanttMinLogs] = useState('');
   const [ganttMaxLogs, setGanttMaxLogs] = useState('');
+  const [ganttSearch, setGanttSearch] = useState('');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [startDate, setStartDate] = useState('');
@@ -1443,6 +1446,28 @@ function StatsScreen() {
                         />
                       </div>
                     </div>
+                                        <label className="input input-bordered flex items-center gap-2 w-full sm:w-56">
+                      <Search className="w-4 h-4 opacity-60" />
+                      <input
+                        type="text"
+                        className="grow"
+                        placeholder="Search titles"
+                        value={ganttSearch}
+                        onChange={(event) =>
+                          setGanttSearch(event.target.value)
+                        }
+                      />
+                      {ganttSearch && (
+                        <button
+                          type="button"
+                          className="opacity-60 hover:opacity-100"
+                          aria-label="Clear search"
+                          onClick={() => setGanttSearch('')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </label>
                   </>
                 )}
               </div>
@@ -2044,6 +2069,7 @@ function StatsScreen() {
                   sortBy={ganttSort}
                   minLogs={ganttMinLogs}
                   maxLogs={ganttMaxLogs}
+                  search={ganttSearch}
                   customStart={ganttCustomStart}
                   customEnd={ganttCustomEnd}
                 />
@@ -2107,6 +2133,7 @@ function GanttChartSection({
   sortBy,
   minLogs,
   maxLogs,
+  search,
   customStart,
   customEnd,
 }: {
@@ -2117,6 +2144,7 @@ function GanttChartSection({
   sortBy: GanttSortOption;
   minLogs: string;
   maxLogs: string;
+  search: string;
   customStart: string;
   customEnd: string;
 }) {
@@ -2151,9 +2179,18 @@ function GanttChartSection({
   }
 
   const isAllTypesSelected = typeFilter.length === LOG_TYPES.length;
-  const filteredItems = isAllTypesSelected
-    ? data
-    : data.filter((item) => typeFilter.includes(item.type));
+  const query = search.trim().toLowerCase();
+  const filteredItems = data.filter((item) => {
+    if (!isAllTypesSelected && !typeFilter.includes(item.type)) return false;
+    if (
+      query &&
+      !item.title.toLowerCase().includes(query) &&
+      !(item.titleEnglish?.toLowerCase().includes(query) ?? false)
+    ) {
+      return false;
+    }
+    return true;
+  });
   const selectedTypeForGantt = typeFilter.length === 1 ? typeFilter[0] : 'all';
 
   return (
