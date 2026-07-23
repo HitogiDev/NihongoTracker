@@ -6,11 +6,34 @@ import {
   IPatreonData,
   IUserModeration,
   IUserModerationHistoryItem,
+  IFavoriteEntry,
 } from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
 import Tag from './tag.model.js';
+
+const FAVORITE_MEDIA_TYPES = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'video',
+  'movie',
+  'tv show',
+  'game',
+];
+
+const FavoriteEntrySchema = new Schema<IFavoriteEntry>(
+  {
+    mediaId: { type: String, required: true },
+    mediaType: { type: String, required: true, enum: FAVORITE_MEDIA_TYPES },
+    note: { type: String, maxlength: 500 },
+    order: { type: Number, required: true, default: 0 },
+    addedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
 
 const SettingsSchema = new Schema<IUserSettings>(
   {
@@ -197,6 +220,7 @@ const UserSchema = new Schema<IUser>(
       type: ModerationSchema,
       default: { rankingBanned: false, banned: false, banReason: '' },
     },
+    favorites: { type: [FavoriteEntrySchema], default: [] },
   },
   { timestamps: true }
 );

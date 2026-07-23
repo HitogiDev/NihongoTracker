@@ -9,6 +9,8 @@ import {
   IMediaDocument,
   IUpdateRequest,
   IUser,
+  IFavoriteEntry,
+  MediaListMediaType,
   StatsCardId,
   StatsGroupId,
   StatsGroupLayout,
@@ -566,6 +568,125 @@ export async function updateStatsLayout(
   }
 }
 
+const FAVORITE_MEDIA_TYPES: MediaListMediaType[] = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'video',
+  'movie',
+  'tv show',
+  'game',
+];
+const MAX_FAVORITES = 50;
+const FAVORITE_NOTE_MAX_LENGTH = 500;
+
+function isFavoriteMediaType(value: unknown): value is MediaListMediaType {
+  return (
+    typeof value === 'string' &&
+    FAVORITE_MEDIA_TYPES.includes(value as MediaListMediaType)
+  );
+}
+
+/**
+ * Joins favorite entries to their media docs, returned in entry order with the
+ * hydrated `media` doc alongside each entry's note/order.
+ */
+async function hydrateFavorites(favorites: IFavoriteEntry[]) {
+  if (!favorites.length) return [];
+
+  const mediaIds = [...new Set(favorites.map((fav) => fav.mediaId))];
+  const mediaDocs = await MediaBase.find({ contentId: { $in: mediaIds } })
+    .select(
+      'contentId type title contentImage coverImage genres isAdult isAdultImage'
+    )
+    .lean();
+
+  const mediaByKey = new Map(
+    mediaDocs.map((doc) => [`${doc.type}:${doc.contentId}`, doc])
+  );
+
+  return [...favorites]
+    .sort((a, b) => a.order - b.order)
+    .map((fav) => ({
+      mediaId: fav.mediaId,
+      mediaType: fav.mediaType,
+      note: fav.note,
+      order: fav.order,
+      addedAt: fav.addedAt,
+      media: mediaByKey.get(`${fav.mediaType}:${fav.mediaId}`) ?? null,
+    }));
+}
+
+export async function updateFavorites(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { favorites } = req.body as {
+    favorites: Array<{
+      mediaId: unknown;
+      mediaType: unknown;
+      note?: unknown;
+      order?: unknown;
+    }>;
+  };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw new customError('User not found', 404);
+
+    if (!Array.isArray(favorites))
+      throw new customError('Favorites must be an array', 400);
+
+    if (favorites.length > MAX_FAVORITES)
+      throw new customError(
+        `You can save at most ${MAX_FAVORITES} favorites`,
+        400
+      );
+
+    const normalized: IFavoriteEntry[] = favorites.map((fav, index) => {
+      if (!fav || typeof fav !== 'object')
+        throw new customError('Each favorite must be an object', 400);
+
+      if (typeof fav.mediaId !== 'string' || !fav.mediaId.trim())
+        throw new customError('Each favorite needs a valid mediaId', 400);
+
+      if (!isFavoriteMediaType(fav.mediaType))
+        throw new customError(`Invalid mediaType: ${fav.mediaType}`, 400);
+
+      let note: string | undefined;
+      if (fav.note !== undefined && fav.note !== null) {
+        if (typeof fav.note !== 'string')
+          throw new customError('Note must be a string', 400);
+        const trimmed = fav.note.trim();
+        if (trimmed.length > FAVORITE_NOTE_MAX_LENGTH)
+          throw new customError(
+            `Note must be ${FAVORITE_NOTE_MAX_LENGTH} characters or fewer`,
+            400
+          );
+        note = trimmed.length ? trimmed : undefined;
+      }
+
+      return {
+        mediaId: fav.mediaId.trim(),
+        mediaType: fav.mediaType,
+        note,
+        order: index,
+      };
+    });
+
+    user.favorites = normalized;
+    await user.save();
+
+    return res.status(200).json({
+      favorites: await hydrateFavorites(user.favorites),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   const userFound = await User.findOne({
     username: req.params.username,
@@ -599,6 +720,8 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     updatedAt: userFound.updatedAt,
     // Expose layout publicly so all visitors see the owner's preferred order
     statsLayout: userFound.settings?.statsLayout ?? [],
+    // Favorites are meant to be showcased — public, no privacy gate
+    favorites: await hydrateFavorites(userFound.favorites ?? []),
   };
 
   if (!canViewPrivateProfile) {

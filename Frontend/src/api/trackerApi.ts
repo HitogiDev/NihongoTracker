@@ -38,6 +38,8 @@ import {
   ICreateMediaRequest,
   IMediaRequestListResponse,
   MediaRequestStatus,
+  IFavoriteEntry,
+  MediaListMediaType,
 } from '../types';
 
 const api = axiosInstance;
@@ -1375,6 +1377,23 @@ export async function updateStatsLayoutFn(
     message: string;
     statsLayout: StatsGroupLayout[];
   }>('users/settings/stats-layout', { layout });
+  return data;
+}
+
+export interface IFavoriteInput {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+}
+
+export async function updateFavoritesFn(
+  favorites: IFavoriteInput[]
+): Promise<{ favorites: IFavoriteEntry[] }> {
+  const { data } = await api.patch<{ favorites: IFavoriteEntry[] }>(
+    'users/favorites',
+    { favorites }
+  );
   return data;
 }
 

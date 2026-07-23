@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import type { IPendingAchievement } from '../../types';
 import { RARITY_COLOR, rarityTint } from './rarity';
+import { AchievementDetailModal } from './AchievementCard';
 
 interface AchievementFeedItemProps {
   item: IPendingAchievement;
@@ -16,6 +18,7 @@ export default function AchievementFeedItem({
   showUser = false,
   relativeDate,
 }: AchievementFeedItemProps) {
+  const [showDetail, setShowDetail] = useState(false);
   const a = item.achievement;
   const rarity = a.rarity ?? 'common';
   const color = RARITY_COLOR[rarity] ?? RARITY_COLOR.common;
@@ -32,10 +35,25 @@ export default function AchievementFeedItem({
     : '';
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl px-3 py-2.5 bg-base-200/60 border border-base-300 hover:border-primary/40 transition">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setShowDetail(true)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setShowDetail(true);
+        }
+      }}
+      className="flex items-center gap-3 rounded-2xl px-3 py-2.5 bg-base-200/60 border border-base-300 cursor-pointer hover:border-primary/40 hover:bg-base-200 transition"
+    >
       {/* User avatar (global feed) */}
       {showUser && user?.username && (
-        <Link to={`/user/${user.username}`} className="shrink-0">
+        <Link
+          to={`/user/${user.username}`}
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0"
+        >
           <div className="w-10 h-10 rounded-full bg-base-300 flex items-center justify-center text-sm font-bold overflow-hidden border border-base-300">
             {user.avatar ? (
               <img
@@ -70,6 +88,7 @@ export default function AchievementFeedItem({
           {showUser && user?.username ? (
             <Link
               to={`/user/${user.username}`}
+              onClick={(e) => e.stopPropagation()}
               className="font-semibold hover:underline"
             >
               {user.username}
@@ -96,6 +115,18 @@ export default function AchievementFeedItem({
           <span className="text-xs text-base-content/50">{dateLabel}</span>
         </div>
       </div>
+
+      {showDetail && (
+        <AchievementDetailModal
+          achievement={{
+            ...a,
+            isEarned: true,
+            unlockedAt: a.unlockedAt ?? item.unlockedAt,
+            rarityPercent: a.rarityPercent ?? item.rarityPercent,
+          }}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
     </div>
   );
 }

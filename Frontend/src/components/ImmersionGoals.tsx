@@ -169,10 +169,31 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
     return value.toLocaleString();
   };
 
-  const getRemainingTimeText = (goal: {
-    progress?: { remainingDays: number };
-  }) => {
+  const getRemainingTimeText = (
+    goal: {
+      targetDate: string | Date;
+      progress?: { remainingDays: number };
+    },
+    isCompleted = false
+  ) => {
     if (!goal.progress) return '';
+
+    // Backend clamps remainingDays to a minimum of 0, so a past-due date
+    // reports 0 days the same as an actual same-day deadline. Compare the
+    // target date to today directly to distinguish "Due today!" from overdue.
+    const target = new Date(goal.targetDate);
+    const startOfTarget = new Date(
+      target.getFullYear(),
+      target.getMonth(),
+      target.getDate()
+    );
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    if (!isCompleted && startOfTarget < startOfToday) return 'Overdue';
 
     const days = goal.progress.remainingDays;
     if (days === 0) return 'Due today!';
@@ -474,7 +495,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                               <>
                                 <span className="text-base-content/30">·</span>
                                 <span className={`text-${statusColor}`}>
-                                  {getRemainingTimeText(goal)}
+                                  {getRemainingTimeText(goal, isCompleted)}
                                 </span>
                               </>
                             )}

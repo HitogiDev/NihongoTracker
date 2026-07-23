@@ -426,6 +426,13 @@ function SearchModal({
   const allResultsRef = useRef(allResults);
   allResultsRef.current = allResults;
 
+  // Mirror hoveredIndex/selectedIndex into refs so the keydown listener reads
+  // the latest values without re-subscribing on every hover.
+  const hoveredIndexRef = useRef(hoveredIndex);
+  hoveredIndexRef.current = hoveredIndex;
+  const selectedIndexRef = useRef(selectedIndex);
+  selectedIndexRef.current = selectedIndex;
+
   const handleSelect = useCallback(
     (result: (typeof allResults)[number]) => {
       if (result.type === 'user') {
@@ -461,12 +468,14 @@ function SearchModal({
             prev > 0 ? prev - 1 : results.length - 1
           );
           break;
-        case 'Enter':
+        case 'Enter': {
           e.preventDefault();
-          if (results[hoveredIndex ?? selectedIndex]) {
-            handleSelect(results[hoveredIndex ?? selectedIndex]);
+          const index = hoveredIndexRef.current ?? selectedIndexRef.current;
+          if (results[index]) {
+            handleSelect(results[index]);
           }
           break;
+        }
         case 'Escape':
           e.preventDefault();
           onClose();
@@ -476,7 +485,7 @@ function SearchModal({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, handleSelect, onClose]);
+  }, [isOpen, handleSelect, onClose]);
 
   // Reset selection when results change
   useEffect(() => {

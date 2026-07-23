@@ -4,17 +4,20 @@ import PlaylistBatchCard from '../components/PlaylistBatchCard';
 import ProgressBar from '../components/ProgressBar';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
+import FavoriteMedia from '../components/FavoriteMedia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getUserLogsFn, getUserAchievementsFn, getUserAchievementActivityFn } from '../api/trackerApi';
 import { Icon } from '@iconify/react';
 import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
-import { RARITY_COLOR } from '../components/achievements/rarity';
+import { AchievementDetailModal } from '../components/achievements/AchievementCard';
+import { RARITY_COLOR, rarityTint } from '../components/achievements/rarity';
 import {
   OutletProfileContextType,
   UnifiedFeedItem,
   UnifiedFeedFilter,
   IPendingAchievement,
+  IAchievement,
   AchievementCategory,
   AchievementRarity,
 } from '../types';
@@ -574,6 +577,16 @@ function ProfileScreen() {
                 )}
               </div>
             </div>
+
+            {username && (
+              <FavoriteMedia
+                favorites={user?.favorites ?? []}
+                isOwner={username === loggedUser?.username}
+                username={username}
+                blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
+              />
+            )}
+
             <div className="card w-full bg-base-100 shadow-sm">
               <div className="card-body w-full p-4 sm:p-6">
                 <h2 className="card-title mb-4">Progress Stats</h2>
@@ -636,10 +649,7 @@ function ProfileScreen() {
 
             {/* Achievement Showcase */}
             {username && (
-              <AchievementShowcaseWidget
-                username={username}
-                isOwner={username === loggedUser?.username}
-              />
+              <AchievementShowcaseWidget username={username} />
             )}
 
           </div>
@@ -1281,18 +1291,14 @@ function ProfileScreen() {
 
 // ─── Achievement Showcase Widget ─────────────────────────────────────────────
 
-function AchievementShowcaseWidget({
-  username,
-  isOwner,
-}: {
-  username: string;
-  isOwner: boolean;
-}) {
+function AchievementShowcaseWidget({ username }: { username: string }) {
   const { data: achievements, isLoading } = useQuery({
     queryKey: ['userAchievements', username],
     queryFn: () => getUserAchievementsFn(username),
     staleTime: 5 * 60 * 1000,
   });
+
+  const [selected, setSelected] = useState<IAchievement | null>(null);
 
   const earned = achievements?.filter((a) => a.isEarned) ?? [];
   const topAchievements = [...earned]
@@ -1300,7 +1306,7 @@ function AchievementShowcaseWidget({
       const rarityOrder = { secret: 0, legendary: 1, epic: 2, rare: 3, common: 4 };
       return (rarityOrder[a.rarity] ?? 5) - (rarityOrder[b.rarity] ?? 5);
     })
-    .slice(0, 5);
+    .slice(0, 6);
 
   if (!isLoading && earned.length === 0) return null;
 
@@ -1318,51 +1324,71 @@ function AchievementShowcaseWidget({
         </div>
 
         {isLoading ? (
-          <div className="flex gap-2">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="skeleton h-10 w-10 rounded-full" />
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="skeleton aspect-square w-full rounded-xl" />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            {topAchievements.map((a) => (
-              <div
-                key={a._id}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 bg-base-200/60 border border-base-300 transition-all"
-              >
-                {a.iconSlug ? (
-                  <Icon
-                    icon={`game-icons:${a.iconSlug}`}
-                    width={20}
-                    height={20}
-                    color={RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common}
-                  />
-                ) : (
-                  <span className="text-sm">🏆</span>
-                )}
-                <span className="text-xs font-semibold flex-1 truncate">
-                  {a.name ?? '???'}
-                </span>
-                <span
-                  className="text-xs capitalize shrink-0"
-                  style={{ color: RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common }}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {topAchievements.map((a) => {
+              const color = RARITY_COLOR[a.rarity] ?? RARITY_COLOR.common;
+              return (
+                <button
+                  key={a._id}
+                  type="button"
+                  onClick={() => setSelected(a)}
+                  title={a.name ?? '???'}
+                  className="group flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-base-300 bg-base-200/40 p-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-base-200 hover:shadow-md"
                 >
-                  {a.rarity}
-                </span>
-              </div>
-            ))}
-            {isOwner && earned.length === 0 && (
-              <p className="text-xs opacity-40">Log some immersion to start earning achievements!</p>
-            )}
+                  <div
+                    className="flex items-center justify-center rounded-xl border transition-transform duration-200 group-hover:scale-105"
+                    style={{
+                      width: 52,
+                      height: 52,
+                      background: rarityTint(a.rarity, '14'),
+                      borderColor: rarityTint(a.rarity, '40'),
+                    }}
+                  >
+                    {a.iconSlug ? (
+                      <Icon
+                        icon={`game-icons:${a.iconSlug}`}
+                        width={32}
+                        height={32}
+                        color={color}
+                      />
+                    ) : (
+                      <span className="text-2xl">🏆</span>
+                    )}
+                  </div>
+                  <span className="line-clamp-2 w-full text-center text-[11px] font-semibold leading-tight text-base-content/90">
+                    {a.name ?? '???'}
+                  </span>
+                  <span
+                    className="text-[10px] font-medium capitalize leading-none"
+                    style={{ color }}
+                  >
+                    {a.rarity}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 
         {earned.length > 0 && (
-          <p className="text-xs opacity-40 mt-2">
+          <p className="text-xs opacity-40 mt-3">
             {earned.length} achievement{earned.length !== 1 ? 's' : ''} earned
           </p>
         )}
       </div>
+
+      {selected && (
+        <AchievementDetailModal
+          achievement={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }

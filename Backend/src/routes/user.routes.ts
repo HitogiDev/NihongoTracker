@@ -13,6 +13,7 @@ import {
   updateMediaCompletionStatus,
   updateHiddenRecentMedia,
   updateStatsLayout,
+  updateFavorites,
   getGanttData,
 } from '../controllers/users.controller.js';
 import { exportLogsCSV } from '../controllers/export.controller.js';
@@ -71,6 +72,7 @@ router.put(
 
 router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
 router.patch('/settings/stats-layout', protect, updateStatsLayout);
+router.patch('/favorites', protect, updateFavorites);
 
 router.post('/cleardata', protect, clearUserData);
 

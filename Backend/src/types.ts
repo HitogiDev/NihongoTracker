@@ -337,6 +337,7 @@ export interface IUser extends Document {
   settings?: IUserSettings;
   patreon?: IPatreonData;
   moderation?: IUserModeration;
+  favorites?: IFavoriteEntry[];
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 
@@ -1286,6 +1287,14 @@ export type MediaListMediaType =
   | 'game';
 
 export interface IMediaListEntry {
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  note?: string;
+  order: number;
+  addedAt?: Date;
+}
+
+export interface IFavoriteEntry {
   mediaId: string;
   mediaType: MediaListMediaType;
   note?: string;

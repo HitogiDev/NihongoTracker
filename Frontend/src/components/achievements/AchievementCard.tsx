@@ -99,7 +99,7 @@ interface DetailModalProps {
   onClose: () => void;
 }
 
-function AchievementDetailModal({ achievement, onClose }: DetailModalProps) {
+export function AchievementDetailModal({ achievement, onClose }: DetailModalProps) {
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
   const isSecret = achievement.isSecret && !isEarned;
@@ -114,7 +114,11 @@ function AchievementDetailModal({ achievement, onClose }: DetailModalProps) {
   }, [onClose]);
 
   const content = (
-    <dialog open className="modal modal-open">
+    <dialog
+      open
+      className="modal modal-open"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="modal-box max-w-md">
         <button
           onClick={onClose}
