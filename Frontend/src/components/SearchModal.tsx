@@ -9,6 +9,8 @@ import {
   Video,
   Clapperboard,
   MonitorPlay,
+  Filter,
+  ChevronDown,
   X,
 } from 'lucide-react';
 import { searchUsersFn, multiSearchMediaFn } from '../api/trackerApi';
@@ -18,6 +20,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { useUserDataStore } from '../store/userData';
 
 type SearchTab = 'all' | 'users' | 'media';
+type MediaTypeFilter = 'all' | string;
 
 interface UserResult {
   _id: string;
@@ -40,6 +43,20 @@ const MEDIA_TYPE_CONFIG: Record<
   movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
   'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
 };
+
+// Media type filter options for the search bar dropdown (keys map to
+// SearchResultType.type / MEDIA_TYPE_CONFIG).
+const MEDIA_TYPE_FILTERS: { value: MediaTypeFilter; label: string }[] = [
+  { value: 'all', label: 'All types' },
+  { value: 'anime', label: 'Anime' },
+  { value: 'manga', label: 'Manga' },
+  { value: 'reading', label: 'Light Novel' },
+  { value: 'vn', label: 'Visual Novel' },
+  { value: 'game', label: 'Video Game' },
+  { value: 'video', label: 'Video' },
+  { value: 'movie', label: 'Movie' },
+  { value: 'tv show', label: 'TV Show' },
+];
 
 type SearchResultEntry = {
   type: 'user' | 'media';
@@ -82,6 +99,43 @@ function scoreSearchCandidates(
 
 function getUserMatchScore(query: string, user: UserResult): number {
   return scoreSearchCandidates(query, [user.username]);
+}
+
+// Round-robin results by media type so every type gets representation in the
+// top slice. Bucket order follows first appearance (DB relevance order), and
+// within each bucket the original order is preserved. Prevents any one type
+// (e.g. anime/manga) from crowding out light novels, visual novels, etc.
+function interleaveByType(items: SearchResultType[]): SearchResultType[] {
+  const buckets = new Map<string, SearchResultType[]>();
+  const order: string[] = [];
+
+  for (const item of items) {
+    let bucket = buckets.get(item.type);
+    if (!bucket) {
+      bucket = [];
+      buckets.set(item.type, bucket);
+      order.push(item.type);
+    }
+    bucket.push(item);
+  }
+
+  const result: SearchResultType[] = [];
+  let round = 0;
+  let addedThisRound = true;
+
+  while (addedThisRound) {
+    addedThisRound = false;
+    for (const type of order) {
+      const bucket = buckets.get(type)!;
+      if (round < bucket.length) {
+        result.push(bucket[round]);
+        addedThisRound = true;
+      }
+    }
+    round++;
+  }
+
+  return result;
 }
 
 function getMediaMatchScore(query: string, media: SearchResultType): number {
@@ -280,6 +334,8 @@ function SearchModal({
 }) {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('all');
+  const [mediaTypeFilter, setMediaTypeFilter] =
+    useState<MediaTypeFilter>('all');
   const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [mediaResults, setMediaResults] = useState<SearchResultType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -305,6 +361,7 @@ function SearchModal({
       setHoveredIndex(null);
       setKeyboardSelectionVisible(false);
       setActiveTab('all');
+      setMediaTypeFilter('all');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -366,7 +423,9 @@ function SearchModal({
                     seen.add(key);
                     return true;
                   });
-                  setMediaResults(unique.slice(0, 15));
+                  // Round-robin by type so light novels / VNs / etc. aren't
+                  // crowded out of the top slice by anime & manga.
+                  setMediaResults(interleaveByType(unique).slice(0, 15));
                 }
               }
             )
@@ -388,12 +447,17 @@ function SearchModal({
   // Build combined results list for keyboard navigation
   const normalizedQuery = normalizeSearchValue(debouncedQuery);
   const allResults = useMemo<SearchResultEntry[]>(() => {
+    const filteredMedia =
+      mediaTypeFilter === 'all'
+        ? mediaResults
+        : mediaResults.filter((media) => media.type === mediaTypeFilter);
+
     if (activeTab === 'users') {
       return userResults.map((user) => ({ type: 'user', data: user }));
     }
 
     if (activeTab === 'media') {
-      return mediaResults.map((media) => ({ type: 'media', data: media }));
+      return filteredMedia.map((media) => ({ type: 'media', data: media }));
     }
 
     const scoredResults: Array<
@@ -409,7 +473,7 @@ function SearchModal({
       });
     });
 
-    mediaResults.forEach((media, index) => {
+    filteredMedia.forEach((media, index) => {
       scoredResults.push({
         type: 'media',
         data: media,
@@ -421,7 +485,7 @@ function SearchModal({
     return scoredResults
       .sort((a, b) => b.score - a.score || a.order - b.order)
       .map(({ type, data }) => ({ type, data }));
-  }, [activeTab, userResults, mediaResults, normalizedQuery]);
+  }, [activeTab, userResults, mediaResults, mediaTypeFilter, normalizedQuery]);
 
   const allResultsRef = useRef(allResults);
   allResultsRef.current = allResults;
@@ -532,6 +596,48 @@ function SearchModal({
           {isSearching && (
             <span className="loading loading-spinner loading-sm text-primary" />
           )}
+          {/* Media type filter */}
+          <div className="dropdown dropdown-end flex-shrink-0">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-sm btn-ghost gap-1.5 font-normal"
+              title="Filter by media type"
+              aria-label="Filter by media type"
+            >
+              <Filter className="w-3.5 h-3.5 opacity-60" />
+              <span className="text-sm">
+                {MEDIA_TYPE_FILTERS.find((o) => o.value === mediaTypeFilter)
+                  ?.label ?? 'All types'}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu menu-sm z-[1] mt-2 w-44 rounded-box border border-base-content/10 bg-base-100 p-1 shadow-lg"
+            >
+              {MEDIA_TYPE_FILTERS.map((opt) => (
+                <li key={opt.value}>
+                  <button
+                    type="button"
+                    className={mediaTypeFilter === opt.value ? 'active' : ''}
+                    onClick={(e) => {
+                      setMediaTypeFilter(opt.value);
+                      // A type filter only makes sense against media results
+                      if (opt.value !== 'all' && activeTab === 'users') {
+                        setActiveTab('media');
+                      }
+                      // Close the dropdown, then refocus the input
+                      (e.currentTarget as HTMLElement).blur();
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
           <button className="btn btn-ghost btn-xs btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
