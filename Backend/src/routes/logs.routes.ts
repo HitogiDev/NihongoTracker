@@ -9,6 +9,7 @@ import {
   updateLog,
   importLogs,
   assignMedia,
+  dismissMatchLogs,
   getUntrackedLogs,
   getLogScreenStats,
   getUserMediaStats,
@@ -47,6 +48,8 @@ router.post(
 );
 
 router.put('/assign-media', protect, assignMedia);
+
+router.put('/dismiss-match', protect, dismissMatchLogs);
 
 router.post<ParamsDictionary, any, ICreateLog>(
   '/',

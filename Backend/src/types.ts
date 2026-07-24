@@ -574,6 +574,7 @@ export interface ILog extends Document {
     | 'tv show'
     | 'game';
   mediaId?: string;
+  matchDismissed?: boolean;
   manabeId?: string;
   mediaTitle?: string;
   xp: number;

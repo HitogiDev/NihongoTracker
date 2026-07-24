@@ -8,6 +8,7 @@ import useSearch from '../hooks/useSearch';
 import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
 
 interface TVShowLogsProps {
   username?: string;
@@ -61,6 +62,12 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
         : [...prevSelectedLogs, log]
     );
   }, []);
+
+  const handleLogsDismissed = useCallback(() => {
+    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+    setSelectedLogs([]);
+    setSelectedGroup(null);
+  }, [selectedLogs]);
 
   const handleOpenGroup = useCallback(
     (group: ILog[] | null, title: string, groupIndex: number) => {
@@ -507,6 +514,11 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
             'Assign TV Show'
           )}
         </button>
+
+        <DismissLogsButton
+          selectedLogs={selectedLogs}
+          onDismissed={handleLogsDismissed}
+        />
       </div>
     </div>
   );

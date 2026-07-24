@@ -53,6 +53,7 @@ const LogSchema = new Schema<ILog>(
       type: String,
       default: null,
     },
+    matchDismissed: { type: Boolean, default: false },
     manabeId: { type: String },
     xp: { type: Number, required: true },
     private: { type: Boolean, default: false },

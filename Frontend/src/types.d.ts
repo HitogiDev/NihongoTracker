@@ -438,6 +438,7 @@ export interface ILog {
   date: Date | string;
   xp: number;
   mediaId?: string;
+  matchDismissed?: boolean;
   manabeId?: string;
   media?: Pick<
     IContentMedia,

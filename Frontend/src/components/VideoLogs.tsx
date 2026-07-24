@@ -13,6 +13,7 @@ import { AxiosError } from 'axios';
 import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
 import PlaylistSelectorModal, {
   PlaylistVideoWithOverride,
 } from './PlaylistSelectorModal';
@@ -56,6 +57,12 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         : [...prevSelectedLogs, log]
     );
   }, []);
+
+  const handleLogsDismissed = useCallback(() => {
+    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+    setSelectedLogs([]);
+    setSelectedGroup(null);
+  }, [selectedLogs]);
 
   const handleOpenGroup = useCallback(
     (group: ILog[] | null, groupIndex: number) => {
@@ -689,6 +696,11 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                       'Match Link'
                     )}
                   </button>
+                  <DismissLogsButton
+                    selectedLogs={selectedLogs}
+                    onDismissed={handleLogsDismissed}
+                    className="btn-sm"
+                  />
                 </>
               );
             })()}

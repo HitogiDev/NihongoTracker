@@ -10,6 +10,7 @@ import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useUserDataStore } from '../store/userData';
 import useSearch from '../hooks/useSearch';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
 
 interface VNLogsProps {
   username?: string;
@@ -59,6 +60,12 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
         : [...prevSelectedLogs, log]
     );
   }, []);
+
+  const handleLogsDismissed = useCallback(() => {
+    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+    setSelectedLogs([]);
+    setSelectedGroup(null);
+  }, [selectedLogs]);
 
   const handleOpenGroup = useCallback(
     (group: ILog[] | null, title: string, groupIndex: number) => {
@@ -651,6 +658,11 @@ function VNLogs({ username, isActive = true }: VNLogsProps) {
             'Assign to Visual Novel'
           )}
         </button>
+
+        <DismissLogsButton
+          selectedLogs={selectedLogs}
+          onDismissed={handleLogsDismissed}
+        />
       </div>
     </div>
   );

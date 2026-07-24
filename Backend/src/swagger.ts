@@ -1421,6 +1421,34 @@ const swaggerDocument = {
         },
       },
     },
+    '/logs/dismiss-match': {
+      put: {
+        tags: ['Logs'],
+        summary:
+          'Dismiss logs from media matching (or undo with dismissed: false)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  logsId: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                  dismissed: { type: 'boolean', default: true },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Logs dismissed from matching' },
+        },
+      },
+    },
     '/logs/untrackedlogs': {
       get: {
         tags: ['Logs'],

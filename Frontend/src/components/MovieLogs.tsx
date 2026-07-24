@@ -8,6 +8,7 @@ import useSearch from '../hooks/useSearch';
 import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
 
 interface MovieLogsProps {
   username?: string;
@@ -59,6 +60,12 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
         : [...prevSelectedLogs, log]
     );
   }, []);
+
+  const handleLogsDismissed = useCallback(() => {
+    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+    setSelectedLogs([]);
+    setSelectedGroup(null);
+  }, [selectedLogs]);
 
   const handleOpenGroup = useCallback(
     (group: ILog[] | null, title: string, groupIndex: number) => {
@@ -497,6 +504,11 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
             'Assign Movie'
           )}
         </button>
+
+        <DismissLogsButton
+          selectedLogs={selectedLogs}
+          onDismissed={handleLogsDismissed}
+        />
       </div>
     </div>
   );

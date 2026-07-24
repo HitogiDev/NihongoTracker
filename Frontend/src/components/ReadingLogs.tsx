@@ -12,6 +12,7 @@ import useSearch from '../hooks/useSearch.tsx';
 import { useUserDataStore } from '../store/userData.ts';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
 
 interface ReadingLogsProps {
   username?: string;
@@ -62,6 +63,12 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
         : [...prevSelectedLogs, log]
     );
   }, []);
+
+  const handleLogsDismissed = useCallback(() => {
+    setAssignedLogs((prev) => [...prev, ...selectedLogs]);
+    setSelectedLogs([]);
+    setSelectedGroup(null);
+  }, [selectedLogs]);
 
   const handleOpenGroup = useCallback(
     (group: ILog[] | null, title: string, groupIndex: number) => {
@@ -682,6 +689,11 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
             'Assign to Reading'
           )}
         </button>
+
+        <DismissLogsButton
+          selectedLogs={selectedLogs}
+          onDismissed={handleLogsDismissed}
+        />
       </div>
     </div>
   );

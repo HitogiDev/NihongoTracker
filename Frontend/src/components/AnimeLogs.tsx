@@ -8,6 +8,7 @@ import useSearch from '../hooks/useSearch';
 import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
+import DismissLogsButton from './DismissLogsButton';
 
 interface AnimeLogsProps {
   username?: string;
@@ -681,6 +682,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             'Assign to Anime'
           )}
         </button>
+
+        <DismissLogsButton
+          selectedLogs={selectedLogs}
+          onDismissed={resetState}
+        />
       </div>
     </div>
   );

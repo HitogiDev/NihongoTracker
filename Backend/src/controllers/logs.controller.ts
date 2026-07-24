@@ -108,8 +108,36 @@ export async function getUntrackedLogs(
         { mediaId: undefined },
         { mediaId: '' },
       ],
+      matchDismissed: { $ne: true },
     });
     return res.status(200).json(untrackedLogs);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function dismissMatchLogs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { user } = res.locals;
+  try {
+    const { logsId, dismissed = true } = req.body as {
+      logsId: string[];
+      dismissed?: boolean;
+    };
+
+    if (!Array.isArray(logsId) || logsId.length === 0) {
+      throw new customError('You need to provide at least one log id', 400);
+    }
+
+    const result = await Log.updateMany(
+      { _id: { $in: logsId }, user: user._id },
+      { matchDismissed: dismissed }
+    );
+
+    return res.status(200).json({ modifiedCount: result.modifiedCount });
   } catch (error) {
     return next(error as customError);
   }
@@ -964,6 +992,7 @@ export async function getUserLogs(
           _id: 1,
           type: 1,
           mediaId: 1,
+          matchDismissed: 1,
           manabeId: 1,
           xp: 1,
           description: 1,

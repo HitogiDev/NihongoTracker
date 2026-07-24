@@ -27,7 +27,13 @@ export function useGroupLogs(
     if (!logs) return {};
     const groupedLogs = new Map<string, ILog[]>();
     logs.forEach((log) => {
-      if (!log.description || log.type !== type || log.mediaId) return;
+      if (
+        !log.description ||
+        log.type !== type ||
+        log.mediaId ||
+        log.matchDismissed
+      )
+        return;
       let strippedDescription = log.description;
       if (type !== 'video')
         strippedDescription = stripSymbols(log.description, type);

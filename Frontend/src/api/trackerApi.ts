@@ -413,6 +413,14 @@ export async function getUntrackedLogsFn() {
   return data;
 }
 
+export async function dismissLogsFn(logsId: string[], dismissed = true) {
+  const { data } = await api.put<{ modifiedCount: number }>(
+    `logs/dismiss-match`,
+    { logsId, dismissed }
+  );
+  return data;
+}
+
 export async function importLogFileFn(file: FormData) {
   const { data } = await api.post(`logs/logfileimport`, file, {
     headers: {
