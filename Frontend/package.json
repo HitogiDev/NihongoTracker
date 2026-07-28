@@ -14,6 +14,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@fontsource-variable/inter": "^5.3.0",
     "@fontsource/roboto": "^5.0.12",
     "@iconify-json/game-icons": "^1.2.4",
     "@iconify/react": "^6.0.2",

@@ -109,6 +109,16 @@
   --padding-25px: 25px;
 
   --color-shadow: #060d22;
+
+  /* Bundled Inter renders identically on every OS, matching the macOS/SF look.
+     Falls through to Noto Sans JP for CJK glyphs Inter doesn't cover. */
+  --font-sans: "Inter Variable", "Inter", "Noto Sans JP Local", "Noto Sans JP",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html, body {
+  font-family: var(--font-sans);
 }
 
 /*
