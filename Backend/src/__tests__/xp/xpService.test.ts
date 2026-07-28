@@ -198,11 +198,11 @@ describe('computeXp — reading types, time as base', () => {
     expect(fastReader.xp).toBe(listener.xp);
   });
 
-  it('caps implausible time claims using chars (2000 chars/hour floor)', () => {
-    // 120 min claimed but only 1000 chars read → 30 credited minutes
+  it('caps implausible time claims using chars (800 chars/hour floor)', () => {
+    // 120 min claimed but only 1000 chars read → 75 credited minutes
     const result = computeXp({ type: 'reading', time: 120, chars: 1000 });
-    expect(result.breakdown.timeCreditedMin).toBeCloseTo(30);
-    expect(result.xp).toBe(67);
+    expect(result.breakdown.timeCreditedMin).toBeCloseTo(75);
+    expect(result.xp).toBe(168);
   });
 
   it('estimates time from chars at the reference speed without history', () => {

@@ -31,7 +31,7 @@ export const MAX_PERSONAL_SPEED_CPH = 30000;
  * capped at chars / MIN_PLAUSIBLE_SPEED_CPH so "2 hours, 500 chars" claims
  * don't earn 2 hours of XP. Low enough not to punish genuinely slow readers.
  */
-export const MIN_PLAUSIBLE_SPEED_CPH = 2000;
+export const MIN_PLAUSIBLE_SPEED_CPH = 800;
 
 /** Rough chars-per-page estimate used when a log only carries pages. */
 export const CHARS_PER_PAGE = 250;
@@ -69,12 +69,7 @@ export const LISTENING_TYPES: ILog['type'][] = [
   'tv show',
   'audio',
 ];
-export const READING_TYPES: ILog['type'][] = [
-  'reading',
-  'manga',
-  'vn',
-  'game',
-];
+export const READING_TYPES: ILog['type'][] = ['reading', 'manga', 'vn', 'game'];
 
 export type LogCategory = 'reading' | 'listening' | null;
 
@@ -264,8 +259,7 @@ function creditedMinutes(
   // Reading category: time is authoritative, chars validate/estimate it.
   if (isPositive(input.time)) {
     if (isPositive(input.chars)) {
-      const maxPlausibleMinutes =
-        (input.chars / MIN_PLAUSIBLE_SPEED_CPH) * 60;
+      const maxPlausibleMinutes = (input.chars / MIN_PLAUSIBLE_SPEED_CPH) * 60;
       return {
         minutes: Math.min(input.time, maxPlausibleMinutes),
         charsBacked: true,
@@ -281,10 +275,7 @@ function creditedMinutes(
     };
   }
 
-  if (
-    isPositive(input.pages) &&
-    (type === 'reading' || type === 'manga')
-  ) {
+  if (isPositive(input.pages) && (type === 'reading' || type === 'manga')) {
     const estimatedChars = input.pages * CHARS_PER_PAGE;
     return {
       minutes: estimateMinutesFromChars(
