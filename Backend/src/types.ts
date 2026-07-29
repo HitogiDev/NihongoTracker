@@ -61,12 +61,27 @@ export interface StatsGroupLayout {
   cards: StatsLayoutItem[];
 }
 
+export type ProfileWidgetId =
+  | 'profileStats'
+  | 'about'
+  | 'favorites'
+  | 'progressStats'
+  | 'immersionActivity'
+  | 'immersionGoals'
+  | 'achievements';
+
+export interface ProfileWidgetLayout {
+  id: ProfileWidgetId;
+  visible: boolean;
+}
+
 export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
   timezone?: string;
   hiddenRecentMedia?: string[];
   statsLayout?: StatsGroupLayout[];
+  profileLayout?: ProfileWidgetLayout[];
   notificationsLastViewedAt?: Date | null;
   dismissedNotificationClubIds?: string[];
   dismissedNotificationClubAt?: Record<string, Date | string>;

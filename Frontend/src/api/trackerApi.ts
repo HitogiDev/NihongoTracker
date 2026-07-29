@@ -30,6 +30,7 @@ import {
   ITextLine,
   ITextSessionHistoryEntry,
   StatsGroupLayout,
+  ProfileWidgetLayout,
   IGanttMediaItem,
   IAchievement,
   ILogCelebration,
@@ -1385,6 +1386,16 @@ export async function updateStatsLayoutFn(
     message: string;
     statsLayout: StatsGroupLayout[];
   }>('users/settings/stats-layout', { layout });
+  return data;
+}
+
+export async function updateProfileLayoutFn(
+  layout: ProfileWidgetLayout[]
+): Promise<{ message: string; profileLayout: ProfileWidgetLayout[] }> {
+  const { data } = await api.patch<{
+    message: string;
+    profileLayout: ProfileWidgetLayout[];
+  }>('users/settings/profile-layout', { layout });
   return data;
 }
 

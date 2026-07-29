@@ -2,6 +2,7 @@ import { Link, useOutletContext } from 'react-router-dom';
 import LogCard from '../components/LogCard';
 import PlaylistBatchCard from '../components/PlaylistBatchCard';
 import ProgressBar from '../components/ProgressBar';
+import ProfileStatsBand from '../components/ProfileStatsBand';
 import ImmersionGoals from '../components/ImmersionGoals';
 import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import FavoriteMedia from '../components/FavoriteMedia';
@@ -20,7 +21,12 @@ import {
   IAchievement,
   AchievementCategory,
   AchievementRarity,
+  ProfileWidgetId,
 } from '../types';
+import {
+  resolveProfileLayout,
+  PROFILE_WIDGET_META,
+} from '../utils/profileWidgets';
 import { useUserDataStore } from '../store/userData';
 import { DayPicker } from 'react-day-picker';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -516,145 +522,181 @@ function ProfileScreen() {
     });
   }, [displayedLogs, filteredAchievements, sortBy, sortDirection]);
 
+  const isOwner = username === loggedUser?.username;
+  const profileLayout = resolveProfileLayout(user?.profileLayout);
+
+  // Left-column widgets keyed by id — rendered in the order/visibility the
+  // owner configured in Settings → Profile (see resolveProfileLayout).
+  const widgetNodes: Partial<Record<ProfileWidgetId, React.ReactNode>> = {
+    profileStats: username ? (
+      <ProfileStatsBand username={username} />
+    ) : null,
+    about: (
+      <div className="card w-full bg-base-100 shadow-sm">
+        <div className="card-body w-full p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h2 className="card-title">About</h2>
+            {isOwner && (
+              <Link
+                to="/settings"
+                className="btn btn-ghost btn-xs text-primary"
+              >
+                Edit profile
+              </Link>
+            )}
+          </div>
+          {aboutHtml ? (
+            <div className="space-y-3">
+              <div className="relative">
+                <div
+                  ref={aboutContentRef}
+                  className={`prose prose-sm max-w-none text-base-content/90 ${
+                    showAboutPreview ? 'max-h-56 overflow-hidden' : ''
+                  }`}
+                  dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                />
+                {showAboutPreview && (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base-100 via-base-100/90 to-transparent" />
+                )}
+              </div>
+              {shouldCollapseAbout && (
+                <div className="flex justify-center">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="link link-hover link-primary text-sm"
+                    onClick={() => setShowFullAbout((value) => !value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setShowFullAbout((value) => !value);
+                      }
+                    }}
+                    aria-expanded={showFullAbout}
+                  >
+                    {showFullAbout ? 'Show less' : 'Read more'}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-base-content/70 text-sm">
+              {isOwner
+                ? 'Add a short introduction from Settings → Profile Information.'
+                : 'This user has not added an about section yet.'}
+            </p>
+          )}
+        </div>
+      </div>
+    ),
+    favorites: username ? (
+      <FavoriteMedia
+        favorites={user?.favorites ?? []}
+        isOwner={isOwner}
+        username={username}
+        blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
+      />
+    ) : null,
+    progressStats: (
+      <div className="card w-full bg-base-100 shadow-sm">
+        <div className="card-body w-full p-4 sm:p-6">
+          <h2 className="card-title mb-4">Progress Stats</h2>
+          <div className="stats stats-vertical w-full shadow-none bg-transparent">
+            <div className="stat px-0 py-4">
+              <div className="stat-title">Overall Progress</div>
+              <div className="stat-value text-2xl">
+                Level {user?.stats?.userLevel}
+              </div>
+              <div className="stat-desc mb-3">
+                {userProgressXP}/{totalUserXpToLevelUp} XP
+              </div>
+              <ProgressBar
+                progress={userProgressPercentage}
+                maxProgress={100}
+              />
+            </div>
+
+            <div className="stat px-0 py-4">
+              <div className="stat-title">Listening Progress</div>
+              <div className="stat-value text-2xl">
+                Level {user?.stats?.listeningLevel}
+              </div>
+              <div className="stat-desc mb-3">
+                {listeningProgressXP}/{totalListeningXpToLevelUp} XP
+              </div>
+              <ProgressBar
+                progress={listeningProgressPercentage}
+                maxProgress={100}
+              />
+            </div>
+
+            <div className="stat px-0 py-4">
+              <div className="stat-title">Reading Progress</div>
+              <div className="stat-value text-2xl">
+                Level {user?.stats?.readingLevel}
+              </div>
+              <div className="stat-desc mb-3">
+                {readingProgressXP}/{totalReadingXpToLevelUp} XP
+              </div>
+              <ProgressBar
+                progress={readingProgressPercentage}
+                maxProgress={100}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    immersionActivity: (
+      <div className="card w-full bg-base-100 shadow-sm overflow-visible">
+        <div className="card-body w-full p-4 sm:p-6 overflow-visible">
+          <h2 className="card-title mb-4">Immersion Activity</h2>
+          {username && <ImmersionHeatmap username={username} />}
+        </div>
+      </div>
+    ),
+    immersionGoals: username ? (
+      <ImmersionGoals username={username} />
+    ) : null,
+    achievements: username ? (
+      <AchievementShowcaseWidget username={username} />
+    ) : null,
+  };
+
+  // Left-column widgets actually rendered (visible, owner rules, node exists).
+  // When none remain, collapse to a single centered column of just the activity.
+  const leftWidgets = profileLayout.filter(({ id, visible }) => {
+    if (!visible) return false;
+    if (PROFILE_WIDGET_META[id]?.ownerOnly && !isOwner) return false;
+    return Boolean(widgetNodes[id]);
+  });
+  const hasLeftColumn = leftWidgets.length > 0;
+
   return (
     <div className="flex flex-col items-center py-4 sm:py-8 px-4 sm:px-6">
       <div className="w-full max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-10">
-          <div className="flex flex-col shrink gap-4 md:gap-5">
-            <div className="card w-full bg-base-100 shadow-sm">
-              <div className="card-body w-full p-4 sm:p-6">
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <h2 className="card-title">About</h2>
-                  {username === loggedUser?.username && (
-                    <Link
-                      to="/settings"
-                      className="btn btn-ghost btn-xs text-primary"
-                    >
-                      Edit profile
-                    </Link>
-                  )}
+        <div
+          className={
+            hasLeftColumn
+              ? 'grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-10'
+              : 'flex justify-center'
+          }
+        >
+          {hasLeftColumn && (
+            <div className="flex flex-col shrink gap-4 md:gap-5">
+              {leftWidgets.map(({ id }) => (
+                <div key={id} className="contents">
+                  {widgetNodes[id]}
                 </div>
-                {aboutHtml ? (
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <div
-                        ref={aboutContentRef}
-                        className={`prose prose-sm max-w-none text-base-content/90 ${
-                          showAboutPreview ? 'max-h-56 overflow-hidden' : ''
-                        }`}
-                        dangerouslySetInnerHTML={{ __html: aboutHtml }}
-                      />
-                      {showAboutPreview && (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base-100 via-base-100/90 to-transparent" />
-                      )}
-                    </div>
-                    {shouldCollapseAbout && (
-                      <div className="flex justify-center">
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          className="link link-hover link-primary text-sm"
-                          onClick={() => setShowFullAbout((value) => !value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              setShowFullAbout((value) => !value);
-                            }
-                          }}
-                          aria-expanded={showFullAbout}
-                        >
-                          {showFullAbout ? 'Show less' : 'Read more'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-base-content/70 text-sm">
-                    {username === loggedUser?.username
-                      ? 'Add a short introduction from Settings → Profile Information.'
-                      : 'This user has not added an about section yet.'}
-                  </p>
-                )}
-              </div>
+              ))}
             </div>
+          )}
 
-            {username && (
-              <FavoriteMedia
-                favorites={user?.favorites ?? []}
-                isOwner={username === loggedUser?.username}
-                username={username}
-                blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
-              />
-            )}
-
-            <div className="card w-full bg-base-100 shadow-sm">
-              <div className="card-body w-full p-4 sm:p-6">
-                <h2 className="card-title mb-4">Progress Stats</h2>
-                <div className="stats stats-vertical w-full shadow-none bg-transparent">
-                  <div className="stat px-0 py-4">
-                    <div className="stat-title">Overall Progress</div>
-                    <div className="stat-value text-2xl">
-                      Level {user?.stats?.userLevel}
-                    </div>
-                    <div className="stat-desc mb-3">
-                      {userProgressXP}/{totalUserXpToLevelUp} XP
-                    </div>
-                    <ProgressBar
-                      progress={userProgressPercentage}
-                      maxProgress={100}
-                    />
-                  </div>
-
-                  <div className="stat px-0 py-4">
-                    <div className="stat-title">Listening Progress</div>
-                    <div className="stat-value text-2xl">
-                      Level {user?.stats?.listeningLevel}
-                    </div>
-                    <div className="stat-desc mb-3">
-                      {listeningProgressXP}/{totalListeningXpToLevelUp} XP
-                    </div>
-                    <ProgressBar
-                      progress={listeningProgressPercentage}
-                      maxProgress={100}
-                    />
-                  </div>
-
-                  <div className="stat px-0 py-4">
-                    <div className="stat-title">Reading Progress</div>
-                    <div className="stat-value text-2xl">
-                      Level {user?.stats?.readingLevel}
-                    </div>
-                    <div className="stat-desc mb-3">
-                      {readingProgressXP}/{totalReadingXpToLevelUp} XP
-                    </div>
-                    <ProgressBar
-                      progress={readingProgressPercentage}
-                      maxProgress={100}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card w-full bg-base-100 shadow-sm overflow-visible">
-              <div className="card-body w-full p-4 sm:p-6 overflow-visible">
-                <h2 className="card-title mb-4">Immersion Activity</h2>
-                {username && <ImmersionHeatmap username={username} />}
-              </div>
-            </div>
-
-            {username === loggedUser?.username && (
-              <ImmersionGoals username={username} />
-            )}
-
-            {/* Achievement Showcase */}
-            {username && (
-              <AchievementShowcaseWidget username={username} />
-            )}
-
-          </div>
-
-          <div className="flex flex-col gap-4 md:gap-5">
+          <div
+            className={`flex flex-col gap-4 md:gap-5 ${
+              hasLeftColumn ? '' : 'w-full max-w-3xl'
+            }`}
+          >
             <div className="flex flex-col gap-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h2 className="card-title self-start">{username}'s Activity</h2>

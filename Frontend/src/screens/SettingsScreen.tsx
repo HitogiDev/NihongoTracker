@@ -23,14 +23,37 @@ import {
   listApiKeysFn,
   generateApiKeyFn,
   deleteApiKeyFn,
+  updateProfileLayoutFn,
   type IApiKey,
   type ICreatedApiKey,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { ILoginResponse } from '../types';
+import { ILoginResponse, ProfileWidgetLayout } from '../types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUserDataStore } from '../store/userData';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  PROFILE_WIDGETS,
+  PROFILE_WIDGET_META,
+  resolveProfileLayout,
+} from '../utils/profileWidgets';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
@@ -83,6 +106,9 @@ import {
   Plus,
   Eye,
   SplitSquareHorizontal,
+  GripVertical,
+  LayoutList,
+  RotateCcw,
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
@@ -2159,6 +2185,8 @@ function SettingsScreen() {
                     </form>
                   </div>
                 </div>
+
+                <ProfileLayoutEditor />
               </div>
             )}
 
@@ -3907,6 +3935,215 @@ function SettingsScreen() {
           <button className="cursor-default">close</button>
         </form>
       </dialog>
+    </div>
+  );
+}
+
+// ─── Profile Layout Editor ───────────────────────────────────────────────────
+// Reorder + show/hide the widgets in the left column of your profile page.
+
+type SortableWidgetRowProps = {
+  id: string;
+  label: string;
+  description: string;
+  visible: boolean;
+  ownerOnly?: boolean;
+  onToggle: () => void;
+};
+
+function SortableWidgetRow({
+  id,
+  label,
+  description,
+  visible,
+  ownerOnly,
+  onToggle,
+}: SortableWidgetRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 p-3 ${
+        !visible ? 'opacity-60' : ''
+      }`}
+    >
+      <button
+        type="button"
+        className="cursor-grab touch-none text-base-content/40 hover:text-base-content/70 active:cursor-grabbing"
+        aria-label="Drag to reorder"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-medium">{label}</span>
+          {ownerOnly && (
+            <span className="badge badge-ghost badge-xs shrink-0">Only you</span>
+          )}
+        </div>
+        <p className="truncate text-xs text-base-content/60">{description}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="btn btn-ghost btn-sm btn-square"
+        title={visible ? 'Hide widget' : 'Show widget'}
+        aria-label={visible ? 'Hide widget' : 'Show widget'}
+      >
+        {visible ? (
+          <Eye className="h-4 w-4" />
+        ) : (
+          <EyeOff className="h-4 w-4 text-base-content/40" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+function ProfileLayoutEditor() {
+  const { user, setUser } = useUserDataStore();
+  const queryClient = useQueryClient();
+  const [layout, setLayout] = useState<ProfileWidgetLayout[]>(() =>
+    resolveProfileLayout(user?.settings?.profileLayout)
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const { mutate: save, isPending } = useMutation({
+    mutationFn: updateProfileLayoutFn,
+    onSuccess: (data) => {
+      if (user) {
+        setUser({
+          ...user,
+          settings: {
+            ...user.settings,
+            profileLayout: data.profileLayout,
+          },
+        } as ILoginResponse);
+      }
+      void queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'user',
+      });
+    },
+    onError: (error) => {
+      if (error instanceof AxiosError) {
+        toast.error(
+          `Failed to save layout: ${error.response?.data?.message ?? ''}`
+        );
+      } else {
+        toast.error('Failed to save profile layout');
+      }
+    },
+  });
+
+  const persist = (next: ProfileWidgetLayout[]) => {
+    setLayout(next);
+    save(next);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = layout.findIndex((w) => w.id === active.id);
+    const newIndex = layout.findIndex((w) => w.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    persist(arrayMove(layout, oldIndex, newIndex));
+  };
+
+  const toggleVisibility = (id: string) => {
+    persist(
+      layout.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w))
+    );
+  };
+
+  const resetDefault = () => {
+    persist(PROFILE_WIDGETS.map((w) => ({ id: w.id, visible: true })));
+  };
+
+  return (
+    <div className="card bg-base-100 shadow-sm border border-base-300/50">
+      <div className="card-body">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-3">
+              <LayoutList className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Profile Layout</h2>
+              <p className="text-base-content/70">
+                Drag to reorder the widgets on your profile, or hide the ones
+                you don't want to show.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={resetDefault}
+            className="btn btn-ghost btn-sm gap-1"
+            disabled={isPending}
+            title="Reset to default order"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </button>
+        </div>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={layout.map((w) => w.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="flex flex-col gap-2">
+              {layout.map((w) => {
+                const meta = PROFILE_WIDGET_META[w.id];
+                if (!meta) return null;
+                return (
+                  <SortableWidgetRow
+                    key={w.id}
+                    id={w.id}
+                    label={meta.label}
+                    description={meta.description}
+                    visible={w.visible}
+                    ownerOnly={meta.ownerOnly}
+                    onToggle={() => toggleVisibility(w.id)}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+
+        <p className="mt-3 text-xs text-base-content/50">
+          Changes save automatically and apply to how everyone sees your
+          profile.
+        </p>
+      </div>
     </div>
   );
 }

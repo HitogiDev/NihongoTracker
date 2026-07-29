@@ -8,25 +8,10 @@ import {
   getUserAchievementsFn,
   getUserLogsFn,
 } from '../api/trackerApi';
-import { ILog } from '../types';
 
 interface ProfileStatsBandProps {
   username: string;
 }
-
-// Same colors as StackedBarChart so a type always looks the same across the app
-const TYPE_META: Array<{ type: ILog['type']; label: string; color: string }> = [
-  { type: 'anime', label: 'Anime', color: '#26b2f2' },
-  { type: 'manga', label: 'Manga', color: '#ee4466' },
-  { type: 'reading', label: 'Reading', color: '#b34ce6' },
-  { type: 'vn', label: 'VN', color: '#3a70e4' },
-  { type: 'game', label: 'Game', color: '#59c94e' },
-  { type: 'video', label: 'Video', color: '#2cc9a4' },
-  { type: 'movie', label: 'Movie', color: '#f77118' },
-  { type: 'tv show', label: 'TV', color: '#f8b420' },
-  { type: 'audio', label: 'Audio', color: '#f2a15a' },
-  { type: 'other', label: 'Other', color: '#10b785' },
-];
 
 // Fritsch–Carlson monotone cubic interpolation → SVG path, matching the
 // `cubicInterpolationMode: 'monotone'` curve the Chart.js stats charts use.
@@ -98,8 +83,9 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(SECTION_COLLAPSE_KEY) === '1';
+    if (typeof window === 'undefined') return true;
+    // Collapsed by default — only expanded if the user explicitly opened it before.
+    return window.localStorage.getItem(SECTION_COLLAPSE_KEY) !== '0';
   });
   const [rankMode, setRankMode] = useState<RankMode>(() => {
     if (typeof window === 'undefined') return 'monthly';
@@ -159,26 +145,20 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     enabled: !!username,
   });
 
-  const { typeCounts, totalMinutes, totalXp } = useMemo(() => {
-    const typeCounts = new Map<string, number>();
+  const { totalMinutes, totalXp } = useMemo(() => {
     let totalMinutes = 0;
     let totalXp = 0;
 
     for (const log of logs ?? []) {
-      typeCounts.set(log.type, (typeCounts.get(log.type) ?? 0) + 1);
       totalMinutes += Math.max(0, Number(log.time) || 0);
       totalXp += Math.max(0, Number(log.xp) || 0);
     }
 
-    return { typeCounts, totalMinutes, totalXp };
+    return { totalMinutes, totalXp };
   }, [logs]);
 
   const earnedAchievements =
     achievements?.filter((a) => a.isEarned).length ?? 0;
-
-  const visibleTypes = TYPE_META.filter(
-    (meta) => (typeCounts.get(meta.type) ?? 0) > 0
-  );
 
   // ── Ranking-position graph geometry ──────────────────────────────────────
   const chartWidth = 300;
@@ -241,15 +221,15 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     : '—';
 
   return (
-    <div className="w-full bg-base-100 border-b border-base-300">
-      <div className="px-5 2xl:max-w-(--breakpoint-2xl) 2xl:px-24 mx-auto w-full py-3 flex flex-col gap-3">
+    <div className="card w-full bg-base-100 shadow-sm">
+      <div className="card-body w-full p-4 sm:p-6 flex flex-col gap-3">
         {/* Header row — always visible, toggles the whole section */}
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
-            className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-base-content/60 hover:text-base-content transition-colors"
+            className="flex items-center gap-1.5 card-title text-base-content/80 hover:text-base-content transition-colors"
           >
             <ChevronDown
               className={`w-4 h-4 transition-transform ${
@@ -397,55 +377,32 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
               </div>
             )}
 
-            {/* Totals + per-type counts */}
-            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
-              <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-base-content/60">
-                    Achievements
-                  </div>
-                  <div className="text-lg font-semibold leading-tight">
-                    {earnedAchievements.toLocaleString()}
-                  </div>
+            {/* Totals */}
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                  Achievements
                 </div>
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-base-content/60">
-                    Total XP
-                  </div>
-                  <div className="text-lg font-semibold leading-tight">
-                    {totalXp.toLocaleString()}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-wide text-base-content/60">
-                    Total Immersion Time
-                  </div>
-                  <div className="text-lg font-semibold leading-tight">
-                    {formatTotalTime(totalMinutes)}
-                  </div>
+                <div className="text-lg font-semibold leading-tight">
+                  {earnedAchievements.toLocaleString()}
                 </div>
               </div>
-
-              {visibleTypes.length > 0 && (
-                <div className="flex flex-wrap items-end gap-3">
-                  {visibleTypes.map((meta) => (
-                    <div
-                      key={meta.type}
-                      className="flex flex-col items-center gap-0.5"
-                    >
-                      <span
-                        className="rounded-full px-3 py-0.5 text-xs font-bold uppercase text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
-                        style={{ backgroundColor: meta.color }}
-                      >
-                        {meta.label}
-                      </span>
-                      <span className="text-sm font-semibold">
-                        {(typeCounts.get(meta.type) ?? 0).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+              <div>
+                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                  Total XP
                 </div>
-              )}
+                <div className="text-lg font-semibold leading-tight">
+                  {totalXp.toLocaleString()}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-base-content/60">
+                  Total Immersion Time
+                </div>
+                <div className="text-lg font-semibold leading-tight">
+                  {formatTotalTime(totalMinutes)}
+                </div>
+              </div>
             </div>
           </>
         )}

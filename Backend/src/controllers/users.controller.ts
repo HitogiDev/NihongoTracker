@@ -14,6 +14,8 @@ import {
   StatsCardId,
   StatsGroupId,
   StatsGroupLayout,
+  ProfileWidgetId,
+  ProfileWidgetLayout,
   userRoles,
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
@@ -568,6 +570,70 @@ export async function updateStatsLayout(
   }
 }
 
+const VALID_PROFILE_WIDGET_IDS = new Set<ProfileWidgetId>([
+  'profileStats',
+  'about',
+  'favorites',
+  'progressStats',
+  'immersionActivity',
+  'immersionGoals',
+  'achievements',
+]);
+
+export async function updateProfileLayout(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { layout } = req.body as { layout: ProfileWidgetLayout[] };
+
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw new customError('User not found', 404);
+
+    if (!Array.isArray(layout))
+      throw new customError('Layout must be an array of widgets', 400);
+
+    const seen = new Set<string>();
+    for (const widget of layout) {
+      if (!widget || typeof widget !== 'object')
+        throw new customError('Each widget must be an object', 400);
+      if (!VALID_PROFILE_WIDGET_IDS.has(widget.id as ProfileWidgetId))
+        throw new customError(`Invalid widget id: ${widget.id}`, 400);
+      if (seen.has(widget.id))
+        throw new customError(`Duplicate widget id: ${widget.id}`, 400);
+      seen.add(widget.id);
+      if (typeof widget.visible !== 'boolean')
+        throw new customError(
+          'Each widget must have a boolean visible field',
+          400
+        );
+    }
+
+    if (!user.settings) {
+      user.settings = {
+        blurAdultContent: true,
+        hideUnmatchedLogsAlert: false,
+        timezone: 'UTC',
+        hiddenRecentMedia: [],
+        statsLayout: [],
+        profileLayout: [],
+      };
+    }
+
+    user.settings.profileLayout = layout;
+    user.markModified('settings');
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Profile layout updated successfully',
+      profileLayout: user.settings.profileLayout,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 const FAVORITE_MEDIA_TYPES: MediaListMediaType[] = [
   'anime',
   'manga',
@@ -720,6 +786,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     updatedAt: userFound.updatedAt,
     // Expose layout publicly so all visitors see the owner's preferred order
     statsLayout: userFound.settings?.statsLayout ?? [],
+    profileLayout: userFound.settings?.profileLayout ?? [],
     // Favorites are meant to be showcased — public, no privacy gate
     favorites: await hydrateFavorites(userFound.favorites ?? []),
   };

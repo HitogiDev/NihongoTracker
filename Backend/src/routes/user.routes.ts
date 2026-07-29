@@ -13,6 +13,7 @@ import {
   updateMediaCompletionStatus,
   updateHiddenRecentMedia,
   updateStatsLayout,
+  updateProfileLayout,
   updateFavorites,
   getGanttData,
 } from '../controllers/users.controller.js';
@@ -72,6 +73,7 @@ router.put(
 
 router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
 router.patch('/settings/stats-layout', protect, updateStatsLayout);
+router.patch('/settings/profile-layout', protect, updateProfileLayout);
 router.patch('/favorites', protect, updateFavorites);
 
 router.post('/cleardata', protect, clearUserData);
