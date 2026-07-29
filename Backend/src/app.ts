@@ -77,6 +77,7 @@ app.use('/api/api-keys', apiKeyRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/docs', swaggerRoutes);
 app.use('/og-image', ogImageRoutes);
+app.use('/api/og-image', ogImageRoutes);
 
 app.use(
   '/api',

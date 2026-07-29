@@ -34,6 +34,7 @@ import Loader from './Loader';
 import SearchModal from './SearchModal';
 import NotificationBell from './NotificationBell';
 import { useNotificationCount } from '../hooks/useNotificationCount';
+import { getAvatarInitials } from '../utils/avatar';
 
 type ThemeMode = 'dark' | 'light' | 'system';
 
@@ -65,6 +66,7 @@ function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       return normalizeThemeMode(localStorage.getItem('theme'));
@@ -72,6 +74,10 @@ function Header() {
 
     return 'system';
   });
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [user?.avatar]);
 
   const MAX_BADGE_COUNT = 99;
   const totalCount = useNotificationCount();
@@ -488,76 +494,28 @@ function Header() {
                 <div
                   tabIndex={0}
                   role="button"
-                  className="btn btn-sm sm:btn-md m-1 gap-2 max-w-full"
+                  aria-label={`${user.username} menu`}
+                  className="btn btn-ghost btn-circle avatar m-1"
                 >
-                  <span className="hidden md:inline">{user.username}</span>
-                  <span className="inline md:hidden truncate max-w-[5rem]">
-                    {user.username}
-                  </span>
-                  {user?.patreon?.isActive &&
-                    user?.patreon?.tier === 'consumer' && (
-                      <div
-                        className={`badge badge-sm gap-1 max-w-[7rem] overflow-hidden text-ellipsis whitespace-nowrap md:max-w-none md:overflow-visible md:whitespace-normal ${
-                          user.patreon.badgeColor === 'rainbow'
-                            ? 'badge-rainbow'
-                            : user.patreon.badgeColor === 'primary'
-                              ? 'badge-primary'
-                              : user.patreon.badgeColor === 'secondary'
-                                ? 'badge-secondary'
-                                : ''
-                        }`}
-                        style={
-                          user.patreon.badgeColor &&
-                          user.patreon.badgeColor !== 'rainbow' &&
-                          user.patreon.badgeColor !== 'primary' &&
-                          user.patreon.badgeColor !== 'secondary'
-                            ? {
-                                backgroundColor: user.patreon.badgeColor,
-                                color:
-                                  user.patreon.badgeTextColor ===
-                                    'primary-content' ||
-                                  user.patreon.badgeTextColor ===
-                                    'secondary-content'
-                                    ? undefined
-                                    : user.patreon.badgeTextColor || '#ffffff',
-                                border: 'none',
-                              }
-                            : user.patreon.badgeColor === 'rainbow' ||
-                                user.patreon.badgeTextColor
-                              ? {
-                                  color:
-                                    user.patreon.badgeTextColor ===
-                                      'primary-content' ||
-                                    user.patreon.badgeTextColor ===
-                                      'secondary-content'
-                                      ? undefined
-                                      : user.patreon.badgeTextColor ||
-                                        undefined,
-                                  border:
-                                    user.patreon.badgeColor === 'rainbow'
-                                      ? 'none'
-                                      : undefined,
-                                }
-                              : {}
-                        }
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3 w-3"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap md:max-w-none md:overflow-visible md:whitespace-normal">
-                          {user.patreon.customBadgeText || 'Consumer'}
-                        </span>
+                  <div
+                    className={`w-8 sm:w-10 rounded-full ${
+                      user?.patreon?.isActive
+                        ? 'ring ring-primary ring-offset-base-100 ring-offset-1'
+                        : ''
+                    }`}
+                  >
+                    {user.avatar && !avatarLoadFailed ? (
+                      <img
+                        src={user.avatar}
+                        alt={`${user.username} avatar`}
+                        onError={() => setAvatarLoadFailed(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-base-300 flex items-center justify-center text-sm font-semibold">
+                        {getAvatarInitials(user.username)}
                       </div>
                     )}
+                  </div>
                 </div>
                 <ul
                   tabIndex={0}

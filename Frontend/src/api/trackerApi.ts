@@ -1399,6 +1399,26 @@ export async function updateProfileLayoutFn(
   return data;
 }
 
+export interface IStatsCardTiles {
+  timeSpentHours: number;
+  dailyAvgHours: number;
+  readingHours: number;
+  listeningHours: number;
+  chars: number;
+  streakDays: number;
+}
+
+export async function generateStatsCardFn(payload: {
+  username: string;
+  dateLabel: string;
+  tiles: IStatsCardTiles;
+}): Promise<Blob> {
+  const { data } = await api.post<Blob>('og-image/stats-card', payload, {
+    responseType: 'blob',
+  });
+  return data;
+}
+
 export interface IFavoriteInput {
   mediaId: string;
   mediaType: MediaListMediaType;

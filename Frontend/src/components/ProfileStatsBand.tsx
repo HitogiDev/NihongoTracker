@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Share2 } from 'lucide-react';
 import {
   getRankingSummaryFn,
   getRankingHistoryFn,
   getUserAchievementsFn,
   getUserLogsFn,
 } from '../api/trackerApi';
+import ShareStatsModal from './ShareStatsModal';
 
 interface ProfileStatsBandProps {
   username: string;
@@ -93,6 +94,8 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
       ? 'global'
       : 'monthly';
   });
+
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Graph shows only on the overview tab (the index route: /user/:username)
   const isOverview =
@@ -238,22 +241,33 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             />
             Profile Stats
           </button>
-          {collapsed && (
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-base-content/60">
-                Global{' '}
-                <span className="font-bold text-base-content">
-                  {compactGlobal}
+          <div className="flex items-center gap-3">
+            {collapsed && (
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-base-content/60">
+                  Global{' '}
+                  <span className="font-bold text-base-content">
+                    {compactGlobal}
+                  </span>
                 </span>
-              </span>
-              <span className="text-base-content/60">
-                Monthly{' '}
-                <span className="font-bold text-base-content">
-                  {compactMonthly}
+                <span className="text-base-content/60">
+                  Monthly{' '}
+                  <span className="font-bold text-base-content">
+                    {compactMonthly}
+                  </span>
                 </span>
-              </span>
-            </div>
-          )}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content"
+              title="Share stats as an image"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </button>
+          </div>
         </div>
 
         {!collapsed && (
@@ -407,6 +421,12 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
           </>
         )}
       </div>
+
+      <ShareStatsModal
+        username={username}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
     </div>
   );
 }

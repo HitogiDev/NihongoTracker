@@ -1,6 +1,8 @@
 import ProfileNavbar from './ProfileNavbar';
+import ShareStatsModal from './ShareStatsModal';
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Share2 } from 'lucide-react';
 import { getUserFn } from '../api/trackerApi';
 import { AxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
@@ -13,6 +15,7 @@ export default function ProfileHeader() {
   const { username = '' } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const {
     data: user,
@@ -99,9 +102,27 @@ export default function ProfileHeader() {
                 )}
               </div>
             </div>
+            {username && (
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="btn btn-sm gap-2 sm:ml-auto sm:mb-2 bg-black/30 hover:bg-black/50 border-white/20 text-white backdrop-blur-sm"
+                title="Share stats as an image"
+              >
+                <Share2 className="h-4 w-4" />
+                Share stats
+              </button>
+            )}
           </div>
         </div>
       </div>
+      {username && (
+        <ShareStatsModal
+          username={username}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
       <ProfileNavbar username={user?.username} />
       <Outlet context={{ user, username } satisfies OutletProfileContextType} />
     </div>
