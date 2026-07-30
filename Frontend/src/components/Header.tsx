@@ -495,12 +495,14 @@ function Header() {
                   tabIndex={0}
                   role="button"
                   aria-label={`${user.username} menu`}
-                  className="btn btn-ghost btn-circle avatar m-1"
+                  // Not btn-circle: that pins the button to the same 40px as the
+                  // avatar, so the ring would spill outside it. p-1 leaves room.
+                  className="btn btn-ghost avatar m-1 h-auto min-h-0 w-auto rounded-full p-1"
                 >
                   <div
                     className={`w-8 sm:w-10 rounded-full ${
                       user?.patreon?.isActive
-                        ? 'ring ring-primary ring-offset-base-100 ring-offset-1'
+                        ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'
                         : ''
                     }`}
                   >
