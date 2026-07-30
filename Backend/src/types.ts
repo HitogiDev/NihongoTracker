@@ -148,6 +148,12 @@ export interface IUserMediaStatus extends Document {
   completed: boolean;
   completedAt?: Date | null;
   autoCompleteSuppressed?: boolean;
+  /**
+   * Set when the user removes the media from their immersion list without
+   * deleting its logs. Hides the entry from getImmersionList; cleared as soon as
+   * the user logs the media again or sets a status on it explicitly.
+   */
+  hiddenFromList?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -406,6 +412,10 @@ export interface IMediaDocument {
   jitenDifficulty?: number | null;
   jitenSyncedAt?: Date | null;
   lastLogDate?: Date;
+  /** Number of the requesting user's logs for this media (immersion list only). */
+  logCount?: number;
+  /** Total XP earned from those logs (immersion list only). */
+  totalXp?: number;
   isCompleted?: boolean;
   completedAt?: Date | null;
   autoCompleteSuppressed?: boolean;

@@ -31,7 +31,11 @@ import { sendVerificationEmail } from '../mailtrap/emails.js';
 import { searchDocuments } from '../services/meilisearch/meiliSearch.js';
 import { indexUser } from '../services/meilisearch/userIndex.js';
 import { calculateXp } from '../services/calculateLevel.js';
-import { getLiveCurrentStreak } from '../services/streaks.js';
+import {
+  getLiveCurrentStreak,
+  recalculateStreaksForUser,
+} from '../services/streaks.js';
+import { recalculateUserXpFromLogs } from '../services/updateStats.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -42,6 +46,17 @@ type ImmersionMediaType =
   | 'video'
   | 'movie'
   | 'tv show';
+
+const IMMERSION_MEDIA_TYPES: ImmersionMediaType[] = [
+  'anime',
+  'manga',
+  'reading',
+  'vn',
+  'game',
+  'video',
+  'movie',
+  'tv show',
+];
 
 const BYTES_IN_MEGABYTE = 1024 * 1024;
 const DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES = 3 * BYTES_IN_MEGABYTE;
@@ -2022,6 +2037,8 @@ export async function getImmersionList(
           $group: {
             _id: { mediaId: '$mediaId', type: '$type' },
             lastLogDate: { $max: '$date' },
+            logCount: { $sum: 1 },
+            totalXp: { $sum: '$xp' },
           },
         },
         {
@@ -2047,6 +2064,8 @@ export async function getImmersionList(
         {
           $addFields: {
             'mediaDetails.lastLogDate': '$lastLogDate',
+            'mediaDetails.logCount': '$logCount',
+            'mediaDetails.totalXp': '$totalXp',
           },
         },
         {
@@ -2085,6 +2104,7 @@ export async function getImmersionList(
           | 'planning'
           | 'in_progress'
           | null;
+        hiddenFromList: boolean;
       }
     >();
     mediaStatuses.forEach((s) => {
@@ -2093,6 +2113,7 @@ export async function getImmersionList(
         completed: s.completed,
         completedAt: s.completedAt ?? null,
         status: s.status ?? null,
+        hiddenFromList: s.hiddenFromList === true,
       });
     });
 
@@ -2111,10 +2132,15 @@ export async function getImmersionList(
     immersionList.forEach((group) => {
       const mediaType = group._id as ImmersionMediaType;
       const mediaWithStatus = group.media
-        .map((media) => {
+        .filter((media) => {
           const key = `${mediaType}:${media.contentId}`;
+          // Tracked either way, so hidden entries aren't re-added below
           mediaKeysFromLogs.add(key);
-          const s = statusMap.get(key);
+          // Removed from the list by the user while keeping its logs
+          return !statusMap.get(key)?.hiddenFromList;
+        })
+        .map((media) => {
+          const s = statusMap.get(`${mediaType}:${media.contentId}`);
           return {
             ...media,
             isCompleted: s?.completed ?? false,
@@ -2133,7 +2159,9 @@ export async function getImmersionList(
 
     const statusesWithoutLogs = mediaStatuses.filter((s) => {
       const key = `${s.type}:${s.mediaId}`;
-      return !!s.status && !mediaKeysFromLogs.has(key);
+      return (
+        !!s.status && s.hiddenFromList !== true && !mediaKeysFromLogs.has(key)
+      );
     });
 
     if (statusesWithoutLogs.length > 0 && statusFilter !== 'incomplete') {
@@ -2173,6 +2201,8 @@ export async function getImmersionList(
 
           result[mediaType].push({
             ...media,
+            logCount: 0,
+            totalXp: 0,
             isCompleted: s.status === 'completed',
             completedAt: s.completedAt ?? null,
             mediaStatus: s.status ?? null,
@@ -2228,18 +2258,8 @@ export async function updateMediaCompletionStatus(
 
     const normalizedMediaId = String(mediaId);
     const normalizedType = type.toLowerCase() as ImmersionMediaType;
-    const validTypes: ImmersionMediaType[] = [
-      'anime',
-      'manga',
-      'reading',
-      'vn',
-      'game',
-      'video',
-      'movie',
-      'tv show',
-    ];
 
-    if (!validTypes.includes(normalizedType)) {
+    if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
       throw new customError('Invalid media type', 400);
     }
 
@@ -2330,6 +2350,8 @@ export async function updateMediaCompletionStatus(
           completed: effectiveCompleted,
           completedAt: effectiveCompletedAt,
           autoCompleteSuppressed: effectiveAutoCompleteSuppressed,
+          // Setting a status brings a hidden entry back to the list
+          hiddenFromList: false,
         },
         $setOnInsert: {
           user: res.locals.user._id,
@@ -2352,6 +2374,125 @@ export async function updateMediaCompletionStatus(
       completedAt: savedStatus?.completedAt ?? effectiveCompletedAt,
       autoCompleteSuppressed:
         savedStatus?.autoCompleteSuppressed ?? effectiveAutoCompleteSuppressed,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+/**
+ * Remove a media entry from the authenticated user's immersion list.
+ *
+ * The list is derived from logs (see getImmersionList), so there are two ways to
+ * remove an entry, selected with the `deleteLogs` query param:
+ *   - `deleteLogs=false` (default): keep the logs and their XP, and flag the
+ *     entry as `hiddenFromList` so it stops showing up in the list.
+ *   - `deleteLogs=true`: delete every log for that media plus its status row,
+ *     then recalculate XP and streaks.
+ */
+export async function removeMediaFromImmersionList(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    if (!res.locals.user?._id) {
+      throw new customError('Not authorized', 401);
+    }
+
+    const { mediaId, type } = req.params as {
+      mediaId?: string;
+      type?: string;
+    };
+
+    if (!mediaId || !type) {
+      throw new customError('Media ID and type are required', 400);
+    }
+
+    const normalizedMediaId = String(mediaId);
+    const normalizedType = type.toLowerCase() as ImmersionMediaType;
+
+    if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
+      throw new customError('Invalid media type', 400);
+    }
+
+    const userId = res.locals.user._id;
+    const deleteLogs =
+      String(req.query.deleteLogs ?? '').toLowerCase() === 'true';
+    const statusFilter = {
+      user: userId,
+      mediaId: normalizedMediaId,
+      type: normalizedType,
+    };
+
+    if (!deleteLogs) {
+      // Keep the logs (and their XP); just hide the entry from the list
+      const logCount = await Log.countDocuments(statusFilter);
+      const existingStatus = await UserMediaStatus.findOne(statusFilter).lean();
+
+      if (logCount === 0 && !existingStatus) {
+        throw new customError('Media not found in your immersion list', 404);
+      }
+
+      if (logCount === 0) {
+        // Nothing to keep — a status-only entry is removed outright
+        await UserMediaStatus.deleteOne(statusFilter);
+
+        return res.status(200).json({
+          mediaId: normalizedMediaId,
+          type: normalizedType,
+          deletedLogs: 0,
+          hidden: false,
+          removedStatus: true,
+        });
+      }
+
+      // The status is cleared too, so the media page stops showing the entry as
+      // tracked while its logs stay intact
+      await UserMediaStatus.findOneAndUpdate(
+        statusFilter,
+        {
+          $set: {
+            hiddenFromList: true,
+            status: null,
+            completed: false,
+            completedAt: null,
+          },
+          $setOnInsert: statusFilter,
+        },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+
+      return res.status(200).json({
+        mediaId: normalizedMediaId,
+        type: normalizedType,
+        deletedLogs: 0,
+        hidden: true,
+        removedStatus: false,
+      });
+    }
+
+    const [logResult, statusResult] = await Promise.all([
+      Log.deleteMany(statusFilter),
+      UserMediaStatus.deleteOne(statusFilter),
+    ]);
+
+    if (logResult.deletedCount === 0 && statusResult.deletedCount === 0) {
+      throw new customError('Media not found in your immersion list', 404);
+    }
+
+    if (logResult.deletedCount > 0) {
+      // Recalculate from scratch instead of applying per-log deltas
+      await recalculateUserXpFromLogs(userId);
+      await recalculateStreaksForUser(userId);
+    }
+
+    return res.status(200).json({
+      mediaId: normalizedMediaId,
+      type: normalizedType,
+      deletedLogs: logResult.deletedCount,
+      hidden: false,
+      removedStatus: statusResult.deletedCount > 0,
     });
   } catch (error) {
     return next(error as customError);

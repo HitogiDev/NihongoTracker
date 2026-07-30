@@ -23,7 +23,10 @@ import {
   getLiveCurrentStreak,
 } from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
-import { updateLevelAndXp } from '../services/updateStats.js';
+import {
+  updateLevelAndXp,
+  recalculateUserXpFromLogs,
+} from '../services/updateStats.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import axios from 'axios';
 import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
@@ -1242,60 +1245,7 @@ export async function deleteLogsBulk(
     }
 
     // Recalculate stats from scratch for the user (single write, no race)
-    const user = await User.findById(userId);
-    if (!user || !user.stats) {
-      throw new customError('User not found', 404);
-    }
-
-    const allUserLogs = await Log.aggregate([
-      { $match: { user: user._id } },
-      {
-        $group: {
-          _id: null,
-          totalXp: { $sum: '$xp' },
-          listeningXp: {
-            $sum: {
-              $cond: [
-                {
-                  $in: [
-                    '$type',
-                    ['anime', 'video', 'movie', 'tv show', 'audio'],
-                  ],
-                },
-                '$xp',
-                0,
-              ],
-            },
-          },
-          readingXp: {
-            $sum: {
-              $cond: [
-                { $in: ['$type', ['manga', 'reading', 'vn', 'game']] },
-                '$xp',
-                0,
-              ],
-            },
-          },
-        },
-      },
-    ]);
-
-    const totals = allUserLogs[0] ?? {
-      totalXp: 0,
-      listeningXp: 0,
-      readingXp: 0,
-    };
-
-    user.stats.userXp = Math.max(0, totals.totalXp);
-    user.stats.listeningXp = Math.max(0, totals.listeningXp);
-    user.stats.readingXp = Math.max(0, totals.readingXp);
-
-    updateLevelAndXp(user.stats, 'user');
-    updateLevelAndXp(user.stats, 'listening');
-    updateLevelAndXp(user.stats, 'reading');
-
-    user.markModified('stats');
-    await user.save();
+    await recalculateUserXpFromLogs(userId);
 
     // Recalculate streaks once after all deletions
     await recalculateStreaksForUser(userId);
@@ -1780,16 +1730,15 @@ export async function createLog(
     }
 
     // Check achievements after stats + streak are updated
-    const newAchievements = await checkAchievements(
-      res.locals.user._id,
-      { trigger: 'log', log: savedLog }
-    );
+    const newAchievements = await checkAchievements(res.locals.user._id, {
+      trigger: 'log',
+      log: savedLog,
+    });
     // Also check streak-triggered achievements if streak was updated
     if (!savedLog.unknownDate) {
-      const streakAchievements = await checkAchievements(
-        res.locals.user._id,
-        { trigger: 'streak' }
-      );
+      const streakAchievements = await checkAchievements(res.locals.user._id, {
+        trigger: 'streak',
+      });
       newAchievements.push(...streakAchievements);
     }
 
@@ -1827,8 +1776,15 @@ export async function createLog(
       };
 
       const existingStatus = await UserMediaStatus.findOne(statusFilter)
-        .select('status completed')
+        .select('status completed hiddenFromList')
         .lean();
+
+      if (existingStatus?.hiddenFromList) {
+        // Logging it again puts the media back on the immersion list
+        await UserMediaStatus.updateOne(statusFilter, {
+          $set: { hiddenFromList: false },
+        });
+      }
 
       if (!existingStatus) {
         try {

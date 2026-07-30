@@ -705,6 +705,10 @@ export interface IMediaDocument {
   isAdult: boolean;
   isAdultImage?: boolean;
   lastLogDate?: string;
+  /** Number of the requesting user's logs for this media (immersion list only). */
+  logCount?: number;
+  /** Total XP earned from those logs (immersion list only). */
+  totalXp?: number;
   isCompleted?: boolean;
   completedAt?: string | Date | null;
   autoCompleteSuppressed?: boolean;
@@ -1277,8 +1281,8 @@ export type AchievementCategory =
 export interface IAchievement {
   _id: string;
   key: string;
-  name?: string;           // undefined for hidden secrets
-  description?: string;    // undefined for hidden secrets
+  name?: string; // undefined for hidden secrets
+  description?: string; // undefined for hidden secrets
   hint?: string;
   category: AchievementCategory;
   rarity: AchievementRarity;
@@ -1353,7 +1357,7 @@ export interface IPendingAchievement {
 // ─── Unified Feed ─────────────────────────────────────────────────────────────
 
 export type UnifiedFeedItem =
-  | { kind: 'log';         sortDate: Date; data: ILog }
+  | { kind: 'log'; sortDate: Date; data: ILog }
   | { kind: 'achievement'; sortDate: Date; data: IPendingAchievement };
 
 export type UnifiedFeedFilter = 'all' | 'logs' | 'achievements';
@@ -1413,5 +1417,3 @@ export interface IMediaListComment {
   createdAt?: string;
   updatedAt?: string;
 }
-
-

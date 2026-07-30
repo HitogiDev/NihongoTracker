@@ -2,7 +2,10 @@ import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   getAverageColorFn,
   getMediaFn,
+  getUserMediaStatsFn,
   updateMediaCompletionStatusFn,
+  removeMediaFromImmersionListFn,
+  IMediaStats,
 } from '../api/trackerApi';
 import { AxiosError } from 'axios';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -17,6 +20,8 @@ import {
   Clock,
   Ban,
   Sparkles,
+  Trash2,
+  TriangleAlert,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
@@ -97,6 +102,8 @@ export default function MediaHeader() {
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [addToListOpen, setAddToListOpen] = useState(false);
+  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [removeWithLogs, setRemoveWithLogs] = useState(false);
   const [completionStatus, setCompletionStatus] = useState({
     isCompleted: false,
     completedAt: null as string | null,
@@ -246,6 +253,89 @@ export default function MediaHeader() {
       },
     });
 
+  // Only fetched once the removal modal is opened — it tells the user how many
+  // logs (and how much XP) removing this media would delete.
+  const { data: removalStats, isLoading: isLoadingRemovalStats } =
+    useQuery<IMediaStats>({
+      queryKey: ['mediaStats', mediaId, mediaType],
+      queryFn: () => getUserMediaStatsFn(mediaId!, mediaType!),
+      enabled: removeModalOpen && !!mediaId && !!mediaType && isOwnProfile,
+      staleTime: 5 * 60 * 1000,
+    });
+
+  const { mutate: removeFromList, isPending: isRemovingFromList } = useMutation(
+    {
+      mutationFn: () => {
+        if (!media?.contentId || !media?.type) {
+          throw new Error('Missing media information');
+        }
+        return removeMediaFromImmersionListFn({
+          mediaId: media.contentId,
+          type: media.type,
+          deleteLogs: removeWithLogs,
+        });
+      },
+      onSuccess: (data) => {
+        setCompletionStatus({
+          isCompleted: false,
+          completedAt: null,
+          status: null,
+        });
+
+        queryClient.setQueryData<IMediaDocument | undefined>(
+          ['media', mediaId, mediaType, targetUsername],
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  isCompleted: false,
+                  completedAt: null,
+                  autoCompleteSuppressed: false,
+                  mediaStatus: null,
+                }
+              : prev
+        );
+
+        // Logs were deleted, so XP/streaks/stats change too — refresh broadly
+        void queryClient.invalidateQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey.some(
+              (key) =>
+                key === 'logs' ||
+                key === 'user' ||
+                key === 'ImmersionList' ||
+                key === 'mediaStats'
+            ),
+        });
+        if (targetUsername) {
+          void queryClient.invalidateQueries({
+            queryKey: ['recentLogs', targetUsername],
+          });
+        }
+        void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+
+        toast.success(
+          data.deletedLogs > 0
+            ? `Removed from your list (${data.deletedLogs} log${
+                data.deletedLogs === 1 ? '' : 's'
+              } deleted).`
+            : 'Removed from your list. Your logs were kept.'
+        );
+        setRemoveModalOpen(false);
+        setRemoveWithLogs(false);
+      },
+      onError: (error) => {
+        const message =
+          (error as { response?: { data?: { message?: string } } })?.response
+            ?.data?.message ||
+          (error as Error)?.message ||
+          `The media couldn't be removed from your list.`;
+        toast.error(message);
+      },
+    }
+  );
+
   if (mediaError) {
     if (mediaError instanceof AxiosError) {
       if (mediaError.status === 404) navigate('/404', { replace: true });
@@ -367,12 +457,116 @@ export default function MediaHeader() {
           onClose={() => setAddToListOpen(false)}
         />
       )}
+      {removeModalOpen && media && (
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box border border-error/20">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-error/10 text-error shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-lg">Remove from your list?</h3>
+                <p className="text-sm text-base-content/70 mt-1 break-words">
+                  {media.title.contentTitleNative}
+                </p>
+              </div>
+            </div>
+
+            <div className="py-4 space-y-3">
+              {isLoadingRemovalStats ? (
+                <div className="flex items-center gap-2 text-sm text-base-content/70">
+                  <span className="loading loading-spinner loading-xs" />
+                  Checking your logs for this media...
+                </div>
+              ) : removalStats && removalStats.total.logs > 0 ? (
+                <>
+                  <label className="label cursor-pointer justify-start gap-3 py-0">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-error checkbox-sm"
+                      checked={removeWithLogs}
+                      onChange={(e) => setRemoveWithLogs(e.target.checked)}
+                      disabled={isRemovingFromList}
+                    />
+                    <span className="label-text text-sm">
+                      Also delete my {removalStats.total.logs} log
+                      {removalStats.total.logs === 1 ? '' : 's'} for this media
+                    </span>
+                  </label>
+
+                  {removeWithLogs ? (
+                    <div role="alert" className="alert alert-warning">
+                      <TriangleAlert className="h-5 w-5 shrink-0" />
+                      <span className="text-sm">
+                        This deletes{' '}
+                        <span className="font-semibold">
+                          {removalStats.total.logs} log
+                          {removalStats.total.logs === 1 ? '' : 's'}
+                        </span>
+                        {removalStats.total.xp
+                          ? ` and ${Math.round(
+                              removalStats.total.xp
+                            ).toLocaleString()} XP`
+                          : ''}
+                        . Your level and streaks will be recalculated, and it
+                        cannot be undone.
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-base-content/70">
+                      Your logs and XP are kept — the media just stops showing
+                      in your list. Logging it again brings it back.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-base-content/70">
+                  This entry has no logs — only its status will be removed.
+                </p>
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setRemoveModalOpen(false);
+                  setRemoveWithLogs(false);
+                }}
+                disabled={isRemovingFromList}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-error gap-2"
+                onClick={() => removeFromList()}
+                disabled={isRemovingFromList}
+              >
+                {isRemovingFromList ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Remove
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => {
+              if (isRemovingFromList) return;
+              setRemoveModalOpen(false);
+              setRemoveWithLogs(false);
+            }}
+          ></div>
+        </dialog>
+      )}
       <div
         className={`h-48 sm:h-64 md:h-96 w-full bg-cover bg-center bg-no-repeat ${
           isLoadingMedia ? 'skeleton' : ''
-        } ${
-          shouldBlur ? 'blur-sm' : ''
-        }`}
+        } ${shouldBlur ? 'blur-sm' : ''}`}
         style={{
           backgroundImage: `url(${!isLoadingMedia ? media?.coverImage : ''})`,
           backgroundColor: averageColor,
@@ -477,8 +671,7 @@ export default function MediaHeader() {
                               ) : completionStatus.status ? (
                                 (() => {
                                   const StatusIcon =
-                                    STATUS_CONFIG[completionStatus.status]
-                                      .icon;
+                                    STATUS_CONFIG[completionStatus.status].icon;
                                   return <StatusIcon className="w-4 h-4" />;
                                 })()
                               ) : (
@@ -486,8 +679,7 @@ export default function MediaHeader() {
                               )}
                               <span>
                                 {completionStatus.status
-                                  ? STATUS_CONFIG[completionStatus.status]
-                                      .label
+                                  ? STATUS_CONFIG[completionStatus.status].label
                                   : 'Set status'}
                               </span>
                             </span>
@@ -518,6 +710,22 @@ export default function MediaHeader() {
                                 </button>
                               </li>
                             ))}
+                            <li>
+                              <div className="divider my-1"></div>
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                className="gap-2 text-error"
+                                onClick={() => {
+                                  setRemoveWithLogs(false);
+                                  setRemoveModalOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Remove from list
+                              </button>
+                            </li>
                           </ul>
                         </div>
                       </div>

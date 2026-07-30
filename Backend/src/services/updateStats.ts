@@ -1,8 +1,10 @@
 import { Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { IEditedFields, ILog, IStats, IUser } from '../types.js';
 import { calculateLevel, calculateXp } from './calculateLevel.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import User from '../models/user.model.js';
+import Log from '../models/log.model.js';
 
 function updateField(
   newValue: number | undefined,
@@ -19,6 +21,67 @@ export function updateLevelAndXp(userStats: any, field: string) {
   userStats[`${field}XpToCurrentLevel`] = calculateXp(
     userStats[`${field}Level`]
   );
+}
+
+/**
+ * Recompute a user's XP totals/levels from scratch by aggregating all of their
+ * remaining logs. Used after bulk deletions, where applying per-log deltas would
+ * cause concurrent writes to the same user document (Mongoose VersionError).
+ */
+export async function recalculateUserXpFromLogs(
+  userId: Types.ObjectId | string
+): Promise<void> {
+  const user = await User.findById(userId);
+  if (!user || !user.stats) {
+    throw new customError('User not found', 404);
+  }
+
+  const aggregated = await Log.aggregate([
+    { $match: { user: user._id } },
+    {
+      $group: {
+        _id: null,
+        totalXp: { $sum: '$xp' },
+        listeningXp: {
+          $sum: {
+            $cond: [
+              {
+                $in: ['$type', ['anime', 'video', 'movie', 'tv show', 'audio']],
+              },
+              '$xp',
+              0,
+            ],
+          },
+        },
+        readingXp: {
+          $sum: {
+            $cond: [
+              { $in: ['$type', ['manga', 'reading', 'vn', 'game', 'book']] },
+              '$xp',
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const totals = aggregated[0] ?? {
+    totalXp: 0,
+    listeningXp: 0,
+    readingXp: 0,
+  };
+
+  user.stats.userXp = Math.max(0, totals.totalXp);
+  user.stats.listeningXp = Math.max(0, totals.listeningXp);
+  user.stats.readingXp = Math.max(0, totals.readingXp);
+
+  updateLevelAndXp(user.stats, 'user');
+  updateLevelAndXp(user.stats, 'listening');
+  updateLevelAndXp(user.stats, 'reading');
+
+  user.markModified('stats');
+  await user.save();
 }
 
 export default async function updateStats(

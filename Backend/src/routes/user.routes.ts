@@ -11,6 +11,7 @@ import {
   getRankingSummary,
   getRankingHistory,
   updateMediaCompletionStatus,
+  removeMediaFromImmersionList,
   updateHiddenRecentMedia,
   updateStatsLayout,
   updateProfileLayout,
@@ -48,6 +49,8 @@ router.get('/:username/ranking-history', getRankingHistory);
 router.get('/:username', optionalProtect, getUser);
 
 router.post('/media/status', protect, updateMediaCompletionStatus);
+
+router.delete('/media/:type/:mediaId', protect, removeMediaFromImmersionList);
 
 router.get('/:username/logs', optionalProtect, getUserLogs);
 

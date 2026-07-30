@@ -5,8 +5,11 @@ import {
   getUntrackedLogsFn,
   updateUserFn,
   updateMediaCompletionStatusFn,
+  removeMediaFromImmersionListFn,
 } from '../api/trackerApi';
 import React, { useState, useEffect, useTransition } from 'react';
+import { toast } from 'react-toastify';
+import { AxiosError } from 'axios';
 
 import { IMediaDocument, IImmersionList } from '../types';
 import { useUserDataStore } from '../store/userData';
@@ -38,6 +41,7 @@ import {
   Plus,
   Filter,
   Check,
+  Trash2,
 } from 'lucide-react';
 
 import { convertBBCodeToHtml } from '../utils/utils';
@@ -144,6 +148,10 @@ function ListScreen() {
   const [selectedMediaForLog, setSelectedMediaForLog] =
     useState<IMediaDocument | null>(null);
   const [isQuickLogOpen, setIsQuickLogOpen] = useState(false);
+  const [mediaToRemove, setMediaToRemove] = useState<IMediaDocument | null>(
+    null
+  );
+  const [removeWithLogs, setRemoveWithLogs] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -249,6 +257,64 @@ function ListScreen() {
       mediaId: media.contentId,
       type: media.type,
       status: newStatus,
+    });
+  };
+
+  const removeMediaMutation = useMutation({
+    mutationFn: removeMediaFromImmersionListFn,
+    onSuccess: (data) => {
+      // Logs were deleted, so XP/streaks/stats change too — refresh broadly
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.some(
+            (key) => key === 'logs' || key === 'user' || key === 'ImmersionList'
+          ),
+      });
+      if (username) {
+        void queryClient.invalidateQueries({
+          queryKey: ['recentLogs', username],
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+
+      toast.success(
+        data.deletedLogs > 0
+          ? `Removed from your list (${data.deletedLogs} log${
+              data.deletedLogs === 1 ? '' : 's'
+            } deleted)`
+          : 'Removed from your list. Your logs were kept.'
+      );
+      setMediaToRemove(null);
+      setRemoveWithLogs(false);
+    },
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof AxiosError
+          ? (mutationError.response?.data?.message ??
+              'Failed to remove media from your list')
+          : 'Failed to remove media from your list'
+      );
+    },
+  });
+
+  const handleRemoveMedia = (media: IMediaDocument) => {
+    if (!isOwnProfile) return;
+    setRemoveWithLogs(false);
+    setMediaToRemove(media);
+  };
+
+  const closeRemoveModal = () => {
+    setMediaToRemove(null);
+    setRemoveWithLogs(false);
+  };
+
+  const confirmRemoveMedia = () => {
+    if (!mediaToRemove) return;
+    removeMediaMutation.mutate({
+      mediaId: mediaToRemove.contentId,
+      type: mediaToRemove.type,
+      deleteLogs: removeWithLogs,
     });
   };
 
@@ -528,6 +594,97 @@ function ListScreen() {
           <div
             className="modal-backdrop"
             onClick={() => setShowHideAlertModal(false)}
+          ></div>
+        </dialog>
+      )}
+
+      {mediaToRemove && (
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
+          <div className="modal-box border border-error/20">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-error/10 text-error shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-lg">Remove from your list?</h3>
+                <p className="text-sm text-base-content/70 mt-1 break-words">
+                  {mediaToRemove.title.contentTitleNative}
+                </p>
+              </div>
+            </div>
+
+            <div className="py-4 space-y-3">
+              {mediaToRemove.logCount ? (
+                <>
+                  <label className="label cursor-pointer justify-start gap-3 py-0">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-error checkbox-sm"
+                      checked={removeWithLogs}
+                      onChange={(e) => setRemoveWithLogs(e.target.checked)}
+                      disabled={removeMediaMutation.isPending}
+                    />
+                    <span className="label-text text-sm">
+                      Also delete my {mediaToRemove.logCount} log
+                      {mediaToRemove.logCount === 1 ? '' : 's'} for this media
+                    </span>
+                  </label>
+
+                  {removeWithLogs ? (
+                    <div role="alert" className="alert alert-warning">
+                      <TriangleAlert className="h-5 w-5 shrink-0" />
+                      <span className="text-sm">
+                        This deletes{' '}
+                        <span className="font-semibold">
+                          {mediaToRemove.logCount} log
+                          {mediaToRemove.logCount === 1 ? '' : 's'}
+                        </span>
+                        {mediaToRemove.totalXp
+                          ? ` and ${Math.round(mediaToRemove.totalXp).toLocaleString()} XP`
+                          : ''}
+                        . Your level and streaks will be recalculated, and it
+                        cannot be undone.
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-base-content/70">
+                      Your logs and XP are kept — the media just stops showing
+                      in your list. Logging it again brings it back.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-base-content/70">
+                  This entry has no logs — only its status will be removed.
+                </p>
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={closeRemoveModal}
+                disabled={removeMediaMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error gap-2"
+                onClick={confirmRemoveMedia}
+                disabled={removeMediaMutation.isPending}
+              >
+                {removeMediaMutation.isPending ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Remove
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => !removeMediaMutation.isPending && closeRemoveModal()}
           ></div>
         </dialog>
       )}
@@ -913,6 +1070,7 @@ function ListScreen() {
                       onSetStatus={handleSetStatus}
                       pendingToggleId={pendingToggleId}
                       onLogMedia={handleOpenQuickLog}
+                      onRemoveMedia={handleRemoveMedia}
                     />
                   ))}
                 </div>
@@ -926,6 +1084,7 @@ function ListScreen() {
                       onSetStatus={handleSetStatus}
                       pendingToggleId={pendingToggleId}
                       onLogMedia={handleOpenQuickLog}
+                      onRemoveMedia={handleRemoveMedia}
                     />
                   ))}
                 </div>
@@ -957,6 +1116,7 @@ function ListScreen() {
                     onSetStatus={handleSetStatus}
                     pendingToggleId={pendingToggleId}
                     onLogMedia={handleOpenQuickLog}
+                    onRemoveMedia={handleRemoveMedia}
                   />
                 ))}
               </div>
@@ -978,6 +1138,7 @@ function MediaGroup({
   onSetStatus,
   pendingToggleId,
   onLogMedia,
+  onRemoveMedia,
 }: {
   type: string;
   mediaList: (IMediaDocument & { category: string })[];
@@ -990,6 +1151,7 @@ function MediaGroup({
   ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
+  onRemoveMedia: (media: IMediaDocument) => void;
 }) {
   const typeConfig = {
     anime: {
@@ -1063,6 +1225,7 @@ function MediaGroup({
               onSetStatus={onSetStatus}
               pendingToggleId={pendingToggleId}
               onLogMedia={onLogMedia}
+              onRemoveMedia={onRemoveMedia}
             />
           ))}
         </div>
@@ -1076,6 +1239,7 @@ function MediaGroup({
               onSetStatus={onSetStatus}
               pendingToggleId={pendingToggleId}
               onLogMedia={onLogMedia}
+              onRemoveMedia={onRemoveMedia}
             />
           ))}
         </div>
@@ -1090,6 +1254,7 @@ function MediaCard({
   onSetStatus,
   pendingToggleId,
   onLogMedia,
+  onRemoveMedia,
 }: {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
@@ -1099,6 +1264,7 @@ function MediaCard({
   ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
+  onRemoveMedia: (media: IMediaDocument) => void;
 }) {
   const { user } = useUserDataStore();
   const { username } = useParams<{ username: string }>();
@@ -1215,6 +1381,18 @@ function MediaCard({
                   </button>
                 </li>
               ))}
+              <li>
+                <div className="divider my-1"></div>
+              </li>
+              <li>
+                <button
+                  className="gap-2 text-error"
+                  onClick={() => onRemoveMedia(media)}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Remove
+                </button>
+              </li>
             </ul>
           </div>
         )}
@@ -1317,6 +1495,7 @@ function MediaListItem({
   onSetStatus,
   pendingToggleId,
   onLogMedia,
+  onRemoveMedia,
 }: {
   media: IMediaDocument & { category: string };
   isOwnProfile: boolean;
@@ -1326,6 +1505,7 @@ function MediaListItem({
   ) => void;
   pendingToggleId: string | null;
   onLogMedia: (media: IMediaDocument) => void;
+  onRemoveMedia: (media: IMediaDocument) => void;
 }) {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -1566,6 +1746,17 @@ function MediaListItem({
                         ))}
                       </ul>
                     </div>
+                    <button
+                      type="button"
+                      className="btn btn-xs btn-ghost text-error gap-1 w-36 justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveMedia(media);
+                      }}
+                      title="Remove from list"
+                    >
+                      <Trash2 className="w-3 h-3" /> Remove
+                    </button>
                   </div>
                 )}
 

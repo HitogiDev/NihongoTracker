@@ -205,9 +205,12 @@ export async function searchMediaFn(params: {
 export async function searchGoogleBooksFn(
   search: string
 ): Promise<SearchResultType[]> {
-  const { data } = await api.get<SearchResultType[]>(`media/googlebooks/search`, {
-    params: { search },
-  });
+  const { data } = await api.get<SearchResultType[]>(
+    `media/googlebooks/search`,
+    {
+      params: { search },
+    }
+  );
   return data || [];
 }
 
@@ -410,6 +413,27 @@ export async function updateMediaCompletionStatusFn(payload: {
   };
 }
 
+export async function removeMediaFromImmersionListFn(payload: {
+  mediaId: string;
+  type: IMediaDocument['type'];
+  /** When false (default) the logs and their XP are kept, entry is just hidden. */
+  deleteLogs?: boolean;
+}) {
+  const { data } = await api.delete(
+    `users/media/${encodeURIComponent(payload.type)}/${encodeURIComponent(
+      payload.mediaId
+    )}`,
+    { params: { deleteLogs: payload.deleteLogs ? 'true' : 'false' } }
+  );
+  return data as {
+    mediaId: string;
+    type: IMediaDocument['type'];
+    deletedLogs: number;
+    hidden: boolean;
+    removedStatus: boolean;
+  };
+}
+
 export async function getAverageColorFn(imageUrl?: string) {
   if (!imageUrl) return null;
   const { data } = await api.get<IAverageColor>(`media/utils/avgcolor`, {
@@ -588,7 +612,6 @@ export async function searchYouTubePlaylistFn(
   });
   return data;
 }
-
 
 export async function getDailyGoalsFn(username: string | undefined) {
   if (!username) return null;
@@ -1013,7 +1036,6 @@ export async function adminDeleteLogsBulkFn(ids: string[]) {
   );
   return data;
 }
-
 
 export async function adminUpdateUserFn(
   userId: string,
@@ -1519,7 +1541,9 @@ export async function updateShowcaseFn(showcaseIds: string[]) {
   return data;
 }
 
-export async function getAchievementFeedFn(limit = 20): Promise<IPendingAchievement[]> {
+export async function getAchievementFeedFn(
+  limit = 20
+): Promise<IPendingAchievement[]> {
   const { data } = await api.get<IPendingAchievement[]>('achievements/feed', {
     params: { limit },
   });
@@ -1543,7 +1567,9 @@ export async function adminGetAchievementsFn(): Promise<IAchievement[]> {
   return data;
 }
 
-export async function adminCreateAchievementFn(achievement: Partial<IAchievement>) {
+export async function adminCreateAchievementFn(
+  achievement: Partial<IAchievement>
+) {
   const { data } = await api.post('achievements/admin', achievement);
   return data;
 }
