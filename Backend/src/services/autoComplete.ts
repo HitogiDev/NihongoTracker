@@ -11,6 +11,7 @@ const LinkTypeObject: Record<string, number> = {
   manga: 4,
   reading: 4,
   movie: 4,
+  book: 6, // GoogleBooks
 };
 
 export async function evaluateAutoCompleteForUserMedia(
@@ -54,15 +55,21 @@ export async function evaluateAutoCompleteForUserMedia(
     // If we don't have chars but this is a char-based type, try Jiten
     if (
       mediaCharTotal === null &&
-      ['reading', 'manga', 'vn', 'game'].includes(normalizedType)
+      ['reading', 'manga', 'vn', 'game', 'book'].includes(normalizedType)
     ) {
       try {
         const jitenURL = process.env.JITEN_API_URL;
         if (jitenURL) {
           const LinkType = LinkTypeObject[normalizedType] ?? null;
           if (LinkType) {
+            // Jiten links books by their raw Google Books volume id; strip our
+            // `gbooks-` namespace prefix so the lookup matches.
+            const jitenLinkId =
+              normalizedType === 'book'
+                ? String(mediaId).replace(/^gbooks-/, '')
+                : mediaId;
             const byLink = await axios.get(
-              `${jitenURL}/media-deck/by-link-id/${LinkType}/${mediaId}`,
+              `${jitenURL}/media-deck/by-link-id/${LinkType}/${jitenLinkId}`,
               { validateStatus: (s) => s === 200 || s === 404 }
             );
             if (
@@ -103,7 +110,9 @@ export async function evaluateAutoCompleteForUserMedia(
       if (Number.isFinite(totalEpisodes) && totalEpisodes > 0) {
         shouldComplete = Number(totals.totalEpisodes || 0) >= totalEpisodes;
       }
-    } else if (['vn', 'game', 'reading', 'manga'].includes(normalizedType)) {
+    } else if (
+      ['vn', 'game', 'reading', 'manga', 'book'].includes(normalizedType)
+    ) {
       if (mediaCharTotal && mediaCharTotal > 0) {
         shouldComplete = Number(totals.totalChars || 0) >= mediaCharTotal;
       }

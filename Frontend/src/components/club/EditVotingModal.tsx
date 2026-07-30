@@ -24,6 +24,7 @@ interface EditVotingData {
     | 'game'
     | 'video'
     | 'movie'
+    | 'book'
     | 'custom';
   customMediaType: string;
   candidateSubmissionType: 'manual' | 'member_suggestions';

@@ -14,6 +14,7 @@ const MEDIA_INDEXES = [
   'movie',
   'tv_show',
   'game',
+  'book',
 ] as const;
 
 const MEDIA_INDEX_SETTINGS = {
@@ -77,6 +78,7 @@ const TYPE_TO_INDEX: Record<string, string> = {
   movie: 'movie',
   'tv show': 'tv_show',
   game: 'game',
+  book: 'book',
 };
 
 async function syncIndexes(indexNames: readonly string[]) {

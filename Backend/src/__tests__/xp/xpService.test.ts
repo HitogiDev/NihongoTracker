@@ -43,10 +43,11 @@ describe('continuousLevel', () => {
 });
 
 describe('normalizeJitenDifficulty', () => {
-  it('maps the native 0-6 scale onto 0-100', () => {
+  it('maps the native 0-5 scale onto 0-100', () => {
     expect(normalizeJitenDifficulty(0)).toBe(0);
-    expect(normalizeJitenDifficulty(3)).toBeCloseTo(50);
-    expect(normalizeJitenDifficulty(6)).toBe(100);
+    expect(normalizeJitenDifficulty(2.5)).toBeCloseTo(50);
+    expect(normalizeJitenDifficulty(4)).toBeCloseTo(80);
+    expect(normalizeJitenDifficulty(5)).toBe(100);
   });
 
   it('returns null for missing or invalid values', () => {

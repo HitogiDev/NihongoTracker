@@ -328,7 +328,8 @@ export interface IMatchMediaLog {
     | 'movie'
     | 'tv show'
     | 'audio'
-    | 'other';
+    | 'other'
+    | 'book';
   description: string;
   mediaId?: string;
   date: Date;
@@ -377,7 +378,15 @@ export interface IUpdateLogRequest {
 
 export interface IContentMedia {
   contentId: string;
-  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'game';
+  type:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'game'
+    | 'book';
   contentImage: string | null;
   coverImage: string | null;
   contentTitleNative: string;
@@ -388,6 +397,9 @@ export interface IContentMedia {
   episodeDuration?: number;
   chapters?: number;
   volumes?: number;
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
   synonyms?: string[] | null;
   isAdult: boolean;
   isAdultImage?: boolean;
@@ -419,6 +431,16 @@ export interface ITag {
   updatedAt?: Date | string;
 }
 
+export interface IXpBreakdown {
+  baseXp: number;
+  timeCreditedMin: number;
+  difficulty: number | null;
+  categoryLevelAt: number;
+  comfortAt?: number | null;
+  multiplier: number;
+  version: number;
+}
+
 export interface ILog {
   _id: string;
   user: {
@@ -441,7 +463,8 @@ export interface ILog {
     | 'movie'
     | 'tv show'
     | 'audio'
-    | 'other';
+    | 'other'
+    | 'book';
   description: string;
   playlistBatchId?: string;
   playlistBatchTitle?: string;
@@ -453,6 +476,7 @@ export interface ILog {
   unknownDate?: boolean;
   date: Date | string;
   xp: number;
+  xpBreakdown?: IXpBreakdown | null;
   mediaId?: string;
   matchDismissed?: boolean;
   manabeId?: string;
@@ -585,7 +609,8 @@ export type MediaRequestType =
   | 'video'
   | 'movie'
   | 'tv show'
-  | 'game';
+  | 'game'
+  | 'book';
 
 export interface IMediaRequest {
   _id: string;
@@ -634,6 +659,7 @@ export interface IImmersionList {
   video: IMediaDocument[];
   movie: IMediaDocument[];
   'tv show': IMediaDocument[];
+  book: IMediaDocument[];
 }
 
 interface IMediaDescription {
@@ -661,7 +687,8 @@ export interface IMediaDocument {
     | 'game'
     | 'video'
     | 'movie'
-    | 'tv show';
+    | 'tv show'
+    | 'book';
   episodes?: number;
   episodeDuration?: number;
   runtime?: number;
@@ -669,6 +696,9 @@ export interface IMediaDocument {
   chapters?: number;
   volumes?: number;
   characters?: number;
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
   genres?: string[];
   platforms?: string[];
   synonyms?: string[] | null;
@@ -937,7 +967,8 @@ export interface IClubMedia {
     | 'game'
     | 'video'
     | 'movie'
-    | 'tv show';
+    | 'tv show'
+    | 'book';
   title: string;
   description?: string;
   startDate: Date;
@@ -966,7 +997,8 @@ export interface IMediaReview {
     | 'game'
     | 'video'
     | 'movie'
-    | 'tv show';
+    | 'tv show'
+    | 'book';
   summary: string;
   content: string;
   rating?: number;
@@ -1001,6 +1033,7 @@ export interface IClubMediaVoting {
     | 'game'
     | 'video'
     | 'movie'
+    | 'book'
     | 'custom';
   customMediaType?: string;
 

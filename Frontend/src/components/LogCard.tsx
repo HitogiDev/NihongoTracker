@@ -7,6 +7,7 @@ import {
   Clock,
   TrendingUp,
   Book,
+  BookOpen,
   Play,
   GamepadDirectional,
   Video,
@@ -110,6 +111,14 @@ const logTypeConfig = {
     borderColor: 'border-[#f8b420]/30',
     accentColor: 'bg-[#f8b420]',
   },
+  book: {
+    label: 'Book',
+    icon: BookOpen,
+    color: 'text-[#d98c1f]',
+    bgColor: 'bg-[#d98c1f]/10',
+    borderColor: 'border-[#d98c1f]/30',
+    accentColor: 'bg-[#d98c1f]',
+  },
   other: {
     label: 'Other',
     icon: Ellipsis,
@@ -176,6 +185,7 @@ function LogCard({
   const {
     description,
     xp,
+    xpBreakdown,
     date,
     type,
     episodes,
@@ -383,7 +393,7 @@ function LogCard({
           ? `${episodes} episodes • ${time} minutes total`
           : `${episodes} episodes watched`,
       });
-    } else if (type === 'manga') {
+    } else if (type === 'manga' || type === 'book') {
       if (pages) {
         info.push({
           label: 'Pages',
@@ -496,7 +506,10 @@ function LogCard({
 
   function getReadingSpeed() {
     if (
-      (type === 'reading' || type === 'vn' || type === 'game') &&
+      (type === 'reading' ||
+        type === 'vn' ||
+        type === 'game' ||
+        type === 'book') &&
       chars &&
       time &&
       time > 0
@@ -509,6 +522,21 @@ function LogCard({
   const quantityInfo = getQuantityInfo();
   const canModerateLog = isOwner || isAdmin;
   const readingSpeed = getReadingSpeed();
+
+  // Difficulty bonus: XP earned above the time-based base because the content
+  // was hard relative to the user's comfort. Only present (and only worth
+  // surfacing) when the multiplier actually pushed XP above baseXp.
+  const difficultyBonus =
+    xpBreakdown && xpBreakdown.baseXp > 0 && xp > xpBreakdown.baseXp
+      ? xp - xpBreakdown.baseXp
+      : 0;
+  const bonusMultiplier = difficultyBonus
+    ? `x${xpBreakdown!.multiplier.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}`
+    : '';
+  const xpTooltip =
+    difficultyBonus > 0
+      ? `Experience gained: ${xp} points (${xpBreakdown!.baseXp} base + ${difficultyBonus} difficulty bonus, ${bonusMultiplier})`
+      : `Experience gained: ${xp} points`;
 
   function handleShare() {
     const shareUrl = `${window.location.origin}/shared-log/${log._id}`;
@@ -724,13 +752,18 @@ function LogCard({
             <div className="flex items-center gap-2">
               <div
                 className={`tooltip tooltip-left md:tooltip-top`}
-                data-tip={`Experience gained: ${xp} points`}
+                data-tip={xpTooltip}
               >
                 <div
                   className={`badge badge-outline ${typeConfig.color} gap-1`}
                 >
                   <TrendingUp className="w-3 h-3" />
                   <span className="text-xs font-bold">{xp} XP</span>
+                  {difficultyBonus > 0 && (
+                    <span className="text-[0.65rem] font-semibold opacity-70">
+                      {bonusMultiplier}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1319,15 +1352,21 @@ function LogCard({
                           ...prev,
                           type: nextType,
                           episodes: nextType === 'anime' ? prev.episodes : 0,
-                          chars: ['reading', 'vn', 'game', 'manga'].includes(
-                            nextType
-                          )
+                          chars: [
+                            'reading',
+                            'vn',
+                            'game',
+                            'manga',
+                            'book',
+                          ].includes(nextType)
                             ? prev.chars
                             : 0,
                           volume: ['manga', 'reading'].includes(nextType)
                             ? prev.volume
                             : 0,
-                          pages: nextType === 'manga' ? prev.pages : 0,
+                          pages: ['manga', 'book'].includes(nextType)
+                            ? prev.pages
+                            : 0,
                         }));
                       }}
                     >
@@ -1337,6 +1376,7 @@ function LogCard({
                       <option value="game">Video Game</option>
                       <option value="video">Video</option>
                       <option value="manga">Manga</option>
+                      <option value="book">Book</option>
                       <option value="audio">Audio</option>
                       <option value="movie">Movie</option>
                       <option value="tv show">TV Show</option>
@@ -1444,7 +1484,8 @@ function LogCard({
                     {(editData.type === 'reading' ||
                       editData.type === 'vn' ||
                       editData.type === 'game' ||
-                      editData.type === 'manga') && (
+                      editData.type === 'manga' ||
+                      editData.type === 'book') && (
                       <div>
                         <label className="label">
                           <span className="label-text font-medium">
@@ -1491,7 +1532,8 @@ function LogCard({
                       </div>
                     )}
 
-                    {editData.type === 'manga' && (
+                    {(editData.type === 'manga' ||
+                      editData.type === 'book') && (
                       <div>
                         <label className="label">
                           <span className="label-text font-medium">Pages</span>

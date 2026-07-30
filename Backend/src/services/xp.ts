@@ -42,8 +42,8 @@ export const GAME_TIME_FACTOR = 0.75;
 
 /** Difficulty bonus: max +30%, reachable at every level (normalized gap). */
 export const MAX_DIFFICULTY_BONUS = 0.3;
-/** Jiten's native difficulty scale tops out around 6 ("Expert"). */
-export const JITEN_MAX_DIFFICULTY = 6;
+/** Jiten's native difficulty scale runs 0-5, topping out at 5 ("Expert"). */
+export const JITEN_MAX_DIFFICULTY = 5;
 /** Curve constant for comfort difficulty: Dc(L) = 100 * L / (L + K). */
 export const COMFORT_CURVE_K = 25;
 
@@ -69,7 +69,13 @@ export const LISTENING_TYPES: ILog['type'][] = [
   'tv show',
   'audio',
 ];
-export const READING_TYPES: ILog['type'][] = ['reading', 'manga', 'vn', 'game'];
+export const READING_TYPES: ILog['type'][] = [
+  'reading',
+  'manga',
+  'vn',
+  'game',
+  'book',
+];
 
 export type LogCategory = 'reading' | 'listening' | null;
 
@@ -275,7 +281,10 @@ function creditedMinutes(
     };
   }
 
-  if (isPositive(input.pages) && (type === 'reading' || type === 'manga')) {
+  if (
+    isPositive(input.pages) &&
+    (type === 'reading' || type === 'manga' || type === 'book')
+  ) {
     const estimatedChars = input.pages * CHARS_PER_PAGE;
     return {
       minutes: estimateMinutesFromChars(

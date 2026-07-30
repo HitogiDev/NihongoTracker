@@ -231,6 +231,7 @@ Create a `Backend/.env` file with the following variables:
 | `FIREBASE_APP_ID`               | **Yes**  | Firebase app ID                                                       |
 | `FIREBASE_MEASUREMENT_ID`       | No       | Firebase analytics measurement ID                                     |
 | `YOUTUBE_API_KEY`               | No       | YouTube Data API key (for video metadata)                             |
+| `GOOGLE_BOOKS_API_KEY`          | No       | Google Books API key (book search); keyless works at lower quota      |
 | `JITEN_API_URL`                 | No       | Dictionary API URL used by text tooling                               |
 | `MANABE_API_URL`                | No       | Manabe integration base URL                                           |
 | `MANABE_WEBHOOK_TOKEN`          | No       | Shared token for Manabe webhook imports                               |
@@ -264,6 +265,7 @@ FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 
 # Optional: External APIs
 YOUTUBE_API_KEY=your-youtube-api-key
+GOOGLE_BOOKS_API_KEY=your-google-books-api-key
 
 # Optional: Search
 MEILISEARCH_HOST=http://localhost:7700

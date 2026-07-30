@@ -47,6 +47,7 @@ const LogSchema = new Schema<ILog>(
         'tv show',
         'other',
         'game',
+        'book',
       ],
     },
     mediaId: {
@@ -87,7 +88,8 @@ const LogSchema = new Schema<ILog>(
         const hasTime = hasPositiveValue(this.time);
         return (
           (!hasChars && !hasTime && this.type === 'manga') ||
-          (!hasChars && !hasTime && this.type === 'reading')
+          (!hasChars && !hasTime && this.type === 'reading') ||
+          (!hasChars && !hasTime && this.type === 'book')
         );
       },
     },
@@ -115,7 +117,8 @@ const LogSchema = new Schema<ILog>(
         return (
           (!hasTime && this.type === 'vn') ||
           (!hasTime && !hasPages && this.type === 'reading') ||
-          (!hasTime && !hasPages && this.type === 'manga')
+          (!hasTime && !hasPages && this.type === 'manga') ||
+          (!hasTime && !hasPages && this.type === 'book')
         );
       },
     },

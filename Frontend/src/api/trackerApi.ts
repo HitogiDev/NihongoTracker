@@ -202,6 +202,15 @@ export async function searchMediaFn(params: {
   return data || [];
 }
 
+export async function searchGoogleBooksFn(
+  search: string
+): Promise<SearchResultType[]> {
+  const { data } = await api.get<SearchResultType[]>(`media/googlebooks/search`, {
+    params: { search },
+  });
+  return data || [];
+}
+
 export async function multiSearchMediaFn(params: {
   search: string;
   perPage?: number;

@@ -8,6 +8,7 @@ import { useUserDataStore } from '../store/userData';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import {
   Book,
+  BookOpen,
   Play,
   GamepadDirectional,
   Video,
@@ -83,6 +84,13 @@ const logTypeConfig = {
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/30',
+  },
+  book: {
+    label: 'Book',
+    icon: BookOpen,
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
   },
   other: {
     label: 'Other',

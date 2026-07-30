@@ -11,6 +11,7 @@ import {
   toggleMediaReviewLike,
   getMediaReviewById,
   anilistSearchProxy,
+  googleBooksSearchProxy,
 } from '../controllers/media.controller.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -20,6 +21,7 @@ const router = Router();
 
 router.get('/utils/avgcolor', getAverageColor);
 router.get('/anilist/search', anilistSearchProxy);
+router.get('/googlebooks/search', googleBooksSearchProxy);
 router.get('/search', searchMedia);
 router.get('/multi-search', multiSearchMedia);
 router.get('/youtube/video', searchYouTubeVideo);

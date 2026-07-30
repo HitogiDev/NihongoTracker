@@ -54,6 +54,7 @@ const TYPE_LABELS: Record<MediaListMediaType, string> = {
   video: 'Videos',
   movie: 'Movies',
   'tv show': 'TV Shows',
+  book: 'Books',
 };
 
 function favoriteKey(fav: { mediaType: string; mediaId: string }) {

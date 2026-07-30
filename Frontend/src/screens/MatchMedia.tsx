@@ -4,6 +4,7 @@ import AnimeLogs from '../components/AnimeLogs';
 import VNLogs from '../components/VNLogs';
 import MangaLogs from '../components/MangaLogs';
 import ReadingLogs from '../components/ReadingLogs';
+import BookLogs from '../components/BookLogs';
 import VideoLogs from '../components/VideoLogs';
 import MovieLogs from '../components/MovieLogs';
 import TVShowLogs from '../components/TVShowLogs';
@@ -45,6 +46,12 @@ function AssignMedia() {
               label: 'Reading',
               component: (isActive) => (
                 <ReadingLogs username={user?.username} isActive={isActive} />
+              ),
+            },
+            {
+              label: 'Book',
+              component: (isActive) => (
+                <BookLogs username={user?.username} isActive={isActive} />
               ),
             },
             {

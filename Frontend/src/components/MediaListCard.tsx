@@ -20,6 +20,7 @@ const TYPE_LABELS: Record<MediaListMediaType, [string, string]> = {
   movie: ['film', 'films'],
   'tv show': ['show', 'shows'],
   game: ['game', 'games'],
+  book: ['book', 'books'],
 };
 
 function entryLabel(list: IMediaList) {

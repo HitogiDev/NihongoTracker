@@ -10,6 +10,7 @@ import {
   TVShow,
   VideoGame,
   Vn,
+  Book,
 } from '../models/media.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
@@ -43,6 +44,7 @@ const TYPE_TO_MODEL: Record<MediaRequestType, Model<IMediaDocument>> = {
   movie: Movie as unknown as Model<IMediaDocument>,
   'tv show': TVShow as unknown as Model<IMediaDocument>,
   game: VideoGame as unknown as Model<IMediaDocument>,
+  book: Book as unknown as Model<IMediaDocument>,
 };
 
 const MAX_PENDING_PER_USER = 10;

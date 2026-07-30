@@ -255,6 +255,7 @@ export async function createMediaVotingFn(
       | 'game'
       | 'video'
       | 'movie'
+      | 'book'
       | 'custom';
     customMediaType?: string;
     candidateSubmissionType: 'manual' | 'member_suggestions';
@@ -309,6 +310,7 @@ export async function editMediaVotingFn(
       | 'game'
       | 'video'
       | 'movie'
+      | 'book'
       | 'custom';
     customMediaType?: string;
     candidateSubmissionType: 'manual' | 'member_suggestions';

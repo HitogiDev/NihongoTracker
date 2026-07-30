@@ -1,8 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useState, useEffect } from 'react';
 import { searchAnilist } from '../api/anilistApi';
-import { searchMediaFn, searchYouTubeVideoFn } from '../api/trackerApi';
+import {
+  searchMediaFn,
+  searchYouTubeVideoFn,
+  searchGoogleBooksFn,
+} from '../api/trackerApi';
 import {
   SearchResultType,
   IMediaDescription,
@@ -221,6 +225,11 @@ export default function useSearch(
         // }
       }
 
+      // Books search Google Books live
+      if (type === 'book') {
+        return searchGoogleBooksFn(debouncedSearch);
+      }
+
       // VN, game, movie, and TV show only search in database
       if (
         type === 'vn' ||
@@ -240,6 +249,11 @@ export default function useSearch(
       return [];
     },
     enabled: isEnabled,
+    // Keep the last results visible while a new query is in flight so the
+    // dropdown doesn't flash empty between keystrokes (smooths Google Books,
+    // which can lag on rate-limited bursts).
+    placeholderData: keepPreviousData,
+    retry: 1,
     staleTime: type === 'video' ? 5 * 60 * 1000 : 0, // Cache YouTube results for 5 minutes
   });
 }

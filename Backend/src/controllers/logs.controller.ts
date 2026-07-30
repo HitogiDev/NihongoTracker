@@ -269,6 +269,7 @@ export async function getRecentLogs(
           manabeId: 1,
           media: 1,
           xp: 1,
+          xpBreakdown: 1,
           isAdult: {
             $ifNull: ['$media.isAdult', false],
           },
@@ -386,6 +387,7 @@ export async function getGlobalFeed(
           description: 1,
           type: 1,
           xp: 1,
+          xpBreakdown: 1,
           episodes: 1,
           volume: 1,
           pages: 1,
@@ -995,6 +997,7 @@ export async function getUserLogs(
           matchDismissed: 1,
           manabeId: 1,
           xp: 1,
+          xpBreakdown: 1,
           description: 1,
           playlistBatchId: 1,
           playlistBatchTitle: 1,
@@ -1118,6 +1121,7 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
           mediaId: 1,
           manabeId: 1,
           xp: 1,
+          xpBreakdown: 1,
           tags: 1,
           'mediaData.title': 1,
           'mediaData.contentImage': 1,
@@ -1712,6 +1716,9 @@ export async function createLog(
         synonyms: mediaData.synonyms,
         chapters: mediaData.chapters,
         volumes: mediaData.volumes,
+        pageCount: mediaData.pageCount,
+        authors: mediaData.authors,
+        publishedDate: mediaData.publishedDate,
         isAdult: mediaData.isAdult,
         coverImage: mediaData.coverImage,
         type,
@@ -1809,6 +1816,7 @@ export async function createLog(
       'video',
       'movie',
       'tv show',
+      'book',
     ]);
 
     if (finalMediaId && immersionMediaTypes.has(statusType)) {
@@ -3592,6 +3600,7 @@ export async function getRecentMediaLogs(
           mediaId: 1,
           manabeId: 1,
           xp: 1,
+          xpBreakdown: 1,
           description: 1,
           episodes: 1,
           pages: 1,

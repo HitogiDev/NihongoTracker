@@ -64,6 +64,9 @@ interface logDataType {
   readPages: number;
   chapters: undefined | number;
   volumes: undefined | number;
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
   hours: number;
   minutes: number;
   showTime: boolean;
@@ -107,6 +110,9 @@ const createInitialLogState = (
   readPages: 0,
   chapters: undefined,
   volumes: undefined,
+  pageCount: undefined,
+  authors: undefined,
+  publishedDate: undefined,
   hours: 0,
   minutes: 0,
   showTime: false,
@@ -635,6 +641,13 @@ function LogScreen() {
         handleInputChange('logVolume', undefined);
       }
 
+      // For books, store Google Books metadata (page count, authors, date)
+      if (logData.type === 'book') {
+        handleInputChange('pageCount', group.pageCount);
+        handleInputChange('authors', group.authors);
+        handleInputChange('publishedDate', group.publishedDate);
+      }
+
       // For movies, auto-populate time from runtime
       if (logData.type === 'movie' && group.runtime) {
         const totalMinutes = group.runtime;
@@ -702,6 +715,9 @@ function LogScreen() {
         episodeDuration: logData.duration,
         chapters: logData.chapters,
         volumes: logData.volumes,
+        pageCount: logData.pageCount,
+        authors: logData.authors,
+        publishedDate: logData.publishedDate,
         isAdult: logData.isAdult,
         synonyms: logData.synonyms,
       };
@@ -752,6 +768,7 @@ function LogScreen() {
     { value: 'tv show', label: 'TV Show' },
     { value: 'movie', label: 'Movie' },
     { value: 'reading', label: 'Reading' },
+    { value: 'book', label: 'Book' },
     { value: 'audio', label: 'Audio' },
   ];
 
@@ -766,11 +783,13 @@ function LogScreen() {
     'audio',
     'manga',
     'movie',
+    'book',
   ].includes(logData.type ?? '');
-  const showCharsInMain = ['vn', 'game', 'reading', 'manga'].includes(
+  const showCharsInMain = ['vn', 'game', 'reading', 'manga', 'book'].includes(
     logData.type ?? ''
   );
-  const showPagesInMain = logData.type === 'manga';
+  const showPagesInMain =
+    logData.type === 'manga' || logData.type === 'book';
 
   const autoCalculatedTime = (() => {
     if (!isSeriesType) return null;
@@ -931,7 +950,7 @@ function LogScreen() {
                         {isSuggestionsOpen &&
                           searchResult &&
                           searchResult.length > 0 && (
-                            <ul className="menu menu-vertical bg-base-200 rounded-box w-full shadow-lg mt-1 absolute z-50 overflow-y-auto max-h-64">
+                            <ul className="menu menu-vertical flex-nowrap bg-base-200 rounded-box w-full shadow-lg mt-1 absolute z-50 overflow-y-auto overflow-x-hidden max-h-64">
                               {searchResult.map((group, i) => {
                                 const isYouTubeResult = (
                                   group as IMediaDocument & {
@@ -951,7 +970,7 @@ function LogScreen() {
                                     }
                                     className="w-full"
                                   >
-                                    <a className="flex items-center gap-3 w-full whitespace-normal p-3">
+                                    <a className="flex flex-nowrap items-center gap-3 w-full min-w-0 whitespace-normal p-3">
                                       {group.contentImage && (
                                         <div className="avatar flex-shrink-0">
                                           <div

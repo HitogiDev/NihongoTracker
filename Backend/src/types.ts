@@ -136,7 +136,8 @@ export interface IUserMediaStatus extends Document {
     | 'video'
     | 'movie'
     | 'tv show'
-    | 'game';
+    | 'game'
+    | 'book';
   status?:
     | 'completed'
     | 'dropped'
@@ -382,7 +383,8 @@ export interface IMediaDocument {
     | 'video'
     | 'movie'
     | 'tv show'
-    | 'game';
+    | 'game'
+    | 'book';
   episodes?: number;
   episodeDuration?: number;
   genres?: string[];
@@ -393,6 +395,10 @@ export interface IMediaDocument {
   runtime?: number;
   igdbUpdatedAt?: number;
   platforms?: string[];
+  // Book specific fields (Google Books)
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
   synonyms?: string[];
   isAdult: boolean;
   isAdultImage?: boolean;
@@ -427,7 +433,8 @@ export type MediaRequestType =
   | 'video'
   | 'movie'
   | 'tv show'
-  | 'game';
+  | 'game'
+  | 'book';
 
 export interface IMediaRequest {
   _id?: Types.ObjectId;
@@ -587,7 +594,8 @@ export interface ILog extends Document {
     | 'movie'
     | 'other'
     | 'tv show'
-    | 'game';
+    | 'game'
+    | 'book';
   mediaId?: string;
   matchDismissed?: boolean;
   manabeId?: string;
@@ -621,7 +629,15 @@ export interface IContentMedia {
     description: string;
     language: 'eng' | 'jpn' | 'spa';
   }[];
-  type: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'game';
+  type:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'game'
+    | 'book';
   episodes?: number;
   episodeDuration?: number;
   chapters?: number;
@@ -630,6 +646,9 @@ export interface IContentMedia {
   runtime?: number;
   igdbUpdatedAt?: number;
   platforms?: string[];
+  pageCount?: number;
+  authors?: string[];
+  publishedDate?: string;
   synonyms?: string[] | null;
   isAdult: boolean;
   isAdultImage?: boolean;
@@ -838,6 +857,7 @@ export interface IClubMediaVoting {
     | 'video'
     | 'movie'
     | 'game'
+    | 'book'
     | 'custom';
   customMediaType?: string;
   candidateSubmissionType: 'manual' | 'member_suggestions';
@@ -871,7 +891,15 @@ export interface IClubMediaVoting {
 export interface IClubMedia {
   _id?: Types.ObjectId;
   mediaId?: string;
-  mediaType: 'anime' | 'manga' | 'reading' | 'vn' | 'video' | 'movie' | 'game';
+  mediaType:
+    | 'anime'
+    | 'manga'
+    | 'reading'
+    | 'vn'
+    | 'video'
+    | 'movie'
+    | 'game'
+    | 'book';
   title: string;
   description?: string;
   startDate: Date;
@@ -911,7 +939,8 @@ export interface IMediaReview extends Document {
     | 'video'
     | 'movie'
     | 'tv show'
-    | 'game';
+    | 'game'
+    | 'book';
   summary: string;
   content: string;
   rating?: number;
@@ -1300,7 +1329,8 @@ export type MediaListMediaType =
   | 'video'
   | 'movie'
   | 'tv show'
-  | 'game';
+  | 'game'
+  | 'book';
 
 export interface IMediaListEntry {
   mediaId: string;

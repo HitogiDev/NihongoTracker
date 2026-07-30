@@ -326,7 +326,8 @@ export default function MediaHeader() {
       mediaType !== 'video' &&
       mediaType !== 'reading' &&
       mediaType !== 'movie' &&
-      mediaType !== 'tv show'
+      mediaType !== 'tv show' &&
+      mediaType !== 'book'
     ) {
       navigate('/404');
     }

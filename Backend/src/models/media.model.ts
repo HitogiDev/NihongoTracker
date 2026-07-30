@@ -34,6 +34,7 @@ const MediaBaseSchema = new Schema<IMediaDocument>(
         'movie',
         'tv show',
         'game',
+        'book',
       ],
     },
     genres: { type: [String], default: [] },
@@ -99,6 +100,14 @@ const VnSchema = new Schema({
 
 const Vn = MediaBase.discriminator('vn', VnSchema);
 
+const BookSchema = new Schema({
+  pageCount: { type: Number, default: null },
+  authors: { type: [String], default: [] },
+  publishedDate: { type: String, default: null },
+});
+
+const Book = MediaBase.discriminator('book', BookSchema);
+
 export {
   MediaBase,
   Anime,
@@ -109,4 +118,5 @@ export {
   TVShow,
   VideoGame,
   Vn,
+  Book,
 };

@@ -7,6 +7,7 @@ import {
   Reading,
   Movie,
   VideoGame,
+  Book,
 } from '../models/media.model.js';
 import User from '../models/user.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
@@ -15,7 +16,12 @@ import { customError } from '../middlewares/errorMiddleware.js';
 import fac from 'fast-average-color-node';
 import { searchAnilist } from '../services/searchAnilist.js';
 import { getIgdbGame } from '../services/searchIgdb.js';
-import axios from 'axios';
+import {
+  searchGoogleBooks,
+  getGoogleBook,
+} from '../services/searchGoogleBooks.js';
+import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import { fetchJitenDetail } from '../services/jiten.js';
 import {
   addDocuments,
   searchDocuments,
@@ -53,89 +59,6 @@ export async function getAverageColor(
   } catch (error) {
     return next(error as customError);
   }
-}
-
-const LinkTypeObject = {
-  // "Web": 1,
-  vn: 2, //VNDB
-  // "Tmdb": 3,
-  anime: 4, // Anilist
-  manga: 4, // Anilist
-  reading: 4, // Anilist
-  movie: 4, // Anilist for movies
-  // "MyAnimeList": 5,
-  // "GoogleBooks": 6,
-  // "Imdb": 7,
-  // "Igdb": 8,
-  // "Syosetsu": 9
-  // "Bookmeter": 10,
-  // "Amazon": 11
-};
-
-interface IJitenDeckLink {
-  linkId: number;
-  linkType: number;
-  url: string;
-  deckId: number;
-}
-
-interface IJitenDeck {
-  deckId: number;
-  creationDate: string;
-  releaseDate: string | null;
-  coverName: string;
-  mediaType: number;
-  originalTitle: string;
-  romajiTitle: string | null;
-  englishTitle: string | null;
-  description: string;
-  characterCount: number;
-  wordCount: number;
-  uniqueWordCount: number;
-  uniqueWordUsedOnceCount: number;
-  uniqueKanjiCount: number;
-  uniqueKanjiUsedOnceCount: number;
-  difficulty: number;
-  difficultyRaw: number;
-  difficultyOverride: number;
-  difficultyAlgorithmic: number;
-  sentenceCount: number;
-  speechDuration: number;
-  speechMoraCount: number;
-  speechSpeed: number;
-  averageSentenceLength: number;
-  parentDeckId: number | null;
-  links: IJitenDeckLink[];
-  aliases: string[];
-  childrenDeckCount: number;
-  selectedWordOccurrences: number;
-  dialoguePercentage: number;
-  hideDialoguePercentage: boolean;
-  coverage: number;
-  uniqueCoverage: number;
-  youngCoverage: number;
-  youngUniqueCoverage: number;
-  externalRating: number;
-  exampleSentence: string | null;
-  genres: number[];
-  tags: unknown[];
-  relationships: unknown[];
-  status: string | null;
-  isFavourite: boolean | null;
-  isIgnored: boolean | null;
-  distinctVoterCount: number;
-  userAdjustment: number;
-}
-
-interface IJitenResponse {
-  data: {
-    parentDeck: IJitenDeck | null;
-    mainDeck: IJitenDeck;
-    subDecks: IJitenDeck[];
-  };
-  totalItems: number;
-  pageSize: number;
-  currentOffset: number;
 }
 
 function normalizeMediaTypeParam(mediaType: string): string {
@@ -217,49 +140,13 @@ export async function getMedia(
       }
     }
 
-    const jitenURL = process.env.JITEN_API_URL;
-    let jitenResponse = null;
-
-    if (jitenURL) {
-      try {
-        const LinkType: number | null = normalizedMediaType
-          ? (LinkTypeObject[
-              normalizedMediaType as keyof typeof LinkTypeObject
-            ] ?? null)
-          : null;
-
-        if (LinkType) {
-          const jitenDeck = await axios.get(
-            `${jitenURL}/media-deck/by-link-id/${LinkType}/${contentId}`,
-            {
-              validateStatus: (status) => status === 200 || status === 404,
-            }
-          );
-
-          if (
-            jitenDeck.status === 200 &&
-            jitenDeck.data &&
-            jitenDeck.data.length > 0
-          ) {
-            const jitenDetailResponse = await axios.get(
-              `${jitenURL}/media-deck/${jitenDeck.data[0]}/detail`,
-              {
-                validateStatus: (status) => status === 200 || status === 404,
-              }
-            );
-
-            if (jitenDetailResponse.status === 200) {
-              jitenResponse = jitenDetailResponse.data as IJitenResponse;
-            }
-          }
-        }
-      } catch (jitenError) {
-        console.warn('Jiten API error:', jitenError);
-        // Continue without Jiten data
-      }
-    }
-
     const media = await MediaBase.findOne(mediaQuery);
+
+    const jitenResponse = await fetchJitenDetail(
+      normalizedMediaType,
+      contentId,
+      media?.title?.contentTitleNative
+    );
 
     // Lazily cache the Jiten difficulty on the media doc so the XP engine can
     // apply the difficulty multiplier without live Jiten calls.
@@ -423,6 +310,30 @@ export async function getMedia(
       return res.status(404).json({ message: 'Media not found' });
     }
 
+    if (!media && normalizedMediaType === 'book') {
+      const googleBook = await getGoogleBook(contentId);
+
+      if (googleBook) {
+        const savedMedia = await Book.findOneAndUpdate(
+          { contentId: googleBook.contentId, type: 'book' },
+          { $setOnInsert: googleBook },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        if (savedMedia) {
+          await addMediaToIndex(savedMedia.toObject());
+
+          return res.status(200).json({
+            ...savedMedia.toObject(),
+            ...completionStatus,
+            jiten: null,
+          });
+        }
+      }
+
+      return res.status(404).json({ message: 'Media not found' });
+    }
+
     if (!media) return res.status(404).json({ message: 'Media not found' });
     return res.status(200).json({
       ...media.toObject(),
@@ -490,6 +401,25 @@ export async function anilistSearchProxy(
   }
 }
 
+export async function googleBooksSearchProxy(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const title = String(req.query.search || '').trim();
+
+    if (!title)
+      return res.status(400).json({ message: 'Invalid query parameters' });
+
+    const results = await searchGoogleBooks(title);
+
+    return res.status(200).json(results);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function searchMedia(
   req: Request,
   res: Response,
@@ -510,6 +440,7 @@ export async function searchMedia(
       tv_show: 'tv_show',
       'tv show': 'tv_show',
       game: 'game',
+      book: 'book',
     };
     const type = normalizedTypeMap[rawType] ?? rawType;
     const page = parseInt(req.query.page as string) || 1;
@@ -527,10 +458,21 @@ export async function searchMedia(
       'movie',
       'tv_show',
       'game',
+      'book',
     ]);
 
     if (!allowedTypes.has(type)) {
       return res.status(400).json({ message: 'Unsupported media type' });
+    }
+
+    if (type === 'book') {
+      const normalizedTitle = title.trim();
+      if (!normalizedTitle) {
+        return res.status(200).json([]);
+      }
+
+      const results = await searchGoogleBooks(normalizedTitle);
+      return res.status(200).json(results);
     }
 
     if (type === 'game') {
@@ -563,6 +505,7 @@ const MULTI_SEARCH_INDEXES = [
   'movie',
   'tv_show',
   'game',
+  'book',
 ] as const;
 
 export async function multiSearchMedia(

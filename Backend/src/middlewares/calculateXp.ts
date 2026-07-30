@@ -5,6 +5,7 @@ import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IImportLogs, ILog, IUser } from '../types.js';
 import { customError } from './errorMiddleware.js';
+import { cacheMediaJitenDifficulty } from '../services/jiten.js';
 import {
   computeXp,
   continuousLevel,
@@ -157,9 +158,21 @@ export async function calculateXp(
     const personalSpeedCph = await makeSpeedResolver(owner?._id)(type);
 
     const mediaId = body.mediaId ?? existing?.mediaId;
-    const difficulty = mediaId
+    let difficulty = mediaId
       ? ((await difficultiesByContentId([mediaId])).get(mediaId) ?? null)
       : null;
+
+    // On a fresh log whose media has no cached Jiten difficulty yet, resolve it
+    // live so the bonus applies immediately instead of only after the media
+    // page has been visited. cacheMediaJitenDifficulty also persists it for
+    // future logs and the consumed-difficulty signal.
+    if (difficulty === null && mediaId && !req.params.id) {
+      const nativeTitle = (
+        req.body as { mediaData?: { contentTitleNative?: string } }
+      ).mediaData?.contentTitleNative;
+      const native = await cacheMediaJitenDifficulty(mediaId, type, nativeTitle);
+      difficulty = normalizeJitenDifficulty(native);
+    }
 
     // Edits reuse the comfort snapshotted at creation; fresh logs compute it
     // from the owner's level + recently consumed difficulty.

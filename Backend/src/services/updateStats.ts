@@ -65,6 +65,7 @@ export default async function updateStats(
       case 'reading':
       case 'vn':
       case 'game':
+      case 'book':
         userStats.readingXp = Math.max(0, userStats.readingXp + xpUpdate);
         break;
       case 'other':

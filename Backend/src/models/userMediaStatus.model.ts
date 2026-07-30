@@ -17,6 +17,7 @@ const UserMediaStatusSchema = new Schema<IUserMediaStatus>(
         'movie',
         'tv show',
         'game',
+        'book',
       ],
     },
     status: {
