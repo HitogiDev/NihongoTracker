@@ -19,6 +19,10 @@ import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IMediaDocument } from '../types.js';
 import { backfillRankHistory } from '../services/rankSnapshot.service.js';
+import {
+  startJitenDifficultyBackfill,
+  getJitenBackfillState,
+} from '../services/jiten.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
 import { Types } from 'mongoose';
 
@@ -963,6 +967,37 @@ export async function backfillRankingHistory(
       message: `Backfilled ${result.snapshots} rank snapshots across ${result.weeks} weeks.`,
       ...result,
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerJitenDifficultyBackfill(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const state = startJitenDifficultyBackfill();
+    const alreadyRunning = state.processed > 0 || state.total > 0;
+    return res.status(alreadyRunning ? 200 : 202).json({
+      message: alreadyRunning
+        ? 'Jiten difficulty backfill already running.'
+        : 'Jiten difficulty backfill started.',
+      ...state,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getJitenDifficultyBackfillStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    return res.status(200).json(getJitenBackfillState());
   } catch (error) {
     return next(error as customError);
   }

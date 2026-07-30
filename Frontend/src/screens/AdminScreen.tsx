@@ -30,8 +30,11 @@ import {
   triggerVndbDumpSyncFn,
   adminBackfillAchievementsFn,
   adminBackfillRankingHistoryFn,
+  adminTriggerJitenDifficultyBackfillFn,
+  getJitenDifficultyBackfillStatusFn,
   type IIgdbDumpSyncStatus,
   type IVndbDumpSyncStatus,
+  type IJitenBackfillStatus,
 } from '../api/trackerApi';
 import { Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
@@ -286,6 +289,17 @@ function AdminScreen() {
     },
   });
 
+  const { data: jitenBackfillStatus } = useQuery({
+    queryKey: ['adminJitenBackfillStatus'],
+    queryFn: getJitenDifficultyBackfillStatusFn,
+    enabled: isAdmin && selectedTab === 'system',
+    staleTime: 2_000,
+    refetchInterval: (query) => {
+      const status = query.state.data as IJitenBackfillStatus | undefined;
+      return status?.running ? 2_000 : false;
+    },
+  });
+
   // Mutations
   const recalcMutation = useMutation({
     mutationFn: recalculateStatsFn,
@@ -490,6 +504,15 @@ function AdminScreen() {
       toast.success(data.message);
     },
     onError: () => toast.error('Failed to backfill ranking history'),
+  });
+
+  const backfillJitenDifficultyMutation = useMutation({
+    mutationFn: adminTriggerJitenDifficultyBackfillFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ['adminJitenBackfillStatus'] });
+    },
+    onError: () => toast.error('Failed to start Jiten difficulty backfill'),
   });
 
   const formatUptime = (days: number) => {
@@ -2475,6 +2498,51 @@ function AdminScreen() {
                         ? 'Backfilling Ranking History...'
                         : 'Backfill Ranking History'}
                     </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Fetches and caches Jiten difficulty for every media that doesn't have one yet, so the difficulty XP bonus and the consumed-difficulty (comfort) signal work across all history. Runs in the background and is paced to respect Jiten's rate limit — it may take a while. Continue?"
+                          )
+                        ) {
+                          backfillJitenDifficultyMutation.mutate();
+                        }
+                      }}
+                      disabled={
+                        backfillJitenDifficultyMutation.isPending ||
+                        jitenBackfillStatus?.running
+                      }
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                      {jitenBackfillStatus?.running
+                        ? `Backfilling Difficulty... ${jitenBackfillStatus.processed}/${jitenBackfillStatus.total} (${jitenBackfillStatus.matched} matched)`
+                        : 'Backfill Jiten Difficulty'}
+                    </button>
+                    {jitenBackfillStatus &&
+                      !jitenBackfillStatus.running &&
+                      jitenBackfillStatus.finishedAt && (
+                        <p className="text-xs text-base-content/60 -mt-2">
+                          Last difficulty backfill:{' '}
+                          {jitenBackfillStatus.matched} matched /{' '}
+                          {jitenBackfillStatus.processed} processed
+                          {jitenBackfillStatus.error
+                            ? ` — error: ${jitenBackfillStatus.error}`
+                            : ''}
+                        </p>
+                      )}
                     <button className="btn btn-secondary w-full">
                       <svg
                         className="w-5 h-5 mr-2"

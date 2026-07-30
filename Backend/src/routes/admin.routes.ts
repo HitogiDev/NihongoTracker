@@ -21,6 +21,8 @@ import {
   getVndbDumpSyncStatus,
   backfillRankingHistory,
   adminUpdateMedia,
+  triggerJitenDifficultyBackfill,
+  getJitenDifficultyBackfillStatus,
 } from '../controllers/admin.controller.js';
 import {
   adminDeleteLog,
@@ -213,6 +215,20 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   backfillRankingHistory
+);
+
+router.post(
+  '/jiten-difficulty/backfill',
+  protect,
+  checkPermission(userRoles.admin),
+  triggerJitenDifficultyBackfill
+);
+
+router.get(
+  '/jiten-difficulty/backfill/status',
+  protect,
+  checkPermission(userRoles.admin),
+  getJitenDifficultyBackfillStatus
 );
 
 // Media editing (admin or mod — pairs with the media-request approval flow)

@@ -40,3 +40,4 @@ dist-ssr
 *.sln
 *.sw?
 skills-lock.json
+*.tsbuildinfo

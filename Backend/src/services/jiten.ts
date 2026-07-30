@@ -214,6 +214,103 @@ export async function fetchJitenDifficulty(
   return typeof difficulty === 'number' && difficulty >= 0 ? difficulty : null;
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export interface IJitenBackfillState {
+  running: boolean;
+  total: number;
+  processed: number;
+  matched: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+let backfillState: IJitenBackfillState = {
+  running: false,
+  total: 0,
+  processed: 0,
+  matched: 0,
+  startedAt: null,
+  finishedAt: null,
+  error: null,
+};
+
+export function getJitenBackfillState(): IJitenBackfillState {
+  return backfillState;
+}
+
+/**
+ * Background job: fetch and cache Jiten difficulty for every linkable media doc
+ * that doesn't have one yet. Paced with a small delay to stay under Jiten's
+ * rate limit. Idempotent — safe to re-run; already-tagged media are skipped by
+ * the query filter. Progress is exposed via getJitenBackfillState().
+ */
+async function runJitenDifficultyBackfill(): Promise<void> {
+  const linkableTypes = Object.keys(JitenLinkTypeByMediaType);
+  const filter = {
+    type: { $in: linkableTypes },
+    $or: [{ jitenDifficulty: null }, { jitenDifficulty: { $exists: false } }],
+  };
+
+  try {
+    backfillState.total = await MediaBase.countDocuments(filter);
+
+    const cursor = MediaBase.find(filter)
+      .select('contentId type title')
+      .lean()
+      .cursor();
+
+    for await (const media of cursor) {
+      const nativeTitle = (
+        media as { title?: { contentTitleNative?: string } }
+      ).title?.contentTitleNative;
+      const difficulty = await fetchJitenDifficulty(
+        media.type,
+        media.contentId,
+        nativeTitle
+      );
+      if (difficulty !== null) {
+        await MediaBase.updateOne(
+          { contentId: media.contentId, type: media.type },
+          { jitenDifficulty: difficulty, jitenSyncedAt: new Date() }
+        ).exec();
+        backfillState.matched += 1;
+      }
+      backfillState.processed += 1;
+      // Pace requests to avoid Jiten rate-limiting on large runs.
+      await sleep(150);
+    }
+  } catch (err) {
+    backfillState.error = (err as Error)?.message ?? String(err);
+    console.error('Jiten difficulty backfill failed:', err);
+  } finally {
+    backfillState.running = false;
+    backfillState.finishedAt = new Date().toISOString();
+  }
+}
+
+/**
+ * Start the background Jiten difficulty backfill if one isn't already running.
+ * Returns the current state immediately (the job runs detached).
+ */
+export function startJitenDifficultyBackfill(): IJitenBackfillState {
+  if (backfillState.running) return backfillState;
+
+  backfillState = {
+    running: true,
+    total: 0,
+    processed: 0,
+    matched: 0,
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    error: null,
+  };
+
+  void runJitenDifficultyBackfill();
+  return backfillState;
+}
+
 /**
  * Cache Jiten difficulty onto an existing media doc when it isn't set yet.
  * Best-effort and non-throwing. Returns the native difficulty (0-5) if known.

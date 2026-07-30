@@ -932,6 +932,28 @@ export async function getVndbDumpSyncStatusFn(): Promise<IVndbDumpSyncStatus> {
   return data;
 }
 
+export interface IJitenBackfillStatus {
+  running: boolean;
+  total: number;
+  processed: number;
+  matched: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+export async function adminTriggerJitenDifficultyBackfillFn(): Promise<
+  IJitenBackfillStatus & { message: string }
+> {
+  const { data } = await api.post('admin/jiten-difficulty/backfill');
+  return data;
+}
+
+export async function getJitenDifficultyBackfillStatusFn(): Promise<IJitenBackfillStatus> {
+  const { data } = await api.get('admin/jiten-difficulty/backfill/status');
+  return data;
+}
+
 // Admin: logs management
 export async function searchAdminLogsFn(params: {
   page?: number;
