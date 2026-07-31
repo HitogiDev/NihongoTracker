@@ -4,6 +4,7 @@ import User from '../models/user.model.js';
 import ApiKey from '../models/apiKey.model.js';
 import { Request, Response, NextFunction } from 'express';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { decodedJWT } from '../types.js';
 
 function hashKey(raw: string): string {
@@ -25,9 +26,10 @@ async function loadAndValidateUser(userId: string) {
   }
 
   if (user?.moderation?.banned) {
-    throw new customError(
-      user.moderation?.banReason || 'Your account has been banned',
-      403
+    throw apiError(
+      'auth.banned',
+      403,
+      user.moderation?.banReason || 'Your account has been banned'
     );
   }
 
@@ -54,7 +56,7 @@ async function authenticateRequest(
 
       if (!apiKey) {
         if (failOnInvalidCredentials) {
-          throw new customError('Invalid API key', 401);
+          throw apiError('apiKey.invalid', 401, 'Invalid API key');
         }
         return null;
       }
@@ -63,7 +65,7 @@ async function authenticateRequest(
       if (apiKey.expiresAt && new Date() > apiKey.expiresAt) {
         await ApiKey.deleteOne({ _id: apiKey._id });
         if (failOnInvalidCredentials) {
-          throw new customError('API key has expired', 401);
+          throw apiError('apiKey.expired', 401, 'API key has expired');
         }
         return null;
       }
@@ -71,7 +73,7 @@ async function authenticateRequest(
       const user = await loadAndValidateUser(apiKey.user.toString());
       if (!user) {
         if (failOnInvalidCredentials) {
-          throw new customError('User not found', 401);
+          throw apiError('user.notFound', 401, 'User not found');
         }
         return null;
       }
@@ -92,7 +94,7 @@ async function authenticateRequest(
   const token = req.cookies.jwt;
   if (!token) {
     if (failOnMissingCredentials) {
-      throw new customError('Unauthorized, no token', 401);
+      throw apiError('auth.noToken', 401, 'Unauthorized, no token');
     }
     return null;
   }
@@ -120,7 +122,7 @@ export async function protect(req: Request, res: Response, next: NextFunction) {
     });
 
     if (!user) {
-      return next(new customError('Unauthorized', 401));
+      return next(apiError('auth.notAuthenticated', 401, 'Unauthorized'));
     }
 
     res.locals.user = user;
@@ -130,7 +132,7 @@ export async function protect(req: Request, res: Response, next: NextFunction) {
       return next(error);
     }
 
-    return next(new customError('Authentication failed', 401));
+    return next(apiError('auth.failed', 401, 'Authentication failed'));
   }
 }
 

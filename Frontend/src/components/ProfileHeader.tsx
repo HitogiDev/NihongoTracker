@@ -9,9 +9,11 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { OutletProfileContextType } from '../types';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
 import { getAvatarInitials } from '../utils/avatar';
 
 export default function ProfileHeader() {
+  const badgeText = usePatreonBadgeText();
   const { username = '' } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
@@ -97,7 +99,7 @@ export default function ProfileHeader() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="font-bold">{patreonBadge.text}</span>
+                    <span className="font-bold">{badgeText(patreonBadge)}</span>
                   </div>
                 )}
               </div>

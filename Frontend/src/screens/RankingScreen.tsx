@@ -21,6 +21,7 @@ import { useTimezone } from '../hooks/useTimezone';
 import { numberWithCommas } from '../utils/utils';
 import { DayPicker } from 'react-day-picker';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
 import UserAvatar from '../components/UserAvatar';
 import { useUserDataStore } from '../store/userData';
 
@@ -156,6 +157,7 @@ const removeRankingDefaults = (userId?: string | null) => {
 };
 
 function RankingScreen() {
+  const badgeText = usePatreonBadgeText();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useUserDataStore();
   const initialDefaults = loadRankingDefaults(user?._id);
@@ -1184,7 +1186,7 @@ function RankingScreen() {
                                   />
                                 </svg>
                                 <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {secondGlobalBadge.text}
+                                  {badgeText(secondGlobalBadge)}
                                 </span>
                               </div>
                             )}
@@ -1254,7 +1256,7 @@ function RankingScreen() {
                                   />
                                 </svg>
                                 <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {firstGlobalBadge.text}
+                                  {badgeText(firstGlobalBadge)}
                                 </span>
                               </div>
                             )}
@@ -1313,7 +1315,7 @@ function RankingScreen() {
                                   />
                                 </svg>
                                 <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {thirdGlobalBadge.text}
+                                  {badgeText(thirdGlobalBadge)}
                                 </span>
                               </div>
                             )}
@@ -1380,7 +1382,7 @@ function RankingScreen() {
                                   />
                                 </svg>
                                 <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {secondMediumBadge.text}
+                                  {badgeText(secondMediumBadge)}
                                 </span>
                               </div>
                             )}
@@ -1450,7 +1452,7 @@ function RankingScreen() {
                                   />
                                 </svg>
                                 <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {firstMediumBadge.text}
+                                  {badgeText(firstMediumBadge)}
                                 </span>
                               </div>
                             )}
@@ -1509,7 +1511,7 @@ function RankingScreen() {
                                   />
                                 </svg>
                                 <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {thirdMediumBadge.text}
+                                  {badgeText(thirdMediumBadge)}
                                 </span>
                               </div>
                             )}
@@ -1656,7 +1658,7 @@ function RankingScreen() {
                                           />
                                         </svg>
                                         <span className="font-bold md:max-w-none md:overflow-visible md:whitespace-normal max-w-[5.5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                          {patreonBadge.text}
+                                          {badgeText(patreonBadge)}
                                         </span>
                                       </div>
                                     )}

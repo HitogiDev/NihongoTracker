@@ -1,0 +1,38 @@
+{
+  "preferences": {
+    "language": {
+      "help": "Language used across the interface. Saved to your account and synced across devices.",
+      "label": "Language"
+    }
+  },
+  "profileWidgets": {
+    "about": {
+      "description": "Your bio / introduction.",
+      "label": "About"
+    },
+    "achievements": {
+      "description": "Your top earned achievements.",
+      "label": "Achievement Showcase"
+    },
+    "favorites": {
+      "description": "Showcase of your favorite media.",
+      "label": "Favorite Media"
+    },
+    "immersionActivity": {
+      "description": "Heatmap of your immersion over time.",
+      "label": "Immersion Activity"
+    },
+    "immersionGoals": {
+      "description": "Your active goals (only visible to you).",
+      "label": "Immersion Goals"
+    },
+    "profileStats": {
+      "description": "Rankings, totals and ranking-over-time graph.",
+      "label": "Profile Stats"
+    },
+    "progressStats": {
+      "description": "Overall, listening and reading levels.",
+      "label": "Progress Stats"
+    }
+  }
+}

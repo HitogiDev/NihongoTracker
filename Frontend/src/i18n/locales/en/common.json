@@ -1,0 +1,24 @@
+{
+  "errors": {
+    "generic": "An error occurred"
+  },
+  "language": {
+    "saveError": "Could not save your language preference"
+  },
+  "mediaTypes": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "game": "Game",
+    "manga": "Manga",
+    "movie": "Movie",
+    "reading": "Reading",
+    "tvShow": "TV Show",
+    "video": "Video",
+    "vn": "Visual Novel"
+  },
+  "patreonTiers": {
+    "consumer": "Consumer",
+    "donator": "Donator",
+    "enthusiast": "Enthusiast"
+  }
+}

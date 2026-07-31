@@ -1,3 +1,4 @@
+import type { ParseKeys } from 'i18next';
 import type { CSSProperties } from 'react';
 
 export type PatreonBadgeData = {
@@ -11,13 +12,19 @@ export type PatreonBadgeData = {
 export type PatreonBadgeProps = {
   colorClass: string;
   style: CSSProperties;
-  text: string;
+  /** Supporter-authored badge text. Rendered as-is when present. */
+  text: string | null;
+  /** Fallback tier label as a translation key, used when `text` is null. */
+  tierKey: ParseKeys<'common'>;
 };
 
-const DEFAULT_TEXT: Record<'donator' | 'enthusiast' | 'consumer', string> = {
-  donator: 'Donator',
-  enthusiast: 'Enthusiast',
-  consumer: 'Consumer',
+const TIER_KEYS: Record<
+  'donator' | 'enthusiast' | 'consumer',
+  ParseKeys<'common'>
+> = {
+  donator: 'patreonTiers.donator',
+  enthusiast: 'patreonTiers.enthusiast',
+  consumer: 'patreonTiers.consumer',
 };
 
 export function getPatreonBadgeProps(
@@ -69,12 +76,9 @@ export function getPatreonBadgeProps(
     tier === 'consumer' || tier === 'enthusiast' || tier === 'donator';
   const trimmedCustomText = patreon.customBadgeText?.trim();
 
-  const text =
-    allowCustomText && trimmedCustomText
-      ? trimmedCustomText
-      : DEFAULT_TEXT[tier];
+  const text = allowCustomText && trimmedCustomText ? trimmedCustomText : null;
 
-  return { colorClass, style, text };
+  return { colorClass, style, text, tierKey: TIER_KEYS[tier] };
 }
 
 function resolveTextColor(value?: string, fallback?: string) {

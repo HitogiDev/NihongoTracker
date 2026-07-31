@@ -53,6 +53,7 @@ import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
 import UserAvatar from '../components/UserAvatar';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
 import {
   getMaxClubMemberLimitForUser,
   getClubMemberLimitValidationMessage,
@@ -141,6 +142,7 @@ function serializeClubGoalDraft(goal: ClubGoalDraft): IClubGoal {
 }
 
 function ClubDetailScreen() {
+  const badgeText = usePatreonBadgeText();
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1230,7 +1232,8 @@ function ClubDetailScreen() {
                               }
                               alt={media.title}
                               className={`w-full h-full object-cover ${
-                                (media.mediaType === 'vn' || media.mediaDocument.type === 'vn'
+                                (media.mediaType === 'vn' ||
+                                media.mediaDocument.type === 'vn'
                                   ? (media.mediaDocument.isAdultImage ?? false)
                                   : media.mediaDocument.isAdult) &&
                                 user?.settings?.blurAdultContent
@@ -1526,7 +1529,7 @@ function ClubDetailScreen() {
                                         />
                                       </svg>
                                       <span className="font-bold">
-                                        {patreonBadge.text}
+                                        {badgeText(patreonBadge)}
                                       </span>
                                     </div>
                                   )}

@@ -54,6 +54,8 @@ import {
   PROFILE_WIDGET_META,
   resolveProfileLayout,
 } from '../utils/profileWidgets';
+import { useTranslation } from 'react-i18next';
+import LanguagePicker from '../components/LanguagePicker';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
@@ -2501,6 +2503,8 @@ function SettingsScreen() {
                     </div>
 
                     <div className="space-y-6">
+                      <LanguagePicker />
+
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text font-medium">Theme</span>
@@ -3995,7 +3999,9 @@ function SortableWidgetRow({
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">{label}</span>
           {ownerOnly && (
-            <span className="badge badge-ghost badge-xs shrink-0">Only you</span>
+            <span className="badge badge-ghost badge-xs shrink-0">
+              Only you
+            </span>
           )}
         </div>
         <p className="truncate text-xs text-base-content/60">{description}</p>
@@ -4018,6 +4024,7 @@ function SortableWidgetRow({
 }
 
 function ProfileLayoutEditor() {
+  const { t: tSettings } = useTranslation('settings');
   const { user, setUser } = useUserDataStore();
   const queryClient = useQueryClient();
   const [layout, setLayout] = useState<ProfileWidgetLayout[]>(() =>
@@ -4127,8 +4134,8 @@ function ProfileLayoutEditor() {
                   <SortableWidgetRow
                     key={w.id}
                     id={w.id}
-                    label={meta.label}
-                    description={meta.description}
+                    label={tSettings(meta.labelKey)}
+                    description={tSettings(meta.descriptionKey)}
                     visible={w.visible}
                     ownerOnly={meta.ownerOnly}
                     onToggle={() => toggleVisibility(w.id)}

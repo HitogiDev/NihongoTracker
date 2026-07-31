@@ -13,6 +13,7 @@ import {
 import { getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
 import { getPatreonBadgeProps } from '../../utils/patreonBadge';
+import { usePatreonBadgeText } from '../../hooks/usePatreonBadgeText';
 import UserAvatar from '../UserAvatar';
 
 interface ClubRankingsTabProps {
@@ -45,6 +46,7 @@ type ClubMember = {
 };
 
 function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
+  const badgeText = usePatreonBadgeText();
   const [sortBy, setSortBy] = useState<
     'totalXp' | 'totalLogs' | 'totalTime' | 'level'
   >('totalXp');
@@ -374,7 +376,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               />
                             </svg>
                             <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                              {secondBadge.text}
+                              {badgeText(secondBadge)}
                             </span>
                           </div>
                         )}
@@ -443,7 +445,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               />
                             </svg>
                             <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                              {firstBadge.text}
+                              {badgeText(firstBadge)}
                             </span>
                           </div>
                         )}
@@ -501,7 +503,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               />
                             </svg>
                             <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                              {thirdBadge.text}
+                              {badgeText(thirdBadge)}
                             </span>
                           </div>
                         )}
@@ -591,7 +593,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                                       />
                                     </svg>
                                     <span className="font-bold md:max-w-none md:overflow-visible md:whitespace-normal max-w-[5.5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                      {patreonBadge.text}
+                                      {badgeText(patreonBadge)}
                                     </span>
                                   </div>
                                 )}

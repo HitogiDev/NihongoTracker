@@ -37,6 +37,8 @@ import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import TagSelector from './TagSelector';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
 
 const logTypeConfig = {
   reading: {
@@ -182,6 +184,7 @@ function LogCard({
   user?: string;
   selectionMode?: boolean;
 }) {
+  const vt = useValidationText();
   const {
     description,
     xp,
@@ -227,7 +230,9 @@ function LogCard({
   const [editData, setEditData] = useState<EditLogFormState>(() =>
     buildEditState()
   );
-  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [editErrors, setEditErrors] = useState<Record<string, ValidationKey>>(
+    {}
+  );
 
   const typeConfig = logTypeConfig[type];
   const TypeIcon = typeConfig.icon;
@@ -1302,7 +1307,7 @@ function LogCard({
                   </h4>
                   <ul className="list-disc list-inside text-sm mt-1">
                     {Object.entries(editErrors).map(([field, error]) => (
-                      <li key={field}>{error}</li>
+                      <li key={field}>{vt(error)}</li>
                     ))}
                   </ul>
                 </div>

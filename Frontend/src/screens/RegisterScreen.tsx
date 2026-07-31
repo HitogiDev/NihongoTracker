@@ -9,7 +9,6 @@ import {
 } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { toast } from 'react-toastify';
-import { AxiosError } from 'axios';
 import Loader from '../components/Loader';
 import {
   validateEmail,
@@ -19,8 +18,12 @@ import {
 } from '../utils/validation';
 import { gsap } from 'gsap';
 import { getUserTimezone } from '../utils/timezone';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import { getApiErrorMessage } from '../utils/apiError';
 
 function RegisterScreen() {
+  const vt = useValidationText();
   const { user, setUser } = useUserDataStore();
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState('');
@@ -39,7 +42,7 @@ function RegisterScreen() {
   const formFieldsRef = useRef<HTMLDivElement[]>([]);
 
   // Validation state
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   // Fetch public stats
@@ -151,7 +154,7 @@ function RegisterScreen() {
 
   // Validate fields when they change and are touched
   useEffect(() => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, ValidationKey> = {};
 
     if (touched.username) {
       const usernameError = validateUsername(username);
@@ -207,11 +210,7 @@ function RegisterScreen() {
       setUser(data);
     },
     onError: (error) => {
-      if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
-      } else {
-        toast.error(error.message ? error.message : 'An error occurred');
-      }
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -502,7 +501,7 @@ function RegisterScreen() {
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        {errors.username}
+                        {vt(errors.username)}
                       </span>
                     </label>
                   )}
@@ -688,7 +687,7 @@ function RegisterScreen() {
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        {errors.email}
+                        {vt(errors.email)}
                       </span>
                     </label>
                   )}
@@ -757,7 +756,7 @@ function RegisterScreen() {
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        {errors.password}
+                        {vt(errors.password)}
                       </span>
                     </label>
                   )}
@@ -855,7 +854,7 @@ function RegisterScreen() {
                             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        {errors.passwordConfirmation}
+                        {vt(errors.passwordConfirmation)}
                       </span>
                     </label>
                   )}

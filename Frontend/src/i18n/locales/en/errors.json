@@ -1,0 +1,106 @@
+{
+  "apiKey": {
+    "expired": "That API key has expired",
+    "invalid": "That API key is not valid"
+  },
+  "auth": {
+    "banned": "Your account has been suspended",
+    "credentialsRequired": "Enter your username and password",
+    "emailAlreadyVerified": "Your email address is already verified",
+    "emailNotVerified": "Verify your email address first",
+    "emailRequired": "An email address is required",
+    "failed": "Sign-in failed. Please try again.",
+    "forbidden": "You do not have permission to do that",
+    "invalidCredentials": "Incorrect username or password",
+    "invalidResetToken": "That password reset link is invalid or has expired",
+    "invalidToken": "Your session is no longer valid. Please sign in again.",
+    "invalidUserData": "The account details are not valid",
+    "invalidVerificationToken": "That verification link is invalid or has expired",
+    "noEmailSet": "This account has no email address set",
+    "noToken": "You need to sign in to do that",
+    "notAuthenticated": "You need to sign in to do that",
+    "passwordConfirmationRequired": "Enter and confirm your new password",
+    "passwordMismatch": "The passwords do not match",
+    "resendCooldown": "Please wait {{seconds}} seconds before requesting another email",
+    "tokenExpired": "Your session has expired. Please sign in again.",
+    "tokenNotActive": "Your session is not active yet. Please sign in again.",
+    "tokenRequired": "That link is missing its token",
+    "userExists": "A user with that username or email already exists"
+  },
+  "common": {
+    "internal": "Something went wrong on our side",
+    "resourceNotFound": "Resource not found",
+    "routeNotFound": "That page could not be found",
+    "unexpected": "Something went wrong. Please try again.",
+    "validationError": "Some of the submitted data is not valid"
+  },
+  "favorites": {
+    "invalidAction": "The action must be add or remove",
+    "invalidMediaType": "That media type is not valid: {{mediaType}}",
+    "itemMustBeObject": "Each favorite must be an object",
+    "mediaIdRequired": "Each favorite needs a valid media ID",
+    "mustBeArray": "Favorites must be a list",
+    "noteTooLong": "The note must be {{max}} characters or fewer",
+    "tooMany": "You can save at most {{max}} favorites"
+  },
+  "immersionList": {
+    "invalidMediaType": "That media type is not valid",
+    "invalidSource": "That source is not valid",
+    "invalidStatus": "That status is not valid",
+    "mediaIdAndTypeRequired": "A media ID and type are required",
+    "mediaIdRequired": "A valid media ID is required",
+    "mediaNotFound": "That media is not in your immersion list",
+    "noteMustBeString": "The note must be text"
+  },
+  "layout": {
+    "cardMustBeObject": "Each card must be an object",
+    "cardNeedsVisible": "Each card needs a visible flag",
+    "duplicateWidgetId": "Widget listed twice: {{id}}",
+    "groupMustBeObject": "Each group must be an object",
+    "groupNeedsCards": "Each group must have a list of cards",
+    "groupNeedsVisible": "Each group needs a visible flag",
+    "invalidCardId": "Unknown card: {{id}}",
+    "invalidGroupId": "Unknown group: {{id}}",
+    "invalidWidgetId": "Unknown widget: {{id}}",
+    "mustBeArrayOfGroups": "The layout must be a list of groups",
+    "mustBeArrayOfWidgets": "The layout must be a list of widgets",
+    "widgetMustBeObject": "Each widget must be an object",
+    "widgetNeedsVisible": "Each widget needs a visible flag"
+  },
+  "media": {
+    "notFound": "Media not found"
+  },
+  "upload": {
+    "avatarCropGifOnly": "Avatar cropping is only supported for GIF uploads",
+    "avatarCropWithoutFile": "Crop data was sent without an avatar file",
+    "bannerCropGifOnly": "Banner cropping is only supported for GIF uploads",
+    "bannerCropWithoutFile": "Crop data was sent without a banner file",
+    "cropWithoutFile": "Crop data was sent without an avatar or banner file",
+    "gifAvatarTierRequired": "Animated GIF avatars are only available on the Enthusiast and Consumer Patreon tiers",
+    "gifBannerTierRequired": "Animated GIF banners are only available on the Enthusiast and Consumer Patreon tiers",
+    "invalidFieldName": "Only avatar and banner uploads are allowed"
+  },
+  "user": {
+    "aboutTooLong": "Your bio must be 2000 characters or less",
+    "discordIdLinked": "That Discord account is already linked to another user",
+    "emailInvalid": "That email address is not valid",
+    "emailTaken": "That email address is already in use",
+    "incorrectPassword": "Incorrect password",
+    "invalidAvatar": "That avatar image is not valid",
+    "invalidBanner": "That banner image is not valid",
+    "invalidDiscordId": "That Discord ID is not valid",
+    "invalidLanguage": "That language is not supported",
+    "invalidTimezone": "That timezone is not valid",
+    "newPasswordRequired": "Enter a new password",
+    "notFound": "User not found",
+    "oldPasswordRequired": "Enter your current password",
+    "passwordConfirmRequired": "Confirm your new password",
+    "passwordMismatch": "The passwords do not match",
+    "passwordRequired": "Enter your current password to make this change",
+    "passwordTooShort": "The password is too short",
+    "usernameConfirmMismatch": "The username does not match. Type your username to confirm.",
+    "usernameInvalid": "Username can only contain letters, numbers and underscores",
+    "usernameLength": "Your username must be between 1 and 20 characters",
+    "usernameTaken": "That username is already taken"
+  }
+}

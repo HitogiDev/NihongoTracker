@@ -111,6 +111,7 @@ const swaggerDocument = {
           blurAdultContent: { type: 'boolean' },
           hideUnmatchedLogsAlert: { type: 'boolean' },
           timezone: { type: 'string' },
+          language: { type: 'string', enum: ['en', 'es'] },
           hiddenRecentMedia: {
             type: 'array',
             items: { type: 'string' },
@@ -515,6 +516,7 @@ const swaggerDocument = {
                   password: { type: 'string', format: 'password' },
                   passwordConfirmation: { type: 'string', format: 'password' },
                   timezone: { type: 'string' },
+                  language: { type: 'string', enum: ['en', 'es'] },
                 },
               },
             },
@@ -698,6 +700,7 @@ const swaggerDocument = {
                   newPasswordConfirm: { type: 'string' },
                   about: { type: 'string' },
                   timezone: { type: 'string' },
+                  language: { type: 'string', enum: ['en', 'es'] },
                   blurAdultContent: { type: 'string' },
                   avatar: { type: 'string', format: 'binary' },
                   avatarCrop: {

@@ -10,6 +10,8 @@ import { validateQuickLogData } from '../utils/validation';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
 
 interface QuickLogProps {
   open: boolean;
@@ -104,6 +106,7 @@ function QuickLog({
   initialValues,
   allowedTypes,
 }: QuickLogProps) {
+  const vt = useValidationText();
   const { user } = useUserDataStore();
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
   const [logDescription, setLogDescription] = useState<string>('');
@@ -124,7 +127,7 @@ function QuickLog({
   const [coverImage, setCoverImage] = useState<string | undefined>(undefined);
   const [isAdultMedia, setIsAdultMedia] = useState<boolean>(false);
   const [isAdultImageMedia, setIsAdultImageMedia] = useState<boolean>(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [defaultDuration, setDefaultDuration] = useState<number>(0);
   const [customDuration, setCustomDuration] = useState<number | undefined>(
     undefined
@@ -968,7 +971,13 @@ function QuickLog({
                           src={coverImage}
                           alt="Cover"
                           className={`w-full h-full object-cover ${
-                            (logType === 'vn' ? isAdultImageMedia : isAdultMedia) ? 'blur-sm scale-110' : ''
+                            (
+                              logType === 'vn'
+                                ? isAdultImageMedia
+                                : isAdultMedia
+                            )
+                              ? 'blur-sm scale-110'
+                              : ''
                           }`}
                         />
                       </Link>
@@ -995,7 +1004,7 @@ function QuickLog({
                     <div>
                       <ul className="list-disc list-inside text-sm">
                         {Object.entries(errors).map(([field, error]) => (
-                          <li key={field}>{error}</li>
+                          <li key={field}>{vt(error)}</li>
                         ))}
                       </ul>
                     </div>

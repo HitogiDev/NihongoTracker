@@ -7,6 +7,7 @@ import {
   IUserModeration,
   IUserModerationHistoryItem,
   IFavoriteEntry,
+  SUPPORTED_LANGUAGES,
 } from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
@@ -40,6 +41,7 @@ const SettingsSchema = new Schema<IUserSettings>(
     blurAdultContent: { type: Boolean, default: true },
     hideUnmatchedLogsAlert: { type: Boolean, default: false },
     timezone: { type: String, default: 'UTC' },
+    language: { type: String, enum: SUPPORTED_LANGUAGES, default: 'en' },
     hiddenRecentMedia: { type: [String], default: [] },
     statsLayout: { type: [Schema.Types.Mixed], default: [] },
     profileLayout: { type: [Schema.Types.Mixed], default: [] },

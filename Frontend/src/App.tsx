@@ -4,6 +4,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from './components/Footer';
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 
 const APP_NAME = 'NihongoTracker';
 
@@ -77,103 +79,149 @@ function parseMediaTabRoute(pathname: string): ParsedMediaTabRoute | null {
   return null;
 }
 
-function getTitle(pathname: string) {
+type TitleKey = ParseKeys<['nav', 'common']>;
+
+/**
+ * URL segment → translation key. Spelled out as literals rather than built with
+ * template strings so every key is type-checked and the i18next extractor can
+ * see them.
+ */
+const MEDIA_TYPE_TITLE_KEYS: Record<string, TitleKey> = {
+  anime: 'common:mediaTypes.anime',
+  manga: 'common:mediaTypes.manga',
+  reading: 'common:mediaTypes.reading',
+  vn: 'common:mediaTypes.vn',
+  game: 'common:mediaTypes.game',
+  video: 'common:mediaTypes.video',
+  movie: 'common:mediaTypes.movie',
+  'tv show': 'common:mediaTypes.tvShow',
+  audio: 'common:mediaTypes.audio',
+};
+
+const CLUB_SECTION_TITLE_KEYS: Record<string, TitleKey> = {
+  activity: 'titles.sections.activity',
+  reviews: 'titles.sections.reviews',
+  rankings: 'titles.sections.rankings',
+};
+
+const USER_SECTION_TITLE_KEYS: Record<string, TitleKey> = {
+  stats: 'titles.sections.stats',
+  list: 'titles.sections.immersionList',
+  lists: 'titles.sections.lists',
+  goals: 'titles.sections.goals',
+  moderation: 'titles.sections.moderation',
+};
+
+interface TitleDescriptor {
+  /** Key inside the `nav:titles` bundle, or null for the bare app name. */
+  key: TitleKey | null;
+  /**
+   * Nested keys are resolved by the caller — i18next only expands `$t()` inside
+   * translation values, not inside interpolation parameters.
+   */
+  sectionKey?: TitleKey;
+  typeKey?: TitleKey;
+  username?: string;
+}
+
+/**
+ * Resolves a pathname to a translation key rather than a finished string, so
+ * the document title follows the active language.
+ */
+function getTitleDescriptor(pathname: string): TitleDescriptor {
   const segments = pathname.split('/').filter(Boolean);
 
-  if (segments.length === 0) return `Home • ${APP_NAME}`;
+  if (segments.length === 0) return { key: 'titles.home' };
 
-  if (segments[0] === 'login') return `Login • ${APP_NAME}`;
-  if (segments[0] === 'register') return `Register • ${APP_NAME}`;
-  if (segments[0] === 'forgot-password') return `Forgot Password • ${APP_NAME}`;
-  if (segments[0] === 'reset-password') return `Reset Password • ${APP_NAME}`;
-  if (segments[0] === 'verify-email') return `Verify Email • ${APP_NAME}`;
+  if (segments[0] === 'login') return { key: 'titles.login' };
+  if (segments[0] === 'register') return { key: 'titles.register' };
+  if (segments[0] === 'forgot-password')
+    return { key: 'titles.forgotPassword' };
+  if (segments[0] === 'reset-password') return { key: 'titles.resetPassword' };
+  if (segments[0] === 'verify-email') return { key: 'titles.verifyEmail' };
 
-  if (segments[0] === 'settings') return `Settings • ${APP_NAME}`;
-  if (segments[0] === 'media-request') return `Request Media • ${APP_NAME}`;
-  if (segments[0] === 'notifications') return `Notifications • ${APP_NAME}`;
+  if (segments[0] === 'settings') return { key: 'titles.settings' };
+  if (segments[0] === 'media-request') return { key: 'titles.requestMedia' };
+  if (segments[0] === 'notifications') return { key: 'titles.notifications' };
 
-  if (segments[0] === 'ranking') return `Ranking • ${APP_NAME}`;
+  if (segments[0] === 'ranking') return { key: 'titles.ranking' };
 
   if (segments[0] === 'clubs') {
-    if (segments[1] === 'create') return `Create Club • ${APP_NAME}`;
-    if (segments.length === 1) return `Clubs • ${APP_NAME}`;
+    if (segments[1] === 'create') return { key: 'titles.createClub' };
+    if (segments.length === 1) return { key: 'titles.clubs' };
     if (segments[2] === 'media') {
-      const sub = segments[4];
-      const section =
-        sub === 'activity'
-          ? 'Activity'
-          : sub === 'reviews'
-            ? 'Reviews'
-            : sub === 'rankings'
-              ? 'Rankings'
-              : 'Media';
-      return `${section} • Club • ${APP_NAME}`;
+      return {
+        key: 'titles.clubSection',
+        sectionKey:
+          CLUB_SECTION_TITLE_KEYS[segments[4]] ?? 'titles.sections.media',
+      };
     }
-    return `Club • ${APP_NAME}`;
+    return { key: 'titles.club' };
   }
 
   if (segments[0] === 'lists') {
-    return segments.length > 1
-      ? `List • ${APP_NAME}`
-      : `Lists • ${APP_NAME}`;
+    return { key: segments.length > 1 ? 'titles.list' : 'titles.lists' };
   }
 
-  if (segments[0] === 'calculator') return `Calculator • ${APP_NAME}`;
-  if (segments[0] === 'features') return `Features • ${APP_NAME}`;
-  if (segments[0] === 'about') return `About • ${APP_NAME}`;
-  if (segments[0] === 'support') return `Support • ${APP_NAME}`;
-  if (segments[0] === 'privacy') return `Privacy Policy • ${APP_NAME}`;
-  if (segments[0] === 'terms') return `Terms of Service • ${APP_NAME}`;
-  if (segments[0] === 'changelog') return `Changelog • ${APP_NAME}`;
+  if (segments[0] === 'calculator') return { key: 'titles.calculator' };
+  if (segments[0] === 'features') return { key: 'titles.features' };
+  if (segments[0] === 'about') return { key: 'titles.about' };
+  if (segments[0] === 'support') return { key: 'titles.support' };
+  if (segments[0] === 'privacy') return { key: 'titles.privacy' };
+  if (segments[0] === 'terms') return { key: 'titles.terms' };
+  if (segments[0] === 'changelog') return { key: 'titles.changelog' };
 
-  if (segments[0] === 'admin') return `Admin • ${APP_NAME}`;
+  if (segments[0] === 'admin') return { key: 'titles.admin' };
 
-  if (segments[0] === 'shared-log') return `Shared Log • ${APP_NAME}`;
+  if (segments[0] === 'shared-log') return { key: 'titles.sharedLog' };
 
-  const mediaTypes = [
-    'anime',
-    'manga',
-    'reading',
-    'vn',
-    'game',
-    'video',
-    'movie',
-    'tv show',
-    'audio',
-  ];
-  if (mediaTypes.includes(segments[0])) {
-    return `${segments[0].charAt(0).toUpperCase() + segments[0].slice(1)} Details • ${APP_NAME}`;
+  const typeKey = MEDIA_TYPE_TITLE_KEYS[segments[0]];
+  if (typeKey) {
+    return { key: 'titles.mediaDetails', typeKey };
   }
 
   if (segments[0] === 'user') {
-    const username = segments[1] || 'User';
-    const sectionKey = segments[2];
-    const sectionLabel =
-      sectionKey === 'stats'
-        ? 'Stats'
-        : sectionKey === 'list'
-          ? 'Immersion List'
-          : sectionKey === 'lists'
-            ? 'Lists'
-            : sectionKey === 'goals'
-            ? 'Goals'
-            : sectionKey === 'moderation'
-              ? 'Moderation'
-              : 'Profile';
-    return `${username}'s ${sectionLabel.toLocaleLowerCase()} • ${APP_NAME}`;
+    return {
+      key: 'titles.userSection',
+      username: segments[1] || 'User',
+      sectionKey:
+        USER_SECTION_TITLE_KEYS[segments[2]] ?? 'titles.sections.profile',
+    };
   }
-  if (segments[0] === 'goals') return `Goals • ${APP_NAME}`;
-  if (segments[0] === 'log') return `Create Log • ${APP_NAME}`;
-  if (segments[0] === 'matchmedia') return `Match Media • ${APP_NAME}`;
-  return APP_NAME;
+  if (segments[0] === 'goals') return { key: 'titles.goals' };
+  if (segments[0] === 'log') return { key: 'titles.createLog' };
+  if (segments[0] === 'matchmedia') return { key: 'titles.matchMedia' };
+  return { key: null };
 }
 
 function TitleManager() {
   const { pathname } = useLocation();
+  const { t, i18n } = useTranslation(['nav', 'common']);
 
   useEffect(() => {
-    document.title = getTitle(pathname);
-  }, [pathname]);
+    const { key, sectionKey, typeKey, username } = getTitleDescriptor(pathname);
+
+    if (!key) {
+      document.title = APP_NAME;
+      return;
+    }
+
+    const params: Record<string, string> = {};
+    if (sectionKey) params.section = t(sectionKey);
+    if (typeKey) params.type = t(typeKey);
+    if (username) params.username = username;
+
+    // The keys are already checked as ParseKeys above; widening here only
+    // relaxes the per-key interpolation signature, which cannot be expressed
+    // over a union of keys.
+    const translate = t as (
+      key: TitleKey,
+      params?: Record<string, string>
+    ) => string;
+
+    document.title = `${translate(key, params)} • ${APP_NAME}`;
+    // i18n.language is a dependency so the title is recomputed on switch
+  }, [pathname, t, i18n.language]);
 
   return null;
 }

@@ -1,8 +1,10 @@
 import { FilePlus, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 
 function Footer() {
+  const { t } = useTranslation('nav');
   const { user } = useUserDataStore();
 
   return (
@@ -12,7 +14,9 @@ function Footer() {
           <p className="text-base-content text-sm sm:text-base">
             © {new Date().getFullYear()} NihongoTracker
             <span className="text-base-content/50 mx-2">•</span>
-            <span className="text-base-content/70">Data provided by </span>
+            <span className="text-base-content/70">
+              {t('footer.dataProvidedBy')}{' '}
+            </span>
             <a
               href="https://anilist.co"
               target="_blank"
@@ -21,7 +25,7 @@ function Footer() {
             >
               AniList
             </a>
-            <span className="text-base-content/70"> and </span>
+            <span className="text-base-content/70"> {t('footer.and')} </span>
             <a
               href="https://vndb.org"
               target="_blank"
@@ -40,19 +44,19 @@ function Footer() {
               to="/privacy"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Privacy Policy
+              {t('footer.privacy')}
             </Link>
             <Link
               to="/terms"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Terms of Service
+              {t('footer.terms')}
             </Link>
             <Link
               to="/refund-policy"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Refund Policy
+              {t('footer.refund')}
             </Link>
             {user && (
               <Link
@@ -60,21 +64,21 @@ function Footer() {
                 className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
               >
                 <FilePlus className="w-4 h-4" />
-                <span>Request Media</span>
+                <span>{t('footer.requestMedia')}</span>
               </Link>
             )}
             <Link
               to="/changelog"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Changelog
+              {t('footer.changelog')}
             </Link>
             <Link
               to="/support"
               className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
               <Heart className="w-4 h-4" />
-              <span className="font-medium">Support</span>
+              <span className="font-medium">{t('footer.support')}</span>
             </Link>
           </nav>
 
@@ -84,7 +88,7 @@ function Footer() {
               target="_blank"
               rel="noreferrer"
               className="btn btn-ghost btn-sm btn-circle"
-              aria-label="NihongoTracker GitHub"
+              aria-label={t('footer.github')}
             >
               <svg
                 role="img"
@@ -100,7 +104,7 @@ function Footer() {
               target="_blank"
               rel="noreferrer"
               className="btn btn-ghost btn-sm btn-circle"
-              aria-label="NihongoTracker Discord"
+              aria-label={t('footer.discord')}
             >
               <svg
                 role="img"

@@ -5,16 +5,19 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { ILoginResponse } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { toast } from 'react-toastify';
-import { AxiosError } from 'axios';
 import Loader from '../components/Loader';
 import { validateLogin } from '../utils/validation';
 import { gsap } from 'gsap';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import { getApiErrorMessage } from '../utils/apiError';
 
 function LoginScreen() {
+  const vt = useValidationText();
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [touched, setTouched] = useState({ login: false, password: false });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const { setUser } = useUserDataStore();
   const navigate = useNavigate();
 
@@ -99,7 +102,7 @@ function LoginScreen() {
 
   // Validate fields when touched
   useEffect(() => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, ValidationKey> = {};
 
     if (touched.login) {
       const usernameOrEmailError = validateLogin(usernameOrEmail);
@@ -109,7 +112,7 @@ function LoginScreen() {
     }
 
     if (touched.password && !password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'password.required';
     }
 
     setErrors(newErrors);
@@ -130,11 +133,7 @@ function LoginScreen() {
       setUser(data);
     },
     onError: (error) => {
-      if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message);
-      } else {
-        toast.error(error.message ? error.message : 'An error occurred');
-      }
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -387,7 +386,7 @@ function LoginScreen() {
                   {errors.usernameOrEmail && (
                     <label className="label">
                       <span className="label-text-alt text-error text-wrap break-words">
-                        {errors.usernameOrEmail}
+                        {vt(errors.usernameOrEmail)}
                       </span>
                     </label>
                   )}
@@ -433,7 +432,7 @@ function LoginScreen() {
                   {errors.password && (
                     <label className="label">
                       <span className="label-text-alt text-error text-wrap break-words">
-                        {errors.password}
+                        {vt(errors.password)}
                       </span>
                     </label>
                   )}

@@ -17,8 +17,11 @@ import {
   ProfileWidgetId,
   ProfileWidgetLayout,
   userRoles,
+  SUPPORTED_LANGUAGES,
+  SupportedLanguage,
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import {
   cropAnimatedGifBuffer,
@@ -106,6 +109,7 @@ export async function updateUser(
     blurAdultContent,
     hideUnmatchedLogsAlert,
     timezone,
+    language,
     about,
     avatarCrop,
     bannerCrop,
@@ -114,7 +118,7 @@ export async function updateUser(
   try {
     const user = await User.findById(res.locals.user._id).select('+password');
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const hasPatreonMediaAccess =
@@ -126,19 +130,31 @@ export async function updateUser(
 
     if (newPassword || newPasswordConfirm) {
       if (!password) {
-        throw new customError('Old password is required', 400);
+        throw apiError(
+          'user.oldPasswordRequired',
+          400,
+          'Old password is required'
+        );
       }
       if (!newPassword) {
-        throw new customError('New password is required', 400);
+        throw apiError(
+          'user.newPasswordRequired',
+          400,
+          'New password is required'
+        );
       }
       if (!newPasswordConfirm) {
-        throw new customError('You need to confirm the new password', 400);
+        throw apiError(
+          'user.passwordConfirmRequired',
+          400,
+          'You need to confirm the new password'
+        );
       }
       if (newPassword !== newPasswordConfirm) {
-        throw new customError('Passwords do not match', 403);
+        throw apiError('user.passwordMismatch', 403, 'Passwords do not match');
       }
       if (!(await user.matchPassword(password))) {
-        throw new customError('Incorrect password', 403);
+        throw apiError('user.incorrectPassword', 403, 'Incorrect password');
       }
 
       user.password = newPassword;
@@ -146,25 +162,27 @@ export async function updateUser(
 
     if (username) {
       if (!username.match(/^[a-zA-Z0-9_]*$/)) {
-        throw new customError(
-          'Username can only contain letters, numbers and underscores',
-          400
+        throw apiError(
+          'user.usernameInvalid',
+          400,
+          'Username can only contain letters, numbers and underscores'
         );
       }
       if (username.length < 1 || username.length > 20) {
-        throw new customError(
-          'Username must be between 1 and 20 characters',
-          400
+        throw apiError(
+          'user.usernameLength',
+          400,
+          'Username must be between 1 and 20 characters'
         );
       }
       if (await User.findOne({ username })) {
-        throw new customError('Username already taken', 400);
+        throw apiError('user.usernameTaken', 400, 'Username already taken');
       }
       if (!password) {
-        throw new customError('Password is required', 400);
+        throw apiError('user.passwordRequired', 400, 'Password is required');
       }
       if (!(await user.matchPassword(password))) {
-        throw new customError('Incorrect password', 403);
+        throw apiError('user.incorrectPassword', 403, 'Incorrect password');
       }
 
       if (user.username !== username) user.username = username;
@@ -178,7 +196,7 @@ export async function updateUser(
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-          throw new customError('Invalid email format', 400);
+          throw apiError('user.emailInvalid', 400, 'Invalid email format');
         }
 
         // Check if email is already in use by another user
@@ -187,14 +205,14 @@ export async function updateUser(
           existingUser &&
           existingUser._id.toString() !== user._id.toString()
         ) {
-          throw new customError('Email already in use', 400);
+          throw apiError('user.emailTaken', 400, 'Email already in use');
         }
 
         if (!password) {
-          throw new customError('Password is required', 400);
+          throw apiError('user.passwordRequired', 400, 'Password is required');
         }
         if (!(await user.matchPassword(password))) {
-          throw new customError('Incorrect password', 403);
+          throw apiError('user.incorrectPassword', 403, 'Incorrect password');
         }
 
         // If email is being changed, mark as unverified
@@ -217,9 +235,10 @@ export async function updateUser(
       (parsedAvatarCrop || parsedBannerCrop) &&
       (!req.files || Object.keys(req.files).length === 0)
     ) {
-      throw new customError(
-        'Crop metadata requires an uploaded avatar or banner file',
-        400
+      throw apiError(
+        'upload.cropWithoutFile',
+        400,
+        'Crop metadata requires an uploaded avatar or banner file'
       );
     }
 
@@ -235,16 +254,18 @@ export async function updateUser(
         : DEFAULT_BANNER_MAX_FILE_SIZE_BYTES;
 
       if (parsedAvatarCrop && !files.avatar?.[0]) {
-        throw new customError(
-          'avatarCrop was provided without an avatar file upload',
-          400
+        throw apiError(
+          'upload.avatarCropWithoutFile',
+          400,
+          'avatarCrop was provided without an avatar file upload'
         );
       }
 
       if (parsedBannerCrop && !files.banner?.[0]) {
-        throw new customError(
-          'bannerCrop was provided without a banner file upload',
-          400
+        throw apiError(
+          'upload.bannerCropWithoutFile',
+          400,
+          'bannerCrop was provided without a banner file upload'
         );
       }
 
@@ -253,16 +274,18 @@ export async function updateUser(
         const isAvatarGif = isGifFile(avatarFile);
 
         if (isAvatarGif && !hasPatreonMediaAccess) {
-          throw new customError(
-            'Animated GIF avatars are only available for Enthusiast and Consumer Patreon tiers.',
-            400
+          throw apiError(
+            'upload.gifAvatarTierRequired',
+            400,
+            'Animated GIF avatars are only available for Enthusiast and Consumer Patreon tiers.'
           );
         }
 
         if (parsedAvatarCrop && !isAvatarGif) {
-          throw new customError(
-            'avatarCrop is only supported for GIF avatar uploads',
-            400
+          throw apiError(
+            'upload.avatarCropGifOnly',
+            400,
+            'avatarCrop is only supported for GIF avatar uploads'
           );
         }
 
@@ -290,16 +313,18 @@ export async function updateUser(
         const isBannerGif = isGifFile(bannerFile);
 
         if (isBannerGif && !hasPatreonMediaAccess) {
-          throw new customError(
-            'Animated GIF banners are only available for Enthusiast and Consumer Patreon tiers.',
-            400
+          throw apiError(
+            'upload.gifBannerTierRequired',
+            400,
+            'Animated GIF banners are only available for Enthusiast and Consumer Patreon tiers.'
           );
         }
 
         if (parsedBannerCrop && !isBannerGif) {
-          throw new customError(
-            'bannerCrop is only supported for GIF banner uploads',
-            400
+          throw apiError(
+            'upload.bannerCropGifOnly',
+            400,
+            'bannerCrop is only supported for GIF banner uploads'
           );
         }
 
@@ -323,9 +348,10 @@ export async function updateUser(
       }
 
       if (!files.avatar && !files.banner) {
-        throw new customError(
-          'Invalid field name. Only avatar and banner uploads are allowed.',
-          400
+        throw apiError(
+          'upload.invalidFieldName',
+          400,
+          'Invalid field name. Only avatar and banner uploads are allowed.'
         );
       }
     }
@@ -338,7 +364,11 @@ export async function updateUser(
         user.discordId = undefined;
       } else {
         if (!normalizedDiscordId.match(/^\d{17,19}$/)) {
-          throw new customError('Invalid Discord ID format', 400);
+          throw apiError(
+            'user.invalidDiscordId',
+            400,
+            'Invalid Discord ID format'
+          );
         }
         const existingUser = await User.findOne({
           discordId: normalizedDiscordId,
@@ -347,9 +377,10 @@ export async function updateUser(
           existingUser &&
           existingUser._id.toString() !== user._id.toString()
         ) {
-          throw new customError(
-            'Discord ID already linked to another user',
-            400
+          throw apiError(
+            'user.discordIdLinked',
+            400,
+            'Discord ID already linked to another user'
           );
         }
         user.discordId = normalizedDiscordId;
@@ -359,7 +390,8 @@ export async function updateUser(
     if (
       blurAdultContent !== undefined ||
       hideUnmatchedLogsAlert !== undefined ||
-      timezone !== undefined
+      timezone !== undefined ||
+      language !== undefined
     ) {
       const updatedSettings: any = { ...user.settings };
 
@@ -378,8 +410,15 @@ export async function updateUser(
           Intl.DateTimeFormat(undefined, { timeZone: timezone });
           updatedSettings.timezone = timezone;
         } catch (error) {
-          throw new customError('Invalid timezone', 400);
+          throw apiError('user.invalidTimezone', 400, 'Invalid timezone');
         }
+      }
+
+      if (language !== undefined) {
+        if (!SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
+          throw apiError('user.invalidLanguage', 400, 'Invalid language');
+        }
+        updatedSettings.language = language;
       }
       user.settings = updatedSettings;
     }
@@ -387,7 +426,11 @@ export async function updateUser(
     if (about !== undefined) {
       const aboutText = typeof about === 'string' ? about : '';
       if (aboutText.length > 2000) {
-        throw new customError('About me must be 2000 characters or less', 400);
+        throw apiError(
+          'user.aboutTooLong',
+          400,
+          'About me must be 2000 characters or less'
+        );
       }
       user.about = aboutText;
     }
@@ -448,15 +491,23 @@ export async function updateHiddenRecentMedia(
   try {
     const user = await User.findById(res.locals.user._id);
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     if (!mediaId || typeof mediaId !== 'string') {
-      throw new customError('Valid mediaId is required', 400);
+      throw apiError(
+        'immersionList.mediaIdRequired',
+        400,
+        'Valid mediaId is required'
+      );
     }
 
     if (!['add', 'remove'].includes(action)) {
-      throw new customError('Action must be "add" or "remove"', 400);
+      throw apiError(
+        'favorites.invalidAction',
+        400,
+        'Action must be "add" or "remove"'
+      );
     }
 
     if (!user.settings) {
@@ -532,32 +583,64 @@ export async function updateStatsLayout(
 
   try {
     const user = await User.findById(res.locals.user._id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     if (!Array.isArray(layout))
-      throw new customError('Layout must be an array of groups', 400);
+      throw apiError(
+        'layout.mustBeArrayOfGroups',
+        400,
+        'Layout must be an array of groups'
+      );
 
     for (const group of layout) {
       if (!group || typeof group !== 'object')
-        throw new customError('Each group must be an object', 400);
+        throw apiError(
+          'layout.groupMustBeObject',
+          400,
+          'Each group must be an object'
+        );
       if (!VALID_GROUP_IDS.has(group.id as StatsGroupId))
-        throw new customError(`Invalid group id: ${group.id}`, 400);
+        throw apiError(
+          'layout.invalidGroupId',
+          400,
+          `Invalid group id: ${group.id}`,
+          {
+            id: String(group.id),
+          }
+        );
       if (typeof group.visible !== 'boolean')
-        throw new customError(
-          'Each group must have a boolean visible field',
-          400
+        throw apiError(
+          'layout.groupNeedsVisible',
+          400,
+          'Each group must have a boolean visible field'
         );
       if (!Array.isArray(group.cards))
-        throw new customError('Each group must have a cards array', 400);
+        throw apiError(
+          'layout.groupNeedsCards',
+          400,
+          'Each group must have a cards array'
+        );
       for (const card of group.cards) {
         if (!card || typeof card !== 'object')
-          throw new customError('Each card must be an object', 400);
+          throw apiError(
+            'layout.cardMustBeObject',
+            400,
+            'Each card must be an object'
+          );
         if (!VALID_STATS_CARD_IDS.has(card.id as StatsCardId))
-          throw new customError(`Invalid card id: ${card.id}`, 400);
+          throw apiError(
+            'layout.invalidCardId',
+            400,
+            `Invalid card id: ${card.id}`,
+            {
+              id: String(card.id),
+            }
+          );
         if (typeof card.visible !== 'boolean')
-          throw new customError(
-            'Each card must have a boolean visible field',
-            400
+          throw apiError(
+            'layout.cardNeedsVisible',
+            400,
+            'Each card must have a boolean visible field'
           );
       }
     }
@@ -604,24 +687,47 @@ export async function updateProfileLayout(
 
   try {
     const user = await User.findById(res.locals.user._id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     if (!Array.isArray(layout))
-      throw new customError('Layout must be an array of widgets', 400);
+      throw apiError(
+        'layout.mustBeArrayOfWidgets',
+        400,
+        'Layout must be an array of widgets'
+      );
 
     const seen = new Set<string>();
     for (const widget of layout) {
       if (!widget || typeof widget !== 'object')
-        throw new customError('Each widget must be an object', 400);
+        throw apiError(
+          'layout.widgetMustBeObject',
+          400,
+          'Each widget must be an object'
+        );
       if (!VALID_PROFILE_WIDGET_IDS.has(widget.id as ProfileWidgetId))
-        throw new customError(`Invalid widget id: ${widget.id}`, 400);
+        throw apiError(
+          'layout.invalidWidgetId',
+          400,
+          `Invalid widget id: ${widget.id}`,
+          {
+            id: String(widget.id),
+          }
+        );
       if (seen.has(widget.id))
-        throw new customError(`Duplicate widget id: ${widget.id}`, 400);
+        throw apiError(
+          'layout.duplicateWidgetId',
+          400,
+          `Duplicate widget id: ${widget.id}`,
+          {
+            id: String(widget.id),
+          }
+        );
       seen.add(widget.id);
       if (typeof widget.visible !== 'boolean')
-        throw new customError(
-          'Each widget must have a boolean visible field',
-          400
+        throw apiError(
+          'layout.widgetNeedsVisible',
+          400,
+          'Each widget must have a boolean visible field'
         );
     }
 
@@ -715,36 +821,63 @@ export async function updateFavorites(
 
   try {
     const user = await User.findById(res.locals.user._id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     if (!Array.isArray(favorites))
-      throw new customError('Favorites must be an array', 400);
+      throw apiError(
+        'favorites.mustBeArray',
+        400,
+        'Favorites must be an array'
+      );
 
     if (favorites.length > MAX_FAVORITES)
-      throw new customError(
+      throw apiError(
+        'favorites.tooMany',
+        400,
         `You can save at most ${MAX_FAVORITES} favorites`,
-        400
+        { max: MAX_FAVORITES }
       );
 
     const normalized: IFavoriteEntry[] = favorites.map((fav, index) => {
       if (!fav || typeof fav !== 'object')
-        throw new customError('Each favorite must be an object', 400);
+        throw apiError(
+          'favorites.itemMustBeObject',
+          400,
+          'Each favorite must be an object'
+        );
 
       if (typeof fav.mediaId !== 'string' || !fav.mediaId.trim())
-        throw new customError('Each favorite needs a valid mediaId', 400);
+        throw apiError(
+          'favorites.mediaIdRequired',
+          400,
+          'Each favorite needs a valid mediaId'
+        );
 
       if (!isFavoriteMediaType(fav.mediaType))
-        throw new customError(`Invalid mediaType: ${fav.mediaType}`, 400);
+        throw apiError(
+          'favorites.invalidMediaType',
+          400,
+          `Invalid mediaType: ${fav.mediaType}`,
+          {
+            mediaType: String(fav.mediaType),
+          }
+        );
 
       let note: string | undefined;
       if (fav.note !== undefined && fav.note !== null) {
         if (typeof fav.note !== 'string')
-          throw new customError('Note must be a string', 400);
+          throw apiError(
+            'immersionList.noteMustBeString',
+            400,
+            'Note must be a string'
+          );
         const trimmed = fav.note.trim();
         if (trimmed.length > FAVORITE_NOTE_MAX_LENGTH)
-          throw new customError(
+          throw apiError(
+            'favorites.noteTooLong',
+            400,
             `Note must be ${FAVORITE_NOTE_MAX_LENGTH} characters or fewer`,
-            400
+            { max: FAVORITE_NOTE_MAX_LENGTH }
           );
         note = trimmed.length ? trimmed : undefined;
       }
@@ -772,7 +905,7 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
   const userFound = await User.findOne({
     username: req.params.username,
   }).collation({ locale: 'en', strength: 2 });
-  if (!userFound) return next(new customError('User not found', 404));
+  if (!userFound) return next(apiError('user.notFound', 404, 'User not found'));
 
   const timezone = userFound.settings?.timezone || 'UTC';
   const liveCurrentStreak = getLiveCurrentStreak(
@@ -1354,7 +1487,7 @@ export async function getRankingSummary(
       .lean();
 
     if (!userDoc || !userDoc.stats) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const timezone = timezoneParam || userDoc.settings?.timezone || 'UTC';
@@ -1619,7 +1752,7 @@ export async function getRankingHistory(
     const { username } = req.params;
     const userDoc = await User.findOne({ username }).select('_id').lean();
     if (!userDoc) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const snapshots = await RankSnapshot.find({ userId: userDoc._id })
@@ -1867,14 +2000,15 @@ export async function clearUserData(
 
     const user = await User.findById(res.locals.user._id);
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     // Verify username matches for extra confirmation
     if (username !== user.username) {
-      throw new customError(
-        'Username does not match. Please type your username to confirm.',
-        400
+      throw apiError(
+        'user.usernameConfirmMismatch',
+        400,
+        'Username does not match. Please type your username to confirm.'
       );
     }
 
@@ -1940,7 +2074,7 @@ export async function clearUserData(
     );
 
     if (!updatedUser) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     // Delete all logs
@@ -1982,7 +2116,7 @@ export async function getImmersionList(
 ) {
   try {
     const user = await User.findOne({ username: req.params.username });
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     type StatusFilter =
       | 'all'
@@ -2234,7 +2368,7 @@ export async function updateMediaCompletionStatus(
 ) {
   try {
     if (!res.locals.user?._id) {
-      throw new customError('Not authorized', 401);
+      throw apiError('auth.forbidden', 401, 'Not authorized');
     }
 
     const { mediaId, type, completed, completedAt, source, status } =
@@ -2253,14 +2387,22 @@ export async function updateMediaCompletionStatus(
       };
 
     if (!mediaId || !type) {
-      throw new customError('Media ID and type are required', 400);
+      throw apiError(
+        'immersionList.mediaIdAndTypeRequired',
+        400,
+        'Media ID and type are required'
+      );
     }
 
     const normalizedMediaId = String(mediaId);
     const normalizedType = type.toLowerCase() as ImmersionMediaType;
 
     if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
-      throw new customError('Invalid media type', 400);
+      throw apiError(
+        'immersionList.invalidMediaType',
+        400,
+        'Invalid media type'
+      );
     }
 
     const normalizedSource = source?.toLowerCase();
@@ -2269,7 +2411,7 @@ export async function updateMediaCompletionStatus(
       normalizedSource !== 'manual' &&
       normalizedSource !== 'auto'
     ) {
-      throw new customError('Invalid source', 400);
+      throw apiError('immersionList.invalidSource', 400, 'Invalid source');
     }
 
     const validStatuses = [
@@ -2280,7 +2422,11 @@ export async function updateMediaCompletionStatus(
       'in_progress',
     ];
     if (status && !validStatuses.includes(status)) {
-      throw new customError('Invalid status value', 400);
+      throw apiError(
+        'immersionList.invalidStatus',
+        400,
+        'Invalid status value'
+      );
     }
 
     const completionSource = (normalizedSource ?? 'manual') as
@@ -2293,7 +2439,7 @@ export async function updateMediaCompletionStatus(
     }).lean();
 
     if (!mediaExists) {
-      throw new customError('Media not found', 404);
+      throw apiError('media.notFound', 404, 'Media not found');
     }
 
     // Determine the effective status to write
@@ -2397,7 +2543,7 @@ export async function removeMediaFromImmersionList(
 ) {
   try {
     if (!res.locals.user?._id) {
-      throw new customError('Not authorized', 401);
+      throw apiError('auth.forbidden', 401, 'Not authorized');
     }
 
     const { mediaId, type } = req.params as {
@@ -2406,14 +2552,22 @@ export async function removeMediaFromImmersionList(
     };
 
     if (!mediaId || !type) {
-      throw new customError('Media ID and type are required', 400);
+      throw apiError(
+        'immersionList.mediaIdAndTypeRequired',
+        400,
+        'Media ID and type are required'
+      );
     }
 
     const normalizedMediaId = String(mediaId);
     const normalizedType = type.toLowerCase() as ImmersionMediaType;
 
     if (!IMMERSION_MEDIA_TYPES.includes(normalizedType)) {
-      throw new customError('Invalid media type', 400);
+      throw apiError(
+        'immersionList.invalidMediaType',
+        400,
+        'Invalid media type'
+      );
     }
 
     const userId = res.locals.user._id;
@@ -2431,7 +2585,11 @@ export async function removeMediaFromImmersionList(
       const existingStatus = await UserMediaStatus.findOne(statusFilter).lean();
 
       if (logCount === 0 && !existingStatus) {
-        throw new customError('Media not found in your immersion list', 404);
+        throw apiError(
+          'immersionList.mediaNotFound',
+          404,
+          'Media not found in your immersion list'
+        );
       }
 
       if (logCount === 0) {
@@ -2478,7 +2636,11 @@ export async function removeMediaFromImmersionList(
     ]);
 
     if (logResult.deletedCount === 0 && statusResult.deletedCount === 0) {
-      throw new customError('Media not found in your immersion list', 404);
+      throw apiError(
+        'immersionList.mediaNotFound',
+        404,
+        'Media not found in your immersion list'
+      );
     }
 
     if (logResult.deletedCount > 0) {
@@ -2770,7 +2932,7 @@ export async function getGanttData(
 ) {
   try {
     const user = await User.findOne({ username: req.params.username }).lean();
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     const typeFilter = req.query.type as string | undefined;
     const timezone = (req.query.timezone as string) || 'UTC';

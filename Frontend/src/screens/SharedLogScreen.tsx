@@ -20,6 +20,8 @@ import {
   MonitorPlay,
 } from 'lucide-react';
 import { validateSharedLogData } from '../utils/validation';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
 
 const logTypeConfig = {
   reading: {
@@ -102,6 +104,7 @@ const logTypeConfig = {
 };
 
 function SharedLogScreen() {
+  const vt = useValidationText();
   const { logId } = useParams<{ logId: string }>();
   const navigate = useNavigate();
   const { user } = useUserDataStore();
@@ -114,7 +117,7 @@ function SharedLogScreen() {
     pages: 0,
     description: '',
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const {
@@ -536,7 +539,7 @@ function SharedLogScreen() {
                         {errors.description && (
                           <label className="label">
                             <span className="label-text-alt text-error">
-                              {errors.description}
+                              {vt(errors.description)}
                             </span>
                           </label>
                         )}
@@ -566,7 +569,7 @@ function SharedLogScreen() {
                             {errors.episodes && (
                               <label className="label">
                                 <span className="label-text-alt text-error">
-                                  {errors.episodes}
+                                  {vt(errors.episodes)}
                                 </span>
                               </label>
                             )}

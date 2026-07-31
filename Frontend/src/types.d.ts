@@ -101,6 +101,7 @@ export interface IUser {
     blurAdultContent: boolean;
     hideUnmatchedLogsAlert?: boolean;
     timezone?: string;
+    language?: 'en' | 'es';
     statsLayout?: StatsGroupLayout[];
     profileLayout?: ProfileWidgetLayout[];
     notificationsLastViewedAt?: string | Date | null;
@@ -350,6 +351,7 @@ export interface updateUserRequest {
   newPassword?: string;
   newPasswordConfirm?: string;
   blurAdultContent?: boolean;
+  language?: 'en' | 'es';
   about?: string;
 }
 
