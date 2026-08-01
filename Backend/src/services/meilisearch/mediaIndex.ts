@@ -4,9 +4,11 @@ import {
   createIndex,
   updateIndexSettings,
   getIndexStats,
+  getExistingIndexUids,
+  invalidateIndexUidCache,
 } from './meiliSearch.js';
 
-const MEDIA_INDEXES = [
+export const MEDIA_INDEXES = [
   'anime',
   'manga',
   'reading',
@@ -45,19 +47,44 @@ const MEDIA_INDEX_SETTINGS = {
 };
 
 export async function initMediaIndexes() {
+  let existing: Set<string>;
   try {
-    for (const indexName of MEDIA_INDEXES) {
-      try {
+    existing = await getExistingIndexUids(true);
+  } catch (error) {
+    console.error('Failed to list Meilisearch indexes:', error);
+    existing = new Set();
+  }
+
+  const failed: string[] = [];
+
+  // Per-index error handling: one index failing to initialize must not stop the
+  // rest from being created (that would leave later indexes — e.g. newly added
+  // ones — missing, and multi-search 400s on a missing index).
+  for (const indexName of MEDIA_INDEXES) {
+    try {
+      if (!existing.has(indexName)) {
         await createIndex(indexName, '_id');
-      } catch {
-        // Index may already exist — that's fine
       }
       await updateIndexSettings(indexName, MEDIA_INDEX_SETTINGS);
+    } catch (error) {
+      failed.push(indexName);
+      console.error(
+        `Failed to initialize Meilisearch index "${indexName}":`,
+        error
+      );
     }
-    console.log('✅ Meilisearch media indexes initialized');
-  } catch (error) {
-    console.error('Failed to initialize media indexes:', error);
   }
+
+  invalidateIndexUidCache();
+
+  if (failed.length > 0) {
+    console.error(
+      `⚠️  Meilisearch media indexes initialized with failures: ${failed.join(', ')}`
+    );
+    return;
+  }
+
+  console.log('✅ Meilisearch media indexes initialized');
 }
 
 async function isIndexEmpty(indexName: string): Promise<boolean> {

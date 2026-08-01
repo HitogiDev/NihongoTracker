@@ -20,7 +20,10 @@ import {
   searchGoogleBooks,
   getGoogleBook,
 } from '../services/searchGoogleBooks.js';
-import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import {
+  addMediaToIndex,
+  MEDIA_INDEXES,
+} from '../services/meilisearch/mediaIndex.js';
 import { fetchJitenDetail } from '../services/jiten.js';
 import {
   addDocuments,
@@ -497,16 +500,7 @@ export async function searchMedia(
   }
 }
 
-const MULTI_SEARCH_INDEXES = [
-  'anime',
-  'manga',
-  'reading',
-  'vn',
-  'movie',
-  'tv_show',
-  'game',
-  'book',
-] as const;
+const MULTI_SEARCH_INDEXES = MEDIA_INDEXES;
 
 export async function multiSearchMedia(
   req: Request,

@@ -55,11 +55,29 @@ function fmtHours(h: number, decimals = 1): string {
   const n = Number.isFinite(h) ? Math.max(0, h) : 0;
   const s = n.toFixed(decimals);
   // Trim trailing zeros / dot: 36.0 -> 36, 66.10 -> 66.1
-  return `${s.replace(/\.?0+$/, '')} h`;
+  const trimmed = s.replace(/\.?0+$/, '');
+  const [int, frac] = trimmed.split('.');
+  const grouped = Number(int).toLocaleString('en-US');
+  return `${frac ? `${grouped}.${frac}` : grouped} h`;
 }
 
-function fmtChars(n: number): string {
+// Big counts are abbreviated (1,300,000 -> 1.3M) so the value never outgrows its
+// tile. Precision shrinks as the magnitude grows: 1.01M, 12.3M, 123M.
+function fmtCompact(n: number): string {
   const v = Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+  const units: Array<{ limit: number; suffix: string }> = [
+    { limit: 1e12, suffix: 'T' },
+    { limit: 1e9, suffix: 'B' },
+    { limit: 1e6, suffix: 'M' },
+  ];
+  for (const { limit, suffix } of units) {
+    if (v < limit) continue;
+    const scaled = v / limit;
+    const decimals = scaled < 10 ? 2 : scaled < 100 ? 1 : 0;
+    // Trim trailing zeros / dot: 1.30 -> 1.3, 5.00 -> 5
+    const s = scaled.toFixed(decimals).replace(/\.?0+$/, '');
+    return `${s}${suffix}`;
+  }
   return v.toLocaleString('en-US');
 }
 
@@ -91,7 +109,7 @@ function buildTiles(t: StatsCardTiles): Tile[] {
     },
     {
       label: 'CHARACTERS READ',
-      value: fmtChars(t.chars),
+      value: fmtCompact(t.chars),
       color: C_PRIMARY,
       icon: 'chars',
     },
@@ -227,13 +245,15 @@ export async function generateStatsCardImage(
     ctx.fillText(tile.label, bx + badge + 16, by + badge / 2 + 1);
     ctx.restore();
 
-    // Value (big, coloured)
+    // Value (big, coloured). Shrunk to fit the tile's inner width so an unusually
+    // long value can never bleed past the tile edge.
+    const valuePad = 28;
     ctx.save();
     ctx.fillStyle = tile.color;
-    ctx.font = `bold ${tile.value.length > 9 ? 40 : 48}px sans-serif`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
-    ctx.fillText(tile.value, tx + 28, ty + tileH - 32);
+    fitFont(ctx, tile.value, tileW - valuePad * 2, 48, 24);
+    ctx.fillText(tile.value, tx + valuePad, ty + tileH - 32);
     ctx.restore();
   });
 
@@ -361,6 +381,22 @@ function rrect(
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+}
+
+// Set the largest bold size in [minPx, maxPx] whose rendered width fits maxWidth.
+function fitFont(
+  ctx: any,
+  text: string,
+  maxWidth: number,
+  maxPx: number,
+  minPx: number
+): void {
+  let size = maxPx;
+  ctx.font = `bold ${size}px sans-serif`;
+  while (size > minPx && ctx.measureText(text).width > maxWidth) {
+    size -= 2;
+    ctx.font = `bold ${size}px sans-serif`;
+  }
 }
 
 function withAlpha(hex: string, alpha: number): string {

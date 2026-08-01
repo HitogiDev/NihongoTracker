@@ -13,18 +13,10 @@ import {
 import {
   initMediaIndexes,
   forceSyncAllMedia,
+  MEDIA_INDEXES,
 } from '../services/meilisearch/mediaIndex.js';
 
 const MEILI_USERS_INDEX = 'users';
-const MEILI_MEDIA_INDEXES = [
-  'anime',
-  'manga',
-  'reading',
-  'vn',
-  'movie',
-  'tv_show',
-  'game',
-] as const;
 
 function shouldRebuildIndexes(value: unknown): boolean {
   if (typeof value === 'boolean') {
@@ -107,7 +99,7 @@ export async function syncMeiliSearchIndexes(
     await Promise.all([initUsersIndex(), initMediaIndexes()]);
 
     if (rebuild) {
-      const indexesToClear = [MEILI_USERS_INDEX, ...MEILI_MEDIA_INDEXES];
+      const indexesToClear = [MEILI_USERS_INDEX, ...MEDIA_INDEXES];
 
       await Promise.all(
         indexesToClear.map(async (indexName) => {
