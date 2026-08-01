@@ -43,6 +43,7 @@ const TYPE_ORDER: MediaListMediaType[] = [
   'video',
   'movie',
   'tv show',
+  'book',
 ];
 
 const TYPE_LABELS: Record<MediaListMediaType, string> = {

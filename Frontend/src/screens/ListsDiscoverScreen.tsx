@@ -29,6 +29,7 @@ const MEDIA_TYPE_FILTERS: Array<{
   { value: 'video', label: 'Video' },
   { value: 'movie', label: 'Movies' },
   { value: 'tv show', label: 'TV shows' },
+  { value: 'book', label: 'Books' },
 ];
 
 function ListsDiscoverScreen() {

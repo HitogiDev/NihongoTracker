@@ -45,7 +45,8 @@ type ImmersionMediaType =
   | 'game'
   | 'video'
   | 'movie'
-  | 'tv show';
+  | 'tv show'
+  | 'book';
 
 const IMMERSION_MEDIA_TYPES: ImmersionMediaType[] = [
   'anime',
@@ -56,6 +57,7 @@ const IMMERSION_MEDIA_TYPES: ImmersionMediaType[] = [
   'video',
   'movie',
   'tv show',
+  'book',
 ];
 
 const BYTES_IN_MEGABYTE = 1024 * 1024;
@@ -658,6 +660,7 @@ const FAVORITE_MEDIA_TYPES: MediaListMediaType[] = [
   'movie',
   'tv show',
   'game',
+  'book',
 ];
 const MAX_FAVORITES = 50;
 const FAVORITE_NOTE_MAX_LENGTH = 500;
@@ -2090,6 +2093,7 @@ export async function getImmersionList(
       video: [],
       movie: [],
       'tv show': [],
+      book: [],
     };
 
     const statusMap = new Map<

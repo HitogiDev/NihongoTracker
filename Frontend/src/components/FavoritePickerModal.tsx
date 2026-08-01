@@ -18,6 +18,7 @@ const MEDIA_TYPE_CONFIG: Record<
   video: { icon: Video, color: 'text-info', label: 'Video' },
   movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
   'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
+  book: { icon: Book, color: 'text-accent', label: 'Book' },
 };
 
 function FavoritePickerModal({

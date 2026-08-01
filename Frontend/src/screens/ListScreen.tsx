@@ -100,6 +100,7 @@ function ListScreen() {
     'video',
     'movie',
     'tv show',
+    'book',
   ];
   const sortOptions: SortOption[] = ['title', 'type', 'recent'];
   const viewOptions: ViewMode[] = ['grid', 'list'];
@@ -1194,6 +1195,11 @@ function MediaGroup({
       color: 'text-[#f8b420]',
       label: 'TV Shows',
     },
+    book: {
+      icon: Book,
+      color: 'text-[#7c6cf0]',
+      label: 'Books',
+    },
   };
 
   const config = typeConfig[type as keyof typeof typeConfig];
@@ -1325,6 +1331,12 @@ function MediaCard({
       color: 'text-[#f8b420]',
       bg: 'bg-[#f8b420]/10',
       border: 'border-[#f8b420]/30',
+    },
+    book: {
+      icon: Book,
+      color: 'text-[#7c6cf0]',
+      bg: 'bg-[#7c6cf0]/10',
+      border: 'border-[#7c6cf0]/30',
     },
   };
 
@@ -1592,6 +1604,11 @@ function MediaListItem({
       icon: MonitorPlay,
       color: 'text-[#f8b420]',
       bg: 'bg-[#f8b420]/10',
+    },
+    book: {
+      icon: Book,
+      color: 'text-[#7c6cf0]',
+      bg: 'bg-[#7c6cf0]/10',
     },
   };
 

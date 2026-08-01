@@ -16,6 +16,7 @@ const MEDIA_TYPES: MediaListMediaType[] = [
   'movie',
   'tv show',
   'game',
+  'book',
 ];
 
 const TITLE_MAX_LENGTH = 100;

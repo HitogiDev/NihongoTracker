@@ -7,6 +7,7 @@ export const MEDIA_TYPE_COLORS: Record<string, string> = {
   manga: '#ee4466',
   reading: '#b34ce6',
   movie: '#f77118',
+  book: '#7c6cf0',
   audio: '#f2a15a',
   other: '#10b785',
 };

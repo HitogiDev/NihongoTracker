@@ -42,6 +42,7 @@ const MEDIA_TYPE_CONFIG: Record<
   video: { icon: Video, color: 'text-info', label: 'Video' },
   movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
   'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
+  book: { icon: Book, color: 'text-accent', label: 'Book' },
 };
 
 // Media type filter options for the search bar dropdown (keys map to
@@ -56,6 +57,7 @@ const MEDIA_TYPE_FILTERS: { value: MediaTypeFilter; label: string }[] = [
   { value: 'video', label: 'Video' },
   { value: 'movie', label: 'Movie' },
   { value: 'tv show', label: 'TV Show' },
+  { value: 'book', label: 'Book' },
 ];
 
 type SearchResultEntry = {
