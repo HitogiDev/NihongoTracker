@@ -5,6 +5,13 @@ FROM node:22
 # zstd: required for tar --zstd to extract VNDB dump archives
 RUN apt-get update && apt-get install -y --no-install-recommends zstd && rm -rf /var/lib/apt/lists/*
 
+# node:22 ships npm 10, which resolves optional peer dependencies differently
+# than the npm 11 the lock files are generated with — npm 10 tries to install
+# vite's optional `esbuild` peer and then fails `npm ci` because those entries
+# aren't in the lock. Pin the major so the build consumes the lock exactly as
+# it was written.
+RUN npm install -g npm@11
+
 # 2. Set working directory
 WORKDIR /app
 
