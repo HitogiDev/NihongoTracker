@@ -960,15 +960,18 @@ export interface IJitenBackfillStatus {
   total: number;
   processed: number;
   matched: number;
+  decksIndexed: number;
   startedAt: string | null;
   finishedAt: string | null;
   error: string | null;
 }
 
-export async function adminTriggerJitenDifficultyBackfillFn(): Promise<
-  IJitenBackfillStatus & { message: string }
-> {
-  const { data } = await api.post('admin/jiten-difficulty/backfill');
+export async function adminTriggerJitenDifficultyBackfillFn(
+  force = false
+): Promise<IJitenBackfillStatus & { message: string }> {
+  const { data } = await api.post('admin/jiten-difficulty/backfill', null, {
+    params: force ? { force: 'true' } : undefined,
+  });
   return data;
 }
 

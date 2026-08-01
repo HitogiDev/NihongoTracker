@@ -507,7 +507,8 @@ function AdminScreen() {
   });
 
   const backfillJitenDifficultyMutation = useMutation({
-    mutationFn: adminTriggerJitenDifficultyBackfillFn,
+    mutationFn: (force: boolean) =>
+      adminTriggerJitenDifficultyBackfillFn(force),
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ['adminJitenBackfillStatus'] });
@@ -2503,10 +2504,10 @@ function AdminScreen() {
                       onClick={() => {
                         if (
                           confirm(
-                            "Fetches and caches Jiten difficulty for every media that doesn't have one yet, so the difficulty XP bonus and the consumed-difficulty (comfort) signal work across all history. Runs in the background and is paced to respect Jiten's rate limit — it may take a while. Continue?"
+                            "Downloads Jiten's full deck catalogue and re-tags the cached difficulty on every linkable media, so the difficulty XP bonus and the consumed-difficulty (comfort) signal work across all history. Runs in the background and takes well under a minute. Continue?"
                           )
                         ) {
-                          backfillJitenDifficultyMutation.mutate();
+                          backfillJitenDifficultyMutation.mutate(true);
                         }
                       }}
                       disabled={

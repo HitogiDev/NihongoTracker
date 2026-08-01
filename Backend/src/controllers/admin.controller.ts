@@ -973,12 +973,15 @@ export async function backfillRankingHistory(
 }
 
 export async function triggerJitenDifficultyBackfill(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const state = startJitenDifficultyBackfill();
+    // `?force=true` re-tags media that already have a difficulty, for when the
+    // stored value's scale or source changes.
+    const force = req.query.force === 'true';
+    const state = startJitenDifficultyBackfill(force);
     const alreadyRunning = state.processed > 0 || state.total > 0;
     return res.status(alreadyRunning ? 200 : 202).json({
       message: alreadyRunning

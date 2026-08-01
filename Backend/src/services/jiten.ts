@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AnyBulkWriteOperation } from 'mongoose';
 import { MediaBase } from '../models/media.model.js';
 
 /**
@@ -203,24 +204,185 @@ export async function fetchJitenDetail(
   return null;
 }
 
-/** Native Jiten difficulty (0-5) for a media item, or null when unmatched. */
+/**
+ * Native Jiten difficulty (0-5) for a media item, or null when unmatched.
+ *
+ * We store `difficultyAlgorithmic` rather than the rounded `difficulty`
+ * bucket: it's the field the bulk deck endpoint exposes, so the on-demand
+ * path here and the backfill below agree on a single scale, and it's a float
+ * on the same 0-5 range — strictly more precise, and the XP engine's
+ * normalization (`normalizeJitenDifficulty`) is continuous anyway. Note that
+ * `difficultyRaw` is the one that folds in user adjustments; switch both this
+ * and the bulk index to it once Jiten exposes it in bulk.
+ */
 export async function fetchJitenDifficulty(
   type: string,
   contentId: string,
   title?: string | null
 ): Promise<number | null> {
   const detail = await fetchJitenDetail(type, contentId, title);
-  const difficulty = detail?.data?.mainDeck?.difficulty;
+  const difficulty = detail?.data?.mainDeck?.difficultyAlgorithmic;
   return typeof difficulty === 'number' && difficulty >= 0 ? difficulty : null;
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Jiten mediaType ids served by the bulk deck endpoint. */
+const JITEN_BULK_MEDIA_TYPES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+/** The only Jiten linkTypes we can map back onto a `contentId`. */
+const JITEN_INDEXED_LINK_TYPES = new Set(
+  Object.values(JitenLinkTypeByMediaType)
+);
+
+/** The subset of deck fields the bulk endpoint gives us that we actually use. */
+interface IJitenBulkDeck {
+  deckId: number;
+  mediaType: number;
+  originalTitle: string | null;
+  difficultyAlgorithmic: number;
+  links: IJitenDeckLink[] | null;
+}
+
+export interface IJitenDeckIndex {
+  /** `${linkType}:${externalId}` → difficulty. */
+  byLink: Map<string, number>;
+  /** Normalized book title → difficulty; ambiguous titles are dropped. */
+  byBookTitle: Map<string, number>;
+  deckCount: number;
+}
+
+/**
+ * Jiten's `links[].linkId` is its own internal row id, *not* the external
+ * site's id — the id we key media on only appears in the link URL's last path
+ * segment (https://vndb.org/v55744, https://anilist.co/anime/11755,
+ * https://www.google.co.jp/books/edition/<title>/QotNAQAAIAAJ).
+ */
+function externalIdFromLinkUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const path = url.split(/[?#]/)[0].replace(/\/+$/, '');
+  const segment = path.slice(path.lastIndexOf('/') + 1);
+  return segment || null;
+}
+
+/**
+ * Download Jiten's whole deck catalogue (one request per mediaType, ~26MB and
+ * ~9s in total) and index it by external link id. This replaces the two
+ * per-media round trips (`by-link-id` then `detail`) the backfill used to
+ * make, turning an hours-long rate-limited crawl into a local join.
+ *
+ * Only the fields we need are retained, and each type's parsed response is
+ * released before the next is fetched, so peak memory stays bounded by the
+ * largest single type (~7MB of JSON) rather than the full catalogue.
+ */
+export async function fetchJitenDeckIndex(): Promise<IJitenDeckIndex | null> {
+  const jitenURL = process.env.JITEN_API_URL;
+  if (!jitenURL) return null;
+
+  const byLink = new Map<string, number>();
+  const byBookTitle = new Map<string, number>();
+  const ambiguousBookTitles = new Set<string>();
+  let deckCount = 0;
+
+  for (const mediaType of JITEN_BULK_MEDIA_TYPES) {
+    const res = await axios.get<IJitenBulkDeck[]>(
+      `${jitenURL}/media-deck/get-media-decks-by-type/${mediaType}`,
+      { validateStatus: (status) => status === 200 || status === 404 }
+    );
+    if (res.status !== 200 || !Array.isArray(res.data)) continue;
+
+    for (const deck of res.data) {
+      const difficulty = deck.difficultyAlgorithmic;
+      if (typeof difficulty !== 'number' || difficulty < 0) continue;
+      deckCount += 1;
+
+      for (const link of deck.links ?? []) {
+        if (!JITEN_INDEXED_LINK_TYPES.has(link.linkType)) continue;
+        const externalId = externalIdFromLinkUrl(link.url);
+        if (!externalId) continue;
+        const key = `${link.linkType}:${externalId}`;
+        if (!byLink.has(key)) byLink.set(key, difficulty);
+      }
+
+      // Title index backing the book fallback: ~40% of Jiten's book decks
+      // carry no GoogleBooks link, only Bookmeter/Amazon.
+      if (JITEN_BOOK_MEDIA_TYPES.has(deck.mediaType)) {
+        const title = normalizeTitleForMatch(deck.originalTitle ?? '');
+        if (title.length >= 3) {
+          const existing = byBookTitle.get(title);
+          if (existing !== undefined && existing !== difficulty) {
+            ambiguousBookTitles.add(title);
+          } else {
+            byBookTitle.set(title, difficulty);
+          }
+        }
+      }
+    }
+  }
+
+  for (const title of ambiguousBookTitles) byBookTitle.delete(title);
+
+  return { byLink, byBookTitle, deckCount };
+}
+
+/**
+ * Book title fallback against the local catalogue — the offline counterpart of
+ * findJitenBookDeckIdByTitle. Containment matches must resolve to a single
+ * difficulty: scanning every deck rather than 8 ranked suggestions makes a
+ * coincidental substring hit far more likely, so ambiguity is dropped rather
+ * than guessed.
+ */
+function lookupBookDifficultyByTitle(
+  index: IJitenDeckIndex,
+  title: string | null | undefined
+): number | null {
+  if (!title) return null;
+  const target = normalizeTitleForMatch(title);
+  if (target.length < 3) return null;
+
+  const exact = index.byBookTitle.get(target);
+  if (exact !== undefined) return exact;
+
+  let match: number | null = null;
+  for (const [candidate, difficulty] of index.byBookTitle) {
+    if (
+      (candidate.includes(target) || target.includes(candidate)) &&
+      Math.min(candidate.length, target.length) >= 4
+    ) {
+      if (match !== null && match !== difficulty) return null;
+      match = difficulty;
+    }
+  }
+  return match;
+}
+
+/** Resolve one media doc against a prefetched deck index. */
+function lookupJitenDifficulty(
+  index: IJitenDeckIndex,
+  type: string,
+  contentId: string,
+  title?: string | null
+): number | null {
+  const normalizedType = String(type).toLowerCase();
+  const linkType = JitenLinkTypeByMediaType[normalizedType] ?? null;
+  if (!linkType) return null;
+
+  // Jiten links books by their raw Google Books volume id; our book contentId
+  // is namespaced as `gbooks-<volumeId>`.
+  const externalId =
+    normalizedType === 'book' ? contentId.replace(/^gbooks-/, '') : contentId;
+
+  const byLink = index.byLink.get(`${linkType}:${externalId}`);
+  if (byLink !== undefined) return byLink;
+
+  if (normalizedType !== 'book') return null;
+  return lookupBookDifficultyByTitle(index, title);
+}
 
 export interface IJitenBackfillState {
   running: boolean;
   total: number;
   processed: number;
   matched: number;
+  decksIndexed: number;
   startedAt: string | null;
   finishedAt: string | null;
   error: string | null;
@@ -231,6 +393,7 @@ let backfillState: IJitenBackfillState = {
   total: 0,
   processed: 0,
   matched: 0,
+  decksIndexed: 0,
   startedAt: null,
   finishedAt: null,
   error: null,
@@ -240,47 +403,81 @@ export function getJitenBackfillState(): IJitenBackfillState {
   return backfillState;
 }
 
+const BACKFILL_BATCH_SIZE = 500;
+
 /**
- * Background job: fetch and cache Jiten difficulty for every linkable media doc
- * that doesn't have one yet. Paced with a small delay to stay under Jiten's
- * rate limit. Idempotent — safe to re-run; already-tagged media are skipped by
- * the query filter. Progress is exposed via getJitenBackfillState().
+ * Background job: cache Jiten difficulty onto every linkable media doc by
+ * joining against the bulk deck index. Idempotent — safe to re-run. By default
+ * only media with no difficulty yet are touched; `force` re-tags everything,
+ * which is what you want after the stored scale changes.
+ *
+ * Progress is exposed via getJitenBackfillState().
  */
-async function runJitenDifficultyBackfill(): Promise<void> {
+async function runJitenDifficultyBackfill(force: boolean): Promise<void> {
   const linkableTypes = Object.keys(JitenLinkTypeByMediaType);
-  const filter = {
-    type: { $in: linkableTypes },
-    $or: [{ jitenDifficulty: null }, { jitenDifficulty: { $exists: false } }],
-  };
+  const filter = force
+    ? { type: { $in: linkableTypes } }
+    : {
+        type: { $in: linkableTypes },
+        $or: [
+          { jitenDifficulty: null },
+          { jitenDifficulty: { $exists: false } },
+        ],
+      };
 
   try {
+    const index = await fetchJitenDeckIndex();
+    if (!index) {
+      backfillState.error = 'JITEN_API_URL is not configured.';
+      return;
+    }
+    backfillState.decksIndexed = index.deckCount;
+
     backfillState.total = await MediaBase.countDocuments(filter);
 
+    // Bounded batches keep the driver from buffering a default 16MB page of
+    // docs, and keep getMore frequent enough that mongod never reaps the
+    // cursor as idle (cursorTimeoutMillis, 10min).
     const cursor = MediaBase.find(filter)
       .select('contentId type title')
       .lean()
+      .batchSize(BACKFILL_BATCH_SIZE)
       .cursor();
+
+    const syncedAt = new Date();
+    let ops: AnyBulkWriteOperation[] = [];
+    const flush = async () => {
+      if (!ops.length) return;
+      await MediaBase.bulkWrite(ops, { ordered: false });
+      ops = [];
+    };
 
     for await (const media of cursor) {
       const nativeTitle = (
         media as { title?: { contentTitleNative?: string } }
       ).title?.contentTitleNative;
-      const difficulty = await fetchJitenDifficulty(
+      const difficulty = lookupJitenDifficulty(
+        index,
         media.type,
         media.contentId,
         nativeTitle
       );
       if (difficulty !== null) {
-        await MediaBase.updateOne(
-          { contentId: media.contentId, type: media.type },
-          { jitenDifficulty: difficulty, jitenSyncedAt: new Date() }
-        ).exec();
+        ops.push({
+          updateOne: {
+            filter: { contentId: media.contentId, type: media.type },
+            update: {
+              $set: { jitenDifficulty: difficulty, jitenSyncedAt: syncedAt },
+            },
+          },
+        });
         backfillState.matched += 1;
+        if (ops.length >= BACKFILL_BATCH_SIZE) await flush();
       }
       backfillState.processed += 1;
-      // Pace requests to avoid Jiten rate-limiting on large runs.
-      await sleep(150);
     }
+
+    await flush();
   } catch (err) {
     backfillState.error = (err as Error)?.message ?? String(err);
     console.error('Jiten difficulty backfill failed:', err);
@@ -294,7 +491,7 @@ async function runJitenDifficultyBackfill(): Promise<void> {
  * Start the background Jiten difficulty backfill if one isn't already running.
  * Returns the current state immediately (the job runs detached).
  */
-export function startJitenDifficultyBackfill(): IJitenBackfillState {
+export function startJitenDifficultyBackfill(force = false): IJitenBackfillState {
   if (backfillState.running) return backfillState;
 
   backfillState = {
@@ -302,12 +499,13 @@ export function startJitenDifficultyBackfill(): IJitenBackfillState {
     total: 0,
     processed: 0,
     matched: 0,
+    decksIndexed: 0,
     startedAt: new Date().toISOString(),
     finishedAt: null,
     error: null,
   };
 
-  void runJitenDifficultyBackfill();
+  void runJitenDifficultyBackfill(force);
   return backfillState;
 }
 
