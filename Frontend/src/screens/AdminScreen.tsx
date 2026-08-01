@@ -2444,7 +2444,7 @@ function AdminScreen() {
                       onClick={() => {
                         if (
                           confirm(
-                            'This will check all achievement conditions for every user and grant any that were previously missed. This may take a while. Continue?'
+                            'This will re-check all achievement conditions for every user: granting any that were previously missed, and REVOKING any the user no longer qualifies for. Admin-granted achievements are kept. This may take a while. Continue?'
                           )
                         ) {
                           backfillAchievementsMutation.mutate();

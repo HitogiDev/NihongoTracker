@@ -1278,6 +1278,7 @@ export type AchievementConditionType =
   | 'weeklyHours'
   | 'sessionsInDay'
   | 'platformAge'
+  | 'clubsCreated'
   | 'manualGrant';
 
 export interface IAchievementCondition {
@@ -1287,7 +1288,7 @@ export interface IAchievementCondition {
   mediaType?: string;
   /** For level conditions — which stat (userLevel, readingLevel, listeningLevel) */
   stat?: string;
-  /** For logTimeRange — UTC hour range [startHour, endHour) */
+  /** For logTimeRange — hour range [startHour, endHour) in the user's timezone */
   startHour?: number;
   endHour?: number;
   /** For logOnDate — MM-DD pattern (e.g. '07-07' for Tanabata) */
@@ -1320,6 +1321,8 @@ export interface IUserAchievement extends Document {
   unlockedAt: Date;
   progress: number;
   notified: boolean;
+  /** Granted by an admin — exempt from automatic revocation */
+  manuallyGranted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

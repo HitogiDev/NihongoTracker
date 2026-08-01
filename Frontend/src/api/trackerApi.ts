@@ -1615,6 +1615,7 @@ export async function adminRevokeAchievementFn(
 export async function adminBackfillAchievementsFn(): Promise<{
   message: string;
   totalGranted: number;
+  totalRevoked: number;
   usersProcessed: number;
   usersWithNewAchievements: number;
 }> {

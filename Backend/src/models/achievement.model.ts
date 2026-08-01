@@ -21,6 +21,7 @@ const ConditionSchema = new Schema(
         'weeklyHours',
         'sessionsInDay',
         'platformAge',
+        'clubsCreated',
         'manualGrant',
       ],
     },

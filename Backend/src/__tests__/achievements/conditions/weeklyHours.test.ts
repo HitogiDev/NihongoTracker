@@ -9,15 +9,14 @@ import Log from '../../../models/log.model.js';
 
 /**
  * Builds the aggregate result shape that weeklyHours.condition expects:
- * an array of { _id: { y, m, d }, totalMinutes } sorted ascending by date.
+ * an array of { _id: 'YYYY-MM-DD', totalMinutes } sorted ascending by day key.
  */
 function makeDays(entries: { date: Date; minutes: number }[]) {
+  const pad = (n: number) => String(n).padStart(2, '0');
   return entries.map(({ date, minutes }) => ({
-    _id: {
-      y: date.getFullYear(),
-      m: date.getMonth() + 1,
-      d: date.getDate(),
-    },
+    _id: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate()
+    )}`,
     totalMinutes: minutes,
   }));
 }

@@ -3,8 +3,8 @@ import Achievement from '../models/achievement.model.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
-import { grantAchievement, checkAchievements } from '../services/achievements/achievementEngine.js';
-import { IAchievementCheckContext } from '../types.js';
+import { grantAchievement } from '../services/achievements/achievementEngine.js';
+import { backfillAchievementsForAllUsers } from '../services/achievements/backfill.service.js';
 import { Types } from 'mongoose';
 
 // ─── Public / User endpoints ──────────────────────────────────────────────────
@@ -563,40 +563,36 @@ export async function adminRevokeAchievement(
 
 /**
  * POST /api/achievements/admin/backfill-all  (admin)
- * Checks all achievement conditions for every user and grants any that are
- * now satisfied but weren't previously awarded.
+ * Checks all achievement conditions for every user, grants any that are now
+ * satisfied but weren't previously awarded, and revokes any the user no longer
+ * qualifies for. Identical to `npm run backfill:achievements` — both call
+ * backfillAchievementsForAllUsers.
+ *
+ * Pass { revoke: false } in the body to only grant.
  * This is a potentially long-running operation — it processes users sequentially.
  */
 export async function adminBackfillAchievementsForAllUsers(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const allUsers = await User.find({}).select('_id').lean();
-    const triggers: IAchievementCheckContext['trigger'][] = ['log', 'streak', 'levelup'];
+    const revoke = req.body?.revoke !== false;
 
-    let totalGranted = 0;
-    let usersProcessed = 0;
-    let usersWithNewAchievements = 0;
-
-    for (const user of allUsers) {
-      const userId = user._id as Types.ObjectId;
-      let userGranted = 0;
-
-      for (const trigger of triggers) {
-        const granted = await checkAchievements(userId, { trigger });
-        userGranted += granted.length;
-      }
-
-      totalGranted += userGranted;
-      usersProcessed++;
-      if (userGranted > 0) usersWithNewAchievements++;
-    }
+    const {
+      totalGranted,
+      totalRevoked,
+      usersProcessed,
+      usersWithNewAchievements,
+    } = await backfillAchievementsForAllUsers({ revoke });
 
     return res.status(200).json({
-      message: `Backfill complete: ${totalGranted} achievement(s) granted across ${usersWithNewAchievements} user(s) out of ${usersProcessed} processed.`,
+      message:
+        `Backfill complete: ${totalGranted} achievement(s) granted across ` +
+        `${usersWithNewAchievements} user(s) out of ${usersProcessed} processed` +
+        (revoke ? `, ${totalRevoked} revoked.` : '.'),
       totalGranted,
+      totalRevoked,
       usersProcessed,
       usersWithNewAchievements,
     });
