@@ -29,12 +29,14 @@ import { OutletMediaContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { addMediaReviewFn, getMediaReviewsFn } from '../api/trackerApi';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import { useTranslation } from 'react-i18next';
 
 const REVIEW_MAX_LENGTH = 5000;
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
 const REVIEW_SUMMARY_MAX_LENGTH = 150;
 
 function MediaWriteReview() {
+  const { t } = useTranslation(['media', 'common']);
   const { mediaDocument, username } =
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
@@ -152,7 +154,7 @@ function MediaWriteReview() {
           mediaDocument?.type,
         ],
       });
-      toast.success('Review added successfully');
+      toast.success(t('toast.reviewAdded'));
       bypassUnsavedPromptRef.current = true;
       // Clear form first so the leave-page blocker doesn't trigger on navigate
       setReviewForm({ summary: '', content: '', rating: undefined });
@@ -263,9 +265,9 @@ function MediaWriteReview() {
     return (
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <div className="alert alert-info">
-          <span>You need to be logged in to write a review.</span>
+          <span>{t('write.loginRequired')}</span>
           <Link to="/login" className="btn btn-sm btn-primary">
-            Login
+            {t('write.login')}
           </Link>
         </div>
       </div>
@@ -277,13 +279,13 @@ function MediaWriteReview() {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <div className="card bg-base-100 shadow-lg">
           <div className="card-body">
-            <h2 className="card-title">You already posted a review</h2>
+            <h2 className="card-title">{t('write.alreadyPostedTitle')}</h2>
             <p className="text-base-content/70">
-              You can edit your existing review from the reviews list.
+              {t('write.alreadyPostedBody')}
             </p>
             <div className="card-actions justify-end">
               <Link to={reviewsPath} className="btn btn-primary btn-sm">
-                Back to reviews
+                {t('write.backToReviews')}
               </Link>
             </div>
           </div>
@@ -297,10 +299,10 @@ function MediaWriteReview() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Pencil className="w-5 h-5" />
-          Write a review
+          {t('reviews.write')}
         </h1>
         <Link to={reviewsPath} className="btn btn-ghost btn-sm">
-          Back to reviews
+          {t('write.backToReviews')}
         </Link>
       </div>
 
@@ -322,7 +324,7 @@ function MediaWriteReview() {
                 }
 
                 if (!trimmedContent) {
-                  toast.error('Review content is required.');
+                  toast.error(t('toast.reviewContentRequired'));
                   return;
                 }
 
@@ -338,13 +340,13 @@ function MediaWriteReview() {
             >
               <div>
                 <label className="label">
-                  <span className="label-text">Summary</span>
+                  <span className="label-text">{t('write.summary')}</span>
                 </label>
                 <input
                   type="text"
                   className="input input-bordered w-full"
                   value={reviewForm.summary}
-                  placeholder="One-sentence summary of your review"
+                  placeholder={t('write.summaryPlaceholder')}
                   maxLength={REVIEW_SUMMARY_MAX_LENGTH}
                   minLength={REVIEW_SUMMARY_MIN_LENGTH}
                   onChange={(e) =>
@@ -369,7 +371,7 @@ function MediaWriteReview() {
 
               <div>
                 <label className="label">
-                  <span className="label-text">Rating (optional)</span>
+                  <span className="label-text">{t('write.rating')}</span>
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="rating rating-lg rating-half">
@@ -411,14 +413,14 @@ function MediaWriteReview() {
 
               <div>
                 <label className="label">
-                  <span className="label-text">Review</span>
+                  <span className="label-text">{t('write.review')}</span>
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={() => insertHeading(1)}
-                    title="Heading 1"
+                    title={t('markdown.heading1')}
                   >
                     <Heading1 className="w-4 h-4" />
                   </button>
@@ -426,7 +428,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={() => insertHeading(2)}
-                    title="Heading 2"
+                    title={t('markdown.heading2')}
                   >
                     <Heading2 className="w-4 h-4" />
                   </button>
@@ -434,7 +436,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={() => insertHeading(3)}
-                    title="Heading 3"
+                    title={t('markdown.heading3')}
                   >
                     <Heading3 className="w-4 h-4" />
                   </button>
@@ -446,7 +448,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertBold}
-                    title="Bold"
+                    title={t('markdown.bold')}
                   >
                     <Bold className="w-4 h-4" />
                   </button>
@@ -454,7 +456,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertItalic}
-                    title="Italic"
+                    title={t('markdown.italic')}
                   >
                     <Italic className="w-4 h-4" />
                   </button>
@@ -462,7 +464,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertInlineCode}
-                    title="Inline code"
+                    title={t('markdown.inlineCode')}
                   >
                     <Type className="w-4 h-4" />
                   </button>
@@ -470,7 +472,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertCodeBlock}
-                    title="Code block"
+                    title={t('markdown.codeBlock')}
                   >
                     <Code className="w-4 h-4" />
                   </button>
@@ -482,7 +484,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={() => insertListItem(false)}
-                    title="Bulleted list"
+                    title={t('markdown.bulletedList')}
                   >
                     <List className="w-4 h-4" />
                   </button>
@@ -490,7 +492,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={() => insertListItem(true)}
-                    title="Numbered list"
+                    title={t('markdown.numberedList')}
                   >
                     <ListOrdered className="w-4 h-4" />
                   </button>
@@ -498,7 +500,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertQuote}
-                    title="Quote"
+                    title={t('markdown.quote')}
                   >
                     <Quote className="w-4 h-4" />
                   </button>
@@ -510,7 +512,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertLink}
-                    title="Link"
+                    title={t('markdown.link')}
                   >
                     <LinkIcon className="w-4 h-4" />
                   </button>
@@ -518,7 +520,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertImage}
-                    title="Image"
+                    title={t('markdown.image')}
                   >
                     <ImageIcon className="w-4 h-4" />
                   </button>
@@ -526,7 +528,7 @@ function MediaWriteReview() {
                     type="button"
                     className="btn btn-ghost btn-xs"
                     onClick={insertSpoiler}
-                    title="Spoiler"
+                    title={t('markdown.spoiler')}
                   >
                     <EyeOff className="w-4 h-4" />
                   </button>
@@ -536,7 +538,7 @@ function MediaWriteReview() {
                   ref={reviewTextareaRef}
                   className="textarea textarea-bordered w-full min-h-72 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
                   value={reviewForm.content}
-                  placeholder="Share your thoughts about this media..."
+                  placeholder={t('write.bodyPlaceholder')}
                   onChange={(e) =>
                     setReviewForm((prev) => ({
                       ...prev,
@@ -576,7 +578,7 @@ function MediaWriteReview() {
 
         <div className="card bg-base-100 shadow-lg">
           <div className="card-body justify-start">
-            <h2 className="card-title text-lg">Preview</h2>
+            <h2 className="card-title text-lg">{t('write.preview')}</h2>
             <div className="grow-0 w-full">
               {reviewForm.summary.trim() && (
                 <div className="text-base font-medium text-base-content/85">
@@ -595,7 +597,7 @@ function MediaWriteReview() {
                 />
               ) : (
                 <div className="text-base-content/60">
-                  Your live preview appears here as you write.
+                  {t('write.previewHint')}
                 </div>
               )}
             </div>

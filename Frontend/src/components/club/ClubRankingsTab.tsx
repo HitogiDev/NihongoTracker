@@ -15,6 +15,7 @@ import { numberWithCommas } from '../../utils/utils';
 import { getPatreonBadgeProps } from '../../utils/patreonBadge';
 import { usePatreonBadgeText } from '../../hooks/usePatreonBadgeText';
 import UserAvatar from '../UserAvatar';
+import { useTranslation } from 'react-i18next';
 
 interface ClubRankingsTabProps {
   clubId: string;
@@ -46,6 +47,7 @@ type ClubMember = {
 };
 
 function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
+  const { t } = useTranslation('clubs');
   const badgeText = usePatreonBadgeText();
   const [sortBy, setSortBy] = useState<
     'totalXp' | 'totalLogs' | 'totalTime' | 'level'
@@ -207,8 +209,8 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           <div className="card-body">
             <div className="text-center py-8 text-error">
               <Trophy className="mx-auto w-10 h-10 mb-2" />
-              <p>Failed to load rankings</p>
-              <p className="text-sm mt-1">Please try again later</p>
+              <p>{t('ranking.tabLoadFailed')}</p>
+              <p className="text-sm mt-1">{t('common.tryAgainLater')}</p>
             </div>
           </div>
         </div>
@@ -221,11 +223,11 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-2">
           <Trophy className="w-10 h-10 text-warning" />
-          <h1 className="text-4xl font-bold text-base-content">Club Ranking</h1>
+          <h1 className="text-4xl font-bold text-base-content">
+            {t('ranking.title')}
+          </h1>
         </div>
-        <p className="text-base-content/70">
-          See how club members stack up against each other
-        </p>
+        <p className="text-base-content/70">{t('ranking.tabSubtitle')}</p>
       </div>
 
       {/* Filters */}
@@ -310,7 +312,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
         <div className="flex justify-center items-center py-16">
           <div className="text-center">
             <span className="loading loading-spinner loading-lg text-primary"></span>
-            <p className="mt-4 text-base-content/70">Loading rankings...</p>
+            <p className="mt-4 text-base-content/70">{t('ranking.loading')}</p>
           </div>
         </div>
       ) : members.length === 0 ? (
@@ -318,10 +320,8 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           <div className="card-body">
             <div className="text-center py-12 text-base-content/60">
               <Trophy className="mx-auto w-12 h-12 mb-4 opacity-30" />
-              <p className="text-lg font-medium">No ranking data available</p>
-              <p className="text-sm mt-2">
-                Members need to log activities to appear in rankings
-              </p>
+              <p className="text-lg font-medium">{t('ranking.empty')}</p>
+              <p className="text-sm mt-2">{t('ranking.emptyHint')}</p>
             </div>
           </div>
         </div>
@@ -525,9 +525,13 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
               <table className="table w-full">
                 <thead>
                   <tr className="border-b border-base-300">
-                    <th className="text-center w-10 sm:w-16">Rank</th>
-                    <th>Member</th>
-                    <th className="text-center hidden sm:table-cell">Level</th>
+                    <th className="text-center w-10 sm:w-16">
+                      {t('ranking.rank')}
+                    </th>
+                    <th>{t('ranking.member')}</th>
+                    <th className="text-center hidden sm:table-cell">
+                      {t('ranking.level')}
+                    </th>
                     <th className="text-end">{getSortLabel()}</th>
                   </tr>
                 </thead>

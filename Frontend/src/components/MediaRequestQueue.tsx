@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
-import {
-  getMediaRequestsFn,
-  reviewMediaRequestFn,
-} from '../api/trackerApi';
+import { getMediaRequestsFn, reviewMediaRequestFn } from '../api/trackerApi';
 import type { IMediaRequest, MediaRequestStatus } from '../types';
 
 const STATUS_TABS: { value: MediaRequestStatus; label: string }[] = [

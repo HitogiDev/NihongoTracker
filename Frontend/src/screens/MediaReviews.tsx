@@ -20,6 +20,7 @@ import {
 import EditReviewModal from '../components/EditReviewModal';
 import MediaReviewCard from '../components/MediaReviewCard';
 import ReviewRatingSummary from '../components/ReviewRatingSummary';
+import { useTranslation } from 'react-i18next';
 
 type ReviewSortOption =
   | 'newest'
@@ -49,6 +50,7 @@ const REVIEW_SORT_OPTIONS: {
 ];
 
 function MediaReviews() {
+  const { t } = useTranslation(['media', 'common']);
   const { mediaDocument, username } =
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
@@ -103,7 +105,7 @@ function MediaReviews() {
           ],
         });
         setEditingReview(null);
-        toast.success('Review updated successfully');
+        toast.success(t('toast.reviewUpdated'));
       },
       onError: (error: unknown) => {
         const errorMessage =
@@ -134,7 +136,7 @@ function MediaReviews() {
             mediaDocument?.type,
           ],
         });
-        toast.success('Review deleted successfully');
+        toast.success(t('toast.reviewDeleted'));
       },
       onError: (error: unknown) => {
         const errorMessage =
@@ -317,7 +319,7 @@ function MediaReviews() {
           <div className="card-body p-4 gap-4">
             <h3 className="font-semibold text-base flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4" />
-              Ratings & Filters
+              {t('reviews.filtersTitle')}
             </h3>
 
             {reviewsLoading ? (
@@ -337,7 +339,7 @@ function MediaReviews() {
 
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-base-content/60">
-                    Visibility
+                    {t('reviews.visibility')}
                   </p>
                   <div className="join w-full">
                     <button
@@ -348,7 +350,7 @@ function MediaReviews() {
                       }`}
                       onClick={() => setRatingPresenceFilter('all')}
                     >
-                      All
+                      {t('reviews.all')}
                     </button>
                     <button
                       className={`join-item btn btn-xs flex-1 ${
@@ -358,7 +360,7 @@ function MediaReviews() {
                       }`}
                       onClick={() => setRatingPresenceFilter('rated')}
                     >
-                      Rated
+                      {t('reviews.rated')}
                     </button>
                     <button
                       className={`join-item btn btn-xs flex-1 ${
@@ -368,14 +370,14 @@ function MediaReviews() {
                       }`}
                       onClick={() => setRatingPresenceFilter('unrated')}
                     >
-                      Unrated
+                      {t('reviews.unrated')}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-base-content/60">
-                    Sort
+                    {t('reviews.sort')}
                   </p>
                   <div className="dropdown w-full">
                     <div
@@ -409,7 +411,7 @@ function MediaReviews() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-wide text-base-content/60">
-                      Score Range
+                      {t('reviews.scoreRange')}
                     </p>
                     {(minScoreInput || maxScoreInput) && (
                       <button
@@ -419,7 +421,7 @@ function MediaReviews() {
                           setMaxScoreInput('');
                         }}
                       >
-                        Clear
+                        {t('common.clear')}
                       </button>
                     )}
                   </div>
@@ -430,8 +432,8 @@ function MediaReviews() {
                       min="0"
                       max="5"
                       step="0.1"
-                      placeholder="Min"
-                      aria-label="Minimum score"
+                      placeholder={t('reviews.minPlaceholder')}
+                      aria-label={t('reviews.a11y.minScore')}
                       className="input input-sm input-bordered rounded-box w-24 text-center"
                       value={minScoreInput}
                       disabled={ratingPresenceFilter === 'unrated'}
@@ -447,8 +449,8 @@ function MediaReviews() {
                       min="0"
                       max="5"
                       step="0.1"
-                      placeholder="Max"
-                      aria-label="Maximum score"
+                      placeholder={t('reviews.maxPlaceholder')}
+                      aria-label={t('reviews.a11y.maxScore')}
                       className="input input-sm input-bordered rounded-box w-24 text-center"
                       value={maxScoreInput}
                       disabled={ratingPresenceFilter === 'unrated'}
@@ -458,21 +460,20 @@ function MediaReviews() {
 
                   {ratingPresenceFilter === 'unrated' && (
                     <p className="text-xs text-base-content/60">
-                      Score range is disabled while viewing unrated reviews.
+                      {t('reviews.scoreRangeDisabled')}
                     </p>
                   )}
 
                   {isScoreRangeInvalid && (
                     <p className="text-xs text-error">
-                      Minimum score must be lower than or equal to maximum
-                      score.
+                      {t('reviews.scoreRangeInvalid')}
                     </p>
                   )}
                 </div>
               </>
             ) : (
               <p className="text-sm text-base-content/60">
-                No rating data yet.
+                {t('reviews.noRatingData')}
               </p>
             )}
           </div>
@@ -484,11 +485,11 @@ function MediaReviews() {
               <div>
                 <h2 className="card-title text-xl flex items-center gap-2">
                   <MessageSquareText className="w-5 h-5" />
-                  Reviews
+                  {t('reviews.title')}
                 </h2>
                 {currentUser && userReview && (
                   <p className="text-sm text-base-content/70 mt-2">
-                    You already posted a review for this title.
+                    {t('reviews.alreadyPosted')}
                   </p>
                 )}
               </div>
@@ -498,7 +499,7 @@ function MediaReviews() {
                   className="btn btn-outline btn-sm gap-2"
                 >
                   <Pencil className="w-4 h-4" />
-                  Write a review
+                  {t('reviews.write')}
                 </Link>
               )}
             </div>
@@ -526,11 +527,9 @@ function MediaReviews() {
               ) : (
                 <div className="text-center py-8 text-base-content/60">
                   <h3 className="text-lg font-semibold mb-1">
-                    No Reviews Match These Filters
+                    {t('reviews.noMatchesTitle')}
                   </h3>
-                  <p className="mb-4">
-                    Try clearing one or more filters to see reviews again.
-                  </p>
+                  <p className="mb-4">{t('reviews.noMatchesBody')}</p>
                   <button
                     className="btn btn-outline btn-sm"
                     onClick={() => {
@@ -540,15 +539,17 @@ function MediaReviews() {
                       setMaxScoreInput('');
                     }}
                   >
-                    Reset filters
+                    {t('reviews.resetFilters')}
                   </button>
                 </div>
               )
             ) : (
               <div className="text-center py-8 text-base-content/60">
                 <MessageSquareText className="mx-auto text-4xl mb-3 opacity-50" />
-                <h3 className="text-lg font-semibold mb-1">No Reviews Yet</h3>
-                <p>Be the first to share your thoughts about this media.</p>
+                <h3 className="text-lg font-semibold mb-1">
+                  {t('reviews.emptyTitle')}
+                </h3>
+                <p>{t('reviews.emptyBody')}</p>
               </div>
             )}
           </div>
@@ -573,17 +574,16 @@ function MediaReviews() {
       {deletingReviewId && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-sm">
-            <h3 className="font-bold text-lg">Delete Review</h3>
+            <h3 className="font-bold text-lg">{t('reviews.deleteTitle')}</h3>
             <p className="py-4 text-base-content/70">
-              Are you sure you want to delete your review? This cannot be
-              undone.
+              {t('reviews.deleteConfirm')}
             </p>
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
                 onClick={() => setDeletingReviewId(null)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error"

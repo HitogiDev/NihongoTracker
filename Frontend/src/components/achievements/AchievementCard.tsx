@@ -3,6 +3,12 @@ import { useEffect, useState } from 'react';
 import { IAchievement, AchievementRarity } from '../../types';
 import { createPortal } from 'react-dom';
 import { RARITY_COLOR, rarityTint } from './rarity';
+import {
+  getAchievementDescription,
+  getAchievementHint,
+  getAchievementName,
+} from '../../utils/achievementText';
+import { useTranslation } from 'react-i18next';
 
 /* ─── Icon sub-component ────────────────────────────────────────────────── */
 
@@ -13,7 +19,12 @@ interface AchievementIconProps {
   size?: number;
 }
 
-function AchievementIcon({ iconSlug, rarity, isEarned = false, size = 32 }: AchievementIconProps) {
+function AchievementIcon({
+  iconSlug,
+  rarity,
+  isEarned = false,
+  size = 32,
+}: AchievementIconProps) {
   if (!iconSlug) {
     return (
       <span
@@ -43,7 +54,13 @@ function AchievementIcon({ iconSlug, rarity, isEarned = false, size = 32 }: Achi
 
 /* ─── Rarity badge ──────────────────────────────────────────────────────── */
 
-function RarityBadge({ rarity, size = 'sm' }: { rarity: AchievementRarity; size?: 'sm' | 'md' }) {
+function RarityBadge({
+  rarity,
+  size = 'sm',
+}: {
+  rarity: AchievementRarity;
+  size?: 'sm' | 'md';
+}) {
   return (
     <span
       className={`inline-flex items-center rounded-full border font-semibold capitalize ${
@@ -75,11 +92,15 @@ function AchievementProgress({
 
   return (
     <div className="w-full">
-      <div className={`flex justify-between text-xs text-base-content/60 ${compact ? 'mb-1' : 'mb-2'}`}>
+      <div
+        className={`flex justify-between text-xs text-base-content/60 ${compact ? 'mb-1' : 'mb-2'}`}
+      >
         <span>{progress.toLocaleString()}</span>
         <span>{threshold.toLocaleString()}</span>
       </div>
-      <div className={`${compact ? 'h-1' : 'h-1.5'} rounded-full bg-base-300 overflow-hidden`}>
+      <div
+        className={`${compact ? 'h-1' : 'h-1.5'} rounded-full bg-base-300 overflow-hidden`}
+      >
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{
@@ -99,7 +120,11 @@ interface DetailModalProps {
   onClose: () => void;
 }
 
-export function AchievementDetailModal({ achievement, onClose }: DetailModalProps) {
+export function AchievementDetailModal({
+  achievement,
+  onClose,
+}: DetailModalProps) {
+  const { t } = useTranslation('achievements');
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
   const isSecret = achievement.isSecret && !isEarned;
@@ -134,7 +159,9 @@ export function AchievementDetailModal({ achievement, onClose }: DetailModalProp
             <div
               className="w-24 h-24 rounded-2xl flex items-center justify-center border"
               style={{
-                borderColor: isEarned ? rarityTint(rarity, '40') : 'transparent',
+                borderColor: isEarned
+                  ? rarityTint(rarity, '40')
+                  : 'transparent',
                 background: isEarned
                   ? rarityTint(rarity, '14')
                   : 'color-mix(in oklab, var(--color-base-content) 6%, transparent)',
@@ -158,7 +185,9 @@ export function AchievementDetailModal({ achievement, onClose }: DetailModalProp
           {/* Name + rarity */}
           <div className="space-y-2">
             <h2 className="text-2xl font-extrabold">
-              {isSecret ? '???' : (achievement.name ?? 'Secret Achievement')}
+              {isSecret
+                ? '???'
+                : getAchievementName(achievement) || t('secretName')}
             </h2>
             <RarityBadge rarity={rarity} size="md" />
           </div>
@@ -166,8 +195,8 @@ export function AchievementDetailModal({ achievement, onClose }: DetailModalProp
           {/* Description */}
           <p className="text-sm leading-relaxed text-base-content/70 max-w-xs">
             {isSecret
-              ? (achievement.hint || 'Complete a secret condition to reveal this achievement.')
-              : (achievement.description ?? '')}
+              ? getAchievementHint(achievement) || t('secretHint')
+              : getAchievementDescription(achievement)}
           </p>
 
           <div className="divider my-0" />
@@ -176,32 +205,47 @@ export function AchievementDetailModal({ achievement, onClose }: DetailModalProp
           <div className="w-full grid grid-cols-3 gap-4 text-center">
             {achievement.points > 0 && (
               <div>
-                <div className="text-xl font-extrabold">{achievement.points}</div>
-                <div className="text-xs text-base-content/50 mt-0.5">points</div>
+                <div className="text-xl font-extrabold">
+                  {achievement.points}
+                </div>
+                <div className="text-xs text-base-content/50 mt-0.5">
+                  points
+                </div>
               </div>
             )}
             {achievement.rarityPercent !== undefined && (
               <div>
-                <div className="text-xl font-extrabold">{achievement.rarityPercent}%</div>
-                <div className="text-xs text-base-content/50 mt-0.5">of users</div>
+                <div className="text-xl font-extrabold">
+                  {achievement.rarityPercent}%
+                </div>
+                <div className="text-xs text-base-content/50 mt-0.5">
+                  of users
+                </div>
               </div>
             )}
             {isEarned && achievement.unlockedAt && (
               <div>
                 <div className="text-sm font-bold mt-1.5">
-                  {new Date(achievement.unlockedAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {new Date(achievement.unlockedAt).toLocaleDateString(
+                    undefined,
+                    {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    }
+                  )}
                 </div>
-                <div className="text-xs text-base-content/50 mt-0.5">unlocked</div>
+                <div className="text-xs text-base-content/50 mt-0.5">
+                  unlocked
+                </div>
               </div>
             )}
           </div>
 
           {/* Progress bar for locked achievements */}
-          {!isEarned && !isSecret && <AchievementProgress achievement={achievement} />}
+          {!isEarned && !isSecret && (
+            <AchievementProgress achievement={achievement} />
+          )}
         </div>
       </div>
 
@@ -226,6 +270,7 @@ export default function AchievementCard({
   onClick,
   compact = false,
 }: AchievementCardProps) {
+  const { t } = useTranslation('achievements');
   const [showDetail, setShowDetail] = useState(false);
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
@@ -255,8 +300,12 @@ export default function AchievementCard({
             ?
           </div>
           <div>
-            <p className="font-semibold text-sm text-base-content/60">Hidden Achievement</p>
-            <p className="text-xs text-base-content/40 mt-0.5">Unlock to reveal</p>
+            <p className="font-semibold text-sm text-base-content/60">
+              Hidden Achievement
+            </p>
+            <p className="text-xs text-base-content/40 mt-0.5">
+              Unlock to reveal
+            </p>
           </div>
         </div>
       </div>
@@ -303,7 +352,9 @@ export default function AchievementCard({
                   isEarned ? 'text-base-content' : 'text-base-content/60'
                 }`}
               >
-                {isSecret ? '???' : (achievement.name ?? 'Secret Achievement')}
+                {isSecret
+                  ? '???'
+                  : getAchievementName(achievement) || t('secretName')}
               </h3>
 
               <RarityBadge rarity={rarity} />
@@ -326,8 +377,8 @@ export default function AchievementCard({
                 }`}
               >
                 {isSecret
-                  ? (achievement.hint || 'Complete a secret condition to reveal this achievement.')
-                  : (achievement.description ?? '')}
+                  ? getAchievementHint(achievement) || t('secretHint')
+                  : getAchievementDescription(achievement)}
               </p>
             )}
 
@@ -345,10 +396,14 @@ export default function AchievementCard({
                   <span>{achievement.rarityPercent}% of users</span>
                 )}
                 {isEarned && achievement.unlockedAt && (
-                  <span>{new Date(achievement.unlockedAt).toLocaleDateString()}</span>
+                  <span>
+                    {new Date(achievement.unlockedAt).toLocaleDateString()}
+                  </span>
                 )}
                 {achievement.points > 0 && (
-                  <span className="font-semibold">{achievement.points} pts</span>
+                  <span className="font-semibold">
+                    {achievement.points} pts
+                  </span>
                 )}
               </div>
             )}

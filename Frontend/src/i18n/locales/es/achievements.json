@@ -1,1 +1,294 @@
-{}
+{
+  "items": {
+    "achievements_100": {
+      "description": "Desbloquea otros 100 logros.",
+      "name": "Cazador de logros"
+    },
+    "achievements_50": {
+      "description": "Desbloquea otros 50 logros.",
+      "name": "Completista"
+    },
+    "bookworm_hours": {
+      "description": "Registra 50 horas de lectura (manga y novelas juntos).",
+      "name": "Ratón de biblioteca"
+    },
+    "cinephile": {
+      "description": "Registra 100 horas de anime.",
+      "name": "Cinéfilo"
+    },
+    "clockwork": {
+      "description": "Registra a la misma hora todos los días durante 2 semanas.",
+      "name": "Como un reloj"
+    },
+    "club_founder": {
+      "description": "Crea un club de inmersión.",
+      "name": "Fundador de club"
+    },
+    "club_mvp": {
+      "description": "Termina como quien más aporta en un reto de club.",
+      "name": "MVP del club"
+    },
+    "culture_day": {
+      "description": "Registra inmersión el 3 de noviembre (文化の日).",
+      "name": "Día de la Cultura"
+    },
+    "currently_airing": {
+      "description": "Registra un anime durante su temporada de emisión.",
+      "name": "En emisión"
+    },
+    "deep_cut": {
+      "description": "Registra algo con menos de 100 miembros en AniList o VNDB.",
+      "name": "Joya oculta"
+    },
+    "early_bird": {
+      "description": "Registra inmersión antes de las 7 de la mañana 10 veces.",
+      "name": "Madrugador"
+    },
+    "first_log": {
+      "description": "Registra tu primera sesión de inmersión.",
+      "name": "Primer paso"
+    },
+    "full_immersion_month": {
+      "description": "Registra todos los días de un mes entero.",
+      "name": "Inmersión total"
+    },
+    "gamer": {
+      "description": "Registra 50 horas de novelas visuales.",
+      "name": "Jugador"
+    },
+    "hours_100": {
+      "description": "Registra 100 horas de inmersión en total.",
+      "name": "Constante"
+    },
+    "hours_1000": {
+      "description": "Registra 1.000 horas de inmersión en total.",
+      "name": "Esto ya es mi vida"
+    },
+    "hours_2000": {
+      "description": "Registra 2.000 horas de inmersión en total.",
+      "name": "Máquina de inmersión"
+    },
+    "hours_500": {
+      "description": "Registra 500 horas de inmersión en total.",
+      "name": "Otaku"
+    },
+    "level_10": {
+      "description": "Llega al nivel 10.",
+      "name": "Subiendo de nivel"
+    },
+    "level_100": {
+      "description": "Llega al nivel 100. Un logro extraordinario.",
+      "name": "Élite"
+    },
+    "level_25": {
+      "description": "Llega al nivel 25.",
+      "name": "Intermedio"
+    },
+    "level_5": {
+      "description": "Llega al nivel 5.",
+      "name": "Primeros pasos"
+    },
+    "level_50": {
+      "description": "Llega al nivel 50.",
+      "name": "Avanzado"
+    },
+    "logs_10": {
+      "description": "Crea 10 registros de inmersión.",
+      "name": "Arrancando"
+    },
+    "logs_100": {
+      "description": "Crea 100 registros de inmersión.",
+      "name": "Habitual"
+    },
+    "logs_1000": {
+      "description": "Crea 1.000 registros de inmersión.",
+      "name": "Veterano"
+    },
+    "logs_50": {
+      "description": "Crea 50 registros de inmersión.",
+      "name": "Inmersión habitual"
+    },
+    "logs_500": {
+      "description": "Crea 500 registros de inmersión.",
+      "name": "Registrador prolífico"
+    },
+    "lunch_break": {
+      "description": "Registra inmersión entre las 12 y la 1 del mediodía 10 veces.",
+      "name": "Pausa para comer"
+    },
+    "marathon_day": {
+      "description": "Registra 10 horas o más de inmersión en un solo día.",
+      "name": "Maratón"
+    },
+    "monday_motivation": {
+      "description": "Registra 10 lunes seguidos.",
+      "name": "Motivación de lunes"
+    },
+    "new_year": {
+      "description": "Registra inmersión el 1 de enero.",
+      "name": "Año nuevo, yo nuevo"
+    },
+    "night_owl": {
+      "description": "Registra inmersión después de medianoche 10 veces.",
+      "name": "Ave nocturna"
+    },
+    "no_days_off": {
+      "description": "Registra en Navidad, en Año Nuevo y en el aniversario de tu cuenta.",
+      "name": "Sin días libres"
+    },
+    "old_school": {
+      "description": "Registra una novela visual publicada antes de 2005.",
+      "name": "De la vieja escuela"
+    },
+    "platform_year": {
+      "description": "Sé miembro activo de NihongoTracker durante un año entero.",
+      "name": "A largo plazo"
+    },
+    "podcast_brain": {
+      "description": "Registra 30 horas de contenido solo de audio.",
+      "name": "Cerebro de pódcast"
+    },
+    "rank_consistent": {
+      "description": "Aparece en el top 25 durante 4 semanas seguidas.",
+      "name": "Regularidad"
+    },
+    "rank_king": {
+      "description": "Llega al puesto 1 de cualquier clasificación.",
+      "name": "Número uno"
+    },
+    "rank_podium": {
+      "description": "Entra en el top 3 de cualquier clasificación.",
+      "name": "Podio"
+    },
+    "rank_top10": {
+      "description": "Entra en el top 10 de la clasificación semanal.",
+      "name": "Top 10"
+    },
+    "renaissance_learner": {
+      "description": "Registra los 6 tipos de contenido en una misma semana.",
+      "name": "Estudiante renacentista"
+    },
+    "secret_absorbed": {
+      "description": "Registra 6 horas o más de un mismo título en una sola sesión.",
+      "hint": "Absorto por completo...",
+      "name": "夢中"
+    },
+    "secret_dethroned": {
+      "description": "Tuviste el puesto 1 y alguien te lo quitó.",
+      "hint": "Cuanto más alto subes...",
+      "name": "Destronado"
+    },
+    "secret_early_adopter": {
+      "description": "Uno de los primeros 100 usuarios de NihongoTracker.",
+      "hint": "¿Estabas aquí desde el principio?",
+      "name": "創始者"
+    },
+    "secret_floor_lava": {
+      "description": "Cambia entre 4 tipos de contenido distintos en un mismo día.",
+      "hint": "No puedes quedarte quieto...",
+      "name": "El suelo es lava"
+    },
+    "secret_keeper": {
+      "description": "Descubre 5 logros ocultos.",
+      "hint": "Aquí hay más de lo que parece...",
+      "name": "Guardián de secretos"
+    },
+    "secret_long_streak": {
+      "description": "Mantén una racha de 500 días. Hay quien dice que no se puede.",
+      "hint": "Una hazaña legendaria de constancia...",
+      "name": "不屈の精神"
+    },
+    "secret_loyal": {
+      "description": "Registra todos los días de una semana justo después de romper una racha.",
+      "hint": "La lealtad no se abandona fácilmente...",
+      "name": "Leal"
+    },
+    "secret_parasocial": {
+      "description": "Sigue a alguien con quien hayas tenido un duelo.",
+      "hint": "Una conexión extraña...",
+      "name": "Parasocial"
+    },
+    "secret_perfectionist": {
+      "description": "Edita un registro antes de 30 segundos desde que lo creaste.",
+      "hint": "Te lo has repensado...",
+      "name": "Perfeccionista"
+    },
+    "secret_phoenix": {
+      "description": "Rompe una racha y vuelve para superar tu récord personal.",
+      "hint": "Resurge de las cenizas...",
+      "name": "Fénix"
+    },
+    "secret_speedrunner": {
+      "description": "Registra una sesión antes de 60 segundos desde la anterior.",
+      "hint": "Vas muy rápido...",
+      "name": "Speedrunner"
+    },
+    "secret_xp_10m": {
+      "description": "Consigue 10.000.000 XP en total. Has trascendido.",
+      "hint": "Más allá de lo legendario...",
+      "name": "一千万の証"
+    },
+    "sprinter_day": {
+      "description": "Registra 5 sesiones de inmersión distintas en un solo día.",
+      "name": "Esprínter"
+    },
+    "streak_100": {
+      "description": "Mantén una racha de 100 días.",
+      "name": "Inquebrantable"
+    },
+    "streak_3": {
+      "description": "Mantén una racha de 3 días.",
+      "name": "Cogiéndole el gusto"
+    },
+    "streak_30": {
+      "description": "Mantén una racha de 30 días.",
+      "name": "Hábito formado"
+    },
+    "streak_365": {
+      "description": "Mantén una racha de 365 días. Un año entero. Increíble.",
+      "name": "Legendario"
+    },
+    "streak_7": {
+      "description": "Mantén una racha de 7 días.",
+      "name": "Arrancando la racha"
+    },
+    "tanabata": {
+      "description": "Registra inmersión el 7 de julio (七夕).",
+      "name": "Tanabata"
+    },
+    "week_24h": {
+      "description": "Registra 24 horas de inmersión en una sola semana.",
+      "name": "¿Has dormido?"
+    },
+    "weekend_warrior": {
+      "description": "Registra todos los sábados y domingos de un mes entero.",
+      "name": "Guerrero de fin de semana"
+    },
+    "xp_1000": {
+      "description": "Consigue 1.000 XP en total.",
+      "name": "Aprendiz"
+    },
+    "xp_10000": {
+      "description": "Consigue 10.000 XP en total.",
+      "name": "Oficial"
+    },
+    "xp_100000": {
+      "description": "Consigue 100.000 XP en total.",
+      "name": "Maestro"
+    },
+    "xp_1000000": {
+      "description": "Consigue 1.000.000 XP en total. Una hazaña casi mítica.",
+      "name": "Leyenda"
+    },
+    "xp_50000": {
+      "description": "Consigue 50.000 XP en total.",
+      "name": "Erudito"
+    },
+    "xp_500000": {
+      "description": "Consigue 500.000 XP en total.",
+      "name": "Gran maestro"
+    }
+  },
+  "secretHint": "Cumple una condición secreta para revelar este logro.",
+  "secretName": "Logro secreto"
+}

@@ -8,17 +8,33 @@
   "mediaTypes": {
     "anime": "anime",
     "audio": "audio",
+    "book": "libro",
     "game": "juego",
     "manga": "manga",
     "movie": "película",
+    "other": "otro",
     "reading": "lectura",
     "tvShow": "serie",
     "video": "vídeo",
     "vn": "novela visual"
   },
+  "mediaTypesPlural": {
+    "anime": "anime",
+    "book": "libros",
+    "game": "juegos",
+    "manga": "manga",
+    "movie": "películas",
+    "reading": "lectura",
+    "tvShow": "series",
+    "video": "vídeos",
+    "vn": "novelas visuales"
+  },
   "patreonTiers": {
     "consumer": "Consumidor",
     "donator": "Donante",
     "enthusiast": "Entusiasta"
+  },
+  "time": {
+    "justNow": "Justo ahora"
   }
 }

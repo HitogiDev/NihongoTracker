@@ -26,6 +26,8 @@ import { useUserDataStore } from '../../store/userData';
 import EditVotingModal from './EditVotingModal';
 import CreateVotingWizard from './CreateVotingWizard';
 import SuggestMediaModal from './SuggestMediaModal';
+import { useTranslation } from 'react-i18next';
+import { getLocale } from '../../utils/timezone';
 
 type ResultsTimespan = '7' | '30' | '90' | '180' | '365' | 'all';
 
@@ -51,6 +53,7 @@ export default function VotingSystem({
   showManagement,
   sharedVotingId,
 }: VotingSystemProps) {
+  const { t } = useTranslation('clubs');
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(
     null
   );
@@ -97,7 +100,7 @@ export default function VotingSystem({
       candidateIndex: number;
     }) => voteForCandidateFn(club._id, votingId, candidateIndex),
     onSuccess: () => {
-      toast.success('Vote recorded successfully!');
+      toast.success(t('toast.voteRecorded'));
       invalidateVotingQueries();
       setSelectedCandidate(null);
     },
@@ -110,7 +113,7 @@ export default function VotingSystem({
   const deleteVotingMutation = useMutation({
     mutationFn: (votingId: string) => deleteMediaVotingFn(club._id, votingId),
     onSuccess: () => {
-      toast.success('Voting deleted successfully!');
+      toast.success(t('toast.votingDeleted'));
       invalidateVotingQueries();
       setDeletingVoting(null);
     },
@@ -178,7 +181,7 @@ export default function VotingSystem({
       return 'Invalid Date';
     }
 
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(getLocale(), {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -269,7 +272,7 @@ export default function VotingSystem({
     return (
       <div className="flex items-center justify-center h-32">
         <span className="loading loading-spinner loading-md"></span>
-        <span className="ml-2">Loading votings...</span>
+        <span className="ml-2">{t('voting.loading')}</span>
       </div>
     );
   }
@@ -288,7 +291,7 @@ export default function VotingSystem({
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        toast.success('Voting link copied to clipboard!');
+        toast.success(t('toast.votingLinkCopied'));
       })
       .catch(() => {
         const textArea = document.createElement('textarea');
@@ -297,7 +300,7 @@ export default function VotingSystem({
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        toast.success('Voting link copied to clipboard!');
+        toast.success(t('toast.votingLinkCopied'));
       });
   };
 
@@ -327,9 +330,11 @@ export default function VotingSystem({
           <div className="card bg-base-100 shadow-sm border border-base-300">
             <div className="card-body text-center py-12">
               <Vote className="w-16 h-16 text-base-content/20 mx-auto mb-4" />
-              <h3 className="text-xl font-medium mb-2">No Active Votings</h3>
+              <h3 className="text-xl font-medium mb-2">
+                {t('voting.noneActive')}
+              </h3>
               <p className="text-base-content/60">
-                There are no votings open for voting right now.
+                {t('voting.noneActiveBody')}
               </p>
             </div>
           </div>
@@ -385,12 +390,11 @@ export default function VotingSystem({
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
                 <Hourglass className="w-5 h-5" />
-                Voting Closed
+                {t('voting.closed')}
               </h3>
 
               <p className="text-sm text-base-content/60 mb-4">
-                These votings have ended and will finalize automatically when
-                the consumption period begins.
+                {t('voting.endedNote')}
               </p>
 
               <div className="space-y-4">
@@ -423,11 +427,11 @@ export default function VotingSystem({
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <h3 className="card-title flex items-center gap-2">
                   <Trophy className="w-5 h-5" />
-                  Recent Results
+                  {t('voting.recentResults')}
                 </h3>
                 <label className="form-control w-full md:w-auto">
                   <span className="label-text text-xs uppercase tracking-wide text-base-content/60">
-                    Timespan
+                    {t('voting.timespan')}
                   </span>
                   <select
                     className="select select-sm"
@@ -447,7 +451,7 @@ export default function VotingSystem({
 
               {filteredCompletedVotings.length === 0 ? (
                 <p className="text-sm text-base-content/60">
-                  No completed votings found in this timespan.
+                  {t('voting.noCompleted')}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -473,7 +477,7 @@ export default function VotingSystem({
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
                 <Plus className="w-5 h-5" />
-                Media Suggestions Open
+                {t('voting.suggestionsOpen')}
               </h3>
 
               <div className="space-y-4">
@@ -495,13 +499,13 @@ export default function VotingSystem({
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
                 <Settings className="w-5 h-5" />
-                Voting Management
+                {t('voting.management')}
               </h3>
 
               {managementVotings.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-base-content/60">
-                    No votings in setup or suggestion phase.
+                    {t('voting.noneInSetup')}
                   </p>
                 </div>
               ) : (
@@ -551,7 +555,9 @@ export default function VotingSystem({
       {deletingVoting && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Delete Voting</h3>
+            <h3 className="font-bold text-lg mb-4">
+              {t('voting.deleteTitle')}
+            </h3>
             <p className="mb-6">
               Are you sure you want to delete the voting "{deletingVoting.title}
               "? This action cannot be undone.
@@ -562,7 +568,7 @@ export default function VotingSystem({
                 className="btn btn-ghost"
                 disabled={deleteVotingMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() =>
@@ -612,7 +618,7 @@ export default function VotingSystem({
             <button
               onClick={() => handleShareVoting(voting)}
               className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
-              title="Share this voting"
+              title={t('voting.shareThis')}
             >
               <Share2 className="w-5 h-5 block" />
             </button>
@@ -650,7 +656,7 @@ export default function VotingSystem({
             <div className="alert alert-success mb-6">
               <CircleCheck className="w-5 h-5" />
               <div>
-                <h4 className="font-medium">Vote submitted!</h4>
+                <h4 className="font-medium">{t('voting.voteSubmitted')}</h4>
                 <p className="text-sm mt-1">
                   You voted for:{' '}
                   <span className="font-medium">
@@ -667,10 +673,8 @@ export default function VotingSystem({
             <div className="alert alert-warning mb-6">
               <Vote className="w-5 h-5" />
               <div>
-                <h4 className="font-medium">Join the club to vote!</h4>
-                <p className="text-sm mt-1">
-                  You need to be a member of this club to participate in voting.
-                </p>
+                <h4 className="font-medium">{t('voting.joinToVote')}</h4>
+                <p className="text-sm mt-1">{t('voting.joinToVoteBody')}</p>
               </div>
             </div>
           )}
@@ -729,7 +733,7 @@ export default function VotingSystem({
                     <div className="mt-4">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-base-content/60">
-                          Votes
+                          {t('voting.votes')}
                         </span>
                         <span className="text-sm font-medium">
                           {candidateVotes} ({votePercentage.toFixed(1)}%)
@@ -751,7 +755,7 @@ export default function VotingSystem({
 
                     {isUserChoice && (
                       <div className="badge badge-success badge-sm mt-2">
-                        Your Vote
+                        {t('voting.yourVote')}
                       </div>
                     )}
                   </div>
@@ -801,22 +805,21 @@ export default function VotingSystem({
               <div className="flex items-center gap-2 mb-2">
                 <h4 className="font-medium">{voting.title}</h4>
                 <span className="badge badge-error badge-sm">
-                  Voting Closed
+                  {t('voting.closed')}
                 </span>
               </div>
               <p className="text-sm text-base-content/70">
                 Consumption begins on {formatDate(voting.consumptionStartDate)}.
               </p>
               <p className="text-xs text-base-content/50 mt-1">
-                Results will finalize automatically when the consumption period
-                starts.
+                {t('voting.finalizeNote')}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => handleShareVoting(voting)}
                 className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
-                title="Share this voting"
+                title={t('voting.shareThis')}
               >
                 <Share2 className="w-5 h-5 block" />
               </button>
@@ -913,7 +916,9 @@ export default function VotingSystem({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h4 className="font-medium">{voting.title}</h4>
-                <span className="badge badge-success badge-sm">Completed</span>
+                <span className="badge badge-success badge-sm">
+                  {t('voting.completed')}
+                </span>
               </div>
               <p className="text-sm text-base-content/70">
                 Consumption period: {formatDate(voting.consumptionStartDate)}
@@ -928,7 +933,7 @@ export default function VotingSystem({
               <button
                 onClick={() => handleShareVoting(voting)}
                 className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
-                title="Share this voting"
+                title={t('voting.shareThis')}
               >
                 <Share2 className="w-5 h-5 block" />
               </button>
@@ -961,14 +966,14 @@ export default function VotingSystem({
             </div>
           ) : (
             <p className="mt-4 text-sm text-base-content/60">
-              No winner was recorded for this voting.
+              {t('voting.noWinner')}
             </p>
           )}
 
           {sortedCandidates.length > 0 && (
             <div className="mt-6">
               <h6 className="text-xs uppercase font-semibold text-base-content/50 mb-2">
-                Final standings
+                {t('voting.finalStandings')}
               </h6>
               <div className="space-y-3">
                 {sortedCandidates.slice(0, 5).map((candidate, index) => {
@@ -1061,21 +1066,21 @@ export default function VotingSystem({
               <button
                 onClick={() => handleShareVoting(voting)}
                 className="btn btn-sm btn-outline btn-ghost"
-                title="Share voting"
+                title={t('voting.share')}
               >
                 <Share2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onEdit(voting)}
                 className="btn btn-sm btn-outline btn-primary"
-                title="Edit voting"
+                title={t('voting.edit')}
               >
                 <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(voting)}
                 className="btn btn-sm btn-outline btn-error"
-                title="Delete voting"
+                title={t('voting.delete')}
               >
                 <Trash className="w-4 h-4" />
               </button>
@@ -1115,13 +1120,13 @@ export default function VotingSystem({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                 <div>
-                  <span className="font-medium">Media Type:</span>{' '}
+                  <span className="font-medium">{t('suggest.mediaType')}</span>{' '}
                   {voting.mediaType === 'custom'
                     ? voting.customMediaType
                     : voting.mediaType}
                 </div>
                 <div>
-                  <span className="font-medium">Suggestions Close:</span>{' '}
+                  <span className="font-medium">{t('suggest.closes')}</span>{' '}
                   {voting.suggestionEndDate
                     ? formatDate(voting.suggestionEndDate)
                     : 'Unknown'}
@@ -1143,7 +1148,7 @@ export default function VotingSystem({
                 <button
                   onClick={() => handleShareVoting(voting)}
                   className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
-                  title="Share this voting"
+                  title={t('voting.shareThis')}
                 >
                   <Share2 className="w-5 h-5 block" />
                 </button>
@@ -1158,7 +1163,7 @@ export default function VotingSystem({
                   }
                 >
                   <Plus className="w-4 h-4" />
-                  Suggest Media
+                  {t('suggest.title')}
                 </button>
               </div>
               className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9"
@@ -1174,7 +1179,9 @@ export default function VotingSystem({
           {/* Show existing suggestions */}
           {voting.candidates.length > 0 && (
             <div className="mt-4 pt-4 border-t border-base-300">
-              <h5 className="font-medium text-sm mb-2">Current Suggestions:</h5>
+              <h5 className="font-medium text-sm mb-2">
+                {t('suggest.current')}
+              </h5>
               <div className="flex flex-wrap gap-2">
                 {voting.candidates.map((candidate, index) => (
                   <div

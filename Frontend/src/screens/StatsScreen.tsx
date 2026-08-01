@@ -71,11 +71,14 @@ import {
 } from '../types';
 import { numberWithCommas } from '../utils/utils';
 import { useUserDataStore } from '../store/userData';
+import { useTranslation } from 'react-i18next';
 
+// Module scope: `t` does not exist here and a plain English label would
+// never react to a language switch, so store keys and translate at render.
 const CATEGORY_OPTIONS = [
-  { id: 'overview', label: 'Overview', Icon: Gauge },
-  { id: 'charts', label: 'Charts', Icon: LineChart },
-  { id: 'timeline', label: 'Timeline', Icon: BarChart3 },
+  { id: 'overview', labelKey: 'tabs.overview', Icon: Gauge },
+  { id: 'charts', labelKey: 'tabs.charts', Icon: LineChart },
+  { id: 'timeline', labelKey: 'tabs.timeline', Icon: BarChart3 },
 ] as const;
 
 type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
@@ -439,6 +442,12 @@ function SortableGroup({
 }
 
 function StatsScreen() {
+  const { t } = useTranslation('stats');
+  // `t` cannot be typed over a union of keys, and CATEGORY_OPTIONS is
+  // `as const`; the keys themselves are still checked in the array.
+  const tTab = t as (
+    key: (typeof CATEGORY_OPTIONS)[number]['labelKey']
+  ) => string;
   const { username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedInUser } = useUserDataStore();
   const isOwner = username === loggedInUser?.username;
@@ -601,12 +610,12 @@ function StatsScreen() {
                 className="btn btn-sm btn-ghost gap-2 text-base-content/60 hover:text-base-content"
                 onClick={handleEnterEditMode}
               >
-                <Pencil className="w-4 h-4" /> Edit Layout
+                <Pencil className="w-4 h-4" /> {t('layout.edit')}
               </button>
             ) : (
               <div className="flex items-center gap-2 flex-wrap w-full">
                 <span className="text-sm text-base-content/60">
-                  Drag groups or cards · click 👁 to hide/show
+                  {t('layout.hint')}
                 </span>
                 <div className="flex gap-2 ml-auto">
                   <button
@@ -614,7 +623,7 @@ function StatsScreen() {
                     className="btn btn-sm btn-ghost"
                     onClick={handleCancelEdit}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="button"
@@ -1024,7 +1033,7 @@ function StatsScreen() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content/70">Loading your stats...</p>
+          <p className="mt-4 text-base-content/70">{t('loading')}</p>
         </div>
       </div>
     );
@@ -1034,11 +1043,9 @@ function StatsScreen() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-base-content/70">
-            We could not retrieve your statistics right now.
-          </p>
+          <p className="text-base-content/70">{t('loadFailed')}</p>
           <p className="text-base-content/50 text-sm mt-2">
-            Try adjusting your filters or refreshing the page.
+            {t('loadFailedHint')}
           </p>
         </div>
       </div>
@@ -1054,10 +1061,7 @@ function StatsScreen() {
               {username}'s Statistics
             </h1>
             {username === loggedInUser?.username ? (
-              <p className="text-base-content/70">
-                Track your immersion progress with detailed breakdowns and
-                charts.
-              </p>
+              <p className="text-base-content/70">{t('subtitle')}</p>
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1075,14 +1079,14 @@ function StatsScreen() {
             <div className="space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
                 <div className="join w-full sm:w-auto">
-                  {CATEGORY_OPTIONS.map(({ id, label, Icon }) => (
+                  {CATEGORY_OPTIONS.map(({ id, labelKey, Icon }) => (
                     <button
                       key={id}
                       className={`join-item btn flex-1 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
                       onClick={() => setActiveCategory(id)}
                     >
                       <Icon className="w-4 h-4" />
-                      {label}
+                      {tTab(labelKey)}
                     </button>
                   ))}
                 </div>
@@ -1101,11 +1105,11 @@ function StatsScreen() {
                     className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-60 border border-base-300"
                   >
                     {[
-                      { label: 'All Time', value: 'total' },
-                      { label: 'Today', value: 'today' },
-                      { label: 'This Week', value: 'week' },
-                      { label: 'This Month', value: 'month' },
-                      { label: 'This Year', value: 'year' },
+                      { label: t('range.allTime'), value: 'total' },
+                      { label: t('range.today'), value: 'today' },
+                      { label: t('range.thisWeek'), value: 'week' },
+                      { label: t('range.thisMonth'), value: 'month' },
+                      { label: t('range.thisYear'), value: 'year' },
                     ].map((option) => (
                       <li key={option.value}>
                         <button
@@ -1122,7 +1126,9 @@ function StatsScreen() {
                         </button>
                       </li>
                     ))}
-                    <li className="menu-title px-2 mt-2">Custom range</li>
+                    <li className="menu-title px-2 mt-2">
+                      {t('filters.customRange')}
+                    </li>
                     <li className="px-2 py-2">
                       <div className="flex flex-col gap-2">
                         <div className="flex flex-col gap-2 w-full">
@@ -1212,7 +1218,7 @@ function StatsScreen() {
                             }}
                             disabled={!customStartDate || !customEndDate}
                           >
-                            Apply
+                            {t('filters.apply')}
                           </button>
                           <button
                             className="btn btn-sm"
@@ -1224,7 +1230,7 @@ function StatsScreen() {
                               setTimeRange('total');
                             }}
                           >
-                            Clear
+                            {t('common.clear')}
                           </button>
                         </div>
                       </div>
@@ -1251,14 +1257,14 @@ function StatsScreen() {
                         className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
                         onClick={handleSelectAllTypes}
                       >
-                        Select All
+                        {t('filters.selectAll')}
                       </button>
                       <button
                         type="button"
                         className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
                         onClick={handleSelectNoneTypes}
                       >
-                        Select None
+                        {t('filters.selectNone')}
                       </button>
                     </div>
                     <div className="divider my-1"></div>
@@ -1331,7 +1337,7 @@ function StatsScreen() {
                             }
                             onClick={() => setGanttSort('title-asc')}
                           >
-                            Alphabetical (A-Z)
+                            {t('sort.azAsc')}
                           </button>
                         </li>
                         <li>
@@ -1341,7 +1347,7 @@ function StatsScreen() {
                             }
                             onClick={() => setGanttSort('title-desc')}
                           >
-                            Alphabetical (Z-A)
+                            {t('sort.azDesc')}
                           </button>
                         </li>
                         <li>
@@ -1351,7 +1357,7 @@ function StatsScreen() {
                             }
                             onClick={() => setGanttSort('first-asc')}
                           >
-                            First log (oldest)
+                            {t('sort.firstLog')}
                           </button>
                         </li>
                         <li>
@@ -1361,7 +1367,7 @@ function StatsScreen() {
                             }
                             onClick={() => setGanttSort('last-desc')}
                           >
-                            Last log (newest)
+                            {t('sort.lastLog')}
                           </button>
                         </li>
                         <li>
@@ -1371,7 +1377,7 @@ function StatsScreen() {
                             }
                             onClick={() => setGanttSort('logs-desc')}
                           >
-                            Most logs
+                            {t('sort.mostLogs')}
                           </button>
                         </li>
                         <li>
@@ -1381,7 +1387,7 @@ function StatsScreen() {
                             }
                             onClick={() => setGanttSort('time-desc')}
                           >
-                            Most time
+                            {t('sort.mostTime')}
                           </button>
                         </li>
                         <li>
@@ -1389,7 +1395,7 @@ function StatsScreen() {
                             className={ganttSort === 'xp-desc' ? 'active' : ''}
                             onClick={() => setGanttSort('xp-desc')}
                           >
-                            Most XP
+                            {t('sort.mostXp')}
                           </button>
                         </li>
                       </ul>
@@ -1412,7 +1418,7 @@ function StatsScreen() {
                           type="number"
                           min={0}
                           className="input input-sm"
-                          placeholder="Min logs"
+                          placeholder={t('filters.minLogs')}
                           value={ganttMinLogs}
                           onChange={(event) =>
                             setGanttMinLogs(event.target.value)
@@ -1438,7 +1444,7 @@ function StatsScreen() {
                           type="number"
                           min={0}
                           className="input input-sm"
-                          placeholder="Max logs"
+                          placeholder={t('filters.maxLogs')}
                           value={ganttMaxLogs}
                           onChange={(event) =>
                             setGanttMaxLogs(event.target.value)
@@ -1446,22 +1452,20 @@ function StatsScreen() {
                         />
                       </div>
                     </div>
-                                        <label className="input input-bordered flex items-center gap-2 w-full sm:w-56">
+                    <label className="input input-bordered flex items-center gap-2 w-full sm:w-56">
                       <Search className="w-4 h-4 opacity-60" />
                       <input
                         type="text"
                         className="grow"
-                        placeholder="Search titles"
+                        placeholder={t('filters.searchTitles')}
                         value={ganttSearch}
-                        onChange={(event) =>
-                          setGanttSearch(event.target.value)
-                        }
+                        onChange={(event) => setGanttSearch(event.target.value)}
                       />
                       {ganttSearch && (
                         <button
                           type="button"
                           className="opacity-60 hover:opacity-100"
-                          aria-label="Clear search"
+                          aria-label={t('filters.clearSearch')}
                           onClick={() => setGanttSearch('')}
                         >
                           <X className="w-4 h-4" />
@@ -1481,7 +1485,7 @@ function StatsScreen() {
             </div>
             <label className="label cursor-pointer gap-3 w-full lg:w-auto justify-between lg:justify-end">
               <span className="label-text text-sm text-base-content whitespace-nowrap">
-                Immersed days only
+                {t('filters.immersedDaysOnly')}
               </span>
               <input
                 type="checkbox"
@@ -1503,7 +1507,7 @@ function StatsScreen() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                          Total XP
+                          {t('cards.totalXp')}
                         </h3>
                         <p className="text-3xl font-bold text-primary mt-1">
                           {numberWithCommas(totalXp)}
@@ -1527,7 +1531,7 @@ function StatsScreen() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                          Time Spent
+                          {t('cards.timeSpent')}
                         </h3>
                         <p className="text-3xl font-bold text-secondary mt-1">
                           {numberWithCommas(
@@ -1556,7 +1560,7 @@ function StatsScreen() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                          Log Count
+                          {t('cards.logCount')}
                         </h3>
                         <p className="text-3xl font-bold text-accent mt-1">
                           {numberWithCommas(totalLogsValue)}
@@ -1588,7 +1592,7 @@ function StatsScreen() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                          Daily Average
+                          {t('cards.dailyAverage')}
                         </h3>
                         <p className="text-3xl font-bold text-secondary mt-1">
                           {numberWithCommas(
@@ -1615,7 +1619,7 @@ function StatsScreen() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                          Current Streak
+                          {t('cards.currentStreak')}
                         </h3>
                         <p className="text-3xl font-bold text-warning mt-1">
                           {numberWithCommas(currentStreakValue)}{' '}
@@ -1629,7 +1633,7 @@ function StatsScreen() {
                       </div>
                     </div>
                     <p className="text-xs text-base-content/60 mt-2">
-                      Consecutive days of immersion activity
+                      {t('cards.currentStreakHint')}
                     </p>
                   </div>
                 </div>
@@ -1640,7 +1644,7 @@ function StatsScreen() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                          Longest Streak
+                          {t('cards.longestStreak')}
                         </h3>
                         <p className="text-3xl font-bold text-info mt-1">
                           {numberWithCommas(longestStreakValue)}{' '}
@@ -1654,7 +1658,7 @@ function StatsScreen() {
                       </div>
                     </div>
                     <p className="text-xs text-base-content/60 mt-2">
-                      Longest streak you have maintained
+                      {t('cards.longestStreakHint')}
                     </p>
                   </div>
                 </div>
@@ -1666,7 +1670,9 @@ function StatsScreen() {
                       <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
                         <BookOpen className="w-4 h-4 text-info" />
                       </div>
-                      <h3 className="font-semibold text-info">Reading</h3>
+                      <h3 className="font-semibold text-info">
+                        {t('cards.reading')}
+                      </h3>
                     </div>
                     <p className="text-2xl font-bold">
                       {numberWithCommas(
@@ -1677,7 +1683,7 @@ function StatsScreen() {
                       </span>
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
-                      Reading, manga, visual novels, and video games
+                      {t('cards.readingHint')}
                     </p>
                   </div>
                 </div>
@@ -1689,7 +1695,9 @@ function StatsScreen() {
                       <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
                         <Headphones className="w-4 h-4 text-success" />
                       </div>
-                      <h3 className="font-semibold text-success">Listening</h3>
+                      <h3 className="font-semibold text-success">
+                        {t('cards.listening')}
+                      </h3>
                     </div>
                     <p className="text-2xl font-bold">
                       {numberWithCommas(
@@ -1700,7 +1708,7 @@ function StatsScreen() {
                       </span>
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
-                      Anime, video, audio, movies, and TV
+                      {t('cards.listeningHint')}
                     </p>
                   </div>
                 </div>
@@ -1712,7 +1720,9 @@ function StatsScreen() {
                       <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
                         <Scale className="w-4 h-4 text-warning" />
                       </div>
-                      <h3 className="font-semibold text-warning">Balance</h3>
+                      <h3 className="font-semibold text-warning">
+                        {t('cards.balance')}
+                      </h3>
                     </div>
                     <p className="text-2xl font-bold">
                       {(() => {
@@ -1729,7 +1739,7 @@ function StatsScreen() {
                       })()}
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
-                      Reading vs. listening ratio
+                      {t('cards.balanceHint')}
                     </p>
                   </div>
                 </div>
@@ -1762,7 +1772,7 @@ function StatsScreen() {
                         <Gauge className="w-5 h-5 text-primary" />
                       </div>
                       <h3 className="font-semibold text-primary">
-                        Average Reading Speed
+                        {t('cards.avgReadingSpeed')}
                       </h3>
                     </div>
                     <p className="text-2xl font-bold">
@@ -1772,7 +1782,7 @@ function StatsScreen() {
                       </span>
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
-                      Based on reading, manga, and visual novels
+                      {t('cards.avgReadingSpeedHint')}
                     </p>
                   </div>
                 </div>
@@ -1804,7 +1814,7 @@ function StatsScreen() {
                         </svg>
                       </div>
                       <h3 className="font-semibold text-primary">
-                        Daily Avg Characters
+                        {t('cards.dailyAvgChars')}
                       </h3>
                     </div>
                     <p className="text-2xl font-bold">
@@ -1846,7 +1856,7 @@ function StatsScreen() {
                         </svg>
                       </div>
                       <h3 className="font-semibold text-primary">
-                        Characters Read
+                        {t('cards.charsRead')}
                       </h3>
                     </div>
                     <p className="text-2xl font-bold">
@@ -1867,7 +1877,9 @@ function StatsScreen() {
                       <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
                         <Book className="w-5 h-5 text-info" />
                       </div>
-                      <h3 className="font-semibold text-info">Pages</h3>
+                      <h3 className="font-semibold text-info">
+                        {t('cards.pages')}
+                      </h3>
                     </div>
                     <p className="text-2xl font-bold">
                       {numberWithCommas(totalPages)}
@@ -1893,7 +1905,7 @@ function StatsScreen() {
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <PieChartIcon className="w-5 h-5 text-primary" />
-                      Log Count
+                      {t('cards.logCount')}
                     </h3>
                     <div className="h-64">
                       <PieChart data={logCountData} valueFormat="logs" />
@@ -1906,7 +1918,7 @@ function StatsScreen() {
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Clock3 className="w-5 h-5 text-primary" />
-                      Time Distribution
+                      {t('charts.timeDistribution')}
                     </h3>
                     <div className="h-64">
                       <PieChart data={logTimeData} valueFormat="hours" />
@@ -1919,7 +1931,7 @@ function StatsScreen() {
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Zap className="w-5 h-5 text-primary" />
-                      XP Distribution
+                      {t('charts.xpDistribution')}
                     </h3>
                     <div className="h-64">
                       <PieChart data={logXpData} valueFormat="xp" />
@@ -1935,7 +1947,7 @@ function StatsScreen() {
                     <div className="card-body">
                       <h3 className="card-title text-xl mb-4">
                         <TrendingUp className="w-6 h-6 text-primary" />
-                        Reading Speed Over Time
+                        {t('charts.readingSpeedOverTime')}
                       </h3>
                       <div className="w-full" style={{ height: '400px' }}>
                         <SpeedChart
@@ -1954,13 +1966,13 @@ function StatsScreen() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <h3 className="card-title text-xl flex items-center gap-2">
                         <Activity className="w-6 h-6 text-primary" />
-                        Progress Timeline
+                        {t('charts.progressTimeline')}
                       </h3>
 
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-base-content/70">
-                            Metric:
+                            {t('charts.metric')}
                           </span>
                           <div className="join">
                             <button
@@ -1983,14 +1995,14 @@ function StatsScreen() {
                               onClick={() => setProgressMetric('hours')}
                             >
                               <Clock3 className="w-4 h-4" />
-                              Hours
+                              {t('charts.hours')}
                             </button>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-base-content/70">
-                            View:
+                            {t('charts.view')}
                           </span>
                           <div className="join">
                             <button
@@ -2002,7 +2014,7 @@ function StatsScreen() {
                               onClick={() => setProgressChartView('line')}
                             >
                               <LineChart className="w-4 h-4" />
-                              Line
+                              {t('charts.line')}
                             </button>
                             <button
                               className={`join-item btn btn-sm ${
@@ -2013,7 +2025,7 @@ function StatsScreen() {
                               onClick={() => setProgressChartView('bar')}
                             >
                               <BarChart3 className="w-4 h-4" />
-                              Bar
+                              {t('charts.bar')}
                             </button>
                           </div>
                         </div>
@@ -2054,12 +2066,10 @@ function StatsScreen() {
               <div className="card-body">
                 <h3 className="card-title text-xl flex items-center gap-2 mb-1">
                   <BarChart3 className="w-6 h-6 text-primary" />
-                  Immersion Timeline
+                  {t('charts.immersionTimeline')}
                 </h3>
                 <p className="text-sm text-base-content/60 mb-4">
-                  Each bar spans from your first to your last log session for
-                  that title. Shading intensity shows how frequently you
-                  immersed in each month.
+                  {t('charts.timelineHint')}
                 </p>
                 <GanttChartSection
                   username={username}
@@ -2148,6 +2158,7 @@ function GanttChartSection({
   customStart: string;
   customEnd: string;
 }) {
+  const { t } = useTranslation('stats');
   const dateRange = computeGanttDateRange(timeFilter, customStart, customEnd);
 
   const { data, isLoading, error } = useQuery({
@@ -2173,7 +2184,7 @@ function GanttChartSection({
   if (error || !data) {
     return (
       <div className="text-center py-12 text-base-content/50">
-        <p>Could not load timeline data.</p>
+        <p>{t('charts.timelineFailed')}</p>
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getChangelogsFn } from '../api/trackerApi';
+import { getLocale } from '../utils/timezone';
 
 export default function ChangelogScreen() {
   const { data: changelogs, isLoading } = useQuery({
@@ -132,12 +133,15 @@ export default function ChangelogScreen() {
                     </span>
                     <h2 className="text-2xl font-bold">{changelog.title}</h2>
                     <span className="text-base-content/60 ml-auto">
-                      {new Date(changelog.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        timeZone: 'UTC',
-                      })}
+                      {new Date(changelog.date).toLocaleDateString(
+                        getLocale(),
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          timeZone: 'UTC',
+                        }
+                      )}
                     </span>
                   </div>
 

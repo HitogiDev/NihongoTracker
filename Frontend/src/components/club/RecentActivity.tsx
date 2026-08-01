@@ -9,9 +9,10 @@ import {
   History,
 } from 'lucide-react';
 import { getClubRecentActivityFn } from '../../api/clubApi';
-import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 import UserAvatar from '../UserAvatar';
+import { useTranslation } from 'react-i18next';
+import { useDateFormatting } from '../../hooks/useDateFormatting';
 
 interface RecentActivityProps {
   clubId: string;
@@ -78,6 +79,8 @@ const formatActivityContent = (activity: Activity) => {
 };
 
 export default function RecentActivity({ clubId }: RecentActivityProps) {
+  const { formatRelativeDate } = useDateFormatting();
+  const { t } = useTranslation('clubs');
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
       queryKey: ['clubRecentActivity', clubId],
@@ -108,7 +111,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
             <History className="text-xl" />
-            Recent Activity
+            {t('activity.title')}
           </h2>
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
@@ -134,14 +137,12 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
             <History className="text-xl" />
-            Recent Activity
+            {t('activity.title')}
           </h2>
           <div className="text-center py-6 text-base-content/60">
             <History className="mx-auto text-2xl mb-2 opacity-50" />
-            <p className="text-sm">No recent activity</p>
-            <p className="text-xs">
-              Activity from the last 7 days will appear here
-            </p>
+            <p className="text-sm">{t('activity.empty')}</p>
+            <p className="text-xs">{t('activity.emptyHint')}</p>
           </div>
         </div>
       </div>
@@ -153,7 +154,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
       <div className="card-body">
         <h2 className="card-title text-lg mb-4 flex items-center gap-2">
           <History className="text-xl" />
-          Recent Activity
+          {t('activity.title')}
         </h2>
 
         <div className="space-y-3">
@@ -203,15 +204,13 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
                 {/* Club Media Label */}
                 {activity.clubMedia && (
                   <span className="text-xs text-primary font-semibold mt-1 block">
-                    Club Media
+                    {t('activity.clubMedia')}
                   </span>
                 )}
 
                 {/* Timestamp */}
                 <span className="text-xs text-base-content/40 mt-1 block">
-                  {formatDistanceToNow(new Date(activity.createdAt), {
-                    addSuffix: true,
-                  })}
+                  {formatRelativeDate(new Date(activity.createdAt))}
                 </span>
               </div>
 

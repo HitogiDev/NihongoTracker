@@ -55,43 +55,39 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   // ── Bulk delete mutation ────────────────────────────────────────────────────
   // onSuccess receives (data, variables) — variables is the logIds array,
   // so we can always show the correct count in the toast without stale closures.
-  const { mutate: bulkDeleteLogs, isPending: loadingBulkDelete } = useMutation(
-    {
-      mutationFn: async (logIds: string[]) => {
-        // Single bulk-delete request — avoids concurrent Mongoose VersionError
-        await (
-          shouldUseAdminEndpoints
-            ? adminDeleteLogsBulkFn(logIds)
-            : deleteLogsBulkFn(logIds)
-        );
-      },
-      onSuccess: (_data, variables) => {
-        void queryClient.invalidateQueries({
-          predicate: (query) => {
-            const key = query.queryKey;
-            if (!Array.isArray(key)) return false;
-            return key.some((k) => k === 'logs' || k === 'user');
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+  const { mutate: bulkDeleteLogs, isPending: loadingBulkDelete } = useMutation({
+    mutationFn: async (logIds: string[]) => {
+      // Single bulk-delete request — avoids concurrent Mongoose VersionError
+      await (shouldUseAdminEndpoints
+        ? adminDeleteLogsBulkFn(logIds)
+        : deleteLogsBulkFn(logIds));
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          if (!Array.isArray(key)) return false;
+          return key.some((k) => k === 'logs' || k === 'user');
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-        // variables = the logIds array passed to mutate() — always correct
-        const count = variables.length;
-        toast.success(
-          `${count} log${count !== 1 ? 's' : ''} deleted successfully!`
-        );
-        deleteConfirmModalRef.current?.close();
-        setSelectedLogIds(new Set());
-      },
-      onError: (error) => {
-        const errorMessage =
-          error instanceof AxiosError
-            ? error.response?.data.message
-            : 'An error occurred';
-        toast.error(errorMessage);
-      },
-    }
-  );
+      // variables = the logIds array passed to mutate() — always correct
+      const count = variables.length;
+      toast.success(
+        `${count} log${count !== 1 ? 's' : ''} deleted successfully!`
+      );
+      deleteConfirmModalRef.current?.close();
+      setSelectedLogIds(new Set());
+    },
+    onError: (error) => {
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data.message
+          : 'An error occurred';
+      toast.error(errorMessage);
+    },
+  });
 
   // ── Open / close modal ──────────────────────────────────────────────────────
   const openModal = useCallback(() => {
@@ -352,7 +348,9 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`p-1.5 rounded-lg ${videoTypeConfig.bgColor}`}>
+                  <div
+                    className={`p-1.5 rounded-lg ${videoTypeConfig.bgColor}`}
+                  >
                     <ListVideo className={`w-4 h-4 ${videoTypeConfig.color}`} />
                   </div>
                   <h3
@@ -527,7 +525,8 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
           {/* Footer: loaded count indicator */}
           {isModalOpen && contentReady && logs.length > 0 && (
             <div className="flex-shrink-0 border-t border-base-content/10 px-5 py-2 text-xs text-base-content/40 text-center">
-              Showing {Math.min(visibleCount, logs.length)} of {logs.length} videos
+              Showing {Math.min(visibleCount, logs.length)} of {logs.length}{' '}
+              videos
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { TypeAnimation } from 'react-type-animation';
+import { useTranslation } from 'react-i18next';
 import {
   Check,
   ArrowRight,
@@ -63,6 +64,7 @@ function ScreenshotWindow({
 }
 
 function Hero() {
+  const { t } = useTranslation('home');
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -163,7 +165,7 @@ function Hero() {
           <button
             className="absolute top-4 right-4 btn btn-circle btn-sm btn-ghost text-white/80 hover:text-white"
             onClick={closeLightbox}
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -245,19 +247,19 @@ function Hero() {
             >
               <Link to="/register">
                 <button className="btn btn-primary btn-lg gap-2 px-10">
-                  Start Tracking
+                  {t('hero.startTracking')}
                   <ArrowRight size={18} />
                 </button>
               </Link>
               <Link to="/features">
                 <button className="btn btn-ghost btn-lg px-8">
-                  See all features
+                  {t('hero.seeFeatures')}
                 </button>
               </Link>
             </div>
 
             <p className="text-sm text-base-content/35">
-              Start tracking today · Core features free forever
+              {t('hero.freeForever')}
             </p>
           </div>
 
@@ -283,7 +285,7 @@ function Hero() {
                     ? '/screenshots/dashboard-v2.png'
                     : '/screenshots/dashboard-light-v2.png'
                 }
-                alt="NihongoTracker Dashboard"
+                alt={t('hero.dashboardAlt')}
                 className="w-full block cursor-zoom-in"
                 loading="eager"
                 onClick={() =>
@@ -302,7 +304,7 @@ function Hero() {
         <section className="py-14 px-4 bg-base-200/50 border-y border-base-300/50">
           <div className="max-w-3xl mx-auto text-center scroll-reveal">
             <p className="text-xs font-semibold text-base-content/40 uppercase tracking-widest mb-5">
-              Track every type of immersion
+              {t('hero.trackEveryType')}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               {[
@@ -331,29 +333,26 @@ function Hero() {
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal space-y-5 order-2 md:order-1">
               <span className="badge badge-primary badge-outline">
-                Log Tracking
+                {t('hero.logTracking')}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                Log in an instant
+                {t('hero.logInstant')}
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
-                Search a title, fill in the details, hit save. No more writing
-                long Discord commands or manually writing the whole title every
-                time, so you can go back to what matters: enjoying your
-                immersion!
+                {t('hero.logBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Anime, manga, VNs, audio, light novels & more
+                  {t('hero.logBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  AniList & VNDB integration for instant metadata
+                  {t('hero.logBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  XP and streaks calculated automatically
+                  {t('hero.logBullet3')}
                 </li>
               </ul>
             </div>
@@ -383,30 +382,28 @@ function Hero() {
             </div>
             <div className="scroll-reveal space-y-5">
               <span className="badge badge-secondary badge-outline">
-                Statistics
+                {t('hero.statistics')}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                See exactly how far
+                {t('hero.seeHowFar')}
                 <br />
                 you've come
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
-                Detailed charts and breakdowns show your growth over time.
-                Immersion hours by media type, reading speed trends, XP history,
-                and activity heatmap.
+                {t('hero.statsBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Overall, listening & reading level progress
+                  {t('hero.statsBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Activity heatmap, streaks & daily averages
+                  {t('hero.statsBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Filter by time range, medium, or tags
+                  {t('hero.statsBullet3')}
                 </li>
               </ul>
             </div>
@@ -418,30 +415,28 @@ function Hero() {
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal space-y-5 order-2 md:order-1">
               <span className="badge badge-accent badge-outline">
-                Leaderboards
+                {t('hero.leaderboards')}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                A little friendly
+                {t('hero.friendly')}
                 <br />
                 competition
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
-                See how you rank against other learners globally or by medium.
-                Monthly rankings reset every month — there's always a fresh
-                chance to climb.
+                {t('hero.rankBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Global & per-medium rankings
+                  {t('hero.rankBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Monthly & all-time leaderboards
+                  {t('hero.rankBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Filters for time range, medium, and listening/reading
+                  {t('hero.rankBullet3')}
                 </li>
               </ul>
             </div>
@@ -464,7 +459,7 @@ function Hero() {
               <ScreenshotWindow
                 src="/screenshots/texthooker-v2.png"
                 url="nihongotracker.app/texthooker"
-                alt="TextHooker Dashboard"
+                alt={t('hero.hookerAlt')}
                 isDark={isDark}
                 onOpen={setLightboxSrc}
               />
@@ -474,29 +469,25 @@ function Hero() {
                 TextHooker
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                Built for visual
+                {t('hero.builtForVn')}
                 <br />
                 novel readers
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
-                The integrated texthooker makes it easy to log your sessions
-                with the click of a button, no more manual logging after a long
-                reading session. You can also create a room to share the
-                texthooker in real-time with other users, perfect for roudoku
-                sessions.
+                {t('hero.hookerBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Multiplayer texthooker rooms for shared reading sessions
+                  {t('hero.hookerBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Full session history per title
+                  {t('hero.hookerBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Easy one-click reading session logging
+                  {t('hero.hookerBullet3')}
                 </li>
               </ul>
             </div>
@@ -507,30 +498,29 @@ function Hero() {
         <section className="py-24 px-4 bg-base-100">
           <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="scroll-reveal space-y-5 order-2 md:order-1">
-              <span className="badge badge-primary badge-outline">Clubs</span>
+              <span className="badge badge-primary badge-outline">
+                {t('hero.clubs')}
+              </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                Learn better
+                {t('hero.learnBetter')}
                 <br />
                 together
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
-                Join or create an immersion club. Compete on club leaderboards,
-                share your accomplishments, and find people who are into the
-                same things you are. Submit and vote on polls to decide the
-                media to consume together next!
+                {t('hero.clubBody')}
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Vote to decide what media to consume together next
+                  {t('hero.clubBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Public and private clubs with tags
+                  {t('hero.clubBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
                   <Check size={16} className="text-success shrink-0" />
-                  Find clubs by genre, style, or level
+                  {t('hero.clubBullet3')}
                 </li>
               </ul>
             </div>
@@ -550,25 +540,25 @@ function Hero() {
         <section className="py-28 px-4 bg-gradient-to-b from-base-100 to-base-200/60">
           <div className="max-w-xl mx-auto text-center scroll-reveal">
             <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
-              Ready to start?
+              {t('cta.title')}
             </h2>
             <p className="text-lg text-base-content/55 mb-10">
-              Free, start tracking your immersion.
+              {t('cta.body')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/register">
                 <button className="btn btn-primary btn-lg px-12">
-                  Join Now
+                  {t('cta.joinNow')}
                 </button>
               </Link>
               <Link to="/features">
                 <button className="btn btn-ghost btn-lg">
-                  See all features →
+                  {t('cta.seeFeatures')}
                 </button>
               </Link>
             </div>
             <p className="mt-8 text-sm text-base-content/50">
-              Made with ❤️ by a fellow learner
+              {t('cta.madeBy')}
             </p>
           </div>
         </section>

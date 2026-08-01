@@ -16,6 +16,7 @@ import ClubMediaNavbar from './ClubMediaNavbar';
 import { OutletClubMediaContextType } from '../../types';
 import { getAverageColorFn } from '../../api/trackerApi';
 import { useUserDataStore } from '../../store/userData';
+import { useTranslation } from 'react-i18next';
 
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -37,6 +38,7 @@ const getMediaTypeIcon = (type: string) => {
 };
 
 export default function ClubMediaHeader() {
+  const { t } = useTranslation('clubs');
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const navigate = useNavigate();
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
@@ -105,12 +107,12 @@ export default function ClubMediaHeader() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Club Not Found</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('media.clubNotFound')}</h1>
           <button
             onClick={() => navigate('/clubs')}
             className="btn btn-primary"
           >
-            Back to Clubs
+            {t('media.backToClubs')}
           </button>
         </div>
       </div>
@@ -121,12 +123,12 @@ export default function ClubMediaHeader() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Media Not Found</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('media.notFound')}</h1>
           <button
             onClick={() => navigate(`/clubs/${clubId}`)}
             className="btn btn-primary"
           >
-            Back to Club
+            {t('media.backToClub')}
           </button>
         </div>
       </div>
@@ -156,9 +158,7 @@ export default function ClubMediaHeader() {
         {media?.mediaDocument?.coverImage ? (
           <div
             className={`flex flex-col justify-end size-full bg-linear-to-t from-shadow/[0.6] to-40% bg-cover ${
-              shouldBlur
-                ? 'blur-sm'
-                : ''
+              shouldBlur ? 'blur-sm' : ''
             }`}
           />
         ) : (
@@ -178,9 +178,7 @@ export default function ClubMediaHeader() {
                     src={media.mediaDocument.contentImage}
                     alt={media.title}
                     className={`w-full h-auto rounded-lg shadow-sm border-2 border-white/20 ${
-                      shouldBlur
-                        ? 'blur-sm'
-                        : ''
+                      shouldBlur ? 'blur-sm' : ''
                     }`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -210,7 +208,7 @@ export default function ClubMediaHeader() {
                   }}
                 >
                   <Pencil className="mr-1 w-4 h-4" />
-                  Quick Log
+                  {t('media.quickLog')}
                 </button>
               )}
             </div>

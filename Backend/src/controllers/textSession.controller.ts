@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 import TextSession from '../models/textSession.model.js';
 import { MediaBase as Media } from '../models/media.model.js';
-import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import axios from 'axios';
 
 // Blank (media-less, user-named) sessions are keyed by a generated id in
@@ -19,7 +19,10 @@ function isBlankSessionId(contentId: string) {
  * Resolves the :contentId route param to either a media-backed session
  * filter or a blank-session filter, depending on its shape.
  */
-async function resolveSessionContext(userId: Types.ObjectId, contentId: string) {
+async function resolveSessionContext(
+  userId: Types.ObjectId,
+  contentId: string
+) {
   if (isBlankSessionId(contentId)) {
     return {
       filter: { userId, blankId: contentId },
@@ -30,7 +33,7 @@ async function resolveSessionContext(userId: Types.ObjectId, contentId: string) 
 
   const media = await Media.findOne({ contentId });
   if (!media) {
-    throw new customError('Media not found', 404);
+    throw apiError('media.notFound', 404, 'Media not found');
   }
 
   return {
@@ -193,10 +196,18 @@ export const createBlankSession = async (
     const trimmedName = typeof name === 'string' ? name.trim() : '';
 
     if (!trimmedName) {
-      throw new customError('Session name is required', 400);
+      throw apiError(
+        'textSession.nameRequired',
+        400,
+        'Session name is required'
+      );
     }
     if (trimmedName.length > 100) {
-      throw new customError('Session name must be 100 characters or fewer', 400);
+      throw apiError(
+        'textSession.nameTooLong',
+        400,
+        'Session name must be 100 characters or fewer'
+      );
     }
 
     const session = await TextSession.create({
@@ -229,7 +240,7 @@ export const getSessionByContentId = async (
     if (isBlank) {
       const session = await TextSession.findOne(filter);
       if (!session) {
-        throw new customError('Session not found', 404);
+        throw apiError('textSession.notFound', 404, 'Session not found');
       }
       res.status(200).json(session);
       return;
@@ -317,7 +328,11 @@ export const updateSessionTimer = async (
     const { timerSeconds } = req.body;
 
     if (typeof timerSeconds !== 'number' || timerSeconds < 0) {
-      throw new customError('Invalid timerSeconds value', 400);
+      throw apiError(
+        'textSession.invalidTimerSeconds',
+        400,
+        'Invalid timerSeconds value'
+      );
     }
 
     const { filter } = await resolveSessionContext(userId, contentId);
@@ -347,7 +362,7 @@ export const addLinesToSession = async (
     const { lines } = req.body;
 
     if (!lines || !Array.isArray(lines)) {
-      throw new customError('Invalid lines data', 400);
+      throw apiError('textSession.invalidLines', 400, 'Invalid lines data');
     }
 
     const { filter } = await resolveSessionContext(userId, contentId);
@@ -428,7 +443,7 @@ export const removeLinesFromSession = async (
     const { lineIds } = req.body;
 
     if (!lineIds || !Array.isArray(lineIds) || lineIds.length === 0) {
-      throw new customError('Invalid lineIds data', 400);
+      throw apiError('textSession.invalidLineIds', 400, 'Invalid lineIds data');
     }
 
     const { filter } = await resolveSessionContext(userId, contentId);
@@ -443,7 +458,7 @@ export const removeLinesFromSession = async (
     );
 
     if (!session) {
-      throw new customError('Session not found', 404);
+      throw apiError('textSession.notFound', 404, 'Session not found');
     }
 
     res.status(200).json(session);
@@ -472,7 +487,7 @@ export const clearSessionLines = async (
     );
 
     if (!session) {
-      throw new customError('Session not found', 404);
+      throw apiError('textSession.notFound', 404, 'Session not found');
     }
 
     res.status(200).json(session);
@@ -500,7 +515,11 @@ export const addSessionHistoryEntry = async (
     } = req.body as IAddSessionHistoryBody;
 
     if (typeof isShared !== 'boolean') {
-      throw new customError('Invalid isShared value', 400);
+      throw apiError(
+        'textSession.invalidIsShared',
+        400,
+        'Invalid isShared value'
+      );
     }
 
     const numericFields = [
@@ -514,7 +533,11 @@ export const addSessionHistoryEntry = async (
         (value) => typeof value !== 'number' || Number.isNaN(value) || value < 0
       )
     ) {
-      throw new customError('Invalid session history metrics', 400);
+      throw apiError(
+        'textSession.invalidHistoryMetrics',
+        400,
+        'Invalid session history metrics'
+      );
     }
 
     const { filter } = await resolveSessionContext(userId, contentId);
@@ -561,7 +584,7 @@ export const deleteSession = async (
     const session = await TextSession.findOneAndDelete(filter);
 
     if (!session) {
-      throw new customError('Session not found', 404);
+      throw apiError('textSession.notFound', 404, 'Session not found');
     }
 
     res.status(200).json({ message: 'Session deleted successfully' });

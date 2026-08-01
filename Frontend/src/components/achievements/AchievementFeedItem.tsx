@@ -27,12 +27,12 @@ export default function AchievementFeedItem({
   const dateLabel = relativeDate
     ? relativeDate
     : item.unlockedAt
-    ? new Date(item.unlockedAt).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : '';
+      ? new Date(item.unlockedAt).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : '';
 
   return (
     <div

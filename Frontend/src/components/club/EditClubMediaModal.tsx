@@ -5,6 +5,8 @@ import { X, Calendar, Save } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { editClubMediaFn } from '../../api/clubApi';
 import { IClub, IClubMedia } from '../../types.d';
+import { useTranslation } from 'react-i18next';
+import { getLocale } from '../../utils/timezone';
 
 interface EditClubMediaModalProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export default function EditClubMediaModal({
   club,
   media,
 }: EditClubMediaModalProps) {
+  const { t } = useTranslation('clubs');
   const [mediaData, setMediaData] = useState<EditMediaData>({
     title: '',
     description: '',
@@ -59,7 +62,7 @@ export default function EditClubMediaModal({
       });
     },
     onSuccess: () => {
-      toast.success('Media updated successfully!');
+      toast.success(t('toast.mediaUpdated'));
       queryClient.invalidateQueries({ queryKey: ['clubMedia', club._id] });
       onClose();
     },
@@ -72,7 +75,7 @@ export default function EditClubMediaModal({
 
   const formatDateForDisplay = (date: Date | undefined) => {
     if (!date) return 'Select date';
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(getLocale(), {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -83,17 +86,17 @@ export default function EditClubMediaModal({
     const { title, startDate, endDate } = mediaData;
 
     if (!title.trim()) {
-      toast.error('Title is required');
+      toast.error(t('toast.titleRequired'));
       return false;
     }
 
     if (!startDate || !endDate) {
-      toast.error('Both start and end dates are required');
+      toast.error(t('toast.datesRequired'));
       return false;
     }
 
     if (startDate >= endDate) {
-      toast.error('End date must be after start date');
+      toast.error(t('toast.endAfterStart'));
       return false;
     }
 
@@ -111,7 +114,7 @@ export default function EditClubMediaModal({
     <div className="modal modal-open">
       <div className="modal-box max-w-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-xl">Edit Club Media</h3>
+          <h3 className="font-bold text-xl">{t('editMedia.title')}</h3>
           <button
             className="btn btn-sm btn-circle btn-ghost"
             onClick={onClose}
@@ -125,11 +128,11 @@ export default function EditClubMediaModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="label">
-                <span className="label-text">Title *</span>
+                <span className="label-text">{t('common.titleRequired')}</span>
               </label>
               <input
                 type="text"
-                placeholder="Media title"
+                placeholder={t('editMedia.titlePlaceholder')}
                 value={mediaData.title}
                 onChange={(e) =>
                   setMediaData((prev) => ({
@@ -144,10 +147,10 @@ export default function EditClubMediaModal({
 
             <div className="md:col-span-2">
               <label className="label">
-                <span className="label-text">Description</span>
+                <span className="label-text">{t('common.description')}</span>
               </label>
               <textarea
-                placeholder="Optional description..."
+                placeholder={t('editMedia.descriptionPlaceholder')}
                 value={mediaData.description}
                 onChange={(e) =>
                   setMediaData((prev) => ({
@@ -163,7 +166,7 @@ export default function EditClubMediaModal({
             {/* Consumption Period */}
             <div>
               <label className="label">
-                <span className="label-text">Consumption Start *</span>
+                <span className="label-text">{t('editMedia.start')}</span>
               </label>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
@@ -221,7 +224,7 @@ export default function EditClubMediaModal({
 
             <div>
               <label className="label">
-                <span className="label-text">Consumption End *</span>
+                <span className="label-text">{t('editMedia.end')}</span>
               </label>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
@@ -279,7 +282,7 @@ export default function EditClubMediaModal({
               className="btn btn-ghost"
               disabled={editMediaMutation.isPending}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSave}

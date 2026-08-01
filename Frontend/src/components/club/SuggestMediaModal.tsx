@@ -6,6 +6,7 @@ import { addVotingCandidateFn } from '../../api/clubApi';
 import useSearch from '../../hooks/useSearch';
 import { IClub, IClubMediaVoting, IMediaDocument } from '../../types.d';
 import { AxiosError } from 'axios';
+import { useTranslation } from 'react-i18next';
 
 interface SuggestMediaModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function SuggestMediaModal({
   club,
   voting,
 }: SuggestMediaModalProps) {
+  const { t } = useTranslation('clubs');
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [customForm, setCustomForm] = useState({
@@ -56,7 +58,7 @@ export default function SuggestMediaModal({
       image?: string;
     }) => addVotingCandidateFn(club._id, voting._id!, candidateData),
     onSuccess: () => {
-      toast.success('Media suggestion submitted successfully!');
+      toast.success(t('toast.suggestionSent'));
       invalidateVotingQueries();
       handleClose();
     },
@@ -93,7 +95,7 @@ export default function SuggestMediaModal({
   function handleCustomSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!customForm.title.trim()) {
-      toast.error('Title is required');
+      toast.error(t('toast.titleRequired'));
       return;
     }
 
@@ -122,7 +124,7 @@ export default function SuggestMediaModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="font-bold text-xl">Suggest Media</h3>
+            <h3 className="font-bold text-xl">{t('suggest.title')}</h3>
             <p className="text-base-content/70 text-sm">
               Suggest media for "{voting.title}"
             </p>
@@ -140,17 +142,17 @@ export default function SuggestMediaModal({
         <div className="card bg-base-200 p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <span className="font-medium">Media Type:</span>{' '}
+              <span className="font-medium">{t('suggest.mediaType')}</span>{' '}
               {voting.mediaType === 'custom'
                 ? voting.customMediaType
                 : voting.mediaType}
             </div>
             <div>
-              <span className="font-medium">Suggestions Close:</span>{' '}
+              <span className="font-medium">{t('suggest.closes')}</span>{' '}
               {formatDate(voting.suggestionEndDate)}
             </div>
             <div>
-              <span className="font-medium">Current Suggestions:</span>{' '}
+              <span className="font-medium">{t('suggest.current')}</span>{' '}
               {voting.candidates.length}
             </div>
           </div>
@@ -163,23 +165,22 @@ export default function SuggestMediaModal({
             <div className="space-y-6">
               <div className="alert alert-info">
                 <div>
-                  <h4 className="font-medium">Custom Media Submission</h4>
-                  <p className="text-sm mt-1">
-                    This voting accepts custom media. Fill in the details below
-                    to suggest your media.
-                  </p>
+                  <h4 className="font-medium">{t('suggest.customTitle')}</h4>
+                  <p className="text-sm mt-1">{t('suggest.customHint')}</p>
                 </div>
               </div>
 
               <form onSubmit={handleCustomSubmit} className="space-y-4">
                 <div>
                   <label className="label">
-                    <span className="label-text">Title *</span>
+                    <span className="label-text">
+                      {t('common.titleRequired')}
+                    </span>
                   </label>
                   <input
                     type="text"
                     className="input input-bordered w-full"
-                    placeholder="Enter media title..."
+                    placeholder={t('suggest.titlePlaceholder')}
                     value={customForm.title}
                     onChange={(e) =>
                       setCustomForm((prev) => ({
@@ -193,11 +194,13 @@ export default function SuggestMediaModal({
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Description</span>
+                    <span className="label-text">
+                      {t('common.description')}
+                    </span>
                   </label>
                   <textarea
                     className="textarea textarea-bordered w-full h-24"
-                    placeholder="Describe the media..."
+                    placeholder={t('suggest.descriptionPlaceholder')}
                     value={customForm.description}
                     onChange={(e) =>
                       setCustomForm((prev) => ({
@@ -210,12 +213,12 @@ export default function SuggestMediaModal({
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Image URL</span>
+                    <span className="label-text">{t('suggest.imageUrl')}</span>
                   </label>
                   <input
                     type="url"
                     className="input input-bordered w-full"
-                    placeholder="https://example.com/image.jpg"
+                    placeholder={t('suggest.imageUrlPlaceholder')}
                     value={customForm.image}
                     onChange={(e) =>
                       setCustomForm((prev) => ({
@@ -228,7 +231,7 @@ export default function SuggestMediaModal({
                     <div className="mt-2">
                       <img
                         src={customForm.image}
-                        alt="Preview"
+                        alt={t('common.previewAlt')}
                         className="w-24 h-32 object-cover rounded"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
@@ -245,7 +248,7 @@ export default function SuggestMediaModal({
                     className="btn btn-ghost"
                     disabled={suggestMediaMutation.isPending}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -257,12 +260,12 @@ export default function SuggestMediaModal({
                     {suggestMediaMutation.isPending ? (
                       <>
                         <span className="loading loading-spinner loading-sm"></span>
-                        Submitting...
+                        {t('suggest.submitting')}
                       </>
                     ) : (
                       <>
                         <Plus className="w-4 h-4" />
-                        Submit Suggestion
+                        {t('suggest.submit')}
                       </>
                     )}
                   </button>
@@ -274,7 +277,7 @@ export default function SuggestMediaModal({
             <div className="space-y-6">
               <div className="alert alert-info">
                 <div>
-                  <h4 className="font-medium">Search and Suggest Media</h4>
+                  <h4 className="font-medium">{t('suggest.searchTitle')}</h4>
                   <p className="text-sm mt-1">
                     Search for {voting.mediaType} and click to suggest it for
                     voting.
@@ -285,7 +288,7 @@ export default function SuggestMediaModal({
               {/* Search Input */}
               <div className="relative">
                 <label className="label">
-                  <span className="label-text">Search for Media</span>
+                  <span className="label-text">{t('suggest.searchLabel')}</span>
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40" />
@@ -309,7 +312,7 @@ export default function SuggestMediaModal({
                   {isSearching ? (
                     <div className="flex items-center justify-center py-8">
                       <span className="loading loading-spinner loading-lg"></span>
-                      <span className="ml-2">Searching...</span>
+                      <span className="ml-2">{t('suggest.searching')}</span>
                     </div>
                   ) : searchResults && searchResults.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -353,7 +356,7 @@ export default function SuggestMediaModal({
                                     disabled={suggestMediaMutation.isPending}
                                   >
                                     <Plus className="w-3 h-3" />
-                                    Suggest
+                                    {t('suggest.suggestButton')}
                                   </button>
                                 </div>
                               </div>
@@ -365,7 +368,9 @@ export default function SuggestMediaModal({
                   ) : (
                     <div className="text-center py-8">
                       <Search className="w-12 h-12 mx-auto text-base-content/20 mb-2" />
-                      <p className="text-base-content/60">No results found</p>
+                      <p className="text-base-content/60">
+                        {t('suggest.noResults')}
+                      </p>
                     </div>
                   )}
                 </div>

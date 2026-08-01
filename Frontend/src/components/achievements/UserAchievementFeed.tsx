@@ -7,7 +7,9 @@ interface UserAchievementFeedProps {
   username: string;
 }
 
-export default function UserAchievementFeed({ username }: UserAchievementFeedProps) {
+export default function UserAchievementFeed({
+  username,
+}: UserAchievementFeedProps) {
   const { data: activity, isLoading } = useQuery({
     queryKey: ['userAchievementActivity', username],
     queryFn: () => getUserAchievementActivityFn(username, 10),

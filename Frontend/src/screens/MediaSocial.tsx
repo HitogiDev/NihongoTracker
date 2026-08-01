@@ -13,8 +13,10 @@ import LogCard from '../components/LogCard';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
 import type { AxiosError } from 'axios';
+import { useTranslation } from 'react-i18next';
 
 export default function MediaSocial() {
+  const { t } = useTranslation(['media', 'common']);
   const { mediaDocument, mediaType } =
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
@@ -137,7 +139,7 @@ export default function MediaSocial() {
               Social for {mediaDocument?.title?.contentTitleNative}
             </h2>
             <p className="text-sm text-base-content/60">
-              See community stats for this title and share your page.
+              {t('social.subtitle')}
             </p>
           </div>
         </div>
@@ -145,7 +147,9 @@ export default function MediaSocial() {
         {/* Stats */}
         <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body">
-            <h3 className="card-title text-lg mb-2">Media-wide stats</h3>
+            <h3 className="card-title text-lg mb-2">
+              {t('social.mediaWideStats')}
+            </h3>
             {statsError && (
               <div role="alert" className="alert alert-error mb-4">
                 <span>
@@ -153,7 +157,7 @@ export default function MediaSocial() {
                     'Failed to load media stats'}
                 </span>
                 <button className="btn btn-sm" onClick={() => refetchStats()}>
-                  Retry
+                  {t('social.retry')}
                 </button>
               </div>
             )}
@@ -174,64 +178,66 @@ export default function MediaSocial() {
             ) : mediaStats ? (
               <div className="stats stats-vertical sm:stats-horizontal shadow w-full">
                 <div className="stat">
-                  <div className="stat-title">Total Logs</div>
+                  <div className="stat-title">{t('social.totalLogs')}</div>
                   <div className="stat-value text-primary">
                     {numberWithCommas(mediaStats.total.logs || 0)}
                   </div>
-                  <div className="stat-desc">All-time</div>
+                  <div className="stat-desc">{t('social.allTime')}</div>
                 </div>
                 <div className="stat">
-                  <div className="stat-title">Total XP</div>
+                  <div className="stat-title">{t('stats.totalXp')}</div>
                   <div className="stat-value text-secondary">
                     {numberWithCommas(mediaStats.total.xp || 0)}
                   </div>
-                  <div className="stat-desc">All-time</div>
+                  <div className="stat-desc">{t('social.allTime')}</div>
                 </div>
                 {(mediaStats.total.minutes || 0) > 0 && (
                   <div className="stat">
-                    <div className="stat-title">Total Time</div>
+                    <div className="stat-title">{t('stats.totalTime')}</div>
                     <div className="stat-value text-accent">
                       {mediaStats.total.minutes >= 60
                         ? `${Math.floor(mediaStats.total.minutes / 60)}h ${mediaStats.total.minutes % 60}m`
                         : `${mediaStats.total.minutes}m`}
                     </div>
-                    <div className="stat-desc">All-time</div>
+                    <div className="stat-desc">{t('social.allTime')}</div>
                   </div>
                 )}
                 {socialMetricType === 'characters' &&
                   (mediaStats.total.characters || 0) > 0 && (
                     <div className="stat">
-                      <div className="stat-title">Characters Read</div>
+                      <div className="stat-title">{t('stats.charsRead')}</div>
                       <div className="stat-value text-info">
                         {numberWithCommas(mediaStats.total.characters)}
                       </div>
-                      <div className="stat-desc">All-time</div>
+                      <div className="stat-desc">{t('social.allTime')}</div>
                     </div>
                   )}
                 {socialMetricType === 'pages' &&
                   (mediaStats.total.pages || 0) > 0 && (
                     <div className="stat">
-                      <div className="stat-title">Pages</div>
+                      <div className="stat-title">{t('stats.pagesLabel')}</div>
                       <div className="stat-value text-warning">
                         {numberWithCommas(mediaStats.total.pages)}
                       </div>
-                      <div className="stat-desc">All-time</div>
+                      <div className="stat-desc">{t('social.allTime')}</div>
                     </div>
                   )}
                 {socialMetricType === 'episodes' &&
                   (mediaStats.total.episodes || 0) > 0 && (
                     <div className="stat">
-                      <div className="stat-title">Episodes</div>
+                      <div className="stat-title">
+                        {t('stats.episodesLabel')}
+                      </div>
                       <div className="stat-value text-success">
                         {numberWithCommas(mediaStats.total.episodes)}
                       </div>
-                      <div className="stat-desc">All-time</div>
+                      <div className="stat-desc">{t('social.allTime')}</div>
                     </div>
                   )}
               </div>
             ) : (
               <div className="text-sm text-base-content/60">
-                No stats available for this media yet.
+                {t('social.noStats')}
               </div>
             )}
           </div>
@@ -241,13 +247,13 @@ export default function MediaSocial() {
         <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body">
             <div className="flex items-center justify-between gap-4 mb-3">
-              <h3 className="card-title text-lg">Compare with a friend</h3>
+              <h3 className="card-title text-lg">{t('social.compare')}</h3>
             </div>
             <div className="join w-full max-w-xl">
               <input
                 type="text"
                 className="input input-bordered join-item w-full"
-                placeholder="Enter a username"
+                placeholder={t('social.usernamePlaceholder')}
                 value={friend}
                 onChange={(e) => setFriend(e.target.value)}
                 onKeyDown={(e) => {
@@ -272,7 +278,7 @@ export default function MediaSocial() {
                   className="btn btn-ghost join-item"
                   onClick={() => setComparison(null)}
                 >
-                  Clear
+                  {t('common.clear')}
                 </button>
               )}
             </div>
@@ -281,7 +287,7 @@ export default function MediaSocial() {
               <div className="mt-4 overflow-x-auto" aria-live="polite">
                 <div className="stats stats-vertical lg:stats-horizontal shadow">
                   <div className="stat">
-                    <div className="stat-title">Total XP</div>
+                    <div className="stat-title">{t('stats.totalXp')}</div>
                     <div className="stat-value text-primary">
                       {numberWithCommas(comparison.user1.stats.totalXp)}
                     </div>
@@ -291,7 +297,7 @@ export default function MediaSocial() {
                     </div>
                   </div>
                   <div className="stat">
-                    <div className="stat-title">Time</div>
+                    <div className="stat-title">{t('stats.timeLabel')}</div>
                     <div className="stat-value text-secondary">
                       {comparison.user1.stats.totalTime >= 60
                         ? `${Math.floor(comparison.user1.stats.totalTime / 60)}h ${comparison.user1.stats.totalTime % 60}m`
@@ -307,7 +313,9 @@ export default function MediaSocial() {
                   {socialMetricType === 'characters' &&
                     (comparison.user1.stats.totalChars || 0) > 0 && (
                       <div className="stat">
-                        <div className="stat-title">Characters</div>
+                        <div className="stat-title">
+                          {t('stats.charactersLabel')}
+                        </div>
                         <div className="stat-value text-info">
                           {numberWithCommas(comparison.user1.stats.totalChars)}
                         </div>
@@ -320,7 +328,9 @@ export default function MediaSocial() {
                   {socialMetricType === 'pages' &&
                     (comparison.user1.stats.totalPages || 0) > 0 && (
                       <div className="stat">
-                        <div className="stat-title">Pages</div>
+                        <div className="stat-title">
+                          {t('stats.pagesLabel')}
+                        </div>
                         <div className="stat-value text-warning">
                           {numberWithCommas(comparison.user1.stats.totalPages)}
                         </div>
@@ -333,7 +343,9 @@ export default function MediaSocial() {
                   {socialMetricType === 'episodes' &&
                     (comparison.user1.stats.totalEpisodes || 0) > 0 && (
                       <div className="stat">
-                        <div className="stat-title">Episodes</div>
+                        <div className="stat-title">
+                          {t('stats.episodesLabel')}
+                        </div>
                         <div className="stat-value text-success">
                           {numberWithCommas(
                             comparison.user1.stats.totalEpisodes
@@ -357,7 +369,9 @@ export default function MediaSocial() {
         <div className="card bg-base-100 shadow-sm mb-6">
           <div className="card-body">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="card-title text-lg">Recent activity (everyone)</h3>
+              <h3 className="card-title text-lg">
+                {t('social.recentActivity')}
+              </h3>
               {globalLogs && globalLogs.length > 0 && (
                 <div className="badge badge-neutral">
                   {globalLogs.length} item{globalLogs.length !== 1 ? 's' : ''}
@@ -374,7 +388,7 @@ export default function MediaSocial() {
                   className="btn btn-sm"
                   onClick={() => refetchGlobalLogs()}
                 >
-                  Retry
+                  {t('social.retry')}
                 </button>
               </div>
             )}
@@ -409,7 +423,7 @@ export default function MediaSocial() {
                           {avatar ? (
                             <img
                               src={avatar}
-                              alt="avatar"
+                              alt={t('social.avatarAlt')}
                               className="w-6 h-6 rounded-full"
                             />
                           ) : (
@@ -449,7 +463,7 @@ export default function MediaSocial() {
               </div>
             ) : (
               <div className="text-center py-10 text-base-content/60">
-                No recent public activity yet for this media.
+                {t('social.noRecentActivity')}
               </div>
             )}
           </div>

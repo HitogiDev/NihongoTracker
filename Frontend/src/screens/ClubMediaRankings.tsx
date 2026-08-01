@@ -5,8 +5,10 @@ import { getClubMediaRankingsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import { useState } from 'react';
 import UserAvatar from '../components/UserAvatar';
+import { useTranslation } from 'react-i18next';
 
 export default function ClubMediaRankings() {
+  const { t } = useTranslation('clubs');
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const { clubMedia } = useOutletContext<OutletClubMediaContextType>();
   const [period, setPeriod] = useState<'consumption' | 'alltime'>(
@@ -24,7 +26,7 @@ export default function ClubMediaRankings() {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="text-center py-12 text-base-content/60">
-          <h3 className="text-lg font-semibold mb-2">Loading...</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
         </div>
       </div>
     );
@@ -38,9 +40,11 @@ export default function ClubMediaRankings() {
           <div className="card-body p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
               <div>
-                <h3 className="card-title text-lg">Club Member Rankings</h3>
+                <h3 className="card-title text-lg">
+                  {t('media.rankingsTitle')}
+                </h3>
                 <p className="text-sm text-base-content/60">
-                  How club members rank based on their activity with this media
+                  {t('media.rankingsSubtitle')}
                 </p>
               </div>
               <div className="join">
@@ -53,8 +57,10 @@ export default function ClubMediaRankings() {
                   onClick={() => setPeriod('consumption')}
                 >
                   <Calendar className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Consumption Period</span>
-                  <span className="sm:hidden">Period</span>
+                  <span className="hidden sm:inline">
+                    {t('media.consumptionPeriod')}
+                  </span>
+                  <span className="sm:hidden">{t('media.period')}</span>
                 </button>
                 <button
                   className={`btn btn-sm join-item ${
@@ -65,8 +71,8 @@ export default function ClubMediaRankings() {
                   onClick={() => setPeriod('alltime')}
                 >
                   <History className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">All Time</span>
-                  <span className="sm:hidden">All Time</span>
+                  <span className="hidden sm:inline">{t('media.allTime')}</span>
+                  <span className="sm:hidden">{t('media.allTime')}</span>
                 </button>
               </div>
             </div>
@@ -165,11 +171,10 @@ export default function ClubMediaRankings() {
             ) : (
               <div className="text-center py-12 text-base-content/60">
                 <TrendingUp className="mx-auto text-4xl mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
-                <p>
-                  No club members have logged this media since the consumption
-                  period started.
-                </p>
+                <h3 className="text-lg font-semibold mb-2">
+                  {t('media.rankingsEmpty')}
+                </h3>
+                <p>{t('media.noLogsSincePeriod')}</p>
               </div>
             )}
           </div>

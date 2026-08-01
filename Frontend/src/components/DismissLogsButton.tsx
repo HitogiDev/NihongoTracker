@@ -52,8 +52,8 @@ function DismissLogsButton({
             <div className="py-4">
               <p className="mb-4">
                 Dismiss {selectedLogs.length} log
-                {selectedLogs.length !== 1 ? 's' : ''} from media matching?
-                They will no longer show up here or count as unmatched logs.
+                {selectedLogs.length !== 1 ? 's' : ''} from media matching? They
+                will no longer show up here or count as unmatched logs.
               </p>
               <p className="text-sm text-base-content/70">
                 Use this for logs that can't be assigned to a single media. The

@@ -47,6 +47,7 @@ import {
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
 import { getMediaTypeColor } from '../constants/mediaColors';
+import { useTranslation } from 'react-i18next';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
@@ -85,6 +86,7 @@ const STATUS_CONFIG: Record<
 };
 
 function ListScreen() {
+  const { t } = useTranslation(['media', 'common']);
   const { username } = useParams<{ username: string }>();
   const { user, setUser } = useUserDataStore();
   const navigate = useNavigate();
@@ -553,7 +555,7 @@ function ListScreen() {
               d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span>Failed to load immersion list</span>
+          <span>{t('list.loadFailed')}</span>
         </div>
       </div>
     );
@@ -564,16 +566,15 @@ function ListScreen() {
       {showHideAlertModal && (
         <dialog className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Hide Unmatched Logs Alert</h3>
+            <h3 className="font-bold text-lg">{t('list.hideAlertTitle')}</h3>
             <div className="py-4">
-              <p className="mb-4">
-                Are you sure you want to stop showing alerts about unmatched
-                logs?
-              </p>
+              <p className="mb-4">{t('list.hideAlertConfirmBody')}</p>
               <p className="text-sm text-base-content/70">
                 You can still access the match media page from your{' '}
-                <span className="font-semibold">Settings</span> under the{' '}
-                <span className="font-semibold">Log Management</span> section.
+                <span className="font-semibold">{t('list.settings')}</span>{' '}
+                under the{' '}
+                <span className="font-semibold">{t('list.logManagement')}</span>{' '}
+                section.
               </p>
             </div>
             <div className="modal-action">
@@ -581,13 +582,13 @@ function ListScreen() {
                 className="btn btn-warning"
                 onClick={handleHideUnmatchedAlert}
               >
-                Yes, hide alerts
+                {t('list.hideAlertConfirm')}
               </button>
               <button
                 className="btn btn-outline"
                 onClick={() => setShowHideAlertModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -606,7 +607,7 @@ function ListScreen() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-lg">Remove from your list?</h3>
+                <h3 className="font-bold text-lg">{t('header.removeTitle')}</h3>
                 <p className="text-sm text-base-content/70 mt-1 break-words">
                   {mediaToRemove.title.contentTitleNative}
                 </p>
@@ -655,7 +656,7 @@ function ListScreen() {
                 </>
               ) : (
                 <p className="text-sm text-base-content/70">
-                  This entry has no logs — only its status will be removed.
+                  {t('header.noLogsNote')}
                 </p>
               )}
             </div>
@@ -666,7 +667,7 @@ function ListScreen() {
                 onClick={closeRemoveModal}
                 disabled={removeMediaMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error gap-2"
@@ -717,7 +718,7 @@ function ListScreen() {
               >
                 <TriangleAlert className="h-6 w-6 flex-shrink-0" />
                 <div>
-                  <h3 className="font-bold">Unmatched Logs Found</h3>
+                  <h3 className="font-bold">{t('list.unmatchedFound')}</h3>
                   <div className="text-sm">
                     You have {untrackedLogs.length} log
                     {untrackedLogs.length !== 1 ? 's' : ''} without media. Match
@@ -730,15 +731,15 @@ function ListScreen() {
                     onClick={() => navigate('/matchmedia')}
                   >
                     <Link2 className="h-4 w-4" />
-                    <span>Match Logs</span>
+                    <span>{t('list.matchLogs')}</span>
                   </button>
                   <button
                     className="btn btn-sm btn-ghost gap-2"
                     onClick={() => setShowHideAlertModal(true)}
-                    title="Don't show this alert again"
+                    title={t('list.dontShowAgainTitle')}
                   >
                     <X className="h-4 w-4" />
-                    <span>Don't show again</span>
+                    <span>{t('list.dontShowAgain')}</span>
                   </button>
                 </div>
               </div>
@@ -756,7 +757,7 @@ function ListScreen() {
                     <input
                       type="text"
                       className="grow"
-                      placeholder="Search by title, romaji, or english..."
+                      placeholder={t('list.searchPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -800,14 +801,14 @@ function ListScreen() {
                             className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
                             onClick={() => setSelectedTypes(MEDIA_TYPES)}
                           >
-                            Select All
+                            {t('list.selectAll')}
                           </button>
                           <button
                             type="button"
                             className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
                             onClick={() => setSelectedTypes([])}
                           >
-                            Select None
+                            {t('list.selectNone')}
                           </button>
                         </div>
                         <div className="divider my-1"></div>
@@ -982,14 +983,14 @@ function ListScreen() {
                         onClick={() => setViewMode('grid')}
                       >
                         <LayoutGrid className="w-4 h-4" />
-                        <span className="sm:hidden ml-2">Grid</span>
+                        <span className="sm:hidden ml-2">{t('list.grid')}</span>
                       </button>
                       <button
                         className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
                         onClick={() => setViewMode('list')}
                       >
                         <LayoutList className="w-4 h-4" />
-                        <span className="sm:hidden ml-2">List</span>
+                        <span className="sm:hidden ml-2">{t('list.list')}</span>
                       </button>
                     </div>
                     <button
@@ -1038,13 +1039,13 @@ function ListScreen() {
                     <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
                       <Bookmark className="w-12 h-12 text-base-content/40" />
                     </div>
-                    <h3 className="text-2xl font-bold">No media found</h3>
+                    <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                     <p className="text-base-content/70">
                       {searchQuery
-                        ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
+                        ? t('list.emptySearch', { query: searchQuery })
                         : selectedTypes.length !== MEDIA_TYPES.length
-                          ? `No media matches the selected types.`
-                          : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                          ? t('list.emptyTypes')
+                          : t('list.emptyLibrary')}
                     </p>
                     {(searchQuery ||
                       selectedTypes.length !== MEDIA_TYPES.length) && (
@@ -1055,7 +1056,7 @@ function ListScreen() {
                           setSelectedTypes(MEDIA_TYPES);
                         }}
                       >
-                        Clear filters
+                        {t('list.clearFilters')}
                       </button>
                     )}
                   </div>
@@ -1096,7 +1097,7 @@ function ListScreen() {
                   <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
                     <Bookmark className="w-12 h-12 text-base-content/40" />
                   </div>
-                  <h3 className="text-2xl font-bold">No media found</h3>
+                  <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                   <p className="text-base-content/70">
                     Your immersion library is empty. Start logging your Japanese
                     learning activities!
@@ -1266,6 +1267,7 @@ function MediaCard({
   onLogMedia: (media: IMediaDocument) => void;
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
+  const { t } = useTranslation(['media', 'common']);
   const { user } = useUserDataStore();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -1390,7 +1392,7 @@ function MediaCard({
                   onClick={() => onRemoveMedia(media)}
                 >
                   <Trash2 className="w-3 h-3" />
-                  Remove
+                  {t('header.remove')}
                 </button>
               </li>
             </ul>
@@ -1430,7 +1432,7 @@ function MediaCard({
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none">
           <div className="text-white text-center p-4">
             <TrendingUp className="w-6 h-6 mx-auto mb-2" />
-            <p className="text-sm font-medium">View Details</p>
+            <p className="text-sm font-medium">{t('list.viewDetails')}</p>
           </div>
         </div>
 
@@ -1442,7 +1444,7 @@ function MediaCard({
               e.stopPropagation();
               onLogMedia(media);
             }}
-            title="Quick Log"
+            title={t('list.quickLog')}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -1507,6 +1509,7 @@ function MediaListItem({
   onLogMedia: (media: IMediaDocument) => void;
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
+  const { t } = useTranslation(['media', 'common']);
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const toggleKey = `${media.type}:${media.contentId}`;
@@ -1698,9 +1701,9 @@ function MediaListItem({
                         e.stopPropagation();
                         onLogMedia(media);
                       }}
-                      title="Quick Log"
+                      title={t('list.quickLog')}
                     >
-                      <Plus className="w-3 h-3" /> Log
+                      <Plus className="w-3 h-3" /> {t('header.log')}
                     </button>
                     {/* Status dropdown */}
                     <div className="dropdown dropdown-end">
@@ -1719,7 +1722,7 @@ function MediaListItem({
                           </>
                         ) : (
                           <>
-                            <Circle className="w-3 h-3" /> Set status
+                            <Circle className="w-3 h-3" /> {t('list.setStatus')}
                           </>
                         )}
                         <ChevronDown className="w-3 h-3 ml-auto" />
@@ -1753,9 +1756,9 @@ function MediaListItem({
                         e.stopPropagation();
                         onRemoveMedia(media);
                       }}
-                      title="Remove from list"
+                      title={t('header.removeFromList')}
                     >
-                      <Trash2 className="w-3 h-3" /> Remove
+                      <Trash2 className="w-3 h-3" /> {t('header.remove')}
                     </button>
                   </div>
                 )}

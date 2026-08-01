@@ -5,15 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import {
-  Bell,
-  Check,
-  Clock3,
-  ChevronRight,
-  Inbox,
-  Trash2,
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Bell, Check, Clock3, ChevronRight, Inbox, Trash2 } from 'lucide-react';
 import { useUserDataStore } from '../store/userData';
 import UserAvatar from '../components/UserAvatar';
 import {
@@ -23,6 +15,7 @@ import {
   markNotificationsAsUnreadFn,
 } from '../api/notificationsApi';
 import { INotificationListItem } from '../types';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 import {
   getNotificationAccent,
   getNotificationAvatar,
@@ -44,6 +37,7 @@ const formatBadgeCount = (count: number): string => {
 };
 
 function NotificationsScreen() {
+  const { formatRelativeDate } = useDateFormatting();
   const { user } = useUserDataStore();
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -169,9 +163,7 @@ function NotificationsScreen() {
     const accent = getNotificationAccent(item.type);
     const badgeAccent = getNotificationBadgeAccent(item.type);
     const isUnread = !item.isRead;
-    const timeLabel = formatDistanceToNow(new Date(item.createdAt), {
-      addSuffix: true,
-    });
+    const timeLabel = formatRelativeDate(new Date(item.createdAt));
 
     return (
       <div key={item.id} className="group relative overflow-hidden rounded-lg">

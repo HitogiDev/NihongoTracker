@@ -1,8 +1,19 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, ExternalLink, Clock, Zap, Hash, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import {
+  CheckCircle,
+  ExternalLink,
+  Clock,
+  Zap,
+  Hash,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+} from 'lucide-react';
 import { IGanttMediaItem } from '../types';
 import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
+import { getLocale } from '../utils/timezone';
+import { useTranslation } from 'react-i18next';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -147,6 +158,7 @@ export default function GanttChart({
   customStart,
   customEnd,
 }: GanttChartProps) {
+  const { t } = useTranslation('stats');
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const headerScrollRef = useRef<HTMLDivElement>(null);
@@ -405,10 +417,10 @@ export default function GanttChart({
         const key = toDayKey(cur);
         const label =
           timeFilter === 'week'
-            ? cur.toLocaleDateString('en-US', { weekday: 'short' })
+            ? cur.toLocaleDateString(getLocale(), { weekday: 'short' })
             : String(cur.getDate());
         const topLabel = isNewMonth
-          ? cur.toLocaleDateString('en-US', { month: 'short' })
+          ? cur.toLocaleDateString(getLocale(), { month: 'short' })
           : undefined;
 
         cols.push({
@@ -440,7 +452,7 @@ export default function GanttChart({
       const y = cur.getFullYear();
       const m = cur.getMonth();
       const key = `${y}-${String(m + 1).padStart(2, '0')}`;
-      const label = cur.toLocaleDateString('en-US', { month: 'short' });
+      const label = cur.toLocaleDateString(getLocale(), { month: 'short' });
       const isNewYear = y !== prevYear;
 
       cols.push({
@@ -524,14 +536,14 @@ export default function GanttChart({
       {hasResults && (
         <div className="flex items-center justify-end gap-1 mb-2 pr-1">
           <span className="text-[10px] text-base-content/50 mr-1 select-none">
-            Ctrl+Scroll to zoom · Middle-click drag to pan
+            {t('gantt.hint')}
           </span>
           <button
             type="button"
             className="btn btn-ghost btn-xs btn-square"
             onClick={handleZoomOut}
             disabled={zoom <= MIN_ZOOM}
-            title="Zoom out"
+            title={t('gantt.zoomOut')}
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -543,7 +555,7 @@ export default function GanttChart({
             className="btn btn-ghost btn-xs btn-square"
             onClick={handleZoomIn}
             disabled={zoom >= MAX_ZOOM}
-            title="Zoom in"
+            title={t('gantt.zoomIn')}
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
@@ -552,7 +564,7 @@ export default function GanttChart({
               type="button"
               className="btn btn-ghost btn-xs btn-square"
               onClick={handleZoomReset}
-              title="Reset zoom"
+              title={t('gantt.resetZoom')}
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
@@ -576,10 +588,7 @@ export default function GanttChart({
             }}
           >
             {/* Header spacer — matches the height of the month header row */}
-            <div
-              style={{ height: 38 }}
-              className="border-b border-base-300"
-            />
+            <div style={{ height: 38 }} className="border-b border-base-300" />
             {/* Row labels */}
             <div style={{ position: 'relative', height: totalH }}>
               {filtered.map((item, rowIdx) => {
@@ -648,7 +657,7 @@ export default function GanttChart({
                           {truncate(item.title, 22)}
                         </span>
                         {item.isCompleted && (
-                          <span title="Completed">
+                          <span title={t('gantt.completed')}>
                             <CheckCircle
                               className="w-3 h-3 flex-shrink-0"
                               style={{ color: rowColor }}
@@ -726,150 +735,154 @@ export default function GanttChart({
                 }
               }}
             >
-            <div style={{ minWidth: totalW }}>
-              {/* ── Rows (bar area only, no labels) ──────────────────────── */}
-              <div style={{ position: 'relative', height: totalH }}>
-                {/* Grid lines */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {columns.map((col, idx) => (
-                    <div
-                      key={col.key}
-                      className="absolute top-0 bottom-0 border-l border-base-300/40"
-                      style={{
-                        left: idx * colWidth,
-                        borderColor: col.isMajor
-                          ? 'oklch(var(--bc)/0.2)'
-                          : undefined,
-                        borderWidth: col.isMajor ? 1 : undefined,
-                        borderStyle: col.isMajor ? 'dashed' : undefined,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Media rows — bar area only */}
-                {filtered.map((item, rowIdx) => {
-                  const rowColor = MEDIA_TYPE_COLORS[item.type] ?? '#888';
-                  const itemKey = `${item.type}:${item.mediaId}`;
-                  const isHovered = hoveredId === itemKey;
-                  const itemStart = new Date(item.firstLogDate);
-                  const itemEnd = new Date(item.lastLogDate);
-                  const effectiveStart =
-                    rangeStart && itemStart < rangeStart ? rangeStart : itemStart;
-                  const effectiveEnd =
-                    rangeEnd && itemEnd > rangeEnd ? rangeEnd : itemEnd;
-                  const rawBarStart = dateToColX(effectiveStart, 'start');
-                  const barEnd = dateToColX(effectiveEnd, 'end');
-                  const barStart = Math.max(rawBarStart, 0);
-                  const barW = Math.max(barEnd - barStart, minBarWidth);
-                  const rowTop = rowIdx * ROW_HEIGHT;
-                  const density = activeDaysPerColumn(
-                    item,
-                    rangeStartKey,
-                    rangeEndKey
-                  );
-
-                  return (
-                    <div
-                      key={itemKey}
-                      className="absolute w-full flex items-center transition-colors"
-                      style={{
-                        top: rowTop,
-                        height: ROW_HEIGHT,
-                        background: isHovered
-                          ? hexToRgba(rowColor, 0.06)
-                          : rowIdx % 2 === 0
-                            ? 'oklch(var(--b2)/0.5)'
-                            : 'transparent',
-                      }}
-                      onMouseEnter={() => setHoveredId(itemKey)}
-                      onMouseLeave={() => {
-                        setHoveredId(null);
-                        scheduleTooltipClose();
-                      }}
-                    >
-                      {/* ── Bar area ──────────────────────────────────────── */}
+              <div style={{ minWidth: totalW }}>
+                {/* ── Rows (bar area only, no labels) ──────────────────────── */}
+                <div style={{ position: 'relative', height: totalH }}>
+                  {/* Grid lines */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {columns.map((col, idx) => (
                       <div
-                        className="flex-1 relative h-full"
-                        style={{ overflow: 'hidden' }}
-                      >
-                        {/* Activity density shading per column */}
-                        {columns.map((col, colIdx) => {
-                          const count = density.get(col.key) ?? 0;
-                          if (!count) return null;
-                          const opacityIdx = DENSITY_THRESHOLDS.findIndex(
-                            (t) => count <= t
-                          );
-                          const alpha =
-                            opacityIdx === -1
-                              ? 0.35
-                              : ([0.06, 0.12, 0.2, 0.28][opacityIdx] ?? 0.06);
-                          return (
-                            <div
-                              key={col.key}
-                              className="absolute top-0 bottom-0"
-                              style={{
-                                left: colIdx * colWidth,
-                                width: colWidth,
-                                background: hexToRgba(rowColor, alpha),
-                                pointerEvents: 'none',
-                              }}
-                            />
-                          );
-                        })}
+                        key={col.key}
+                        className="absolute top-0 bottom-0 border-l border-base-300/40"
+                        style={{
+                          left: idx * colWidth,
+                          borderColor: col.isMajor
+                            ? 'oklch(var(--bc)/0.2)'
+                            : undefined,
+                          borderWidth: col.isMajor ? 1 : undefined,
+                          borderStyle: col.isMajor ? 'dashed' : undefined,
+                        }}
+                      />
+                    ))}
+                  </div>
 
-                        {/* The main Gantt bar */}
+                  {/* Media rows — bar area only */}
+                  {filtered.map((item, rowIdx) => {
+                    const rowColor = MEDIA_TYPE_COLORS[item.type] ?? '#888';
+                    const itemKey = `${item.type}:${item.mediaId}`;
+                    const isHovered = hoveredId === itemKey;
+                    const itemStart = new Date(item.firstLogDate);
+                    const itemEnd = new Date(item.lastLogDate);
+                    const effectiveStart =
+                      rangeStart && itemStart < rangeStart
+                        ? rangeStart
+                        : itemStart;
+                    const effectiveEnd =
+                      rangeEnd && itemEnd > rangeEnd ? rangeEnd : itemEnd;
+                    const rawBarStart = dateToColX(effectiveStart, 'start');
+                    const barEnd = dateToColX(effectiveEnd, 'end');
+                    const barStart = Math.max(rawBarStart, 0);
+                    const barW = Math.max(barEnd - barStart, minBarWidth);
+                    const rowTop = rowIdx * ROW_HEIGHT;
+                    const density = activeDaysPerColumn(
+                      item,
+                      rangeStartKey,
+                      rangeEndKey
+                    );
+
+                    return (
+                      <div
+                        key={itemKey}
+                        className="absolute w-full flex items-center transition-colors"
+                        style={{
+                          top: rowTop,
+                          height: ROW_HEIGHT,
+                          background: isHovered
+                            ? hexToRgba(rowColor, 0.06)
+                            : rowIdx % 2 === 0
+                              ? 'oklch(var(--b2)/0.5)'
+                              : 'transparent',
+                        }}
+                        onMouseEnter={() => setHoveredId(itemKey)}
+                        onMouseLeave={() => {
+                          setHoveredId(null);
+                          scheduleTooltipClose();
+                        }}
+                      >
+                        {/* ── Bar area ──────────────────────────────────────── */}
                         <div
-                          className="absolute flex items-center"
-                          style={{
-                            left: barStart,
-                            top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
-                            width: barW,
-                            height: BAR_HEIGHT,
-                            borderRadius: BAR_RADIUS,
-                            background: hexToRgba(
-                              rowColor,
-                              isHovered ? 0.85 : 0.65
-                            ),
-                            border: `1.5px solid ${hexToRgba(rowColor, 0.9)}`,
-                            transition: 'background 0.15s, box-shadow 0.15s',
-                            boxShadow: isHovered
-                              ? `0 2px 12px ${hexToRgba(rowColor, 0.45)}`
-                              : undefined,
-                            cursor: 'default',
-                            overflow: 'hidden',
-                            paddingInline: 6,
-                          }}
-                          onMouseEnter={(e) => {
-                            clearTooltipCloseTimeout();
-                            tooltipHoverRef.current = false;
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setTooltip({
-                              item,
-                              x: rect.left + rect.width / 2,
-                              y: rect.top,
-                            });
-                          }}
+                          className="flex-1 relative h-full"
+                          style={{ overflow: 'hidden' }}
                         >
-                          {/* Bar label: show log count if wide enough */}
-                          {barW > 36 && (
-                            <span
-                              className="text-[10px] font-semibold truncate leading-none"
-                              style={{
-                                color: '#fff',
-                                textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-                              }}
-                            >
-                              {item.logCount} log{item.logCount !== 1 ? 's' : ''}
-                            </span>
-                          )}
+                          {/* Activity density shading per column */}
+                          {columns.map((col, colIdx) => {
+                            const count = density.get(col.key) ?? 0;
+                            if (!count) return null;
+                            const opacityIdx = DENSITY_THRESHOLDS.findIndex(
+                              (t) => count <= t
+                            );
+                            const alpha =
+                              opacityIdx === -1
+                                ? 0.35
+                                : ([0.06, 0.12, 0.2, 0.28][opacityIdx] ?? 0.06);
+                            return (
+                              <div
+                                key={col.key}
+                                className="absolute top-0 bottom-0"
+                                style={{
+                                  left: colIdx * colWidth,
+                                  width: colWidth,
+                                  background: hexToRgba(rowColor, alpha),
+                                  pointerEvents: 'none',
+                                }}
+                              />
+                            );
+                          })}
+
+                          {/* The main Gantt bar */}
+                          <div
+                            className="absolute flex items-center"
+                            style={{
+                              left: barStart,
+                              top: (ROW_HEIGHT - BAR_HEIGHT) / 2,
+                              width: barW,
+                              height: BAR_HEIGHT,
+                              borderRadius: BAR_RADIUS,
+                              background: hexToRgba(
+                                rowColor,
+                                isHovered ? 0.85 : 0.65
+                              ),
+                              border: `1.5px solid ${hexToRgba(rowColor, 0.9)}`,
+                              transition: 'background 0.15s, box-shadow 0.15s',
+                              boxShadow: isHovered
+                                ? `0 2px 12px ${hexToRgba(rowColor, 0.45)}`
+                                : undefined,
+                              cursor: 'default',
+                              overflow: 'hidden',
+                              paddingInline: 6,
+                            }}
+                            onMouseEnter={(e) => {
+                              clearTooltipCloseTimeout();
+                              tooltipHoverRef.current = false;
+                              const rect =
+                                e.currentTarget.getBoundingClientRect();
+                              setTooltip({
+                                item,
+                                x: rect.left + rect.width / 2,
+                                y: rect.top,
+                              });
+                            }}
+                          >
+                            {/* Bar label: show log count if wide enough */}
+                            {barW > 36 && (
+                              <span
+                                className="text-[10px] font-semibold truncate leading-none"
+                                style={{
+                                  color: '#fff',
+                                  textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                                }}
+                              >
+                                {item.logCount} log
+                                {item.logCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
             </div>
           </div>
         </div>
@@ -904,9 +917,7 @@ export default function GanttChart({
               opacity=".2"
             />
           </svg>
-          <p className="text-sm">
-            No immersion data to display for this filter.
-          </p>
+          <p className="text-sm">{t('gantt.empty')}</p>
         </div>
       )}
 
@@ -946,6 +957,7 @@ function GanttTooltip({
   onNavigate: (mediaId: string, type: string) => void;
   onHoverChange: (isHovering: boolean) => void;
 }) {
+  const { t } = useTranslation('stats');
   const color = MEDIA_TYPE_COLORS[item.type] ?? '#888';
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x, y });
@@ -1010,7 +1022,7 @@ function GanttTooltip({
                   style={{ background: hexToRgba(color, 0.15), color }}
                 >
                   <CheckCircle className="w-2.5 h-2.5" />
-                  Done
+                  {t('gantt.done')}
                 </span>
               )}
             </div>
@@ -1045,7 +1057,7 @@ function GanttTooltip({
         {/* Dates */}
         <div className="mt-2 text-[10px] text-base-content/50 space-y-0.5">
           <div>
-            <span className="font-medium">Started:</span>{' '}
+            <span className="font-medium">{t('gantt.started')}</span>{' '}
             {formatDate(item.firstLogDate)}
           </div>
           <div>
@@ -1067,7 +1079,7 @@ function GanttTooltip({
           onClick={() => onNavigate(item.mediaId, item.type)}
         >
           <ExternalLink className="w-3 h-3" />
-          View media page
+          {t('gantt.viewMedia')}
         </button>
       </div>
     </div>

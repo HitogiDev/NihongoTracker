@@ -17,8 +17,8 @@
     "invalidUserData": "Los datos de la cuenta no son válidos",
     "invalidVerificationToken": "Ese enlace de verificación no es válido o ha caducado",
     "noEmailSet": "Esta cuenta no tiene ninguna dirección de correo",
-    "noToken": "Necesitas iniciar sesión para hacer eso",
     "notAuthenticated": "Necesitas iniciar sesión para hacer eso",
+    "noToken": "Necesitas iniciar sesión para hacer eso",
     "passwordConfirmationRequired": "Introduce y confirma tu nueva contraseña",
     "passwordMismatch": "Las contraseñas no coinciden",
     "resendCooldown": "Espera {{seconds}} segundos antes de pedir otro correo",
@@ -42,6 +42,18 @@
     "mustBeArray": "Los favoritos deben ser una lista",
     "noteTooLong": "La nota debe tener {{max}} caracteres o menos",
     "tooMany": "Puedes guardar como máximo {{max}} favoritos"
+  },
+  "goal": {
+    "alreadyActive": "Ya tienes un objetivo de {{type}} activo. Desactívalo primero.",
+    "invalidTimeframe": "Ese periodo de visualización no es válido",
+    "invalidType": "Ese tipo de objetivo no es válido",
+    "longTermFieldsRequired": "Hacen falta el tipo, el objetivo total, la fecha objetivo y la fecha de inicio",
+    "notFound": "Objetivo no encontrado",
+    "startBeforeTarget": "La fecha de inicio debe ser anterior a la fecha objetivo",
+    "targetInFuture": "La fecha objetivo debe estar en el futuro",
+    "targetPositive": "El objetivo debe ser mayor que 0",
+    "totalTargetPositive": "El objetivo total debe ser mayor que 0",
+    "typeAndTargetRequired": "Hacen falta un tipo y un objetivo"
   },
   "immersionList": {
     "invalidMediaType": "Ese tipo de contenido no es válido",
@@ -67,8 +79,34 @@
     "widgetMustBeObject": "Cada widget debe ser un objeto",
     "widgetNeedsVisible": "Cada widget necesita un indicador de visibilidad"
   },
+  "log": {
+    "atLeastOneId": "Selecciona al menos un registro",
+    "createFailed": "No se pudo crear el registro",
+    "descriptionRequired": "Hace falta una descripción",
+    "idsRequired": "Los ids deben ser una lista no vacía",
+    "manabeNotConfigured": "La integración con Manabe no está configurada",
+    "noneFound": "No se encontraron registros",
+    "noneFoundOrForbidden": "No se encontraron registros, o no son tuyos",
+    "notFound": "Registro no encontrado",
+    "notFoundOrForbidden": "Ese registro no existe o no es tuyo",
+    "notFoundPlural_one": "Registro no encontrado",
+    "notFoundPlural_other": "Registros no encontrados",
+    "rangeMinAboveMax": "El mínimo de {{field}} no puede ser mayor que su máximo",
+    "saveFailed": "No se pudo guardar el registro",
+    "typeRequired": "Hace falta un tipo de registro"
+  },
   "media": {
     "notFound": "Contenido no encontrado"
+  },
+  "textSession": {
+    "invalidHistoryMetrics": "Las métricas del historial de la sesión no son válidas",
+    "invalidIsShared": "Ese valor para compartir no es válido",
+    "invalidLineIds": "Los ids de línea no son válidos",
+    "invalidLines": "Los datos de las líneas no son válidos",
+    "invalidTimerSeconds": "Ese valor del temporizador no es válido",
+    "nameRequired": "Hace falta un nombre de sesión",
+    "nameTooLong": "El nombre de la sesión debe tener 100 caracteres o menos",
+    "notFound": "Sesión no encontrada"
   },
   "upload": {
     "avatarCropGifOnly": "El recorte de avatar solo funciona con archivos GIF",
@@ -98,9 +136,11 @@
     "passwordMismatch": "Las contraseñas no coinciden",
     "passwordRequired": "Introduce tu contraseña actual para hacer este cambio",
     "passwordTooShort": "La contraseña es demasiado corta",
+    "updateFailed": "No se pudo actualizar el usuario",
     "usernameConfirmMismatch": "El nombre de usuario no coincide. Escríbelo para confirmar.",
     "usernameInvalid": "El nombre de usuario solo puede contener letras, números y guiones bajos",
     "usernameLength": "Tu nombre de usuario debe tener entre 1 y 20 caracteres",
+    "usernameRequired": "Hace falta un nombre de usuario",
     "usernameTaken": "Ese nombre de usuario ya está en uso"
   }
 }

@@ -30,7 +30,9 @@ type EditState = IMediaDocument & {
 };
 
 function descFor(media: IMediaDocument, language: 'eng' | 'jpn' | 'spa') {
-  return media.description?.find((d) => d.language === language)?.description ?? '';
+  return (
+    media.description?.find((d) => d.language === language)?.description ?? ''
+  );
 }
 
 function toEditState(media: IMediaDocument): EditState {
@@ -162,7 +164,14 @@ export default function MediaEditPanel() {
 
   const numberField = (
     label: string,
-    key: 'episodes' | 'episodeDuration' | 'seasons' | 'chapters' | 'volumes' | 'characters' | 'runtime'
+    key:
+      | 'episodes'
+      | 'episodeDuration'
+      | 'seasons'
+      | 'chapters'
+      | 'volumes'
+      | 'characters'
+      | 'runtime'
   ) => (
     <label className="form-control">
       <div className="label">

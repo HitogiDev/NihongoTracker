@@ -11,6 +11,8 @@ import {
 import useSearch from '../../hooks/useSearch';
 import { IClub, IMediaDocument } from '../../types.d';
 import { useUserDataStore } from '../../store/userData';
+import { useTranslation } from 'react-i18next';
+import { getLocale } from '../../utils/timezone';
 
 interface CreateVotingWizardProps {
   isOpen: boolean;
@@ -51,20 +53,25 @@ interface Candidate {
 }
 
 const MEDIA_TYPES = [
-  { value: 'anime', label: 'Anime' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'reading', label: 'Light Novel' },
-  { value: 'vn', label: 'Visual Novel' },
-  { value: 'game', label: 'Video Game' },
-  { value: 'video', label: 'Video/Movie' },
-  { value: 'custom', label: 'Custom' },
-];
+  { value: 'anime', labelKey: 'wizard.mediaTypes.anime' },
+  { value: 'manga', labelKey: 'wizard.mediaTypes.manga' },
+  { value: 'reading', labelKey: 'wizard.mediaTypes.lightNovel' },
+  { value: 'vn', labelKey: 'wizard.mediaTypes.vn' },
+  { value: 'game', labelKey: 'wizard.mediaTypes.game' },
+  { value: 'video', labelKey: 'wizard.mediaTypes.videoMovie' },
+  { value: 'custom', labelKey: 'wizard.mediaTypes.custom' },
+] as const;
 
 export default function CreateVotingWizard({
   isOpen,
   onClose,
   club,
 }: CreateVotingWizardProps) {
+  const { t } = useTranslation(['clubs', 'common']);
+  // MEDIA_TYPES is `as const`, so labelKey is a union of literal keys.
+  // `t` cannot be typed over a key union, so widen it for those two call
+  // sites only; the keys themselves are still checked at the array.
+  const tKey = t as (key: (typeof MEDIA_TYPES)[number]['labelKey']) => string;
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -74,7 +81,7 @@ export default function CreateVotingWizard({
   // Helper function to format date for display
   const formatDateForDisplay = (date: Date | undefined) => {
     if (!date) return 'Select date';
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(getLocale(), {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -233,14 +240,14 @@ export default function CreateVotingWizard({
 
   const handleAddCandidate = () => {
     if (!tempCandidate.title || !tempCandidate.mediaId) {
-      toast.error('Please select or enter a media title');
+      toast.error(t('toast.selectOrEnterTitle'));
       return;
     }
 
     const newCandidate = { ...tempCandidate };
     setCandidates((prev) => [...prev, newCandidate]);
     resetTempCandidate();
-    toast.success('Candidate added to voting!');
+    toast.success(t('toast.candidateAdded'));
   };
 
   const validateStep1 = () => {
@@ -253,7 +260,7 @@ export default function CreateVotingWizard({
     } = votingData;
 
     if (!title.trim()) {
-      toast.error('Please enter a voting title');
+      toast.error(t('toast.votingTitleRequired'));
       return false;
     }
 
@@ -263,22 +270,22 @@ export default function CreateVotingWizard({
       !consumptionStartDate ||
       !consumptionEndDate
     ) {
-      toast.error('Please fill in all required dates');
+      toast.error(t('toast.datesRequiredAll'));
       return false;
     }
 
     if (votingStartDate >= votingEndDate) {
-      toast.error('Voting end date must be after start date');
+      toast.error(t('toast.votingEndAfterStart'));
       return false;
     }
 
     if (consumptionStartDate >= consumptionEndDate) {
-      toast.error('Consumption end date must be after start date');
+      toast.error(t('toast.consumptionEndAfterStart'));
       return false;
     }
 
     if (votingEndDate >= consumptionStartDate) {
-      toast.error('Consumption must start after voting ends');
+      toast.error(t('toast.consumptionAfterVoting'));
       return false;
     }
 
@@ -286,17 +293,17 @@ export default function CreateVotingWizard({
       const { suggestionStartDate, suggestionEndDate } = votingData;
 
       if (!suggestionStartDate || !suggestionEndDate) {
-        toast.error('Please fill in suggestion period dates');
+        toast.error(t('toast.suggestionDatesRequired'));
         return false;
       }
 
       if (suggestionStartDate >= suggestionEndDate) {
-        toast.error('Suggestion end date must be after start date');
+        toast.error(t('toast.suggestionEndAfterStart'));
         return false;
       }
 
       if (suggestionEndDate >= votingStartDate) {
-        toast.error('Suggestions must end before voting starts');
+        toast.error(t('toast.suggestionsBeforeVoting'));
         return false;
       }
     }
@@ -327,13 +334,13 @@ export default function CreateVotingWizard({
         {/* Progress Steps */}
         <div className="steps w-full mb-8">
           <div className={`step ${currentStep >= 1 ? 'step-primary' : ''}`}>
-            Setup
+            {t('wizard.stepSetup')}
           </div>
           <div className={`step ${currentStep >= 2 ? 'step-primary' : ''}`}>
-            Add Candidates
+            {t('wizard.stepCandidates')}
           </div>
           <div className={`step ${currentStep >= 3 ? 'step-primary' : ''}`}>
-            Confirm
+            {t('wizard.stepConfirm')}
           </div>
         </div>
 
@@ -343,11 +350,13 @@ export default function CreateVotingWizard({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="label">
-                  <span className="label-text">Voting Title *</span>
+                  <span className="label-text">
+                    {t('editVoting.votingTitle')}
+                  </span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Summer 2024 Anime Selection"
+                  placeholder={t('editVoting.titlePlaceholder')}
                   value={votingData.title}
                   onChange={(e) =>
                     setVotingData((prev) => ({
@@ -374,20 +383,20 @@ export default function CreateVotingWizard({
                     className="checkbox checkbox-primary"
                   />
                   <span className="label-text">
-                    Testing Mode (Allow past dates for testing)
+                    {t('editVoting.testingMode')}
                   </span>
                 </label>
                 <div className="text-xs text-base-content/60 ml-6">
-                  Enable this to test the voting system with past dates
+                  {t('editVoting.testingModeHint')}
                 </div>
               </div>
 
               <div className="md:col-span-2">
                 <label className="label">
-                  <span className="label-text">Description</span>
+                  <span className="label-text">{t('common.description')}</span>
                 </label>
                 <textarea
-                  placeholder="Describe what this voting is for..."
+                  placeholder={t('editVoting.descriptionPlaceholder')}
                   value={votingData.description}
                   onChange={(e) =>
                     setVotingData((prev) => ({
@@ -402,7 +411,9 @@ export default function CreateVotingWizard({
 
               <div>
                 <label className="label">
-                  <span className="label-text">Media Type *</span>
+                  <span className="label-text">
+                    {t('editVoting.mediaTypeRequired')}
+                  </span>
                 </label>
                 <select
                   value={votingData.mediaType}
@@ -416,7 +427,7 @@ export default function CreateVotingWizard({
                 >
                   {MEDIA_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
-                      {type.label}
+                      {tKey(type.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -425,11 +436,13 @@ export default function CreateVotingWizard({
               {votingData.mediaType === 'custom' && (
                 <div>
                   <label className="label">
-                    <span className="label-text">Custom Media Type *</span>
+                    <span className="label-text">
+                      {t('editVoting.customMediaType')}
+                    </span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., Podcast, Book, Game..."
+                    placeholder={t('editVoting.customTypePlaceholder')}
                     value={votingData.customMediaType}
                     onChange={(e) =>
                       setVotingData((prev) => ({
@@ -445,7 +458,7 @@ export default function CreateVotingWizard({
               <div className="md:col-span-2">
                 <label className="label">
                   <span className="label-text">
-                    How will candidates be added? *
+                    {t('editVoting.howCandidates')}
                   </span>
                 </label>
                 <div className="space-y-2">
@@ -463,9 +476,7 @@ export default function CreateVotingWizard({
                       }
                       className="radio radio-primary"
                     />
-                    <span>
-                      I'll add candidates manually (leaders/moderators only)
-                    </span>
+                    <span>{t('editVoting.manualCandidates')}</span>
                   </label>
                   <label className="cursor-pointer label justify-start gap-3">
                     <input
@@ -484,9 +495,7 @@ export default function CreateVotingWizard({
                       }
                       className="radio radio-primary"
                     />
-                    <span>
-                      Members can suggest candidates during a suggestion period
-                    </span>
+                    <span>{t('editVoting.memberSuggestions')}</span>
                   </label>
                 </div>
               </div>
@@ -496,7 +505,7 @@ export default function CreateVotingWizard({
                   <div>
                     <label className="label">
                       <span className="label-text">
-                        Suggestion Period Start *
+                        {t('editVoting.suggestionStart')}
                       </span>
                     </label>
                     <div className="dropdown dropdown-top dropdown-end w-full">
@@ -556,7 +565,7 @@ export default function CreateVotingWizard({
                   <div>
                     <label className="label">
                       <span className="label-text">
-                        Suggestion Period End *
+                        {t('editVoting.suggestionEnd')}
                       </span>
                     </label>
                     <div className="dropdown dropdown-top dropdown-end w-full">
@@ -615,7 +624,7 @@ export default function CreateVotingWizard({
 
               <div>
                 <label className="label">
-                  <span className="label-text">Voting Period Start *</span>
+                  <span className="label-text">{t('wizard.votingStart')}</span>
                 </label>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
@@ -691,7 +700,7 @@ export default function CreateVotingWizard({
 
               <div>
                 <label className="label">
-                  <span className="label-text">Voting Period End *</span>
+                  <span className="label-text">{t('wizard.votingEnd')}</span>
                 </label>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
@@ -752,7 +761,9 @@ export default function CreateVotingWizard({
 
               <div>
                 <label className="label">
-                  <span className="label-text">Consumption Period Start *</span>
+                  <span className="label-text">
+                    {t('editVoting.consumptionStart')}
+                  </span>
                 </label>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
@@ -818,7 +829,9 @@ export default function CreateVotingWizard({
 
               <div>
                 <label className="label">
-                  <span className="label-text">Consumption Period End *</span>
+                  <span className="label-text">
+                    {t('editVoting.consumptionEnd')}
+                  </span>
                 </label>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
@@ -892,12 +905,16 @@ export default function CreateVotingWizard({
               {/* Add Candidate Form */}
               <div className="card bg-base-200 shadow-sm">
                 <div className="card-body">
-                  <h4 className="card-title text-lg">Add Candidate</h4>
+                  <h4 className="card-title text-lg">
+                    {t('wizard.addCandidate')}
+                  </h4>
 
                   <div className="space-y-4">
                     <div>
                       <label className="label">
-                        <span className="label-text">Search for Media</span>
+                        <span className="label-text">
+                          {t('suggest.searchLabel')}
+                        </span>
                       </label>
                       <div className="relative">
                         <input
@@ -957,11 +974,13 @@ export default function CreateVotingWizard({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="label">
-                          <span className="label-text">Title *</span>
+                          <span className="label-text">
+                            {t('common.titleRequired')}
+                          </span>
                         </label>
                         <input
                           type="text"
-                          placeholder="Enter title manually"
+                          placeholder={t('addMedia.titlePlaceholder')}
                           value={tempCandidate.title}
                           onChange={(e) =>
                             setTempCandidate((prev) => ({
@@ -976,11 +995,13 @@ export default function CreateVotingWizard({
 
                       <div>
                         <label className="label">
-                          <span className="label-text">Image URL</span>
+                          <span className="label-text">
+                            {t('suggest.imageUrl')}
+                          </span>
                         </label>
                         <input
                           type="url"
-                          placeholder="https://example.com/image.jpg"
+                          placeholder={t('suggest.imageUrlPlaceholder')}
                           value={tempCandidate.image}
                           onChange={(e) =>
                             setTempCandidate((prev) => ({
@@ -994,10 +1015,12 @@ export default function CreateVotingWizard({
 
                       <div className="md:col-span-2">
                         <label className="label">
-                          <span className="label-text">Description</span>
+                          <span className="label-text">
+                            {t('common.description')}
+                          </span>
                         </label>
                         <textarea
-                          placeholder="Brief description..."
+                          placeholder={t('wizard.briefDescriptionPlaceholder')}
                           value={tempCandidate.description}
                           onChange={(e) =>
                             setTempCandidate((prev) => ({
@@ -1016,7 +1039,7 @@ export default function CreateVotingWizard({
                       disabled={!tempCandidate.title}
                       className="btn btn-primary"
                     >
-                      Add Candidate
+                      {t('wizard.addCandidate')}
                     </button>
                   </div>
                 </div>
@@ -1074,18 +1097,18 @@ export default function CreateVotingWizard({
             <div className="space-y-6">
               <div className="alert alert-info">
                 <div>
-                  <h4 className="font-medium">Member Suggestions Enabled</h4>
-                  <p className="text-sm mt-1">
-                    Members will be able to suggest candidates during the
-                    suggestion period. You can skip to step 3 to finalize the
-                    voting setup.
-                  </p>
+                  <h4 className="font-medium">
+                    {t('wizard.suggestionsEnabled')}
+                  </h4>
+                  <p className="text-sm mt-1">{t('wizard.suggestionsNote')}</p>
                 </div>
               </div>
 
               <div className="stats shadow w-full">
                 <div className="stat">
-                  <div className="stat-title">Suggestion Period</div>
+                  <div className="stat-title">
+                    {t('wizard.suggestionPeriod')}
+                  </div>
                   <div className="stat-value text-lg">
                     {votingData.suggestionStartDate
                       ? votingData.suggestionStartDate.toLocaleDateString()
@@ -1096,7 +1119,7 @@ export default function CreateVotingWizard({
                       : 'Not set'}
                   </div>
                   <div className="stat-desc">
-                    Members can suggest candidates during this time
+                    {t('wizard.suggestionPeriodHint')}
                   </div>
                 </div>
               </div>
@@ -1108,7 +1131,7 @@ export default function CreateVotingWizard({
           <div className="space-y-6">
             <div className="alert alert-success">
               <div>
-                <h4 className="font-medium">Ready to Launch!</h4>
+                <h4 className="font-medium">{t('wizard.readyTitle')}</h4>
                 <p className="text-sm mt-1">
                   Review the information below and click "Launch Voting" to make
                   it live.
@@ -1118,34 +1141,46 @@ export default function CreateVotingWizard({
 
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body">
-                <h4 className="card-title">Voting Summary</h4>
+                <h4 className="card-title">{t('wizard.summary')}</h4>
                 <div className="space-y-3">
                   <div>
-                    <span className="font-medium">Title:</span>{' '}
+                    <span className="font-medium">
+                      {t('wizard.summaryTitle')}
+                    </span>{' '}
                     {votingData.title}
                   </div>
                   {votingData.description && (
                     <div>
-                      <span className="font-medium">Description:</span>{' '}
+                      <span className="font-medium">
+                        {t('wizard.summaryDescription')}
+                      </span>{' '}
                       {votingData.description}
                     </div>
                   )}
                   <div>
-                    <span className="font-medium">Media Type:</span>{' '}
+                    <span className="font-medium">
+                      {t('suggest.mediaType')}
+                    </span>{' '}
                     {votingData.mediaType === 'custom'
                       ? votingData.customMediaType
-                      : MEDIA_TYPES.find(
-                          (t) => t.value === votingData.mediaType
-                        )?.label}
+                      : tKey(
+                          MEDIA_TYPES.find(
+                            (option) => option.value === votingData.mediaType
+                          )?.labelKey ?? 'wizard.mediaTypes.custom'
+                        )}
                   </div>
                   <div>
-                    <span className="font-medium">Candidate Submission:</span>{' '}
+                    <span className="font-medium">
+                      {t('wizard.summaryCandidates')}
+                    </span>{' '}
                     {votingData.candidateSubmissionType === 'manual'
-                      ? 'Manual (Leaders/Moderators)'
-                      : 'Member Suggestions'}
+                      ? t('wizard.submissionManual')
+                      : t('wizard.submissionMembers')}
                   </div>
                   <div>
-                    <span className="font-medium">Voting Period:</span>{' '}
+                    <span className="font-medium">
+                      {t('wizard.summaryVotingPeriod')}
+                    </span>{' '}
                     {votingData.votingStartDate
                       ? votingData.votingStartDate.toLocaleDateString()
                       : 'Not set'}{' '}
@@ -1155,7 +1190,9 @@ export default function CreateVotingWizard({
                       : 'Not set'}
                   </div>
                   <div>
-                    <span className="font-medium">Consumption Period:</span>{' '}
+                    <span className="font-medium">
+                      {t('mediaInfo.consumptionPeriodLabel')}
+                    </span>{' '}
                     {votingData.consumptionStartDate
                       ? votingData.consumptionStartDate.toLocaleDateString()
                       : 'Not set'}{' '}
@@ -1166,7 +1203,9 @@ export default function CreateVotingWizard({
                   </div>
                   {votingData.candidateSubmissionType === 'manual' && (
                     <div>
-                      <span className="font-medium">Candidates:</span>{' '}
+                      <span className="font-medium">
+                        {t('wizard.summaryCandidateList')}
+                      </span>{' '}
                       {candidates.length} added
                     </div>
                   )}
@@ -1185,7 +1224,7 @@ export default function CreateVotingWizard({
               disabled={finalizeVotingMutation.isPending}
             >
               <ArrowLeft className="w-4 h-4" />
-              Back
+              {t('wizard.back')}
             </button>
           )}
 
@@ -1194,12 +1233,12 @@ export default function CreateVotingWizard({
             className="btn btn-outline"
             disabled={finalizeVotingMutation.isPending}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
 
           {currentStep === 1 && (
             <button onClick={handleStep1Submit} className="btn btn-primary">
-              Next
+              {t('wizard.next')}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -1209,7 +1248,7 @@ export default function CreateVotingWizard({
               onClick={() => setCurrentStep(3)}
               className="btn btn-primary"
             >
-              Next
+              {t('wizard.next')}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -1225,7 +1264,7 @@ export default function CreateVotingWizard({
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  Launch Voting
+                  {t('wizard.launch')}
                 </>
               )}
             </button>

@@ -9,6 +9,7 @@ import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
 import DismissLogsButton from './DismissLogsButton';
+import { useTranslation } from 'react-i18next';
 
 interface AnimeLogsProps {
   username?: string;
@@ -16,6 +17,7 @@ interface AnimeLogsProps {
 }
 
 function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
+  const { t } = useTranslation(['logs', 'common']);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedAnime, setSelectedAnime] = useState<
     IMediaDocument | undefined
@@ -134,11 +136,13 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
   const handleAssignMedia = useCallback(() => {
     if (!selectedAnime) {
-      toast.error('You need to select an anime!');
+      toast.error(
+        t('matcher.selectOne', { type: t('common:mediaTypesPlural.anime') })
+      );
       return;
     }
     if (selectedLogs.length === 0) {
-      toast.error('You need to select at least one log!');
+      toast.error(t('matcher.selectAtLeastOneLog'));
       return;
     }
     assignMedia([
@@ -166,7 +170,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       },
     ]);
     setShouldAnilistSearch(false);
-  }, [selectedAnime, selectedLogs, assignMedia]);
+  }, [selectedAnime, selectedLogs, assignMedia, t]);
 
   const [isAutoMatching, setIsAutoMatching] = useState(false);
   const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
@@ -255,19 +259,19 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           `Auto-matched ${totalProcessed} logs to ${matches.length} anime`
         );
       } else {
-        toast.info('No exact matches found in database');
+        toast.info(t('matcher.noExactMatchesDb'));
       }
     } catch (error) {
       console.error('Auto-match error:', error);
-      toast.error('Failed to auto-match logs');
+      toast.error(t('matcher.autoMatchFailed'));
     } finally {
       setIsAutoMatching(false);
     }
-  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username]);
+  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username, t]);
 
   const handleAutoMatch = useCallback(async () => {
     if (Object.keys(filteredGroupedLogs).length === 0) {
-      toast.info('No log groups available to match');
+      toast.info(t('matcher.noGroups'));
       return;
     }
 
@@ -279,7 +283,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
     }
 
     await performAutoMatch();
-  }, [filteredGroupedLogs, performAutoMatch]);
+  }, [filteredGroupedLogs, performAutoMatch, t]);
 
   if (isLoadingLogs) {
     return (
@@ -291,14 +295,14 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
-              Loading Media Matcher
+              {t('matcher.loadingTitle')}
             </h2>
 
             <p className="text-base-content/70 mb-4">
-              Preparing your logs for media matching...
+              {t('matcher.preparing')}
             </p>
 
-            <div className="divider">Please wait</div>
+            <div className="divider">{t('matcher.pleaseWait')}</div>
 
             <div className="alert alert-info">
               <svg
@@ -315,8 +319,10 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                 ></path>
               </svg>
               <div className="text-sm">
-                <div className="font-semibold">This may take a moment</div>
-                <div>Loading and processing your media logs</div>
+                <div className="font-semibold">
+                  {t('matcher.mayTakeAMoment')}
+                </div>
+                <div>{t('matcher.loadingLogs')}</div>
               </div>
             </div>
 
@@ -333,7 +339,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             </div>
 
             <div className="text-xs text-base-content/50 mt-2">
-              Fetching logs from database...
+              {t('matcher.fetching')}
             </div>
           </div>
         </div>
@@ -344,7 +350,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
   if (logError) {
     return (
       <div className="alert alert-error">
-        <span>Error loading anime logs</span>
+        <span>
+          {t('matcher.errorLoading', {
+            type: t('common:mediaTypesPlural.anime'),
+          })}
+        </span>
       </div>
     );
   }
@@ -355,7 +365,9 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       {showAutoMatchModal && (
         <dialog open className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Large Batch Auto-Match</h3>
+            <h3 className="font-bold text-lg">
+              {t('matcher.largeBatchTitle')}
+            </h3>
             <p className="py-4">
               You have {Object.keys(filteredGroupedLogs).length} log groups to
               process. This may take a few minutes to complete. Do you want to
@@ -366,10 +378,10 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                 className="btn btn-ghost"
                 onClick={() => setShowAutoMatchModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn btn-primary" onClick={performAutoMatch}>
-                Continue
+                {t('common.continue')}
               </button>
             </div>
           </div>
@@ -384,17 +396,17 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       )}
 
       <h1 className="text-2xl font-bold text-center mb-4">
-        Assign Anime to Logs
+        {t('matcher.assignTitle', { type: t('common:mediaTypesPlural.anime') })}
       </h1>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-4 w-full">
         <div className="stats shadow flex-1">
           <div className="stat">
-            <div className="stat-title">Selected Logs</div>
+            <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value">{selectedLogs.length}</div>
           </div>
           <div className="stat">
-            <div className="stat-title">Available Groups</div>
+            <div className="stat-title">{t('matcher.availableGroups')}</div>
             <div className="stat-value">
               {Object.keys(filteredGroupedLogs).length}
             </div>
@@ -410,7 +422,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           {isAutoMatching ? (
             <>
               <span className="loading loading-spinner"></span>
-              Auto-matching...
+              {t('matcher.autoMatching')}
             </>
           ) : (
             <>
@@ -426,7 +438,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                   clipRule="evenodd"
                 />
               </svg>
-              Auto-Match All
+              {t('matcher.autoMatchAll')}
             </>
           )}
         </button>
@@ -436,7 +448,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         {/* Left panel - Log groups */}
         <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
-            <h2 className="card-title">Unassigned Logs</h2>
+            <h2 className="card-title">{t('matcher.unassignedLogs')}</h2>
             <div className="divider my-1"></div>
 
             {Object.keys(filteredGroupedLogs).length > 0 ? (
@@ -512,7 +524,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>No unassigned anime logs found.</span>
+                <span>
+                  {t('matcher.noUnassigned', {
+                    type: t('common:mediaTypesPlural.anime'),
+                  })}
+                </span>
               </div>
             )}
           </div>
@@ -520,7 +536,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
         <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
-            <h2 className="card-title">Find Matching Anime</h2>
+            <h2 className="card-title">
+              {t('matcher.findMatching', {
+                type: t('common:mediaTypesPlural.anime'),
+              })}
+            </h2>
             <div className="divider my-1"></div>
 
             <label className="input input-bordered input-primary flex items-center gap-2 mb-4">
@@ -539,7 +559,9 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
               <input
                 type="text"
                 className="grow"
-                placeholder="Search anime..."
+                placeholder={t('matcher.searchPlaceholder', {
+                  type: t('common:mediaTypesPlural.anime'),
+                })}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -552,7 +574,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
               {isSearchingAnilist ? (
                 <div className="flex flex-col items-center justify-center py-8">
                   <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <p className="mt-2">Searching anime...</p>
+                  <p className="mt-2">
+                    {t('matcher.searching', {
+                      type: t('common:mediaTypesPlural.anime'),
+                    })}
+                  </p>
                 </div>
               ) : animeResult && animeResult.length > 0 ? (
                 <div className="space-y-2">
@@ -633,7 +659,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span>No anime found. Try different keywords.</span>
+                  <span>
+                    {t('matcher.noneFound', {
+                      type: t('common:mediaTypesPlural.anime'),
+                    })}
+                  </span>
                 </div>
               ) : (
                 <div className="alert alert-info">
@@ -651,7 +681,9 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                     ></path>
                   </svg>
                   <span>
-                    Select a log group or enter an anime title to search
+                    {t('matcher.selectGroupOrTitle', {
+                      type: t('common:mediaTypesPlural.anime'),
+                    })}
                   </span>
                 </div>
               )}
@@ -663,7 +695,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
         <div className="stats shadow">
           <div className="stat">
-            <div className="stat-title">Selected Logs</div>
+            <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value text-primary">{selectedLogs.length}</div>
           </div>
         </div>
@@ -676,7 +708,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           {isAssigning ? (
             <>
               <span className="loading loading-spinner"></span>
-              Assigning...
+              {t('matcher.assigning')}
             </>
           ) : (
             'Assign to Anime'

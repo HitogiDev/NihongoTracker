@@ -38,6 +38,7 @@ import PlaylistSelectorModal, {
 } from '../components/PlaylistSelectorModal';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
+import { useTranslation } from 'react-i18next';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -193,6 +194,7 @@ const getDeckForVolume = (
 };
 
 function LogScreen() {
+  const { t } = useTranslation(['logs', 'common']);
   const vt = useValidationText();
   const [logData, setLogData] = useState<logDataType>(() =>
     createInitialLogState()
@@ -379,10 +381,13 @@ function LogScreen() {
       invalidateLogScreenQueries(queryClient, 'video', user?.username);
 
       toast.success(
-        `Logged ${loggedCount} of ${selected.length} playlist video${selected.length !== 1 ? 's' : ''} successfully!`
+        t('toast.playlistLogged', {
+          count: selected.length,
+          logged: loggedCount,
+        })
       );
     },
-    [queryClient, user?.username, playlistResult?.playlistTitle]
+    [queryClient, user?.username, playlistResult?.playlistTitle, t]
   );
 
   // ── End playlist helpers ────────────────────────────────────────────────────
@@ -695,7 +700,7 @@ function LogScreen() {
     setErrors(validation.errors);
 
     if (!validation.isValid) {
-      toast.error('Please fix all validation errors before submitting');
+      toast.error(t('toast.fixValidationAll'));
       return;
     }
 
@@ -759,20 +764,21 @@ function LogScreen() {
   };
 
   useEffect(() => {
-    if (searchError) toast.error(`Error: ${searchError.message}`);
-  }, [searchError]);
+    if (searchError)
+      toast.error(t('toast.searchError', { message: searchError.message }));
+  }, [searchError, t]);
 
   const logTypeOptions = [
-    { value: 'anime', label: 'Anime' },
-    { value: 'manga', label: 'Manga' },
-    { value: 'vn', label: 'Visual Novel' },
-    { value: 'game', label: 'Video Game' },
-    { value: 'video', label: 'Video' },
-    { value: 'tv show', label: 'TV Show' },
-    { value: 'movie', label: 'Movie' },
-    { value: 'reading', label: 'Reading' },
-    { value: 'book', label: 'Book' },
-    { value: 'audio', label: 'Audio' },
+    { value: 'anime', label: t('common:mediaTypes.anime') },
+    { value: 'manga', label: t('common:mediaTypes.manga') },
+    { value: 'vn', label: t('common:mediaTypes.vn') },
+    { value: 'game', label: t('common:mediaTypes.game') },
+    { value: 'video', label: t('common:mediaTypes.video') },
+    { value: 'tv show', label: t('common:mediaTypes.tvShow') },
+    { value: 'movie', label: t('common:mediaTypes.movie') },
+    { value: 'reading', label: t('common:mediaTypes.reading') },
+    { value: 'book', label: t('common:mediaTypes.book') },
+    { value: 'audio', label: t('common:mediaTypes.audio') },
   ];
 
   const isSeriesType = logData.type === 'anime' || logData.type === 'tv show';
@@ -833,11 +839,8 @@ function LogScreen() {
         <div className="w-full max-w-6xl">
           <form onSubmit={logSubmit} className="space-y-8">
             <div className="text-center">
-              <h1 className="text-4xl font-bold mb-2">Log Your Immersion</h1>
-              <p className="text-base-content/70">
-                Register your media consumption and stay motivated in your
-                learning journey
-              </p>
+              <h1 className="text-4xl font-bold mb-2">{t('create.title')}</h1>
+              <p className="text-base-content/70">{t('create.subtitle')}</p>
             </div>
 
             {/* Log Type Selection */}
@@ -1070,7 +1073,7 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label">
                               <span className="label-text font-medium">
-                                Episodes Watched
+                                {t('create.episodesWatched')}
                               </span>
                               {logData.customDuration ? (
                                 <span className="label-text-alt text-sm text-warning">
@@ -1083,7 +1086,7 @@ function LogScreen() {
                               min="1"
                               max="1000"
                               onInput={preventNegativeValues}
-                              placeholder="Number of episodes"
+                              placeholder={t('create.episodesPlaceholder')}
                               className={`input input-bordered w-full ${
                                 errors.episodes
                                   ? 'input-error'
@@ -1145,17 +1148,17 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label">
                               <span className="label-text font-medium">
-                                Episode Duration (minutes)
+                                {t('create.episodeDuration')}
                               </span>
                               <span className="label-text-alt text-warning">
-                                Needed to calculate time
+                                {t('create.durationHint')}
                               </span>
                             </label>
                             <input
                               type="number"
                               min="1"
                               max="300"
-                              placeholder="Episode duration in minutes"
+                              placeholder={t('create.durationPlaceholder')}
                               className="input input-bordered w-full"
                               onChange={(e) => {
                                 const customDuration = Number(e.target.value);
@@ -1181,13 +1184,13 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label">
                               <span className="label-text font-medium">
-                                Time Spent
+                                {t('create.timeSpent')}
                               </span>
                               {['video', 'audio', 'movie'].includes(
                                 logData.type || ''
                               ) && (
                                 <span className="label-text-alt text-warning">
-                                  Required
+                                  {t('create.required')}
                                 </span>
                               )}
                             </label>
@@ -1197,7 +1200,7 @@ function LogScreen() {
                                   type="number"
                                   min="0"
                                   max="24"
-                                  placeholder="Hours"
+                                  placeholder={t('create.hoursPlaceholder')}
                                   className={`input input-bordered w-full ${
                                     errors.hours || errors.time
                                       ? 'input-error'
@@ -1218,7 +1221,7 @@ function LogScreen() {
                                   type="number"
                                   min="0"
                                   max="1440"
-                                  placeholder="Minutes"
+                                  placeholder={t('create.minutesPlaceholder')}
                                   className={`input input-bordered w-full ${
                                     errors.minutes || errors.time
                                       ? 'input-error'
@@ -1254,7 +1257,7 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label">
                               <span className="label-text font-medium">
-                                Characters Read
+                                {t('create.charsRead')}
                               </span>
                             </label>
                             <input
@@ -1262,7 +1265,7 @@ function LogScreen() {
                               min="0"
                               max="1000000"
                               onInput={preventNegativeValues}
-                              placeholder="Number of characters"
+                              placeholder={t('create.charsPlaceholder')}
                               className={`input input-bordered w-full ${
                                 errors.chars
                                   ? 'input-error'
@@ -1293,7 +1296,7 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label">
                               <span className="label-text font-medium">
-                                Volume
+                                {t('create.volume')}
                               </span>
                             </label>
                             <div className="flex items-center gap-2">
@@ -1331,7 +1334,7 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label">
                               <span className="label-text font-medium">
-                                Pages Read
+                                {t('create.pagesRead')}
                               </span>
                             </label>
                             <input
@@ -1339,7 +1342,7 @@ function LogScreen() {
                               min="0"
                               max="10000"
                               onInput={preventNegativeValues}
-                              placeholder="Number of pages"
+                              placeholder={t('create.pagesPlaceholder')}
                               className={`input input-bordered w-full ${
                                 errors.pages
                                   ? 'input-error'
@@ -1376,14 +1379,14 @@ function LogScreen() {
                           }
                         />
                         <div className="collapse-title font-medium">
-                          Advanced Options
+                          {t('create.advancedOptions')}
                         </div>
                         <div className="collapse-content space-y-4">
                           {isAdvancedOptions && isSeriesType && (
                             <div className="form-control">
                               <label className="label flex flex-col items-start gap-1">
                                 <span className="label-text">
-                                  Episode Duration (minutes)
+                                  {t('create.episodeDuration')}
                                 </span>
                               </label>
                               <input
@@ -1424,7 +1427,7 @@ function LogScreen() {
                             <div className="form-control">
                               <label className="label flex flex-col items-start gap-1">
                                 <span className="label-text">
-                                  Episodes Watched (optional)
+                                  {t('create.episodesWatchedOptional')}
                                 </span>
                               </label>
                               <input
@@ -1446,7 +1449,7 @@ function LogScreen() {
                             <div className="form-control">
                               <label className="label flex flex-col items-start gap-1">
                                 <span className="label-text">
-                                  Time Spent (optional)
+                                  {t('create.timeSpentOptional')}
                                 </span>
                               </label>
                               <div className="flex gap-2">
@@ -1454,7 +1457,7 @@ function LogScreen() {
                                   type="number"
                                   min="0"
                                   className="input input-bordered w-1/2"
-                                  placeholder="Hours"
+                                  placeholder={t('create.hoursPlaceholder')}
                                   value={logData.hours || ''}
                                   onInput={preventNegativeValues}
                                   onChange={(e) =>
@@ -1469,7 +1472,7 @@ function LogScreen() {
                                   min="0"
                                   max="59"
                                   className="input input-bordered w-1/2"
-                                  placeholder="Minutes"
+                                  placeholder={t('create.minutesPlaceholder')}
                                   value={logData.minutes || ''}
                                   onInput={preventNegativeValues}
                                   onChange={(e) =>
@@ -1486,7 +1489,7 @@ function LogScreen() {
                             <div className="form-control">
                               <label className="label flex flex-col items-start gap-1">
                                 <span className="label-text">
-                                  Characters Read (optional)
+                                  {t('create.charsReadOptional')}
                                 </span>
                               </label>
                               <input
@@ -1508,7 +1511,7 @@ function LogScreen() {
                             <div className="form-control">
                               <label className="label flex flex-col items-start gap-1">
                                 <span className="label-text">
-                                  Pages Read (optional)
+                                  {t('create.pagesReadOptional')}
                                 </span>
                               </label>
                               <input
@@ -1545,10 +1548,10 @@ function LogScreen() {
                               />
                               <div className="flex flex-col">
                                 <span className="label-text font-medium">
-                                  Unknown date
+                                  {t('create.unknownDate')}
                                 </span>
                                 <span className="label-text-alt text-base-content/70">
-                                  Excluded from month's ranking
+                                  {t('create.excludedFromRanking')}
                                 </span>
                               </div>
                             </label>
@@ -1556,7 +1559,9 @@ function LogScreen() {
                           {!logData.unknownDate && (
                             <div className="form-control">
                               <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">Date</span>
+                                <span className="label-text">
+                                  {t('create.date')}
+                                </span>
                               </label>
                               <div className="dropdown dropdown-top dropdown-end w-full">
                                 <div
@@ -1623,12 +1628,12 @@ function LogScreen() {
                           <div className="form-control">
                             <label className="label flex flex-col items-start gap-1">
                               <span className="label-text">
-                                Custom Description (Optional)
+                                {t('create.customDescription')}
                               </span>
                             </label>
                             <textarea
                               className="textarea textarea-bordered w-full"
-                              placeholder="Add your own notes about this log"
+                              placeholder={t('create.notesPlaceholder')}
                               onChange={(e) =>
                                 handleInputChange('description', e.target.value)
                               }
@@ -1645,13 +1650,13 @@ function LogScreen() {
                 <div className="lg:col-span-2">
                   <div className="card bg-base-100 shadow-sm sticky top-24">
                     <div className="card-body">
-                      <h2 className="card-title">Preview</h2>
+                      <h2 className="card-title">{t('create.preview')}</h2>
                       <div className="flex flex-col items-center justify-center min-h-[300px] bg-base-200 rounded-lg p-4">
                         {logData.img ? (
                           <div className="w-full text-center">
                             <img
                               src={logData.img}
-                              alt="Selected Media"
+                              alt={t('create.selectedMediaAlt')}
                               className={`max-h-64 mx-auto rounded-lg shadow-lg mb-4 ${
                                 (logData.type === 'vn'
                                   ? (logData.isAdultImage ?? false)
@@ -1714,7 +1719,7 @@ function LogScreen() {
               <div className="card bg-base-100 shadow-sm">
                 <div className="card-body items-center text-center">
                   <h2 className="card-title">3. Ready to log?</h2>
-                  <p>Review your details above and click the button to save.</p>
+                  <p>{t('create.reviewHint')}</p>
                   <div className="card-actions justify-center mt-4">
                     <button
                       className={`btn btn-primary btn-lg w-64 ${!isFormValid ? 'btn-disabled' : ''}`}
@@ -1755,7 +1760,9 @@ function LogScreen() {
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-base-100 border border-base-content/20 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-72">
             <span className="loading loading-spinner loading-sm text-primary" />
             <div className="flex-1">
-              <p className="text-sm font-semibold">Logging playlist videos…</p>
+              <p className="text-sm font-semibold">
+                {t('create.loggingPlaylist')}
+              </p>
               <progress
                 className="progress progress-primary w-full mt-1"
                 value={batchProgress.current}

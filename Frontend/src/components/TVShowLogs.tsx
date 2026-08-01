@@ -9,6 +9,7 @@ import { useUserDataStore } from '../store/userData';
 import { useFilteredGroupedLogs } from '../hooks/useFilteredGroupedLogs.tsx';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
 import DismissLogsButton from './DismissLogsButton';
+import { useTranslation } from 'react-i18next';
 
 interface TVShowLogsProps {
   username?: string;
@@ -16,6 +17,7 @@ interface TVShowLogsProps {
 }
 
 function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
+  const { t } = useTranslation(['logs', 'common']);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedShow, setSelectedShow] = useState<IMediaDocument | undefined>(
     undefined
@@ -116,24 +118,26 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-      toast.success('Video logs converted to TV shows successfully');
+      toast.success(t('video.convertedToTvShows'));
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error('Error assigning media');
+        toast.error(t('matcher.assignError'));
       }
     },
   });
 
   const handleAssignMedia = useCallback(() => {
     if (!selectedShow) {
-      toast.error('You need to select a TV show!');
+      toast.error(
+        t('matcher.selectOne', { type: t('common:mediaTypesPlural.tvShow') })
+      );
       return;
     }
     if (selectedLogs.length === 0) {
-      toast.error('You need to select at least one log!');
+      toast.error(t('matcher.selectAtLeastOneLog'));
       return;
     }
     assignMedia([
@@ -164,7 +168,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
       },
     ]);
     setShouldSearch(false);
-  }, [selectedShow, selectedLogs, assignMedia]);
+  }, [selectedShow, selectedLogs, assignMedia, t]);
 
   if (isLoadingLogs) {
     return (
@@ -175,12 +179,12 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
             <h2 className="card-title justify-center text-2xl mb-2">
-              Loading Media Matcher
+              {t('matcher.loadingTitle')}
             </h2>
             <p className="text-base-content/70 mb-4">
-              Preparing your logs for media matching...
+              {t('matcher.preparing')}
             </p>
-            <div className="divider">Please wait</div>
+            <div className="divider">{t('matcher.pleaseWait')}</div>
             <div className="alert alert-info">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -196,8 +200,10 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
                 ></path>
               </svg>
               <div className="text-sm">
-                <div className="font-semibold">This may take a moment</div>
-                <div>Loading and processing your media logs</div>
+                <div className="font-semibold">
+                  {t('matcher.mayTakeAMoment')}
+                </div>
+                <div>{t('matcher.loadingLogs')}</div>
               </div>
             </div>
           </div>
@@ -216,7 +222,9 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
 
   return (
     <div className="w-full p-4">
-      <h1 className="text-2xl font-bold text-center mb-4">TV Show Logs</h1>
+      <h1 className="text-2xl font-bold text-center mb-4">
+        {t('video.tvShowLogs')}
+      </h1>
 
       <div className="alert alert-info mb-4">
         <svg
@@ -240,11 +248,11 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
 
       <div className="stats shadow mb-4 w-full">
         <div className="stat">
-          <div className="stat-title">Selected Logs</div>
+          <div className="stat-title">{t('matcher.selectedLogs')}</div>
           <div className="stat-value">{selectedLogs.length}</div>
         </div>
         <div className="stat">
-          <div className="stat-title">Available Groups</div>
+          <div className="stat-title">{t('matcher.availableGroups')}</div>
           <div className="stat-value">
             {Object.keys(filteredGroupedLogs).length}
           </div>
@@ -254,7 +262,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card bg-base-200 shadow-lg">
           <div className="card-body p-4">
-            <h2 className="card-title">Video Logs (Unmatched)</h2>
+            <h2 className="card-title">{t('video.unmatchedTitle')}</h2>
             <div className="divider my-1"></div>
 
             {Object.keys(filteredGroupedLogs).length > 0 ? (
@@ -338,7 +346,11 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
 
         <div className="card bg-base-200 shadow-lg">
           <div className="card-body p-4">
-            <h2 className="card-title">Find Matching TV Shows</h2>
+            <h2 className="card-title">
+              {t('matcher.findMatching', {
+                type: t('common:mediaTypesPlural.tvShow'),
+              })}
+            </h2>
             <div className="divider my-1"></div>
 
             <label className="input input-bordered input-primary flex items-center gap-2 mb-4">
@@ -357,7 +369,9 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
               <input
                 type="text"
                 className="grow"
-                placeholder="Search TV shows..."
+                placeholder={t('matcher.searchPlaceholder', {
+                  type: t('common:mediaTypesPlural.tvShow'),
+                })}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -370,7 +384,11 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
               {isSearchingTvShow ? (
                 <div className="flex flex-col items-center justify-center py-8">
                   <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <p className="mt-2">Searching TV shows...</p>
+                  <p className="mt-2">
+                    {t('matcher.searching', {
+                      type: t('common:mediaTypesPlural.tvShow'),
+                    })}
+                  </p>
                 </div>
               ) : tvShowResult && tvShowResult.length > 0 ? (
                 <div className="space-y-2">
@@ -463,7 +481,11 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span>No TV shows found. Try different keywords.</span>
+                  <span>
+                    {t('matcher.noneFound', {
+                      type: t('common:mediaTypesPlural.tvShow'),
+                    })}
+                  </span>
                 </div>
               ) : (
                 <div className="alert alert-info">
@@ -481,7 +503,9 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
                     ></path>
                   </svg>
                   <span>
-                    Select a log group or enter a TV show title to search
+                    {t('matcher.selectGroupOrTitle', {
+                      type: t('common:mediaTypesPlural.tvShow'),
+                    })}
                   </span>
                 </div>
               )}
@@ -493,7 +517,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
         <div className="stats shadow">
           <div className="stat">
-            <div className="stat-title">Selected Logs</div>
+            <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value text-primary">{selectedLogs.length}</div>
           </div>
         </div>
@@ -506,7 +530,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
           {isAssigning ? (
             <>
               <span className="loading loading-spinner"></span>
-              Converting...
+              {t('video.converting')}
             </>
           ) : selectedLogs.some((log) => log.type === 'video') ? (
             'Convert Video Logs to TV Shows'

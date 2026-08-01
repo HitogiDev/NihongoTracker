@@ -54,6 +54,7 @@ import RecentActivity from '../components/club/RecentActivity';
 import UserAvatar from '../components/UserAvatar';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
+import { useTranslation } from 'react-i18next';
 import {
   getMaxClubMemberLimitForUser,
   getClubMemberLimitValidationMessage,
@@ -142,6 +143,7 @@ function serializeClubGoalDraft(goal: ClubGoalDraft): IClubGoal {
 }
 
 function ClubDetailScreen() {
+  const { t } = useTranslation(['clubs', 'common']);
   const badgeText = usePatreonBadgeText();
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
@@ -210,12 +212,12 @@ function ClubDetailScreen() {
 
       // Check if club was disbanded (user was last member)
       if (club?.userRole === 'leader' && club.memberCount === 1) {
-        toast.success('Club has been disbanded');
+        toast.success(t('toast.disbanded'));
         navigate('/clubs');
       } else if (club?.userStatus === 'pending') {
-        toast.success('Join request canceled');
+        toast.success(t('toast.joinCanceled'));
       } else {
-        toast.success('Successfully left the club');
+        toast.success(t('toast.left'));
         navigate('/clubs');
       }
     },
@@ -426,7 +428,7 @@ function ClubDetailScreen() {
       transferLeadershipFn(clubId!, newLeaderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
-      toast.success('Leadership transferred successfully!');
+      toast.success(t('toast.leadershipTransferred'));
       setIsTransferLeadershipModalOpen(false);
       setSelectedNewLeader(null);
     },
@@ -471,7 +473,7 @@ function ClubDetailScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
-      toast.success('Club updated successfully!');
+      toast.success(t('toast.updated'));
       setIsEditClubModalOpen(false);
       setEditFiles({});
       setEditPreviews({});
@@ -564,7 +566,7 @@ function ClubDetailScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
-      toast.success('Club goals updated successfully!');
+      toast.success(t('toast.goalsUpdated'));
       setIsClubGoalsModalOpen(false);
     },
     onError: (error: unknown) => {
@@ -680,13 +682,13 @@ function ClubDetailScreen() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('toast.selectImage'));
       return;
     }
 
     // Validate file size (3MB limit)
     if (file.size > 3 * 1024 * 1024) {
-      toast.error('File must be under 3MB');
+      toast.error(t('toast.fileTooLarge'));
       return;
     }
 
@@ -772,9 +774,17 @@ function ClubDetailScreen() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'leader':
-        return <span className="badge badge-warning badge-xs">Leader</span>;
+        return (
+          <span className="badge badge-warning badge-xs">
+            {t('roles.leader')}
+          </span>
+        );
       case 'moderator':
-        return <span className="badge badge-info badge-xs">Moderator</span>;
+        return (
+          <span className="badge badge-info badge-xs">
+            {t('roles.moderator')}
+          </span>
+        );
       default:
         return null;
     }
@@ -798,13 +808,13 @@ function ClubDetailScreen() {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-error mb-4">
-              Club not found
+              {t('detail.notFound')}
             </h1>
             <button
               className="btn btn-primary"
               onClick={() => navigate('/clubs')}
             >
-              Back to Clubs
+              {t('media.backToClubs')}
             </button>
           </div>
         </div>
@@ -879,7 +889,9 @@ function ClubDetailScreen() {
                         onClick={() => setIsEditClubModalOpen(true)}
                       >
                         <Pencil className="w-4 h-4" />
-                        <span className="hidden sm:inline">Edit</span>
+                        <span className="hidden sm:inline">
+                          {t('common.edit')}
+                        </span>
                       </button>
                     )}
                     <button
@@ -947,7 +959,9 @@ function ClubDetailScreen() {
                     onClick={() => navigate('/login')}
                   >
                     <UserPlus className="text-lg" />
-                    <span className="hidden sm:inline">Login to Join</span>
+                    <span className="hidden sm:inline">
+                      {t('detail.loginToJoin')}
+                    </span>
                   </button>
                 )}
               </div>
@@ -965,21 +979,21 @@ function ClubDetailScreen() {
             onClick={() => setActiveTab('overview')}
           >
             <Info className="mr-2 w-4 h-4" />
-            Overview
+            {t('tabs.overview')}
           </button>
           <button
             className={`tab ${activeTab === 'media' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('media')}
           >
             <Play className="mr-2 w-4 h-4" />
-            Media
+            {t('tabs.media')}
           </button>
           <button
             className={`tab ${activeTab === 'members' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('members')}
           >
             <Users className="mr-2 w-4 h-4" />
-            Members
+            {t('detail.members')}
             {club?.userRole === 'leader' &&
               pendingRequests?.pending &&
               pendingRequests.pending.length > 0 && (
@@ -993,7 +1007,7 @@ function ClubDetailScreen() {
             onClick={() => setActiveTab('rankings')}
           >
             <BarChart className="mr-2 w-4 h-4" />
-            Rankings
+            {t('tabs.rankings')}
           </button>
         </div>
 
@@ -1008,7 +1022,7 @@ function ClubDetailScreen() {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="card-title text-lg flex items-center gap-2">
                       <Vote className="text-xl" />
-                      Media Voting
+                      {t('voting.title')}
                     </h2>
                     {canManageClub && (
                       <div className="flex gap-2">
@@ -1029,7 +1043,7 @@ function ClubDetailScreen() {
                         >
                           <Plus className="w-4 h-4" />
                           <span className="hidden sm:inline">
-                            Create Voting
+                            {t('voting.create')}
                           </span>
                         </button>
                       </div>
@@ -1051,9 +1065,11 @@ function ClubDetailScreen() {
               {club.isUserMember && club.userStatus === 'active' && (
                 <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
-                    <h2 className="card-title text-lg mb-2">Activity Feed</h2>
+                    <h2 className="card-title text-lg mb-2">
+                      {t('detail.activityFeed')}
+                    </h2>
                     <p className="text-sm text-base-content/60 mb-4">
-                      What members are logging and recent club activity.
+                      {t('detail.activityFeedHint')}
                     </p>
                     <RecentActivity clubId={club._id} />
                   </div>
@@ -1075,7 +1091,9 @@ function ClubDetailScreen() {
               {club.description && (
                 <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
-                    <h2 className="card-title text-lg mb-2">About</h2>
+                    <h2 className="card-title text-lg mb-2">
+                      {t('detail.about')}
+                    </h2>
                     <p className="text-base-content/80 whitespace-pre-wrap text-sm">
                       {club.description}
                     </p>
@@ -1087,7 +1105,9 @@ function ClubDetailScreen() {
               {club.rules && (
                 <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
-                    <h2 className="card-title text-lg mb-2">Rules</h2>
+                    <h2 className="card-title text-lg mb-2">
+                      {t('detail.rules')}
+                    </h2>
                     <p className="text-base-content/80 whitespace-pre-wrap text-sm">
                       {club.rules}
                     </p>
@@ -1099,7 +1119,9 @@ function ClubDetailScreen() {
               {club.tags && club.tags.length > 0 && (
                 <div className="card bg-base-100 shadow-sm">
                   <div className="card-body">
-                    <h2 className="card-title text-lg mb-2">Tags</h2>
+                    <h2 className="card-title text-lg mb-2">
+                      {t('common.tags')}
+                    </h2>
                     <div className="flex flex-wrap gap-2">
                       {club.tags.map((tag) => (
                         <span key={tag} className="badge badge-outline">
@@ -1117,7 +1139,9 @@ function ClubDetailScreen() {
         {isHistoryOpen && (
           <dialog open className="modal modal-open">
             <div className="modal-box w-11/12 max-w-4xl">
-              <h3 className="font-bold text-lg mb-4">Past Media</h3>
+              <h3 className="font-bold text-lg mb-4">
+                {t('detail.pastMedia')}
+              </h3>
 
               {isPastLoading ? (
                 <div className="flex justify-center py-8">
@@ -1152,7 +1176,7 @@ function ClubDetailScreen() {
                               className="btn btn-outline btn-sm"
                               onClick={() => setIsHistoryOpen(false)}
                             >
-                              View
+                              {t('common.view')}
                             </Link>
                           )}
                         </div>
@@ -1162,7 +1186,7 @@ function ClubDetailScreen() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-base-content/60">
-                  <p>No past media found</p>
+                  <p>{t('detail.noPastMedia')}</p>
                 </div>
               )}
 
@@ -1173,7 +1197,7 @@ function ClubDetailScreen() {
                     className="btn"
                     onClick={() => setIsHistoryOpen(false)}
                   >
-                    Close
+                    {t('common.close')}
                   </button>
                 </form>
               </div>
@@ -1187,15 +1211,19 @@ function ClubDetailScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="card-title text-lg">Club Media</h2>
+                  <h2 className="card-title text-lg">
+                    {t('activity.clubMedia')}
+                  </h2>
                   <div className="flex items-center gap-2">
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => setIsHistoryOpen(true)}
-                      title="View past media"
+                      title={t('detail.viewPastMedia')}
                     >
                       <Clock className="w-4 h-4" />
-                      <span className="hidden sm:inline ml-1">History</span>
+                      <span className="hidden sm:inline ml-1">
+                        {t('detail.history')}
+                      </span>
                     </button>
 
                     {canManageClub && (
@@ -1204,7 +1232,9 @@ function ClubDetailScreen() {
                         onClick={() => setIsAddMediaModalOpen(true)}
                       >
                         <Plus className="text-lg" />
-                        <span className="hidden sm:inline">Add Media</span>
+                        <span className="hidden sm:inline">
+                          {t('detail.addMedia')}
+                        </span>
                       </button>
                     )}
                   </div>
@@ -1324,7 +1354,7 @@ function ClubDetailScreen() {
                                     )}`}
                                     className="btn btn-outline btn-sm flex-1"
                                   >
-                                    View Details
+                                    {t('common.viewDetails')}
                                   </Link>
                                 )}
 
@@ -1336,7 +1366,7 @@ function ClubDetailScreen() {
                                         setEditingMedia(media);
                                         setIsEditMediaModalOpen(true);
                                       }}
-                                      title="Edit consumption period"
+                                      title={t('detail.editPeriod')}
                                     >
                                       <Pencil className="w-4 h-4" />
                                     </button>
@@ -1353,9 +1383,9 @@ function ClubDetailScreen() {
                                       });
                                       setLogModalOpen(true);
                                     }}
-                                    title="Quick Log"
+                                    title={t('media.quickLog')}
                                   >
-                                    Log
+                                    {t('common.log')}
                                   </button>
                                 </div>
                               </div>
@@ -1367,11 +1397,9 @@ function ClubDetailScreen() {
                 ) : (
                   <div className="text-center py-8 text-base-content/60">
                     <Book className="mx-auto text-4xl mb-2 opacity-50" />
-                    <p>No media added yet</p>
+                    <p>{t('detail.noMedia')}</p>
                     {canManageClub && (
-                      <p className="text-sm mt-1">
-                        Add the first media for your club members to enjoy!
-                      </p>
+                      <p className="text-sm mt-1">{t('detail.noMediaHint')}</p>
                     )}
                   </div>
                 )}
@@ -1393,7 +1421,7 @@ function ClubDetailScreen() {
                   pendingRequests.pending.length > 0 && (
                     <div className="mb-8">
                       <h3 className="font-semibold mb-2 flex items-center gap-2">
-                        Pending Requests
+                        {t('detail.pendingRequests')}
                         <span className="badge badge-warning badge-sm">
                           {pendingRequests.pending.length}
                         </span>
@@ -1566,7 +1594,7 @@ function ClubDetailScreen() {
                                         transferLeadershipMutation.isPending
                                       }
                                     >
-                                      Transfer Leadership
+                                      {t('detail.transferLeadership')}
                                     </button>
                                   )}
                                 {((club?.userRole === 'leader' &&
@@ -1610,7 +1638,7 @@ function ClubDetailScreen() {
         <div className="modal modal-open">
           <div className="modal-box">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">Add New Media</h3>
+              <h3 className="font-bold text-lg">{t('addMedia.title')}</h3>
               <button
                 className="btn btn-ghost btn-sm btn-circle"
                 onClick={handleCloseAddMediaModal}
@@ -1635,7 +1663,7 @@ function ClubDetailScreen() {
               {/* Media Type */}
               <div>
                 <label className="label">
-                  <span className="label-text">Media Type</span>
+                  <span className="label-text">{t('addMedia.mediaType')}</span>
                 </label>
                 <select
                   className="select select-bordered w-full"
@@ -1650,20 +1678,22 @@ function ClubDetailScreen() {
                     setShowResults(false);
                   }}
                 >
-                  <option value="anime">Anime</option>
-                  <option value="manga">Manga</option>
-                  <option value="reading">Reading</option>
-                  <option value="vn">Visual Novel</option>
-                  <option value="game">Video Game</option>
-                  <option value="video">Video</option>
-                  <option value="movie">Movie</option>
+                  <option value="anime">{t('common:mediaTypes.anime')}</option>
+                  <option value="manga">{t('common:mediaTypes.manga')}</option>
+                  <option value="reading">
+                    {t('common:mediaTypes.reading')}
+                  </option>
+                  <option value="vn">{t('common:mediaTypes.vn')}</option>
+                  <option value="game">{t('common:mediaTypes.game')}</option>
+                  <option value="video">{t('common:mediaTypes.video')}</option>
+                  <option value="movie">{t('common:mediaTypes.movie')}</option>
                 </select>
               </div>
 
               {/* Title with Search */}
               <div className="relative">
                 <label className="label">
-                  <span className="label-text">Search for Media</span>
+                  <span className="label-text">{t('suggest.searchLabel')}</span>
                 </label>
                 <div className="relative">
                   <input
@@ -1721,12 +1751,14 @@ function ClubDetailScreen() {
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Title *</span>
+                    <span className="label-text">
+                      {t('common.titleRequired')}
+                    </span>
                   </label>
                   <input
                     type="text"
                     className="input input-bordered w-full"
-                    placeholder="Enter title manually"
+                    placeholder={t('addMedia.titlePlaceholder')}
                     value={mediaForm.title}
                     onChange={(e) =>
                       setMediaForm({ ...mediaForm, title: e.target.value })
@@ -1739,12 +1771,12 @@ function ClubDetailScreen() {
               {/* Media ID (optional for external links) */}
               <div>
                 <label className="label">
-                  <span className="label-text">Media ID (optional)</span>
+                  <span className="label-text">{t('addMedia.mediaId')}</span>
                 </label>
                 <input
                   type="text"
                   className="input input-bordered w-full"
-                  placeholder="AniList ID, MAL ID, etc."
+                  placeholder={t('addMedia.mediaIdPlaceholder')}
                   value={mediaForm.mediaId}
                   onChange={(e) =>
                     setMediaForm({ ...mediaForm, mediaId: e.target.value })
@@ -1755,11 +1787,11 @@ function ClubDetailScreen() {
               {/* Description */}
               <div>
                 <label className="label">
-                  <span className="label-text">Description</span>
+                  <span className="label-text">{t('common.description')}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full"
-                  placeholder="Optional description or notes"
+                  placeholder={t('addMedia.descriptionPlaceholder')}
                   value={mediaForm.description}
                   onChange={(e) =>
                     setMediaForm({ ...mediaForm, description: e.target.value })
@@ -1771,7 +1803,9 @@ function ClubDetailScreen() {
               {/* Start Date */}
               <div>
                 <label className="label">
-                  <span className="label-text">Start Date *</span>
+                  <span className="label-text">
+                    {t('addMedia.startRequired')}
+                  </span>
                 </label>
                 <input
                   type="date"
@@ -1787,7 +1821,9 @@ function ClubDetailScreen() {
               {/* End Date */}
               <div>
                 <label className="label">
-                  <span className="label-text">End Date *</span>
+                  <span className="label-text">
+                    {t('addMedia.endRequired')}
+                  </span>
                 </label>
                 <input
                   type="date"
@@ -1807,7 +1843,7 @@ function ClubDetailScreen() {
                   className="btn btn-ghost"
                   onClick={handleCloseAddMediaModal}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -1867,7 +1903,7 @@ function ClubDetailScreen() {
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">Edit Club</h3>
+              <h3 className="font-bold text-lg">{t('edit.title')}</h3>
               <button
                 className="btn btn-ghost btn-sm btn-circle"
                 onClick={handleCloseEditModal}
@@ -1922,7 +1958,7 @@ function ClubDetailScreen() {
               {/* Club Name */}
               <div>
                 <label className="label">
-                  <span className="label-text">Club Name *</span>
+                  <span className="label-text">{t('edit.nameRequired')}</span>
                 </label>
                 <input
                   type="text"
@@ -1939,7 +1975,7 @@ function ClubDetailScreen() {
               {/* Avatar Upload */}
               <div>
                 <label className="label">
-                  <span className="label-text">Club Avatar</span>
+                  <span className="label-text">{t('edit.avatar')}</span>
                 </label>
 
                 {/* Current/Preview Avatar - Centered */}
@@ -1949,13 +1985,13 @@ function ClubDetailScreen() {
                       {editPreviews.avatar ? (
                         <img
                           src={editPreviews.avatar}
-                          alt="New avatar preview"
+                          alt={t('edit.newAvatarAlt')}
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : club?.avatar ? (
                         <img
                           src={club.avatar}
-                          alt="Current avatar"
+                          alt={t('edit.currentAvatarAlt')}
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : (
@@ -1987,14 +2023,14 @@ function ClubDetailScreen() {
                       className="btn btn-ghost btn-xs text-error"
                       onClick={() => handleEditFileRemove('avatar')}
                     >
-                      Remove Avatar
+                      {t('edit.removeAvatar')}
                     </button>
                   )}
                 </div>
 
                 <div className="label">
                   <span className="label-text-alt text-center block">
-                    Recommended: Square image, max 3MB
+                    {t('edit.avatarHint')}
                   </span>
                 </div>
               </div>
@@ -2002,7 +2038,7 @@ function ClubDetailScreen() {
               {/* Banner Upload */}
               <div>
                 <label className="label">
-                  <span className="label-text">Club Banner</span>
+                  <span className="label-text">{t('create.banner')}</span>
                 </label>
 
                 {/* Current/Preview Banner */}
@@ -2011,19 +2047,19 @@ function ClubDetailScreen() {
                     {editPreviews.banner ? (
                       <img
                         src={editPreviews.banner}
-                        alt="New banner preview"
+                        alt={t('edit.newBannerAlt')}
                         className="w-full h-full object-cover"
                       />
                     ) : club?.banner ? (
                       <img
                         src={club.banner}
-                        alt="Current banner"
+                        alt={t('edit.currentBannerAlt')}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="text-center text-base-content/50">
                         <div className="text-3xl mb-2">🖼️</div>
-                        <div className="text-sm">No banner uploaded</div>
+                        <div className="text-sm">{t('edit.noBanner')}</div>
                       </div>
                     )}
                   </div>
@@ -2049,14 +2085,14 @@ function ClubDetailScreen() {
                       className="btn btn-ghost btn-xs text-error"
                       onClick={() => handleEditFileRemove('banner')}
                     >
-                      Remove Banner
+                      {t('edit.removeBanner')}
                     </button>
                   )}
                 </div>
 
                 <div className="label">
                   <span className="label-text-alt text-center block">
-                    Recommended: 16:9 aspect ratio, max 3MB
+                    {t('edit.bannerHint')}
                   </span>
                 </div>
               </div>
@@ -2064,7 +2100,7 @@ function ClubDetailScreen() {
               {/* Description */}
               <div>
                 <label className="label">
-                  <span className="label-text">Description</span>
+                  <span className="label-text">{t('common.description')}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full"
@@ -2080,7 +2116,7 @@ function ClubDetailScreen() {
               {/* Privacy */}
               <div>
                 <label className="label">
-                  <span className="label-text">Privacy</span>
+                  <span className="label-text">{t('create.privacy')}</span>
                 </label>
                 <div className="flex gap-4">
                   <label className="label cursor-pointer">
@@ -2093,7 +2129,9 @@ function ClubDetailScreen() {
                         setEditForm({ ...editForm, isPublic: true })
                       }
                     />
-                    <span className="label-text ml-2">Public</span>
+                    <span className="label-text ml-2">
+                      {t('create.public')}
+                    </span>
                   </label>
                   <label className="label cursor-pointer">
                     <input
@@ -2105,7 +2143,9 @@ function ClubDetailScreen() {
                         setEditForm({ ...editForm, isPublic: false })
                       }
                     />
-                    <span className="label-text ml-2">Private</span>
+                    <span className="label-text ml-2">
+                      {t('create.private')}
+                    </span>
                   </label>
                 </div>
               </div>
@@ -2113,7 +2153,7 @@ function ClubDetailScreen() {
               {/* Member Limit */}
               <div>
                 <label className="label">
-                  <span className="label-text">Member Limit</span>
+                  <span className="label-text">{t('create.memberLimit')}</span>
                 </label>
                 <input
                   type="number"
@@ -2136,9 +2176,9 @@ function ClubDetailScreen() {
                     Current tier max: {maxAllowedMemberLimit} members
                   </p>
                   <p className="text-xs text-base-content/70">
-                    Need more members?{' '}
+                    {t('create.needMoreMembers')}{' '}
                     <Link to="/support" className="link link-primary">
-                      Donate
+                      {t('create.donate')}
                     </Link>{' '}
                     to unlock higher club limits and more perks.
                   </p>
@@ -2148,7 +2188,7 @@ function ClubDetailScreen() {
               {/* Rules */}
               <div>
                 <label className="label">
-                  <span className="label-text">Rules</span>
+                  <span className="label-text">{t('detail.rules')}</span>
                 </label>
                 <textarea
                   className="textarea textarea-bordered w-full"
@@ -2164,12 +2204,12 @@ function ClubDetailScreen() {
               {/* Tags */}
               <div>
                 <label className="label">
-                  <span className="label-text">Tags</span>
+                  <span className="label-text">{t('common.tags')}</span>
                 </label>
                 <input
                   type="text"
                   className="input input-bordered w-full"
-                  placeholder="Enter tags separated by commas"
+                  placeholder={t('edit.tagsPlaceholder')}
                   value={editForm.tags.join(', ')}
                   onChange={(e) => {
                     const tags = e.target.value
@@ -2180,10 +2220,7 @@ function ClubDetailScreen() {
                   }}
                 />
                 <div className="label">
-                  <span className="label-text-alt">
-                    Separate tags with commas (e.g., beginner, anime,
-                    study-group)
-                  </span>
+                  <span className="label-text-alt">{t('edit.tagsHint')}</span>
                 </div>
               </div>
 
@@ -2194,7 +2231,7 @@ function ClubDetailScreen() {
                   className="btn btn-ghost"
                   onClick={handleCloseEditModal}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -2217,10 +2254,9 @@ function ClubDetailScreen() {
           <div className="modal-box max-w-3xl">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <h3 className="font-bold text-lg">Club Goals</h3>
+                <h3 className="font-bold text-lg">{t('goals.title')}</h3>
                 <p className="text-sm text-base-content/60">
-                  Create shared goals that reset by period, use a custom date
-                  range, or stay active indefinitely.
+                  {t('goals.editorHint')}
                 </p>
               </div>
               <button
@@ -2243,7 +2279,7 @@ function ClubDetailScreen() {
                 onClick={addClubGoalDraft}
               >
                 <Plus className="w-4 h-4" />
-                Add Goal
+                {t('goals.add')}
               </button>
             </div>
 
@@ -2258,10 +2294,10 @@ function ClubDetailScreen() {
                   </div>
                   <div className="space-y-1 max-w-sm">
                     <p className="text-xl font-semibold text-base-content">
-                      Add a club goal
+                      {t('goals.addTitle')}
                     </p>
                     <p className="text-sm text-base-content/70">
-                      Club goals can make club members be more consistent.
+                      {t('goals.addBody')}
                     </p>
                   </div>
                 </div>
@@ -2283,14 +2319,14 @@ function ClubDetailScreen() {
                         onClick={() => removeClubGoalDraft(index)}
                       >
                         <X className="w-4 h-4" />
-                        Remove
+                        {t('common.remove')}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="label">
-                          <span className="label-text">Type</span>
+                          <span className="label-text">{t('goals.type')}</span>
                         </label>
                         <select
                           className="select select-bordered w-full"
@@ -2331,10 +2367,12 @@ function ClubDetailScreen() {
                             );
                           }}
                         >
-                          <option value="time">Time</option>
-                          <option value="chars">Characters</option>
-                          <option value="episodes">Episodes</option>
-                          <option value="pages">Pages</option>
+                          <option value="time">{t('goals.time')}</option>
+                          <option value="chars">{t('goals.characters')}</option>
+                          <option value="episodes">
+                            {t('goals.episodes')}
+                          </option>
+                          <option value="pages">{t('goals.pages')}</option>
                         </select>
                       </div>
 
@@ -2342,7 +2380,9 @@ function ClubDetailScreen() {
                         <div className="grid grid-cols-2 gap-3 md:col-span-1">
                           <div>
                             <label className="label">
-                              <span className="label-text">Hours</span>
+                              <span className="label-text">
+                                {t('goals.hours')}
+                              </span>
                             </label>
                             <input
                               type="number"
@@ -2360,7 +2400,9 @@ function ClubDetailScreen() {
                           </div>
                           <div>
                             <label className="label">
-                              <span className="label-text">Minutes</span>
+                              <span className="label-text">
+                                {t('goals.minutes')}
+                              </span>
                             </label>
                             <input
                               type="number"
@@ -2387,7 +2429,9 @@ function ClubDetailScreen() {
                       ) : (
                         <div>
                           <label className="label">
-                            <span className="label-text">Target</span>
+                            <span className="label-text">
+                              {t('goals.target')}
+                            </span>
                           </label>
                           <input
                             type="number"
@@ -2407,7 +2451,9 @@ function ClubDetailScreen() {
 
                       <div>
                         <label className="label">
-                          <span className="label-text">Period</span>
+                          <span className="label-text">
+                            {t('media.period')}
+                          </span>
                         </label>
                         <select
                           className="select select-bordered w-full"
@@ -2449,16 +2495,20 @@ function ClubDetailScreen() {
                             )
                           }
                         >
-                          <option value="weekly">Weekly</option>
-                          <option value="monthly">Monthly</option>
-                          <option value="custom">Custom</option>
-                          <option value="indefinite">Indefinite</option>
+                          <option value="weekly">{t('goals.weekly')}</option>
+                          <option value="monthly">{t('goals.monthly')}</option>
+                          <option value="custom">{t('goals.custom')}</option>
+                          <option value="indefinite">
+                            {t('goals.indefinite')}
+                          </option>
                         </select>
                       </div>
 
                       <div className="flex items-end">
                         <label className="label cursor-pointer gap-3 justify-start w-full">
-                          <span className="label-text">Active</span>
+                          <span className="label-text">
+                            {t('goals.active')}
+                          </span>
                           <input
                             type="checkbox"
                             className="toggle toggle-primary"
@@ -2478,7 +2528,9 @@ function ClubDetailScreen() {
                         <>
                           <div>
                             <label className="label">
-                              <span className="label-text">Start Date</span>
+                              <span className="label-text">
+                                {t('goals.startDate')}
+                              </span>
                             </label>
                             <input
                               type="date"
@@ -2496,7 +2548,9 @@ function ClubDetailScreen() {
 
                           <div>
                             <label className="label">
-                              <span className="label-text">End Date</span>
+                              <span className="label-text">
+                                {t('goals.endDate')}
+                              </span>
                             </label>
                             <input
                               type="date"
@@ -2533,7 +2587,7 @@ function ClubDetailScreen() {
                 className="btn btn-ghost"
                 onClick={() => setIsClubGoalsModalOpen(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -2565,18 +2619,17 @@ function ClubDetailScreen() {
       {isDisbandConfirmModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg text-warning">Disband Club</h3>
-            <p className="py-4">
-              This will permanently disband the club and remove all data. This
-              action cannot be undone.
-            </p>
+            <h3 className="font-bold text-lg text-warning">
+              {t('detail.disband')}
+            </h3>
+            <p className="py-4">{t('detail.disbandConfirm')}</p>
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
                 onClick={() => setIsDisbandConfirmModalOpen(false)}
                 disabled={leaveMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-warning"
@@ -2597,18 +2650,15 @@ function ClubDetailScreen() {
       {isLeaveConfirmModalOpen && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Leave Club</h3>
-            <p className="py-4">
-              Are you sure you want to leave this club? You will need to request
-              to join again if the club is private.
-            </p>
+            <h3 className="font-bold text-lg">{t('detail.leave')}</h3>
+            <p className="py-4">{t('detail.leaveConfirm')}</p>
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
                 onClick={() => setIsLeaveConfirmModalOpen(false)}
                 disabled={leaveMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error"
@@ -2630,7 +2680,7 @@ function ClubDetailScreen() {
         <div className="modal modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg text-warning">
-              Transfer Leadership
+              {t('detail.transferLeadership')}
             </h3>
             <p className="py-4">
               Are you sure you want to transfer club leadership to{' '}
@@ -2642,13 +2692,8 @@ function ClubDetailScreen() {
             <div className="alert alert-warning mb-4">
               <Info className="text-lg" />
               <div className="text-sm">
-                <div className="font-semibold">
-                  This action cannot be undone!
-                </div>
-                <div>
-                  You will become a regular member and lose all leadership
-                  privileges.
-                </div>
+                <div className="font-semibold">{t('detail.irreversible')}</div>
+                <div>{t('detail.transferConfirm')}</div>
               </div>
             </div>
             <div className="modal-action">
@@ -2660,7 +2705,7 @@ function ClubDetailScreen() {
                 }}
                 disabled={transferLeadershipMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-warning"
@@ -2682,7 +2727,9 @@ function ClubDetailScreen() {
       {kickTarget && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg text-error">Remove Member</h3>
+            <h3 className="font-bold text-lg text-error">
+              {t('detail.removeMember')}
+            </h3>
             <p className="py-4">
               Remove{' '}
               <span className="font-semibold">{kickTarget.username}</span> from
@@ -2694,7 +2741,7 @@ function ClubDetailScreen() {
                 onClick={() => setKickTarget(null)}
                 disabled={kickMemberMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error"

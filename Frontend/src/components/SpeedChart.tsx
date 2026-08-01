@@ -4,6 +4,8 @@ import { ILog } from '../types';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
 import LineChart from './LineChart';
+import { getLocale } from '../utils/timezone';
+import { useTranslation } from 'react-i18next';
 
 type TimeframeType = 'total' | 'today' | 'week' | 'month' | 'year';
 type ReadingType = 'reading' | 'vn' | 'game' | 'manga';
@@ -57,6 +59,7 @@ function SpeedChart({
   readingData,
   readingSpeedData,
 }: SpeedChartProps) {
+  const { t } = useTranslation('stats');
   // Use state to manage the timeframe
   const [timeframe, setTimeframe] = useState<TimeframeType>('total');
   const [filteredData, setFilteredData] = useState<FilteredData>({});
@@ -81,6 +84,7 @@ function SpeedChart({
       return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
     };
 
+    // 'en-CA' is intentional: it yields ISO-ordered, Latin-digit parts that are reassembled into a YYYY-MM-DD key below. NOT user-facing — do not localize.
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone,
       year: 'numeric',
@@ -264,7 +268,7 @@ function SpeedChart({
       return sortedDates.map((dateStr) => {
         const [year, month] = dateStr.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1);
-        return new Intl.DateTimeFormat('en-US', {
+        return new Intl.DateTimeFormat(getLocale(), {
           year: 'numeric',
           month: 'short',
         }).format(date);
@@ -350,7 +354,7 @@ function SpeedChart({
                 const [year, month] = item.date.split('-');
                 const itemDate = new Date(parseInt(year), parseInt(month) - 1);
                 return (
-                  new Intl.DateTimeFormat('en-US', {
+                  new Intl.DateTimeFormat(getLocale(), {
                     year: 'numeric',
                     month: 'short',
                   }).format(itemDate) === monthYear
@@ -468,7 +472,7 @@ function SpeedChart({
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             ></path>
           </svg>
-          <span>No data available for the selected timeframe.</span>
+          <span>{t('speed.empty')}</span>
         </div>
       )}
     </div>

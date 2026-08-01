@@ -19,16 +19,17 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Info, NotebookPen, Pencil, PencilLine, Plus, Save, X } from 'lucide-react';
 import {
-  updateFavoritesFn,
-  IFavoriteInput,
-} from '../api/trackerApi';
-import {
-  IFavoriteEntry,
-  MediaListMediaType,
-  SearchResultType,
-} from '../types';
+  Info,
+  NotebookPen,
+  Pencil,
+  PencilLine,
+  Plus,
+  Save,
+  X,
+} from 'lucide-react';
+import { updateFavoritesFn, IFavoriteInput } from '../api/trackerApi';
+import { IFavoriteEntry, MediaListMediaType, SearchResultType } from '../types';
 import FavoritePickerModal from './FavoritePickerModal';
 
 const MAX_FAVORITES = 50;
@@ -172,7 +173,10 @@ function FavoritePopover({
     const close = () => onClose();
     const onPointerDown = (e: PointerEvent) => {
       const el = e.target as HTMLElement;
-      if (!el.closest('[data-fav-popover]') && !el.closest('button[aria-label^="View"]'))
+      if (
+        !el.closest('[data-fav-popover]') &&
+        !el.closest('button[aria-label^="View"]')
+      )
         onClose();
     };
     window.addEventListener('scroll', close, true);
@@ -191,7 +195,8 @@ function FavoritePopover({
 
   const WIDTH = 224;
   const MARGIN = 8;
-  const vw = typeof window !== 'undefined' ? window.innerWidth : WIDTH + MARGIN * 2;
+  const vw =
+    typeof window !== 'undefined' ? window.innerWidth : WIDTH + MARGIN * 2;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
   // Prefer the right side of the cover; flip to the left when it would overflow.
@@ -212,7 +217,9 @@ function FavoritePopover({
   return (
     <div data-fav-popover className="fixed z-50" style={style}>
       <div className="rounded-lg border border-base-300 bg-base-100 p-3 shadow-xl text-left">
-        <p className="font-semibold text-sm leading-tight">{mediaTitle(media)}</p>
+        <p className="font-semibold text-sm leading-tight">
+          {mediaTitle(media)}
+        </p>
         {media?.title.contentTitleEnglish &&
           media.title.contentTitleEnglish !== mediaTitle(media) && (
             <p className="text-xs text-base-content/60 mt-0.5">
@@ -253,8 +260,14 @@ function SortableFavorite({
   onEditNote: () => void;
 }) {
   const id = favoriteKey(fav);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -486,8 +499,7 @@ function FavoriteMedia({
   if (!isOwner && favorites.length === 0) return null;
 
   const draftKeys = new Set(draft.map((f) => favoriteKey(f)));
-  const noteEditFav =
-    draft.find((f) => favoriteKey(f) === noteEditKey) ?? null;
+  const noteEditFav = draft.find((f) => favoriteKey(f) === noteEditKey) ?? null;
 
   return (
     <div className="card w-full bg-base-100 shadow-sm overflow-visible">
@@ -543,7 +555,9 @@ function FavoriteMedia({
                       blurAdult={blurAdult}
                       onRemove={() =>
                         setDraft((prev) =>
-                          prev.filter((f) => favoriteKey(f) !== favoriteKey(fav))
+                          prev.filter(
+                            (f) => favoriteKey(f) !== favoriteKey(fav)
+                          )
                         )
                       }
                       onEditNote={() => setNoteEditKey(favoriteKey(fav))}
@@ -564,8 +578,8 @@ function FavoriteMedia({
               </SortableContext>
             </DndContext>
             <p className="text-xs text-base-content/50 mt-2">
-              {draft.length}/{MAX_FAVORITES} · drag to reorder, tap the note icon
-              to add a note.
+              {draft.length}/{MAX_FAVORITES} · drag to reorder, tap the note
+              icon to add a note.
             </p>
           </>
         ) : favorites.length === 0 ? (

@@ -40,7 +40,14 @@ import ClubRanking from './club/ClubRanking';
 import QuickLog from './QuickLog';
 import UserAvatar from './UserAvatar';
 import AchievementFeedItem from './achievements/AchievementFeedItem';
-import { IMediaDocument, ILog, ILoginResponse, IPendingAchievement, UnifiedFeedItem, UnifiedFeedFilter } from '../types';
+import {
+  IMediaDocument,
+  ILog,
+  ILoginResponse,
+  IPendingAchievement,
+  UnifiedFeedItem,
+  UnifiedFeedFilter,
+} from '../types';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
   reading: Book,
@@ -63,7 +70,11 @@ type GlobalFeedGroup = {
   isPlaylistGroup: boolean;
 };
 
-const feedKindOptions: Array<{ label: string; value: UnifiedFeedFilter; icon: React.ElementType }> = [
+const feedKindOptions: Array<{
+  label: string;
+  value: UnifiedFeedFilter;
+  icon: React.ElementType;
+}> = [
   { label: 'All activity', value: 'all', icon: Sparkles },
   { label: 'Logs', value: 'logs', icon: LayoutList },
   { label: 'Achievements', value: 'achievements', icon: Trophy },
@@ -133,7 +144,6 @@ function Dashboard() {
     title: string;
   } | null>(null);
 
-
   const queryClient = useQueryClient();
 
   const hideMediaMutation = useMutation({
@@ -188,11 +198,13 @@ function Dashboard() {
     staleTime: 1000 * 60 * 2,
   });
 
-  const { data: achievementFeed, isLoading: achievementFeedLoading } = useQuery({
-    queryKey: ['achievementFeed', feedFilters.timeRange],
-    queryFn: () => getAchievementFeedFn(20),
-    staleTime: 60_000,
-  });
+  const { data: achievementFeed, isLoading: achievementFeedLoading } = useQuery(
+    {
+      queryKey: ['achievementFeed', feedFilters.timeRange],
+      queryFn: () => getAchievementFeedFn(20),
+      staleTime: 60_000,
+    }
+  );
 
   // Build unified chronological feed (logs + achievements)
   const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
@@ -205,10 +217,10 @@ function Dashboard() {
     // Filter achievements by timeRange
     const now = Date.now();
     const rangeMs: Record<string, number> = {
-      day:   1 * 24 * 60 * 60 * 1000,
-      week:  7 * 24 * 60 * 60 * 1000,
+      day: 1 * 24 * 60 * 60 * 1000,
+      week: 7 * 24 * 60 * 60 * 1000,
       month: 30 * 24 * 60 * 60 * 1000,
-      year:  365 * 24 * 60 * 60 * 1000,
+      year: 365 * 24 * 60 * 60 * 1000,
     };
     const achievementItems: UnifiedFeedItem[] = (achievementFeed ?? [])
       .filter((a) => {
@@ -235,13 +247,21 @@ function Dashboard() {
     const order: string[] = [];
     for (const log of feedLogs) {
       const key = log.playlistBatchId?.trim() || `single:${log._id}`;
-      if (!grouped.has(key)) { grouped.set(key, []); order.push(key); }
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+        order.push(key);
+      }
       grouped.get(key)!.push(log);
     }
     return order.map((key) => {
       const logs = grouped.get(key) ?? [];
       const representative = logs[0];
-      return { key, logs, representative, isPlaylistGroup: Boolean(representative?.playlistBatchId) };
+      return {
+        key,
+        logs,
+        representative,
+        isPlaylistGroup: Boolean(representative?.playlistBatchId),
+      };
     });
   }, [globalFeed]);
 
@@ -618,7 +638,9 @@ function Dashboard() {
                       className="btn btn-sm btn-outline gap-2 justify-start"
                     >
                       {(() => {
-                        const Icon = feedKindOptions.find((o) => o.value === feedKind)?.icon;
+                        const Icon = feedKindOptions.find(
+                          (o) => o.value === feedKind
+                        )?.icon;
                         return Icon ? <Icon className="w-3.5 h-3.5" /> : null;
                       })()}
                       {feedKindOptions.find((o) => o.value === feedKind)?.label}
@@ -633,7 +655,9 @@ function Dashboard() {
                         return (
                           <li key={option.value}>
                             <a
-                              className={feedKind === option.value ? 'active' : ''}
+                              className={
+                                feedKind === option.value ? 'active' : ''
+                              }
                               onClick={() => setFeedKind(option.value)}
                             >
                               <Icon className="w-4 h-4" />
@@ -654,7 +678,11 @@ function Dashboard() {
                         className="btn btn-sm btn-outline gap-2"
                       >
                         <Funnel className="w-3.5 h-3.5" />
-                        {feedTypeOptions.find((o) => o.value === feedFilters.type)?.label}
+                        {
+                          feedTypeOptions.find(
+                            (o) => o.value === feedFilters.type
+                          )?.label
+                        }
                         <ChevronDown className="w-3.5 h-3.5" />
                       </div>
                       <ul
@@ -665,7 +693,9 @@ function Dashboard() {
                           <li key={option.value}>
                             <a
                               className={
-                                feedFilters.type === option.value ? 'active' : ''
+                                feedFilters.type === option.value
+                                  ? 'active'
+                                  : ''
                               }
                               onClick={() =>
                                 setFeedFilters((prev) => ({
@@ -690,7 +720,11 @@ function Dashboard() {
                       className="btn btn-sm btn-outline gap-2"
                     >
                       <Clock className="w-3.5 h-3.5" />
-                      {feedTimeOptions.find((o) => o.value === feedFilters.timeRange)?.label}
+                      {
+                        feedTimeOptions.find(
+                          (o) => o.value === feedFilters.timeRange
+                        )?.label
+                      }
                       <ChevronDown className="w-3.5 h-3.5" />
                     </div>
                     <ul
@@ -701,7 +735,9 @@ function Dashboard() {
                         <li key={option.value}>
                           <a
                             className={
-                              feedFilters.timeRange === option.value ? 'active' : ''
+                              feedFilters.timeRange === option.value
+                                ? 'active'
+                                : ''
                             }
                             onClick={() =>
                               setFeedFilters((prev) => ({
@@ -721,172 +757,202 @@ function Dashboard() {
 
               {/* Feed items */}
               <div className="space-y-3">
-                {(globalFeedLoading || achievementFeedLoading) ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="skeleton h-16 w-full rounded-2xl" />
-                  ))
-                ) : (() => {
-                  const items = unifiedFeed.filter((item) => {
-                    if (feedKind === 'logs') return item.kind === 'log';
-                    if (feedKind === 'achievements') return item.kind === 'achievement';
-                    return true;
-                  });
-
-                  if (items.length === 0) {
-                    return (
-                      <div className="text-base-content/70 text-sm">
-                        No activity for the selected filters.
-                      </div>
-                    );
-                  }
-
-                  return items.map((item) => {
-                    if (item.kind === 'achievement') {
-                      return (
-                        <AchievementFeedItem
-                          key={`ach-${item.data.userAchievementId}`}
-                          item={item.data as IPendingAchievement}
-                          showUser
-                          relativeDate={formatRelativeDate(item.data.unlockedAt)}
-                        />
-                      );
-                    }
-
-                    // Log item — find its group
-                    const log = item.data;
-                    const groupKey = log.playlistBatchId?.trim() || `single:${log._id}`;
-                    const entry = groupedGlobalFeed.find((g) => g.key === groupKey);
-                    if (!entry) return null;
-
-                    // Skip if not the representative (avoid duplicates from grouped playlists)
-                    if (entry.representative._id !== log._id) return null;
-
-                    const Icon = logTypeIcons[log.type] || Book;
-                    const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
-                    const image = log.media?.contentImage || mediaCover;
-                    const feedUsername = log.user?.username ?? 'Someone';
-                    const userAvatar = log.user?.avatar;
-                    const mediaType = (log.media as IMediaDocument | undefined)?.type ?? log.type;
-                    const mediaContentId = log.media?.contentId;
-                    const mediaDoc = log.media as IMediaDocument | undefined;
-                    const shouldBlurAdult = user?.settings?.blurAdultContent ?? true;
-                    const feedIsAdultImage = mediaDoc?.isAdultImage ?? false;
-                    const blurAdult = shouldBlurAdult && feedIsAdultImage;
-                    const mediaLink =
-                      !entry.isPlaylistGroup && mediaType && mediaContentId
-                        ? `/${mediaType}/${mediaContentId}`
-                        : undefined;
-                    const playlistTitle = log.playlistBatchTitle ?? 'Playlist batch';
-                    const playlistXp = entry.logs.reduce(
-                      (sum, playlistLog) => sum + playlistLog.xp,
-                      0
-                    );
-
-                    return (
+                {globalFeedLoading || achievementFeedLoading
+                  ? Array.from({ length: 5 }).map((_, index) => (
                       <div
-                        key={entry.key}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
-                      >
-                        {log.user?.username ? (
-                          <Link
-                            to={`/user/${log.user.username}`}
-                            className="shrink-0"
-                            aria-label={`View ${log.user.username}'s profile`}
-                          >
-                            <div className="avatar">
-                              <UserAvatar
-                                username={feedUsername}
-                                avatar={userAvatar}
-                                containerClassName="w-12 rounded-full border border-base-300 overflow-hidden"
-                                imageClassName="w-full h-full object-cover"
-                                fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
-                                textClassName="text-sm font-semibold"
-                              />
-                            </div>
-                          </Link>
-                        ) : (
-                          <div className="avatar">
-                            <UserAvatar
-                              username={feedUsername}
-                              avatar={userAvatar}
-                              containerClassName="w-12 rounded-full border border-base-300"
-                              imageClassName="w-full h-full rounded-full object-cover"
-                              fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
-                              textClassName="text-sm font-semibold"
-                            />
+                        key={index}
+                        className="skeleton h-16 w-full rounded-2xl"
+                      />
+                    ))
+                  : (() => {
+                      const items = unifiedFeed.filter((item) => {
+                        if (feedKind === 'logs') return item.kind === 'log';
+                        if (feedKind === 'achievements')
+                          return item.kind === 'achievement';
+                        return true;
+                      });
+
+                      if (items.length === 0) {
+                        return (
+                          <div className="text-base-content/70 text-sm">
+                            No activity for the selected filters.
                           </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                        );
+                      }
+
+                      return items.map((item) => {
+                        if (item.kind === 'achievement') {
+                          return (
+                            <AchievementFeedItem
+                              key={`ach-${item.data.userAchievementId}`}
+                              item={item.data as IPendingAchievement}
+                              showUser
+                              relativeDate={formatRelativeDate(
+                                item.data.unlockedAt
+                              )}
+                            />
+                          );
+                        }
+
+                        // Log item — find its group
+                        const log = item.data;
+                        const groupKey =
+                          log.playlistBatchId?.trim() || `single:${log._id}`;
+                        const entry = groupedGlobalFeed.find(
+                          (g) => g.key === groupKey
+                        );
+                        if (!entry) return null;
+
+                        // Skip if not the representative (avoid duplicates from grouped playlists)
+                        if (entry.representative._id !== log._id) return null;
+
+                        const Icon = logTypeIcons[log.type] || Book;
+                        const mediaCover = (
+                          log.media as IMediaDocument | undefined
+                        )?.coverImage;
+                        const image = log.media?.contentImage || mediaCover;
+                        const feedUsername = log.user?.username ?? 'Someone';
+                        const userAvatar = log.user?.avatar;
+                        const mediaType =
+                          (log.media as IMediaDocument | undefined)?.type ??
+                          log.type;
+                        const mediaContentId = log.media?.contentId;
+                        const mediaDoc = log.media as
+                          | IMediaDocument
+                          | undefined;
+                        const shouldBlurAdult =
+                          user?.settings?.blurAdultContent ?? true;
+                        const feedIsAdultImage =
+                          mediaDoc?.isAdultImage ?? false;
+                        const blurAdult = shouldBlurAdult && feedIsAdultImage;
+                        const mediaLink =
+                          !entry.isPlaylistGroup && mediaType && mediaContentId
+                            ? `/${mediaType}/${mediaContentId}`
+                            : undefined;
+                        const playlistTitle =
+                          log.playlistBatchTitle ?? 'Playlist batch';
+                        const playlistXp = entry.logs.reduce(
+                          (sum, playlistLog) => sum + playlistLog.xp,
+                          0
+                        );
+
+                        return (
+                          <div
+                            key={entry.key}
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
+                          >
                             {log.user?.username ? (
                               <Link
                                 to={`/user/${log.user.username}`}
-                                className="font-semibold hover:underline"
+                                className="shrink-0"
+                                aria-label={`View ${log.user.username}'s profile`}
                               >
-                                {log.user.username}
+                                <div className="avatar">
+                                  <UserAvatar
+                                    username={feedUsername}
+                                    avatar={userAvatar}
+                                    containerClassName="w-12 rounded-full border border-base-300 overflow-hidden"
+                                    imageClassName="w-full h-full object-cover"
+                                    fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
+                                    textClassName="text-sm font-semibold"
+                                  />
+                                </div>
                               </Link>
                             ) : (
-                              <span className="font-semibold">{feedUsername}</span>
+                              <div className="avatar">
+                                <UserAvatar
+                                  username={feedUsername}
+                                  avatar={userAvatar}
+                                  containerClassName="w-12 rounded-full border border-base-300"
+                                  imageClassName="w-full h-full rounded-full object-cover"
+                                  fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
+                                  textClassName="text-sm font-semibold"
+                                />
+                              </div>
                             )}
-                            <span className="text-base-content/60">tracked</span>
-                            <Icon className="text-primary w-4 h-4" />
-                            {entry.isPlaylistGroup ? (
-                              <span className="font-medium">{playlistTitle}</span>
-                            ) : mediaLink ? (
-                              <Link to={mediaLink} className="font-medium hover:underline">
-                                {log.media?.title?.contentTitleNative ?? log.description}
-                              </Link>
-                            ) : (
-                              <span className="font-medium">
-                                {log.media?.title?.contentTitleNative ?? log.description}
-                              </span>
-                            )}
-                            {entry.isPlaylistGroup && (
-                              <span className="badge badge-secondary badge-sm">
-                                {entry.logs.length} videos
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-base-content/70">
-                            {formatRelativeDate(log.date)} · +
-                            {numberWithCommas(
-                              entry.isPlaylistGroup ? playlistXp : log.xp
-                            )}{' '}
-                            XP
-                          </p>
-                          {entry.isPlaylistGroup && (
-                            <p className="text-xs text-base-content/60 mt-1">
-                              Logged {entry.logs.length} videos from this playlist
-                            </p>
-                          )}
-                        </div>
-                        {!entry.isPlaylistGroup &&
-                          image &&
-                          (mediaLink ? (
-                            <Link
-                              to={mediaLink}
-                              className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden"
-                              aria-label={`View ${log.media?.title?.contentTitleNative ?? 'media'}`}
-                            >
-                              <img
-                                src={image}
-                                alt={log.media?.title?.contentTitleNative}
-                                className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
-                              />
-                            </Link>
-                          ) : (
-                            <div className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden">
-                              <img
-                                src={image}
-                                alt={log.media?.title?.contentTitleNative}
-                                className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
-                              />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 text-sm">
+                                {log.user?.username ? (
+                                  <Link
+                                    to={`/user/${log.user.username}`}
+                                    className="font-semibold hover:underline"
+                                  >
+                                    {log.user.username}
+                                  </Link>
+                                ) : (
+                                  <span className="font-semibold">
+                                    {feedUsername}
+                                  </span>
+                                )}
+                                <span className="text-base-content/60">
+                                  tracked
+                                </span>
+                                <Icon className="text-primary w-4 h-4" />
+                                {entry.isPlaylistGroup ? (
+                                  <span className="font-medium">
+                                    {playlistTitle}
+                                  </span>
+                                ) : mediaLink ? (
+                                  <Link
+                                    to={mediaLink}
+                                    className="font-medium hover:underline"
+                                  >
+                                    {log.media?.title?.contentTitleNative ??
+                                      log.description}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">
+                                    {log.media?.title?.contentTitleNative ??
+                                      log.description}
+                                  </span>
+                                )}
+                                {entry.isPlaylistGroup && (
+                                  <span className="badge badge-secondary badge-sm">
+                                    {entry.logs.length} videos
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-base-content/70">
+                                {formatRelativeDate(log.date)} · +
+                                {numberWithCommas(
+                                  entry.isPlaylistGroup ? playlistXp : log.xp
+                                )}{' '}
+                                XP
+                              </p>
+                              {entry.isPlaylistGroup && (
+                                <p className="text-xs text-base-content/60 mt-1">
+                                  Logged {entry.logs.length} videos from this
+                                  playlist
+                                </p>
+                              )}
                             </div>
-                          ))}
-                      </div>
-                    );
-                  });
-                })()}
+                            {!entry.isPlaylistGroup &&
+                              image &&
+                              (mediaLink ? (
+                                <Link
+                                  to={mediaLink}
+                                  className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden"
+                                  aria-label={`View ${log.media?.title?.contentTitleNative ?? 'media'}`}
+                                >
+                                  <img
+                                    src={image}
+                                    alt={log.media?.title?.contentTitleNative}
+                                    className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
+                                  />
+                                </Link>
+                              ) : (
+                                <div className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden">
+                                  <img
+                                    src={image}
+                                    alt={log.media?.title?.contentTitleNative}
+                                    className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        );
+                      });
+                    })()}
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { confetti } from '@tsparticles/confetti';
 import { Volume2, VolumeX, TrendingUp, Flame } from 'lucide-react';
 import { ILogCelebration } from '../types';
 import LevelUpAnimation from './LevelUpAnimation';
+import { useTranslation } from 'react-i18next';
 import {
   playLogSuccess,
   playXpTick,
@@ -24,6 +25,7 @@ export default function LogCelebration({
   celebration,
   onClose,
 }: LogCelebrationProps) {
+  const { t } = useTranslation(['logs', 'common']);
   const { xpGained, streak, levelUp, xp, rank } = celebration;
   const hasOvertake = !!rank && rank.overtaken.length > 0;
 
@@ -111,7 +113,10 @@ export default function LogCelebration({
     const startXp = Math.max(0, xp.current - xpGained);
     const totalForLevel = Math.max(1, xp.toNextLevel - xp.toCurrentLevel);
     const clampPct = (value: number) =>
-      Math.max(0, Math.min(100, ((value - xp.toCurrentLevel) / totalForLevel) * 100));
+      Math.max(
+        0,
+        Math.min(100, ((value - xp.toCurrentLevel) / totalForLevel) * 100)
+      );
 
     const counterData = { xp: startXp };
     tl.to(
@@ -266,7 +271,9 @@ export default function LogCelebration({
               <div className="text-3xl font-extrabold text-success">
                 +{xpGained.toLocaleString()} XP
               </div>
-              <div className="text-sm text-white/60 mt-1">Log successful!</div>
+              <div className="text-sm text-white/60 mt-1">
+                {t('celebration.success')}
+              </div>
             </div>
 
             {/* Counter + level progress */}
@@ -334,7 +341,7 @@ export default function LogCelebration({
           >
             <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-xs">
               <TrendingUp size={16} />
-              Monthly ranking
+              {t('celebration.monthlyRanking')}
             </div>
 
             {/* Overtaken avatars */}
@@ -379,7 +386,11 @@ export default function LogCelebration({
                 #{rank.previousRank}
               </span>
               <span className="text-primary text-2xl self-center">→</span>
-              <span ref={rankToRef} className="text-primary" style={{ opacity: 0 }}>
+              <span
+                ref={rankToRef}
+                className="text-primary"
+                style={{ opacity: 0 }}
+              >
                 #{rank.rank}
               </span>
             </div>

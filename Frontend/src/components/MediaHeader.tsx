@@ -33,6 +33,7 @@ import AddToListModal from '../components/AddToListModal';
 import { useUserDataStore } from '../store/userData';
 import MediaNavbar from './MediaNavbar';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import { useTranslation } from 'react-i18next';
 
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -80,6 +81,7 @@ const STATUS_CONFIG: Record<
 };
 
 export default function MediaHeader() {
+  const { t } = useTranslation(['media', 'common']);
   const { mediaType, mediaId, username } = useParams<{
     mediaType: IMediaDocument['type'] | undefined;
     mediaId: string;
@@ -465,7 +467,7 @@ export default function MediaHeader() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-lg">Remove from your list?</h3>
+                <h3 className="font-bold text-lg">{t('header.removeTitle')}</h3>
                 <p className="text-sm text-base-content/70 mt-1 break-words">
                   {media.title.contentTitleNative}
                 </p>
@@ -476,7 +478,7 @@ export default function MediaHeader() {
               {isLoadingRemovalStats ? (
                 <div className="flex items-center gap-2 text-sm text-base-content/70">
                   <span className="loading loading-spinner loading-xs" />
-                  Checking your logs for this media...
+                  {t('header.checkingLogs')}
                 </div>
               ) : removalStats && removalStats.total.logs > 0 ? (
                 <>
@@ -521,7 +523,7 @@ export default function MediaHeader() {
                 </>
               ) : (
                 <p className="text-sm text-base-content/70">
-                  This entry has no logs — only its status will be removed.
+                  {t('header.noLogsNote')}
                 </p>
               )}
             </div>
@@ -536,7 +538,7 @@ export default function MediaHeader() {
                 }}
                 disabled={isRemovingFromList}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -549,7 +551,7 @@ export default function MediaHeader() {
                 ) : (
                   <Trash2 className="w-4 h-4" />
                 )}
-                Remove
+                {t('header.remove')}
               </button>
             </div>
           </div>
@@ -614,14 +616,14 @@ export default function MediaHeader() {
                     className="btn btn-primary w-full"
                     onClick={() => setLogModalOpen(true)}
                   >
-                    Log
+                    {t('header.log')}
                   </button>
                   {user && media?.contentId && media?.type && (
                     <button
                       className="btn btn-outline w-full"
                       onClick={() => setAddToListOpen(true)}
                     >
-                      Add to list
+                      {t('header.addToList')}
                     </button>
                   )}
                   {isOwnProfile &&
@@ -723,7 +725,7 @@ export default function MediaHeader() {
                                 }}
                               >
                                 <Trash2 className="w-4 h-4" />
-                                Remove from list
+                                {t('header.removeFromList')}
                               </button>
                             </li>
                           </ul>

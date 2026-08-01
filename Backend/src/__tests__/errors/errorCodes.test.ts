@@ -21,13 +21,29 @@ function loadLocale(language: string): Record<string, unknown> {
   ) as Record<string, unknown>;
 }
 
-function hasPath(source: Record<string, unknown>, dotted: string): boolean {
+function resolve(source: Record<string, unknown>, dotted: string): unknown {
   return dotted.split('.').reduce<unknown>((node, segment) => {
     if (node && typeof node === 'object' && segment in node) {
       return (node as Record<string, unknown>)[segment];
     }
     return undefined;
-  }, source) !== undefined;
+  }, source);
+}
+
+/**
+ * A code is translated if the key exists, or — for pluralised messages — if
+ * i18next's `_one` / `_other` variants exist instead. i18next never stores the
+ * bare key for a plural.
+ */
+function hasTranslation(
+  source: Record<string, unknown>,
+  code: string
+): boolean {
+  if (resolve(source, code) !== undefined) return true;
+
+  return ['_one', '_other'].every(
+    (suffix) => resolve(source, code + suffix) !== undefined
+  );
 }
 
 describe('apiError', () => {
@@ -67,7 +83,9 @@ describe('error code catalogue', () => {
     'has a %s translation for every code',
     (language) => {
       const locale = loadLocale(language);
-      const missing = ERROR_CODES.filter((code) => !hasPath(locale, code));
+      const missing = ERROR_CODES.filter(
+        (code) => !hasTranslation(locale, code)
+      );
 
       expect(missing).toEqual([]);
     }

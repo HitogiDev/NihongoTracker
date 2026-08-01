@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Search, X, Play, Book, Gamepad, Video, Clapperboard, MonitorPlay } from 'lucide-react';
+import {
+  Search,
+  X,
+  Play,
+  Book,
+  Gamepad,
+  Video,
+  Clapperboard,
+  MonitorPlay,
+} from 'lucide-react';
 import { multiSearchMediaFn } from '../api/trackerApi';
 import { searchAnilist } from '../api/anilistApi';
 import { SearchResultType } from '../types';

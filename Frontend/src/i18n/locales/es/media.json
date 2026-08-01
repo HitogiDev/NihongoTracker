@@ -1,1 +1,185 @@
-{}
+{
+  "activity": {
+    "a11y": {
+      "clearDate": "Quitar el filtro de fechas",
+      "clearSearch": "Limpiar la búsqueda",
+      "resetSort": "Restablecer el orden"
+    },
+    "activeFilters": "Filtros activos:",
+    "asc": "De menor a mayor",
+    "clearAll": "Quitar todos",
+    "desc": "De mayor a menor",
+    "direction": "Dirección",
+    "empty": "No se encontró actividad",
+    "emptyBody": "Empieza a registrar tu progreso para ver aquí tu línea de actividad. Todo empieza por la primera entrada.",
+    "noMatches": "Ningún registro coincide con tus filtros",
+    "noMatchesBody": "Prueba a cambiar la búsqueda, el rango de fechas o el orden para ver más entradas de este contenido.",
+    "searchPlaceholder": "Buscar en descripciones, etiquetas o valores",
+    "sortField": "Campo de ordenación",
+    "title": "Actividad reciente"
+  },
+  "chart": {
+    "bar": "Barras",
+    "hours": "Horas",
+    "line": "Líneas",
+    "metric": "Métrica:",
+    "title": "Gráfico de actividad",
+    "view": "Vista:"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "clear": "Limpiar"
+  },
+  "detail": {
+    "a11y": {
+      "options": "Opciones de la reseña"
+    },
+    "backHome": "Volver al inicio",
+    "backToMedia": "Volver al contenido",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "notFound": "Reseña no encontrada o no disponible.",
+    "share": "Compartir",
+    "spoilers": "Spoilers"
+  },
+  "details": {
+    "chapters": "Capítulos:",
+    "characters": "Caracteres:",
+    "difficulty": "Dificultad:",
+    "duration": "Duración:",
+    "episodes": "Episodios:",
+    "externalLinks": "Enlaces externos",
+    "title": "Detalles del contenido",
+    "type": "Tipo:",
+    "volumes": "Volúmenes:"
+  },
+  "header": {
+    "addToList": "Añadir a la lista",
+    "checkingLogs": "Comprobando tus registros de este contenido...",
+    "log": "Registrar",
+    "noLogsNote": "Esta entrada no tiene registros; solo se quitará su estado.",
+    "remove": "Quitar",
+    "removeFromList": "Quitar de la lista",
+    "removeTitle": "¿Quitar de tu lista?"
+  },
+  "list": {
+    "clearFilters": "Quitar filtros",
+    "dontShowAgain": "No volver a mostrar",
+    "dontShowAgainTitle": "No volver a mostrar este aviso",
+    "emptyLibrary": "Tu biblioteca de inmersión está vacía. Empieza a registrar tu aprendizaje de japonés.",
+    "emptySearch": "Nada coincide con tu búsqueda de \"{{query}}\". Prueba con otras palabras o filtros.",
+    "emptyTypes": "Nada coincide con los tipos seleccionados.",
+    "grid": "Cuadrícula",
+    "hideAlertConfirm": "Sí, ocultar los avisos",
+    "hideAlertConfirmBody": "¿Seguro que quieres dejar de ver avisos sobre registros sin emparejar?",
+    "hideAlertTitle": "Ocultar el aviso de registros sin emparejar",
+    "list": "Lista",
+    "loadFailed": "No se pudo cargar la lista de inmersión",
+    "logManagement": "Gestión de registros",
+    "matchLogs": "Emparejar registros",
+    "noMedia": "No se encontró contenido",
+    "quickLog": "Registro rápido",
+    "searchPlaceholder": "Buscar por título, romaji o inglés...",
+    "selectAll": "Seleccionar todo",
+    "selectNone": "No seleccionar nada",
+    "setStatus": "Cambiar estado",
+    "settings": "Ajustes",
+    "unmatchedFound": "Hay registros sin emparejar",
+    "viewDetails": "Ver detalles"
+  },
+  "markdown": {
+    "bold": "Negrita",
+    "bulletedList": "Lista con viñetas",
+    "codeBlock": "Bloque de código",
+    "heading1": "Encabezado 1",
+    "heading2": "Encabezado 2",
+    "heading3": "Encabezado 3",
+    "image": "Imagen",
+    "inlineCode": "Código en línea",
+    "italic": "Cursiva",
+    "link": "Enlace",
+    "numberedList": "Lista numerada",
+    "quote": "Cita",
+    "spoiler": "Spoiler"
+  },
+  "reviews": {
+    "a11y": {
+      "maxScore": "Puntuación máxima",
+      "minScore": "Puntuación mínima"
+    },
+    "all": "Todas",
+    "alreadyPosted": "Ya has publicado una reseña de este título.",
+    "deleteConfirm": "¿Seguro que quieres eliminar tu reseña? No se puede deshacer.",
+    "deleteTitle": "Eliminar reseña",
+    "emptyBody": "Sé la primera persona en compartir tu opinión sobre este contenido.",
+    "emptyTitle": "Aún no hay reseñas",
+    "filtersTitle": "Puntuaciones y filtros",
+    "maxPlaceholder": "Máx",
+    "minPlaceholder": "Mín",
+    "noMatchesBody": "Prueba a quitar algún filtro para volver a ver reseñas.",
+    "noMatchesTitle": "Ninguna reseña coincide con estos filtros",
+    "noRatingData": "Todavía no hay puntuaciones.",
+    "rated": "Con puntuación",
+    "resetFilters": "Restablecer filtros",
+    "scoreRange": "Rango de puntuación",
+    "scoreRangeDisabled": "El rango de puntuación se desactiva al ver reseñas sin puntuar.",
+    "scoreRangeInvalid": "La puntuación mínima debe ser menor o igual que la máxima.",
+    "sort": "Orden",
+    "title": "Reseñas",
+    "unrated": "Sin puntuación",
+    "visibility": "Visibilidad",
+    "write": "Escribir una reseña"
+  },
+  "social": {
+    "allTime": "Histórico",
+    "avatarAlt": "avatar",
+    "compare": "Comparar con alguien",
+    "mediaWideStats": "Estadísticas del contenido",
+    "noRecentActivity": "Todavía no hay actividad pública reciente para este contenido.",
+    "noStats": "Aún no hay estadísticas de este contenido.",
+    "recentActivity": "Actividad reciente (todo el mundo)",
+    "retry": "Reintentar",
+    "subtitle": "Consulta las estadísticas de la comunidad para este título y comparte tu página.",
+    "totalLogs": "Registros totales",
+    "usernamePlaceholder": "Introduce un nombre de usuario"
+  },
+  "stats": {
+    "allCaughtUp": "Al día",
+    "charactersLabel": "Caracteres",
+    "charsRead": "Caracteres leídos",
+    "completed": "Completado",
+    "completion": "Progreso",
+    "currentVolume": "Volumen actual",
+    "episodesLabel": "Episodios",
+    "episodesWatched": "Episodios vistos",
+    "pagesLabel": "Páginas",
+    "pagesRead": "Páginas leídas",
+    "readingSpeed": "Velocidad de lectura",
+    "recentSpeed": "Velocidad reciente",
+    "timeLabel": "Tiempo",
+    "timeToFinish": "Tiempo para terminar",
+    "totalTime": "Tiempo total",
+    "totalXp": "XP total"
+  },
+  "toast": {
+    "reviewAdded": "Reseña publicada",
+    "reviewContentRequired": "La reseña no puede estar vacía.",
+    "reviewDeleted": "Reseña eliminada",
+    "reviewLinkCopied": "Enlace de la reseña copiado al portapapeles",
+    "reviewUpdated": "Reseña actualizada"
+  },
+  "write": {
+    "alreadyPostedBody": "Puedes editar tu reseña desde la lista de reseñas.",
+    "alreadyPostedTitle": "Ya has publicado una reseña",
+    "backToReviews": "Volver a las reseñas",
+    "bodyPlaceholder": "Comparte tu opinión sobre este contenido...",
+    "login": "Iniciar sesión",
+    "loginRequired": "Tienes que iniciar sesión para escribir una reseña.",
+    "preview": "Vista previa",
+    "previewHint": "Aquí aparece la vista previa mientras escribes.",
+    "rating": "Puntuación (opcional)",
+    "review": "Reseña",
+    "summary": "Resumen",
+    "summaryPlaceholder": "Resume tu reseña en una frase"
+  }
+}

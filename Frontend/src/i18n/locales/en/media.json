@@ -1,1 +1,185 @@
-{}
+{
+  "activity": {
+    "a11y": {
+      "clearDate": "Clear date filter",
+      "clearSearch": "Clear search",
+      "resetSort": "Reset sort"
+    },
+    "activeFilters": "Active filters:",
+    "asc": "Lowest to highest",
+    "clearAll": "Clear all",
+    "desc": "Highest to lowest",
+    "direction": "Direction",
+    "empty": "No activity found",
+    "emptyBody": "Start logging your progress to see your activity timeline here. Your journey begins with the first entry!",
+    "noMatches": "No logs match your filters",
+    "noMatchesBody": "Try adjusting your search, date range, or sorting to see more entries for this media.",
+    "searchPlaceholder": "Search descriptions, tags, or values",
+    "sortField": "Sort field",
+    "title": "Recent Activity"
+  },
+  "chart": {
+    "bar": "Bar",
+    "hours": "Hours",
+    "line": "Line",
+    "metric": "Metric:",
+    "title": "Activity Chart",
+    "view": "View:"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "clear": "Clear"
+  },
+  "detail": {
+    "a11y": {
+      "options": "Review options"
+    },
+    "backHome": "Back to home",
+    "backToMedia": "Back to media",
+    "delete": "Delete",
+    "edit": "Edit",
+    "notFound": "Review not found or unavailable.",
+    "share": "Share",
+    "spoilers": "Spoilers"
+  },
+  "details": {
+    "chapters": "Chapters:",
+    "characters": "Characters:",
+    "difficulty": "Difficulty:",
+    "duration": "Duration:",
+    "episodes": "Episodes:",
+    "externalLinks": "External Links",
+    "title": "Media Details",
+    "type": "Type:",
+    "volumes": "Volumes:"
+  },
+  "header": {
+    "addToList": "Add to list",
+    "checkingLogs": "Checking your logs for this media...",
+    "log": "Log",
+    "noLogsNote": "This entry has no logs — only its status will be removed.",
+    "remove": "Remove",
+    "removeFromList": "Remove from list",
+    "removeTitle": "Remove from your list?"
+  },
+  "list": {
+    "clearFilters": "Clear filters",
+    "dontShowAgain": "Don't show again",
+    "dontShowAgainTitle": "Don't show this alert again",
+    "emptyLibrary": "Your immersion library is empty. Start logging your Japanese learning activities!",
+    "emptySearch": "No media matches your search for \"{{query}}\". Try different keywords or filters.",
+    "emptyTypes": "No media matches the selected types.",
+    "grid": "Grid",
+    "hideAlertConfirm": "Yes, hide alerts",
+    "hideAlertConfirmBody": "Are you sure you want to stop showing alerts about unmatched logs?",
+    "hideAlertTitle": "Hide Unmatched Logs Alert",
+    "list": "List",
+    "loadFailed": "Failed to load immersion list",
+    "logManagement": "Log Management",
+    "matchLogs": "Match Logs",
+    "noMedia": "No media found",
+    "quickLog": "Quick Log",
+    "searchPlaceholder": "Search by title, romaji, or english...",
+    "selectAll": "Select All",
+    "selectNone": "Select None",
+    "setStatus": "Set status",
+    "settings": "Settings",
+    "unmatchedFound": "Unmatched Logs Found",
+    "viewDetails": "View Details"
+  },
+  "markdown": {
+    "bold": "Bold",
+    "bulletedList": "Bulleted list",
+    "codeBlock": "Code block",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "image": "Image",
+    "inlineCode": "Inline code",
+    "italic": "Italic",
+    "link": "Link",
+    "numberedList": "Numbered list",
+    "quote": "Quote",
+    "spoiler": "Spoiler"
+  },
+  "reviews": {
+    "a11y": {
+      "maxScore": "Maximum score",
+      "minScore": "Minimum score"
+    },
+    "all": "All",
+    "alreadyPosted": "You already posted a review for this title.",
+    "deleteConfirm": "Are you sure you want to delete your review? This cannot be undone.",
+    "deleteTitle": "Delete Review",
+    "emptyBody": "Be the first to share your thoughts about this media.",
+    "emptyTitle": "No Reviews Yet",
+    "filtersTitle": "Ratings & Filters",
+    "maxPlaceholder": "Max",
+    "minPlaceholder": "Min",
+    "noMatchesBody": "Try clearing one or more filters to see reviews again.",
+    "noMatchesTitle": "No Reviews Match These Filters",
+    "noRatingData": "No rating data yet.",
+    "rated": "Rated",
+    "resetFilters": "Reset filters",
+    "scoreRange": "Score Range",
+    "scoreRangeDisabled": "Score range is disabled while viewing unrated reviews.",
+    "scoreRangeInvalid": "Minimum score must be lower than or equal to maximum score.",
+    "sort": "Sort",
+    "title": "Reviews",
+    "unrated": "Unrated",
+    "visibility": "Visibility",
+    "write": "Write a review"
+  },
+  "social": {
+    "allTime": "All-time",
+    "avatarAlt": "avatar",
+    "compare": "Compare with a friend",
+    "mediaWideStats": "Media-wide stats",
+    "noRecentActivity": "No recent public activity yet for this media.",
+    "noStats": "No stats available for this media yet.",
+    "recentActivity": "Recent activity (everyone)",
+    "retry": "Retry",
+    "subtitle": "See community stats for this title and share your page.",
+    "totalLogs": "Total Logs",
+    "usernamePlaceholder": "Enter a username"
+  },
+  "stats": {
+    "allCaughtUp": "All caught up",
+    "charactersLabel": "Characters",
+    "charsRead": "Characters Read",
+    "completed": "Completed",
+    "completion": "Completion",
+    "currentVolume": "Current Volume",
+    "episodesLabel": "Episodes",
+    "episodesWatched": "Episodes Watched",
+    "pagesLabel": "Pages",
+    "pagesRead": "Pages Read",
+    "readingSpeed": "Reading Speed",
+    "recentSpeed": "Recent Speed",
+    "timeLabel": "Time",
+    "timeToFinish": "Time to Finish",
+    "totalTime": "Total Time",
+    "totalXp": "Total XP"
+  },
+  "toast": {
+    "reviewAdded": "Review added successfully",
+    "reviewContentRequired": "Review content is required.",
+    "reviewDeleted": "Review deleted successfully",
+    "reviewLinkCopied": "Review link copied to clipboard!",
+    "reviewUpdated": "Review updated successfully"
+  },
+  "write": {
+    "alreadyPostedBody": "You can edit your existing review from the reviews list.",
+    "alreadyPostedTitle": "You already posted a review",
+    "backToReviews": "Back to reviews",
+    "bodyPlaceholder": "Share your thoughts about this media...",
+    "login": "Login",
+    "loginRequired": "You need to be logged in to write a review.",
+    "preview": "Preview",
+    "previewHint": "Your live preview appears here as you write.",
+    "rating": "Rating (optional)",
+    "review": "Review",
+    "summary": "Summary",
+    "summaryPlaceholder": "One-sentence summary of your review"
+  }
+}
