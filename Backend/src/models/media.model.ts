@@ -64,6 +64,10 @@ const MediaBase = model<IMediaDocument>('Media', MediaBaseSchema);
 const AnimeSchema = new Schema({
   episodes: { type: Number },
   episodeDuration: { type: Number },
+  // AniList airing window. airingEndDate stays null while a show is still
+  // airing (or when AniList has no end date yet).
+  airingStartDate: { type: Date, default: null },
+  airingEndDate: { type: Date, default: null },
 });
 
 const Anime = MediaBase.discriminator('anime', AnimeSchema);
@@ -108,6 +112,8 @@ const VideoGame = MediaBase.discriminator('game', VideoGameSchema);
 /** isAdultImage: true when the cover image has a VNDB sexual avg >= 100 (suggestive+) */
 const VnSchema = new Schema({
   characters: { type: Number, default: null },
+  // Year of the VN's earliest known release, from the VNDB dump
+  releaseYear: { type: Number, default: null },
 });
 
 const Vn = MediaBase.discriminator('vn', VnSchema);

@@ -1,5 +1,9 @@
 import { Types } from 'mongoose';
 import Log from '../../../models/log.model.js';
+import {
+  EFFECTIVE_MINUTES_EXPR,
+  HAS_EFFECTIVE_TIME_MATCH,
+} from './effectiveMinutes.js';
 
 /**
  * Checks whether the user has logged threshold hours within any rolling 7-day window.
@@ -19,14 +23,20 @@ export async function evaluateWeeklyHours(
     totalMinutes: number;
   }>([
     // unknownDate logs have a placeholder date — they don't belong to any real week
-    { $match: { user: userId, time: { $gt: 0 }, unknownDate: { $ne: true } } },
+    {
+      $match: {
+        user: userId,
+        unknownDate: { $ne: true },
+        ...HAS_EFFECTIVE_TIME_MATCH,
+      },
+    },
     {
       $group: {
         // Day buckets follow the user's timezone, not UTC
         _id: {
           $dateToString: { format: '%Y-%m-%d', date: '$date', timezone },
         },
-        totalMinutes: { $sum: '$time' },
+        totalMinutes: { $sum: EFFECTIVE_MINUTES_EXPR },
       },
     },
     // 'YYYY-MM-DD' strings sort chronologically

@@ -182,7 +182,10 @@ export async function getMedia(
     ) {
       const needsAnimeFields =
         normalizedMediaType === 'anime' &&
-        (media.episodes == null || media.episodeDuration == null);
+        (media.episodes == null ||
+          media.episodeDuration == null ||
+          // Airing window was added later — fill it in for existing records
+          media.airingStartDate == null);
       const needsMangaLikeFields =
         (normalizedMediaType === 'manga' ||
           normalizedMediaType === 'reading') &&
@@ -204,7 +207,7 @@ export async function getMedia(
 
           const refreshedMedia = refreshedFromAnilist[0];
           if (refreshedMedia) {
-            const metadataUpdates: Record<string, number> = {};
+            const metadataUpdates: Record<string, number | Date> = {};
 
             if (media.episodes == null && refreshedMedia.episodes != null) {
               metadataUpdates.episodes = refreshedMedia.episodes;
@@ -214,6 +217,18 @@ export async function getMedia(
               refreshedMedia.episodeDuration != null
             ) {
               metadataUpdates.episodeDuration = refreshedMedia.episodeDuration;
+            }
+            if (
+              media.airingStartDate == null &&
+              refreshedMedia.airingStartDate != null
+            ) {
+              metadataUpdates.airingStartDate = refreshedMedia.airingStartDate;
+            }
+            if (
+              media.airingEndDate == null &&
+              refreshedMedia.airingEndDate != null
+            ) {
+              metadataUpdates.airingEndDate = refreshedMedia.airingEndDate;
             }
             if (media.chapters == null && refreshedMedia.chapters != null) {
               metadataUpdates.chapters = refreshedMedia.chapters;

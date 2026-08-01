@@ -58,3 +58,23 @@ export async function* streamTsvRows(
     yield row;
   }
 }
+
+/**
+ * VNDB stores release dates in `releases.released` as an integer YYYYMMDD,
+ * where an unknown month or day component is 99, a fully unknown ("TBA") date
+ * is 99999999, and the column default for "no date at all" is 0. Only the year
+ * matters to us, so partial dates are fine — TBA, 0 and nonsense years are
+ * dropped.
+ */
+export function parseVndbReleaseYear(released: string | null): number | null {
+  if (!released) return null;
+
+  const value = Number(released);
+  if (!Number.isFinite(value)) return null;
+
+  const year = Math.floor(value / 10000);
+  // 9999 is VNDB's TBA marker; anything outside a sane range is bad data
+  if (year < 1970 || year > 2200) return null;
+
+  return year;
+}

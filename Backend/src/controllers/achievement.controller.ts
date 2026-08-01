@@ -7,6 +7,26 @@ import { grantAchievement } from '../services/achievements/achievementEngine.js'
 import { backfillAchievementsForAllUsers } from '../services/achievements/backfill.service.js';
 import { Types } from 'mongoose';
 
+/**
+ * Strip the machine-readable unlock condition from a secret achievement.
+ *
+ * Earned secrets are visible on public profiles, so shipping `condition` would
+ * hand every visitor the exact recipe (type + threshold) for a secret they
+ * haven't found — the descriptions are deliberately vague for the same reason.
+ * Non-secret achievements keep it; the UI needs `condition.threshold` to draw
+ * progress bars.
+ */
+function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T): T {
+  if (!achievement.isSecret) return achievement;
+  // progress goes too: a bare "6" next to a secret still hints at its target
+  const {
+    condition: _condition,
+    progress: _progress,
+    ...rest
+  } = achievement as T & { condition?: unknown; progress?: unknown };
+  return rest as T;
+}
+
 // ─── Public / User endpoints ──────────────────────────────────────────────────
 
 /**
@@ -73,10 +93,10 @@ export async function getAchievements(
         };
       }
 
-      return {
+      return stripSecretCondition({
         ...a,
         rarityPercent,
-      };
+      });
     });
 
     return res.status(200).json(mapped);
@@ -201,13 +221,13 @@ async function getUserAchievementsById(
         };
       }
 
-      return {
+      return stripSecretCondition({
         ...a,
         isEarned,
         unlockedAt: earned?.unlockedAt ?? null,
         progress: earned?.progress ?? 0,
         rarityPercent,
-      };
+      });
     });
 
     // Filter out nulls (hidden secret unearned for non-owners)
@@ -623,6 +643,8 @@ export async function getAchievementFeed(
           isActive: true,
           isHidden: false,
         },
+        // Never leak a secret's unlock condition into a public feed
+        select: '-condition',
       })
       .populate('user', 'username avatar')
       .sort({ unlockedAt: -1 })
@@ -664,6 +686,8 @@ export async function getUserAchievementActivity(
       .populate({
         path: 'achievement',
         match: { isActive: true, isHidden: false },
+        // Never leak a secret's unlock condition on a public profile
+        select: '-condition',
       })
       .sort({ unlockedAt: -1 })
       .limit(limit * 2)

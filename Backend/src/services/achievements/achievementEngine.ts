@@ -17,6 +17,20 @@ import { evaluateWeeklyHours } from './conditions/weeklyHours.condition.js';
 import { evaluateSessionsInDay } from './conditions/sessionsInDay.condition.js';
 import { evaluatePlatformAge } from './conditions/platformAge.condition.js';
 import { evaluateClubsCreated } from './conditions/clubsCreated.condition.js';
+import { evaluateClubMvp } from './conditions/clubMvp.condition.js';
+import { evaluateMediaTypesInWeek } from './conditions/mediaTypesInWeek.condition.js';
+import { evaluateMediaReleasedBefore } from './conditions/mediaReleasedBefore.condition.js';
+import { evaluateLogDuringAiring } from './conditions/logDuringAiring.condition.js';
+import { evaluateClubsJoined } from './conditions/clubsJoined.condition.js';
+import { evaluateDistinctMediaCount } from './conditions/distinctMediaCount.condition.js';
+import { evaluateConsecutiveDaysWithHours } from './conditions/consecutiveDaysWithHours.condition.js';
+import { evaluateSingleSessionHours } from './conditions/singleSessionHours.condition.js';
+import { evaluateRapidSuccession } from './conditions/rapidSuccession.condition.js';
+import { evaluateStreakComeback } from './conditions/streakComeback.condition.js';
+import { evaluateStreakAfterBreak } from './conditions/streakAfterBreak.condition.js';
+import { evaluateRankDethroned } from './conditions/rankDethroned.condition.js';
+import { evaluateSecretAchievementCount } from './conditions/secretAchievementCount.condition.js';
+import { evaluateEarlyAdopter } from './conditions/earlyAdopter.condition.js';
 import {
   createNotification,
   removeNotifications,
@@ -31,6 +45,10 @@ const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
   'singleDayHours',
   'weeklyHours',
   'sessionsInDay',
+  'mediaTypesInWeek',
+  'consecutiveDaysWithHours',
+  'streakComeback',
+  'streakAfterBreak',
 ]);
 
 /**
@@ -115,6 +133,66 @@ async function evaluateCondition(
 
     case 'clubsCreated':
       return evaluateClubsCreated(userId, condition.threshold ?? 1);
+
+    case 'clubMvp':
+      return evaluateClubMvp(userId, condition.threshold ?? 1);
+
+    case 'mediaTypesInWeek':
+      return evaluateMediaTypesInWeek(
+        userId,
+        condition.threshold ?? 6,
+        timezone,
+        condition.days ?? 7
+      );
+
+    case 'clubsJoined':
+      return evaluateClubsJoined(userId, condition.threshold ?? 1);
+
+    case 'distinctMediaCount':
+      return evaluateDistinctMediaCount(userId, condition.threshold ?? 1);
+
+    case 'consecutiveDaysWithHours':
+      return evaluateConsecutiveDaysWithHours(
+        userId,
+        condition.threshold ?? 7,
+        condition.hours ?? 4,
+        timezone
+      );
+
+    case 'singleSessionHours':
+      return evaluateSingleSessionHours(userId, condition.threshold ?? 6);
+
+    case 'rapidSuccession':
+      return evaluateRapidSuccession(userId, condition.seconds ?? 60);
+
+    case 'streakComeback':
+      return evaluateStreakComeback(userId, condition.threshold ?? 1, timezone);
+
+    case 'streakAfterBreak':
+      return evaluateStreakAfterBreak(
+        userId,
+        condition.threshold ?? 7,
+        timezone
+      );
+
+    case 'rankDethroned':
+      return evaluateRankDethroned(userId);
+
+    case 'secretAchievementCount':
+      return evaluateSecretAchievementCount(userId, condition.threshold ?? 5);
+
+    case 'earlyAdopter':
+      return evaluateEarlyAdopter(userId, condition.threshold ?? 100);
+
+    case 'mediaReleasedBefore':
+      return evaluateMediaReleasedBefore(
+        userId,
+        condition.mediaType ?? 'vn',
+        condition.year ?? 2005
+      );
+
+    case 'logDuringAiring':
+      return evaluateLogDuringAiring(userId);
 
     case 'manualGrant':
       // Manual grants are handled by the admin endpoint; never auto-evaluate
@@ -366,10 +444,15 @@ function getRelevantConditions(trigger: IAchievementCheckContext['trigger']): st
         'totalHours', 'mediaTypeHours', 'achievementCount',
         'logTimeRange', 'logOnDate', 'singleDayHours',
         'weeklyHours', 'sessionsInDay', 'platformAge',
-        'clubsCreated',
+        'clubsCreated', 'clubMvp', 'mediaTypesInWeek',
+        'mediaReleasedBefore', 'logDuringAiring',
+        'clubsJoined', 'distinctMediaCount', 'consecutiveDaysWithHours',
+        'singleSessionHours', 'rapidSuccession', 'streakComeback',
+        'streakAfterBreak', 'rankDethroned', 'secretAchievementCount',
+        'earlyAdopter',
       ];
     case 'streak':
-      return ['streak'];
+      return ['streak', 'streakComeback', 'streakAfterBreak'];
     case 'levelup':
       return ['level', 'totalXp'];
     case 'manual':

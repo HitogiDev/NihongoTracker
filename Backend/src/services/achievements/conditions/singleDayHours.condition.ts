@@ -1,5 +1,9 @@
 import { Types } from 'mongoose';
 import Log from '../../../models/log.model.js';
+import {
+  EFFECTIVE_MINUTES_EXPR,
+  HAS_EFFECTIVE_TIME_MATCH,
+} from './effectiveMinutes.js';
 
 /**
  * Finds the maximum hours logged in any single calendar day, using the user's
@@ -13,13 +17,19 @@ export async function evaluateSingleDayHours(
 ): Promise<{ met: boolean; progress: number }> {
   const result = await Log.aggregate([
     // unknownDate logs have a placeholder date — they don't belong to any real day
-    { $match: { user: userId, time: { $gt: 0 }, unknownDate: { $ne: true } } },
+    {
+      $match: {
+        user: userId,
+        unknownDate: { $ne: true },
+        ...HAS_EFFECTIVE_TIME_MATCH,
+      },
+    },
     {
       $group: {
         _id: {
           $dateToString: { format: '%Y-%m-%d', date: '$date', timezone },
         },
-        totalMinutes: { $sum: '$time' },
+        totalMinutes: { $sum: EFFECTIVE_MINUTES_EXPR },
       },
     },
     {
