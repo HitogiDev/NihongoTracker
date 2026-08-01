@@ -114,10 +114,10 @@ const logTypeConfig = {
   book: {
     label: 'Book',
     icon: BookOpen,
-    color: 'text-[#d98c1f]',
-    bgColor: 'bg-[#d98c1f]/10',
-    borderColor: 'border-[#d98c1f]/30',
-    accentColor: 'bg-[#d98c1f]',
+    color: 'text-[#7c6cf0]',
+    bgColor: 'bg-[#7c6cf0]/10',
+    borderColor: 'border-[#7c6cf0]/30',
+    accentColor: 'bg-[#7c6cf0]',
   },
   other: {
     label: 'Other',

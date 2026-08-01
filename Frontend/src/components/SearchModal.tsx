@@ -616,7 +616,7 @@ function SearchModal({
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu menu-sm z-[1] mt-2 w-44 rounded-box border border-base-content/10 bg-base-100 p-1 shadow-lg"
+              className="dropdown-content menu menu-sm z-50 mt-2 w-44 rounded-box border border-base-content/10 bg-base-100 p-1 shadow-lg"
             >
               {MEDIA_TYPE_FILTERS.map((opt) => (
                 <li key={opt.value}>

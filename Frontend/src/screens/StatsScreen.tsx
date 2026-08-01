@@ -91,7 +91,7 @@ type GanttSortOption =
   | 'time-desc'
   | 'xp-desc';
 
-type ReadingType = 'reading' | 'manga' | 'vn' | 'game';
+type ReadingType = 'reading' | 'manga' | 'vn' | 'game' | 'book';
 type EpisodeType = 'anime' | 'video' | 'movie';
 
 const READING_TYPES: ReadonlyArray<ReadingType> = [
@@ -99,6 +99,7 @@ const READING_TYPES: ReadonlyArray<ReadingType> = [
   'manga',
   'vn',
   'game',
+  'book',
 ];
 const EPISODE_TYPES: ReadonlyArray<EpisodeType> = ['anime', 'video', 'movie'];
 const LOG_TYPES = [
@@ -111,6 +112,7 @@ const LOG_TYPES = [
   'audio',
   'movie',
   'tv show',
+  'book',
   'other',
 ];
 
@@ -801,7 +803,10 @@ function StatsScreen() {
   const showReadingMetrics =
     isAllTypesSelected ||
     selectedTypes.some((type) => readingTypeSet.has(type as ReadingType));
-  const showPageMetric = isAllTypesSelected || selectedTypes.includes('manga');
+  const showPageMetric =
+    isAllTypesSelected ||
+    selectedTypes.includes('manga') ||
+    selectedTypes.includes('book');
   const showEpisodeMetrics =
     isAllTypesSelected ||
     selectedTypes.some((type) => episodeTypeSet.has(type as EpisodeType));

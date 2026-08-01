@@ -395,6 +395,7 @@ export async function markLogsWithoutStatusToInProgress(
       'video',
       'movie',
       'tv show',
+      'book',
     ];
 
     const combos = await Log.aggregate<any>([

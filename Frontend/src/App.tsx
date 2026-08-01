@@ -17,6 +17,7 @@ const MEDIA_TYPES = new Set([
   'movie',
   'tv show',
   'audio',
+  'book',
 ]);
 
 type MediaTabSection = 'overview' | 'reviews' | 'social';
@@ -140,6 +141,7 @@ function getTitle(pathname: string) {
     'movie',
     'tv show',
     'audio',
+    'book',
   ];
   if (mediaTypes.includes(segments[0])) {
     return `${segments[0].charAt(0).toUpperCase() + segments[0].slice(1)} Details • ${APP_NAME}`;

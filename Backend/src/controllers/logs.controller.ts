@@ -31,7 +31,7 @@ import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import axios from 'axios';
 import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
 import { recalculateAllUsersXpV2 } from '../services/xpMigration.js';
-import { addDocuments } from '../services/meilisearch/meiliSearch.js';
+import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
 import { checkAchievements } from '../services/achievements/achievementEngine.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { computeMonthlyOvertakes } from '../services/overtake.service.js';
@@ -1674,16 +1674,7 @@ export async function createLog(
         type,
         description: mediaData.description ? mediaData.description : undefined,
       });
-      await addDocuments(type.replace(' ', '_'), [
-        {
-          _id: createdMedia._id,
-          contentId: createdMedia.contentId,
-          title: createdMedia.title,
-          contentImage: createdMedia.contentImage,
-          isAdult: createdMedia.isAdult,
-          synonyms: mediaData.synonyms,
-        },
-      ]);
+      await addMediaToIndex(createdMedia.toObject());
       logMedia = createdMedia;
     }
 
@@ -2187,6 +2178,7 @@ interface IGetUserStatsQuery {
     | 'movie'
     | 'vn'
     | 'game'
+    | 'book'
     | 'other'
     | 'tv show';
   start?: string;
@@ -2300,6 +2292,7 @@ export async function getUserStats(
       'movie',
       'vn',
       'game',
+      'book',
       'other',
     ];
 
@@ -2497,6 +2490,7 @@ export async function getUserStats(
       'movie',
       'manga',
       'audio',
+      'book',
       'other',
     ];
 
@@ -2646,7 +2640,7 @@ export async function getUserStats(
         acc.untrackedCount += stat.untrackedCount;
         acc.totalChars += stat.totalChars || 0;
 
-        if (['reading', 'manga', 'vn', 'game'].includes(stat.type)) {
+        if (['reading', 'manga', 'vn', 'game', 'book'].includes(stat.type)) {
           acc.readingHours += stat.totalTimeHours;
         } else if (
           ['anime', 'video', 'tv show', 'movie', 'audio'].includes(stat.type)
