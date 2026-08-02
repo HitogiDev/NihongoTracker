@@ -19,6 +19,7 @@ import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IMediaDocument } from '../types.js';
 import { backfillRankHistory } from '../services/rankSnapshot.service.js';
+import { backfillRankAchievements } from '../services/achievements/cronAchievements.service.js';
 import {
   startJitenDifficultyBackfill,
   getJitenBackfillState,
@@ -966,6 +967,22 @@ export async function backfillRankingHistory(
     const result = await backfillRankHistory();
     return res.status(200).json({
       message: `Backfilled ${result.snapshots} rank snapshots across ${result.weeks} weeks.`,
+      ...result,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function backfillWeeklyRankAchievements(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await backfillRankAchievements();
+    return res.status(200).json({
+      message: `Replayed ${result.weeks} weeks and granted ${result.granted} rank achievements.`,
       ...result,
     });
   } catch (error) {

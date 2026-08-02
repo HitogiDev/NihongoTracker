@@ -28,6 +28,7 @@ npm run migrate:indexes   # run MongoDB index migration script (dev)
 npm run migrate:indexes:prod  # same, with NODE_ENV=production
 npm run seed:achievements     # seed achievement definitions
 npm run backfill:achievements # backfill achievement unlocks for existing users
+npm run backfill:ranks        # replay past weeks to award weekly leaderboard achievements
 ```
 
 Tests live in `Backend/src/__tests__/**/*.test.ts` (configured in `vitest.config.ts`). Coverage is currently scoped to the achievement engine (`src/services/achievements/**`). There is no backend lint script configured despite eslint being a devDependency — use `npx eslint <path>` directly if needed, and `npx tsc --noEmit` for type checking.

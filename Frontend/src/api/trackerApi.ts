@@ -1632,6 +1632,15 @@ export async function adminBackfillRankingHistoryFn(): Promise<{
   return data;
 }
 
+export async function adminBackfillRankAchievementsFn(): Promise<{
+  message: string;
+  weeks: number;
+  granted: number;
+}> {
+  const { data } = await api.post('admin/rank-achievements/backfill');
+  return data;
+}
+
 // ---- Media requests ----
 
 export async function createMediaRequestFn(

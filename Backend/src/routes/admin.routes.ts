@@ -20,6 +20,7 @@ import {
   triggerVndbDumpSync,
   getVndbDumpSyncStatus,
   backfillRankingHistory,
+  backfillWeeklyRankAchievements,
   adminUpdateMedia,
   triggerJitenDifficultyBackfill,
   getJitenDifficultyBackfillStatus,
@@ -215,6 +216,13 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   backfillRankingHistory
+);
+
+router.post(
+  '/rank-achievements/backfill',
+  protect,
+  checkPermission(userRoles.admin),
+  backfillWeeklyRankAchievements
 );
 
 router.post(

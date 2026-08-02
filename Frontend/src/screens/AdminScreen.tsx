@@ -30,6 +30,7 @@ import {
   triggerVndbDumpSyncFn,
   adminBackfillAchievementsFn,
   adminBackfillRankingHistoryFn,
+  adminBackfillRankAchievementsFn,
   adminTriggerJitenDifficultyBackfillFn,
   getJitenDifficultyBackfillStatusFn,
   type IIgdbDumpSyncStatus,
@@ -504,6 +505,14 @@ function AdminScreen() {
       toast.success(data.message);
     },
     onError: () => toast.error('Failed to backfill ranking history'),
+  });
+
+  const backfillRankAchievementsMutation = useMutation({
+    mutationFn: adminBackfillRankAchievementsFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: () => toast.error('Failed to backfill rank achievements'),
   });
 
   const backfillJitenDifficultyMutation = useMutation({
@@ -2498,6 +2507,36 @@ function AdminScreen() {
                       {backfillRankingHistoryMutation.isPending
                         ? 'Backfilling Ranking History...'
                         : 'Backfill Ranking History'}
+                    </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This replays every completed Sunday-to-Saturday week and awards Top 10 / Podium / King / Consistent to the users who earned them. Run this once to repair the weeks the cron scored with the wrong window. Nothing already granted is duplicated or revoked. This may take a while. Continue?'
+                          )
+                        ) {
+                          backfillRankAchievementsMutation.mutate();
+                        }
+                      }}
+                      disabled={backfillRankAchievementsMutation.isPending}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                        />
+                      </svg>
+                      {backfillRankAchievementsMutation.isPending
+                        ? 'Backfilling Rank Achievements...'
+                        : 'Backfill Rank Achievements'}
                     </button>
                     <button
                       className="btn btn-info w-full"

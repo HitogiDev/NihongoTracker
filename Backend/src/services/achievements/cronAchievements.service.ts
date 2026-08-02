@@ -4,8 +4,8 @@
  *
  * Schedule:
  *   runDailyCronAchievements  — runs once per day (00:30 UTC)
- *   runWeeklyCronAchievements — runs every Monday at 01:00 UTC
- *   runMonthlyCronAchievements — runs on the 1st of each month at 02:00 UTC
+ *   runWeeklyCronAchievements — runs every Sunday at 01:00 UTC, scoring the
+ *                               Sunday→Saturday week that just closed
  *
  * Cron-based achievements covered:
  *   Daily:   Full Immersion (logged every day this month so far)
@@ -14,7 +14,6 @@
  *   Weekly:  Weekend Warrior (every Sat+Sun for 4 consecutive weekends)
  *            Monday Motivation (10 consecutive Mondays)
  *            Top 10 / Podium / King / Consistent (weekly leaderboard snapshot)
- *   Monthly: Full Immersion (final check: logged every day of the last calendar month)
  *
  * The jobs themselves are scheduled in UTC, but every per-user calendar question
  * ("which day is this log on", "was that a Saturday", "same hour each day") is
@@ -346,22 +345,58 @@ async function checkNoDaysOff(
 }
 
 /**
- * LEADERBOARD RANK
- * Compute current weekly XP leaderboard and return each user's position.
- * Returns a Map<userId_string, position> (1-based).
+ * The week the weekly cron reports on: the last *completed* Sunday→Saturday
+ * week, as [weekStart, weekEnd) in UTC.
+ *
+ * The job fires Monday 01:00 UTC, so the Sunday boundary nearest "now" is the
+ * start of the week that just began — ranking that window would score ~25h of
+ * logs instead of the week users actually competed in. Step back one week.
  */
-async function computeWeeklyLeaderboard(): Promise<Map<string, number>> {
-  const weekStart = utcDayBoundary(-(new Date().getUTCDay())); // Sunday
+function lastCompletedWeek(): { weekStart: Date; weekEnd: Date } {
+  const weekEnd = utcDayBoundary(-(new Date().getUTCDay())); // Sunday 00:00 UTC
+  const weekStart = new Date(weekEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return { weekStart, weekEnd };
+}
+
+/**
+ * LEADERBOARD RANK
+ * Compute the weekly XP leaderboard over [weekStart, weekEnd) and return each
+ * user's position. Returns a Map<userId_string, position> (1-based).
+ */
+async function computeWeeklyLeaderboard(
+  weekStart: Date,
+  weekEnd: Date
+): Promise<Map<string, number>> {
   const ranked = await Log.aggregate<{ _id: Types.ObjectId; totalXp: number }>([
     {
       $match: {
-        date: { $gte: weekStart },
+        date: { $gte: weekStart, $lt: weekEnd },
         private: { $ne: true },
         unknownDate: { $ne: true },
       },
     },
     { $group: { _id: '$user', totalXp: { $sum: '$xp' } } },
+    // Ranking-banned users must not occupy a slot — leaving them in shifts every
+    // legitimate user one position down and can push #11 out of the top 10.
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: { path: '$user', preserveNullAndEmptyArrays: false } },
+    {
+      $match: {
+        $or: [
+          { 'user.moderation.rankingBanned': { $exists: false } },
+          { 'user.moderation.rankingBanned': false },
+        ],
+      },
+    },
     { $sort: { totalXp: -1 } },
+    { $project: { _id: 1, totalXp: 1 } },
   ]);
 
   const map = new Map<string, number>();
@@ -429,6 +464,152 @@ export async function runDailyCronAchievements(): Promise<void> {
   }
 }
 
+// ─── Weekly Rank Awards ──────────────────────────────────────────────────────
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Grant the leaderboard achievements for one completed week and record every
+ * ranked user's snapshot. Shared by the weekly cron and the retroactive
+ * backfill so both score a week exactly the same way.
+ *
+ * Only users in `eligibleUserIds` (non-banned, still existing) can be awarded,
+ * but the leaderboard positions themselves come from the full week's logs.
+ */
+async function awardWeeklyRanks(
+  weekStart: Date,
+  weekEnd: Date,
+  eligibleUserIds: Set<string>
+): Promise<number> {
+  const leaderboard = await computeWeeklyLeaderboard(weekStart, weekEnd);
+  let granted = 0;
+
+  for (const [userIdString, position] of leaderboard) {
+    if (!eligibleUserIds.has(userIdString)) continue;
+    const userId = new Types.ObjectId(userIdString);
+
+    if (position <= 10 && (await grantIfUnowned(userId, 'rank_top10', position))) {
+      granted++;
+    }
+    if (position <= 3 && (await grantIfUnowned(userId, 'rank_podium', position))) {
+      granted++;
+    }
+    if (position === 1 && (await grantIfUnowned(userId, 'rank_king', position))) {
+      granted++;
+    }
+
+    // Save weekly snapshot for Consistent tracking
+    await WeeklyRankSnapshot.findOneAndUpdate(
+      { userId, weekStart },
+      { userId, weekStart, position },
+      { upsert: true }
+    );
+  }
+
+  return granted;
+}
+
+/**
+ * Consistent — top 25 for 4 consecutive weeks. Scans the user's whole snapshot
+ * history rather than only the latest 4: the achievement records something the
+ * user *did*, so a qualifying run stays earned even after they drop off.
+ */
+async function checkRankConsistent(userId: Types.ObjectId): Promise<boolean> {
+  const snapshots = await WeeklyRankSnapshot.find({ userId })
+    .select('weekStart position')
+    .sort({ weekStart: 1 })
+    .lean();
+
+  let run = 0;
+  let previousWeek: number | null = null;
+
+  for (const snapshot of snapshots) {
+    const week = snapshot.weekStart.getTime();
+    const isConsecutive = previousWeek !== null && week - previousWeek === WEEK_MS;
+
+    if (snapshot.position <= 25) {
+      run = isConsecutive ? run + 1 : 1;
+    } else {
+      run = 0;
+    }
+    previousWeek = week;
+
+    if (run >= 4) return true;
+  }
+
+  return false;
+}
+
+/** The UTC Sunday 00:00 on/before the given date. */
+function sundayOfUtc(date: Date): Date {
+  const d = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  );
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d;
+}
+
+/**
+ * Replay every completed Sunday→Saturday week and grant the leaderboard
+ * achievements the weekly cron should have given at the time.
+ *
+ * Needed because the cron used to score the wrong window (it ranked the ~25h of
+ * the week that had just *started* rather than the week that had just ended),
+ * so users who genuinely finished a week in the top 10 were never awarded.
+ *
+ * Idempotent — grants go through grantIfUnowned and snapshots are upserted, so
+ * this is safe to re-run and will not re-award anything already held.
+ */
+export async function backfillRankAchievements(options?: {
+  onWeek?: (info: { weekStart: Date; index: number; total: number }) => void;
+}): Promise<{ weeks: number; granted: number }> {
+  const users = await getActiveUsers();
+  const eligible = new Set(users.map((u) => u._id.toString()));
+
+  const [firstLog] = await Log.aggregate<{ first: Date }>([
+    { $match: { private: { $ne: true }, unknownDate: { $ne: true } } },
+    { $group: { _id: null, first: { $min: '$date' } } },
+  ]);
+  if (!firstLog?.first) return { weeks: 0, granted: 0 };
+
+  // The in-progress week is not scored — only weeks that have fully closed.
+  const { weekEnd: openWeekStart } = lastCompletedWeek();
+
+  const MAX_WEEKS = 520; // ~10 years — bounds work and ignores mis-dated old logs
+  let cursor = sundayOfUtc(new Date(firstLog.first));
+  const spanWeeks =
+    Math.floor((openWeekStart.getTime() - cursor.getTime()) / WEEK_MS) + 1;
+  if (spanWeeks > MAX_WEEKS) {
+    cursor = new Date(openWeekStart.getTime() - MAX_WEEKS * WEEK_MS);
+  }
+
+  const total = Math.max(
+    0,
+    Math.floor((openWeekStart.getTime() - cursor.getTime()) / WEEK_MS)
+  );
+
+  let weeks = 0;
+  let granted = 0;
+
+  while (cursor.getTime() < openWeekStart.getTime()) {
+    const weekEnd = new Date(cursor.getTime() + WEEK_MS);
+    granted += await awardWeeklyRanks(cursor, weekEnd, eligible);
+    weeks++;
+    options?.onWeek?.({ weekStart: cursor, index: weeks, total });
+    cursor = weekEnd;
+  }
+
+  // Consistent depends on the full snapshot history, so evaluate it only once
+  // every week has been replayed.
+  for (const { _id: userId } of users) {
+    if (await checkRankConsistent(userId)) {
+      if (await grantIfUnowned(userId, 'rank_consistent')) granted++;
+    }
+  }
+
+  return { weeks, granted };
+}
+
 // ─── Weekly Cron ─────────────────────────────────────────────────────────────
 
 export async function runWeeklyCronAchievements(): Promise<void> {
@@ -437,9 +618,14 @@ export async function runWeeklyCronAchievements(): Promise<void> {
     const users = await getActiveUsers();
     let granted = 0;
 
-    // Compute current weekly leaderboard (a single global UTC week for everyone)
-    const leaderboard = await computeWeeklyLeaderboard();
-    const weekStart = utcDayBoundary(-(new Date().getUTCDay()));
+    // Rank the week that just closed (a single global UTC week for everyone).
+    // The snapshot is keyed to that week's Sunday, not to "now".
+    const { weekStart, weekEnd } = lastCompletedWeek();
+    granted += await awardWeeklyRanks(
+      weekStart,
+      weekEnd,
+      new Set(users.map((u) => u._id.toString()))
+    );
 
     for (const { _id: userId, timezone } of users) {
       try {
@@ -457,44 +643,10 @@ export async function runWeeklyCronAchievements(): Promise<void> {
           }
         }
 
-        // 3. Leaderboard achievements
-        const position = leaderboard.get(userId.toString());
-        if (position !== undefined) {
-          if (position <= 10 && (await grantIfUnowned(userId, 'rank_top10', position))) {
-            granted++;
-          }
-          if (position <= 3 && (await grantIfUnowned(userId, 'rank_podium', position))) {
-            granted++;
-          }
-          if (position === 1 && (await grantIfUnowned(userId, 'rank_king', position))) {
-            granted++;
-          }
-
-          // Save weekly snapshot for Consistent tracking
-          await WeeklyRankSnapshot.findOneAndUpdate(
-            { userId, weekStart },
-            { userId, weekStart, position },
-            { upsert: true }
-          );
-        }
-
-        // 4. Consistent — top 25 for 4 consecutive weeks
-        const snapshots = await WeeklyRankSnapshot.find({ userId })
-          .sort({ weekStart: -1 })
-          .limit(4)
-          .lean();
-
-        if (
-          snapshots.length === 4 &&
-          snapshots.every((s) => s.position <= 25)
-        ) {
-          // Verify they are truly 4 consecutive weeks apart
-          const sorted = snapshots.map((s) => s.weekStart.getTime()).sort((a, b) => b - a);
-          const allConsecutive = sorted.every((ts, i) => {
-            if (i === 0) return true;
-            return sorted[i - 1] - ts === 7 * 24 * 60 * 60 * 1000;
-          });
-          if (allConsecutive && (await grantIfUnowned(userId, 'rank_consistent'))) {
+        // 3. Consistent — top 25 for 4 consecutive weeks
+        //    (rank_top10/podium/king were already granted by awardWeeklyRanks)
+        if (await checkRankConsistent(userId)) {
+          if (await grantIfUnowned(userId, 'rank_consistent')) {
             granted++;
           }
         }
@@ -533,9 +685,10 @@ export function initAchievementCronScheduler(): void {
     'UTC'
   );
 
-  // Weekly every Monday at 01:00 UTC
+  // Weekly every Sunday at 01:00 UTC — one hour after the Sunday→Saturday week
+  // closes, so the leaderboard result lands while it is still fresh.
   new CronJob(
-    '0 1 * * 1',
+    '0 1 * * 0',
     () => {
       runWeeklyCronAchievements().catch((e) =>
         console.error('Weekly achievement cron error:', e)
@@ -546,5 +699,5 @@ export function initAchievementCronScheduler(): void {
     'UTC'
   );
 
-  console.log('🏆 Achievement cron jobs scheduled (daily 00:30 UTC, weekly Mon 01:00 UTC)');
+  console.log('🏆 Achievement cron jobs scheduled (daily 00:30 UTC, weekly Sun 01:00 UTC)');
 }
