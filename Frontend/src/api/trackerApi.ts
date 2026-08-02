@@ -150,6 +150,7 @@ export async function getMediumRankingFn(params: {
     | 'video'
     | 'movie'
     | 'tv show'
+    | 'book'
     | 'audio';
   metric: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
   timeFilter?: string;

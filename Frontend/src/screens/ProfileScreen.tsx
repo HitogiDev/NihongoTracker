@@ -83,6 +83,8 @@ function ProfileScreen() {
     | 'game'
     | 'video'
     | 'movie'
+    | 'tv show'
+    | 'book'
     | 'audio'
     | 'other'
   >('all');
@@ -783,6 +785,8 @@ function ProfileScreen() {
                             { value: 'game', label: 'Video Game' },
                             { value: 'video', label: 'Video' },
                             { value: 'movie', label: 'Movie' },
+                            { value: 'tv show', label: 'TV Show' },
+                            { value: 'book', label: 'Book' },
                             { value: 'audio', label: 'Audio' },
                             { value: 'other', label: 'Other' },
                           ].map((option) => (

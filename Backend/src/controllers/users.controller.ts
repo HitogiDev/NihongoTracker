@@ -1661,6 +1661,7 @@ export async function getMediumRanking(
       | 'video'
       | 'movie'
       | 'tv show'
+      | 'book'
       | 'audio'
       | undefined;
     const metric = (req.query.metric as string) || 'xp'; // xp | time | episodes | chars | pages

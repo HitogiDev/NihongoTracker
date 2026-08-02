@@ -135,6 +135,7 @@ const swaggerDocument = {
               'movie',
               'other',
               'tv show',
+              'book',
             ],
           },
           mediaId: { type: 'string' },
@@ -184,6 +185,7 @@ const swaggerDocument = {
               'movie',
               'other',
               'tv show',
+              'book',
             ],
           },
           mediaId: {
@@ -271,6 +273,7 @@ const swaggerDocument = {
               'video',
               'movie',
               'tv show',
+              'book',
             ],
           },
           episodes: { type: 'number' },

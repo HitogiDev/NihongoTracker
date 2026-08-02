@@ -674,7 +674,8 @@ function MediaDetails() {
     (mediaDocument?.type === 'vn' ||
       mediaDocument?.type === 'game' ||
       mediaDocument?.type === 'manga' ||
-      mediaDocument?.type === 'reading') &&
+      mediaDocument?.type === 'reading' ||
+      mediaDocument?.type === 'book') &&
     totalCharCount > 0 &&
     readingPercentage >= 100;
   const isAutoCompleteSuppressed =
@@ -1175,7 +1176,8 @@ function MediaDetails() {
             {(mediaDocument?.type === 'vn' ||
               mediaDocument?.type === 'game' ||
               mediaDocument?.type === 'manga' ||
-              mediaDocument?.type === 'reading') &&
+              mediaDocument?.type === 'reading' ||
+              mediaDocument?.type === 'book') &&
               totalCharCount > 0 &&
               myStats.readingPercentage !== null &&
               theirStats.readingPercentage !== null && (
@@ -1363,6 +1365,34 @@ function MediaDetails() {
                     </>
                   )}
 
+                  {mediaType === 'book' && (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-base-content/70 min-w-20">
+                          Pages:
+                        </span>
+                        <span>{mediaDocument?.pageCount ?? 'Unknown'}</span>
+                      </div>
+                      {mediaDocument?.authors &&
+                        mediaDocument.authors.length > 0 && (
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-base-content/70 min-w-20">
+                              Authors:
+                            </span>
+                            <span>{mediaDocument.authors.join(', ')}</span>
+                          </div>
+                        )}
+                      {mediaDocument?.publishedDate && (
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-base-content/70 min-w-20">
+                            Published:
+                          </span>
+                          <span>{mediaDocument.publishedDate}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   {(mediaType === 'manga' || mediaType === 'reading') && (
                     <>
                       <div className="flex items-center gap-3">
@@ -1452,6 +1482,33 @@ function MediaDetails() {
                           VNDB
                         </a>
                       )}
+                      {mediaDocument?.type === 'book' &&
+                        mediaDocument?.contentId && (
+                          <a
+                            className="btn btn-outline btn-sm gap-2"
+                            href={`https://books.google.com/books?id=${mediaDocument.contentId.replace(
+                              /^gbooks-/,
+                              ''
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                              />
+                            </svg>
+                            Google Books
+                          </a>
+                        )}
                       {mediaDocument?.type === 'game' && igdbGameUrl && (
                         <a
                           className="btn btn-outline btn-sm gap-2"
@@ -1783,7 +1840,8 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading') &&
+                    mediaDocument?.type === 'reading' ||
+                    mediaDocument?.type === 'book') &&
                     totalCharsRead > 0 && (
                       <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
@@ -1819,7 +1877,8 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading') &&
+                    mediaDocument?.type === 'reading' ||
+                    mediaDocument?.type === 'book') &&
                     progressTotalChars > 0 &&
                     !effectiveIsCompleted && (
                       <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
@@ -1865,7 +1924,8 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading') &&
+                    mediaDocument?.type === 'reading' ||
+                    mediaDocument?.type === 'book') &&
                     readingSpeed > 0 && (
                       <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="card-body">
@@ -1905,7 +1965,8 @@ function MediaDetails() {
                 {(mediaDocument?.type === 'vn' ||
                   mediaDocument?.type === 'game' ||
                   mediaDocument?.type === 'manga' ||
-                  mediaDocument?.type === 'reading') &&
+                  mediaDocument?.type === 'reading' ||
+                  mediaDocument?.type === 'book') &&
                   progressTotalChars > 0 &&
                   !effectiveIsCompleted && (
                     <div className="mt-6 space-y-4">

@@ -352,6 +352,10 @@ function ListScreen() {
         ...item,
         category: 'tv show' as const,
       })),
+      ...(immersionList.book || []).map((item) => ({
+        ...item,
+        category: 'book' as const,
+      })),
     ];
   })();
 
@@ -424,6 +428,7 @@ function ListScreen() {
       'video',
       'movie',
       'tv show',
+      'book',
     ];
 
     filteredAndSortedMedia.forEach((item) => {

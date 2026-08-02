@@ -1086,6 +1086,7 @@ export async function adminUpdateMedia(
       'characters',
       'seasons',
       'runtime',
+      'pageCount',
     ];
     const mediaRecord = media as unknown as Record<string, unknown>;
     for (const field of numericFields) {

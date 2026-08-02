@@ -60,6 +60,7 @@ type RankingMediumType =
   | 'video'
   | 'movie'
   | 'tv show'
+  | 'book'
   | 'audio';
 type RankingMediumMetric = 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
 
@@ -95,6 +96,7 @@ const VALID_MEDIUM_TYPES: RankingMediumType[] = [
   'video',
   'movie',
   'tv show',
+  'book',
   'audio',
 ];
 const isOneOf = <T extends string>(
@@ -229,6 +231,7 @@ function RankingScreen() {
     | 'video'
     | 'movie'
     | 'tv show'
+    | 'book'
     | 'audio',
     Array<{
       label: string;
@@ -277,6 +280,12 @@ function RankingScreen() {
       'tv show': [
         { label: 'XP', value: 'xp' },
         { label: 'Time', value: 'time' },
+      ],
+      book: [
+        { label: 'XP', value: 'xp' },
+        { label: 'Time', value: 'time' },
+        { label: 'Pages', value: 'pages' },
+        { label: 'Characters', value: 'chars' },
       ],
     };
   }, []);
@@ -1066,6 +1075,7 @@ function RankingScreen() {
                   'video',
                   'movie',
                   'tv show',
+                  'book',
                   'audio',
                 ] as const
               ).map((t) => (

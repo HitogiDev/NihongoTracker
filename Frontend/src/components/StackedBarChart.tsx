@@ -66,6 +66,7 @@ const typeColors: { [key: string]: string } = {
   anime: '#26b2f2',
   video: '#2cc9a4',
   'tv show': '#f8b420',
+  book: '#7c6cf0',
   manga: '#ee4466',
   reading: '#b34ce6',
   movie: '#f77118',

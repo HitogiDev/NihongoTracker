@@ -10,6 +10,7 @@ const LOG_SCREEN_QUERY_KEYS: Partial<Record<ILog['type'], string[]>> = {
   video: ['videoLogs', 'movieLogs', 'tvShowLogs'],
   movie: ['movieLogs'],
   'tv show': ['tvShowLogs'],
+  book: ['bookLogs'],
 };
 
 export const invalidateLogScreenQueries = (

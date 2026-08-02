@@ -155,6 +155,7 @@ export default function MediaEditPanel() {
     if (t === 'manga' || t === 'reading' || t === 'vn')
       payload.characters = edit.characters ?? undefined;
     if (t === 'movie') payload.runtime = edit.runtime ?? undefined;
+    if (t === 'book') payload.pageCount = edit.pageCount ?? undefined;
     if (t === 'game') payload.platforms = splitList(edit._platformsText);
 
     saveMutation.mutate({ id: edit._id, payload });
@@ -162,7 +163,7 @@ export default function MediaEditPanel() {
 
   const numberField = (
     label: string,
-    key: 'episodes' | 'episodeDuration' | 'seasons' | 'chapters' | 'volumes' | 'characters' | 'runtime'
+    key: 'episodes' | 'episodeDuration' | 'seasons' | 'chapters' | 'volumes' | 'characters' | 'runtime' | 'pageCount'
   ) => (
     <label className="form-control">
       <div className="label">
@@ -363,6 +364,7 @@ export default function MediaEditPanel() {
                 edit.type === 'vn') &&
                 numberField('Characters', 'characters')}
               {edit.type === 'movie' && numberField('Runtime (min)', 'runtime')}
+              {edit.type === 'book' && numberField('Pages', 'pageCount')}
 
               {edit.type === 'game' && (
                 <label className="form-control md:col-span-2">
