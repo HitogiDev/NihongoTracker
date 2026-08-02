@@ -693,6 +693,28 @@ function MediaDetails() {
     (isLastVolumeCompleted || isCharacterProgressCompleted || isEpisodeProgressCompleted);
   const effectiveIsCompleted =
     !!mediaDocument?.isCompleted || shouldAutoCompleteMedia;
+
+  // Status badge shown on the Media Details card. Falls back to the presence of
+  // logs so untouched media reads "Not started" instead of "In progress".
+  const statusBadge: { label: string; className: string } = (() => {
+    if (effectiveIsCompleted)
+      return { label: 'Completed', className: 'badge-success' };
+
+    switch (mediaDocument?.mediaStatus) {
+      case 'dropped':
+        return { label: 'Dropped', className: 'badge-error' };
+      case 'paused':
+        return { label: 'Paused', className: 'badge-warning' };
+      case 'planning':
+        return { label: 'Planning', className: 'badge-info' };
+      case 'in_progress':
+        return { label: 'In progress', className: 'badge-outline' };
+      default:
+        return logsArray.length > 0
+          ? { label: 'In progress', className: 'badge-outline' }
+          : { label: 'Not started', className: 'badge-ghost' };
+    }
+  })();
   const isOwnProfile =
     !!currentUser?.username && (!username || currentUser.username === username);
   const useCurrentVolumeProgress =
@@ -1286,17 +1308,13 @@ function MediaDetails() {
                         }
                       >
                         <span
-                          className={`badge ${
-                            effectiveIsCompleted
-                              ? 'badge-success'
-                              : 'badge-outline'
-                          } ${
+                          className={`badge ${statusBadge.className} ${
                             effectiveIsCompleted && mediaDocument.completedAt
                               ? 'cursor-help'
                               : ''
                           }`}
                         >
-                          {effectiveIsCompleted ? 'Completed' : 'In progress'}
+                          {statusBadge.label}
                         </span>
                       </div>
                     </div>
