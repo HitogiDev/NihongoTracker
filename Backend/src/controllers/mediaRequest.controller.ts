@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { apiError } from '../i18n/errorCodes.js';
 import { Model, Types } from 'mongoose';
 import MediaRequest from '../models/mediaRequest.model.js';
 import {
@@ -101,7 +102,7 @@ export async function createMediaRequest(
 ) {
   try {
     const userId = res.locals.user?.id;
-    if (!userId) throw new customError('Authentication required', 401);
+    if (!userId) throw apiError('auth.notAuthenticated', 401, 'Authentication required');
 
     const { type, referenceUrl, coverImage, isAdult, note } =
       req.body as Partial<IMediaRequest> & { isAdult?: boolean };
@@ -109,14 +110,14 @@ export async function createMediaRequest(
 
     const title = sanitizeTitle(req.body.title);
     if (!title) {
-      throw new customError('A native title is required', 400);
+      throw apiError('mediaRequest.nativeTitleRequired', 400, 'A native title is required');
     }
 
     if (
       typeof type !== 'string' ||
       !MEDIA_REQUEST_TYPES.includes(type as MediaRequestType)
     ) {
-      throw new customError('A valid media type is required', 400);
+      throw apiError('mediaRequest.invalidType', 400, 'A valid media type is required');
     }
 
     const pendingCount = await MediaRequest.countDocuments({
@@ -124,9 +125,11 @@ export async function createMediaRequest(
       status: 'pending',
     });
     if (pendingCount >= MAX_PENDING_PER_USER) {
-      throw new customError(
+      throw apiError(
+        'mediaRequest.tooManyPending',
+        429,
         `You already have ${MAX_PENDING_PER_USER} pending requests. Wait for them to be reviewed before submitting more.`,
-        429
+        { max: MAX_PENDING_PER_USER }
       );
     }
 
@@ -161,7 +164,7 @@ export async function getMyMediaRequests(
 ) {
   try {
     const userId = res.locals.user?.id;
-    if (!userId) throw new customError('Authentication required', 401);
+    if (!userId) throw apiError('auth.notAuthenticated', 401, 'Authentication required');
 
     const requests = await MediaRequest.find({ user: userId })
       .sort({ createdAt: -1 })
@@ -228,11 +231,11 @@ export async function reviewMediaRequest(
 ) {
   try {
     const reviewerId = res.locals.user?.id;
-    if (!reviewerId) throw new customError('Authentication required', 401);
+    if (!reviewerId) throw apiError('auth.notAuthenticated', 401, 'Authentication required');
 
     const { id } = req.params;
     if (!Types.ObjectId.isValid(id)) {
-      throw new customError('Invalid request id', 400);
+      throw apiError('mediaRequest.invalidId', 400, 'Invalid request id');
     }
 
     const { action, reviewNote } = req.body as {
@@ -240,15 +243,16 @@ export async function reviewMediaRequest(
       reviewNote?: string;
     };
     if (action !== 'approve' && action !== 'reject') {
-      throw new customError('action must be "approve" or "reject"', 400);
+      throw apiError('mediaRequest.invalidAction', 400, 'action must be "approve" or "reject"');
     }
 
     const request = await MediaRequest.findById(id);
-    if (!request) throw new customError('Media request not found', 404);
+    if (!request) throw apiError('mediaRequest.notFound', 404, 'Media request not found');
     if (request.status !== 'pending') {
-      throw new customError(
-        `This request has already been ${request.status}`,
-        409
+      throw apiError(
+        'mediaRequest.alreadyReviewed',
+        409,
+        `This request has already been ${request.status}`
       );
     }
 

@@ -3,7 +3,8 @@
     "format": "Discord ID must be 17-19 digits"
   },
   "email": {
-    "invalid": "Please enter a valid email address"
+    "invalid": "Please enter a valid email address",
+    "required": "Email is required"
   },
   "goal": {
     "charsMax": "Daily character target seems unreasonably high (max: 100,000)",

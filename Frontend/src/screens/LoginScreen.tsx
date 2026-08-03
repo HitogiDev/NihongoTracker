@@ -8,12 +8,17 @@ import { toast } from 'react-toastify';
 import Loader from '../components/Loader';
 import { validateLogin } from '../utils/validation';
 import { gsap } from 'gsap';
+import { Trans, useTranslation } from 'react-i18next';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { getLearnerCountKey } from '../utils/learnerCount';
 import { getApiErrorMessage } from '../utils/apiError';
 
 function LoginScreen() {
+  const { t } = useTranslation('auth');
   const vt = useValidationText();
+  const { formatNumber } = useDateFormatting();
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [touched, setTouched] = useState({ login: false, password: false });
@@ -34,26 +39,9 @@ function LoginScreen() {
     refetchInterval: 5 * 60 * 1000,
   });
 
-  // Format numbers for display
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    }
-    return num.toString();
-  };
-
-  // Get appropriate word based on user count
-  const getUserCountWord = (count: number | undefined): string => {
-    if (!count) return 'learners';
-    if (count < 100) return 'learners';
-    if (count < 1000) return 'hundreds of learners';
-    if (count < 10000) return 'thousands of learners';
-    if (count < 100000) return 'tens of thousands of learners';
-    return 'hundreds of thousands of learners';
-  };
+  // Compact notation gives "1.2K" in English and "1,2 mil" in Spanish.
+  const formatCompact = (num: number): string =>
+    formatNumber(num, { notation: 'compact', maximumFractionDigits: 1 });
 
   const addToRefs = (el: HTMLDivElement | null) => {
     if (el && !formFieldsRef.current.includes(el)) {
@@ -144,7 +132,7 @@ function LoginScreen() {
     setTouched({ login: true, password: true });
 
     if (!isFormValid) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('login.toast.missingFields'));
       return;
     }
 
@@ -162,12 +150,12 @@ function LoginScreen() {
         repeat: 1,
       });
 
-      toast.success('Login successful');
+      toast.success(t('login.toast.success'));
       setTimeout(() => {
         navigate('/');
       }, 500);
     }
-  }, [navigate, isSuccess]);
+  }, [navigate, isSuccess, t]);
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-base-200 via-base-300 to-base-200 overflow-hidden pt-20">
@@ -198,21 +186,26 @@ function LoginScreen() {
                       d="M13 10V3L4 14h7v7l9-11h-7z"
                     />
                   </svg>
-                  Welcome Back
+                  {t('login.badge')}
                 </span>
               </div>
 
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                Continue Your{' '}
-                <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  Japanese Learning
-                </span>
-                Journey
+                <Trans
+                  t={t}
+                  i18nKey="login.title"
+                  components={{
+                    hl: (
+                      <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent" />
+                    ),
+                  }}
+                />
               </h1>
 
               <p className="text-xl text-base-content/70 leading-relaxed">
-                Join {getUserCountWord(stats?.totalUsers)} tracking their
-                immersion, leveling up, and achieving their immersion goals.
+                {t('login.subtitle', {
+                  learners: t(getLearnerCountKey(stats?.totalUsers)),
+                })}
               </p>
             </div>
 
@@ -237,10 +230,10 @@ function LoginScreen() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
-                    Track Your Progress
+                    {t('login.features.progress.title')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    Monitor your daily and long-term immersion goals
+                    {t('login.features.progress.description')}
                   </p>
                 </div>
               </div>
@@ -264,10 +257,10 @@ function LoginScreen() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
-                    Level Up & Compete
+                    {t('login.features.levelUp.title')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    Earn XP, climb leaderboards, and stay motivated
+                    {t('login.features.levelUp.description')}
                   </p>
                 </div>
               </div>
@@ -291,10 +284,10 @@ function LoginScreen() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
-                    Join Your Clubs
+                    {t('login.features.clubs.title')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    Connect with your learning communities and friends
+                    {t('login.features.clubs.description')}
                   </p>
                 </div>
               </div>
@@ -304,26 +297,26 @@ function LoginScreen() {
             <div className="grid grid-cols-3 gap-4 pt-4">
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-primary">
-                  {stats?.totalUsers ? formatNumber(stats.totalUsers) : '...'}
+                  {stats?.totalUsers ? formatCompact(stats.totalUsers) : '...'}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  Total Users
+                  {t('hero.stats.totalUsers')}
                 </div>
               </div>
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-secondary">
-                  {stats?.totalXp ? formatNumber(stats.totalXp) : '...'}
+                  {stats?.totalXp ? formatCompact(stats.totalXp) : '...'}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  XP Earned
+                  {t('hero.stats.xpEarned')}
                 </div>
               </div>
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-accent">
-                  {stats?.totalLogs ? formatNumber(stats.totalLogs) : '...'}
+                  {stats?.totalLogs ? formatCompact(stats.totalLogs) : '...'}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  Logs Tracked
+                  {t('hero.stats.logsTracked')}
                 </div>
               </div>
             </div>
@@ -340,10 +333,10 @@ function LoginScreen() {
                   ref={titleRef}
                   className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
                 >
-                  Welcome Back
+                  {t('login.form.title')}
                 </h2>
                 <p className="text-center text-base-content/60 mb-6 text-sm">
-                  Sign in and continue tracking!
+                  {t('login.form.subtitle')}
                 </p>
 
                 {/* Username/Email Field */}
@@ -364,12 +357,12 @@ function LoginScreen() {
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                      Username or Email
+                      {t('login.form.login.label')}
                     </span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter your username or email"
+                    placeholder={t('login.form.login.placeholder')}
                     className={`input input-bordered w-full ${
                       errors.usernameOrEmail
                         ? 'input-error'
@@ -410,12 +403,12 @@ function LoginScreen() {
                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                         />
                       </svg>
-                      Password
+                      {t('login.form.password.label')}
                     </span>
                   </label>
                   <input
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder={t('login.form.password.placeholder')}
                     className={`input input-bordered w-full ${
                       errors.password
                         ? 'input-error'
@@ -442,7 +435,7 @@ function LoginScreen() {
                       to="/forgot-password"
                       className="label-text-alt link link-hover link-primary"
                     >
-                      Forgot password?
+                      {t('login.form.forgotPassword')}
                     </Link>
                   </label>
                 </div>
@@ -461,7 +454,7 @@ function LoginScreen() {
                     {isPending ? (
                       <>
                         <span className="loading loading-spinner loading-sm"></span>
-                        Signing In...
+                        {t('login.form.submitting')}
                       </>
                     ) : (
                       <>
@@ -479,7 +472,7 @@ function LoginScreen() {
                             d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                           />
                         </svg>
-                        Sign In
+                        {t('login.form.submit')}
                       </>
                     )}
                   </button>

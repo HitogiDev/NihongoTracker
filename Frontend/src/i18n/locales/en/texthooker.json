@@ -1,1 +1,162 @@
-{}
+{
+  "dashboard": {
+    "title": "Texthooker Dashboard",
+    "subtitle": "Track your reading progress with the texthooker",
+    "stats": {
+      "sessions": "Total Sessions",
+      "sessionsDesc": "Logged texthooker sessions",
+      "lines": "Total Lines",
+      "linesDesc": "Lines captured",
+      "characters": "Total Characters",
+      "charactersDesc": "Japanese characters read",
+      "time": "Total Time",
+      "timeDesc": "Time tracked reading"
+    },
+    "recentSessions": "Recent Sessions",
+    "empty": "No sessions yet",
+    "emptyBody": "Start a TextHooker session from a media page or launch a blank session anytime.",
+    "untitledSession": "Untitled Session",
+    "unknownTitle": "Unknown Title",
+    "cover": "Cover",
+    "deleteSession": "Delete Session",
+    "joinRoom": "Join Room",
+    "startSession": "Start Session",
+    "linesCount_one": "{{count}} line",
+    "linesCount_other": "{{count}} lines",
+    "charsCount_one": "{{count}} char",
+    "charsCount_other": "{{count}} chars"
+  },
+  "duration": {
+    "hoursMinutes": "{{hours}}h {{minutes}}m",
+    "hours": "{{hours}}h",
+    "minutes": "{{minutes}}m",
+    "seconds": "{{seconds}}s"
+  },
+  "hooker": {
+    "documentTitle": "TextHooker • NihongoTracker",
+    "stats": {
+      "characters": "Characters",
+      "lines": "Lines",
+      "totalLines": "Total Lines",
+      "linesRead": "Lines Read",
+      "readingSpeed": "Reading Speed",
+      "readingSpeedUnit": "Reading Speed (chars/hour)",
+      "speed": "Speed",
+      "time": "Time",
+      "timeElapsed": "Time Elapsed",
+      "progress": "Progress",
+      "timer": "Timer"
+    },
+    "timer": {
+      "pause": "Pause Timer",
+      "resume": "Resume Timer",
+      "reset": "Reset Timer",
+      "set": "Set Timer",
+      "resetConfirm": "Reset timer?",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "seconds": "Seconds",
+      "autoPause": "Auto-Pause Timeout (s)",
+      "autoPauseHint": "Pause the running timer when the websocket connection is lost"
+    },
+    "collab": {
+      "title": "Collaboration Mode",
+      "local": "Local (Offline)",
+      "host": "Host (Broadcast)",
+      "guest": "Guest (Receive)",
+      "hostShort": "Host",
+      "guestShort": "Guest",
+      "shared": "Shared",
+      "offline": "Offline",
+      "connected": "Connected",
+      "connectedMembers": "Connected Members",
+      "roomId": "Room ID",
+      "roomPlaceholder": "Enter Room Name",
+      "websocketUrl": "WebSocket URL",
+      "websocketPlaceholder": "ws://localhost:6677",
+      "join": "Join",
+      "disconnect": "Disconnect",
+      "inviteLink": "Invite Link",
+      "copied": "Copied!",
+      "continuousReconnect": "Continuous Reconnect",
+      "continuousReconnectHint": "Keep trying to connect until successful",
+      "preventDuplicates": "Prevent Global Duplicates",
+      "preventDuplicatesHint": "Block adding identical text lines globally",
+      "allowPaste": "Allow Paste during Pause"
+    },
+    "settings": {
+      "title": "Settings",
+      "theme": "Hooker Theme",
+      "useAppTheme": "Use app theme",
+      "fontFamily": "Font Family",
+      "fontSize": "Font Size (px)",
+      "lineHeight": "Line Height",
+      "lineGap": "Line Gap (px)",
+      "verticalText": "Vertical Text",
+      "alwaysVertical": "Always vertical control bar",
+      "customCss": "Custom CSS",
+      "classNameHelp": "Class Name Help",
+      "showClassNameHelp": "Show class name help"
+    },
+    "controls": {
+      "back": "Back to Dashboard",
+      "showControls": "Show controls",
+      "hideControls": "Hide controls",
+      "openPopup": "Open in popup window",
+      "openedInPopup": "Opened in a popup window",
+      "viewStats": "View Stats",
+      "deleteLine": "Delete line",
+      "deleteLastLine": "Delete last line",
+      "undoDelete": "Undo delete"
+    },
+    "session": {
+      "resumePrevious": "Resume previous session?",
+      "started": "Started a new session",
+      "syncing": "Syncing pending lines..."
+    },
+    "toast": {
+      "copyInviteFailed": "Failed to copy invite link",
+      "copyLinesFailed": "Failed to copy lines",
+      "logFailed": "Failed to log session",
+      "startFailed": "Failed to start a new session"
+    }
+  },
+  "mediaSession": {
+    "title": "Start Media Session",
+    "mediaType": "Media Type",
+    "visualNovel": "Visual Novel",
+    "videoGame": "Video Game",
+    "searchPlaceholder_vn": "Search for a visual novel...",
+    "searchPlaceholder_game": "Search for a video game...",
+    "noResults": "No results found",
+    "namePlaceholder": "e.g. Random reading practice",
+    "enter": "Enter",
+    "searchPlaceholder": "Search for media..."
+  },
+  "room": {
+    "title": "Join Collaborative Room",
+    "createTab": "Create & share room",
+    "joinTab": "Join existing room",
+    "roomId": "Room ID",
+    "createHint": "Choose a unique name for your room",
+    "joinHint": "Get the room ID from the host",
+    "createPlaceholder": "Create a room name",
+    "joinPlaceholder": "Enter room ID",
+    "joinAs": "Join as",
+    "host": "Host",
+    "guest": "Guest",
+    "create": "Create Room",
+    "join": "Join Room",
+    "close": "close",
+    "sessionName": "Session name",
+    "idTaken": "Room ID already exists. Please choose another name.",
+    "notFound": "Room not found. Check the Room ID or ask the host.",
+    "checkFailed": "Failed to check room availability"
+  },
+  "toast": {
+    "sessionDeleted": "Session deleted successfully",
+    "createFailed": "Failed to create session",
+    "deleteFailed": "Failed to delete session",
+    "searchFailed": "Failed to search media"
+  }
+}

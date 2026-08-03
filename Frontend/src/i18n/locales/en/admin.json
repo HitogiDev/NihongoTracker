@@ -1,1 +1,110 @@
-{}
+{
+  "mediaRequest": {
+    "title": "Request Media",
+    "subtitle": "Can't find a title in the database? Submit it here and an admin or moderator will review it.",
+    "newRequest": "New request",
+    "nativeTitle": "Native title",
+    "nativeTitlePlaceholder": "日本語のタイトル",
+    "mediaType": "Media type",
+    "romajiTitle": "Romaji title",
+    "englishTitle": "English title",
+    "referenceUrl": "Reference URL",
+    "referenceUrlPlaceholder": "AniList / VNDB / IGDB link",
+    "coverImage": "Cover image URL",
+    "descriptions": "Descriptions",
+    "descriptionsHint": "(all optional — fill in any languages you can)",
+    "optional": "optional",
+    "note": "Note to reviewer",
+    "notePlaceholder": "Anything the reviewer should know",
+    "isAdult": "Contains adult content (18+)",
+    "submit": "Submit request",
+    "myRequests": "My requests",
+    "empty": "You haven't requested any media yet.",
+    "viewMedia": "View media",
+    "types": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "reading": "Light Novel",
+      "vn": "Visual Novel",
+      "movie": "Movie",
+      "tvShow": "TV Show",
+      "game": "Game"
+    },
+    "languages": {
+      "eng": "English",
+      "jpn": "Japanese",
+      "spa": "Spanish"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "toast": {
+      "nativeTitleRequired": "A native title is required",
+      "submitFailed": "Failed to submit request"
+    }
+  },
+  "moderation": {
+    "accessDeniedTitle": "Access denied",
+    "accessDeniedBody": "You need admin permissions to access profile moderation tools.",
+    "title": "Moderation",
+    "subtitle": "Manage moderation actions for <b>{{username}}</b>.",
+    "refresh": "Refresh",
+    "recalculateTitle": "Recalculate streak for this user",
+    "recalculateBody": "Rebuilds streak from all existing logs for <b>{{username}}</b>.",
+    "recalculateAction": "Recalculate streak",
+    "rankingBanTitle": "Ban from rankings",
+    "rankingBanBody": "User will be hidden from global ranking and ranking summary.",
+    "banTitle": "Ban user",
+    "banBody": "User cannot log in while banned.",
+    "banReason": "Ban reason",
+    "banReasonPlaceholder": "Optional moderation note or ban reason",
+    "save": "Save moderation",
+    "timeline": "Moderation timeline",
+    "timelineEmpty": "No moderation actions recorded yet.",
+    "by": "by {{username}}",
+    "unknownAdmin": "Unknown admin",
+    "unknownDate": "Unknown date",
+    "reasonSnapshot": "Reason snapshot: {{reason}}",
+    "history": {
+      "rankingBanEnabled": "Ranking ban enabled",
+      "rankingBanRemoved": "Ranking ban removed",
+      "accountBanned": "Account banned",
+      "accountUnbanned": "Account unbanned",
+      "banReasonUpdated": "Ban reason updated",
+      "banReasonCleared": "Ban reason cleared",
+      "reasonSet": "Reason set to: {{reason}}",
+      "reasonCleared": "Reason was cleared",
+      "reasonChanged": "Reason changed to: {{reason}}",
+      "reasonEmpty": "empty",
+      "changed": "Changed from {{previous}} to {{next}}",
+      "enabled": "enabled",
+      "disabled": "disabled"
+    },
+    "toast": {
+      "updated": "Moderation updated",
+      "updateFailed": "Failed to update moderation",
+      "streakRecalculated": "{{username}}'s streak recalculated (current: {{streak}})",
+      "streakFailed": "Failed to recalculate streak for this user"
+    }
+  },
+  "queue": {
+    "title": "Media Requests",
+    "empty_pending": "No pending requests.",
+    "empty_approved": "No approved requests.",
+    "empty_rejected": "No rejected requests.",
+    "requestedBy": "Requested by <b>{{username}}</b> on {{date}}",
+    "unknownRequester": "Unknown",
+    "note": "Note: {{note}}",
+    "reviewNotePlaceholder": "Review note (optional, shown to requester)",
+    "approve": "Approve",
+    "reject": "Reject",
+    "reviewedBy": "Reviewed by {{username}}.",
+    "viewMedia": "View media",
+    "reviewFailed": "Failed to review request",
+    "pendingCount_one": "{{count}} pending",
+    "pendingCount_other": "{{count}} pending",
+    "empty": "No requests."
+  }
+}

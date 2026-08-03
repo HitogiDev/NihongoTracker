@@ -265,7 +265,35 @@
   },
   "tags": {
     "subtitle": "Create and manage tags to organize your logs",
-    "title": "Tags"
+    "title": "Tags",
+    "manager": {
+      "title": "Manage Tags",
+      "createNew": "Create New Tag",
+      "editTag": "Edit Tag",
+      "tagName": "Tag Name",
+      "tagColor": "Tag Color",
+      "namePlaceholder": "e.g., Study, Fun, Practice",
+      "colorPlaceholder": "#3b82f6",
+      "preview": "Preview",
+      "create": "Create",
+      "empty": "No tags yet. Create your first tag to organize your logs!",
+      "deleteTitle": "Delete tag?",
+      "deleteTag": "Delete tag",
+      "editAction": "Edit tag",
+      "nameRequired": "Tag name is required",
+      "created": "Tag created successfully",
+      "updated": "Tag updated successfully",
+      "deleted": "Tag deleted successfully",
+      "createFailed": "Failed to create tag",
+      "updateFailed": "Failed to update tag",
+      "deleteFailed": "Failed to delete tag"
+    },
+    "selector": {
+      "createNewTag": "Create new tag",
+      "createAndAdd": "Create & Add",
+      "loading": "Loading tags...",
+      "close": "Close"
+    }
   },
   "toast": {
     "aboutMaxLength": "About Me text is at the maximum length.",

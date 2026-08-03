@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -71,33 +73,44 @@ type GlobalFeedGroup = {
 };
 
 const feedKindOptions: Array<{
-  label: string;
+  labelKey: ParseKeys<'home'>;
   value: UnifiedFeedFilter;
   icon: React.ElementType;
 }> = [
-  { label: 'All activity', value: 'all', icon: Sparkles },
-  { label: 'Logs', value: 'logs', icon: LayoutList },
-  { label: 'Achievements', value: 'achievements', icon: Trophy },
+  { labelKey: 'dashboard.feed.all', value: 'all', icon: Sparkles },
+  { labelKey: 'dashboard.feed.logs', value: 'logs', icon: LayoutList },
+  {
+    labelKey: 'dashboard.feed.achievements',
+    value: 'achievements',
+    icon: Trophy,
+  },
 ];
 
-const feedTypeOptions: Array<{ label: string; value: FeedType }> = [
-  { label: 'All types', value: 'all' },
-  { label: 'Anime', value: 'anime' },
-  { label: 'Manga', value: 'manga' },
-  { label: 'Reading', value: 'reading' },
-  { label: 'Visual Novel', value: 'vn' },
-  { label: 'Video Game', value: 'game' },
-  { label: 'Video', value: 'video' },
-  { label: 'Movie', value: 'movie' },
-  { label: 'Audio', value: 'audio' },
+const feedTypeOptions: Array<{
+  labelKey: ParseKeys<'home'> | ParseKeys<'common'>;
+  ns: 'home' | 'common';
+  value: FeedType;
+}> = [
+  { labelKey: 'dashboard.feed.allTypes', ns: 'home', value: 'all' },
+  { labelKey: 'mediaTypes.anime', ns: 'common', value: 'anime' },
+  { labelKey: 'mediaTypes.manga', ns: 'common', value: 'manga' },
+  { labelKey: 'mediaTypes.reading', ns: 'common', value: 'reading' },
+  { labelKey: 'mediaTypes.vn', ns: 'common', value: 'vn' },
+  { labelKey: 'mediaTypes.game', ns: 'common', value: 'game' },
+  { labelKey: 'mediaTypes.video', ns: 'common', value: 'video' },
+  { labelKey: 'mediaTypes.movie', ns: 'common', value: 'movie' },
+  { labelKey: 'mediaTypes.audio', ns: 'common', value: 'audio' },
 ];
 
-const feedTimeOptions: Array<{ label: string; value: FeedTimeRange }> = [
-  { label: 'Last 24h', value: 'day' },
-  { label: 'Last 7 days', value: 'week' },
-  { label: 'Last 30 days', value: 'month' },
-  { label: 'Last year', value: 'year' },
-  { label: 'All time', value: 'all' },
+const feedTimeOptions: Array<{
+  labelKey: ParseKeys<'home'>;
+  value: FeedTimeRange;
+}> = [
+  { labelKey: 'dashboard.time.day', value: 'day' },
+  { labelKey: 'dashboard.time.week', value: 'week' },
+  { labelKey: 'dashboard.time.month', value: 'month' },
+  { labelKey: 'dashboard.time.year', value: 'year' },
+  { labelKey: 'dashboard.time.all', value: 'all' },
 ];
 
 const RECENT_MEDIA_PANEL_LIMIT = 4;
@@ -114,19 +127,25 @@ function getRecentMediaRailLimit(width: number) {
 }
 
 function Dashboard() {
+  const { t } = useTranslation('home');
+  // feedTypeOptions mixes the `home` and `common` namespaces, which the typed
+  // `t` signature cannot express in one call.
+  const tAny = t as unknown as (key: string, options?: object) => string;
   const { user, setUser } = useUserDataStore();
   const username = user?.username;
   const userTimezone = user?.settings?.timezone ?? 'UTC';
 
-  const [randomGreeting] = useState(() => {
-    const greetings = [
-      "Let's get some immersion done!",
-      'Time to track your progress!',
-      'Another day, another step towards fluency!',
-      'Keep up the great work!',
-      'The journey of a thousand miles begins with a single step.',
+  // Pick the key once so the greeting stays put, but translate on every render
+  // so it follows a language change.
+  const [greetingKey] = useState<ParseKeys<'home'>>(() => {
+    const keys: ParseKeys<'home'>[] = [
+      'dashboard.greetings.immersion',
+      'dashboard.greetings.track',
+      'dashboard.greetings.fluency',
+      'dashboard.greetings.keepUp',
+      'dashboard.greetings.journey',
     ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
+    return keys[Math.floor(Math.random() * keys.length)];
   });
 
   const { formatRelativeDate } = useDateFormatting();
@@ -421,7 +440,7 @@ function Dashboard() {
 
       setUser(loginResponse);
     } catch (error) {
-      console.error('Failed to refresh user data after quick log', error);
+      console.error(t('dashboard.refreshFailed'), error);
     }
   }
 
@@ -434,20 +453,29 @@ function Dashboard() {
   const xpGapContent = monthlyRanking ? (
     monthlyRanking.nextUser ? (
       <>
-        <span>{numberWithCommas(monthlyRanking.nextUser.gap)} XP behind </span>
-        <Link
-          to={`/user/${monthlyRanking.nextUser.username}`}
-          className="hover:underline"
-        >
-          {monthlyRanking.nextUser.username}
-        </Link>
-        <span> this month</span>
+        <Trans
+          t={t}
+          i18nKey="dashboard.ranking.gap"
+          values={{
+            xp: numberWithCommas(monthlyRanking.nextUser.gap),
+            username: monthlyRanking.nextUser.username,
+          }}
+          components={{
+            xp: <span />,
+            user: (
+              <Link
+                to={`/user/${monthlyRanking.nextUser.username}`}
+                className="hover:underline"
+              />
+            ),
+          }}
+        />
       </>
     ) : (
-      'You are leading the monthly ranking!'
+      t('dashboard.ranking.leading')
     )
   ) : (
-    'Log something to enter this month’s ranking.'
+    t('dashboard.ranking.notRanked')
   );
 
   const closeQuickLog = () => {
@@ -482,7 +510,7 @@ function Dashboard() {
           <h1 className="text-3xl md:text-4xl font-bold text-base-content">
             {user.username}
           </h1>
-          <p className="text-base-content/70 mt-1">{randomGreeting}</p>
+          <p className="text-base-content/70 mt-1">{t(greetingKey)}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
           <Link to="/log" className="btn btn-primary btn-lg">
@@ -566,19 +594,19 @@ function Dashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
-                    label: 'Reading',
+                    label: t('dashboard.stats.reading'),
                     value: `${immersionStats.currentMonth.reading}h`,
                     change: immersionStats.changes.reading,
                     accent: 'text-primary',
                   },
                   {
-                    label: 'Listening',
+                    label: t('dashboard.stats.listening'),
                     value: `${immersionStats.currentMonth.listening}h`,
                     change: immersionStats.changes.listening,
                     accent: 'text-secondary',
                   },
                   {
-                    label: 'Total',
+                    label: t('dashboard.stats.total'),
                     value: `${immersionStats.currentMonth.total}h`,
                     change: immersionStats.changes.total,
                     accent: 'text-base-content',
@@ -610,8 +638,10 @@ function Dashboard() {
                         <ChevronDown className="w-4 h-4 shrink-0" />
                       )}
                       {stat.change !== 0
-                        ? `${Math.abs(stat.change)}% vs. last month`
-                        : 'No change'}
+                        ? t('dashboard.stats.change', {
+                            percent: Math.abs(stat.change),
+                          })
+                        : t('dashboard.stats.noChange')}
                     </p>
                   </div>
                 ))}
@@ -624,7 +654,9 @@ function Dashboard() {
               {/* Header */}
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Global Feed</h2>
+                  <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
+                    {t('dashboard.feed.globalFeed')}
+                  </h2>
                   <p className={DASHBOARD_CARD_DESCRIPTION_CLASS}>
                     See what the community is immersing in right now
                   </p>
@@ -643,7 +675,10 @@ function Dashboard() {
                         )?.icon;
                         return Icon ? <Icon className="w-3.5 h-3.5" /> : null;
                       })()}
-                      {feedKindOptions.find((o) => o.value === feedKind)?.label}
+                      {t(
+                        feedKindOptions.find((o) => o.value === feedKind)
+                          ?.labelKey ?? 'dashboard.feed.all'
+                      )}
                       <ChevronDown className="w-3.5 h-3.5 ml-auto" />
                     </div>
                     <ul
@@ -661,7 +696,7 @@ function Dashboard() {
                               onClick={() => setFeedKind(option.value)}
                             >
                               <Icon className="w-4 h-4" />
-                              {option.label}
+                              {t(option.labelKey)}
                             </a>
                           </li>
                         );
@@ -678,11 +713,17 @@ function Dashboard() {
                         className="btn btn-sm btn-outline gap-2"
                       >
                         <Funnel className="w-3.5 h-3.5" />
-                        {
+                        {tAny(
                           feedTypeOptions.find(
                             (o) => o.value === feedFilters.type
-                          )?.label
-                        }
+                          )?.labelKey ?? 'dashboard.feed.allTypes',
+                          {
+                            ns:
+                              feedTypeOptions.find(
+                                (o) => o.value === feedFilters.type
+                              )?.ns ?? 'home',
+                          }
+                        )}
                         <ChevronDown className="w-3.5 h-3.5" />
                       </div>
                       <ul
@@ -704,7 +745,7 @@ function Dashboard() {
                                 }))
                               }
                             >
-                              {option.label}
+                              {tAny(option.labelKey, { ns: option.ns })}
                             </a>
                           </li>
                         ))}
@@ -720,11 +761,11 @@ function Dashboard() {
                       className="btn btn-sm btn-outline gap-2"
                     >
                       <Clock className="w-3.5 h-3.5" />
-                      {
+                      {t(
                         feedTimeOptions.find(
                           (o) => o.value === feedFilters.timeRange
-                        )?.label
-                      }
+                        )?.labelKey ?? 'dashboard.time.all'
+                      )}
                       <ChevronDown className="w-3.5 h-3.5" />
                     </div>
                     <ul
@@ -746,7 +787,7 @@ function Dashboard() {
                               }))
                             }
                           >
-                            {option.label}
+                            {t(option.labelKey)}
                           </a>
                         </li>
                       ))}
@@ -811,7 +852,8 @@ function Dashboard() {
                           log.media as IMediaDocument | undefined
                         )?.coverImage;
                         const image = log.media?.contentImage || mediaCover;
-                        const feedUsername = log.user?.username ?? 'Someone';
+                        const feedUsername =
+                          log.user?.username ?? t('dashboard.someone');
                         const userAvatar = log.user?.avatar;
                         const mediaType =
                           (log.media as IMediaDocument | undefined)?.type ??
@@ -830,7 +872,8 @@ function Dashboard() {
                             ? `/${mediaType}/${mediaContentId}`
                             : undefined;
                         const playlistTitle =
-                          log.playlistBatchTitle ?? 'Playlist batch';
+                          log.playlistBatchTitle ??
+                          t('dashboard.playlistBatch');
                         const playlistXp = entry.logs.reduce(
                           (sum, playlistLog) => sum + playlistLog.xp,
                           0
@@ -977,7 +1020,7 @@ function Dashboard() {
         open={mediaToRemove !== null}
       >
         <div className="modal-box">
-          <h3 className="font-bold text-lg">Hide from Recent Media?</h3>
+          <h3 className="font-bold text-lg">{t('dashboard.hideTitle')}</h3>
           <p className="py-4">
             Are you sure you want to hide{' '}
             <span className="font-semibold">{mediaToRemove?.title}</span> from
@@ -1081,6 +1124,7 @@ function RecentMediaRail({
   onQuickLog,
   onRemove,
 }: RecentMediaRailProps) {
+  const { t } = useTranslation('home');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(false);
   const [limit, setLimit] = useState(() =>
@@ -1109,14 +1153,20 @@ function RecentMediaRail({
       <div className="card-body space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className={DASHBOARD_CARD_EYEBROW_CLASS}>Recent Media</p>
-            <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Jump back in</h2>
+            <p className={DASHBOARD_CARD_EYEBROW_CLASS}>
+              {t('dashboard.recentMedia')}
+            </p>
+            <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
+              {t('dashboard.jumpBackIn')}
+            </h2>
             <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
               Quick log shortcuts
             </p>
           </div>
           {showSwipeHint && (
-            <span className="text-xs text-base-content/60">Swipe</span>
+            <span className="text-xs text-base-content/60">
+              {t('dashboard.swipe')}
+            </span>
           )}
         </div>
         {logs.length === 0 ? (
@@ -1153,6 +1203,7 @@ function RecentMediaRailTile({
   onQuickLog,
   onRemove,
 }: RecentMediaRailTileProps) {
+  const { t } = useTranslation('home');
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -1183,7 +1234,7 @@ function RecentMediaRailTile({
           type="button"
           onClick={handleRemoveClick}
           className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover/tile:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
-          aria-label="Hide from recent media"
+          aria-label={t('dashboard.hideAria')}
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -1230,6 +1281,7 @@ function RecentMediaTile({
   onQuickLog,
   onRemove,
 }: RecentMediaTileProps) {
+  const { t } = useTranslation('home');
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -1267,7 +1319,7 @@ function RecentMediaTile({
           type="button"
           onClick={handleRemoveClick}
           className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
-          aria-label="Hide from recent media"
+          aria-label={t('dashboard.hideAria')}
         >
           <Minus className="w-4 h-4" />
         </button>

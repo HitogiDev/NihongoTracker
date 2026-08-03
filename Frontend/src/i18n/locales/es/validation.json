@@ -3,7 +3,8 @@
     "format": "El ID de Discord debe tener entre 17 y 19 dígitos"
   },
   "email": {
-    "invalid": "Introduce una dirección de correo válida"
+    "invalid": "Introduce una dirección de correo válida",
+    "required": "El correo electrónico es obligatorio"
   },
   "goal": {
     "charsMax": "El objetivo diario de caracteres parece excesivo (máx.: 100.000)",

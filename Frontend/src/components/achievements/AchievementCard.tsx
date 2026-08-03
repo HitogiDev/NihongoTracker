@@ -9,6 +9,20 @@ import {
   getAchievementName,
 } from '../../utils/achievementText';
 import { useTranslation } from 'react-i18next';
+import { useDateFormatting } from '../../hooks/useDateFormatting';
+
+/**
+ * `formatDateInTimezone` merges in hour, minute and time-zone name unless they
+ * are explicitly opted out, and achievement cards want a bare date.
+ */
+const DATE_ONLY: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: undefined,
+  minute: undefined,
+  timeZoneName: undefined,
+};
 
 /* ─── Icon sub-component ────────────────────────────────────────────────── */
 
@@ -61,9 +75,11 @@ function RarityBadge({
   rarity: AchievementRarity;
   size?: 'sm' | 'md';
 }) {
+  const { t } = useTranslation('achievements');
+
   return (
     <span
-      className={`inline-flex items-center rounded-full border font-semibold capitalize ${
+      className={`inline-flex items-center rounded-full border font-semibold ${
         size === 'md' ? 'text-sm px-3 py-1' : 'text-xs px-2 py-0.5'
       }`}
       style={{
@@ -72,7 +88,7 @@ function RarityBadge({
         color: RARITY_COLOR[rarity],
       }}
     >
-      {rarity}
+      {t(`rarity.${rarity}`)}
     </span>
   );
 }
@@ -86,6 +102,7 @@ function AchievementProgress({
   achievement: IAchievement;
   compact?: boolean;
 }) {
+  const { formatNumber } = useDateFormatting();
   const threshold = achievement.condition?.threshold;
   const progress = achievement.progress ?? 0;
   if (!threshold || progress <= 0) return null;
@@ -95,8 +112,8 @@ function AchievementProgress({
       <div
         className={`flex justify-between text-xs text-base-content/60 ${compact ? 'mb-1' : 'mb-2'}`}
       >
-        <span>{progress.toLocaleString()}</span>
-        <span>{threshold.toLocaleString()}</span>
+        <span>{formatNumber(progress)}</span>
+        <span>{formatNumber(threshold)}</span>
       </div>
       <div
         className={`${compact ? 'h-1' : 'h-1.5'} rounded-full bg-base-300 overflow-hidden`}
@@ -125,6 +142,7 @@ export function AchievementDetailModal({
   onClose,
 }: DetailModalProps) {
   const { t } = useTranslation('achievements');
+  const { formatDate } = useDateFormatting();
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
   const isSecret = achievement.isSecret && !isEarned;
@@ -209,7 +227,7 @@ export function AchievementDetailModal({
                   {achievement.points}
                 </div>
                 <div className="text-xs text-base-content/50 mt-0.5">
-                  points
+                  {t('card.points')}
                 </div>
               </div>
             )}
@@ -219,24 +237,17 @@ export function AchievementDetailModal({
                   {achievement.rarityPercent}%
                 </div>
                 <div className="text-xs text-base-content/50 mt-0.5">
-                  of users
+                  {t('card.ofUsers')}
                 </div>
               </div>
             )}
             {isEarned && achievement.unlockedAt && (
               <div>
                 <div className="text-sm font-bold mt-1.5">
-                  {new Date(achievement.unlockedAt).toLocaleDateString(
-                    undefined,
-                    {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    }
-                  )}
+                  {formatDate(achievement.unlockedAt, DATE_ONLY)}
                 </div>
                 <div className="text-xs text-base-content/50 mt-0.5">
-                  unlocked
+                  {t('card.unlocked')}
                 </div>
               </div>
             )}
@@ -271,6 +282,7 @@ export default function AchievementCard({
   compact = false,
 }: AchievementCardProps) {
   const { t } = useTranslation('achievements');
+  const { formatDate, formatNumber } = useDateFormatting();
   const [showDetail, setShowDetail] = useState(false);
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
@@ -393,16 +405,18 @@ export default function AchievementCard({
             {!compact && (
               <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-base-content/50">
                 {achievement.rarityPercent !== undefined && (
-                  <span>{achievement.rarityPercent}% of users</span>
+                  <span>
+                    {t('card.rarityPercent', {
+                      percent: formatNumber(achievement.rarityPercent),
+                    })}
+                  </span>
                 )}
                 {isEarned && achievement.unlockedAt && (
-                  <span>
-                    {new Date(achievement.unlockedAt).toLocaleDateString()}
-                  </span>
+                  <span>{formatDate(achievement.unlockedAt, DATE_ONLY)}</span>
                 )}
                 {achievement.points > 0 && (
                   <span className="font-semibold">
-                    {achievement.points} pts
+                    {t('card.pts', { count: achievement.points })}
                   </span>
                 )}
               </div>

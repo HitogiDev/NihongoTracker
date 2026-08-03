@@ -1154,46 +1154,47 @@ function MediaGroup({
   onLogMedia: (media: IMediaDocument) => void;
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
+  const { t: tCommon } = useTranslation('common');
   const typeConfig = {
     anime: {
       icon: Play,
       color: 'text-[#26b2f2]',
-      label: 'Anime',
+      label: tCommon('mediaTypeGroups.anime'),
     },
     manga: {
       icon: Book,
       color: 'text-[#ee4466]',
-      label: 'Manga',
+      label: tCommon('mediaTypeGroups.manga'),
     },
     reading: {
       icon: Book,
       color: 'text-[#b34ce6]',
-      label: 'Reading',
+      label: tCommon('mediaTypeGroups.reading'),
     },
     vn: {
       icon: Gamepad,
       color: 'text-[#3a70e4]',
-      label: 'Visual Novels',
+      label: tCommon('mediaTypeGroups.vn'),
     },
     game: {
       icon: Gamepad,
       color: 'text-[#59c94e]',
-      label: 'Video Games',
+      label: tCommon('mediaTypeGroups.game'),
     },
     video: {
       icon: Video,
       color: 'text-[#2cc9a4]',
-      label: 'Video',
+      label: tCommon('mediaTypeGroups.video'),
     },
     movie: {
       icon: Clapperboard,
       color: 'text-[#f77118]',
-      label: 'Movies',
+      label: tCommon('mediaTypeGroups.movie'),
     },
     'tv show': {
       icon: MonitorPlay,
       color: 'text-[#f8b420]',
-      label: 'TV Shows',
+      label: tCommon('mediaTypeGroups.tvShow'),
     },
   };
 

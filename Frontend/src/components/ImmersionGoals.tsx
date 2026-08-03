@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDailyGoalsFn,
@@ -30,25 +32,25 @@ import { useUserDataStore } from '../store/userData';
 
 const goalTypeConfig = {
   time: {
-    label: 'Time',
+    labelKey: 'types.time',
     icon: Clock5,
     color: 'text-primary',
     unit: 'min',
   },
   chars: {
-    label: 'Characters',
+    labelKey: 'types.chars',
     icon: BookOpen,
     color: 'text-secondary',
     unit: 'chars',
   },
   episodes: {
-    label: 'Episodes',
+    labelKey: 'types.episodes',
     icon: Play,
     color: 'text-accent',
     unit: 'ep',
   },
   pages: {
-    label: 'Pages',
+    labelKey: 'types.pages',
     icon: FileText,
     color: 'text-info',
     unit: 'pages',
@@ -56,6 +58,7 @@ const goalTypeConfig = {
 };
 
 function ImmersionGoals({ username }: { username: string | undefined }) {
+  const { t } = useTranslation('goals');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<ILongTermGoal | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -193,12 +196,13 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       now.getMonth(),
       now.getDate()
     );
-    if (!isCompleted && startOfTarget < startOfToday) return 'Overdue';
+    if (!isCompleted && startOfTarget < startOfToday)
+      return t('widget.overdue');
 
     const days = goal.progress.remainingDays;
-    if (days === 0) return 'Due today!';
-    if (days === 1) return '1 day left';
-    if (days < 7) return `${days} days left`;
+    if (days === 0) return t('widget.dueToday');
+    if (days === 1) return t('widget.daysLeft', { count: 1 });
+    if (days < 7) return t('widget.daysLeft', { count: days });
     if (days < 30) return `${Math.ceil(days / 7)} weeks left`;
 
     // Use average calendar month length so values like 364 days show 12 months.
@@ -239,7 +243,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body text-center py-10">
             <h3 className="text-xl font-bold text-base-content">
-              No active goals yet
+              {t('widget.emptyTitle')}
             </h3>
             <p className="text-base-content/70 mt-2 mb-5">
               Create your first daily or long-term goal and start tracking your
@@ -250,7 +254,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 onClick={() => setIsModalOpen(true)}
                 className="btn btn-primary"
               >
-                Create goal
+                {t('widget.createGoal')}
               </button>
             </div>
           </div>
@@ -272,12 +276,12 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="card-title text-2xl">Immersion Goals</h2>
+              <h2 className="card-title text-2xl">{t('widget.title')}</h2>
               {canManageGoals && (
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="btn btn-ghost btn-sm"
-                  title="Manage Goals"
+                  title={t('widget.manage')}
                 >
                   <Settings className="w-5 h-5" />
                 </button>
@@ -285,7 +289,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">Today's Progress</h3>
+              <h3 className="text-lg font-semibold mb-3">
+                {t('widget.todayProgress')}
+              </h3>
               <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
                 {activeGoals.map((goal) => {
                   const current = goalsData?.todayProgress[goal.type] || 0;
@@ -313,7 +319,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                         )}
                       </div>
                       <div className="text-xs font-medium text-base-content/70">
-                        {config.label}
+                        {t(config.labelKey as ParseKeys<'goals'>)}
                       </div>
                       <div
                         className={`mt-1 text-lg font-bold tabular-nums leading-tight whitespace-nowrap ${
@@ -349,7 +355,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
           <div className="flex items-center justify-between gap-3 px-1">
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-primary" />
-              <h3 className="text-xl font-bold">Long-term Goals</h3>
+              <h3 className="text-xl font-bold">{t('widget.longTerm')}</h3>
               <span className="badge badge-primary badge-sm">
                 {activeLongTermGoals.length}
               </span>
@@ -392,11 +398,11 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               const getTimeframeLabel = () => {
                 switch (goal.displayTimeframe) {
                   case 'weekly':
-                    return 'This Week';
+                    return t('timeframes.thisWeek');
                   case 'monthly':
-                    return 'This Month';
+                    return t('timeframes.thisMonth');
                   default:
-                    return 'Today';
+                    return t('timeframes.today');
                 }
               };
 
@@ -476,7 +482,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                               goal.type
                             )}
                             {goal.type !== 'time' ? ` ${config.unit}` : ''}{' '}
-                            {config.label} Goal
+                            {t(config.labelKey as ParseKeys<'goals'>)} Goal
                           </h4>
                           <div className="flex items-center gap-2 text-xs text-base-content/60 mt-0.5">
                             <CalendarClock className="w-3 h-3 flex-shrink-0" />
@@ -683,7 +689,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           </span>
                           <span className="text-base-content/20">·</span>
                           <span className="tabular-nums">
-                            {progress.remainingDays} days left
+                            {t('widget.remainingDays', {
+                              count: progress.remainingDays,
+                            })}
                           </span>
                           <span className="text-base-content/20">·</span>
                           <span
@@ -693,7 +701,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                 : 'text-warning'
                             }`}
                           >
-                            {progress.isOnTrack ? 'On track' : 'Behind pace'}
+                            {progress.isOnTrack
+                              ? t('widget.onTrack')
+                              : t('widget.behindPace')}
                           </span>
                         </div>
                       </>
@@ -743,9 +753,14 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 })()}
               </div>
               <div>
-                <h3 className="font-bold text-lg">Edit Goal</h3>
+                <h3 className="font-bold text-lg">{t('modal.editGoal')}</h3>
                 <p className="text-xs text-base-content/60">
-                  Adjust your {goalTypeConfig[editingGoal.type]?.label} target
+                  {t('modal.adjustTarget', {
+                    type: t(
+                      goalTypeConfig[editingGoal.type]
+                        .labelKey as ParseKeys<'goals'>
+                    ).toLowerCase(),
+                  })}
                 </p>
               </div>
             </div>
@@ -772,22 +787,26 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               className="space-y-4"
             >
               <fieldset className="fieldset">
-                <legend className="fieldset-legend">Goal Type</legend>
+                <legend className="fieldset-legend">
+                  {t('modal.goalType')}
+                </legend>
                 <select
                   name="type"
                   className="select select-bordered w-full"
                   defaultValue={editingGoal.type}
                   disabled
                 >
-                  <option value="time">Time (minutes)</option>
-                  <option value="chars">Characters</option>
-                  <option value="episodes">Episodes</option>
-                  <option value="pages">Pages</option>
+                  <option value="time">{t('types.timeMinutes')}</option>
+                  <option value="chars">{t('types.chars')}</option>
+                  <option value="episodes">{t('types.episodes')}</option>
+                  <option value="pages">{t('types.pages')}</option>
                 </select>
               </fieldset>
 
               <fieldset className="fieldset">
-                <legend className="fieldset-legend">Total Target</legend>
+                <legend className="fieldset-legend">
+                  {t('modal.totalTarget')}
+                </legend>
                 <input
                   type="number"
                   name="totalTarget"
@@ -800,7 +819,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
               <div className="grid grid-cols-2 gap-3">
                 <fieldset className="fieldset">
-                  <legend className="fieldset-legend">Target Date</legend>
+                  <legend className="fieldset-legend">
+                    {t('modal.targetDate')}
+                  </legend>
                   <input
                     type="date"
                     name="targetDate"
@@ -823,9 +844,9 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     className="select select-bordered w-full"
                     defaultValue={editingGoal.displayTimeframe}
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="daily">{t('timeframes.daily')}</option>
+                    <option value="weekly">{t('timeframes.weekly')}</option>
+                    <option value="monthly">{t('timeframes.monthly')}</option>
                   </select>
                 </fieldset>
               </div>
@@ -838,7 +859,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     className="toggle toggle-primary toggle-sm"
                     defaultChecked={editingGoal.isActive}
                   />
-                  <span className="label-text">Active Goal</span>
+                  <span className="label-text">{t('widget.activeGoal')}</span>
                 </label>
               </div>
 
@@ -851,7 +872,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     setEditingGoal(null);
                   }}
                 >
-                  Cancel
+                  {t('modal.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -861,10 +882,10 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   {updateMutation.isPending ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      Saving...
+                      {t('modal.saving')}
                     </>
                   ) : (
-                    'Save Changes'
+                    t('modal.saveChanges')
                   )}
                 </button>
               </div>
@@ -886,10 +907,14 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       {goalToDelete && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-md">
-            <h3 className="font-bold text-lg mb-2">Delete long-term goal?</h3>
+            <h3 className="font-bold text-lg mb-2">{t('modal.deleteTitle')}</h3>
             <p className="text-base-content/70 mb-4">
-              This will permanently delete your{' '}
-              {goalTypeConfig[goalToDelete.type]?.label.toLowerCase()} goal.
+              {t('modal.deleteBody', {
+                type: t(
+                  goalTypeConfig[goalToDelete.type]
+                    .labelKey as ParseKeys<'goals'>
+                ).toLowerCase(),
+              })}
             </p>
             <div className="modal-action">
               <button
@@ -898,7 +923,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 onClick={() => setGoalToDelete(null)}
                 disabled={deleteMutation.isPending}
               >
-                Cancel
+                {t('modal.cancel')}
               </button>
               <button
                 type="button"
@@ -909,10 +934,10 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 {deleteMutation.isPending ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Deleting...
+                    {t('modal.deleting')}
                   </>
                 ) : (
-                  'Delete goal'
+                  t('modal.deleteGoal')
                 )}
               </button>
             </div>

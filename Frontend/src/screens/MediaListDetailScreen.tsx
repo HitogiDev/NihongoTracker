@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import {
   DndContext,
   closestCenter,
@@ -65,9 +66,16 @@ function EntryRow({
   onNoteChange,
   onRemove,
 }: EntryRowProps) {
+  const { t } = useTranslation('media');
   const id = `${entry.mediaType}:${entry.mediaId}`;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id, disabled: !isEditing });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: !isEditing });
 
   const media = entry.media;
   const title = getMediaDisplayTitle(media);
@@ -114,7 +122,7 @@ function EntryRow({
           <button
             type="button"
             className="btn btn-ghost btn-xs cursor-grab"
-            aria-label="Reorder entry"
+            aria-label={t('lists.detail.reorderEntry')}
             {...attributes}
             {...listeners}
           >
@@ -123,7 +131,9 @@ function EntryRow({
         )}
 
         {isEditing || !media ? (
-          <div className="flex items-center gap-3 flex-1 min-w-0">{content}</div>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {content}
+          </div>
         ) : (
           <Link
             to={`/${media.type}/${media.contentId}`}
@@ -138,7 +148,7 @@ function EntryRow({
             type="button"
             className="btn btn-ghost btn-xs text-error"
             onClick={onRemove}
-            aria-label="Remove entry"
+            aria-label={t('lists.detail.removeEntry')}
           >
             <Trash className="w-4 h-4" />
           </button>
@@ -148,7 +158,7 @@ function EntryRow({
       {isEditing && (
         <input
           className="input input-bordered input-sm w-full"
-          placeholder="Why is this on the list? (optional)"
+          placeholder={t('lists.detail.notePlaceholder')}
           maxLength={500}
           value={noteDraft}
           onChange={(e) => onNoteChange(e.target.value)}
@@ -159,6 +169,7 @@ function EntryRow({
 }
 
 function MediaListDetailScreen() {
+  const { t } = useTranslation('media');
   const { listId } = useParams<{ listId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -211,9 +222,9 @@ function MediaListDetailScreen() {
     onSuccess: () => {
       setIsEditing(false);
       refresh();
-      toast.success('List updated');
+      toast.success(t('lists.detail.toast.updated'));
     },
-    onError: () => toast.error('Could not save the list'),
+    onError: () => toast.error(t('lists.detail.toast.saveFailed')),
   });
 
   const saveMeta = useMutation({
@@ -222,33 +233,33 @@ function MediaListDetailScreen() {
     onSuccess: () => {
       setShowMetaModal(false);
       refresh();
-      toast.success('List updated');
+      toast.success(t('lists.detail.toast.updated'));
     },
-    onError: () => toast.error('Could not update the list'),
+    onError: () => toast.error(t('lists.detail.toast.updateFailed')),
   });
 
   const removeList = useMutation({
     mutationFn: () => deleteMediaListFn(listId as string),
     onSuccess: () => {
-      toast.success('List deleted');
+      toast.success(t('lists.detail.toast.deleted'));
       navigate('/lists');
     },
-    onError: () => toast.error('Could not delete the list'),
+    onError: () => toast.error(t('lists.detail.toast.deleteFailed')),
   });
 
   const toggleLike = useMutation({
     mutationFn: () => toggleMediaListLikeFn(listId as string),
     onSuccess: () => refresh(),
-    onError: () => toast.error('Could not update the like'),
+    onError: () => toast.error(t('lists.detail.toast.likeFailed')),
   });
 
   const cloneList = useMutation({
     mutationFn: () => cloneMediaListFn(listId as string),
     onSuccess: (result) => {
-      toast.success('Copied to your lists');
+      toast.success(t('lists.detail.toast.copied'));
       navigate(`/lists/${result.list._id}`);
     },
-    onError: () => toast.error('Could not copy the list'),
+    onError: () => toast.error(t('lists.detail.toast.copyFailed')),
   });
 
   function handleDragEnd(event: DragEndEvent) {
@@ -273,12 +284,14 @@ function MediaListDetailScreen() {
     return (
       <div className="min-h-screen bg-base-200 pt-24 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-2">List unavailable</h1>
+          <h1 className="text-2xl font-bold mb-2">
+            {t('lists.detail.unavailableTitle')}
+          </h1>
           <p className="text-base-content/70">
-            This list does not exist or is private.
+            {t('lists.detail.unavailableBody')}
           </p>
           <Link to="/lists" className="btn btn-primary mt-6">
-            Browse lists
+            {t('lists.detail.browse')}
           </Link>
         </div>
       </div>
@@ -297,10 +310,14 @@ function MediaListDetailScreen() {
             </h1>
             {!list.isPublic && (
               <span className="badge badge-ghost gap-1">
-                <Lock className="w-3 h-3" /> Private
+                <Lock className="w-3 h-3" /> {t('lists.detail.private')}
               </span>
             )}
-            {list.isRanked && <span className="badge badge-ghost">Ranked</span>}
+            {list.isRanked && (
+              <span className="badge badge-ghost">
+                {t('lists.detail.ranked')}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 mt-3">
@@ -316,7 +333,7 @@ function MediaListDetailScreen() {
               {list.user?.username}
             </Link>
             <span className="text-sm text-base-content/60">
-              · {list.entryCount} items
+              · {t('lists.entries', { count: list.entryCount })}
             </span>
           </div>
 
@@ -346,7 +363,7 @@ function MediaListDetailScreen() {
                 disabled={cloneList.isPending}
                 onClick={() => cloneList.mutate()}
               >
-                <Copy className="w-4 h-4" /> Copy list
+                <Copy className="w-4 h-4" /> {t('lists.detail.copy')}
               </button>
             )}
 
@@ -357,14 +374,15 @@ function MediaListDetailScreen() {
                   className="btn btn-sm btn-outline"
                   onClick={() => setShowMetaModal(true)}
                 >
-                  <Pencil className="w-4 h-4" /> Edit details
+                  <Pencil className="w-4 h-4" /> {t('lists.detail.editDetails')}
                 </button>
                 <button
                   type="button"
                   className="btn btn-sm btn-outline"
                   onClick={() => setIsEditing(true)}
                 >
-                  <GripVertical className="w-4 h-4" /> Reorder items
+                  <GripVertical className="w-4 h-4" />{' '}
+                  {t('lists.detail.reorder')}
                 </button>
                 <button
                   type="button"
@@ -372,7 +390,7 @@ function MediaListDetailScreen() {
                   onClick={() => removeList.mutate()}
                   disabled={removeList.isPending}
                 >
-                  <Trash className="w-4 h-4" /> Delete
+                  <Trash className="w-4 h-4" /> {t('lists.detail.delete')}
                 </button>
               </>
             )}
@@ -385,7 +403,7 @@ function MediaListDetailScreen() {
                   onClick={() => saveEntries.mutate()}
                   disabled={saveEntries.isPending}
                 >
-                  <Save className="w-4 h-4" /> Save changes
+                  <Save className="w-4 h-4" /> {t('lists.detail.save')}
                 </button>
                 <button
                   type="button"
@@ -395,7 +413,7 @@ function MediaListDetailScreen() {
                     setIsEditing(false);
                   }}
                 >
-                  <X className="w-4 h-4" /> Cancel
+                  <X className="w-4 h-4" /> {t('lists.detail.cancel')}
                 </button>
               </>
             )}
@@ -403,9 +421,7 @@ function MediaListDetailScreen() {
         </header>
 
         {entries.length === 0 ? (
-          <p className="text-base-content/60">
-            This list is empty. Add media from any media page.
-          </p>
+          <p className="text-base-content/60">{t('lists.detail.empty')}</p>
         ) : (
           <DndContext
             sensors={sensors}

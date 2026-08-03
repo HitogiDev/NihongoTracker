@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
   useInfiniteQuery,
@@ -43,6 +44,7 @@ const formatBadgeCount = (count: number): string => {
 };
 
 function NotificationBell() {
+  const { t } = useTranslation('notifications');
   const { user } = useUserDataStore();
   const queryClient = useQueryClient();
   const isLoggedIn = Boolean(user);
@@ -172,7 +174,7 @@ function NotificationBell() {
         <button
           type="button"
           className="absolute inset-y-0 left-0 w-10 rounded-l-lg rounded-r-none bg-error text-error-content -translate-x-full transition-all duration-300 ease-out cursor-pointer hover:bg-error/90 group-hover:translate-x-0 group-hover:pointer-events-auto pointer-events-none flex items-center justify-center"
-          title="Delete notification"
+          title={t('item.delete')}
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -241,7 +243,7 @@ function NotificationBell() {
                     isUnread ? 'badge-primary' : 'badge-ghost'
                   }`}
                 >
-                  {isUnread ? 'Unread' : 'Read'}
+                  {isUnread ? t('item.unread') : 'Read'}
                 </span>
               </div>
               {item.body && (
@@ -275,7 +277,7 @@ function NotificationBell() {
         type="button"
         className="btn btn-ghost btn-sm sm:btn-md btn-circle relative"
         aria-label={
-          totalCount > 0 ? `Notifications (${totalCount})` : 'Notifications'
+          totalCount > 0 ? `Notifications (${totalCount})` : t('page.title')
         }
       >
         <Bell className="w-4 h-4" />
@@ -292,7 +294,7 @@ function NotificationBell() {
       >
         <div className="border-b border-base-300/70 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Notifications</span>
+            <span className="text-sm font-semibold">{t('page.title')}</span>
           </div>
         </div>
 
@@ -422,7 +424,7 @@ function NotificationBell() {
         </div>
         <form method="dialog" className="modal-backdrop">
           <button
-            aria-label="Close delete confirmation"
+            aria-label={t('deleteConfirm.close')}
             onClick={() => {
               setDeleteConfirmOpen(false);
               setDeleteConfirmItem(null);

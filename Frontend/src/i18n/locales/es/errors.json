@@ -1,4 +1,24 @@
 {
+  "achievement": {
+    "fieldsRequired": "Se requieren key, name y condition",
+    "invalidId": "ID de logro no válido",
+    "keyExists": "Ya existe un logro con esa clave",
+    "notEarned": "Este usuario no ha conseguido uno o más de esos logros",
+    "notFound": "Logro no encontrado",
+    "showcaseDuplicates": "showcaseIds no puede contener duplicados",
+    "showcaseInvalidIds": "showcaseIds debe contener IDs de logro válidos",
+    "showcaseMax": "Máximo 5 logros en la vitrina",
+    "showcaseNotArray": "showcaseIds debe ser una lista",
+    "unlockFieldsRequired": "Se requieren username y achievementKey"
+  },
+  "admin": {
+    "fieldMustBeNumber": "{{field}} debe ser un número",
+    "invalidMediaId": "ID de contenido no válido",
+    "mediaNotFound": "Contenido no encontrado",
+    "moderationFieldRequired": "Debes indicar al menos un campo de moderación",
+    "nativeTitleRequired": "El título original no puede estar vacío",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres"
+  },
   "apiKey": {
     "expired": "Esa clave de API ha caducado",
     "invalid": "Esa clave de API no es válida"
@@ -17,8 +37,8 @@
     "invalidUserData": "Los datos de la cuenta no son válidos",
     "invalidVerificationToken": "Ese enlace de verificación no es válido o ha caducado",
     "noEmailSet": "Esta cuenta no tiene ninguna dirección de correo",
-    "notAuthenticated": "Necesitas iniciar sesión para hacer eso",
     "noToken": "Necesitas iniciar sesión para hacer eso",
+    "notAuthenticated": "Necesitas iniciar sesión para hacer eso",
     "passwordConfirmationRequired": "Introduce y confirma tu nueva contraseña",
     "passwordMismatch": "Las contraseñas no coinciden",
     "resendCooldown": "Espera {{seconds}} segundos antes de pedir otro correo",
@@ -26,6 +46,12 @@
     "tokenNotActive": "Tu sesión aún no está activa. Vuelve a iniciar sesión.",
     "tokenRequired": "A ese enlace le falta el token",
     "userExists": "Ya existe una cuenta con ese nombre de usuario o correo"
+  },
+  "changelog": {
+    "fieldsRequired": "Se requieren la versión, el título y al menos un cambio",
+    "invalidChangeType": "Tipo de cambio no válido. Debe ser: feature, improvement, bugfix o breaking",
+    "notFound": "Novedad no encontrada",
+    "versionExists": "Ya existe una entrada de novedades con esa versión"
   },
   "common": {
     "internal": "Algo ha fallado por nuestra parte",
@@ -97,6 +123,34 @@
   },
   "media": {
     "notFound": "Contenido no encontrado"
+  },
+  "mediaRequest": {
+    "alreadyReviewed": "Esta solicitud ya ha sido revisada",
+    "invalidAction": "action debe ser \"approve\" o \"reject\"",
+    "invalidId": "ID de solicitud no válido",
+    "invalidType": "Se requiere un tipo de contenido válido",
+    "nativeTitleRequired": "El título original es obligatorio",
+    "notFound": "Solicitud de contenido no encontrada",
+    "tooManyPending": "Ya tienes {{max}} solicitudes pendientes. Espera a que las revisen antes de enviar más."
+  },
+  "patreon": {
+    "badgeColorTierRequired": "Los colores personalizados de la insignia solo están disponibles para el nivel Consumer",
+    "badgeTextNotAllowed": "El texto de la insignia contiene lenguaje no permitido",
+    "badgeTextTierRequired": "El texto personalizado de la insignia solo está disponible para los niveles Enthusiast y Consumer",
+    "badgeTextTooLong": "El texto de la insignia no puede superar los 20 caracteres",
+    "invalidBadgeColor": "El color de la insignia debe ser un color hex válido, \"rainbow\", \"primary\" o \"secondary\"",
+    "invalidBadgeTextColor": "El color del texto de la insignia debe ser un color hex válido, \"primary-content\" o \"secondary-content\"",
+    "notConfigured": "El OAuth de Patreon no está configurado en este servidor",
+    "oauthNotConfigured": "OAuth no está configurado correctamente en este servidor",
+    "useOauthFlow": "Usa el flujo de OAuth para vincular tu cuenta de Patreon"
+  },
+  "tag": {
+    "fieldsRequired": "El nombre y el color son obligatorios",
+    "invalidId": "ID de etiqueta no válido",
+    "limitReached": "Solo puedes crear hasta {{max}} etiquetas",
+    "limitReachedTier": "Solo puedes crear hasta {{max}} etiquetas con tu nivel actual",
+    "nameExists": "Ya existe una etiqueta con ese nombre",
+    "notFound": "Etiqueta no encontrada"
   },
   "textSession": {
     "invalidHistoryMetrics": "Las métricas del historial de la sesión no son válidas",

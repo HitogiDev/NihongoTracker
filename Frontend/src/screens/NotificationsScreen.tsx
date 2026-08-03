@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Bell, Check, Clock3, ChevronRight, Inbox, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 import UserAvatar from '../components/UserAvatar';
 import {
@@ -37,6 +38,7 @@ const formatBadgeCount = (count: number): string => {
 };
 
 function NotificationsScreen() {
+  const { t } = useTranslation('notifications');
   const { formatRelativeDate } = useDateFormatting();
   const { user } = useUserDataStore();
   const queryClient = useQueryClient();
@@ -170,7 +172,7 @@ function NotificationsScreen() {
         <button
           type="button"
           className="absolute inset-y-0 left-0 w-12 rounded-l-lg rounded-r-none bg-error text-error-content border-r-4 border-r-primary -translate-x-full transition-transform duration-300 ease-out cursor-pointer hover:bg-error/90 group-hover:translate-x-0 group-hover:pointer-events-auto pointer-events-none flex items-center justify-center z-10"
-          title="Delete notification"
+          title={t('item.delete')}
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -236,7 +238,7 @@ function NotificationsScreen() {
                       isUnread ? 'badge-primary' : 'badge-ghost'
                     }`}
                   >
-                    {isUnread ? 'Unread' : 'Read'}
+                    {isUnread ? t('item.unread') : t('item.read')}
                   </span>
                 </div>
 
@@ -278,11 +280,11 @@ function NotificationsScreen() {
           <div className="flex items-center justify-center gap-3 mb-2">
             <Bell className="w-10 h-10 text-primary" />
             <h1 className="text-4xl font-bold text-base-content">
-              Notifications
+              {t('page.title')}
             </h1>
           </div>
           <p className="text-base-content/70 max-w-lg mx-auto">
-            Browse every notification, including the ones you have already read.
+            {t('page.subtitle')}
           </p>
         </div>
 
@@ -293,13 +295,13 @@ function NotificationsScreen() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-lg bg-base-200 p-3">
                     <div className="text-xs uppercase tracking-wider text-base-content/50">
-                      Total
+                      {t('summary.total')}
                     </div>
                     <div className="text-2xl font-semibold">{totalCount}</div>
                   </div>
                   <div className="rounded-lg bg-base-200 p-3">
                     <div className="text-xs uppercase tracking-wider text-base-content/50">
-                      Unread
+                      {t('summary.unread')}
                     </div>
                     <div className="text-2xl font-semibold">{unreadCount}</div>
                   </div>
@@ -313,21 +315,21 @@ function NotificationsScreen() {
                   }}
                   title={
                     unreadCount === 0
-                      ? 'No unread notifications'
-                      : 'Mark all notifications as read'
+                      ? t('summary.nothingUnread')
+                      : t('summary.markAsReadTitle')
                   }
                 >
                   <Check className="w-4 h-4" />
-                  Mark as read
+                  {t('summary.markAsRead')}
                 </button>
 
                 <button
                   className="btn btn-outline btn-sm gap-2 w-full"
                   onClick={() => markNotificationsAsUnreadMutation.mutate()}
-                  title="Mark all notifications as unread"
+                  title={t('summary.markAsUnreadTitle')}
                 >
                   <Inbox className="w-4 h-4" />
-                  Mark as unread
+                  {t('summary.markAsUnread')}
                 </button>
               </div>
             </div>
@@ -337,12 +339,13 @@ function NotificationsScreen() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-semibold text-base-content">
-                  All notifications
+                  {t('list.heading')}
                 </h2>
                 <p className="text-sm text-base-content/60 mt-0.5">
-                  Showing {notificationItems.length} of {totalCount}{' '}
-                  notification
-                  {totalCount !== 1 ? 's' : ''}
+                  {t('list.showing', {
+                    shown: notificationItems.length,
+                    count: totalCount,
+                  })}
                 </p>
               </div>
             </div>
@@ -372,11 +375,10 @@ function NotificationsScreen() {
                     <Bell className="w-8 h-8 text-error" />
                   </div>
                   <h3 className="text-lg font-semibold">
-                    Unable to load notifications
+                    {t('list.error.title')}
                   </h3>
                   <p className="text-sm text-base-content/60 max-w-sm mt-1">
-                    Something went wrong while fetching your notifications.
-                    Please try again later.
+                    {t('list.error.description')}
                   </p>
                 </div>
               </div>
@@ -387,10 +389,10 @@ function NotificationsScreen() {
                     <Inbox className="w-10 h-10 text-base-content/40" />
                   </div>
                   <h3 className="text-xl font-semibold text-base-content mb-1">
-                    All caught up
+                    {t('list.empty.title')}
                   </h3>
                   <p className="text-sm text-base-content/60 max-w-sm">
-                    You do not have any notifications right now.
+                    {t('list.empty.description')}
                   </p>
                 </div>
               </div>
@@ -403,13 +405,13 @@ function NotificationsScreen() {
                 {isFetchingNextPage && (
                   <div className="flex items-center justify-center gap-2 text-sm text-base-content/60 py-4">
                     <span className="loading loading-spinner loading-xs"></span>
-                    Loading more...
+                    {t('list.loadingMore')}
                   </div>
                 )}
 
                 {!hasNextPage && notificationItems.length > 0 && (
                   <div className="text-center text-sm text-base-content/50 py-2">
-                    You have reached the end.
+                    {t('list.endReached')}
                   </div>
                 )}
               </div>
@@ -426,10 +428,10 @@ function NotificationsScreen() {
             </div>
             <div>
               <h3 className="font-bold text-lg text-base-content">
-                Delete notification?
+                {t('deleteConfirm.title')}
               </h3>
               <p className="text-sm text-base-content/70">
-                This removes it from your notifications.
+                {t('deleteConfirm.description')}
               </p>
             </div>
           </div>
@@ -448,7 +450,7 @@ function NotificationsScreen() {
               }
             />
             <span className="label-text flex items-center gap-2 text-base-content/90">
-              Don't show again
+              {t('deleteConfirm.dontShowAgain')}
             </span>
           </label>
 
@@ -462,7 +464,7 @@ function NotificationsScreen() {
                 setDeleteConfirmDontShowAgain(false);
               }}
             >
-              Cancel
+              {t('deleteConfirm.cancel')}
             </button>
             <button
               type="button"
@@ -470,13 +472,13 @@ function NotificationsScreen() {
               onClick={handleConfirmDelete}
             >
               <Check className="w-4 h-4" />
-              Delete
+              {t('deleteConfirm.confirm')}
             </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
           <button
-            aria-label="Close delete confirmation"
+            aria-label={t('deleteConfirm.close')}
             onClick={() => {
               setDeleteConfirmOpen(false);
               setDeleteConfirmItem(null);

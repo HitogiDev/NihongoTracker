@@ -8,16 +8,19 @@ import {
   adminUpdateMediaFn,
 } from '../api/trackerApi';
 import type { IMediaDocument, SearchResultType } from '../types';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 // Types that are searchable via the meilisearch-backed /media/search endpoint.
-const SEARCH_TYPES: { value: string; label: string }[] = [
-  { value: 'anime', label: 'Anime' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'reading', label: 'Reading' },
-  { value: 'vn', label: 'Visual Novel' },
-  { value: 'movie', label: 'Movie' },
-  { value: 'tv_show', label: 'TV Show' },
-  { value: 'game', label: 'Game' },
+/** Module scope: key names, never text. */
+const SEARCH_TYPES: { value: string; labelKey: ParseKeys<'common'> }[] = [
+  { value: 'anime', labelKey: 'mediaTypes.anime' },
+  { value: 'manga', labelKey: 'mediaTypes.manga' },
+  { value: 'reading', labelKey: 'mediaTypes.reading' },
+  { value: 'vn', labelKey: 'mediaTypes.vn' },
+  { value: 'movie', labelKey: 'mediaTypes.movie' },
+  { value: 'tv_show', labelKey: 'mediaTypes.tvShow' },
+  { value: 'game', labelKey: 'mediaTypes.game' },
 ];
 
 type EditState = IMediaDocument & {
@@ -63,6 +66,7 @@ function numOrNull(value: string): number | null {
 }
 
 export default function MediaEditPanel() {
+  const { t } = useTranslation('common');
   const queryClient = useQueryClient();
   const [type, setType] = useState('anime');
   const [term, setTerm] = useState('');
@@ -200,9 +204,9 @@ export default function MediaEditPanel() {
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
-            {SEARCH_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {SEARCH_TYPES.map((searchType) => (
+              <option key={searchType.value} value={searchType.value}>
+                {t(searchType.labelKey)}
               </option>
             ))}
           </select>

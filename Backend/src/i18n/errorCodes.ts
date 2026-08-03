@@ -149,6 +149,62 @@ export const ERROR_CODES = [
   'textSession.invalidLines',
   'textSession.invalidHistoryMetrics',
   'textSession.invalidTimerSeconds',
+
+  // Achievement
+  'achievement.notFound',
+  'achievement.invalidId',
+  'achievement.keyExists',
+  'achievement.fieldsRequired',
+  'achievement.showcaseMax',
+  'achievement.showcaseNotArray',
+  'achievement.showcaseInvalidIds',
+  'achievement.showcaseDuplicates',
+  'achievement.unlockFieldsRequired',
+
+  // Admin
+  'admin.invalidMediaId',
+  'admin.mediaNotFound',
+  'admin.nativeTitleRequired',
+  'admin.passwordTooShort',
+  'admin.fieldMustBeNumber',
+
+  // Tag
+  'tag.notFound',
+  'tag.invalidId',
+  'tag.nameExists',
+  'tag.fieldsRequired',
+
+  // Patreon
+  'patreon.badgeTextTooLong',
+  'patreon.oauthNotConfigured',
+  'patreon.notConfigured',
+
+  // MediaRequest
+  'mediaRequest.notFound',
+  'mediaRequest.invalidId',
+  'mediaRequest.nativeTitleRequired',
+  'mediaRequest.invalidType',
+  'mediaRequest.invalidAction',
+
+  // Changelog
+  'changelog.notFound',
+
+  // E4 follow-ups
+  'achievement.notEarned',
+  'admin.moderationFieldRequired',
+  'tag.limitReached',
+  'tag.limitReachedTier',
+  'patreon.useOauthFlow',
+  'patreon.badgeTextTierRequired',
+  'patreon.badgeTextNotAllowed',
+  'patreon.badgeColorTierRequired',
+  'patreon.invalidBadgeColor',
+  'patreon.invalidBadgeTextColor',
+  'mediaRequest.tooManyPending',
+  'mediaRequest.alreadyReviewed',
+  'changelog.fieldsRequired',
+  'changelog.invalidChangeType',
+  'changelog.versionExists',
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

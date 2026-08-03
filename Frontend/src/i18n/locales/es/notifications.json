@@ -1,1 +1,44 @@
-{}
+{
+  "page": {
+    "title": "Notificaciones",
+    "subtitle": "Consulta todas tus notificaciones, incluidas las que ya has leído."
+  },
+  "summary": {
+    "total": "Total",
+    "unread": "Sin leer",
+    "markAsRead": "Marcar como leídas",
+    "markAsReadTitle": "Marcar todas las notificaciones como leídas",
+    "nothingUnread": "No hay notificaciones sin leer",
+    "markAsUnread": "Marcar como no leídas",
+    "markAsUnreadTitle": "Marcar todas las notificaciones como no leídas"
+  },
+  "list": {
+    "heading": "Todas las notificaciones",
+    "showing_one": "Mostrando {{shown}} de {{count}} notificación",
+    "showing_many": "Mostrando {{shown}} de {{count}} notificaciones",
+    "showing_other": "Mostrando {{shown}} de {{count}} notificaciones",
+    "endReached": "Has llegado al final.",
+    "loadingMore": "Cargando más...",
+    "error": {
+      "title": "No se pudieron cargar las notificaciones",
+      "description": "Algo ha fallado al obtener tus notificaciones. Inténtalo de nuevo más tarde."
+    },
+    "empty": {
+      "title": "Todo al día",
+      "description": "Ahora mismo no tienes ninguna notificación."
+    }
+  },
+  "item": {
+    "read": "Leída",
+    "unread": "Sin leer",
+    "delete": "Eliminar notificación"
+  },
+  "deleteConfirm": {
+    "title": "¿Eliminar la notificación?",
+    "description": "Se quitará de tus notificaciones.",
+    "dontShowAgain": "No volver a mostrar",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar",
+    "close": "Cerrar la confirmación de eliminación"
+  }
+}

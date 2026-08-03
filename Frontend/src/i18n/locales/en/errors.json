@@ -1,4 +1,24 @@
 {
+  "achievement": {
+    "fieldsRequired": "key, name, and condition are required",
+    "invalidId": "Invalid achievement id",
+    "keyExists": "Achievement key already exists",
+    "notEarned": "One or more achievements are not earned by this user",
+    "notFound": "Achievement not found",
+    "showcaseDuplicates": "showcaseIds must not contain duplicates",
+    "showcaseInvalidIds": "showcaseIds must be valid achievement ids",
+    "showcaseMax": "Maximum 5 achievements in showcase",
+    "showcaseNotArray": "showcaseIds must be an array",
+    "unlockFieldsRequired": "username and achievementKey are required"
+  },
+  "admin": {
+    "fieldMustBeNumber": "{{field}} must be a number",
+    "invalidMediaId": "Invalid media id",
+    "mediaNotFound": "Media not found",
+    "moderationFieldRequired": "At least one moderation field must be provided",
+    "nativeTitleRequired": "Native title cannot be empty",
+    "passwordTooShort": "Password must be at least 6 characters"
+  },
   "apiKey": {
     "expired": "That API key has expired",
     "invalid": "That API key is not valid"
@@ -17,8 +37,8 @@
     "invalidUserData": "The account details are not valid",
     "invalidVerificationToken": "That verification link is invalid or has expired",
     "noEmailSet": "This account has no email address set",
-    "notAuthenticated": "You need to sign in to do that",
     "noToken": "You need to sign in to do that",
+    "notAuthenticated": "You need to sign in to do that",
     "passwordConfirmationRequired": "Enter and confirm your new password",
     "passwordMismatch": "The passwords do not match",
     "resendCooldown": "Please wait {{seconds}} seconds before requesting another email",
@@ -26,6 +46,12 @@
     "tokenNotActive": "Your session is not active yet. Please sign in again.",
     "tokenRequired": "That link is missing its token",
     "userExists": "A user with that username or email already exists"
+  },
+  "changelog": {
+    "fieldsRequired": "Version, title, and at least one change are required",
+    "invalidChangeType": "Invalid change type. Must be: feature, improvement, bugfix, or breaking",
+    "notFound": "Changelog not found",
+    "versionExists": "A changelog with this version already exists"
   },
   "common": {
     "internal": "Something went wrong on our side",
@@ -97,6 +123,34 @@
   },
   "media": {
     "notFound": "Media not found"
+  },
+  "mediaRequest": {
+    "alreadyReviewed": "This request has already been reviewed",
+    "invalidAction": "action must be \"approve\" or \"reject\"",
+    "invalidId": "Invalid request id",
+    "invalidType": "A valid media type is required",
+    "nativeTitleRequired": "A native title is required",
+    "notFound": "Media request not found",
+    "tooManyPending": "You already have {{max}} pending requests. Wait for them to be reviewed before submitting more."
+  },
+  "patreon": {
+    "badgeColorTierRequired": "Custom badge colors are only available for Consumer tier supporters",
+    "badgeTextNotAllowed": "Custom badge text contains language that is not allowed",
+    "badgeTextTierRequired": "Custom badge text is only available for Enthusiast and Consumer tier supporters",
+    "badgeTextTooLong": "Custom badge text must be 20 characters or less",
+    "invalidBadgeColor": "Badge color must be a valid hex color, \"rainbow\", \"primary\", or \"secondary\"",
+    "invalidBadgeTextColor": "Badge text color must be a valid hex color, \"primary-content\", or \"secondary-content\"",
+    "notConfigured": "Patreon OAuth is not configured on this server",
+    "oauthNotConfigured": "OAuth is not configured properly on this server",
+    "useOauthFlow": "Please use the OAuth flow to link your Patreon account"
+  },
+  "tag": {
+    "fieldsRequired": "Name and color are required",
+    "invalidId": "Invalid tag ID",
+    "limitReached": "You can only create up to {{max}} tags",
+    "limitReachedTier": "You can only create up to {{max}} tags with your current tier",
+    "nameExists": "A tag with this name already exists",
+    "notFound": "Tag not found"
   },
   "textSession": {
     "invalidHistoryMetrics": "The session history metrics are not valid",

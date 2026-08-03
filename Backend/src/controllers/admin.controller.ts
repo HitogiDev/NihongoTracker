@@ -1,4 +1,5 @@
 import User from '../models/user.model.js';
+import { apiError } from '../i18n/errorCodes.js';
 import Log from '../models/log.model.js';
 import { Request, Response, NextFunction } from 'express';
 import { IUser } from '../types.js';
@@ -203,7 +204,7 @@ export async function deleteUserById(
 ) {
   try {
     const user = await User.findById(req.params.id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     // Delete user's files from Firebase before deleting user
     if (user.avatar) {
@@ -245,7 +246,7 @@ export async function updateUserById(
       },
       { new: true }
     );
-    if (!updatedUser) throw new customError('User not found', 404);
+    if (!updatedUser) throw apiError('user.notFound', 404, 'User not found');
     return res.json(updatedUser);
   } catch (error) {
     return next(error as customError);
@@ -260,10 +261,10 @@ export async function resetUserPassword(
   try {
     const { newPassword } = req.body as { newPassword?: string };
     if (!newPassword || newPassword.length < 6) {
-      throw new customError('Password must be at least 6 characters', 400);
+      throw apiError('admin.passwordTooShort', 400, 'Password must be at least 6 characters');
     }
     const user = await User.findById(req.params.id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
     // Hash explicitly to avoid relying on pre-save for findByIdAndUpdate
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
@@ -560,7 +561,7 @@ export async function adminSetPatreonStatus(
     };
 
     const user = await User.findById(req.params.id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     if (!tier) {
       // Remove patreon status
@@ -656,7 +657,7 @@ export async function getUserModerationByUsername(
       .lean();
 
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const moderationHistory = [...(user.moderation?.history || [])].sort(
@@ -697,7 +698,7 @@ export async function updateUserModerationByUsername(
 
     const user = await User.findOne({ username: req.params.username });
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const hasRankingBanned = typeof rankingBanned === 'boolean';
@@ -705,9 +706,10 @@ export async function updateUserModerationByUsername(
     const hasReason = typeof banReason === 'string';
 
     if (!hasRankingBanned && !hasBanned && !hasReason) {
-      throw new customError(
-        'At least one moderation field must be provided',
-        400
+      throw apiError(
+        'admin.moderationFieldRequired',
+        400,
+        'At least one moderation field must be provided'
       );
     }
 
@@ -814,7 +816,7 @@ export async function recalculateUserStreakByUsername(
       .lean();
 
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     await recalculateStreaksForUser(user._id);
@@ -826,7 +828,7 @@ export async function recalculateUserStreakByUsername(
       .lean();
 
     if (!updatedUser) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     return res.status(200).json({
@@ -1014,11 +1016,11 @@ export async function adminUpdateMedia(
   try {
     const { id } = req.params;
     if (!Types.ObjectId.isValid(id)) {
-      throw new customError('Invalid media id', 400);
+      throw apiError('admin.invalidMediaId', 400, 'Invalid media id');
     }
 
     const media = await MediaBase.findById(id);
-    if (!media) throw new customError('Media not found', 404);
+    if (!media) throw apiError('admin.mediaNotFound', 404, 'Media not found');
 
     const body = req.body as Partial<IMediaDocument>;
 
@@ -1028,7 +1030,7 @@ export async function adminUpdateMedia(
         typeof body.title.contentTitleNative === 'string'
           ? body.title.contentTitleNative.trim()
           : media.title.contentTitleNative;
-      if (!native) throw new customError('Native title cannot be empty', 400);
+      if (!native) throw apiError('admin.nativeTitleRequired', 400, 'Native title cannot be empty');
       media.title = {
         contentTitleNative: native,
         contentTitleRomaji:
@@ -1073,7 +1075,12 @@ export async function adminUpdateMedia(
       } else if (body[field] !== undefined) {
         const value = Number(body[field]);
         if (Number.isNaN(value)) {
-          throw new customError(`${field} must be a number`, 400);
+          throw apiError(
+            'admin.fieldMustBeNumber',
+            400,
+            `${field} must be a number`,
+            { field }
+          );
         }
         mediaRecord[field] = value;
       }

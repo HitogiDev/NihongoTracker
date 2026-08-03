@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getUserTagsByUsernameFn,
@@ -13,6 +14,7 @@ import Wheel from '@uiw/react-color-wheel';
 import { useUserDataStore } from '../store/userData';
 
 export default function TagManager() {
+  const { t } = useTranslation('settings');
   const [editingTag, setEditingTag] = useState<ITag | null>(null);
   const [tagToDelete, setTagToDelete] = useState<ITag | null>(null);
   const [editName, setEditName] = useState('');
@@ -41,7 +43,7 @@ export default function TagManager() {
     mutationFn: createTagFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
-      toast.success('Tag created successfully');
+      toast.success(t('tags.manager.created'));
       (
         document.getElementById('create_tag_modal') as HTMLDialogElement
       )?.close();
@@ -49,7 +51,9 @@ export default function TagManager() {
       setEditColor('#3b82f6');
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      toast.error(error.response?.data?.message || 'Failed to create tag');
+      toast.error(
+        error.response?.data?.message || t('tags.manager.createFailed')
+      );
     },
   });
 
@@ -63,12 +67,14 @@ export default function TagManager() {
     }) => updateTagFn(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
-      toast.success('Tag updated successfully');
+      toast.success(t('tags.manager.updated'));
       (document.getElementById('edit_tag_modal') as HTMLDialogElement)?.close();
       setEditingTag(null);
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      toast.error(error.response?.data?.message || 'Failed to update tag');
+      toast.error(
+        error.response?.data?.message || t('tags.manager.updateFailed')
+      );
     },
   });
 
@@ -77,17 +83,19 @@ export default function TagManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['logs'] });
-      toast.success('Tag deleted successfully');
+      toast.success(t('tags.manager.deleted'));
       setTagToDelete(null);
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      toast.error(error.response?.data?.message || 'Failed to delete tag');
+      toast.error(
+        error.response?.data?.message || t('tags.manager.deleteFailed')
+      );
     },
   });
 
   const handleCreateTag = () => {
     if (!editName.trim()) {
-      toast.error('Tag name is required');
+      toast.error(t('tags.manager.nameRequired'));
       return;
     }
     createMutation.mutate({ name: editName.trim(), color: editColor });
@@ -96,7 +104,7 @@ export default function TagManager() {
   const handleUpdateTag = () => {
     if (!editingTag) return;
     if (!editName.trim()) {
-      toast.error('Tag name is required');
+      toast.error(t('tags.manager.nameRequired'));
       return;
     }
     updateMutation.mutate({
@@ -143,7 +151,7 @@ export default function TagManager() {
     <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Manage Tags</h3>
+          <h3 className="text-lg font-semibold">{t('tags.manager.title')}</h3>
           <button
             className="btn btn-primary btn-sm"
             onClick={openCreateModal}
@@ -202,7 +210,7 @@ export default function TagManager() {
         <div className="space-y-2">
           {tags.length === 0 ? (
             <div className="text-center py-8 text-base-content/60">
-              <p>No tags yet. Create your first tag to organize your logs!</p>
+              <p>{t('tags.manager.empty')}</p>
             </div>
           ) : (
             tags.map((tag) => (
@@ -225,7 +233,7 @@ export default function TagManager() {
                       <button
                         className="btn btn-ghost btn-sm btn-square"
                         onClick={() => openEditModal(tag)}
-                        title="Edit tag"
+                        title={t('tags.manager.editAction')}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +253,7 @@ export default function TagManager() {
                       <button
                         className="btn btn-ghost btn-sm btn-square text-error"
                         onClick={() => handleDeleteTag(tag)}
-                        title="Delete tag"
+                        title={t('tags.manager.deleteTag')}
                         disabled={deleteMutation.isPending}
                       >
                         <svg
@@ -275,16 +283,18 @@ export default function TagManager() {
       {/* Create Tag Modal */}
       <dialog id="create_tag_modal" className="modal">
         <div className="modal-box max-w-md">
-          <h3 className="font-bold text-lg mb-4">Create New Tag</h3>
+          <h3 className="font-bold text-lg mb-4">
+            {t('tags.manager.createNew')}
+          </h3>
           <div>
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Tag Name</span>
+                <span className="label-text">{t('tags.manager.tagName')}</span>
               </label>
               <input
                 type="text"
                 className="input input-bordered"
-                placeholder="e.g., Study, Fun, Practice"
+                placeholder={t('tags.manager.namePlaceholder')}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 maxLength={30}
@@ -294,7 +304,7 @@ export default function TagManager() {
 
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Tag Color</span>
+                <span className="label-text">{t('tags.manager.tagColor')}</span>
               </label>
               <div className="flex flex-col items-center gap-3">
                 <div
@@ -305,7 +315,7 @@ export default function TagManager() {
                     color: editColor,
                   }}
                 >
-                  {editName || 'Preview'}
+                  {editName || t('tags.manager.preview')}
                 </div>
                 <div style={{ width: '200px', height: '200px' }}>
                   <Wheel
@@ -320,7 +330,7 @@ export default function TagManager() {
                   className="input input-bordered input-sm w-full text-center"
                   value={editColor}
                   onChange={(e) => setEditColor(e.target.value)}
-                  placeholder="#3b82f6"
+                  placeholder={t('tags.manager.colorPlaceholder')}
                 />
               </div>
             </div>
@@ -348,7 +358,7 @@ export default function TagManager() {
                 {createMutation.isPending ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : (
-                  'Create'
+                  t('tags.manager.create')
                 )}
               </button>
             </div>
@@ -362,16 +372,18 @@ export default function TagManager() {
       {/* Edit Tag Modal */}
       <dialog id="edit_tag_modal" className="modal">
         <div className="modal-box max-w-md">
-          <h3 className="font-bold text-lg mb-4">Edit Tag</h3>
+          <h3 className="font-bold text-lg mb-4">
+            {t('tags.manager.editTag')}
+          </h3>
           <div>
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Tag Name</span>
+                <span className="label-text">{t('tags.manager.tagName')}</span>
               </label>
               <input
                 type="text"
                 className="input input-bordered"
-                placeholder="e.g., Study, Fun, Practice"
+                placeholder={t('tags.manager.namePlaceholder')}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 maxLength={30}
@@ -381,7 +393,7 @@ export default function TagManager() {
 
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Tag Color</span>
+                <span className="label-text">{t('tags.manager.tagColor')}</span>
               </label>
               <div className="flex flex-col items-center gap-3">
                 <div
@@ -392,7 +404,7 @@ export default function TagManager() {
                     color: editColor,
                   }}
                 >
-                  {editName || 'Preview'}
+                  {editName || t('tags.manager.preview')}
                 </div>
                 <div style={{ width: '200px', height: '200px' }}>
                   <Wheel
@@ -407,7 +419,7 @@ export default function TagManager() {
                   className="input input-bordered input-sm w-full text-center"
                   value={editColor}
                   onChange={(e) => setEditColor(e.target.value)}
-                  placeholder="#3b82f6"
+                  placeholder={t('tags.manager.colorPlaceholder')}
                 />
               </div>
             </div>
@@ -449,7 +461,9 @@ export default function TagManager() {
       {tagToDelete && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-md">
-            <h3 className="font-bold text-lg mb-2">Delete tag?</h3>
+            <h3 className="font-bold text-lg mb-2">
+              {t('tags.manager.deleteTitle')}
+            </h3>
             <p className="text-base-content/70 mb-4">
               This will remove the tag "{tagToDelete.name}" from all logs.
             </p>
@@ -474,7 +488,7 @@ export default function TagManager() {
                     Deleting...
                   </>
                 ) : (
-                  'Delete tag'
+                  t('tags.manager.deleteTag')
                 )}
               </button>
             </div>

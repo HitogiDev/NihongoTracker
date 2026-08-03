@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 import { useQueryClient } from '@tanstack/react-query';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export default function VerifyEmailScreen() {
+  const { t } = useTranslation('auth');
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const user = useUserDataStore((state) => state.user);
@@ -24,9 +27,7 @@ export default function VerifyEmailScreen() {
       try {
         const response = await axios.post(`/api/auth/verify-email`, { token });
         setStatus('success');
-        setMessage(
-          response.data.message || 'Your email has been successfully verified!'
-        );
+        setMessage(response.data.message || t('verifyEmail.success.message'));
 
         // If user is logged in, update their state with verified email
         if (user && response.data.user) {
@@ -41,11 +42,7 @@ export default function VerifyEmailScreen() {
         }, 3000);
       } catch (error) {
         setStatus('error');
-        setMessage(
-          (error as Error & { response?: { data?: { message?: string } } })
-            .response?.data?.message ||
-            'Verification failed. The link may be invalid or expired.'
-        );
+        setMessage(getApiErrorMessage(error, 'auth.invalidVerificationToken'));
       }
     };
 
@@ -53,7 +50,7 @@ export default function VerifyEmailScreen() {
       verifyEmail();
     } else {
       setStatus('error');
-      setMessage('Invalid verification link.');
+      setMessage(t('verifyEmail.error.invalidLink'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
@@ -65,8 +62,12 @@ export default function VerifyEmailScreen() {
           {status === 'verifying' && (
             <>
               <div className="loading loading-spinner loading-lg text-primary"></div>
-              <h2 className="card-title mt-4">Verifying your email...</h2>
-              <p className="text-base-content/60">Please wait a moment</p>
+              <h2 className="card-title mt-4">
+                {t('verifyEmail.verifying.title')}
+              </h2>
+              <p className="text-base-content/60">
+                {t('verifyEmail.verifying.description')}
+              </p>
             </>
           )}
 
@@ -89,19 +90,23 @@ export default function VerifyEmailScreen() {
                   />
                 </svg>
               </div>
-              <h2 className="card-title text-success">Email Verified!</h2>
+              <h2 className="card-title text-success">
+                {t('verifyEmail.success.title')}
+              </h2>
               <p className="text-base-content/80">{message}</p>
               <p className="text-sm text-base-content/60 mt-2">
                 {user
-                  ? 'Redirecting to settings...'
-                  : 'Redirecting to login...'}
+                  ? t('verifyEmail.success.redirectingToSettings')
+                  : t('verifyEmail.success.redirectingToLogin')}
               </p>
               <div className="card-actions mt-4">
                 <Link
                   to={user ? '/settings' : '/login'}
                   className="btn btn-primary"
                 >
-                  {user ? 'Go to Settings' : 'Go to Login'}
+                  {user
+                    ? t('verifyEmail.actions.settings')
+                    : t('verifyEmail.actions.login')}
                 </Link>
               </div>
             </>
@@ -126,25 +131,27 @@ export default function VerifyEmailScreen() {
                   />
                 </svg>
               </div>
-              <h2 className="card-title text-error">Verification Failed</h2>
+              <h2 className="card-title text-error">
+                {t('verifyEmail.error.title')}
+              </h2>
               <p className="text-base-content/80">{message}</p>
               <div className="card-actions mt-4 flex-col sm:flex-row gap-2">
                 {user ? (
                   <>
                     <Link to="/settings" className="btn btn-primary">
-                      Go to Settings
+                      {t('verifyEmail.actions.settings')}
                     </Link>
                     <Link to="/" className="btn btn-outline">
-                      Go to Home
+                      {t('verifyEmail.actions.home')}
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link to="/register" className="btn btn-outline">
-                      Register Again
+                      {t('verifyEmail.actions.register')}
                     </Link>
                     <Link to="/login" className="btn btn-primary">
-                      Go to Login
+                      {t('verifyEmail.actions.login')}
                     </Link>
                   </>
                 )}

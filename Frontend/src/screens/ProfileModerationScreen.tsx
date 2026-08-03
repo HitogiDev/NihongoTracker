@@ -11,6 +11,8 @@ import {
   Clock3,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { Trans, useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 
 import {
   adminGetUserModerationFn,
@@ -19,7 +21,8 @@ import {
 } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
-import { AxiosError } from 'axios';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { getApiErrorMessage } from '../utils/apiError';
 
 type ModerationHistoryEntry = {
   field: 'rankingBanned' | 'banned' | 'banReason';
@@ -30,29 +33,24 @@ type ModerationHistoryEntry = {
   updatedByUsername?: string;
 };
 
-function formatHistoryDate(dateValue: string) {
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) {
-    return 'Unknown date';
-  }
-
-  return parsed.toLocaleString();
-}
-
-function getHistoryBadgeLabel(entry: ModerationHistoryEntry) {
+function getHistoryBadgeLabelKey(
+  entry: ModerationHistoryEntry
+): ParseKeys<'admin'> {
   if (entry.field === 'rankingBanned') {
     return entry.newValue === true
-      ? 'Ranking ban enabled'
-      : 'Ranking ban removed';
+      ? 'moderation.history.rankingBanEnabled'
+      : 'moderation.history.rankingBanRemoved';
   }
 
   if (entry.field === 'banned') {
-    return entry.newValue === true ? 'Account banned' : 'Account unbanned';
+    return entry.newValue === true
+      ? 'moderation.history.accountBanned'
+      : 'moderation.history.accountUnbanned';
   }
 
   return String(entry.newValue || '').trim()
-    ? 'Ban reason updated'
-    : 'Ban reason cleared';
+    ? 'moderation.history.banReasonUpdated'
+    : 'moderation.history.banReasonCleared';
 }
 
 function getHistoryBadgeClass(entry: ModerationHistoryEntry) {
@@ -67,28 +65,50 @@ function getHistoryBadgeClass(entry: ModerationHistoryEntry) {
   return 'badge-info';
 }
 
-function getHistoryDescription(entry: ModerationHistoryEntry) {
+interface HistoryDescription {
+  key: ParseKeys<'admin'>;
+  params?: Record<string, string>;
+}
+
+function getHistoryDescription(
+  entry: ModerationHistoryEntry
+): HistoryDescription {
   if (entry.field === 'banReason') {
     const previous = String(entry.previousValue || '').trim();
     const next = String(entry.newValue || '').trim();
 
     if (!previous && next) {
-      return `Reason set to: ${next}`;
+      return { key: 'moderation.history.reasonSet', params: { reason: next } };
     }
 
     if (previous && !next) {
-      return 'Reason was cleared';
+      return { key: 'moderation.history.reasonCleared' };
     }
 
-    return `Reason changed to: ${next || 'empty'}`;
+    return {
+      key: 'moderation.history.reasonChanged',
+      params: { reason: next },
+    };
   }
 
-  const previous = entry.previousValue === true ? 'enabled' : 'disabled';
-  const next = entry.newValue === true ? 'enabled' : 'disabled';
-  return `Changed from ${previous} to ${next}`;
+  return {
+    key: 'moderation.history.changed',
+    params: {
+      previous:
+        entry.previousValue === true
+          ? 'moderation.history.enabled'
+          : 'moderation.history.disabled',
+      next:
+        entry.newValue === true
+          ? 'moderation.history.enabled'
+          : 'moderation.history.disabled',
+    },
+  };
 }
 
 function ProfileModerationScreen() {
+  const { t } = useTranslation('admin');
+  const { formatDate } = useDateFormatting();
   const { username } = useOutletContext<OutletProfileContextType>();
   const loggedUser = useUserDataStore((state) => state.user);
   const queryClient = useQueryClient();
@@ -126,7 +146,7 @@ function ProfileModerationScreen() {
         banReason,
       }),
     onSuccess: () => {
-      toast.success('Moderation updated');
+      toast.success(t('moderation.toast.updated'));
       queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey;
@@ -140,7 +160,7 @@ function ProfileModerationScreen() {
       });
     },
     onError: () => {
-      toast.error('Failed to update moderation');
+      toast.error(t('moderation.toast.updateFailed'));
     },
   });
 
@@ -154,15 +174,14 @@ function ProfileModerationScreen() {
           queryKey: ['profileModeration', username],
         });
         toast.success(
-          `${result.username}'s streak recalculated (current: ${result.streaks.currentStreak})`
+          t('moderation.toast.streakRecalculated', {
+            username: result.username,
+            streak: result.streaks.currentStreak,
+          })
         );
       },
       onError: (error) => {
-        const axiosError = error as AxiosError<{ message?: string }>;
-        toast.error(
-          axiosError?.response?.data?.message ||
-            'Failed to recalculate streak for this user'
-        );
+        toast.error(getApiErrorMessage(error));
       },
     });
 
@@ -173,10 +192,12 @@ function ProfileModerationScreen() {
           <div className="card-body">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-6 h-6 text-error" />
-              <h2 className="card-title text-error">Access denied</h2>
+              <h2 className="card-title text-error">
+                {t('moderation.accessDeniedTitle')}
+              </h2>
             </div>
             <p className="text-base-content/70">
-              You need admin permissions to access profile moderation tools.
+              {t('moderation.accessDeniedBody')}
             </p>
           </div>
         </div>
@@ -193,10 +214,15 @@ function ProfileModerationScreen() {
               <div>
                 <h2 className="card-title flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5 text-warning" />
-                  Moderation
+                  {t('moderation.title')}
                 </h2>
                 <p className="text-sm text-base-content/70 mt-1">
-                  Manage moderation actions for <b>{username}</b>.
+                  <Trans
+                    t={t}
+                    i18nKey="moderation.subtitle"
+                    values={{ username }}
+                    components={{ b: <b /> }}
+                  />
                 </p>
               </div>
               <button
@@ -208,7 +234,7 @@ function ProfileModerationScreen() {
                 <RefreshCw
                   className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`}
                 />
-                Refresh
+                {t('moderation.refresh')}
               </button>
             </div>
           </div>
@@ -220,11 +246,15 @@ function ProfileModerationScreen() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="font-semibold text-base-content">
-                    Recalculate streak for this user
+                    {t('moderation.recalculateTitle')}
                   </p>
                   <p className="text-xs text-base-content/60 mt-1">
-                    Rebuilds streak from all existing logs for{' '}
-                    <span className="font-semibold">{username}</span>.
+                    <Trans
+                      t={t}
+                      i18nKey="moderation.recalculateBody"
+                      values={{ username }}
+                      components={{ b: <span className="font-semibold" /> }}
+                    />
                   </p>
                 </div>
                 <button
@@ -238,7 +268,7 @@ function ProfileModerationScreen() {
                   ) : (
                     <RefreshCw className="w-4 h-4" />
                   )}
-                  Recalculate streak
+                  {t('moderation.recalculateAction')}
                 </button>
               </div>
             </div>
@@ -248,10 +278,10 @@ function ProfileModerationScreen() {
                 <Trophy className="w-5 h-5 text-warning mt-0.5" />
                 <div>
                   <span className="font-semibold text-base-content">
-                    Ban from rankings
+                    {t('moderation.rankingBanTitle')}
                   </span>
                   <p className="text-xs text-base-content/60 mt-1">
-                    User will be hidden from global ranking and ranking summary.
+                    {t('moderation.rankingBanBody')}
                   </p>
                 </div>
               </div>
@@ -268,10 +298,10 @@ function ProfileModerationScreen() {
                 <Ban className="w-5 h-5 text-error mt-0.5" />
                 <div>
                   <span className="font-semibold text-base-content">
-                    Ban user
+                    {t('moderation.banTitle')}
                   </span>
                   <p className="text-xs text-base-content/60 mt-1">
-                    User cannot log in while banned.
+                    {t('moderation.banBody')}
                   </p>
                 </div>
               </div>
@@ -286,7 +316,7 @@ function ProfileModerationScreen() {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-medium text-base-content">
-                  Ban reason
+                  {t('moderation.banReason')}
                 </span>
                 <span className="text-xs text-base-content/60">
                   {banReason.length}/500
@@ -296,7 +326,7 @@ function ProfileModerationScreen() {
                 className="textarea textarea-bordered w-full min-h-28"
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
-                placeholder="Optional moderation note or ban reason"
+                placeholder={t('moderation.banReasonPlaceholder')}
                 maxLength={500}
               />
             </div>
@@ -313,7 +343,7 @@ function ProfileModerationScreen() {
                 ) : (
                   <Save className="w-4 h-4" />
                 )}
-                Save moderation
+                {t('moderation.save')}
               </button>
             </div>
           </div>
@@ -323,12 +353,12 @@ function ProfileModerationScreen() {
           <div className="card-body">
             <h3 className="font-semibold flex items-center gap-2">
               <Clock3 className="w-4 h-4 text-base-content/70" />
-              Moderation timeline
+              {t('moderation.timeline')}
             </h3>
 
             {sortedHistory.length === 0 ? (
               <p className="text-sm text-base-content/60">
-                No moderation actions recorded yet.
+                {t('moderation.timelineEmpty')}
               </p>
             ) : (
               <ul className="space-y-3">
@@ -344,23 +374,49 @@ function ProfileModerationScreen() {
                         <span
                           className={`badge badge-soft ${getHistoryBadgeClass(entry)}`}
                         >
-                          {getHistoryBadgeLabel(entry)}
+                          {t(getHistoryBadgeLabelKey(entry))}
                         </span>
                         <span className="text-xs text-base-content/60">
-                          by {entry.updatedByUsername || 'Unknown admin'}
+                          {t('moderation.by', {
+                            username:
+                              entry.updatedByUsername ||
+                              t('moderation.unknownAdmin'),
+                          })}
                         </span>
                         <span className="text-xs text-base-content/50">
-                          {formatHistoryDate(entry.updatedAt)}
+                          {Number.isNaN(new Date(entry.updatedAt).getTime())
+                            ? t('moderation.unknownDate')
+                            : formatDate(entry.updatedAt)}
                         </span>
                       </div>
 
                       <p className="mt-2 text-sm text-base-content/75">
-                        {getHistoryDescription(entry)}
+                        {(() => {
+                          const description = getHistoryDescription(entry);
+                          const params = description.params;
+                          return t(description.key, {
+                            ...params,
+                            // The on/off wording is itself a key.
+                            ...(params?.previous
+                              ? {
+                                  previous: t(
+                                    params.previous as ParseKeys<'admin'>
+                                  ),
+                                  next: t(params.next as ParseKeys<'admin'>),
+                                }
+                              : {}),
+                            reason:
+                              params?.reason ||
+                              t('moderation.history.reasonEmpty'),
+                          });
+                        })()}
                       </p>
 
                       {entry.reasonSnapshot ? (
                         <p className="mt-2 text-xs text-base-content/60">
-                          Reason snapshot: {entry.reasonSnapshot}
+                          {t('moderation.reasonSnapshot', {
+                            reason: entry.reasonSnapshot,
+                          })}
                         </p>
                       ) : null}
                     </li>

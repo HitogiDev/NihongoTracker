@@ -1,29 +1,57 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { Trans, useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { Link } from 'react-router-dom';
 import { getMediaRequestsFn, reviewMediaRequestFn } from '../api/trackerApi';
 import type { IMediaRequest, MediaRequestStatus } from '../types';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { getApiErrorMessage } from '../utils/apiError';
 
-const STATUS_TABS: { value: MediaRequestStatus; label: string }[] = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
+/** The shared date formatter adds time and zone unless opted out. */
+const DATE_ONLY: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: undefined,
+  minute: undefined,
+  timeZoneName: undefined,
+};
+
+/** Module scope: key names, never text. */
+const STATUS_TABS: {
+  value: MediaRequestStatus;
+  labelKey: ParseKeys<'admin'>;
+}[] = [
+  { value: 'pending', labelKey: 'mediaRequest.status.pending' },
+  { value: 'approved', labelKey: 'mediaRequest.status.approved' },
+  { value: 'rejected', labelKey: 'mediaRequest.status.rejected' },
 ];
 
-function statusBadge(status: MediaRequestStatus) {
+function StatusBadge({ status }: { status: MediaRequestStatus }) {
+  const { t } = useTranslation('admin');
   const cls =
     status === 'pending'
       ? 'badge-warning'
       : status === 'approved'
         ? 'badge-success'
         : 'badge-error';
-  return <span className={`badge ${cls} capitalize`}>{status}</span>;
+  return (
+    <span className={`badge ${cls}`}>{t(`mediaRequest.status.${status}`)}</span>
+  );
 }
 
-function requesterName(request: IMediaRequest): string {
+/** `tv show` is the stored value; the translation key is camelCase. */
+function mediaTypeKey(type: string): ParseKeys<'admin'> {
+  return `mediaRequest.types.${
+    type === 'tv show' ? 'tvShow' : type
+  }` as ParseKeys<'admin'>;
+}
+
+function requesterName(request: IMediaRequest): string | null {
   if (typeof request.user === 'string') return request.user;
-  return request.user?.username ?? 'Unknown';
+  return request.user?.username ?? null;
 }
 
 function reviewerName(request: IMediaRequest): string | null {
@@ -35,6 +63,8 @@ function reviewerName(request: IMediaRequest): string | null {
 // Admin/mod queue for reviewing user-submitted media requests. Shared by the
 // admin dashboard "Requests" tab and the /media-request page (for mods).
 export default function MediaRequestQueue() {
+  const { t } = useTranslation('admin');
+  const { formatDate } = useDateFormatting();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<MediaRequestStatus>('pending');
   const [page, setPage] = useState(1);
@@ -60,7 +90,7 @@ export default function MediaRequestQueue() {
       toast.success(res.message);
       queryClient.invalidateQueries({ queryKey: ['mediaRequests'] });
     },
-    onError: () => toast.error('Failed to review request'),
+    onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
   return (
@@ -68,10 +98,10 @@ export default function MediaRequestQueue() {
       <div className="card-body">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="card-title">
-            Media Requests
+            {t('queue.title')}
             {data?.pendingCount ? (
               <span className="badge badge-warning ml-2">
-                {data.pendingCount} pending
+                {t('queue.pendingCount', { count: data.pendingCount })}
               </span>
             ) : null}
           </h3>
@@ -85,7 +115,7 @@ export default function MediaRequestQueue() {
                   setPage(1);
                 }}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </div>
@@ -97,7 +127,7 @@ export default function MediaRequestQueue() {
           </div>
         ) : !data?.requests.length ? (
           <div className="py-12 text-center text-base-content/60">
-            No {status} requests.
+            {t('queue.empty', { context: status })}
           </div>
         ) : (
           <div className="space-y-4">
@@ -121,13 +151,13 @@ export default function MediaRequestQueue() {
                       <span className="font-bold">
                         {request.title.contentTitleNative}
                       </span>
-                      <span className="badge badge-ghost capitalize">
-                        {request.type}
+                      <span className="badge badge-ghost">
+                        {t(mediaTypeKey(request.type))}
                       </span>
                       {request.isAdult ? (
                         <span className="badge badge-error">18+</span>
                       ) : null}
-                      {statusBadge(request.status)}
+                      <StatusBadge status={request.status} />
                     </div>
                     {(request.title.contentTitleRomaji ||
                       request.title.contentTitleEnglish) && (
@@ -141,11 +171,17 @@ export default function MediaRequestQueue() {
                       </p>
                     )}
                     <p className="text-xs text-base-content/60 mt-1">
-                      Requested by{' '}
-                      <span className="font-medium">
-                        {requesterName(request)}
-                      </span>{' '}
-                      on {new Date(request.createdAt).toLocaleDateString()}
+                      <Trans
+                        t={t}
+                        i18nKey="queue.requestedBy"
+                        values={{
+                          username:
+                            requesterName(request) ??
+                            t('queue.unknownRequester'),
+                          date: formatDate(request.createdAt, DATE_ONLY),
+                        }}
+                        components={{ b: <span className="font-medium" /> }}
+                      />
                     </p>
                     {request.description?.length
                       ? request.description.map((desc) => (
@@ -162,7 +198,7 @@ export default function MediaRequestQueue() {
                       : null}
                     {request.note ? (
                       <p className="text-sm mt-2 italic text-base-content/70">
-                        Note: {request.note}
+                        {t('queue.note', { note: request.note })}
                       </p>
                     ) : null}
                     {request.referenceUrl ? (
@@ -181,7 +217,7 @@ export default function MediaRequestQueue() {
                         <input
                           type="text"
                           className="input input-bordered input-sm w-full"
-                          placeholder="Review note (optional, shown to requester)"
+                          placeholder={t('queue.reviewNotePlaceholder')}
                           value={note}
                           onChange={(e) =>
                             setReviewNotes((prev) => ({
@@ -202,7 +238,7 @@ export default function MediaRequestQueue() {
                               })
                             }
                           >
-                            Approve
+                            {t('queue.approve')}
                           </button>
                           <button
                             className="btn btn-error btn-sm"
@@ -215,13 +251,15 @@ export default function MediaRequestQueue() {
                               })
                             }
                           >
-                            Reject
+                            {t('queue.reject')}
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="mt-2 text-xs text-base-content/60">
-                        {reviewer ? <>Reviewed by {reviewer}. </> : null}
+                        {reviewer
+                          ? `${t('queue.reviewedBy', { username: reviewer })} `
+                          : null}
                         {request.reviewNote ? (
                           <span className="italic">"{request.reviewNote}"</span>
                         ) : null}
@@ -234,7 +272,7 @@ export default function MediaRequestQueue() {
                               to={`/${request.createdMediaType}/${request.createdMediaContentId}`}
                               className="link link-primary"
                             >
-                              View media
+                              {t('queue.viewMedia')}
                             </Link>
                           </>
                         ) : null}

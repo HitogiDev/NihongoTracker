@@ -8,6 +8,8 @@ import {
 } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { Plus, Search } from 'lucide-react';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { browseMediaListsFn, createMediaListFn } from '../api/listsApi';
 import { MediaListMediaType } from '../types';
 import { useUserDataStore } from '../store/userData';
@@ -16,22 +18,28 @@ import MediaListFormModal, {
   MediaListFormValues,
 } from '../components/MediaListFormModal';
 
+/**
+ * Module scope, so it stores key names rather than text: a literal translated
+ * here would be resolved once at import time and never update on a language
+ * change.
+ */
 const MEDIA_TYPE_FILTERS: Array<{
   value: '' | MediaListMediaType;
-  label: string;
+  labelKey: ParseKeys<'media'>;
 }> = [
-  { value: '', label: 'All types' },
-  { value: 'anime', label: 'Anime' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'reading', label: 'Reading' },
-  { value: 'vn', label: 'Visual novels' },
-  { value: 'game', label: 'Games' },
-  { value: 'video', label: 'Video' },
-  { value: 'movie', label: 'Movies' },
-  { value: 'tv show', label: 'TV shows' },
+  { value: '', labelKey: 'lists.filters.all' },
+  { value: 'anime', labelKey: 'lists.filters.anime' },
+  { value: 'manga', labelKey: 'lists.filters.manga' },
+  { value: 'reading', labelKey: 'lists.filters.reading' },
+  { value: 'vn', labelKey: 'lists.filters.vn' },
+  { value: 'game', labelKey: 'lists.filters.game' },
+  { value: 'video', labelKey: 'lists.filters.video' },
+  { value: 'movie', labelKey: 'lists.filters.movie' },
+  { value: 'tv show', labelKey: 'lists.filters.tvShow' },
 ];
 
 function ListsDiscoverScreen() {
+  const { t } = useTranslation('media');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user: currentUser } = useUserDataStore();
@@ -60,10 +68,10 @@ function ListsDiscoverScreen() {
     onSuccess: (result) => {
       setShowCreateModal(false);
       void queryClient.invalidateQueries({ queryKey: ['mediaLists'] });
-      toast.success('List created');
+      toast.success(t('lists.toast.created'));
       navigate(`/lists/${result.list._id}`);
     },
-    onError: () => toast.error('Could not create the list'),
+    onError: () => toast.error(t('lists.toast.createFailed')),
   });
 
   const lists = data?.lists ?? [];
@@ -73,9 +81,9 @@ function ListsDiscoverScreen() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Lists</h1>
+            <h1 className="text-3xl font-bold">{t('lists.discover.title')}</h1>
             <p className="text-base-content/70">
-              Curated media collections from the community.
+              {t('lists.discover.subtitle')}
             </p>
           </div>
           {currentUser && (
@@ -84,7 +92,7 @@ function ListsDiscoverScreen() {
               className="btn btn-primary"
               onClick={() => setShowCreateModal(true)}
             >
-              <Plus className="w-4 h-4" /> New list
+              <Plus className="w-4 h-4" /> {t('lists.create')}
             </button>
           )}
         </div>
@@ -100,7 +108,7 @@ function ListsDiscoverScreen() {
           >
             <input
               className="input input-bordered join-item flex-1"
-              placeholder="Search lists"
+              placeholder={t('lists.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -117,9 +125,9 @@ function ListsDiscoverScreen() {
               setSort(e.target.value as typeof sort);
             }}
           >
-            <option value="popular">Most liked</option>
-            <option value="recent">Newest</option>
-            <option value="updated">Recently updated</option>
+            <option value="popular">{t('lists.sort.popular')}</option>
+            <option value="recent">{t('lists.sort.recent')}</option>
+            <option value="updated">{t('lists.sort.updated')}</option>
           </select>
 
           <select
@@ -132,7 +140,7 @@ function ListsDiscoverScreen() {
           >
             {MEDIA_TYPE_FILTERS.map((option) => (
               <option key={option.value || 'all'} value={option.value}>
-                {option.label}
+                {t(option.labelKey)}
               </option>
             ))}
           </select>
@@ -144,7 +152,7 @@ function ListsDiscoverScreen() {
           </div>
         ) : lists.length === 0 ? (
           <p className="text-base-content/60 py-16 text-center">
-            No lists found.
+            {t('lists.emptyDiscover')}
           </p>
         ) : (
           <div className="grid gap-x-6 gap-y-8 grid-cols-[repeat(auto-fill,278px)] justify-center sm:justify-start">
@@ -162,10 +170,10 @@ function ListsDiscoverScreen() {
               disabled={page === 1}
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             >
-              Previous
+              {t('lists.pagination.previous')}
             </button>
             <button type="button" className="btn join-item no-animation">
-              Page {page}
+              {t('lists.pagination.page', { page })}
             </button>
             <button
               type="button"
@@ -173,7 +181,7 @@ function ListsDiscoverScreen() {
               disabled={!data?.hasMore}
               onClick={() => setPage((prev) => prev + 1)}
             >
-              Next
+              {t('lists.pagination.next')}
             </button>
           </div>
         )}

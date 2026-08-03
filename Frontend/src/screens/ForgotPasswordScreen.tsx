@@ -3,22 +3,27 @@ import { Link } from 'react-router-dom';
 import { forgotPasswordFn } from '../api/trackerApi';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { AxiosError } from 'axios';
+import { Trans, useTranslation } from 'react-i18next';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import { getApiErrorMessage } from '../utils/apiError';
 
 function ForgotPasswordScreen() {
+  const { t } = useTranslation('auth');
+  const vt = useValidationText();
   const [email, setEmail] = useState('');
   const [touched, setTouched] = useState({ email: false });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
 
   // Validate email when touched
   useEffect(() => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, ValidationKey> = {};
 
     if (touched.email) {
       if (!email) {
-        newErrors.email = 'Email is required';
+        newErrors.email = 'email.required';
       } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
-        newErrors.email = 'Please enter a valid email address';
+        newErrors.email = 'email.invalid';
       }
     }
 
@@ -35,13 +40,10 @@ function ForgotPasswordScreen() {
   const { mutate, isPending, isSuccess } = useMutation({
     mutationFn: forgotPasswordFn,
     onSuccess: () => {
-      toast.success('Password reset instructions sent to your email');
+      toast.success(t('forgotPassword.toast.success'));
     },
     onError: (error) => {
-      const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(
-        axiosError.response?.data?.message || 'Failed to send reset email'
-      );
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -59,17 +61,22 @@ function ForgotPasswordScreen() {
           <div className="card-body text-center">
             <div className="text-6xl mb-4">📧</div>
             <h2 className="card-title justify-center text-2xl mb-4">
-              Check Your Email
+              {t('forgotPassword.sent.title')}
             </h2>
             <p className="text-base-content/70 mb-6">
-              We've sent password reset instructions to <strong>{email}</strong>
+              <Trans
+                t={t}
+                i18nKey="forgotPassword.sent.description"
+                values={{ email }}
+                components={{ strong: <strong /> }}
+              />
             </p>
             <p className="text-sm text-base-content/60 mb-6">
-              If you don't see the email, check your spam folder or try again.
+              {t('forgotPassword.sent.spamHint')}
             </p>
             <div className="card-actions justify-center">
               <Link to="/login" className="btn btn-primary">
-                Back to Login
+                {t('forgotPassword.backToLogin')}
               </Link>
             </div>
           </div>
@@ -83,21 +90,22 @@ function ForgotPasswordScreen() {
       <div className="card w-full max-w-md bg-base-100 shadow-sm">
         <div className="card-body">
           <h2 className="card-title justify-center text-2xl mb-6">
-            Forgot Password
+            {t('forgotPassword.title')}
           </h2>
           <p className="text-base-content/70 mb-6 text-center">
-            Enter your email address and we'll send you instructions to reset
-            your password.
+            {t('forgotPassword.description')}
           </p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-control w-full mb-4">
               <label className="label justify-center">
-                <span className="label-text">Email</span>
+                <span className="label-text">
+                  {t('forgotPassword.email.label')}
+                </span>
               </label>
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t('forgotPassword.email.placeholder')}
                 className={`input input-bordered w-full ${
                   errors.email ? 'input-error' : ''
                 }`}
@@ -108,7 +116,7 @@ function ForgotPasswordScreen() {
               {errors.email && (
                 <label className="label justify-center">
                   <span className="label-text-alt text-error">
-                    {errors.email}
+                    {vt(errors.email)}
                   </span>
                 </label>
               )}
@@ -123,20 +131,20 @@ function ForgotPasswordScreen() {
                 {isPending ? (
                   <span className="loading loading-spinner loading-sm" />
                 ) : (
-                  'Send Reset Instructions'
+                  t('forgotPassword.submit')
                 )}
               </button>
             </div>
           </form>
 
-          <div className="divider">OR</div>
+          <div className="divider">{t('forgotPassword.or')}</div>
 
           <div className="text-center">
             <span className="text-base-content/70">
-              Remember your password?{' '}
+              {t('forgotPassword.rememberPassword')}{' '}
             </span>
             <Link to="/login" className="link link-primary">
-              Back to Login
+              {t('forgotPassword.backToLogin')}
             </Link>
           </div>
         </div>

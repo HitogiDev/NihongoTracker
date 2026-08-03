@@ -11,6 +11,8 @@ import logs from './logs.json';
 import media from './media.json';
 import nav from './nav.json';
 import notifications from './notifications.json';
+import profile from './profile.json';
+import ranking from './ranking.json';
 import settings from './settings.json';
 import stats from './stats.json';
 import texthooker from './texthooker.json';
@@ -30,6 +32,8 @@ const en = {
   media,
   nav,
   notifications,
+  profile,
+  ranking,
   settings,
   stats,
   texthooker,

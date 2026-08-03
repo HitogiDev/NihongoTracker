@@ -1,0 +1,57 @@
+{
+  "title": "Clasificación",
+  "subtitle": "Mira cómo te comparas con el resto",
+  "modes": {
+    "global": "Global",
+    "medium": "Por tipo"
+  },
+  "scope": {
+    "total": "Total",
+    "reading": "Lectura",
+    "listening": "Escucha"
+  },
+  "metrics": {
+    "xp": "XP",
+    "hours": "Horas",
+    "chars": "Caracteres",
+    "time": "Tiempo",
+    "episodes": "Episodios",
+    "characters": "Caracteres",
+    "pages": "Páginas"
+  },
+  "filterLabel": "{{scope}} · {{metric}}",
+  "columnHeader": "{{filter}} ({{unit}})",
+  "units": {
+    "hours": "Horas",
+    "xp": "XP"
+  },
+  "time": {
+    "allTime": "Histórico",
+    "today": "Hoy",
+    "week": "Esta semana",
+    "month": "Este mes",
+    "year": "Este año",
+    "custom": "Personalizado",
+    "customRange": "Rango personalizado",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "to": "a",
+    "apply": "Aplicar",
+    "clear": "Limpiar"
+  },
+  "defaults": {
+    "save": "Guardar como predeterminado",
+    "remove": "Quitar predeterminado",
+    "menu": "Preferencias de clasificación"
+  },
+  "table": {
+    "rank": "Puesto",
+    "user": "Usuario",
+    "level": "Nivel"
+  },
+  "avatarAlt": "Avatar de {{username}}",
+  "unknownUser": "Usuario",
+  "loading": "Cargando la clasificación...",
+  "loadingMore": "Cargando más...",
+  "loadMore": "Cargar más puestos"
+}

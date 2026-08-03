@@ -1,0 +1,147 @@
+{
+  "about": {
+    "title": "Sobre mí",
+    "edit": "Editar perfil",
+    "readMore": "Leer más",
+    "showLess": "Mostrar menos",
+    "emptyOwn": "Añade una breve presentación desde Ajustes → Información del perfil.",
+    "emptyOther": "Esta persona todavía no ha escrito su presentación."
+  },
+  "achievements": {
+    "title": "Logros",
+    "viewAll": "Ver todos",
+    "none": "Todavía no hay logros",
+    "noMatches": "Ningún logro coincide con tus filtros"
+  },
+  "activity": {
+    "title": "Actividad de inmersión"
+  },
+  "categories": {
+    "all": "Todas las categorías",
+    "streaks": "Rachas",
+    "immersion": "Inmersión",
+    "social": "Social",
+    "milestone": "Hitos",
+    "secret": "Secretos"
+  },
+  "favorites": {
+    "title": "Favoritos"
+  },
+  "favoritesWidget": {
+    "empty": "Todavía no hay favoritos.",
+    "emptyOwn": "Añade tu contenido favorito para mostrarlo aquí.",
+    "hint": "{{current}}/{{max}} · arrastra para reordenar y toca el icono de nota para añadir una.",
+    "viewInfo": "Ver información",
+    "viewNote": "Ver la nota y la información",
+    "drag": "Arrastrar para reordenar",
+    "editNote": "Editar la nota",
+    "remove": "Quitar de favoritos",
+    "notePlaceholder": "¿Por qué es favorito?",
+    "unknown": "Desconocido",
+    "updated": "Favoritos actualizados",
+    "updateFailed": "No se pudieron actualizar los favoritos",
+    "types": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "reading": "Novelas ligeras",
+      "vn": "Novelas visuales",
+      "game": "Videojuegos",
+      "video": "Vídeos",
+      "movie": "Películas",
+      "book": "Libros",
+      "tvShow": "Series"
+    },
+    "noteTitle": "Nota",
+    "cancel": "Cancelar",
+    "saveNote": "Guardar nota"
+  },
+  "feed": {
+    "all": "Toda la actividad",
+    "logs": "Registros",
+    "achievements": "Logros"
+  },
+  "filters": {
+    "active": "Filtros activos:",
+    "clearAll": "Quitar todos",
+    "allTypes": "Todos los tipos",
+    "clearType": "Quitar el filtro de tipo",
+    "clearCategory": "Quitar el filtro de categoría",
+    "clearDate": "Quitar el filtro de fechas",
+    "clearSort": "Quitar el orden",
+    "includeUnknownDates": "Incluir fechas desconocidas",
+    "hideUnknownDates": "Ocultar fechas desconocidas",
+    "categoryBadge": "Categoría:",
+    "sortBadge": "Orden:"
+  },
+  "header": {
+    "shareStats": "Compartir estadísticas",
+    "shareStatsTitle": "Compartir las estadísticas como imagen",
+    "avatarAlt": "Avatar de {{username}}"
+  },
+  "loadMore": "Cargar más",
+  "loadMoreLogs": "Cargar más registros",
+  "nothingMore": "No hay nada más que cargar",
+  "progress": {
+    "title": "Progreso",
+    "overall": "Progreso general",
+    "listening": "Progreso de escucha",
+    "reading": "Progreso de lectura",
+    "level": "Nivel {{level}}",
+    "xp": "{{current}}/{{total}} XP"
+  },
+  "search": {
+    "placeholder": "Buscar registros...",
+    "clear": "Limpiar la búsqueda"
+  },
+  "sort": {
+    "date": "Fecha",
+    "rarity": "Rareza",
+    "points": "Puntos",
+    "xp": "XP",
+    "episodes": "Episodios",
+    "chars": "Caracteres",
+    "pages": "Páginas",
+    "time": "Tiempo",
+    "readingSpeed": "Velocidad de lectura",
+    "newestFirst": "Más recientes primero",
+    "oldestFirst": "Más antiguos primero",
+    "highestToLowest": "De mayor a menor",
+    "lowestToHighest": "De menor a mayor"
+  },
+  "stats": {
+    "title": "Estadísticas del perfil",
+    "share": "Compartir",
+    "shareTitle": "Compartir las estadísticas como imagen",
+    "globalRanking": "Clasificación global",
+    "monthlyRanking": "Clasificación mensual",
+    "rankingOverTime": "Evolución de la clasificación",
+    "monthly": "Mensual",
+    "global": "Global",
+    "achievements": "Logros",
+    "totalXp": "XP total",
+    "totalTime": "Tiempo total de inmersión",
+    "hoverPosition": "{{date}}: n.º {{position}}"
+  },
+  "tabs": {
+    "overview": "Resumen",
+    "stats": "Estadísticas",
+    "immersionList": "Lista de inmersión",
+    "lists": "Listas",
+    "goals": "Objetivos",
+    "achievements": "Logros",
+    "moderation": "Moderación"
+  },
+  "time": {
+    "all": "Histórico",
+    "today": "Hoy",
+    "week": "Esta semana",
+    "month": "Este mes",
+    "year": "Este año",
+    "custom": "Rango personalizado",
+    "startDate": "Fecha de inicio",
+    "endDate": "Fecha de fin",
+    "start": "Inicio",
+    "end": "Fin",
+    "range": "{{start}} a {{end}}"
+  }
+}

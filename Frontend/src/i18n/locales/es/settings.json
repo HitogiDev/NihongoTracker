@@ -265,7 +265,35 @@
   },
   "tags": {
     "subtitle": "Crea y gestiona etiquetas para organizar tus registros",
-    "title": "Etiquetas"
+    "title": "Etiquetas",
+    "manager": {
+      "title": "Gestionar etiquetas",
+      "createNew": "Crear una etiqueta",
+      "editTag": "Editar la etiqueta",
+      "tagName": "Nombre de la etiqueta",
+      "tagColor": "Color de la etiqueta",
+      "namePlaceholder": "p. ej. Estudio, Ocio, Práctica",
+      "colorPlaceholder": "#3b82f6",
+      "preview": "Vista previa",
+      "create": "Crear",
+      "empty": "Todavía no hay etiquetas. Crea la primera para organizar tus registros.",
+      "deleteTitle": "¿Eliminar la etiqueta?",
+      "deleteTag": "Eliminar la etiqueta",
+      "editAction": "Editar la etiqueta",
+      "nameRequired": "El nombre de la etiqueta es obligatorio",
+      "created": "Etiqueta creada",
+      "updated": "Etiqueta actualizada",
+      "deleted": "Etiqueta eliminada",
+      "createFailed": "No se pudo crear la etiqueta",
+      "updateFailed": "No se pudo actualizar la etiqueta",
+      "deleteFailed": "No se pudo eliminar la etiqueta"
+    },
+    "selector": {
+      "createNewTag": "Crear una etiqueta",
+      "createAndAdd": "Crear y añadir",
+      "loading": "Cargando las etiquetas...",
+      "close": "Cerrar"
+    }
   },
   "toast": {
     "aboutMaxLength": "El texto de tu biografía ha llegado al máximo.",

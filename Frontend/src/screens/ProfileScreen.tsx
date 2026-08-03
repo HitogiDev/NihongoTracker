@@ -8,7 +8,11 @@ import ImmersionHeatmap from '../components/ImmersionHeatmap';
 import FavoriteMedia from '../components/FavoriteMedia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { getUserLogsFn, getUserAchievementsFn, getUserAchievementActivityFn } from '../api/trackerApi';
+import {
+  getUserLogsFn,
+  getUserAchievementsFn,
+  getUserAchievementActivityFn,
+} from '../api/trackerApi';
 import { Icon } from '@iconify/react';
 import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
 import { AchievementDetailModal } from '../components/achievements/AchievementCard';
@@ -45,6 +49,18 @@ import {
   Tag,
   X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
+
+/** The shared date formatter adds time and zone unless opted out. */
+const DATE_ONLY: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: undefined,
+  minute: undefined,
+  timeZoneName: undefined,
+};
 
 const RARITY_ORDER: Record<AchievementRarity, number> = {
   common: 0,
@@ -54,23 +70,27 @@ const RARITY_ORDER: Record<AchievementRarity, number> = {
   secret: 4,
 };
 
+/** Module scope: key names, never text. */
 const achievementCategoryOptions: Array<{
   value: 'all' | AchievementCategory;
-  label: string;
+  labelKey: ParseKeys<'profile'>;
 }> = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'streaks', label: 'Streaks' },
-  { value: 'immersion', label: 'Immersion' },
-  { value: 'social', label: 'Social' },
-  { value: 'milestone', label: 'Milestone' },
-  { value: 'secret', label: 'Secret' },
+  { value: 'all', labelKey: 'categories.all' },
+  { value: 'streaks', labelKey: 'categories.streaks' },
+  { value: 'immersion', labelKey: 'categories.immersion' },
+  { value: 'social', labelKey: 'categories.social' },
+  { value: 'milestone', labelKey: 'categories.milestone' },
+  { value: 'secret', labelKey: 'categories.secret' },
 ];
 
 function ProfileScreen() {
+  const { t } = useTranslation('profile');
+  const { t: tCommon } = useTranslation('common');
   const limit = 10;
   const { user, username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedUser } = useUserDataStore();
-  const { getCurrentTime, getDayBounds, formatDateOnly } = useDateFormatting();
+  const { getCurrentTime, getDayBounds, formatDateOnly, formatDate } =
+    useDateFormatting();
   const [showFullAbout, setShowFullAbout] = useState(false);
   const aboutContentRef = useRef<HTMLDivElement | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -118,39 +138,43 @@ function ProfileScreen() {
   const aboutPreviewHeight = 224;
   const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
 
-  const feedKindOptions: Array<{ label: string; value: UnifiedFeedFilter; icon: React.ElementType }> = [
-    { label: 'All activity', value: 'all', icon: Sparkles },
-    { label: 'Logs', value: 'logs', icon: LayoutList },
-    { label: 'Achievements', value: 'achievements', icon: Trophy },
+  const feedKindOptions: Array<{
+    label: string;
+    value: UnifiedFeedFilter;
+    icon: React.ElementType;
+  }> = [
+    { label: t('feed.all'), value: 'all', icon: Sparkles },
+    { label: t('feed.logs'), value: 'logs', icon: LayoutList },
+    { label: t('feed.achievements'), value: 'achievements', icon: Trophy },
   ];
 
   const sortFieldOptions =
     feedKind === 'achievements'
       ? [
-          { value: 'date', label: 'Date' },
-          { value: 'rarity', label: 'Rarity' },
-          { value: 'points', label: 'Points' },
+          { value: 'date', label: t('sort.date') },
+          { value: 'rarity', label: t('sort.rarity') },
+          { value: 'points', label: t('sort.points') },
         ]
       : feedKind === 'logs'
         ? [
-            { value: 'date', label: 'Date' },
-            { value: 'xp', label: 'XP' },
-            { value: 'episodes', label: 'Episodes' },
-            { value: 'chars', label: 'Characters' },
-            { value: 'pages', label: 'Pages' },
-            { value: 'time', label: 'Time' },
-            { value: 'readingSpeed', label: 'Reading Speed' },
+            { value: 'date', label: t('sort.date') },
+            { value: 'xp', label: t('sort.xp') },
+            { value: 'episodes', label: t('sort.episodes') },
+            { value: 'chars', label: t('sort.chars') },
+            { value: 'pages', label: t('sort.pages') },
+            { value: 'time', label: t('sort.time') },
+            { value: 'readingSpeed', label: t('sort.readingSpeed') },
           ]
         : [
-            { value: 'date', label: 'Date' },
-            { value: 'xp', label: 'XP' },
-            { value: 'episodes', label: 'Episodes' },
-            { value: 'chars', label: 'Characters' },
-            { value: 'pages', label: 'Pages' },
-            { value: 'time', label: 'Time' },
-            { value: 'readingSpeed', label: 'Reading Speed' },
-            { value: 'rarity', label: 'Rarity' },
-            { value: 'points', label: 'Points' },
+            { value: 'date', label: t('sort.date') },
+            { value: 'xp', label: t('sort.xp') },
+            { value: 'episodes', label: t('sort.episodes') },
+            { value: 'chars', label: t('sort.chars') },
+            { value: 'pages', label: t('sort.pages') },
+            { value: 'time', label: t('sort.time') },
+            { value: 'readingSpeed', label: t('sort.readingSpeed') },
+            { value: 'rarity', label: t('sort.rarity') },
+            { value: 'points', label: t('sort.points') },
           ];
 
   useEffect(() => {
@@ -160,7 +184,14 @@ function ProfileScreen() {
   // Sort options differ by feed kind — reset to a value valid for the newly selected kind.
   // "all" supports every field (items missing it sort to the end), so it never needs a reset.
   useEffect(() => {
-    const logOnlyFields = ['xp', 'episodes', 'chars', 'pages', 'time', 'readingSpeed'];
+    const logOnlyFields = [
+      'xp',
+      'episodes',
+      'chars',
+      'pages',
+      'time',
+      'readingSpeed',
+    ];
     const achievementOnlyFields = ['rarity', 'points'];
     if (feedKind === 'achievements' && logOnlyFields.includes(sortBy)) {
       setSortBy('date');
@@ -353,7 +384,9 @@ function ProfileScreen() {
       // Backend paginates by groups (playlist batches = 1 group).
       // Count unique groups in this page to check if we got a full page.
       const groupKeys = new Set(
-        lastPage.map((log) => log.playlistBatchId?.trim() || `single:${log._id}`)
+        lastPage.map(
+          (log) => log.playlistBatchId?.trim() || `single:${log._id}`
+        )
       );
       if (groupKeys.size < limit) return undefined;
       return allPages ? allPages.length + 1 : 2;
@@ -417,7 +450,9 @@ function ProfileScreen() {
     let items = achievementActivity ?? [];
 
     if (achievementCategory !== 'all') {
-      items = items.filter((a) => a.achievement.category === achievementCategory);
+      items = items.filter(
+        (a) => a.achievement.category === achievementCategory
+      );
     }
 
     const term = searchTerm.trim().toLowerCase();
@@ -432,7 +467,9 @@ function ProfileScreen() {
     if (dateRange) {
       items = items.filter((a) => {
         const unlockedAt = new Date(a.unlockedAt);
-        return unlockedAt >= dateRange.startDate && unlockedAt <= dateRange.endDate;
+        return (
+          unlockedAt >= dateRange.startDate && unlockedAt <= dateRange.endDate
+        );
       });
     }
 
@@ -440,7 +477,8 @@ function ProfileScreen() {
     if (sortBy === 'rarity') {
       sorted.sort((a, b) => {
         const diff =
-          RARITY_ORDER[b.achievement.rarity] - RARITY_ORDER[a.achievement.rarity];
+          RARITY_ORDER[b.achievement.rarity] -
+          RARITY_ORDER[a.achievement.rarity];
         return sortDirection === 'asc' ? -diff : diff;
       });
     } else if (sortBy === 'points') {
@@ -450,13 +488,21 @@ function ProfileScreen() {
       });
     } else {
       sorted.sort((a, b) => {
-        const diff = new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime();
+        const diff =
+          new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime();
         return sortDirection === 'asc' ? -diff : diff;
       });
     }
 
     return sorted;
-  }, [achievementActivity, achievementCategory, searchTerm, dateRange, sortBy, sortDirection]);
+  }, [
+    achievementActivity,
+    achievementCategory,
+    searchTerm,
+    dateRange,
+    sortBy,
+    sortDirection,
+  ]);
 
   // Unified feed (achievements + log groups). Sorting by a field only one
   // kind has (e.g. XP on logs, Rarity on achievements) pushes the other
@@ -467,11 +513,13 @@ function ProfileScreen() {
       sortDate: new Date(log.date ?? 0),
       data: log,
     }));
-    const achievementItems: UnifiedFeedItem[] = filteredAchievements.map((a) => ({
-      kind: 'achievement',
-      sortDate: new Date(a.unlockedAt),
-      data: a,
-    }));
+    const achievementItems: UnifiedFeedItem[] = filteredAchievements.map(
+      (a) => ({
+        kind: 'achievement',
+        sortDate: new Date(a.unlockedAt),
+        data: a,
+      })
+    );
 
     const getSortValue = (item: UnifiedFeedItem): number | null => {
       if (sortBy === 'date') return item.sortDate.getTime();
@@ -528,20 +576,18 @@ function ProfileScreen() {
   // Left-column widgets keyed by id — rendered in the order/visibility the
   // owner configured in Settings → Profile (see resolveProfileLayout).
   const widgetNodes: Partial<Record<ProfileWidgetId, React.ReactNode>> = {
-    profileStats: username ? (
-      <ProfileStatsBand username={username} />
-    ) : null,
+    profileStats: username ? <ProfileStatsBand username={username} /> : null,
     about: (
       <div className="card w-full bg-base-100 shadow-sm">
         <div className="card-body w-full p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <h2 className="card-title">About</h2>
+            <h2 className="card-title">{t('about.title')}</h2>
             {isOwner && (
               <Link
                 to="/settings"
                 className="btn btn-ghost btn-xs text-primary"
               >
-                Edit profile
+                {t('about.edit')}
               </Link>
             )}
           </div>
@@ -574,16 +620,14 @@ function ProfileScreen() {
                     }}
                     aria-expanded={showFullAbout}
                   >
-                    {showFullAbout ? 'Show less' : 'Read more'}
+                    {showFullAbout ? t('about.showLess') : t('about.readMore')}
                   </span>
                 </div>
               )}
             </div>
           ) : (
             <p className="text-base-content/70 text-sm">
-              {isOwner
-                ? 'Add a short introduction from Settings → Profile Information.'
-                : 'This user has not added an about section yet.'}
+              {isOwner ? t('about.emptyOwn') : t('about.emptyOther')}
             </p>
           )}
         </div>
@@ -600,15 +644,18 @@ function ProfileScreen() {
     progressStats: (
       <div className="card w-full bg-base-100 shadow-sm">
         <div className="card-body w-full p-4 sm:p-6">
-          <h2 className="card-title mb-4">Progress Stats</h2>
+          <h2 className="card-title mb-4">{t('progress.title')}</h2>
           <div className="stats stats-vertical w-full shadow-none bg-transparent">
             <div className="stat px-0 py-4">
-              <div className="stat-title">Overall Progress</div>
+              <div className="stat-title">{t('progress.overall')}</div>
               <div className="stat-value text-2xl">
-                Level {user?.stats?.userLevel}
+                {t('progress.level', { level: user?.stats?.userLevel ?? 0 })}
               </div>
               <div className="stat-desc mb-3">
-                {userProgressXP}/{totalUserXpToLevelUp} XP
+                {t('progress.xp', {
+                  current: userProgressXP,
+                  total: totalUserXpToLevelUp,
+                })}
               </div>
               <ProgressBar
                 progress={userProgressPercentage}
@@ -617,12 +664,17 @@ function ProfileScreen() {
             </div>
 
             <div className="stat px-0 py-4">
-              <div className="stat-title">Listening Progress</div>
+              <div className="stat-title">{t('progress.listening')}</div>
               <div className="stat-value text-2xl">
-                Level {user?.stats?.listeningLevel}
+                {t('progress.level', {
+                  level: user?.stats?.listeningLevel ?? 0,
+                })}
               </div>
               <div className="stat-desc mb-3">
-                {listeningProgressXP}/{totalListeningXpToLevelUp} XP
+                {t('progress.xp', {
+                  current: listeningProgressXP,
+                  total: totalListeningXpToLevelUp,
+                })}
               </div>
               <ProgressBar
                 progress={listeningProgressPercentage}
@@ -631,12 +683,17 @@ function ProfileScreen() {
             </div>
 
             <div className="stat px-0 py-4">
-              <div className="stat-title">Reading Progress</div>
+              <div className="stat-title">{t('progress.reading')}</div>
               <div className="stat-value text-2xl">
-                Level {user?.stats?.readingLevel}
+                {t('progress.level', {
+                  level: user?.stats?.readingLevel ?? 0,
+                })}
               </div>
               <div className="stat-desc mb-3">
-                {readingProgressXP}/{totalReadingXpToLevelUp} XP
+                {t('progress.xp', {
+                  current: readingProgressXP,
+                  total: totalReadingXpToLevelUp,
+                })}
               </div>
               <ProgressBar
                 progress={readingProgressPercentage}
@@ -650,14 +707,12 @@ function ProfileScreen() {
     immersionActivity: (
       <div className="card w-full bg-base-100 shadow-sm overflow-visible">
         <div className="card-body w-full p-4 sm:p-6 overflow-visible">
-          <h2 className="card-title mb-4">Immersion Activity</h2>
+          <h2 className="card-title mb-4">{t('activity.title')}</h2>
           {username && <ImmersionHeatmap username={username} />}
         </div>
       </div>
     ),
-    immersionGoals: username ? (
-      <ImmersionGoals username={username} />
-    ) : null,
+    immersionGoals: username ? <ImmersionGoals username={username} /> : null,
     achievements: username ? (
       <AchievementShowcaseWidget username={username} />
     ) : null,
@@ -708,7 +763,9 @@ function ProfileScreen() {
                     className="btn btn-outline gap-2 justify-start"
                   >
                     {(() => {
-                      const Icon = feedKindOptions.find((o) => o.value === feedKind)?.icon;
+                      const Icon = feedKindOptions.find(
+                        (o) => o.value === feedKind
+                      )?.icon;
                       return Icon ? <Icon className="w-4 h-4" /> : null;
                     })()}
                     {feedKindOptions.find((o) => o.value === feedKind)?.label}
@@ -723,7 +780,9 @@ function ProfileScreen() {
                       return (
                         <li key={option.value}>
                           <a
-                            className={feedKind === option.value ? 'active' : ''}
+                            className={
+                              feedKind === option.value ? 'active' : ''
+                            }
                             onClick={() => setFeedKind(option.value)}
                           >
                             <Icon className="w-4 h-4" />
@@ -746,7 +805,7 @@ function ProfileScreen() {
                       <input
                         type="text"
                         className="grow"
-                        placeholder="Search logs..."
+                        placeholder={t('search.placeholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -765,7 +824,7 @@ function ProfileScreen() {
                         >
                           <Funnel className="w-4 h-4" />
                           {filterType === 'all'
-                            ? 'All Types'
+                            ? t('filters.allTypes')
                             : filterType.charAt(0).toUpperCase() +
                               filterType.slice(1)}
                           <ChevronDown className="w-4 h-4 ml-auto" />
@@ -775,16 +834,40 @@ function ProfileScreen() {
                           className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
                         >
                           {[
-                            { value: 'all', label: 'All Types' },
-                            { value: 'anime', label: 'Anime' },
-                            { value: 'manga', label: 'Manga' },
-                            { value: 'reading', label: 'Reading' },
-                            { value: 'vn', label: 'Visual Novel' },
-                            { value: 'game', label: 'Video Game' },
-                            { value: 'video', label: 'Video' },
-                            { value: 'movie', label: 'Movie' },
-                            { value: 'audio', label: 'Audio' },
-                            { value: 'other', label: 'Other' },
+                            { value: 'all', label: t('filters.allTypes') },
+                            {
+                              value: 'anime',
+                              label: tCommon('mediaTypes.anime'),
+                            },
+                            {
+                              value: 'manga',
+                              label: tCommon('mediaTypes.manga'),
+                            },
+                            {
+                              value: 'reading',
+                              label: tCommon('mediaTypes.reading'),
+                            },
+                            { value: 'vn', label: tCommon('mediaTypes.vn') },
+                            {
+                              value: 'game',
+                              label: tCommon('mediaTypes.game'),
+                            },
+                            {
+                              value: 'video',
+                              label: tCommon('mediaTypes.video'),
+                            },
+                            {
+                              value: 'movie',
+                              label: tCommon('mediaTypes.movie'),
+                            },
+                            {
+                              value: 'audio',
+                              label: tCommon('mediaTypes.audio'),
+                            },
+                            {
+                              value: 'other',
+                              label: tCommon('mediaTypes.other'),
+                            },
                           ].map((option) => (
                             <li key={option.value}>
                               <a
@@ -793,7 +876,10 @@ function ProfileScreen() {
                                 }
                                 onClick={() => {
                                   const value = option.value;
-                                  if (value === 'all' || isValidLogType(value)) {
+                                  if (
+                                    value === 'all' ||
+                                    isValidLogType(value)
+                                  ) {
                                     setFilterType(value as typeof filterType);
                                   }
                                 }}
@@ -815,7 +901,11 @@ function ProfileScreen() {
                           className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                         >
                           <Tag className="w-4 h-4" />
-                          {achievementCategoryOptions.find((o) => o.value === achievementCategory)?.label}
+                          {t(
+                            achievementCategoryOptions.find(
+                              (o) => o.value === achievementCategory
+                            )?.labelKey ?? 'categories.all'
+                          )}
                           <ChevronDown className="w-4 h-4 ml-auto" />
                         </div>
                         <ul
@@ -826,11 +916,15 @@ function ProfileScreen() {
                             <li key={option.value}>
                               <a
                                 className={
-                                  achievementCategory === option.value ? 'active' : ''
+                                  achievementCategory === option.value
+                                    ? 'active'
+                                    : ''
                                 }
-                                onClick={() => setAchievementCategory(option.value)}
+                                onClick={() =>
+                                  setAchievementCategory(option.value)
+                                }
                               >
-                                {option.label}
+                                {t(option.labelKey)}
                               </a>
                             </li>
                           ))}
@@ -847,16 +941,16 @@ function ProfileScreen() {
                       >
                         <Clock className="w-4 h-4" />
                         {dateFilter === 'all'
-                          ? 'All Time'
+                          ? t('time.all')
                           : dateFilter === 'today'
-                            ? 'Today'
+                            ? t('time.today')
                             : dateFilter === 'week'
-                              ? 'This Week'
+                              ? t('time.week')
                               : dateFilter === 'month'
-                                ? 'This Month'
+                                ? t('time.month')
                                 : dateFilter === 'year'
-                                  ? 'This Year'
-                                  : 'Custom Range'}
+                                  ? t('time.year')
+                                  : t('time.custom')}
                         <ChevronDown className="w-4 h-4 ml-auto" />
                       </div>
                       <ul
@@ -864,12 +958,12 @@ function ProfileScreen() {
                         className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
                       >
                         {[
-                          { value: 'all', label: 'All Time' },
-                          { value: 'today', label: 'Today' },
-                          { value: 'week', label: 'This Week' },
-                          { value: 'month', label: 'This Month' },
-                          { value: 'year', label: 'This Year' },
-                          { value: 'custom', label: 'Custom Range' },
+                          { value: 'all', label: t('time.all') },
+                          { value: 'today', label: t('time.today') },
+                          { value: 'week', label: t('time.week') },
+                          { value: 'month', label: t('time.month') },
+                          { value: 'year', label: t('time.year') },
+                          { value: 'custom', label: t('time.custom') },
                         ].map((option) => (
                           <li key={option.value}>
                             <a
@@ -917,8 +1011,9 @@ function ProfileScreen() {
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
                         <ListFilter className="w-4 h-4" />
-                        Sort:{' '}
-                        {sortFieldOptions.find((o) => o.value === sortBy)?.label ?? 'Date'}{' '}
+                        {t('filters.sortBadge')}{' '}
+                        {sortFieldOptions.find((o) => o.value === sortBy)
+                          ?.label ?? t('sort.date')}{' '}
                         {sortDirection === 'desc' ? (
                           <ArrowDown className="w-3 h-3" />
                         ) : (
@@ -957,7 +1052,9 @@ function ProfileScreen() {
                             onClick={() => setSortDirection('desc')}
                           >
                             <ArrowDown className="w-4 h-4" />
-                            {sortBy === 'date' ? 'Newest First' : 'Highest to Lowest'}
+                            {sortBy === 'date'
+                              ? t('sort.newestFirst')
+                              : t('sort.highestToLowest')}
                           </a>
                         </li>
                         <li>
@@ -966,7 +1063,9 @@ function ProfileScreen() {
                             onClick={() => setSortDirection('asc')}
                           >
                             <ArrowUp className="w-4 h-4" />
-                            {sortBy === 'date' ? 'Oldest First' : 'Lowest to Highest'}
+                            {sortBy === 'date'
+                              ? t('sort.oldestFirst')
+                              : t('sort.lowestToHighest')}
                           </a>
                         </li>
                       </ul>
@@ -985,7 +1084,7 @@ function ProfileScreen() {
                       >
                         {customStartDate
                           ? formatDateOnly(customStartDate)
-                          : 'Start Date'}
+                          : t('time.startDate')}
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4 ml-1"
@@ -1034,7 +1133,7 @@ function ProfileScreen() {
                       >
                         {customEndDate
                           ? formatDateOnly(customEndDate)
-                          : 'End Date'}
+                          : t('time.endDate')}
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4 ml-1"
@@ -1088,7 +1187,7 @@ function ProfileScreen() {
                   sortDirection !== 'desc') && (
                   <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-xs text-base-content/60">
-                      Active filters:
+                      {t('filters.active')}
                     </span>
 
                     {searchTerm && (
@@ -1097,7 +1196,7 @@ function ProfileScreen() {
                         <button
                           className="ml-1 hover:bg-primary-focus rounded-full"
                           onClick={() => setSearchTerm('')}
-                          aria-label="Clear search"
+                          aria-label={t('search.clear')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1110,7 +1209,7 @@ function ProfileScreen() {
                         <button
                           className="ml-1 hover:bg-secondary-focus rounded-full"
                           onClick={() => setFilterType('all')}
-                          aria-label="Clear type filter"
+                          aria-label={t('filters.clearType')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1119,12 +1218,16 @@ function ProfileScreen() {
 
                     {feedKind !== 'logs' && achievementCategory !== 'all' && (
                       <div className="badge badge-secondary badge-sm gap-1">
-                        Category:{' '}
-                        {achievementCategoryOptions.find((o) => o.value === achievementCategory)?.label}
+                        {t('filters.categoryBadge')}{' '}
+                        {t(
+                          achievementCategoryOptions.find(
+                            (o) => o.value === achievementCategory
+                          )?.labelKey ?? 'categories.all'
+                        )}
                         <button
                           className="ml-1 hover:bg-secondary-focus rounded-full"
                           onClick={() => setAchievementCategory('all')}
-                          aria-label="Clear category filter"
+                          aria-label={t('filters.clearCategory')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1134,14 +1237,23 @@ function ProfileScreen() {
                     {dateFilter !== 'all' && (
                       <div className="badge badge-accent badge-sm gap-1">
                         {dateFilter === 'custom'
-                          ? `${customStartDate?.toLocaleDateString() || 'Start'} to ${customEndDate?.toLocaleDateString() || 'End'}`
+                          ? t('time.range', {
+                              start:
+                                (customStartDate &&
+                                  formatDate(customStartDate, DATE_ONLY)) ||
+                                t('time.start'),
+                              end:
+                                (customEndDate &&
+                                  formatDate(customEndDate, DATE_ONLY)) ||
+                                t('time.end'),
+                            })
                           : dateFilter === 'today'
-                            ? 'Today'
+                            ? t('time.today')
                             : dateFilter === 'week'
-                              ? 'This Week'
+                              ? t('time.week')
                               : dateFilter === 'month'
-                                ? 'This Month'
-                                : 'This Year'}
+                                ? t('time.month')
+                                : t('time.year')}
                         <button
                           className="ml-1 hover:bg-accent-focus rounded-full"
                           onClick={() => {
@@ -1149,7 +1261,7 @@ function ProfileScreen() {
                             setCustomStartDate(undefined);
                             setCustomEndDate(undefined);
                           }}
-                          aria-label="Clear date filter"
+                          aria-label={t('filters.clearDate')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1158,11 +1270,11 @@ function ProfileScreen() {
 
                     {showUnknownDates && (
                       <div className="badge badge-neutral badge-sm gap-1">
-                        Include unknown dates
+                        {t('filters.includeUnknownDates')}
                         <button
                           className="ml-1 hover:bg-neutral-focus rounded-full"
                           onClick={() => setShowUnknownDates(false)}
-                          aria-label="Hide unknown dates"
+                          aria-label={t('filters.hideUnknownDates')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1171,19 +1283,20 @@ function ProfileScreen() {
 
                     {(sortBy !== 'date' || sortDirection !== 'desc') && (
                       <div className="badge badge-info badge-sm gap-1">
-                        Sort:{' '}
+                        {t('filters.sortBadge')}{' '}
                         {sortBy !== 'date'
-                          ? sortFieldOptions.find((o) => o.value === sortBy)?.label
+                          ? sortFieldOptions.find((o) => o.value === sortBy)
+                              ?.label
                           : sortDirection === 'asc'
-                            ? 'Oldest First'
-                            : 'Newest First'}
+                            ? t('sort.oldestFirst')
+                            : t('sort.newestFirst')}
                         <button
                           className="ml-1 hover:bg-info-focus rounded-full"
                           onClick={() => {
                             setSortBy('date');
                             setSortDirection('desc');
                           }}
-                          aria-label="Clear sort filter"
+                          aria-label={t('filters.clearSort')}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1204,7 +1317,7 @@ function ProfileScreen() {
                         setShowUnknownDates(false);
                       }}
                     >
-                      Clear all
+                      {t('filters.clearAll')}
                     </button>
                   </div>
                 )}
@@ -1218,8 +1331,8 @@ function ProfileScreen() {
                 <div className="card w-full bg-base-100 shadow-sm p-4">
                   <p className="text-center text-base-content/60">
                     {(achievementActivity ?? []).length === 0
-                      ? 'No achievements yet'
-                      : 'No achievements match your filters'}
+                      ? t('achievements.none')
+                      : t('achievements.noMatches')}
                   </p>
                 </div>
               ) : (
@@ -1238,9 +1351,17 @@ function ProfileScreen() {
                 {logs?.pages ? (
                   groupedLogs.map((entry) =>
                     entry.isPlaylistGroup ? (
-                      <PlaylistBatchCard key={entry.key} logs={entry.logs} user={username} />
+                      <PlaylistBatchCard
+                        key={entry.key}
+                        logs={entry.logs}
+                        user={username}
+                      />
                     ) : (
-                      <LogCard key={entry.logs[0]._id} log={entry.logs[0]} user={username} />
+                      <LogCard
+                        key={entry.logs[0]._id}
+                        log={entry.logs[0]}
+                        user={username}
+                      />
                     )
                   )
                 ) : (
@@ -1263,9 +1384,9 @@ function ProfileScreen() {
                   {isFetchingNextPage ? (
                     <span className="loading loading-spinner loading-sm"></span>
                   ) : hasNextPage ? (
-                    'Load More'
+                    t('loadMore')
                   ) : (
-                    'Nothing more to load'
+                    t('nothingMore')
                   )}
                 </button>
               </>
@@ -1274,7 +1395,9 @@ function ProfileScreen() {
               <>
                 {unifiedFeed.length === 0 ? (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
-                    <p className="text-center text-base-content/60">No activity yet</p>
+                    <p className="text-center text-base-content/60">
+                      No activity yet
+                    </p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
@@ -1289,20 +1412,31 @@ function ProfileScreen() {
                       }
                       // Log — find group
                       const log = item.data;
-                      const groupKey = log.playlistBatchId?.trim() || `single:${log._id}`;
+                      const groupKey =
+                        log.playlistBatchId?.trim() || `single:${log._id}`;
                       const entry = groupedLogs.find((g) => g.key === groupKey);
                       if (!entry) return null;
                       // Skip non-representative logs in a group
                       if (entry.logs[0]._id !== log._id) return null;
                       return entry.isPlaylistGroup ? (
-                        <PlaylistBatchCard key={entry.key} logs={entry.logs} user={username} />
+                        <PlaylistBatchCard
+                          key={entry.key}
+                          logs={entry.logs}
+                          user={username}
+                        />
                       ) : (
-                        <LogCard key={entry.logs[0]._id} log={entry.logs[0]} user={username} />
+                        <LogCard
+                          key={entry.logs[0]._id}
+                          log={entry.logs[0]}
+                          user={username}
+                        />
                       );
                     })}
                   </div>
                 )}
-                {logs?.pages && displayedLogs.length === 0 && filteredAchievements.length === 0 ? (
+                {logs?.pages &&
+                displayedLogs.length === 0 &&
+                filteredAchievements.length === 0 ? (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
                     <div className="alert alert-info">
                       <span>No activity matches your search criteria</span>
@@ -1318,7 +1452,7 @@ function ProfileScreen() {
                     {isFetchingNextPage ? (
                       <span className="loading loading-spinner loading-sm"></span>
                     ) : (
-                      'Load More Logs'
+                      t('loadMoreLogs')
                     )}
                   </button>
                 )}
@@ -1334,6 +1468,7 @@ function ProfileScreen() {
 // ─── Achievement Showcase Widget ─────────────────────────────────────────────
 
 function AchievementShowcaseWidget({ username }: { username: string }) {
+  const { t } = useTranslation('profile');
   const { data: achievements, isLoading } = useQuery({
     queryKey: ['userAchievements', username],
     queryFn: () => getUserAchievementsFn(username),
@@ -1345,7 +1480,13 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
   const earned = achievements?.filter((a) => a.isEarned) ?? [];
   const topAchievements = [...earned]
     .sort((a, b) => {
-      const rarityOrder = { secret: 0, legendary: 1, epic: 2, rare: 3, common: 4 };
+      const rarityOrder = {
+        secret: 0,
+        legendary: 1,
+        epic: 2,
+        rare: 3,
+        common: 4,
+      };
       return (rarityOrder[a.rarity] ?? 5) - (rarityOrder[b.rarity] ?? 5);
     })
     .slice(0, 6);
@@ -1356,19 +1497,22 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
     <div className="card w-full bg-base-100 shadow-sm">
       <div className="card-body w-full p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="card-title text-base">Achievements</h2>
+          <h2 className="card-title text-base">{t('achievements.title')}</h2>
           <Link
             to={`/user/${username}/achievements`}
             className="btn btn-xs btn-ghost opacity-60 hover:opacity-100"
           >
-            View all
+            {t('achievements.viewAll')}
           </Link>
         </div>
 
         {isLoading ? (
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton aspect-square w-full rounded-xl" />
+              <div
+                key={i}
+                className="skeleton aspect-square w-full rounded-xl"
+              />
             ))}
           </div>
         ) : (

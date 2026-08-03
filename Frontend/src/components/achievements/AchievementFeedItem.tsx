@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
 import type { IPendingAchievement } from '../../types';
 import { RARITY_COLOR, rarityTint } from './rarity';
 import { AchievementDetailModal } from './AchievementCard';
+import { useDateFormatting } from '../../hooks/useDateFormatting';
+import { getAchievementName } from '../../utils/achievementText';
 
 interface AchievementFeedItemProps {
   item: IPendingAchievement;
@@ -18,6 +21,8 @@ export default function AchievementFeedItem({
   showUser = false,
   relativeDate,
 }: AchievementFeedItemProps) {
+  const { t } = useTranslation('achievements');
+  const { formatDate } = useDateFormatting();
   const [showDetail, setShowDetail] = useState(false);
   const a = item.achievement;
   const rarity = a.rarity ?? 'common';
@@ -27,10 +32,14 @@ export default function AchievementFeedItem({
   const dateLabel = relativeDate
     ? relativeDate
     : item.unlockedAt
-      ? new Date(item.unlockedAt).toLocaleDateString(undefined, {
+      ? formatDate(item.unlockedAt, {
+          year: 'numeric',
           month: 'short',
           day: 'numeric',
-          year: 'numeric',
+          // The shared formatter adds these unless opted out.
+          hour: undefined,
+          minute: undefined,
+          timeZoneName: undefined,
         })
       : '';
 
@@ -95,22 +104,22 @@ export default function AchievementFeedItem({
             </Link>
           ) : null}
           <span className="text-base-content/60 text-xs">
-            {showUser ? 'earned' : 'Logro desbloqueado:'}
+            {showUser ? t('feed.earned') : t('feed.unlocked')}
           </span>
           <span className="font-medium text-sm">
-            {a.name ?? 'Secret Achievement'}
+            {getAchievementName(a) || t('secretName')}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span
-            className="text-xs px-1.5 py-0.5 rounded-full border font-semibold capitalize"
+            className="text-xs px-1.5 py-0.5 rounded-full border font-semibold"
             style={{
               borderColor: rarityTint(rarity, '40'),
               background: rarityTint(rarity, '10'),
               color,
             }}
           >
-            {rarity}
+            {t(`rarity.${rarity}`)}
           </span>
           <span className="text-xs text-base-content/50">{dateLabel}</span>
         </div>

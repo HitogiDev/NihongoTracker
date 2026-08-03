@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { apiError } from '../i18n/errorCodes.js';
 import User from '../models/user.model.js';
-import { customError } from '../middlewares/errorMiddleware.js';
 import crypto from 'crypto';
 import axios from 'axios';
 import qs from 'qs';
@@ -134,9 +134,10 @@ export async function linkPatreonAccount(
       });
     } else {
       return next(
-        new customError(
-          'Please use the OAuth flow to link your Patreon account',
-          400
+        apiError(
+          'patreon.useOauthFlow',
+          400,
+          'Please use the OAuth flow to link your Patreon account'
         )
       );
     }
@@ -188,9 +189,10 @@ export async function updateCustomBadgeText(
       (user.patreon.tier !== 'enthusiast' && user.patreon.tier !== 'consumer')
     ) {
       return next(
-        new customError(
-          'Custom badge text is only available for Enthusiast and Consumer tier supporters',
-          403
+        apiError(
+          'patreon.badgeTextTierRequired',
+          403,
+          'Custom badge text is only available for Enthusiast and Consumer tier supporters'
         )
       );
     }
@@ -198,16 +200,17 @@ export async function updateCustomBadgeText(
     // Validate badge text length
     if (customBadgeText && customBadgeText.length > 20) {
       return next(
-        new customError('Custom badge text must be 20 characters or less', 400)
+        apiError('patreon.badgeTextTooLong', 400, 'Custom badge text must be 20 characters or less')
       );
     }
 
     // Reject slurs / strong profanity in the public-facing badge text
     if (customBadgeText && containsOffensiveText(customBadgeText)) {
       return next(
-        new customError(
-          'Custom badge text contains language that is not allowed',
-          400
+        apiError(
+          'patreon.badgeTextNotAllowed',
+          400,
+          'Custom badge text contains language that is not allowed'
         )
       );
     }
@@ -250,9 +253,10 @@ export async function updateBadgeColors(
     // Check if user has Consumer tier
     if (!user.patreon?.isActive || user.patreon.tier !== 'consumer') {
       return next(
-        new customError(
-          'Custom badge colors are only available for Consumer tier supporters',
-          403
+        apiError(
+          'patreon.badgeColorTierRequired',
+          403,
+          'Custom badge colors are only available for Consumer tier supporters'
         )
       );
     }
@@ -273,9 +277,10 @@ export async function updateBadgeColors(
       !validSpecialColors.includes(badgeColor)
     ) {
       return next(
-        new customError(
-          'Badge color must be a valid hex color, "rainbow", "primary", or "secondary"',
-          400
+        apiError(
+          'patreon.invalidBadgeColor',
+          400,
+          'Badge color must be a valid hex color, "rainbow", "primary", or "secondary"'
         )
       );
     }
@@ -287,9 +292,10 @@ export async function updateBadgeColors(
       !validTextColors.includes(badgeTextColor)
     ) {
       return next(
-        new customError(
-          'Badge text color must be a valid hex color, "primary-content", or "secondary-content"',
-          400
+        apiError(
+          'patreon.invalidBadgeTextColor',
+          400,
+          'Badge text color must be a valid hex color, "primary-content", or "secondary-content"'
         )
       );
     }
@@ -434,7 +440,7 @@ async function handlePledgeCreateOrUpdate(event: any) {
     });
 
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     user.patreon = {
@@ -518,7 +524,7 @@ export async function initiatePatreonOAuth(
     if (!backendUrl) {
       console.error('Patreon OAuth base URL is not configured');
       return next(
-        new customError('OAuth is not configured properly on this server', 500)
+        apiError('patreon.oauthNotConfigured', 500, 'OAuth is not configured properly on this server')
       );
     }
 
@@ -526,7 +532,7 @@ export async function initiatePatreonOAuth(
 
     if (!clientId) {
       return next(
-        new customError('Patreon OAuth is not configured on this server', 500)
+        apiError('patreon.notConfigured', 500, 'Patreon OAuth is not configured on this server')
       );
     }
 

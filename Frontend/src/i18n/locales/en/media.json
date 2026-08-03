@@ -87,6 +87,101 @@
     "unmatchedFound": "Unmatched Logs Found",
     "viewDetails": "View Details"
   },
+  "lists": {
+    "heading": "Lists",
+    "create": "New list",
+    "emptyOwn": "You have not created any lists yet.",
+    "emptyOther": "This user has no public lists.",
+    "toast": {
+      "created": "List created",
+      "createFailed": "Could not create the list"
+    },
+    "discover": {
+      "title": "Lists",
+      "subtitle": "Curated media collections from the community."
+    },
+    "searchPlaceholder": "Search lists",
+    "sort": {
+      "popular": "Most liked",
+      "recent": "Newest",
+      "updated": "Recently updated"
+    },
+    "filters": {
+      "all": "All types",
+      "anime": "Anime",
+      "manga": "Manga",
+      "reading": "Light Novels",
+      "vn": "Visual novels",
+      "game": "Games",
+      "video": "Video",
+      "movie": "Movies",
+      "tvShow": "TV shows"
+    },
+    "emptyDiscover": "No lists found.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}}"
+    },
+    "entries_one": "{{count}} item",
+    "entries_other": "{{count}} items",
+    "entries_anime_one": "{{count}} anime",
+    "entries_anime_other": "{{count}} anime",
+    "entries_manga_one": "{{count}} manga",
+    "entries_manga_other": "{{count}} manga",
+    "entries_book_one": "{{count}} book",
+    "entries_book_other": "{{count}} books",
+    "entries_vn_one": "{{count}} VN",
+    "entries_vn_other": "{{count}} VNs",
+    "entries_video_one": "{{count}} video",
+    "entries_video_other": "{{count}} videos",
+    "entries_movie_one": "{{count}} film",
+    "entries_movie_other": "{{count}} films",
+    "entries_tvShow_one": "{{count}} show",
+    "entries_tvShow_other": "{{count}} shows",
+    "entries_game_one": "{{count}} game",
+    "entries_game_other": "{{count}} games",
+    "form": {
+      "createTitle": "Create list",
+      "editTitle": "Edit list",
+      "title": "Title",
+      "titlePlaceholder": "Best VNs for beginners",
+      "description": "Description",
+      "descriptionPlaceholder": "What is this list about?",
+      "ranked": "Ranked list — show numbered positions",
+      "public": "Public — anyone can see this list",
+      "cancel": "Cancel",
+      "create": "Create",
+      "save": "Save"
+    },
+    "detail": {
+      "unavailableTitle": "List unavailable",
+      "unavailableBody": "This list does not exist or is private.",
+      "browse": "Browse lists",
+      "private": "Private",
+      "ranked": "Ranked",
+      "empty": "This list is empty. Add media from any media page.",
+      "copy": "Copy list",
+      "editDetails": "Edit details",
+      "reorder": "Reorder items",
+      "delete": "Delete",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "reorderEntry": "Reorder entry",
+      "removeEntry": "Remove entry",
+      "notePlaceholder": "Why is this on the list? (optional)",
+      "toast": {
+        "updated": "List updated",
+        "saveFailed": "Could not save the list",
+        "updateFailed": "Could not update the list",
+        "deleted": "List deleted",
+        "deleteFailed": "Could not delete the list",
+        "likeFailed": "Could not update the like",
+        "copied": "Copied to your lists",
+        "copyFailed": "Could not copy the list"
+      }
+    }
+  },
   "markdown": {
     "bold": "Bold",
     "bulletedList": "Bulleted list",
@@ -101,6 +196,12 @@
     "numberedList": "Numbered list",
     "quote": "Quote",
     "spoiler": "Spoiler"
+  },
+  "progress": {
+    "title": "Your Progress",
+    "loading": "Loading your progress...",
+    "thisWeek": "This week",
+    "thisMonth": "This month"
   },
   "reviews": {
     "a11y": {
@@ -180,6 +281,12 @@
     "rating": "Rating (optional)",
     "review": "Review",
     "summary": "Summary",
-    "summaryPlaceholder": "One-sentence summary of your review"
+    "summaryPlaceholder": "One-sentence summary of your review",
+    "title": "Edit Review",
+    "ratingOptional": "Rating (Optional)",
+    "update": "Update Review",
+    "updating": "Updating...",
+    "listItem": "List item",
+    "quoteText": "Quote text"
   }
 }

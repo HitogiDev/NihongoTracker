@@ -6,7 +6,34 @@
     "delete": "Delete",
     "details": "Details",
     "edit": "Edit",
-    "share": "Share"
+    "share": "Share",
+    "metrics": {
+      "episodes": "Episodes",
+      "pages": "Pages",
+      "characters": "Characters",
+      "speed": "Speed",
+      "time": "Time"
+    },
+    "unknown": "Unknown",
+    "unknownDate": "Unknown date",
+    "untitled": "Untitled Log",
+    "hoursPlaceholder": "Hours",
+    "minutesPlaceholder": "Minutes",
+    "tooltips": {
+      "episodesWithTime": "{{episodes}} episodes • {{time}} minutes total",
+      "episodesWatched": "{{episodes}} episodes watched",
+      "pagesWithChars": "{{pages}} pages • {{chars}} characters",
+      "pagesRead": "{{pages}} pages read",
+      "charsWithSpeed": "{{chars}} characters • {{time}} min • {{speed}} chars/hour",
+      "charsRead": "{{chars}} characters read",
+      "readingSpeed": "Reading speed: {{speed}} characters per hour",
+      "minutesManga": "{{time}} minutes spent reading manga",
+      "minutesReading": "{{time}} minutes spent reading",
+      "minutesOfType": "{{time}} minutes of {{type}} content"
+    },
+    "speedValue": "{{speed}}/hr",
+    "hoursMinutes": "{{hours}}h {{minutes}}m",
+    "minutesOnly": "{{minutes}}m"
   },
   "celebration": {
     "monthlyRanking": "Monthly ranking",
@@ -144,6 +171,22 @@
     "selectGroupOrTitle": "Select a log group or enter a {{type}} title to search",
     "selectOne": "You need to select a media entry!",
     "unassignedLogs": "Unassigned Logs"
+  },
+  "quick": {
+    "title": "Quick Log",
+    "selectType": "Select the log type",
+    "logType": "Log type",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "hours": "Hours",
+    "timeSpent": "Time Spent",
+    "pagesRead": "Pages Read",
+    "volume": "Volume",
+    "descriptionPlaceholder": "Description",
+    "durationMinutes": "Duration in minutes",
+    "volumePlaceholder": "1",
+    "created": "Log created successfully!",
+    "validationErrors": "Please fix validation errors"
   },
   "shared": {
     "addHeading": "Add This to Your Progress",

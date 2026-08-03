@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ICreateLog, ILog, IMediaDocument, youtubeChannelInfo } from '../types';
 import { createLogFn, getMediaFn, getUserLogsFn } from '../api/trackerApi';
 import useSearch from '../hooks/useSearch';
@@ -106,6 +107,8 @@ function QuickLog({
   initialValues,
   allowedTypes,
 }: QuickLogProps) {
+  const { t } = useTranslation('logs');
+  const { t: tCommon } = useTranslation('common');
   const vt = useValidationText();
   const { user } = useUserDataStore();
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
@@ -386,7 +389,7 @@ function QuickLog({
           query.queryKey[0] === 'rankingSummary',
       });
       invalidateLogScreenQueries(queryClient, loggedType, user?.username);
-      toast.success('Log created successfully!');
+      toast.success(t('quick.created'));
       if (onLogged) {
         void onLogged();
       }
@@ -395,7 +398,7 @@ function QuickLog({
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -455,7 +458,7 @@ function QuickLog({
     e.preventDefault();
 
     if (!isFormValid()) {
-      toast.error('Please fix validation errors');
+      toast.error(t('quick.validationErrors'));
       return;
     }
 
@@ -574,7 +577,7 @@ function QuickLog({
           <div className="modal-box w-full max-w-lg max-h-[90vh] overflow-y-auto p-0">
             <div className="card-body">
               <div className="flex justify-between items-center">
-                <h2 className="card-title">Quick Log</h2>
+                <h2 className="card-title">{t('quick.title')}</h2>
                 <button
                   className="btn btn-sm btn-circle btn-ghost"
                   onClick={onClose}
@@ -588,14 +591,16 @@ function QuickLog({
                   <div className="flex flex-col gap-4 flex-grow min-w-0">
                     <div>
                       <label className="label">
-                        <span className="label-text">Select the log type</span>
+                        <span className="label-text">
+                          {t('quick.selectType')}
+                        </span>
                       </label>
                       <select
                         className="select select-bordered w-full"
                         onChange={(e) =>
                           setLogType(e.target.value as ILog['type'])
                         }
-                        value={logType || 'Log type'}
+                        value={logType || t('quick.logType')}
                       >
                         <option disabled value="Log type">
                           Log type
@@ -615,9 +620,9 @@ function QuickLog({
                         ).map((type) => (
                           <option key={type} value={type}>
                             {type === 'vn'
-                              ? 'Visual Novel'
+                              ? tCommon('mediaTypes.vn')
                               : type === 'game'
-                                ? 'Video Game'
+                                ? tCommon('mediaTypes.game')
                                 : type === 'tv show'
                                   ? 'TV Show'
                                   : type.charAt(0).toUpperCase() +
@@ -637,7 +642,7 @@ function QuickLog({
                           </label>
                           <input
                             type="text"
-                            placeholder="Description"
+                            placeholder={t('quick.descriptionPlaceholder')}
                             className="input input-bordered w-full"
                             onFocus={() => setIsSuggestionsOpen(true)}
                             onBlur={handleDescriptionInputBlur}
@@ -655,11 +660,11 @@ function QuickLog({
                             <ul className="dropdown-content menu bg-base-200 rounded-box w-full shadow-lg mt-2 z-10">
                               {isSearching ? (
                                 <li>
-                                  <a>Loading...</a>
+                                  <a>{t('quick.loading')}</a>
                                 </li>
                               ) : searchResult?.length === 0 ? (
                                 <li>
-                                  <a>No results found</a>
+                                  <a>{t('quick.noResults')}</a>
                                 </li>
                               ) : null}
                               {searchResult?.map((group, i) => (
@@ -762,7 +767,7 @@ function QuickLog({
                                           ? `${defaultDuration}`
                                           : logType === 'anime'
                                             ? '24'
-                                            : 'Duration in minutes'
+                                            : t('quick.durationMinutes')
                                       }
                                       className="input input-bordered input-sm"
                                       onChange={(e) => {
@@ -830,7 +835,9 @@ function QuickLog({
                         {(logType === 'manga' || logType === 'reading') && (
                           <div>
                             <label className="label">
-                              <span className="label-text">Volume</span>
+                              <span className="label-text">
+                                {t('quick.volume')}
+                              </span>
                             </label>
                             <div className="flex items-center gap-2">
                               <input
@@ -838,7 +845,7 @@ function QuickLog({
                                 min="1"
                                 max={seriesVolumes}
                                 onInput={preventNegativeValues}
-                                placeholder="1"
+                                placeholder={t('quick.volumePlaceholder')}
                                 className="input input-bordered input-sm w-12 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 onChange={(e) => {
                                   if (e.target.value === '') {
@@ -876,7 +883,7 @@ function QuickLog({
                               type="number"
                               min="0"
                               onInput={preventNegativeValues}
-                              placeholder="Number of characters"
+                              placeholder={t('create.charsPlaceholder')}
                               className="input input-bordered w-full"
                               onChange={(e) => setChars(Number(e.target.value))}
                               value={chars || ''}
@@ -887,13 +894,15 @@ function QuickLog({
                         {(logType === 'manga' || logType === 'reading') && (
                           <div>
                             <label className="label">
-                              <span className="label-text">Pages Read</span>
+                              <span className="label-text">
+                                {t('quick.pagesRead')}
+                              </span>
                             </label>
                             <input
                               type="number"
                               min="0"
                               onInput={preventNegativeValues}
-                              placeholder="Number of pages"
+                              placeholder={t('create.pagesPlaceholder')}
                               className="input input-bordered w-full"
                               onChange={(e) => setPages(Number(e.target.value))}
                               value={pages || ''}
@@ -911,7 +920,9 @@ function QuickLog({
                           (logType === 'movie' && !episodes)) && (
                           <div>
                             <label className="label">
-                              <span className="label-text">Time Spent</span>
+                              <span className="label-text">
+                                {t('quick.timeSpent')}
+                              </span>
                             </label>
                             <div className="flex gap-2">
                               <div className="flex-1">
@@ -920,7 +931,7 @@ function QuickLog({
                                   min="0"
                                   max="24"
                                   onInput={preventNegativeValues}
-                                  placeholder="Hours"
+                                  placeholder={t('create.hoursPlaceholder')}
                                   className="input input-bordered w-full"
                                   onChange={(e) =>
                                     setHours(Number(e.target.value))
@@ -928,7 +939,9 @@ function QuickLog({
                                   value={hours || ''}
                                 />
                                 <label className="label">
-                                  <span className="label-text-alt">Hours</span>
+                                  <span className="label-text-alt">
+                                    {t('quick.hours')}
+                                  </span>
                                 </label>
                               </div>
                               <div className="flex-1">
@@ -937,7 +950,7 @@ function QuickLog({
                                   min="0"
                                   max="59"
                                   onInput={preventNegativeValues}
-                                  placeholder="Minutes"
+                                  placeholder={t('create.minutesPlaceholder')}
                                   className="input input-bordered w-full"
                                   onChange={(e) =>
                                     setMinutes(Number(e.target.value))

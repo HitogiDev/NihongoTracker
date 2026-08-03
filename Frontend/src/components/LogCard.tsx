@@ -31,7 +31,6 @@ import {
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import queryClient from '../queryClient';
-import { AxiosError } from 'axios';
 import { useUserDataStore } from '../store/userData';
 import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
@@ -40,10 +39,15 @@ import TagSelector from './TagSelector';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
 import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '../utils/apiError';
 
+/**
+ * Module scope, so the label is a key into `common:mediaTypes` rather than
+ * text — a literal here would never update on a language change.
+ */
 const logTypeConfig = {
   reading: {
-    label: 'Reading',
+    labelKey: 'mediaTypes.reading',
     icon: Book,
     color: 'text-[#b34ce6]',
     bgColor: 'bg-[#b34ce6]/10',
@@ -51,7 +55,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#b34ce6]',
   },
   anime: {
-    label: 'Anime',
+    labelKey: 'mediaTypes.anime',
     icon: Play,
     color: 'text-[#26b2f2]',
     bgColor: 'bg-[#26b2f2]/10',
@@ -59,7 +63,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#26b2f2]',
   },
   vn: {
-    label: 'Visual Novel',
+    labelKey: 'mediaTypes.vn',
     icon: GamepadDirectional,
     color: 'text-[#3a70e4]',
     bgColor: 'bg-[#3a70e4]/10',
@@ -67,7 +71,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#3a70e4]',
   },
   game: {
-    label: 'Video Game',
+    labelKey: 'mediaTypes.game',
     icon: GamepadDirectional,
     color: 'text-[#59c94e]',
     bgColor: 'bg-[#59c94e]/10',
@@ -75,7 +79,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#59c94e]',
   },
   video: {
-    label: 'Video',
+    labelKey: 'mediaTypes.video',
     icon: Video,
     color: 'text-[#2cc9a4]',
     bgColor: 'bg-[#2cc9a4]/10',
@@ -83,7 +87,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#2cc9a4]',
   },
   manga: {
-    label: 'Manga',
+    labelKey: 'mediaTypes.manga',
     icon: Book,
     color: 'text-[#ee4466]',
     bgColor: 'bg-[#ee4466]/10',
@@ -91,7 +95,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#ee4466]',
   },
   audio: {
-    label: 'Audio',
+    labelKey: 'mediaTypes.audio',
     icon: Volume2,
     color: 'text-[#f2a15a]',
     bgColor: 'bg-[#f2a15a]/10',
@@ -99,7 +103,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#f2a15a]',
   },
   movie: {
-    label: 'Movie',
+    labelKey: 'mediaTypes.movie',
     icon: Clapperboard,
     color: 'text-[#f77118]',
     bgColor: 'bg-[#f77118]/10',
@@ -107,7 +111,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#f77118]',
   },
   'tv show': {
-    label: 'TV Show',
+    labelKey: 'mediaTypes.tvShow',
     icon: MonitorPlay,
     color: 'text-[#f8b420]',
     bgColor: 'bg-[#f8b420]/10',
@@ -115,7 +119,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#f8b420]',
   },
   book: {
-    label: 'Book',
+    labelKey: 'mediaTypes.book',
     icon: BookOpen,
     color: 'text-[#d98c1f]',
     bgColor: 'bg-[#d98c1f]/10',
@@ -123,14 +127,14 @@ const logTypeConfig = {
     accentColor: 'bg-[#d98c1f]',
   },
   other: {
-    label: 'Other',
+    labelKey: 'mediaTypes.other',
     icon: Ellipsis,
     color: 'text-[#6b7280]',
     bgColor: 'bg-[#6b7280]/10',
     borderColor: 'border-[#6b7280]/30',
     accentColor: 'bg-[#6b7280]',
   },
-};
+} as const;
 
 type EditLogFormState = {
   description: string;
@@ -203,7 +207,17 @@ function LogCard({
     unknownDate,
   } = log;
   const { user } = useUserDataStore();
-  const { formatRelativeDate, formatDateTime } = useDateFormatting();
+  const { formatRelativeDate, formatDateTime, formatNumber } =
+    useDateFormatting();
+
+  /** "1h 30m" in English, "1 h 30 min" in Spanish. */
+  const formatDuration = (minutes: number) =>
+    minutes >= 60
+      ? t('card.hoursMinutes', {
+          hours: Math.floor(minutes / 60),
+          minutes: minutes % 60,
+        })
+      : t('card.minutesOnly', { minutes });
   const deleteModalRef = useRef<HTMLDialogElement>(null);
   const editModalRef = useRef<HTMLDialogElement>(null);
   const detailsModalRef = useRef<HTMLDialogElement>(null);
@@ -238,14 +252,15 @@ function LogCard({
 
   const typeConfig = logTypeConfig[type];
   const TypeIcon = typeConfig.icon;
+  const typeLabel = t(typeConfig.labelKey, { ns: 'common' });
 
   const relativeDate = unknownDate
-    ? 'Unknown'
+    ? t('card.unknown')
     : date
       ? formatRelativeDate(date)
       : '';
   const fullDate = unknownDate
-    ? 'Unknown date'
+    ? t('card.unknownDate')
     : date
       ? formatDateTime(date)
       : '';
@@ -253,7 +268,7 @@ function LogCard({
   const logTitle =
     media && typeof media === 'object' && media.title?.contentTitleNative
       ? media.title.contentTitleNative
-      : description || 'Untitled Log';
+      : description || t('card.untitled');
 
   const displayTitle =
     logTitle.length > 35 ? `${logTitle.slice(0, 35)}...` : logTitle;
@@ -274,11 +289,7 @@ function LogCard({
       deleteModalRef.current?.close();
     },
     onError: (error) => {
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data.message
-          : 'An error occurred';
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -300,11 +311,7 @@ function LogCard({
       editModalRef.current?.close();
     },
     onError: (error) => {
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data.message
-          : 'An error occurred';
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -393,63 +400,68 @@ function LogCard({
 
     if ((type === 'anime' || type === 'tv show') && episodes) {
       info.push({
-        label: 'Episodes',
+        label: t('card.metrics.episodes'),
         value: episodes,
         icon: Play,
         tooltip: time
-          ? `${episodes} episodes • ${time} minutes total`
-          : `${episodes} episodes watched`,
+          ? t('card.tooltips.episodesWithTime', { episodes, time })
+          : t('card.tooltips.episodesWatched', { episodes }),
       });
     } else if (type === 'manga' || type === 'book') {
       if (pages) {
         info.push({
-          label: 'Pages',
+          label: t('card.metrics.pages'),
           value: pages,
           icon: Book,
           tooltip: chars
-            ? `${pages} pages • ${chars.toLocaleString()} characters`
-            : `${pages} pages read`,
+            ? t('card.tooltips.pagesWithChars', {
+                pages,
+                chars: formatNumber(chars),
+              })
+            : t('card.tooltips.pagesRead', { pages }),
         });
       }
       if (chars) {
         const readingSpeed =
           time && chars ? Math.round((chars / time) * 60) : null;
         info.push({
-          label: 'Characters',
-          value: chars.toLocaleString(),
+          label: t('card.metrics.characters'),
+          value: formatNumber(chars),
           icon: Book,
           tooltip: readingSpeed
-            ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
-            : `${chars.toLocaleString()} characters read`,
+            ? t('card.tooltips.charsWithSpeed', {
+                chars: formatNumber(chars),
+                time,
+                speed: readingSpeed,
+              })
+            : t('card.tooltips.charsRead', { chars: formatNumber(chars) }),
         });
 
         if (readingSpeed && time) {
           info.push({
-            label: 'Speed',
-            value: `${readingSpeed}/hr`,
+            label: t('card.metrics.speed'),
+            value: t('card.speedValue', { speed: readingSpeed }),
             icon: Gauge,
-            tooltip: `Reading speed: ${readingSpeed} characters per hour`,
+            tooltip: t('card.tooltips.readingSpeed', { speed: readingSpeed }),
           });
         }
 
         if (time) {
-          const timeStr =
-            time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+          const timeStr = formatDuration(time);
           info.push({
-            label: 'Time',
+            label: t('card.metrics.time'),
             value: timeStr,
             icon: Timer,
-            tooltip: `${time} minutes spent reading manga`,
+            tooltip: t('card.tooltips.minutesManga', { time }),
           });
         }
       } else if (time && !chars) {
-        const timeStr =
-          time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+        const timeStr = formatDuration(time);
         info.push({
-          label: 'Time',
+          label: t('card.metrics.time'),
           value: timeStr,
           icon: Clock,
-          tooltip: `${time} minutes spent reading`,
+          tooltip: t('card.tooltips.minutesReading', { time }),
         });
       }
     } else if (type === 'vn' || type === 'game' || type === 'reading') {
@@ -457,54 +469,58 @@ function LogCard({
         const readingSpeed =
           time && chars ? Math.round((chars / time) * 60) : null;
         info.push({
-          label: 'Characters',
-          value: chars.toLocaleString(),
+          label: t('card.metrics.characters'),
+          value: formatNumber(chars),
           icon: Book,
           tooltip: readingSpeed
-            ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
-            : `${chars.toLocaleString()} characters read`,
+            ? t('card.tooltips.charsWithSpeed', {
+                chars: formatNumber(chars),
+                time,
+                speed: readingSpeed,
+              })
+            : t('card.tooltips.charsRead', { chars: formatNumber(chars) }),
         });
 
         if (readingSpeed && time) {
           info.push({
-            label: 'Speed',
-            value: `${readingSpeed}/hr`,
+            label: t('card.metrics.speed'),
+            value: t('card.speedValue', { speed: readingSpeed }),
             icon: Gauge,
-            tooltip: `Reading speed: ${readingSpeed} characters per hour`,
+            tooltip: t('card.tooltips.readingSpeed', { speed: readingSpeed }),
           });
         }
 
         if (time) {
-          const timeStr =
-            time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+          const timeStr = formatDuration(time);
           info.push({
-            label: 'Time',
+            label: t('card.metrics.time'),
             value: timeStr,
             icon: Timer,
-            tooltip: `${time} minutes spent reading`,
+            tooltip: t('card.tooltips.minutesReading', { time }),
           });
         }
       } else if (time && !chars) {
-        const timeStr =
-          time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+        const timeStr = formatDuration(time);
         info.push({
-          label: 'Time',
+          label: t('card.metrics.time'),
           value: timeStr,
           icon: Clock,
-          tooltip: `${time} minutes spent reading`,
+          tooltip: t('card.tooltips.minutesReading', { time }),
         });
       }
     } else if (
       (type === 'video' || type === 'audio' || type === 'movie') &&
       time
     ) {
-      const timeStr =
-        time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+      const timeStr = formatDuration(time);
       info.push({
-        label: 'Time',
+        label: t('card.metrics.time'),
         value: timeStr,
         icon: Clock,
-        tooltip: `${time} minutes of ${type} content`,
+        tooltip: t('card.tooltips.minutesOfType', {
+          time,
+          type: typeLabel.toLowerCase(),
+        }),
       });
     }
 
@@ -552,7 +568,7 @@ function LogCard({
       // Use native sharing if available
       navigator
         .share({
-          title: `Check out this ${typeConfig.label} log: ${logTitle}`,
+          title: `Check out this ${typeLabel} log: ${logTitle}`,
           text: `I logged "${logTitle}" and thought you might want to create a similar log!`,
           url: shareUrl,
         })
@@ -602,7 +618,7 @@ function LogCard({
                 className={`badge badge-outline ${typeConfig.color} gap-1 shrink-0`}
               >
                 <TypeIcon className="w-3 h-3" />
-                <span className="text-xs font-medium">{typeConfig.label}</span>
+                <span className="text-xs font-medium">{typeLabel}</span>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -812,7 +828,7 @@ function LogCard({
                 </h3>
                 <div className={`badge ${typeConfig.color} gap-1 mt-1`}>
                   <TypeIcon className="w-3 h-3" />
-                  {typeConfig.label}
+                  {typeLabel}
                 </div>
               </div>
             </div>
@@ -929,9 +945,7 @@ function LogCard({
                         {t('details.timeSpent')}
                       </div>
                       <div className="stat-value text-2xl text-info">
-                        {time >= 60
-                          ? `${Math.floor(time / 60)}h ${time % 60}m`
-                          : `${time}m`}
+                        {formatDuration(time)}
                       </div>
                       <div className="stat-desc">{time} minutes</div>
                     </div>
@@ -967,7 +981,7 @@ function LogCard({
                         {t('details.characters')}
                       </div>
                       <div className="stat-value text-lg text-accent">
-                        {chars.toLocaleString()}
+                        {formatNumber(chars)}
                       </div>
                       <div className="stat-desc">{t('details.read')}</div>
                     </div>
@@ -1254,7 +1268,7 @@ function LogCard({
               <div>
                 <h4 className="font-semibold">"{displayTitle}"</h4>
                 <div className="text-sm opacity-80">
-                  {xp} XP • {typeConfig.label} • {relativeDate}
+                  {xp} XP • {typeLabel} • {relativeDate}
                   {readingSpeed && ` • ${readingSpeed} chars/hour`}
                 </div>
               </div>
@@ -1489,7 +1503,7 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Hours"
+                          placeholder={t('card.hoursPlaceholder')}
                         />
                         <div className="label">
                           <span className="label-text-alt">
@@ -1511,7 +1525,7 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Minutes"
+                          placeholder={t('card.minutesPlaceholder')}
                         />
                         <div className="label">
                           <span className="label-text-alt">

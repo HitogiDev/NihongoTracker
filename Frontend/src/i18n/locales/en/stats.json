@@ -60,6 +60,15 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out"
   },
+  "groups": {
+    "totals": "Totals",
+    "streaks": "Streaks",
+    "timeBreakdown": "Time Breakdown",
+    "readingMetrics": "Reading Metrics",
+    "chartDistribution": "Distributions",
+    "chartProgress": "Progress",
+    "chartReading": "Reading"
+  },
   "heatmap": {
     "less": "Less",
     "more": "More"

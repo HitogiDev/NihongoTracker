@@ -17,13 +17,18 @@ import {
   validateUsername,
 } from '../utils/validation';
 import { gsap } from 'gsap';
+import { Trans, useTranslation } from 'react-i18next';
 import { getUserTimezone } from '../utils/timezone';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
+import { useDateFormatting } from '../hooks/useDateFormatting';
+import { getLearnerCountKey } from '../utils/learnerCount';
 import { getApiErrorMessage } from '../utils/apiError';
 
 function RegisterScreen() {
+  const { t } = useTranslation('auth');
   const vt = useValidationText();
+  const { formatNumber } = useDateFormatting();
   const { user, setUser } = useUserDataStore();
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState('');
@@ -53,26 +58,9 @@ function RegisterScreen() {
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
-  // Format numbers for display
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    }
-    return num.toString();
-  };
-
-  // Get appropriate word based on user count
-  const getUserCountWord = (count: number | undefined): string => {
-    if (!count) return 'learners';
-    if (count < 100) return 'learners';
-    if (count < 1000) return 'hundreds of learners';
-    if (count < 10000) return 'thousands of learners';
-    if (count < 100000) return 'tens of thousands of learners';
-    return 'hundreds of thousands of learners';
-  };
+  // Compact notation gives "1.2K" in English and "1,2 mil" in Spanish.
+  const formatCompact = (num: number): string =>
+    formatNumber(num, { notation: 'compact', maximumFractionDigits: 1 });
 
   // Detailed validation states
   const [usernameValidation, setUsernameValidation] =
@@ -221,7 +209,7 @@ function RegisterScreen() {
     setTouched({ username: true, password: true, passwordConfirmation: true });
 
     if (!isFormValid()) {
-      toast.error('Please fix all validation errors before submitting');
+      toast.error(t('register.toast.validationErrors'));
       return;
     }
 
@@ -250,13 +238,13 @@ function RegisterScreen() {
         },
       });
 
-      toast.success('Registration successful! Welcome aboard! 🎉');
+      toast.success(t('register.toast.success'));
 
       setTimeout(() => {
         navigate('/');
       }, 1000);
     }
-  }, [navigate, isSuccess]);
+  }, [navigate, isSuccess, t]);
 
   const addToRefs = (el: HTMLDivElement | null) => {
     if (el && !formFieldsRef.current.includes(el)) {
@@ -293,22 +281,26 @@ function RegisterScreen() {
                       d="M13 10V3L4 14h7v7l9-11h-7z"
                     />
                   </svg>
-                  Start Your Journey
+                  {t('register.badge')}
                 </span>
               </div>
 
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                Track Your
-                <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  Japanese Learning
-                </span>
-                Journey
+                <Trans
+                  t={t}
+                  i18nKey="register.title"
+                  components={{
+                    hl: (
+                      <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent" />
+                    ),
+                  }}
+                />
               </h1>
 
               <p className="text-xl text-base-content/70 leading-relaxed">
-                Join {getUserCountWord(stats?.totalUsers)} tracking their
-                immersion, leveling up, and achieving their Japanese language
-                goals.
+                {t('register.subtitle', {
+                  learners: t(getLearnerCountKey(stats?.totalUsers)),
+                })}
               </p>
             </div>
 
@@ -333,11 +325,10 @@ function RegisterScreen() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
-                    Track Everything
+                    {t('register.features.trackEverything.title')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    Anime, manga, reading, listening, and more - all in one
-                    place
+                    {t('register.features.trackEverything.description')}
                   </p>
                 </div>
               </div>
@@ -361,10 +352,10 @@ function RegisterScreen() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
-                    Level Up & Compete
+                    {t('register.features.levelUp.title')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    Earn XP, maintain streaks, and climb the leaderboards
+                    {t('register.features.levelUp.description')}
                   </p>
                 </div>
               </div>
@@ -388,10 +379,10 @@ function RegisterScreen() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">
-                    Join the Community
+                    {t('register.features.community.title')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    Create clubs, share progress, and learn together
+                    {t('register.features.community.description')}
                   </p>
                 </div>
               </div>
@@ -401,26 +392,26 @@ function RegisterScreen() {
             <div className="grid grid-cols-3 gap-4 pt-4">
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-primary">
-                  {stats?.totalUsers ? formatNumber(stats.totalUsers) : '...'}
+                  {stats?.totalUsers ? formatCompact(stats.totalUsers) : '...'}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  Total Users
+                  {t('hero.stats.totalUsers')}
                 </div>
               </div>
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-secondary">
-                  {stats?.totalXp ? formatNumber(stats.totalXp) : '...'}
+                  {stats?.totalXp ? formatCompact(stats.totalXp) : '...'}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  XP Earned
+                  {t('hero.stats.xpEarned')}
                 </div>
               </div>
               <div className="text-center p-4 rounded-lg bg-base-100/30 backdrop-blur-sm">
                 <div className="text-3xl font-bold text-accent">
-                  {stats?.totalLogs ? formatNumber(stats.totalLogs) : '...'}
+                  {stats?.totalLogs ? formatCompact(stats.totalLogs) : '...'}
                 </div>
                 <div className="text-xs text-base-content/60 mt-1">
-                  Logs Tracked
+                  {t('hero.stats.logsTracked')}
                 </div>
               </div>
             </div>
@@ -437,10 +428,10 @@ function RegisterScreen() {
                   ref={titleRef}
                   className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
                 >
-                  Create Account
+                  {t('register.form.title')}
                 </h2>
                 <p className="text-center text-base-content/60 mb-6 text-sm">
-                  Join NihongoTracker and start your journey! 🚀
+                  {t('register.form.subtitle')}
                 </p>
 
                 {/* Username Field */}
@@ -461,12 +452,12 @@ function RegisterScreen() {
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                      Username
+                      {t('register.form.username.label')}
                     </span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Choose a unique username"
+                    placeholder={t('register.form.username.placeholder')}
                     className={`input input-bordered w-full transition-all duration-300 ${
                       errors.username
                         ? 'input-error focus:input-error'
@@ -509,7 +500,7 @@ function RegisterScreen() {
                   {showUsernameRequirements && (
                     <div className="mt-2 p-3 bg-base-200 rounded-box text-xs animate-fadeIn border border-base-300">
                       <p className="font-semibold mb-2 text-base-content">
-                        Username Requirements:
+                        {t('register.usernameRequirements.title')}
                       </p>
                       <ul className="space-y-1.5">
                         <li
@@ -536,7 +527,7 @@ function RegisterScreen() {
                               <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
                             )}
                           </div>
-                          Not empty
+                          {t('register.usernameRequirements.notEmpty')}
                         </li>
                         <li
                           className={`flex items-center gap-2 transition-colors ${usernameValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
@@ -562,7 +553,7 @@ function RegisterScreen() {
                               <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
                             )}
                           </div>
-                          At least 3 characters
+                          {t('register.usernameRequirements.minLength')}
                         </li>
                         <li
                           className={`flex items-center gap-2 transition-colors ${usernameValidation.maxLength ? 'text-success' : 'text-error'}`}
@@ -600,7 +591,7 @@ function RegisterScreen() {
                               </svg>
                             )}
                           </div>
-                          Maximum 20 characters
+                          {t('register.usernameRequirements.maxLength')}
                         </li>
                         <li
                           className={`flex items-center gap-2 transition-colors ${usernameValidation.validCharacters ? 'text-success' : 'text-base-content/60'}`}
@@ -626,7 +617,7 @@ function RegisterScreen() {
                               <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
                             )}
                           </div>
-                          Only letters, numbers, hyphens, and underscores
+                          {t('register.usernameRequirements.validCharacters')}
                         </li>
                       </ul>
                     </div>
@@ -651,15 +642,15 @@ function RegisterScreen() {
                           d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                         />
                       </svg>
-                      Email
+                      {t('register.form.email.label')}
                     </span>
                     <span className="label-text-alt badge badge-ghost badge-sm">
-                      Optional
+                      {t('register.form.email.optional')}
                     </span>
                   </label>
                   <input
                     type="email"
-                    placeholder="your.email@example.com"
+                    placeholder={t('register.form.email.placeholder')}
                     className={`input input-bordered w-full transition-all duration-300 ${
                       errors.email
                         ? 'input-error focus:input-error'
@@ -693,7 +684,7 @@ function RegisterScreen() {
                   )}
                   <label className="label">
                     <span className="label-text-alt text-base-content/60 text-xs">
-                      Recommended for account recovery & password reset
+                      {t('register.form.email.hint')}
                     </span>
                   </label>
                 </div>
@@ -716,12 +707,12 @@ function RegisterScreen() {
                           d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                         />
                       </svg>
-                      Password
+                      {t('register.form.password.label')}
                     </span>
                   </label>
                   <input
                     type="password"
-                    placeholder="Create a strong password"
+                    placeholder={t('register.form.password.placeholder')}
                     className={`input input-bordered w-full transition-all duration-300 ${
                       errors.password
                         ? 'input-error focus:input-error'
@@ -764,7 +755,7 @@ function RegisterScreen() {
                   {showPasswordRequirements && (
                     <div className="mt-2 p-3 bg-base-200 rounded-box text-xs animate-fadeIn border border-base-300">
                       <p className="font-semibold mb-2 text-base-content">
-                        Password Requirements:
+                        {t('register.passwordRequirements.title')}
                       </p>
                       <ul className="space-y-1.5">
                         <li
@@ -791,7 +782,7 @@ function RegisterScreen() {
                               <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
                             )}
                           </div>
-                          At least 8 characters
+                          {t('register.passwordRequirements.minLength')}
                         </li>
                       </ul>
                     </div>
@@ -816,12 +807,14 @@ function RegisterScreen() {
                           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                      Confirm Password
+                      {t('register.form.passwordConfirmation.label')}
                     </span>
                   </label>
                   <input
                     type="password"
-                    placeholder="Re-enter your password"
+                    placeholder={t(
+                      'register.form.passwordConfirmation.placeholder'
+                    )}
                     className={`input input-bordered w-full transition-all duration-300 ${
                       errors.passwordConfirmation
                         ? 'input-error focus:input-error'
@@ -870,24 +863,28 @@ function RegisterScreen() {
                       onChange={(e) => setAgreedToTerms(e.target.checked)}
                     />
                     <span className="label-text text-sm text-left leading-relaxed">
-                      I agree to the{' '}
-                      <Link
-                        to="/terms"
-                        className="link link-primary font-semibold hover:link-hover"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Terms of Service
-                      </Link>{' '}
-                      and{' '}
-                      <Link
-                        to="/privacy"
-                        className="link link-primary font-semibold hover:link-hover"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Privacy Policy
-                      </Link>
+                      <Trans
+                        t={t}
+                        i18nKey="register.form.terms"
+                        components={{
+                          terms: (
+                            <Link
+                              to="/terms"
+                              className="link link-primary font-semibold hover:link-hover"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            />
+                          ),
+                          privacy: (
+                            <Link
+                              to="/privacy"
+                              className="link link-primary font-semibold hover:link-hover"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            />
+                          ),
+                        }}
+                      />
                     </span>
                   </label>
                 </div>
@@ -906,7 +903,7 @@ function RegisterScreen() {
                     {isPending ? (
                       <>
                         <span className="loading loading-spinner loading-sm"></span>
-                        Creating your account...
+                        {t('register.form.submitting')}
                       </>
                     ) : (
                       <>
@@ -924,7 +921,7 @@ function RegisterScreen() {
                             d="M13 7l5 5m0 0l-5 5m5-5H6"
                           />
                         </svg>
-                        Create Account
+                        {t('register.form.submit')}
                       </>
                     )}
                   </button>
@@ -935,17 +932,17 @@ function RegisterScreen() {
                   ref={addToRefs}
                   className="divider text-xs text-base-content/60"
                 >
-                  OR
+                  {t('register.form.or')}
                 </div>
 
                 <div ref={addToRefs} className="text-center">
                   <p className="text-sm text-base-content/70">
-                    Already have an account?{' '}
+                    {t('register.form.haveAccount')}{' '}
                     <Link
                       to="/login"
                       className="link link-primary font-semibold hover:link-hover"
                     >
-                      Sign in here
+                      {t('register.form.signIn')}
                     </Link>
                   </p>
                 </div>

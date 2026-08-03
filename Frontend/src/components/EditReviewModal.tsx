@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   X,
   Heading1,
@@ -43,6 +44,7 @@ export default function EditReviewModal({
   onSubmit,
   isLoading,
 }: EditReviewModalProps) {
+  const { t } = useTranslation('media');
   const reviewTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [editForm, setEditForm] = useState({
     summary: review.summary,
@@ -71,7 +73,7 @@ export default function EditReviewModal({
     }
 
     if (!trimmedContent) {
-      toast.error('Review content is required.');
+      toast.error(t('toast.reviewContentRequired'));
       return;
     }
 
@@ -137,15 +139,15 @@ export default function EditReviewModal({
     (ordered: boolean) => {
       const bullet = ordered ? '1. ' : '- ';
       const prefix = `${needsLineBreak() ? '\n' : ''}${bullet}`;
-      insertSnippet(prefix, '', 'List item');
+      insertSnippet(prefix, '', t('write.listItem'));
     },
-    [insertSnippet, needsLineBreak]
+    [insertSnippet, needsLineBreak, t]
   );
 
   const insertQuote = useCallback(() => {
     const prefix = `${needsLineBreak() ? '\n' : ''}> `;
-    insertSnippet(prefix, '', 'Quote text');
-  }, [insertSnippet, needsLineBreak]);
+    insertSnippet(prefix, '', t('write.quoteText'));
+  }, [insertSnippet, needsLineBreak, t]);
 
   const insertCodeBlock = useCallback(() => {
     const lineBreak = needsLineBreak() ? '\n' : '';
@@ -182,7 +184,7 @@ export default function EditReviewModal({
     <dialog open className="modal">
       <div className="modal-box max-w-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-lg">Edit Review</h3>
+          <h3 className="font-bold text-lg">{t('write.title')}</h3>
           <button
             className="btn btn-sm btn-circle btn-ghost"
             onClick={onClose}
@@ -195,12 +197,14 @@ export default function EditReviewModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">
-              <span className="label-text font-medium">Summary</span>
+              <span className="label-text font-medium">
+                {t('write.summary')}
+              </span>
             </label>
             <input
               type="text"
               className="input input-bordered w-full"
-              placeholder="One-sentence summary of your review"
+              placeholder={t('write.summaryPlaceholder')}
               value={editForm.summary}
               onChange={(e) =>
                 setEditForm((prev) => ({ ...prev, summary: e.target.value }))
@@ -223,7 +227,9 @@ export default function EditReviewModal({
           {/* Rating */}
           <div>
             <label className="label">
-              <span className="label-text font-medium">Rating (Optional)</span>
+              <span className="label-text font-medium">
+                {t('write.ratingOptional')}
+              </span>
             </label>
             <div className="flex items-center gap-3">
               <div className="rating rating-lg rating-half">
@@ -263,14 +269,16 @@ export default function EditReviewModal({
           {/* Content */}
           <div>
             <label className="label">
-              <span className="label-text font-medium">Review</span>
+              <span className="label-text font-medium">
+                {t('write.review')}
+              </span>
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
               <button
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => insertHeading(1)}
-                title="Heading 1"
+                title={t('markdown.heading1')}
               >
                 <Heading1 className="w-4 h-4" />
               </button>
@@ -278,7 +286,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => insertHeading(2)}
-                title="Heading 2"
+                title={t('markdown.heading2')}
               >
                 <Heading2 className="w-4 h-4" />
               </button>
@@ -286,7 +294,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => insertHeading(3)}
-                title="Heading 3"
+                title={t('markdown.heading3')}
               >
                 <Heading3 className="w-4 h-4" />
               </button>
@@ -298,7 +306,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertBold}
-                title="Bold"
+                title={t('markdown.bold')}
               >
                 <Bold className="w-4 h-4" />
               </button>
@@ -306,7 +314,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertItalic}
-                title="Italic"
+                title={t('markdown.italic')}
               >
                 <Italic className="w-4 h-4" />
               </button>
@@ -314,7 +322,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertInlineCode}
-                title="Inline code"
+                title={t('markdown.inlineCode')}
               >
                 <Type className="w-4 h-4" />
               </button>
@@ -322,7 +330,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertCodeBlock}
-                title="Code block"
+                title={t('markdown.codeBlock')}
               >
                 <Code className="w-4 h-4" />
               </button>
@@ -334,7 +342,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => insertListItem(false)}
-                title="Bulleted list"
+                title={t('markdown.bulletedList')}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -342,7 +350,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => insertListItem(true)}
-                title="Numbered list"
+                title={t('markdown.numberedList')}
               >
                 <ListOrdered className="w-4 h-4" />
               </button>
@@ -350,7 +358,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertQuote}
-                title="Quote"
+                title={t('markdown.quote')}
               >
                 <Quote className="w-4 h-4" />
               </button>
@@ -362,7 +370,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertLink}
-                title="Link"
+                title={t('markdown.link')}
               >
                 <LinkIcon className="w-4 h-4" />
               </button>
@@ -370,7 +378,7 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertImage}
-                title="Image"
+                title={t('markdown.image')}
               >
                 <ImageIcon className="w-4 h-4" />
               </button>
@@ -378,14 +386,14 @@ export default function EditReviewModal({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={insertSpoiler}
-                title="Spoiler"
+                title={t('markdown.spoiler')}
               >
                 <EyeOff className="w-4 h-4" />
               </button>
             </div>
             <textarea
               className="textarea textarea-bordered w-full min-h-56 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
-              placeholder="Share your thoughts about this media..."
+              placeholder={t('write.bodyPlaceholder')}
               value={editForm.content}
               ref={reviewTextareaRef}
               onChange={(e) =>
@@ -405,7 +413,7 @@ export default function EditReviewModal({
 
           <div className="card bg-base-200/50 border border-base-300">
             <div className="card-body p-4">
-              <h4 className="font-semibold">Preview</h4>
+              <h4 className="font-semibold">{t('write.preview')}</h4>
               <div className="grow-0 w-full">
                 {editForm.summary.trim() && (
                   <div className="text-base font-medium text-base-content/85">
@@ -451,7 +459,7 @@ export default function EditReviewModal({
                 editForm.content.length > REVIEW_MAX_LENGTH
               }
             >
-              {isLoading ? 'Updating...' : 'Update Review'}
+              {isLoading ? t('write.updating') : t('write.update')}
             </button>
           </div>
         </form>

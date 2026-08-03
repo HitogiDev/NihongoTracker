@@ -11,6 +11,7 @@ import {
   BookmarkX,
   MoreHorizontal,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
@@ -157,6 +158,8 @@ const removeRankingDefaults = (userId?: string | null) => {
 };
 
 function RankingScreen() {
+  const { t } = useTranslation('ranking');
+  const { t: tCommon } = useTranslation('common');
   const badgeText = usePatreonBadgeText();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useUserDataStore();
@@ -239,49 +242,49 @@ function RankingScreen() {
   > = useMemo(() => {
     return {
       anime: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
-        { label: 'Episodes', value: 'episodes' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.episodes'), value: 'episodes' },
       ],
       audio: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
       ],
       reading: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
-        { label: 'Characters', value: 'chars' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.characters'), value: 'chars' },
       ],
       manga: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
-        { label: 'Pages', value: 'pages' },
-        { label: 'Characters', value: 'chars' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.pages'), value: 'pages' },
+        { label: t('metrics.characters'), value: 'chars' },
       ],
       video: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
       ],
       vn: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
-        { label: 'Characters', value: 'chars' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.characters'), value: 'chars' },
       ],
       game: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
-        { label: 'Characters', value: 'chars' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
+        { label: t('metrics.characters'), value: 'chars' },
       ],
       movie: [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
       ],
       'tv show': [
-        { label: 'XP', value: 'xp' },
-        { label: 'Time', value: 'time' },
+        { label: t('metrics.xp'), value: 'xp' },
+        { label: t('metrics.time'), value: 'time' },
       ],
     };
-  }, []);
+  }, [t]);
   const [mediumMetric, setMediumMetric] = useState<RankingMediumMetric>(() => {
     const allowed = mediumMetricOptions[resolvedMediumType].map(
       (item) => item.value
@@ -456,25 +459,25 @@ function RankingScreen() {
   // Combined filter options: scope (Total/Reading/Listening) and metric (XP/Hours/Chars)
   const scopeOptions = [
     {
-      label: 'Total',
+      label: t('scope.total'),
       value: 'userXp',
       icon: <Zap className="w-4 h-4" />,
     },
     {
-      label: 'Reading',
+      label: t('scope.reading'),
       value: 'readingXp',
       icon: <BookOpen className="w-4 h-4" />,
     },
     {
-      label: 'Listening',
+      label: t('scope.listening'),
       value: 'listeningXp',
       icon: <Headphones className="w-4 h-4" />,
     },
   ] as const;
   const metricOptions = [
-    { label: 'XP', value: 'xp' as const },
-    { label: 'Hours', value: 'hours' as const },
-    { label: 'Chars', value: 'chars' as const },
+    { label: t('metrics.xp'), value: 'xp' as const },
+    { label: t('metrics.hours'), value: 'hours' as const },
+    { label: t('metrics.chars'), value: 'chars' as const },
   ];
   const allowedMetricOptions = () =>
     xpFilter === 'listeningXp'
@@ -541,27 +544,27 @@ function RankingScreen() {
   // Time filter options
   const timeFilterOptions = [
     {
-      label: 'All Time',
+      label: t('time.allTime'),
       value: 'all-time',
       icon: <Trophy className="w-4 h-4" />,
     },
     {
-      label: 'Today',
+      label: t('time.today'),
       value: 'today',
       icon: <Calendar1 className="w-4 h-4" />,
     },
     {
-      label: 'This Week',
+      label: t('time.week'),
       value: 'week',
       icon: <Calendar1 className="w-4 h-4" />,
     },
     {
-      label: 'This Month',
+      label: t('time.month'),
       value: 'month',
       icon: <BarChart className="w-4 h-4" />,
     },
     {
-      label: 'This Year',
+      label: t('time.year'),
       value: 'year',
       icon: <Calendar className="w-4 h-4" />,
     },
@@ -658,7 +661,10 @@ function RankingScreen() {
   const getFilterLabel = () => {
     const option = scopeOptions.find((option) => option.value === xpFilter);
     const metric = metricOptions.find((m) => m.value === displayMode)?.label;
-    return `${option?.label || 'Total'} · ${metric}`;
+    return t('filterLabel', {
+      scope: option?.label || t('scope.total'),
+      metric,
+    });
   };
 
   const getFilterIcon = () => {
@@ -668,11 +674,11 @@ function RankingScreen() {
 
   // Get the correct label for the selected time filter
   const getTimeFilterLabel = () => {
-    if (timeFilter === 'custom') return 'Custom';
+    if (timeFilter === 'custom') return t('time.custom');
     const option = timeFilterOptions.find(
       (option) => option.value === timeFilter
     );
-    return option?.label || 'All Time';
+    return option?.label || t('time.allTime');
   };
 
   const getTimeFilterIcon = () => {
@@ -698,12 +704,13 @@ function RankingScreen() {
   const getMediumTypeLabel = (type: string) => {
     switch (type) {
       case 'vn':
-        return 'Visual Novel';
+        return tCommon('mediaTypes.vn');
       case 'game':
-        return 'Video Game';
+        return tCommon('mediaTypes.game');
       case 'tv show':
-        return 'TV Show';
+        return tCommon('mediaTypes.tvShow');
       default:
+        // Falls back to the raw value for any media type without a key yet.
         return type.slice(0, 1).toUpperCase() + type.slice(1);
     }
   };
@@ -715,12 +722,10 @@ function RankingScreen() {
           <div className="flex items-center justify-center gap-3 mb-2">
             <Trophy className="w-10 h-10 text-warning" />
             <h1 className="text-4xl font-bold text-base-content">
-              Leaderboard
+              {t('title')}
             </h1>
           </div>
-          <p className="text-base-content/70">
-            See how you stack up against other learners
-          </p>
+          <p className="text-base-content/70">{t('subtitle')}</p>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
@@ -729,13 +734,13 @@ function RankingScreen() {
               className={`btn join-item flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('global')}
             >
-              Global
+              {t('modes.global')}
             </button>
             <button
               className={`btn join-item flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('medium')}
             >
-              By Medium
+              {t('modes.medium')}
             </button>
           </div>
 
@@ -785,7 +790,9 @@ function RankingScreen() {
                     </button>
                   </li>
                 ))}
-                <li className="menu-title px-2 mt-2">Custom range</li>
+                <li className="menu-title px-2 mt-2">
+                  {t('time.customRange')}
+                </li>
                 <li className="px-2 py-2">
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-2 w-full">
@@ -798,7 +805,7 @@ function RankingScreen() {
                         >
                           {customStartDate
                             ? formatDateOnly(customStartDate)
-                            : 'Start Date'}
+                            : t('time.startDate')}
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-4 w-4 ml-1"
@@ -839,7 +846,7 @@ function RankingScreen() {
                         </div>
                       </div>
                       <span className="text-center text-base-content/50">
-                        to
+                        {t('time.to')}
                       </span>
 
                       <div className="dropdown dropdown-bottom">
@@ -851,7 +858,7 @@ function RankingScreen() {
                         >
                           {customEndDate
                             ? formatDateOnly(customEndDate)
-                            : 'End Date'}
+                            : t('time.endDate')}
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-4 w-4 ml-1"
@@ -900,7 +907,7 @@ function RankingScreen() {
                         }}
                         disabled={!customStartDate || !customEndDate}
                       >
-                        Apply
+                        {t('time.apply')}
                       </button>
                       <button
                         className="btn btn-sm"
@@ -912,7 +919,7 @@ function RankingScreen() {
                           setTimeFilter('all-time');
                         }}
                       >
-                        Clear
+                        {t('time.clear')}
                       </button>
                     </div>
                   </div>
@@ -994,7 +1001,7 @@ function RankingScreen() {
             ) : (
               <Bookmark className="w-4 h-4" />
             )}
-            {isDefaultMatch ? 'Remove default' : 'Save as default'}
+            {isDefaultMatch ? t('defaults.remove') : t('defaults.save')}
           </button>
 
           <div className="dropdown dropdown-end hidden sm:block">
@@ -1002,7 +1009,7 @@ function RankingScreen() {
               tabIndex={0}
               role="button"
               className="btn btn-circle"
-              aria-label="Ranking defaults"
+              aria-label={t('defaults.menu')}
             >
               <MoreHorizontal className="w-4 h-4" />
             </div>
@@ -1023,7 +1030,7 @@ function RankingScreen() {
                   ) : (
                     <Bookmark className="w-4 h-4" />
                   )}
-                  {isDefaultMatch ? 'Remove default' : 'Save as default'}
+                  {isDefaultMatch ? t('defaults.remove') : t('defaults.save')}
                 </button>
               </li>
             </ul>
@@ -1132,7 +1139,7 @@ function RankingScreen() {
           <div className="flex justify-center items-center py-16">
             <div className="text-center">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <p className="mt-4 text-base-content/70">Loading rankings...</p>
+              <p className="mt-4 text-base-content/70">{t('loading')}</p>
             </div>
           </div>
         ) : (
@@ -1149,7 +1156,11 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondGlobalUser?.username}
                               avatar={secondGlobalUser?.avatar}
-                              alt={`${secondGlobalUser?.username ?? 'User'}'s Avatar`}
+                              alt={t('avatarAlt', {
+                                username:
+                                  secondGlobalUser?.username ??
+                                  t('unknownUser'),
+                              })}
                               containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
                               imageClassName="w-full h-full rounded-full object-cover"
                               fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1208,7 +1219,10 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstGlobalUser?.username}
                               avatar={firstGlobalUser?.avatar}
-                              alt={`${firstGlobalUser?.username ?? 'User'}'s Avatar`}
+                              alt={t('avatarAlt', {
+                                username:
+                                  firstGlobalUser?.username ?? t('unknownUser'),
+                              })}
                               containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
                               imageClassName="w-full h-full rounded-full object-cover"
                               fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1278,7 +1292,10 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdGlobalUser?.username}
                               avatar={thirdGlobalUser?.avatar}
-                              alt={`${thirdGlobalUser?.username ?? 'User'}'s Avatar`}
+                              alt={t('avatarAlt', {
+                                username:
+                                  thirdGlobalUser?.username ?? t('unknownUser'),
+                              })}
                               containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
                               imageClassName="w-full h-full rounded-full object-cover"
                               fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1345,7 +1362,11 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondMediumUser?.username}
                               avatar={secondMediumUser?.avatar}
-                              alt={`${secondMediumUser?.username ?? 'User'}'s Avatar`}
+                              alt={t('avatarAlt', {
+                                username:
+                                  secondMediumUser?.username ??
+                                  t('unknownUser'),
+                              })}
                               containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
                               imageClassName="w-full h-full rounded-full object-cover"
                               fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1404,7 +1425,10 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstMediumUser?.username}
                               avatar={firstMediumUser?.avatar}
-                              alt={`${firstMediumUser?.username ?? 'User'}'s Avatar`}
+                              alt={t('avatarAlt', {
+                                username:
+                                  firstMediumUser?.username ?? t('unknownUser'),
+                              })}
                               containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
                               imageClassName="w-full h-full rounded-full object-cover"
                               fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1474,7 +1498,10 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdMediumUser?.username}
                               avatar={thirdMediumUser?.avatar}
-                              alt={`${thirdMediumUser?.username ?? 'User'}'s Avatar`}
+                              alt={t('avatarAlt', {
+                                username:
+                                  thirdMediumUser?.username ?? t('unknownUser'),
+                              })}
                               containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
                               imageClassName="w-full h-full rounded-full object-cover"
                               fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1534,16 +1561,24 @@ function RankingScreen() {
                 <table className="table w-full">
                   <thead>
                     <tr className="border-b border-base-300">
-                      <th className="text-center w-10 sm:w-16">Rank</th>
-                      <th>User</th>
+                      <th className="text-center w-10 sm:w-16">
+                        {t('table.rank')}
+                      </th>
+                      <th>{t('table.user')}</th>
                       <th className="text-center hidden sm:table-cell">
-                        Level
+                        {t('table.level')}
                       </th>
                       <th className="text-end">
                         {mode === 'global'
                           ? displayMode === 'chars'
-                            ? 'Characters'
-                            : `${getFilterLabel()} ${displayMode === 'hours' ? '(Hours)' : '(XP)'}`
+                            ? t('metrics.characters')
+                            : t('columnHeader', {
+                                filter: getFilterLabel(),
+                                unit:
+                                  displayMode === 'hours'
+                                    ? t('units.hours')
+                                    : t('units.xp'),
+                              })
                           : mediumMetricOptions[mediumType].find(
                               (o) => o.value === mediumMetric
                             )?.label}
@@ -1720,10 +1755,10 @@ function RankingScreen() {
                     ) ? (
                       <>
                         <span className="loading loading-spinner loading-sm"></span>
-                        Loading more...
+                        {t('loadingMore')}
                       </>
                     ) : (
-                      'Load More Rankings'
+                      t('loadMore')
                     )}
                   </button>
                 </div>

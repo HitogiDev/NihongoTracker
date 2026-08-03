@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 import Tabs from '../components/Tabs';
 import AnimeLogs from '../components/AnimeLogs';
@@ -11,6 +12,7 @@ import TVShowLogs from '../components/TVShowLogs';
 import GameLogs from '../components/GameLogs';
 
 function AssignMedia() {
+  const { t } = useTranslation('common');
   const { user } = useUserDataStore();
 
   return (
@@ -19,55 +21,55 @@ function AssignMedia() {
         <Tabs
           tabs={[
             {
-              label: 'Anime',
+              label: t('mediaTypes.anime'),
               component: (isActive) => (
                 <AnimeLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'Manga',
+              label: t('mediaTypes.manga'),
               component: (isActive) => (
                 <MangaLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'VN',
+              label: t('mediaTypes.vn'),
               component: (isActive) => (
                 <VNLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'Game',
+              label: t('mediaTypes.game'),
               component: (isActive) => (
                 <GameLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'Reading',
+              label: t('mediaTypes.reading'),
               component: (isActive) => (
                 <ReadingLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'Book',
+              label: t('mediaTypes.book'),
               component: (isActive) => (
                 <BookLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'Video',
+              label: t('mediaTypes.video'),
               component: (isActive) => (
                 <VideoLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'Movie',
+              label: t('mediaTypes.movie'),
               component: (isActive) => (
                 <MovieLogs username={user?.username} isActive={isActive} />
               ),
             },
             {
-              label: 'TV Show',
+              label: t('mediaTypes.tvShow'),
               component: (isActive) => (
                 <TVShowLogs username={user?.username} isActive={isActive} />
               ),

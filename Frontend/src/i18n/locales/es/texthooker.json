@@ -1,1 +1,164 @@
-{}
+{
+  "dashboard": {
+    "title": "Panel del texthooker",
+    "subtitle": "Sigue tu progreso de lectura con el texthooker",
+    "stats": {
+      "sessions": "Sesiones totales",
+      "sessionsDesc": "Sesiones de texthooker registradas",
+      "lines": "Líneas totales",
+      "linesDesc": "Líneas capturadas",
+      "characters": "Caracteres totales",
+      "charactersDesc": "Caracteres japoneses leídos",
+      "time": "Tiempo total",
+      "timeDesc": "Tiempo registrado leyendo"
+    },
+    "recentSessions": "Sesiones recientes",
+    "empty": "Todavía no hay sesiones",
+    "emptyBody": "Inicia una sesión de TextHooker desde la página de un contenido o abre una sesión en blanco cuando quieras.",
+    "untitledSession": "Sesión sin título",
+    "unknownTitle": "Título desconocido",
+    "cover": "Portada",
+    "deleteSession": "Eliminar la sesión",
+    "joinRoom": "Unirse a una sala",
+    "startSession": "Iniciar sesión",
+    "linesCount_one": "{{count}} línea",
+    "linesCount_many": "{{count}} líneas",
+    "linesCount_other": "{{count}} líneas",
+    "charsCount_one": "{{count}} caracter",
+    "charsCount_many": "{{count}} caracteres",
+    "charsCount_other": "{{count}} caracteres"
+  },
+  "duration": {
+    "hoursMinutes": "{{hours}} h {{minutes}} min",
+    "hours": "{{hours}} h",
+    "minutes": "{{minutes}} min",
+    "seconds": "{{seconds}} s"
+  },
+  "hooker": {
+    "documentTitle": "TextHooker • NihongoTracker",
+    "stats": {
+      "characters": "Caracteres",
+      "lines": "Líneas",
+      "totalLines": "Líneas totales",
+      "linesRead": "Líneas leídas",
+      "readingSpeed": "Velocidad de lectura",
+      "readingSpeedUnit": "Velocidad de lectura (caracteres/hora)",
+      "speed": "Velocidad",
+      "time": "Tiempo",
+      "timeElapsed": "Tiempo transcurrido",
+      "progress": "Progreso",
+      "timer": "Cronómetro"
+    },
+    "timer": {
+      "pause": "Pausar el cronómetro",
+      "resume": "Reanudar el cronómetro",
+      "reset": "Reiniciar el cronómetro",
+      "set": "Ajustar el cronómetro",
+      "resetConfirm": "¿Reiniciar el cronómetro?",
+      "hours": "Horas",
+      "minutes": "Minutos",
+      "seconds": "Segundos",
+      "autoPause": "Pausa automática (s)",
+      "autoPauseHint": "Pausa el cronómetro cuando se pierde la conexión websocket"
+    },
+    "collab": {
+      "title": "Modo colaborativo",
+      "local": "Local (sin conexión)",
+      "host": "Anfitrión (emitir)",
+      "guest": "Invitado (recibir)",
+      "hostShort": "Anfitrión",
+      "guestShort": "Invitado",
+      "shared": "Compartida",
+      "offline": "Sin conexión",
+      "connected": "Conectado",
+      "connectedMembers": "Miembros conectados",
+      "roomId": "ID de la sala",
+      "roomPlaceholder": "Introduce el nombre de la sala",
+      "websocketUrl": "URL del WebSocket",
+      "websocketPlaceholder": "ws://localhost:6677",
+      "join": "Unirse",
+      "disconnect": "Desconectar",
+      "inviteLink": "Enlace de invitación",
+      "copied": "¡Copiado!",
+      "continuousReconnect": "Reconexión continua",
+      "continuousReconnectHint": "Seguir intentando conectar hasta lograrlo",
+      "preventDuplicates": "Evitar duplicados globales",
+      "preventDuplicatesHint": "Impedir que se añadan líneas de texto idénticas",
+      "allowPaste": "Permitir pegar durante la pausa"
+    },
+    "settings": {
+      "title": "Ajustes",
+      "theme": "Tema del texthooker",
+      "useAppTheme": "Usar el tema de la aplicación",
+      "fontFamily": "Tipografía",
+      "fontSize": "Tamaño de fuente (px)",
+      "lineHeight": "Altura de línea",
+      "lineGap": "Separación entre líneas (px)",
+      "verticalText": "Texto vertical",
+      "alwaysVertical": "Barra de control siempre vertical",
+      "customCss": "CSS personalizado",
+      "classNameHelp": "Ayuda sobre los nombres de clase",
+      "showClassNameHelp": "Mostrar la ayuda sobre los nombres de clase"
+    },
+    "controls": {
+      "back": "Volver al panel",
+      "showControls": "Mostrar los controles",
+      "hideControls": "Ocultar los controles",
+      "openPopup": "Abrir en una ventana emergente",
+      "openedInPopup": "Abierto en una ventana emergente",
+      "viewStats": "Ver estadísticas",
+      "deleteLine": "Eliminar la línea",
+      "deleteLastLine": "Eliminar la última línea",
+      "undoDelete": "Deshacer la eliminación"
+    },
+    "session": {
+      "resumePrevious": "¿Reanudar la sesión anterior?",
+      "started": "Sesión nueva iniciada",
+      "syncing": "Sincronizando las líneas pendientes..."
+    },
+    "toast": {
+      "copyInviteFailed": "No se pudo copiar el enlace de invitación",
+      "copyLinesFailed": "No se pudieron copiar las líneas",
+      "logFailed": "No se pudo registrar la sesión",
+      "startFailed": "No se pudo iniciar una sesión nueva"
+    }
+  },
+  "mediaSession": {
+    "title": "Iniciar una sesión con contenido",
+    "mediaType": "Tipo de contenido",
+    "visualNovel": "Novela visual",
+    "videoGame": "Videojuego",
+    "searchPlaceholder_vn": "Busca una novela visual...",
+    "searchPlaceholder_game": "Busca un videojuego...",
+    "noResults": "No se han encontrado resultados",
+    "namePlaceholder": "p. ej. Práctica de lectura suelta",
+    "enter": "Entrar",
+    "searchPlaceholder": "Buscar contenido..."
+  },
+  "room": {
+    "title": "Unirse a una sala colaborativa",
+    "createTab": "Crear y compartir sala",
+    "joinTab": "Unirse a una sala existente",
+    "roomId": "ID de la sala",
+    "createHint": "Elige un nombre único para tu sala",
+    "joinHint": "Pide el ID de la sala a quien la aloja",
+    "createPlaceholder": "Crea un nombre de sala",
+    "joinPlaceholder": "Introduce el ID de la sala",
+    "joinAs": "Unirse como",
+    "host": "Anfitrión",
+    "guest": "Invitado",
+    "create": "Crear sala",
+    "join": "Unirse a la sala",
+    "close": "cerrar",
+    "sessionName": "Nombre de la sesión",
+    "idTaken": "Ese ID de sala ya existe. Elige otro nombre.",
+    "notFound": "Sala no encontrada. Revisa el ID o pídeselo a quien la aloja.",
+    "checkFailed": "No se pudo comprobar si la sala está disponible"
+  },
+  "toast": {
+    "sessionDeleted": "Sesión eliminada",
+    "createFailed": "No se pudo crear la sesión",
+    "deleteFailed": "No se pudo eliminar la sesión",
+    "searchFailed": "No se pudo buscar contenido"
+  }
+}

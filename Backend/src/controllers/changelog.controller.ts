@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { apiError } from '../i18n/errorCodes.js';
 import Changelog from '../models/changelog.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 
@@ -58,7 +59,7 @@ export const getChangelog = async (
       .populate('createdBy', 'username');
 
     if (!changelog) {
-      const error = new customError('Changelog not found', 404);
+      const error = apiError('changelog.notFound', 404, 'Changelog not found');
       return next(error);
     }
 
@@ -83,9 +84,10 @@ export async function createChangelog(
 
     // Validate required fields
     if (!version || !title || !changes || changes.length === 0) {
-      const error = new customError(
-        'Version, title, and at least one change are required',
-        400
+      const error = apiError(
+        'changelog.fieldsRequired',
+        400,
+        'Version, title, and at least one change are required'
       );
       return next(error);
     }
@@ -97,9 +99,10 @@ export async function createChangelog(
     );
 
     if (invalidChanges.length > 0) {
-      const error = new customError(
-        'Invalid change type. Must be: feature, improvement, bugfix, or breaking',
-        400
+      const error = apiError(
+        'changelog.invalidChangeType',
+        400,
+        'Invalid change type. Must be: feature, improvement, bugfix, or breaking'
       );
       return next(error);
     }
@@ -107,9 +110,10 @@ export async function createChangelog(
     // Check if version already exists
     const existingChangelog = await Changelog.findOne({ version });
     if (existingChangelog) {
-      const error = new customError(
-        'A changelog with this version already exists',
-        409
+      const error = apiError(
+        'changelog.versionExists',
+        409,
+        'A changelog with this version already exists'
       );
       return next(error);
     }
@@ -150,7 +154,7 @@ export const updateChangelog = async (
     const changelog = await Changelog.findById(id);
 
     if (!changelog) {
-      const error = new customError('Changelog not found', 404);
+      const error = apiError('changelog.notFound', 404, 'Changelog not found');
       return next(error);
     }
 
@@ -162,9 +166,10 @@ export const updateChangelog = async (
       );
 
       if (invalidChanges.length > 0) {
-        const error = new customError(
-          'Invalid change type. Must be: feature, improvement, bugfix, or breaking',
-          400
+        const error = apiError(
+          'changelog.invalidChangeType',
+          400,
+          'Invalid change type. Must be: feature, improvement, bugfix, or breaking'
         );
         return next(error);
       }
@@ -174,9 +179,10 @@ export const updateChangelog = async (
     if (version && version !== changelog.version) {
       const existingChangelog = await Changelog.findOne({ version });
       if (existingChangelog) {
-        const error = new customError(
-          'A changelog with this version already exists',
-          409
+        const error = apiError(
+          'changelog.versionExists',
+          409,
+          'A changelog with this version already exists'
         );
         return next(error);
       }
@@ -217,7 +223,7 @@ export const deleteChangelog = async (
     const changelog = await Changelog.findById(id);
 
     if (!changelog) {
-      const error = new customError('Changelog not found', 404);
+      const error = apiError('changelog.notFound', 404, 'Changelog not found');
       return next(error);
     }
 

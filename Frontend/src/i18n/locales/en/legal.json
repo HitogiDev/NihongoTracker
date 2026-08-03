@@ -1,1 +1,997 @@
-{}
+{
+  "common": {
+    "lastUpdated": "Last Updated: {{date}}",
+    "tagline": "A Japanese immersion tracker",
+    "seeAlso": "See also:",
+    "translationNotice": "This document is a translation provided for convenience. The **English version is the authoritative text** and prevails in the event of any discrepancy."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "October 18, 2025",
+    "sections": [
+      {
+        "heading": "Introduction",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Welcome to NihongoTracker (\"we,\" \"our,\" or \"us\"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Japanese immersion tracking platform."
+          },
+          {
+            "type": "p",
+            "text": "By using NihongoTracker, you agree to the collection and use of information in accordance with this policy. Please also review our [Terms of Service](/terms) which govern your use of our platform."
+          }
+        ]
+      },
+      {
+        "heading": "Information We Collect",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "Information You Provide to Us"
+          },
+          {
+            "type": "ul",
+            "heading": "Account Information:",
+            "items": [
+              "Username",
+              "Email address (optional, for Patreon linking)",
+              "Password (encrypted and hashed)",
+              "Discord ID (optional, for external integrations)"
+            ],
+            "headingLevel": "h4"
+          },
+          {
+            "type": "ul",
+            "heading": "Profile Information:",
+            "items": [
+              "Avatar image",
+              "Banner image",
+              "Profile customization settings (themes, preferences)",
+              "Timezone settings"
+            ],
+            "headingLevel": "h4"
+          },
+          {
+            "type": "ul",
+            "heading": "Immersion Data:",
+            "items": [
+              "Logs of your Japanese immersion activities (anime, manga, visual novels, books, videos, audio)",
+              "Media titles and metadata",
+              "Time spent, pages read, episodes watched, characters read",
+              "Personal notes and tags on your logs",
+              "Goals and progress tracking data"
+            ],
+            "headingLevel": "h4"
+          },
+          {
+            "type": "ul",
+            "heading": "Patreon Information (Optional):",
+            "items": [
+              "Patreon email address (for benefit verification)",
+              "Patreon ID (provided by Patreon webhook)",
+              "Subscription tier information",
+              "Subscription status"
+            ],
+            "headingLevel": "h4"
+          },
+          {
+            "type": "h3",
+            "text": "Information Collected Automatically"
+          },
+          {
+            "type": "ul",
+            "heading": "Usage Data:",
+            "items": [
+              "IP address",
+              "Browser type and version",
+              "Device information",
+              "Pages visited and features used",
+              "Date and time of access",
+              "Referral source"
+            ],
+            "headingLevel": "h4"
+          },
+          {
+            "type": "ul",
+            "heading": "Cookies and Similar Technologies:",
+            "items": [
+              "Authentication tokens (for keeping you logged in)",
+              "Theme preferences",
+              "Session data"
+            ],
+            "headingLevel": "h4"
+          }
+        ]
+      },
+      {
+        "heading": "How We Use Your Information",
+        "blocks": [
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Core Functionality",
+            "items": [
+              "Provide and maintain the NihongoTracker service",
+              "Create and manage your account",
+              "Track and display your immersion progress",
+              "Calculate XP, levels, and streaks",
+              "Generate statistics and visualizations",
+              "Enable comparison and ranking features"
+            ]
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Community Features",
+            "items": [
+              "Display public profiles and leaderboards",
+              "Enable club functionality and social interactions",
+              "Show shared logs and media activity"
+            ]
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Patreon Integration",
+            "items": [
+              "Verify your Patreon subscription status",
+              "Apply appropriate benefits based on your tier",
+              "Process supporter badges and premium features"
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "Information Sharing and Disclosure",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "We do not sell, trade, or rent your personal information to third parties. We may share your information only in the following circumstances:"
+          },
+          {
+            "type": "h3",
+            "text": "Public Information"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Username",
+              "Avatar and banner",
+              "Public immersion statistics (total XP, level, streaks)",
+              "Public logs (if you choose to make them public)",
+              "Club memberships"
+            ],
+            "intro": "The following information is publicly visible on your profile:"
+          },
+          {
+            "type": "h3",
+            "text": "Third-Party Services"
+          },
+          {
+            "type": "h4",
+            "text": "AniList API:"
+          },
+          {
+            "type": "p",
+            "text": "We use AniList to fetch anime and manga metadata. We may send search queries based on your logged media. No personal information is shared with AniList."
+          },
+          {
+            "type": "h4",
+            "text": "VNDB API:"
+          },
+          {
+            "type": "p",
+            "text": "We use VNDB to fetch visual novel metadata. We may send search queries based on your logged media. No personal information is shared with VNDB."
+          },
+          {
+            "type": "h4",
+            "text": "YouTube Data API:"
+          },
+          {
+            "type": "p",
+            "text": "We use YouTube API to fetch video metadata. We may send video IDs based on your logged media. No personal information is shared with YouTube."
+          },
+          {
+            "type": "h4",
+            "text": "Firebase Storage:"
+          },
+          {
+            "type": "p",
+            "text": "We use Firebase to store uploaded images (avatars, banners). Images are stored securely and accessed only by our application. Google's privacy policy applies to Firebase services."
+          },
+          {
+            "type": "h4",
+            "text": "Patreon:"
+          },
+          {
+            "type": "p",
+            "text": "If you link your Patreon account, we share your Patreon email with Patreon's servers to verify your subscription. We receive webhook notifications about your subscription status. Patreon's privacy policy applies to their services."
+          }
+        ]
+      },
+      {
+        "heading": "Data Security",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "**Encryption:** Passwords are hashed using bcrypt",
+              "**HTTPS:** All data transmission is encrypted using SSL/TLS",
+              "**Access Control:** Limited access to personal data by authorized personnel only",
+              "**Regular Backups:** Database backups to prevent data loss",
+              "**Security Monitoring:** Regular security audits and monitoring"
+            ],
+            "intro": "We implement appropriate technical and organizational security measures to protect your personal information:"
+          },
+          {
+            "type": "p",
+            "text": "However, no method of transmission over the internet or electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee absolute security."
+          }
+        ]
+      },
+      {
+        "heading": "Your Rights and Choices",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "You have the following rights regarding your personal information:"
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Access and Portability",
+            "items": [
+              "View all your personal data through your profile and settings",
+              "Export your immersion logs (feature coming soon)"
+            ]
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Correction and Update",
+            "items": [
+              "Update your profile information at any time through Settings",
+              "Correct or edit your immersion logs"
+            ]
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Deletion",
+            "items": [
+              "Delete individual logs or specific data",
+              "Delete your entire account and all associated data through Settings → Clear All Data",
+              "Once deleted, data cannot be recovered"
+            ]
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Privacy Controls",
+            "items": [
+              "Control which logs are public or private",
+              "Opt out of displaying adult content",
+              "Unlink external integrations (Discord, Patreon)"
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "Children's Privacy",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "NihongoTracker is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete it."
+          }
+        ]
+      },
+      {
+        "heading": "Cookies Policy",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "We use cookies and similar tracking technologies to track activity on our service and store certain information."
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Essential Cookies:",
+            "items": [
+              "Authentication tokens (to keep you logged in)",
+              "Session management"
+            ]
+          },
+          {
+            "type": "ul",
+            "headingLevel": "h3",
+            "heading": "Preference Cookies:",
+            "items": [
+              "Theme selection (light/dark mode)",
+              "Language preferences",
+              "Timezone settings"
+            ]
+          },
+          {
+            "type": "p",
+            "text": "You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our service."
+          }
+        ]
+      },
+      {
+        "heading": "Changes to This Privacy Policy",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "Posting the new Privacy Policy on this page",
+              "Updating the \"Last Updated\" date at the top",
+              "Sending a notification through the service (for significant changes)"
+            ],
+            "intro": "We may update our Privacy Policy from time to time. We will notify you of any changes by:"
+          },
+          {
+            "type": "p",
+            "text": "We encourage you to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page."
+          }
+        ]
+      },
+      {
+        "heading": "Contact Us",
+        "blocks": [
+          {
+            "type": "plain",
+            "items": [
+              "**GitHub Issues:** [https://github.com/HitogiDev/NihongoTracker/issues](https://github.com/HitogiDev/NihongoTracker/issues)",
+              "**Email:** support@nihongotracker.app"
+            ],
+            "intro": "If you have any questions about this Privacy Policy, or if you wish to exercise your privacy rights, please contact us:"
+          }
+        ]
+      },
+      {
+        "heading": "Consent",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "By using NihongoTracker, you hereby consent to our Privacy Policy and agree to its terms."
+          }
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "December 25, 2025",
+    "intro": [
+      {
+        "type": "p",
+        "text": "Welcome to NihongoTracker! These Terms of Service (\"Terms\") govern your access to and use of our website, services, and applications (collectively, the \"Service\"). By accessing or using NihongoTracker, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our Service."
+      }
+    ],
+    "sections": [
+      {
+        "heading": "1. Acceptance of Terms",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "By creating an account or using NihongoTracker, you acknowledge that you have read, understood, and agree to be bound by these Terms, as well as our [Privacy Policy](/privacy). We reserve the right to modify these Terms at any time. We will notify you of significant changes by posting the updated Terms on our website. Your continued use of the Service after such modifications constitutes your acceptance of the updated Terms."
+          }
+        ]
+      },
+      {
+        "heading": "2. Eligibility",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "You must be at least 13 years old to use NihongoTracker. By using our Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have obtained permission from your parent or legal guardian to use this Service."
+          },
+          {
+            "type": "p",
+            "text": "We reserve the right to request proof of age at any time. If we discover that a user is under 13 years of age, we will terminate their account immediately."
+          }
+        ]
+      },
+      {
+        "heading": "3. Account Registration",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "Provide accurate, current, and complete information",
+              "Maintain and promptly update your account information",
+              "Maintain the security of your password and accept all risks of unauthorized access",
+              "Immediately notify us of any unauthorized use of your account",
+              "Be responsible for all activities that occur under your account"
+            ],
+            "intro": "To use certain features of NihongoTracker, you must create an account. When creating an account, you agree to:"
+          },
+          {
+            "type": "p",
+            "text": "You may not create an account using a false identity or impersonating another person. We reserve the right to refuse service, terminate accounts, or remove content at our sole discretion."
+          }
+        ]
+      },
+      {
+        "heading": "4. User Content",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "4.1 Content You Provide"
+          },
+          {
+            "type": "p",
+            "text": "NihongoTracker allows you to create and share content, including but not limited to profile information, avatar images, immersion logs, reviews, and comments (\"User Content\"). You retain ownership of your User Content, but by posting it on our Service, you grant us a worldwide, non-exclusive, royalty-free license to use, display, reproduce, and distribute your User Content in connection with operating and promoting the Service."
+          },
+          {
+            "type": "h3",
+            "text": "4.2 Content Standards"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Violate any laws or regulations",
+              "Infringe on the intellectual property rights of others",
+              "Contain hate speech, harassment, threats, or bullying",
+              "Include sexually explicit or pornographic material",
+              "Promote violence or illegal activities",
+              "Contain spam, malware, or phishing attempts",
+              "Impersonate any person or entity",
+              "Include personal information of others without their consent"
+            ],
+            "intro": "You agree that your User Content will not:"
+          },
+          {
+            "type": "h3",
+            "text": "4.3 Content Moderation"
+          },
+          {
+            "type": "p",
+            "text": "We reserve the right to review, monitor, and remove any User Content that violates these Terms or is otherwise objectionable, at our sole discretion and without prior notice. However, we are not obligated to monitor all User Content and are not responsible for content posted by users."
+          }
+        ]
+      },
+      {
+        "heading": "5. Acceptable Use",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "Use the Service for any illegal purpose or in violation of any laws",
+              "Attempt to gain unauthorized access to our systems or other users' accounts",
+              "Interfere with or disrupt the Service or servers/networks connected to the Service",
+              "Use automated systems (bots, scrapers, etc.) to access the Service without permission",
+              "Reverse engineer, decompile, or disassemble any part of the Service",
+              "Collect or harvest personal information about other users",
+              "Manipulate statistics, XP, or other game elements through cheating or exploits",
+              "Create multiple accounts to abuse the Service or gain unfair advantages",
+              "Sell, trade, or transfer your account to another person"
+            ],
+            "intro": "You agree not to:"
+          }
+        ]
+      },
+      {
+        "heading": "6. Intellectual Property",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "6.1 Our Content"
+          },
+          {
+            "type": "p",
+            "text": "NihongoTracker and its original content (excluding User Content), features, and functionality are owned by NihongoTracker and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws."
+          },
+          {
+            "type": "h3",
+            "text": "6.2 License to Use"
+          },
+          {
+            "type": "p",
+            "text": "We grant you a limited, non-exclusive, non-transferable, revocable license to access and use the Service for personal, non-commercial purposes, subject to these Terms."
+          },
+          {
+            "type": "h3",
+            "text": "6.3 Third-Party Content"
+          },
+          {
+            "type": "p",
+            "text": "Our Service integrates with third-party services (AniList, VNDB, YouTube) and displays metadata from these sources. All trademarks, logos, and copyrights belong to their respective owners. We do not claim ownership of any third-party content displayed on our Service."
+          }
+        ]
+      },
+      {
+        "heading": "7. Patreon Subscriptions",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "7.1 Subscription Tiers"
+          },
+          {
+            "type": "p",
+            "text": "NihongoTracker offers optional Patreon subscriptions that provide additional benefits. Subscription tiers and benefits are described on our Support page. We reserve the right to modify, add, or remove benefits at any time, though we will make reasonable efforts to notify subscribers of significant changes."
+          },
+          {
+            "type": "h3",
+            "text": "7.2 Billing and Payments"
+          },
+          {
+            "type": "p",
+            "text": "All subscription payments are processed through Patreon. By subscribing, you agree to Patreon's Terms of Service and Privacy Policy. We are not responsible for any billing issues, refunds, or payment disputes with Patreon."
+          },
+          {
+            "type": "h3",
+            "text": "7.3 Linking Your Account"
+          },
+          {
+            "type": "p",
+            "text": "To receive Patreon benefits on NihongoTracker, you must link your Patreon account in your Settings using the email address associated with your Patreon account. Benefits are applied automatically via webhooks and may take a few minutes to activate."
+          },
+          {
+            "type": "h3",
+            "text": "7.4 Cancellation"
+          },
+          {
+            "type": "p",
+            "text": "You may cancel your Patreon subscription at any time through Patreon. Upon cancellation, you will retain your benefits until the end of your current billing period, after which they will be automatically removed."
+          },
+          {
+            "type": "h3",
+            "text": "7.5 Refunds"
+          },
+          {
+            "type": "p",
+            "text": "We offer refunds within 14 days of purchase for subscription payments. For complete details about our refund process, eligibility, and how to request a refund, please see our [Refund Policy](/refund-policy)."
+          }
+        ]
+      },
+      {
+        "heading": "8. Disclaimers and Limitations of Liability",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "8.1 \"As Is\" Service"
+          },
+          {
+            "type": "p",
+            "text": "THE SERVICE IS PROVIDED \"AS IS\" AND \"AS AVAILABLE\" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE."
+          },
+          {
+            "type": "h3",
+            "text": "8.2 Limitation of Liability"
+          },
+          {
+            "type": "p",
+            "text": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, NIHONGOTRACKER AND ITS AFFILIATES, OFFICERS, EMPLOYEES, AGENTS, AND LICENSORS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, USE, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR RELATED TO YOUR USE OF THE SERVICE."
+          },
+          {
+            "type": "h3",
+            "text": "8.3 Third-Party Services"
+          },
+          {
+            "type": "p",
+            "text": "We are not responsible for any issues, errors, or damages arising from third-party services (AniList, VNDB, YouTube, Firebase, Patreon) integrated with our Service. Use of these services is subject to their respective terms and policies."
+          }
+        ]
+      },
+      {
+        "heading": "9. Indemnification",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "You agree to indemnify, defend, and hold harmless NihongoTracker and its affiliates, officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses, including reasonable attorneys' fees, arising out of or in any way connected with: (a) your access to or use of the Service; (b) your User Content; (c) your violation of these Terms; or (d) your violation of any rights of another person or entity."
+          }
+        ]
+      },
+      {
+        "heading": "10. Data Loss and Backups",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "While we make reasonable efforts to maintain and back up your data, we cannot guarantee against data loss or corruption. You are responsible for maintaining your own backups of any important data. We are not liable for any loss of data or User Content."
+          },
+          {
+            "type": "p",
+            "text": "We recommend periodically exporting your immersion logs and other important data as a precaution."
+          }
+        ]
+      },
+      {
+        "heading": "11. Termination",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "11.1 By You"
+          },
+          {
+            "type": "p",
+            "text": "You may delete your account at any time through your Settings page. Upon deletion, your User Content and personal data will be removed from our servers, except as required by law or for legitimate business purposes."
+          },
+          {
+            "type": "h3",
+            "text": "11.2 By Us"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Violation of these Terms",
+              "Fraudulent, abusive, or illegal activity",
+              "Extended periods of inactivity",
+              "Requests by law enforcement or government agencies"
+            ],
+            "intro": "We reserve the right to suspend or terminate your account and access to the Service at any time, with or without notice, for any reason, including but not limited to:"
+          },
+          {
+            "type": "h3",
+            "text": "11.3 Effect of Termination"
+          },
+          {
+            "type": "p",
+            "text": "Upon termination, your right to use the Service will immediately cease. All provisions of these Terms that by their nature should survive termination shall survive, including ownership provisions, warranty disclaimers, indemnity, and limitations of liability."
+          }
+        ]
+      },
+      {
+        "heading": "12. Governing Law and Dispute Resolution",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "These Terms shall be governed by and construed in accordance with the laws of the Dominican Republic, without regard to its conflict of law provisions. Any disputes arising from these Terms or your use of the Service shall be resolved through binding arbitration, except that either party may seek injunctive or other equitable relief in court to prevent infringement of intellectual property rights."
+          }
+        ]
+      },
+      {
+        "heading": "13. Changes to the Service",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "We reserve the right to modify, suspend, or discontinue any part of the Service at any time, with or without notice. We will not be liable to you or any third party for any modification, suspension, or discontinuation of the Service."
+          }
+        ]
+      },
+      {
+        "heading": "14. Severability",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions will continue in full force and effect. The invalid or unenforceable provision will be deemed modified to the extent necessary to make it valid and enforceable."
+          }
+        ]
+      },
+      {
+        "heading": "15. Entire Agreement",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "These Terms, together with our [Privacy Policy](/privacy), constitute the entire agreement between you and NihongoTracker regarding your use of the Service and supersede any prior agreements or understandings."
+          }
+        ]
+      },
+      {
+        "heading": "16. Contact Information",
+        "blocks": [
+          {
+            "type": "plain",
+            "items": [
+              "**Email:** support@nihongotracker.app",
+              "**Website:** https://nihongotracker.app"
+            ],
+            "intro": "If you have any questions about these Terms of Service, please contact us:"
+          }
+        ]
+      }
+    ],
+    "seeAlso": [
+      {
+        "label": "Privacy Policy",
+        "href": "/privacy"
+      },
+      {
+        "label": "Refund Policy",
+        "href": "/refund-policy"
+      },
+      {
+        "label": "Support",
+        "href": "/support"
+      }
+    ]
+  },
+  "refund": {
+    "title": "Refund Policy",
+    "lastUpdated": "December 25, 2025",
+    "intro": [
+      {
+        "type": "p",
+        "text": "At NihongoTracker, we want you to be completely satisfied with your subscription. This Refund Policy outlines our practices regarding refunds for our premium subscription services."
+      }
+    ],
+    "sections": [
+      {
+        "heading": "1. Subscription Services",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "**Donator** - $1/month",
+              "**Immersion Enthusiast** - $5/month",
+              "**Avid Consumer** - $10/month"
+            ],
+            "intro": "NihongoTracker offers optional premium subscriptions that provide additional features and benefits. Our subscription tiers are:"
+          },
+          {
+            "type": "p",
+            "text": "For detailed information about what each tier includes, please visit our [Support page](/support)."
+          }
+        ]
+      },
+      {
+        "heading": "2. Free Trial Period",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "NihongoTracker's core features are free to use. Premium subscriptions do not include a free trial period. We encourage you to explore our free features before subscribing to understand the value our premium tiers provide."
+          }
+        ]
+      },
+      {
+        "heading": "3. Refund Eligibility",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "3.1 Within 14 Days of Purchase"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "The request must be made within 14 days of the charge",
+              "You must not have previously received a refund for the same subscription",
+              "Your account must be in good standing (not suspended or banned)"
+            ],
+            "intro": "If you are not satisfied with your subscription, you may request a full refund within 14 days of your initial purchase or renewal. To be eligible for a refund:"
+          },
+          {
+            "type": "h3",
+            "text": "3.2 After 14 Days"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Technical issues that prevented you from using premium features",
+              "Accidental duplicate charges",
+              "Unauthorized transactions (with appropriate verification)"
+            ],
+            "intro": "After the 14-day period, refunds are generally not provided. However, we may consider refund requests on a case-by-case basis for exceptional circumstances, such as:"
+          }
+        ]
+      },
+      {
+        "heading": "4. How to Request a Refund",
+        "blocks": [
+          {
+            "type": "ol",
+            "items": [
+              "Email us at [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "Include your account username or email",
+              "Provide the date of the transaction",
+              "Explain the reason for your refund request"
+            ],
+            "intro": "To request a refund, please:"
+          },
+          {
+            "type": "p",
+            "text": "We will review your request and respond within 5 business days. If approved, refunds will be processed to your original payment method within 5-10 business days, depending on your payment provider."
+          }
+        ]
+      },
+      {
+        "heading": "5. Cancellation Policy",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "Your premium benefits will remain active until the end of your current billing period",
+              "You will not be charged for subsequent billing periods",
+              "No partial refunds are provided for the remaining time in your current billing period",
+              "Your account will automatically revert to our free tier when your subscription ends"
+            ],
+            "intro": "You may cancel your subscription at any time through your account settings or payment provider dashboard. Upon cancellation:"
+          }
+        ]
+      },
+      {
+        "heading": "6. Non-Refundable Items",
+        "blocks": [
+          {
+            "type": "ul",
+            "items": [
+              "One-time donations made through Ko-fi or similar platforms",
+              "Subscriptions cancelled after using premium features extensively",
+              "Accounts that have been suspended or terminated for violating our [Terms of Service](/terms)",
+              "Requests made more than 14 days after purchase (except in exceptional circumstances)"
+            ],
+            "intro": "The following are not eligible for refunds:"
+          }
+        ]
+      },
+      {
+        "heading": "7. Chargebacks",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "If you believe you have been charged in error, please contact us first before initiating a chargeback with your payment provider. Filing a chargeback without first attempting to resolve the issue with us may result in permanent suspension of your account. We are committed to resolving any billing issues fairly and promptly."
+          }
+        ]
+      },
+      {
+        "heading": "8. Changes to Pricing",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "We reserve the right to modify our subscription prices at any time. If we increase prices, we will provide existing subscribers with at least 30 days' notice before the new prices take effect. You may cancel your subscription before the price change takes effect if you do not wish to continue at the new price."
+          }
+        ]
+      },
+      {
+        "heading": "9. Service Availability",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "While we strive to maintain 99.9% uptime, we do not guarantee uninterrupted access to our services. Brief service interruptions for maintenance or technical issues do not qualify for refunds. However, if our service experiences extended downtime (more than 72 consecutive hours) affecting premium features, we will provide pro-rata credits or refunds upon request."
+          }
+        ]
+      },
+      {
+        "heading": "10. Contact Us",
+        "blocks": [
+          {
+            "type": "plain",
+            "items": [
+              "**Email:** [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "**Website:** https://nihongotracker.app"
+            ],
+            "intro": "If you have any questions about our Refund Policy or need assistance with a refund request, please contact us:"
+          }
+        ]
+      },
+      {
+        "heading": "11. Policy Updates",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "We may update this Refund Policy from time to time. Any changes will be posted on this page with an updated \"Last Updated\" date. Your continued use of our subscription services after any changes indicates your acceptance of the updated policy."
+          }
+        ]
+      }
+    ],
+    "seeAlso": [
+      {
+        "label": "Terms of Service",
+        "href": "/terms"
+      },
+      {
+        "label": "Privacy Policy",
+        "href": "/privacy"
+      },
+      {
+        "label": "Support",
+        "href": "/support"
+      }
+    ]
+  },
+  "support": {
+    "hero": {
+      "badge": "Support the Project",
+      "title": "Keep NihongoTracker <hl>free</hl>, fast, and growing",
+      "subtitle": "Your support helps cover infrastructure and development so I can keep building the best immersion tracker for Japanese learners.",
+      "cta": "Become a Patron"
+    },
+    "stats": {
+      "tiers": "Patreon Tiers",
+      "freeCore": "Core Features Free",
+      "community": "Community Access",
+      "creator": "Independent Creator"
+    },
+    "why": {
+      "badge": "Why It Matters",
+      "title": "Where your support goes",
+      "items": {
+        "lights": {
+          "title": "Keep the Lights On",
+          "description": "Server costs, database hosting, and API integrations aren't free. Your support helps me maintain reliable service."
+        },
+        "development": {
+          "title": "Continuous Development",
+          "description": "We're constantly adding new features, improving performance, and fixing bugs. Support enables full-time development."
+        },
+        "community": {
+          "title": "Community First",
+          "description": "NihongoTracker will always have a generous free tier. Supporters help me keep it that way for everyone."
+        },
+        "openSource": {
+          "title": "Open Source Values",
+          "description": "Your support helps me contribute back to the open source community and keep our codebase transparent."
+        }
+      }
+    },
+    "tiers": {
+      "badge": "Patreon Tiers",
+      "title": "Pick the support level that fits you",
+      "subtitle": "Benefits are cumulative. Higher tiers include all lower tier benefits.",
+      "highlighted": "Highlighted Tier",
+      "perMonth": "/month",
+      "cta": "Become a Patron",
+      "items": {
+        "donator": {
+          "description": "You like what NihongoTracker strives for: \"helping self-learners track their Japanese immersion\", and you want to show a little love. Every dollar helps keep the servers running and the project alive 💕",
+          "benefits": [
+            "Show your symbolic support for the project",
+            "Donator Badge on the profile",
+            "Increase maximum log tags to 7",
+            "Unlock more themes"
+          ]
+        },
+        "enthusiast": {
+          "description": "For those who use NihongoTracker daily and want to contribute a little more to its development. This tier helps fund hosting, testing, and small feature improvements.",
+          "benefits": [
+            "Animated GIF avatars and banners",
+            "Custom text in the profile donator badge",
+            "Increase maximum log tags to 15",
+            "Increase maximum club members to 250"
+          ]
+        },
+        "consumer": {
+          "description": "You're going above and beyond to support NihongoTracker. This tier helps cover development and server costs while allowing the project to grow sustainably. Every update, every improvement, and every new feature is made possible thanks to people like you.",
+          "benefits": [
+            "Custom donator badge color (rainbow included)",
+            "Site-wide donator badge",
+            "Increase the maximum log tags to 25",
+            "Increase maximum club members to 1000"
+          ]
+        }
+      }
+    },
+    "oneTime": {
+      "title": "Prefer a one-time donation?",
+      "subtitle": "Not ready for a monthly commitment? You can still support the project through Ko-fi."
+    },
+    "faq": {
+      "badge": "FAQ",
+      "title": "Frequently asked questions",
+      "alwaysFree": {
+        "question": "Will NihongoTracker always be free?",
+        "answer": "Yes! Core features will always remain free. Premium tiers unlock additional features and customization options, but you'll always be able to track your immersion, view stats, and compete on leaderboards for free."
+      },
+      "benefits": {
+        "question": "How do I get my supporter benefits?",
+        "answer": "After becoming a Patreon supporter, link your Patreon account in your settings. Benefits will be automatically applied to your account within 24 hours."
+      },
+      "cancel": {
+        "question": "Can I cancel anytime?",
+        "answer": "Absolutely. You can cancel your Patreon membership at any time, and you'll keep your benefits until the end of your current billing period."
+      },
+      "notApplying": {
+        "question": "I linked my patreon and my benefits are not applying, what should I do?",
+        "answer": "You can contact me through Discord: <code>hitogi</code>.<br /> Or email me at: <mail>support@nihongotracker.app</mail>"
+      }
+    },
+    "cta": {
+      "title": "Ready to support?",
+      "subtitle": "Join the supporters helping NihongoTracker stay free and keep improving.",
+      "button": "Become a Patron",
+      "thanks": "Thank you for supporting the project"
+    }
+  },
+  "changelog": {
+    "title": "Changelog",
+    "subtitle": "Stay up to date with the latest features, improvements, and bug fixes",
+    "labels": {
+      "feature": "New",
+      "improvement": "Improved",
+      "bugfix": "Fixed",
+      "breaking": "Breaking"
+    },
+    "empty": {
+      "title": "No changelogs available yet",
+      "description": "Check back later for updates and new features"
+    }
+  }
+}

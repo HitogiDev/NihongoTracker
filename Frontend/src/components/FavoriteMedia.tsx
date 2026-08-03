@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -46,16 +48,17 @@ const TYPE_ORDER: MediaListMediaType[] = [
   'tv show',
 ];
 
-const TYPE_LABELS: Record<MediaListMediaType, string> = {
-  anime: 'Anime',
-  manga: 'Manga',
-  reading: 'Light Novels',
-  vn: 'Visual Novels',
-  game: 'Games',
-  video: 'Videos',
-  movie: 'Movies',
-  'tv show': 'TV Shows',
-  book: 'Books',
+/** Module scope: key names, never text. */
+const TYPE_LABELS: Record<MediaListMediaType, ParseKeys<'profile'>> = {
+  anime: 'favoritesWidget.types.anime',
+  manga: 'favoritesWidget.types.manga',
+  reading: 'favoritesWidget.types.reading',
+  vn: 'favoritesWidget.types.vn',
+  game: 'favoritesWidget.types.game',
+  video: 'favoritesWidget.types.video',
+  movie: 'favoritesWidget.types.movie',
+  'tv show': 'favoritesWidget.types.tvShow',
+  book: 'favoritesWidget.types.book',
 };
 
 function favoriteKey(fav: { mediaType: string; mediaId: string }) {
@@ -92,6 +95,7 @@ function FavoriteCover({
   onShow: ShowFn;
   onHide: () => void;
 }) {
+  const { t } = useTranslation('profile');
   const media = fav.media;
   const blur = shouldBlurCover(media, blurAdult);
   const cover = media?.contentImage || media?.coverImage;
@@ -123,7 +127,11 @@ function FavoriteCover({
             ? 'bg-primary text-primary-content'
             : 'bg-base-100/85 text-base-content/70'
         }`}
-        aria-label={fav.note ? 'View note and info' : 'View info'}
+        aria-label={
+          fav.note
+            ? t('favoritesWidget.viewNote')
+            : t('favoritesWidget.viewInfo')
+        }
         onClick={(e) => {
           // Don't navigate the wrapping Link; toggle the popover instead.
           e.preventDefault();
@@ -168,6 +176,7 @@ function FavoritePopover({
   active: { fav: IFavoriteEntry; rect: DOMRect } | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('profile');
   useEffect(() => {
     if (!active) return;
     const close = () => onClose();
@@ -228,7 +237,9 @@ function FavoritePopover({
           )}
         {media && (
           <span className="badge badge-ghost badge-sm mt-2">
-            {TYPE_LABELS[media.type as MediaListMediaType] ?? media.type}
+            {TYPE_LABELS[media.type as MediaListMediaType]
+              ? t(TYPE_LABELS[media.type as MediaListMediaType])
+              : media.type}
           </span>
         )}
         {media?.genres && media.genres.length > 0 && (
@@ -259,6 +270,7 @@ function SortableFavorite({
   onRemove: () => void;
   onEditNote: () => void;
 }) {
+  const { t } = useTranslation('profile');
   const id = favoriteKey(fav);
   const {
     attributes,
@@ -289,7 +301,7 @@ function SortableFavorite({
         className="relative rounded-lg cursor-grab active:cursor-grabbing touch-none"
         {...attributes}
         {...listeners}
-        aria-label="Drag to reorder"
+        aria-label={t('favoritesWidget.drag')}
       >
         <div className="aspect-[3/4] w-full rounded-lg overflow-hidden bg-base-300 ring-1 ring-base-content/10">
           {cover ? (
@@ -314,7 +326,7 @@ function SortableFavorite({
               ? 'bg-primary text-primary-content'
               : 'bg-base-100/80 text-base-content/70'
           }`}
-          aria-label="Edit note"
+          aria-label={t('favoritesWidget.editNote')}
           onPointerDown={stopDrag}
           onClick={onEditNote}
         >
@@ -325,7 +337,7 @@ function SortableFavorite({
         <button
           type="button"
           className="absolute top-1 right-1 bg-error text-error-content rounded-full p-0.5 shadow"
-          aria-label="Remove favorite"
+          aria-label={t('favoritesWidget.remove')}
           onPointerDown={stopDrag}
           onClick={onRemove}
         >
@@ -351,6 +363,7 @@ function NoteModal({
   onClose: () => void;
   onSave: (value: string) => void;
 }) {
+  const { t } = useTranslation('profile');
   const [value, setValue] = useState(fav.note ?? '');
 
   return (
@@ -358,7 +371,7 @@ function NoteModal({
       <div className="modal-box">
         <h3 className="font-bold text-lg flex items-center gap-2">
           <NotebookPen className="w-5 h-5" />
-          Note
+          {t('favoritesWidget.noteTitle')}
         </h3>
         <p className="text-sm text-base-content/60 mt-1 truncate">
           {mediaTitle(fav.media)}
@@ -367,7 +380,7 @@ function NoteModal({
           className="textarea textarea-bordered w-full mt-3"
           rows={4}
           maxLength={500}
-          placeholder="Why a favorite?"
+          placeholder={t('favoritesWidget.notePlaceholder')}
           value={value}
           autoFocus
           onChange={(e) => setValue(e.target.value)}
@@ -377,7 +390,7 @@ function NoteModal({
         </div>
         <div className="modal-action">
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            Cancel
+            {t('favoritesWidget.cancel')}
           </button>
           <button
             className="btn btn-primary btn-sm"
@@ -386,7 +399,7 @@ function NoteModal({
               onClose();
             }}
           >
-            <Save className="w-4 h-4" /> Save note
+            <Save className="w-4 h-4" /> {t('favoritesWidget.saveNote')}
           </button>
         </div>
       </div>
@@ -408,6 +421,7 @@ function FavoriteMedia({
   username: string;
   blurAdult: boolean;
 }) {
+  const { t } = useTranslation('profile');
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<IFavoriteEntry[]>(favorites);
@@ -445,9 +459,9 @@ function FavoriteMedia({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', username] });
       setIsEditing(false);
-      toast.success('Favorites updated');
+      toast.success(t('favoritesWidget.updated'));
     },
-    onError: () => toast.error('Could not update favorites'),
+    onError: () => toast.error(t('favoritesWidget.updateFailed')),
   });
 
   const groups = useMemo(() => {
@@ -505,7 +519,7 @@ function FavoriteMedia({
     <div className="card w-full bg-base-100 shadow-sm overflow-visible">
       <div className="card-body w-full p-4 sm:p-6 overflow-visible">
         <div className="flex items-center justify-between gap-3 mb-2">
-          <h2 className="card-title">Favorites</h2>
+          <h2 className="card-title">{t('favorites.title')}</h2>
           {isOwner &&
             (isEditing ? (
               <div className="flex items-center gap-1">
@@ -578,22 +592,24 @@ function FavoriteMedia({
               </SortableContext>
             </DndContext>
             <p className="text-xs text-base-content/50 mt-2">
-              {draft.length}/{MAX_FAVORITES} · drag to reorder, tap the note
-              icon to add a note.
+              {t('favoritesWidget.hint', {
+                current: draft.length,
+                max: MAX_FAVORITES,
+              })}
             </p>
           </>
         ) : favorites.length === 0 ? (
           <p className="text-base-content/70 text-sm">
             {isOwner
-              ? 'Add your favorite media to showcase them here.'
-              : 'No favorites yet.'}
+              ? t('favoritesWidget.emptyOwn')
+              : t('favoritesWidget.empty')}
           </p>
         ) : (
           <div className="flex flex-col gap-4">
             {groups.map((group) => (
               <div key={group.type}>
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/50 mb-2">
-                  {TYPE_LABELS[group.type]}
+                  {t(TYPE_LABELS[group.type])}
                 </h3>
                 <div className="flex flex-wrap gap-3">
                   {group.items.map((fav) => (

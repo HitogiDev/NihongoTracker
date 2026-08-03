@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getUserMediaStatsFn, IMediaStats } from '../api/trackerApi';
 import { ILog } from '../types';
 
@@ -9,6 +10,7 @@ interface MediaStatsProps {
 }
 
 function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
+  const { t } = useTranslation('media');
   const {
     data: stats,
     isLoading,
@@ -25,7 +27,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
       <div className="mt-4 p-3 bg-base-300 rounded-lg">
         <div className="flex items-center gap-2 mb-2">
           <span className="loading loading-spinner loading-sm"></span>
-          <span className="text-sm font-medium">Loading your progress...</span>
+          <span className="text-sm font-medium">{t('progress.loading')}</span>
         </div>
       </div>
     );
@@ -121,7 +123,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
   return (
     <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg">
       <div className="flex items-center gap-2 mb-3">
-        <span className="font-medium text-sm">Your Progress</span>
+        <span className="font-medium text-sm">{t('progress.title')}</span>
         <div className="badge badge-success badge-sm">
           {stats.total.logs} log{stats.total.logs !== 1 ? 's' : ''}
         </div>
@@ -155,7 +157,9 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
           <div className="grid grid-cols-2 gap-2 text-xs">
             {stats.thisWeek.logs > 0 && (
               <div className="text-center">
-                <div className="text-base-content/60">This week</div>
+                <div className="text-base-content/60">
+                  {t('progress.thisWeek')}
+                </div>
                 <div className="font-medium">
                   {stats.thisWeek.logs} log
                   {stats.thisWeek.logs !== 1 ? 's' : ''}
@@ -164,7 +168,9 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
             )}
             {stats.thisMonth.logs > 0 && (
               <div className="text-center">
-                <div className="text-base-content/60">This month</div>
+                <div className="text-base-content/60">
+                  {t('progress.thisMonth')}
+                </div>
                 <div className="font-medium">
                   {stats.thisMonth.logs} log
                   {stats.thisMonth.logs !== 1 ? 's' : ''}

@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
+import type { ParseKeys } from 'i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DayPicker } from 'react-day-picker';
 import { useOutletContext } from 'react-router-dom';
@@ -240,14 +241,15 @@ const DEFAULT_GROUPS_LAYOUT: StatsGroupLayout[] = [
   },
 ];
 
-const GROUP_LABELS: Record<StatsGroupId, string> = {
-  totals: 'Totals',
-  streaks: 'Streaks',
-  timeBreakdown: 'Time Breakdown',
-  readingMetrics: 'Reading Metrics',
-  chartDistribution: 'Distributions',
-  chartProgress: 'Progress',
-  chartReading: 'Reading',
+/** Module scope: key names, never text. */
+const GROUP_LABELS: Record<StatsGroupId, ParseKeys<'stats'>> = {
+  totals: 'groups.totals',
+  streaks: 'groups.streaks',
+  timeBreakdown: 'groups.timeBreakdown',
+  readingMetrics: 'groups.readingMetrics',
+  chartDistribution: 'groups.chartDistribution',
+  chartProgress: 'groups.chartProgress',
+  chartReading: 'groups.chartReading',
 };
 
 const GROUP_CATEGORIES: Record<StatsGroupId, CategoryId> = {
@@ -667,7 +669,7 @@ function StatsScreen() {
                   <SortableGroup
                     key={group.id}
                     id={group.id}
-                    label={GROUP_LABELS[group.id]}
+                    label={t(GROUP_LABELS[group.id])}
                     editMode={editMode}
                     visible={group.visible}
                     onToggleGroupVisibility={() =>

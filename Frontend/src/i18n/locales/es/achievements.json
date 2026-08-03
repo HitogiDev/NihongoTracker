@@ -1,4 +1,25 @@
 {
+  "card": {
+    "points": "puntos",
+    "ofUsers": "de usuarios",
+    "unlocked": "desbloqueado",
+    "rarityPercent": "{{percent}} % de usuarios",
+    "pts_one": "{{count}} pt",
+    "pts_many": "{{count}} pts",
+    "pts_other": "{{count}} pts"
+  },
+  "category": {
+    "all": "Todos",
+    "milestone": "Hitos",
+    "streaks": "Rachas",
+    "immersion": "Inmersión",
+    "social": "Social",
+    "secret": "Secretos"
+  },
+  "feed": {
+    "earned": "ha conseguido",
+    "unlocked": "Logro desbloqueado:"
+  },
   "items": {
     "achievements_100": {
       "description": "Desbloquea otros 100 logros.",
@@ -11,6 +32,10 @@
     "bookworm_hours": {
       "description": "Registra 50 horas de lectura (manga y novelas juntos).",
       "name": "Ratón de biblioteca"
+    },
+    "century_club": {
+      "name": "Club del centenar",
+      "description": "Registra 100 títulos distintos."
     },
     "cinephile": {
       "description": "Registra 100 horas de anime.",
@@ -35,10 +60,6 @@
     "currently_airing": {
       "description": "Registra un anime durante su temporada de emisión.",
       "name": "En emisión"
-    },
-    "deep_cut": {
-      "description": "Registra algo con menos de 100 miembros en AniList o VNDB.",
-      "name": "Joya oculta"
     },
     "early_bird": {
       "description": "Registra inmersión antes de las 7 de la mañana 10 veces.",
@@ -173,6 +194,11 @@
       "hint": "Absorto por completo...",
       "name": "夢中"
     },
+    "secret_club_hopper": {
+      "name": "Saltaclubes",
+      "description": "Un solo grupo nunca iba a bastarte.",
+      "hint": "¿Por qué conformarse con un solo grupo?"
+    },
     "secret_dethroned": {
       "description": "Tuviste el puesto 1 y alguien te lo quitó.",
       "hint": "Cuanto más alto subes...",
@@ -188,6 +214,11 @@
       "hint": "No puedes quedarte quieto...",
       "name": "El suelo es lava"
     },
+    "secret_iron_will": {
+      "name": "鉄の意志",
+      "description": "El descanso es para quien tiene planes más modestos.",
+      "hint": "Ni un día libre, sin excusas..."
+    },
     "secret_keeper": {
       "description": "Descubre 5 logros ocultos.",
       "hint": "Aquí hay más de lo que parece...",
@@ -202,16 +233,6 @@
       "description": "Registra todos los días de una semana justo después de romper una racha.",
       "hint": "La lealtad no se abandona fácilmente...",
       "name": "Leal"
-    },
-    "secret_parasocial": {
-      "description": "Sigue a alguien con quien hayas tenido un duelo.",
-      "hint": "Una conexión extraña...",
-      "name": "Parasocial"
-    },
-    "secret_perfectionist": {
-      "description": "Edita un registro antes de 30 segundos desde que lo creaste.",
-      "hint": "Te lo has repensado...",
-      "name": "Perfeccionista"
     },
     "secret_phoenix": {
       "description": "Rompe una racha y vuelve para superar tu récord personal.",
@@ -288,6 +309,52 @@
       "description": "Consigue 500.000 XP en total.",
       "name": "Gran maestro"
     }
+  },
+  "rarity": {
+    "common": "Común",
+    "rare": "Rara",
+    "epic": "Épica",
+    "legendary": "Legendaria",
+    "secret": "Secreta"
+  },
+  "screen": {
+    "titleOwn": "Logros",
+    "titleOther": "Logros de {{username}}",
+    "documentTitleOwn": "Mis logros — NihongoTracker",
+    "documentTitleOther": "Logros de {{username}} — NihongoTracker",
+    "subtitle": "Sigue tus hitos de inmersión y desbloquea secretos ocultos.",
+    "loadError": "No se pudieron cargar los logros.",
+    "stats": {
+      "earned": "Conseguidos",
+      "total": "Total",
+      "points": "Puntos",
+      "completion": "Progreso"
+    },
+    "searchPlaceholder": "Buscar logros...",
+    "clearSearch": "Limpiar la búsqueda",
+    "categoryLabel": "Categoría: {{value}}",
+    "statusLabel": "Estado: {{value}}",
+    "sortLabel": "Orden: {{value}}",
+    "status": {
+      "all": "Todos",
+      "earned": "Conseguidos",
+      "locked": "Bloqueados"
+    },
+    "sort": {
+      "order": "Predeterminado",
+      "rarity": "Rareza",
+      "earned": "Conseguidos primero",
+      "orderLong": "Orden predeterminado",
+      "rarityLong": "Por rareza",
+      "earnedLong": "Conseguidos primero"
+    },
+    "grouped": "Agrupados",
+    "ungrouped": "Sin agrupar",
+    "groupTitle": "Agrupar por rareza",
+    "ungroupTitle": "Dejar de agrupar por rareza",
+    "noMatches": "Ningún logro coincide con tus filtros.",
+    "earnedOfTotal": "{{earned}}/{{total}} conseguidos",
+    "attribution": "Iconos de logros por <icons>game-icons.net</icons> con licencia <license>CC BY 3.0</license>."
   },
   "secretHint": "Cumple una condición secreta para revelar este logro.",
   "secretName": "Logro secreto"

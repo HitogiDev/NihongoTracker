@@ -5,18 +5,31 @@
   "language": {
     "saveError": "No se pudo guardar tu preferencia de idioma"
   },
+  "mediaTypeGroups": {
+    "anime": "Anime",
+    "manga": "Manga",
+    "reading": "Novelas ligeras",
+    "vn": "Novelas visuales",
+    "game": "Videojuegos",
+    "video": "Vídeo",
+    "movie": "Películas",
+    "tvShow": "Series",
+    "book": "Libros",
+    "audio": "Audio",
+    "other": "Otros"
+  },
   "mediaTypes": {
-    "anime": "anime",
-    "audio": "audio",
-    "book": "libro",
-    "game": "juego",
-    "manga": "manga",
-    "movie": "película",
-    "other": "otro",
-    "reading": "lectura",
-    "tvShow": "serie",
-    "video": "vídeo",
-    "vn": "novela visual"
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Libro",
+    "game": "Juego",
+    "manga": "Manga",
+    "movie": "Película",
+    "other": "Otro",
+    "reading": "Novela ligera",
+    "tvShow": "Serie",
+    "video": "Vídeo",
+    "vn": "Novela visual"
   },
   "mediaTypesPlural": {
     "anime": "anime",
@@ -24,10 +37,15 @@
     "game": "juegos",
     "manga": "manga",
     "movie": "películas",
-    "reading": "lectura",
+    "reading": "novelas ligeras",
     "tvShow": "series",
     "video": "vídeos",
     "vn": "novelas visuales"
+  },
+  "notFound": {
+    "title": "404 - Página no encontrada",
+    "description": "¡Vaya! La página que buscas no existe.",
+    "hint": "Ya que estamos, ¡vete a hacer un poco de inmersión!"
   },
   "patreonTiers": {
     "consumer": "Consumidor",

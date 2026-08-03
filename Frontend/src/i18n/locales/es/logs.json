@@ -6,7 +6,34 @@
     "delete": "Eliminar",
     "details": "Detalles",
     "edit": "Editar",
-    "share": "Compartir"
+    "share": "Compartir",
+    "metrics": {
+      "episodes": "Episodios",
+      "pages": "Páginas",
+      "characters": "Caracteres",
+      "speed": "Velocidad",
+      "time": "Tiempo"
+    },
+    "unknown": "Desconocida",
+    "unknownDate": "Fecha desconocida",
+    "untitled": "Registro sin título",
+    "hoursPlaceholder": "Horas",
+    "minutesPlaceholder": "Minutos",
+    "tooltips": {
+      "episodesWithTime": "{{episodes}} episodios • {{time}} minutos en total",
+      "episodesWatched": "{{episodes}} episodios vistos",
+      "pagesWithChars": "{{pages}} páginas • {{chars}} caracteres",
+      "pagesRead": "{{pages}} páginas leídas",
+      "charsWithSpeed": "{{chars}} caracteres • {{time}} min • {{speed}} caracteres/hora",
+      "charsRead": "{{chars}} caracteres leídos",
+      "readingSpeed": "Velocidad de lectura: {{speed}} caracteres por hora",
+      "minutesManga": "{{time}} minutos leyendo manga",
+      "minutesReading": "{{time}} minutos leyendo",
+      "minutesOfType": "{{time}} minutos de {{type}}"
+    },
+    "speedValue": "{{speed}}/h",
+    "hoursMinutes": "{{hours}} h {{minutes}} min",
+    "minutesOnly": "{{minutes}} min"
   },
   "celebration": {
     "monthlyRanking": "Clasificación mensual",
@@ -144,6 +171,22 @@
     "selectGroupOrTitle": "Selecciona un grupo de registros o escribe un título de {{type}} para buscar",
     "selectOne": "Tienes que seleccionar un contenido",
     "unassignedLogs": "Registros sin asignar"
+  },
+  "quick": {
+    "title": "Registro rápido",
+    "selectType": "Selecciona el tipo de registro",
+    "logType": "Tipo de registro",
+    "loading": "Cargando...",
+    "noResults": "No se han encontrado resultados",
+    "hours": "Horas",
+    "timeSpent": "Tiempo dedicado",
+    "pagesRead": "Páginas leídas",
+    "volume": "Volumen",
+    "descriptionPlaceholder": "Descripción",
+    "durationMinutes": "Duración en minutos",
+    "volumePlaceholder": "1",
+    "created": "Registro creado",
+    "validationErrors": "Corrige los errores de validación"
   },
   "shared": {
     "addHeading": "Añade esto a tu progreso",

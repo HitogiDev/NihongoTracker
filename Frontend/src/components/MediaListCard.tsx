@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart, Layers, Lock, ListOrdered } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { IMediaDocument, IMediaList, MediaListMediaType } from '../types';
 import UserAvatar from './UserAvatar';
 
@@ -10,31 +11,33 @@ interface MediaListCardProps {
   variant?: 'stack' | 'row';
 }
 
-/** Plural nouns used to label an entry count, e.g. "30 VNs", "63 films". */
-const TYPE_LABELS: Record<MediaListMediaType, [string, string]> = {
-  anime: ['anime', 'anime'],
-  manga: ['manga', 'manga'],
-  reading: ['book', 'books'],
-  vn: ['VN', 'VNs'],
-  video: ['video', 'videos'],
-  movie: ['film', 'films'],
-  'tv show': ['show', 'shows'],
-  game: ['game', 'games'],
-  book: ['book', 'books'],
+/**
+ * i18next context suffix per media type. The noun and its plural live in
+ * `media:lists.entries_<context>_<plural>`, so languages whose plural rules
+ * differ from English (Spanish has an extra `many` category) get the right
+ * form without any logic here.
+ */
+const TYPE_CONTEXTS: Record<MediaListMediaType, string> = {
+  anime: 'anime',
+  manga: 'manga',
+  reading: 'book',
+  vn: 'vn',
+  video: 'video',
+  movie: 'movie',
+  'tv show': 'tvShow',
+  game: 'game',
+  book: 'book',
 };
 
-function entryLabel(list: IMediaList) {
+/** The one media type a list is made of, or undefined when it is mixed. */
+function soleTypeContext(list: IMediaList): string | undefined {
   const counts = Object.entries(list.entryTypeCounts ?? {}).filter(
     ([, count]) => (count ?? 0) > 0
   );
-  const plural = list.entryCount === 1 ? 0 : 1;
 
-  if (counts.length === 1) {
-    const labels = TYPE_LABELS[counts[0][0] as MediaListMediaType];
-    if (labels) return `${list.entryCount} ${labels[plural]}`;
-  }
+  if (counts.length !== 1) return undefined;
 
-  return `${list.entryCount} ${list.entryCount === 1 ? 'item' : 'items'}`;
+  return TYPE_CONTEXTS[counts[0][0] as MediaListMediaType];
 }
 
 interface PosterStackProps {
@@ -99,8 +102,13 @@ function MediaListCard({
   showOwner = true,
   variant = 'stack',
 }: MediaListCardProps) {
+  const { t } = useTranslation('media');
   const posters = (list.preview ?? []).slice(0, 5);
   const owner = typeof list.user === 'object' ? list.user : undefined;
+  const entryLabel = t('lists.entries', {
+    count: list.entryCount,
+    context: soleTypeContext(list),
+  });
 
   if (variant === 'row') {
     return (
@@ -122,7 +130,7 @@ function MediaListCard({
             {list.title}
           </h3>
           <p className="text-sm text-base-content/60 mt-1 flex items-center gap-2">
-            <span>{entryLabel(list)}</span>
+            <span>{entryLabel}</span>
             {list.likeCount > 0 && (
               <span className="flex items-center gap-1">
                 <Heart className="w-3.5 h-3.5 fill-current text-error" />
@@ -165,7 +173,7 @@ function MediaListCard({
             <span className="truncate">{owner.username}</span>
           </span>
         )}
-        <span className="shrink-0">{entryLabel(list)}</span>
+        <span className="shrink-0">{entryLabel}</span>
         {list.likeCount > 0 && (
           <span className="flex items-center gap-1 shrink-0">
             <Heart className="w-3.5 h-3.5 fill-current text-error" />
