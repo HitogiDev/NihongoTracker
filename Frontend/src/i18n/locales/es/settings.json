@@ -76,12 +76,12 @@
     "kechimochiHint": "Exporta tus Activity Logs desde Kechimochi y sube ese archivo directamente aquí. No hace falta que edites el formato CSV a mano.",
     "kechimochiOnlyActivity": "Usa solo la exportación de Activity Logs. Esta opción no importa las exportaciones de Milestones ni de Media Library.",
     "kechimochiTitle": "Ayuda para importar de Kechimochi",
-    "kechimochiWatching": "Los registros de visionado se importan como vídeo salvo que Kechimochi indique un subtipo concreto como anime, película o serie.",
+    "kechimochiWatching": "Los logs de visionado se importan como vídeo salvo que Kechimochi indique un subtipo concreto como anime, película o serie.",
     "mediaId": "ID de AniList, VNDB o del contenido",
     "noneOrUnknown": "Entradas marcadas como Ninguno o Desconocido.",
     "notes": "Notas",
     "pages": "Número de páginas leídas",
-    "readingListening": "Los registros de lectura y escucha conservan sus tipos correspondientes.",
+    "readingListening": "Los logs de lectura y escucha conservan sus tipos correspondientes.",
     "required": "Obligatorio",
     "time": "Tiempo dedicado en minutos",
     "title": "Formato CSV personalizado",
@@ -92,7 +92,7 @@
     "cannotBeUndone": "no se puede deshacer",
     "clearAll": "Borrar todos los datos",
     "confirmUsername": "Para confirmar, escribe tu nombre de usuario:",
-    "deleteWarning": "Esto borrará de forma permanente todos tus registros y estadísticas. Esta acción",
+    "deleteWarning": "Esto borrará de forma permanente todos tus logs y estadísticas. Esta acción",
     "irreversibleNote": "Esta acción no se puede deshacer y borrará todos tus datos de forma permanente.",
     "passwordPlaceholder": "Introduce tu contraseña para confirmar",
     "subtitle": "Acciones irreversibles",
@@ -102,7 +102,7 @@
   "data": {
     "export": "Exportar datos",
     "exportCsv": "Exportar como CSV",
-    "exportHint": "Descarga todos tus registros en un archivo CSV que podrás volver a importar más adelante.",
+    "exportHint": "Descarga todos tus logs en un archivo CSV que podrás volver a importar más adelante.",
     "exporting": "Exportando...",
     "import": "Importar archivo",
     "importFrom": "Importar desde archivo",
@@ -110,7 +110,7 @@
     "subtitle": "Importa, sincroniza y exporta tus datos",
     "syncExternal": "Sincronizar datos externos",
     "syncing": "Sincronizando...",
-    "syncLogs": "Sincronizar registros",
+    "syncLogs": "Sincronizar logs",
     "title": "Gestión de datos"
   },
   "header": {
@@ -127,10 +127,10 @@
   },
   "logs": {
     "goToMatch": "Ir a emparejar contenido",
-    "matchHint": "Vincula tus registros sin seguimiento con el tipo de contenido correcto.",
+    "matchHint": "Vincula tus logs sin seguimiento con el tipo de contenido correcto.",
     "matchMedia": "Emparejar contenido",
-    "matchSubtitle": "Empareja registros sin seguimiento con su contenido",
-    "title": "Gestión de registros"
+    "matchSubtitle": "Empareja logs sin seguimiento con su contenido",
+    "title": "Gestión de logs"
   },
   "markdown": {
     "a11y": {
@@ -203,8 +203,8 @@
   "preferences": {
     "blurAdult": "Difuminar contenido adulto",
     "blurAdultHint": "Ocultar el contenido explícito por defecto",
-    "hideUnmatched": "Ocultar el aviso de registros sin emparejar",
-    "hideUnmatchedHint": "No mostrar avisos sobre registros sin emparejar",
+    "hideUnmatched": "Ocultar el aviso de logs sin emparejar",
+    "hideUnmatchedHint": "No mostrar avisos sobre logs sin emparejar",
     "language": {
       "help": "Idioma de toda la interfaz. Se guarda en tu cuenta y se sincroniza entre dispositivos.",
       "label": "Idioma"
@@ -267,7 +267,7 @@
     "title": "Filtrar por etiquetas"
   },
   "tags": {
-    "subtitle": "Crea y gestiona etiquetas para organizar tus registros",
+    "subtitle": "Crea y gestiona etiquetas para organizar tus logs",
     "title": "Etiquetas",
     "manager": {
       "title": "Gestionar etiquetas",
@@ -279,7 +279,7 @@
       "colorPlaceholder": "#3b82f6",
       "preview": "Vista previa",
       "create": "Crear",
-      "empty": "Todavía no hay etiquetas. Crea la primera para organizar tus registros.",
+      "empty": "Todavía no hay etiquetas. Crea la primera para organizar tus logs.",
       "deleteTitle": "¿Eliminar la etiqueta?",
       "deleteTag": "Eliminar la etiqueta",
       "editAction": "Editar la etiqueta",

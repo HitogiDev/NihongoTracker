@@ -24,8 +24,8 @@
     "types": {
       "anime": "Anime",
       "manga": "Manga",
-      "reading": "Novela ligera",
-      "vn": "Novela visual",
+      "reading": "Novela Ligera",
+      "vn": "Novela Visual",
       "movie": "Película",
       "tvShow": "Serie",
       "game": "Videojuego"
@@ -52,7 +52,7 @@
     "subtitle": "Gestiona las acciones de moderación de <b>{{username}}</b>.",
     "refresh": "Actualizar",
     "recalculateTitle": "Recalcular la racha de esta persona",
-    "recalculateBody": "Reconstruye la racha a partir de todos los registros de <b>{{username}}</b>.",
+    "recalculateBody": "Reconstruye la racha a partir de todos los logs de <b>{{username}}</b>.",
     "recalculateAction": "Recalcular racha",
     "rankingBanTitle": "Vetar de las clasificaciones",
     "rankingBanBody": "No aparecerá en la clasificación global ni en el resumen de clasificación.",

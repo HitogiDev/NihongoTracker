@@ -31,7 +31,7 @@
     "close": "Cerrar"
   },
   "cta": {
-    "body": "Gratis. Empieza a registrar tu inmersión.",
+    "body": "Gratis. Empieza a loguear tu inmersión.",
     "joinNow": "Únete ahora",
     "madeBy": "Hecho con ❤️ por otro estudiante",
     "seeFeatures": "Ver todas las funciones →",
@@ -40,14 +40,14 @@
   "dashboard": {
     "greetings": {
       "immersion": "¡Vamos a hacer algo de inmersión!",
-      "track": "¡Toca registrar tu progreso!",
+      "track": "¡Toca loguear tu progreso!",
       "fluency": "Otro día, otro paso hacia la fluidez.",
       "keepUp": "¡Sigue así!",
       "journey": "Un viaje de mil millas empieza con un solo paso."
     },
     "feed": {
       "all": "Toda la actividad",
-      "logs": "Registros",
+      "logs": "Logs",
       "achievements": "Logros",
       "globalFeed": "Actividad global",
       "allTypes": "Todos los tipos",
@@ -71,7 +71,7 @@
     "ranking": {
       "gap": "<xp>{{xp}} XP por detrás de </xp><user>{{username}}</user> este mes",
       "leading": "¡Vas en cabeza de la clasificación mensual!",
-      "notRanked": "Registra algo para entrar en la clasificación de este mes."
+      "notRanked": "Loguea algo para entrar en la clasificación de este mes."
     },
     "recentMedia": "Contenido reciente",
     "jumpBackIn": "Retomar",
@@ -80,10 +80,10 @@
     "hideAria": "Ocultar de contenido reciente",
     "someone": "Alguien",
     "playlistBatch": "Lote de lista de reproducción",
-    "refreshFailed": "No se pudieron actualizar los datos tras el registro rápido",
+    "refreshFailed": "No se pudieron actualizar los datos tras el log rápido",
     "welcomeBack": "Hola de nuevo",
     "actions": {
-      "createLog": "Crear registro",
+      "createLog": "Crear log",
       "profile": "Perfil",
       "rankings": "Clasificación",
       "cancel": "Cancelar",
@@ -101,9 +101,9 @@
       "title": "Inmersión de este mes",
       "subtitle": "Comparado con el mismo periodo del mes pasado"
     },
-    "quickLog": "Registro rápido",
-    "quickShortcuts": "Atajos de registro rápido",
-    "recentEmpty": "Registra algo para desbloquear acciones rápidas aquí.",
+    "quickLog": "Log rápido",
+    "quickShortcuts": "Atajos de log rápido",
+    "recentEmpty": "Loguea algo para desbloquear acciones rápidas aquí.",
     "thisMedia": "este contenido",
     "hideConfirm": "¿Seguro que quieres ocultar <title>{{title}}</title> de tu contenido reciente? Dejará de aparecer en las acciones rápidas."
   },
@@ -128,11 +128,11 @@
     "categories": {
       "tracking": {
         "title": "Seguimiento inteligente de la inmersión",
-        "description": "Sistema de registro completo para todo tu contenido en japonés",
+        "description": "Sistema completo para loguear todo tu contenido en japonés",
         "items": {
           "multiMedia": {
             "title": "Compatible con todo tipo de contenido",
-            "description": "Registra anime, manga, novelas visuales, libros, audiolibros, películas, series y más"
+            "description": "Loguea anime, manga, novelas visuales, libros, audiolibros, películas, series y más"
           },
           "durationEstimates": {
             "title": "Estimación automática de duración",
@@ -148,15 +148,15 @@
           },
           "databaseIntegration": {
             "title": "Integración con bases de datos",
-            "description": "Emparejado automático con AniList, VNDB y nuestra amplia base de datos para registrar sin esfuerzo"
+            "description": "Emparejado automático con AniList, VNDB y nuestra amplia base de datos para loguear sin esfuerzo"
           },
           "importExport": {
-            "title": "Importar y exportar registros",
+            "title": "Importar y exportar logs",
             "description": "Importa desde otros trackers y exporta tus datos"
           },
           "texthooker": {
             "title": "Integración con el texthooker",
-            "description": "Registra tus sesiones de lectura de novelas visuales en tiempo real, con analíticas de caracteres y líneas sincronizadas con tus registros"
+            "description": "Loguea tus sesiones de lectura de novelas visuales en tiempo real, con analíticas de caracteres y líneas sincronizadas con tus logs"
           }
         }
       },
@@ -222,7 +222,7 @@
       },
       "social": {
         "title": "Funciones sociales y competición",
-        "description": "Conecta con otras personas que aprenden y compara vuestro progreso",
+        "description": "Conecta con otras personas que aprenden y compara tu progreso",
         "items": {
           "rankings": {
             "title": "Clasificaciones globales",
@@ -241,8 +241,8 @@
             "description": "Consulta las estadísticas de la comunidad y la actividad reciente de cualquier contenido"
           },
           "logSharing": {
-            "title": "Compartir registros",
-            "description": "Comparte con la comunidad registros y descubrimientos interesantes"
+            "title": "Compartir logs",
+            "description": "Comparte con la comunidad logs y descubrimientos interesantes"
           },
           "activityFeed": {
             "title": "Actividad reciente",
@@ -260,7 +260,7 @@
           },
           "mediaTracking": {
             "title": "Seguimiento del contenido del club",
-            "description": "Seguid en común el progreso del contenido elegido por el club"
+            "description": "Sigue en común el progreso del contenido elegido por el club"
           },
           "memberRankings": {
             "title": "Clasificación de miembros",
@@ -272,7 +272,7 @@
           },
           "voting": {
             "title": "Votación de contenido",
-            "description": "Votad qué contenido leerá o verá el club a continuación"
+            "description": "Vota qué contenido leerá o verá el club a continuación"
           },
           "activity": {
             "title": "Seguimiento de actividad",
@@ -302,7 +302,7 @@
           },
           "export": {
             "title": "Exportación de datos",
-            "description": "Exporta tus registros y estadísticas para analizarlos por fuera"
+            "description": "Exporta tus logs y estadísticas para analizarlos por fuera"
           },
           "sync": {
             "title": "Sincronización entre dispositivos",
@@ -318,7 +318,7 @@
       "steps": {
         "track": {
           "title": "Regístralo todo",
-          "description": "Registra anime, manga, libros y cualquier contenido en japonés con métricas detalladas."
+          "description": "Loguea anime, manga, libros y cualquier contenido en japonés con métricas detalladas."
         },
         "analyze": {
           "title": "Analiza tu progreso",
@@ -336,51 +336,51 @@
     },
     "cta": {
       "title": "¿Listo para empezar?",
-      "subtitle": "Gratis, empieza a registrar tu inmersión.",
-      "primary": "Empezar a registrar",
+      "subtitle": "Gratis, empieza a loguear tu inmersión.",
+      "primary": "Empezar a loguear",
       "secondary": "Ver clasificaciones →",
       "madeWith": "Hecho con ❤️ por alguien que también aprende"
     }
   },
   "hero": {
     "builtForVn": "Hecho para quienes leen<br />novelas visuales",
-    "clubBody": "Únete a un club de inmersión o crea el tuyo. Competid en las clasificaciones del club.",
-    "clubBullet1": "Votad qué contenido consumir juntos a continuación",
+    "clubBody": "Únete a un club de inmersión o crea el tuyo. Compite en las clasificaciones del club.",
+    "clubBullet1": "Vota qué contenido consumir juntos a continuación",
     "clubBullet2": "Clubes públicos y privados con etiquetas",
     "clubBullet3": "Encuentra clubes por género, estilo o nivel",
     "clubs": "Clubes",
     "dashboardAlt": "Panel de NihongoTracker",
     "freeForever": "Empieza hoy · Las funciones principales son gratis para siempre",
-    "friendly": "Un poco de<br />piques sanos",
+    "friendly": "Un poco de<br />competitividad sana",
     "hookerAlt": "Panel del TextHooker",
-    "hookerBody": "El texthooker integrado hace fácil registrar tus sesiones.",
+    "hookerBody": "El texthooker integrado hace fácil loguear tus sesiones.",
     "hookerBullet1": "Salas de texthooker compartidas para leer en grupo",
     "hookerBullet2": "Historial completo de sesiones por título",
-    "hookerBullet3": "Registra la sesión de lectura con un clic",
+    "hookerBullet3": "Loguea la sesión de lectura con un clic",
     "leaderboards": "Clasificaciones",
     "learnBetter": "Aprende mejor<br />acompañado",
     "logBody": "Busca un título, rellena los datos y guarda. Se acabó apuntar cosas a mano.",
     "logBullet1": "Anime, manga, novelas visuales, audio, novelas ligeras y más",
     "logBullet2": "Integración con AniList y VNDB para traer los datos al instante",
     "logBullet3": "XP y rachas calculadas solas",
-    "logInstant": "Registra en un momento",
-    "logTracking": "Registro de sesiones",
+    "logInstant": "Loguea en un momento",
+    "logTracking": "Logueo de sesiones",
     "rankBody": "Mira cómo te comparas con otros estudiantes, en global o por medio.",
     "rankBullet1": "Clasificaciones globales y por medio",
     "rankBullet2": "Clasificaciones mensuales e históricas",
     "rankBullet3": "Filtros por periodo, medio y escucha o lectura",
     "seeFeatures": "Ver todas las funciones",
     "seeHowFar": "Mira exactamente<br />cuánto has avanzado",
-    "startTracking": "Empezar a registrar",
+    "startTracking": "Empezar a loguear",
     "statistics": "Estadísticas",
     "statsBody": "Gráficos y desgloses detallados muestran tu evolución con el tiempo.",
     "statsBullet1": "Progreso de nivel global, de escucha y de lectura",
     "statsBullet2": "Mapa de calor de actividad, rachas y medias diarias",
     "statsBullet3": "Filtra por periodo, medio o etiquetas",
-    "trackEveryType": "Registra cualquier tipo de inmersión",
+    "trackEveryType": "Loguea cualquier tipo de inmersión",
     "tagline": "La mejor forma de <verb></verb> tu inmersión en japonés",
     "taglineVerbs": {
-      "track": "registrar",
+      "track": "loguear",
       "gamify": "gamificar",
       "celebrate": "celebrar",
       "share": "compartir"

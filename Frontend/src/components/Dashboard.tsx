@@ -653,7 +653,7 @@ function Dashboard() {
             <div className="card-body space-y-4">
               {/* Header */}
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
+                <div className="min-w-0">
                   <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
                     {t('dashboard.feed.globalFeed')}
                   </h2>
@@ -661,13 +661,13 @@ function Dashboard() {
                     {t('dashboard.feed.subtitle')}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
                   {/* Kind filter */}
                   <div className="dropdown dropdown-end">
                     <div
                       tabIndex={0}
                       role="button"
-                      className="btn btn-sm btn-outline gap-2 justify-start"
+                      className="btn btn-sm btn-outline gap-2 justify-start whitespace-nowrap"
                     >
                       {(() => {
                         const Icon = feedKindOptions.find(
@@ -710,7 +710,7 @@ function Dashboard() {
                       <div
                         tabIndex={0}
                         role="button"
-                        className="btn btn-sm btn-outline gap-2"
+                        className="btn btn-sm btn-outline gap-2 whitespace-nowrap"
                       >
                         <Funnel className="w-3.5 h-3.5" />
                         {tAny(
@@ -758,7 +758,7 @@ function Dashboard() {
                     <div
                       tabIndex={0}
                       role="button"
-                      className="btn btn-sm btn-outline gap-2"
+                      className="btn btn-sm btn-outline gap-2 whitespace-nowrap"
                     >
                       <Clock className="w-3.5 h-3.5" />
                       {t(

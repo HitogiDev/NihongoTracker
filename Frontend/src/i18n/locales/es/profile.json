@@ -57,7 +57,7 @@
   },
   "feed": {
     "all": "Toda la actividad",
-    "logs": "Registros",
+    "logs": "Logs",
     "achievements": "Logros"
   },
   "filters": {
@@ -79,7 +79,7 @@
     "avatarAlt": "Avatar de {{username}}"
   },
   "loadMore": "Cargar más",
-  "loadMoreLogs": "Cargar más registros",
+  "loadMoreLogs": "Cargar más logs",
   "nothingMore": "No hay nada más que cargar",
   "progress": {
     "title": "Progreso",
@@ -90,7 +90,7 @@
     "xp": "{{current}}/{{total}} XP"
   },
   "search": {
-    "placeholder": "Buscar registros...",
+    "placeholder": "Buscar logs...",
     "clear": "Limpiar la búsqueda"
   },
   "sort": {

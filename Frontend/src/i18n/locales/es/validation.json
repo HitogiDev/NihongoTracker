@@ -28,7 +28,7 @@
     "minutesMax": "Los minutos no pueden superar 59",
     "movieDurationRequired": "Introduce la duración de la película (debe ser mayor que 0)",
     "movieDurationTooHigh": "La duración de la película parece excesiva (máx.: 1000 minutos)",
-    "noProgress": "Registra algo de progreso antes de enviar",
+    "noProgress": "Loguea algo de progreso antes de enviar",
     "pagesCharsOrTime": "Introduce las páginas leídas, los caracteres leídos o el tiempo dedicado",
     "pagesNegative": "Las páginas no pueden ser negativas",
     "pagesTooHigh": "El número de páginas parece excesivo (máx.: 10.000)",
@@ -39,7 +39,7 @@
     "titleMaxLength": "El título debe tener menos de 200 caracteres",
     "titleRequired": "Introduce un título o una descripción",
     "totalTimeMax": "El tiempo total no puede superar 24 horas",
-    "typeRequired": "Selecciona un tipo de registro",
+    "typeRequired": "Selecciona un tipo de log",
     "volumeTooHigh": "El número de volumen parece excesivo (máx.: 10.000)"
   },
   "login": {

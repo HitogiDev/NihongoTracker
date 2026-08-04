@@ -179,7 +179,7 @@ function Header() {
   return (
     <div className="relative">
       <div className="navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
-        <div className="navbar-start w-auto">
+        <div className="navbar-start flex-1 w-auto">
           <div className="dropdown">
             <div
               tabIndex={0}
@@ -309,7 +309,6 @@ function Header() {
                     {t('links.settings')}
                   </Link>
                 </li>
-                <LanguageMenuItem />
                 <li>
                   <a
                     onClick={logoutHandler}
@@ -364,7 +363,7 @@ function Header() {
           </Link>
         </div>
         {user ? (
-          <div className="hidden min-[1450px]:inline-flex flex-1 justify-center">
+          <div className="hidden min-[1450px]:inline-flex flex-none justify-center">
             {/* <QuickLog /> */}
             <ul className="inline-flex flex-row gap-3 min-[1600px]:gap-6">
               <li>
@@ -426,7 +425,7 @@ function Header() {
             </ul>
           </div>
         ) : (
-          <div className="navbar-center hidden xl:flex flex-1 justify-center">
+          <div className="navbar-center hidden xl:flex flex-none justify-center">
             <ul className="inline-flex flex-row gap-6">
               <li>
                 <Link
@@ -456,7 +455,7 @@ function Header() {
           </div>
         )}
 
-        <div className="navbar-end w-auto gap-1 sm:gap-3 mx-1 sm:mx-3">
+        <div className="navbar-end flex-1 w-auto gap-1 sm:gap-3 mx-1 sm:mx-3">
           {/* Search Button */}
           <button
             className="btn btn-ghost btn-sm sm:btn-md gap-2"
@@ -567,7 +566,6 @@ function Header() {
                       {t('links.settings')}
                     </Link>
                   </li>
-                  <LanguageMenuItem />
                   <li>
                     <Link
                       to="/support"

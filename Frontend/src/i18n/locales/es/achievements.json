@@ -30,19 +30,19 @@
       "name": "Completista"
     },
     "bookworm_hours": {
-      "description": "Registra 50 horas de lectura (manga y novelas juntos).",
+      "description": "Loguea 50 horas de lectura (manga y novelas juntos).",
       "name": "Ratón de biblioteca"
     },
     "century_club": {
       "name": "Club del centenar",
-      "description": "Registra 100 títulos distintos."
+      "description": "Loguea 100 títulos distintos."
     },
     "cinephile": {
-      "description": "Registra 100 horas de anime.",
+      "description": "Loguea 100 horas de anime.",
       "name": "Cinéfilo"
     },
     "clockwork": {
-      "description": "Registra a la misma hora todos los días durante 2 semanas.",
+      "description": "Loguea a la misma hora todos los días durante 2 semanas.",
       "name": "Como un reloj"
     },
     "club_founder": {
@@ -54,43 +54,43 @@
       "name": "MVP del club"
     },
     "culture_day": {
-      "description": "Registra inmersión el 3 de noviembre (文化の日).",
+      "description": "Loguea inmersión el 3 de noviembre (文化の日).",
       "name": "Día de la Cultura"
     },
     "currently_airing": {
-      "description": "Registra un anime durante su temporada de emisión.",
+      "description": "Loguea un anime durante su temporada de emisión.",
       "name": "En emisión"
     },
     "early_bird": {
-      "description": "Registra inmersión antes de las 7 de la mañana 10 veces.",
+      "description": "Loguea inmersión antes de las 7 de la mañana 10 veces.",
       "name": "Madrugador"
     },
     "first_log": {
-      "description": "Registra tu primera sesión de inmersión.",
+      "description": "Loguea tu primera sesión de inmersión.",
       "name": "Primer paso"
     },
     "full_immersion_month": {
-      "description": "Registra todos los días de un mes entero.",
+      "description": "Loguea todos los días de un mes entero.",
       "name": "Inmersión total"
     },
     "gamer": {
-      "description": "Registra 50 horas de novelas visuales.",
+      "description": "Loguea 50 horas de novelas visuales.",
       "name": "Jugador"
     },
     "hours_100": {
-      "description": "Registra 100 horas de inmersión en total.",
+      "description": "Loguea 100 horas de inmersión en total.",
       "name": "Constante"
     },
     "hours_1000": {
-      "description": "Registra 1.000 horas de inmersión en total.",
+      "description": "Loguea 1.000 horas de inmersión en total.",
       "name": "Esto ya es mi vida"
     },
     "hours_2000": {
-      "description": "Registra 2.000 horas de inmersión en total.",
+      "description": "Loguea 2.000 horas de inmersión en total.",
       "name": "Máquina de inmersión"
     },
     "hours_500": {
-      "description": "Registra 500 horas de inmersión en total.",
+      "description": "Loguea 500 horas de inmersión en total.",
       "name": "Otaku"
     },
     "level_10": {
@@ -114,51 +114,51 @@
       "name": "Avanzado"
     },
     "logs_10": {
-      "description": "Crea 10 registros de inmersión.",
+      "description": "Crea 10 logs de inmersión.",
       "name": "Arrancando"
     },
     "logs_100": {
-      "description": "Crea 100 registros de inmersión.",
+      "description": "Crea 100 logs de inmersión.",
       "name": "Habitual"
     },
     "logs_1000": {
-      "description": "Crea 1.000 registros de inmersión.",
+      "description": "Crea 1.000 logs de inmersión.",
       "name": "Veterano"
     },
     "logs_50": {
-      "description": "Crea 50 registros de inmersión.",
+      "description": "Crea 50 logs de inmersión.",
       "name": "Inmersión habitual"
     },
     "logs_500": {
-      "description": "Crea 500 registros de inmersión.",
-      "name": "Registrador prolífico"
+      "description": "Crea 500 logs de inmersión.",
+      "name": "Logueador prolífico"
     },
     "lunch_break": {
-      "description": "Registra inmersión entre las 12 y la 1 del mediodía 10 veces.",
+      "description": "Loguea inmersión entre las 12 y la 1 del mediodía 10 veces.",
       "name": "Pausa para comer"
     },
     "marathon_day": {
-      "description": "Registra 10 horas o más de inmersión en un solo día.",
+      "description": "Loguea 10 horas o más de inmersión en un solo día.",
       "name": "Maratón"
     },
     "monday_motivation": {
-      "description": "Registra 10 lunes seguidos.",
+      "description": "Loguea 10 lunes seguidos.",
       "name": "Motivación de lunes"
     },
     "new_year": {
-      "description": "Registra inmersión el 1 de enero.",
+      "description": "Loguea inmersión el 1 de enero.",
       "name": "Año nuevo, yo nuevo"
     },
     "night_owl": {
-      "description": "Registra inmersión después de medianoche 10 veces.",
+      "description": "Loguea inmersión después de medianoche 10 veces.",
       "name": "Ave nocturna"
     },
     "no_days_off": {
-      "description": "Registra en Navidad, en Año Nuevo y en el aniversario de tu cuenta.",
+      "description": "Loguea en Navidad, en Año Nuevo y en el aniversario de tu cuenta.",
       "name": "Sin días libres"
     },
     "old_school": {
-      "description": "Registra una novela visual publicada antes de 2005.",
+      "description": "Loguea una novela visual publicada antes de 2005.",
       "name": "De la vieja escuela"
     },
     "platform_year": {
@@ -166,7 +166,7 @@
       "name": "A largo plazo"
     },
     "podcast_brain": {
-      "description": "Registra 30 horas de contenido solo de audio.",
+      "description": "Loguea 30 horas de contenido solo de audio.",
       "name": "Cerebro de pódcast"
     },
     "rank_consistent": {
@@ -186,11 +186,11 @@
       "name": "Top 10"
     },
     "renaissance_learner": {
-      "description": "Registra los 6 tipos de contenido en una misma semana.",
+      "description": "Loguea los 6 tipos de contenido en una misma semana.",
       "name": "Estudiante renacentista"
     },
     "secret_absorbed": {
-      "description": "Registra 6 horas o más de un mismo título en una sola sesión.",
+      "description": "Loguea 6 horas o más de un mismo título en una sola sesión.",
       "hint": "Absorto por completo...",
       "name": "夢中"
     },
@@ -230,7 +230,7 @@
       "name": "不屈の精神"
     },
     "secret_loyal": {
-      "description": "Registra todos los días de una semana justo después de romper una racha.",
+      "description": "Loguea todos los días de una semana justo después de romper una racha.",
       "hint": "La lealtad no se abandona fácilmente...",
       "name": "Leal"
     },
@@ -240,7 +240,7 @@
       "name": "Fénix"
     },
     "secret_speedrunner": {
-      "description": "Registra una sesión antes de 60 segundos desde la anterior.",
+      "description": "Loguea una sesión antes de 60 segundos desde el log anterior.",
       "hint": "Vas muy rápido...",
       "name": "Speedrunner"
     },
@@ -250,7 +250,7 @@
       "name": "一千万の証"
     },
     "sprinter_day": {
-      "description": "Registra 5 sesiones de inmersión distintas en un solo día.",
+      "description": "Loguea 5 sesiones de inmersión distintas en un solo día.",
       "name": "Esprínter"
     },
     "streak_100": {
@@ -274,15 +274,15 @@
       "name": "Arrancando la racha"
     },
     "tanabata": {
-      "description": "Registra inmersión el 7 de julio (七夕).",
+      "description": "Loguea inmersión el 7 de julio (七夕).",
       "name": "Tanabata"
     },
     "week_24h": {
-      "description": "Registra 24 horas de inmersión en una sola semana.",
+      "description": "Loguea 24 horas de inmersión en una sola semana.",
       "name": "¿Has dormido?"
     },
     "weekend_warrior": {
-      "description": "Registra todos los sábados y domingos de un mes entero.",
+      "description": "Loguea todos los sábados y domingos de un mes entero.",
       "name": "Guerrero de fin de semana"
     },
     "xp_1000": {

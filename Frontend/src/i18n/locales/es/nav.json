@@ -6,8 +6,8 @@
     "userMenu": "Menú de {{username}}"
   },
   "actions": {
-    "createLog": "Crear registro",
-    "createLogShort": "Registro"
+    "createLog": "Crear log",
+    "createLogShort": "Log"
   },
   "footer": {
     "and": "y",
@@ -28,7 +28,7 @@
     "admin": "Administración",
     "calculator": "Calculadora",
     "clubs": "Clubes",
-    "donate": "Donar",
+    "donate": "Apoyar",
     "features": "Funciones",
     "home": "Inicio",
     "immersionList": "Lista de inmersión",
@@ -60,7 +60,7 @@
     "clubs": "Clubes",
     "clubSection": "{{section}} • Club",
     "createClub": "Crear club",
-    "createLog": "Crear registro",
+    "createLog": "Crear log",
     "features": "Funciones",
     "forgotPassword": "Recuperar contraseña",
     "goals": "Objetivos",
@@ -89,7 +89,7 @@
       "stats": "estadísticas"
     },
     "settings": "Ajustes",
-    "sharedLog": "Registro compartido",
+    "sharedLog": "Log compartido",
     "support": "Apoyo",
     "terms": "Términos del servicio",
     "userSection": "{{section}} de {{username}}",

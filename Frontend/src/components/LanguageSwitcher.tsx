@@ -7,23 +7,42 @@ import {
 } from '../i18n/languages';
 import { useSetLanguage } from '../hooks/useSetLanguage';
 
+interface LanguageSwitcherProps {
+  /** Extra classes for the dropdown wrapper, e.g. `dropdown-top`. */
+  className?: string;
+  /** Extra classes for the trigger button. */
+  buttonClassName?: string;
+  /** Render the current language name next to the globe icon. */
+  showLabel?: boolean;
+}
+
 /**
  * Standalone globe dropdown for the header toolbar (logged-out users, next to
- * the theme toggle).
+ * the theme toggle) and the footer.
  */
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({
+  className = 'dropdown-end',
+  buttonClassName = 'btn btn-ghost btn-sm sm:btn-md btn-circle',
+  showLabel = false,
+}: LanguageSwitcherProps = {}) {
   const { t, i18n } = useTranslation('nav');
   const setLanguage = useSetLanguage();
+  const currentLanguage = SUPPORTED_LANGUAGES.find(
+    (language) => language === i18n.language
+  );
 
   return (
-    <div className="dropdown dropdown-end">
+    <div className={`dropdown ${className}`}>
       <div
         tabIndex={0}
         role="button"
-        className="btn btn-ghost btn-sm sm:btn-md btn-circle"
+        className={buttonClassName}
         aria-label={t('language.switcherLabel')}
       >
         <Globe className="w-5 h-5" />
+        {showLabel && currentLanguage ? (
+          <span>{LANGUAGE_LABELS[currentLanguage]}</span>
+        ) : null}
       </div>
       <ul
         tabIndex={0}
@@ -35,7 +54,12 @@ export default function LanguageSwitcher() {
               className={`rounded-lg font-medium whitespace-nowrap ${
                 i18n.language === language ? 'active text-primary' : ''
               }`}
-              onClick={() => setLanguage(language)}
+              onClick={() => {
+                setLanguage(language);
+                if (document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur();
+                }
+              }}
             >
               {LANGUAGE_LABELS[language]}
             </a>

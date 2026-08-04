@@ -11,7 +11,7 @@
     "dailyAvgChars": "Media diaria de caracteres",
     "listening": "Escucha",
     "listeningHint": "Anime, vídeo, audio, películas y series",
-    "logCount": "Número de registros",
+    "logCount": "Número de logs",
     "longestStreak": "Racha más larga",
     "longestStreakHint": "La racha más larga que has mantenido",
     "pages": "Páginas",
@@ -30,7 +30,7 @@
     "readingSpeedOverTime": "Velocidad de lectura en el tiempo",
     "timeDistribution": "Distribución del tiempo",
     "timelineFailed": "No se pudieron cargar los datos de la cronología.",
-    "timelineHint": "Cada barra va desde tu primera hasta tu última sesión registrada",
+    "timelineHint": "Cada barra va desde tu primera hasta tu última sesión logueada",
     "view": "Vista:",
     "xpDistribution": "Distribución de la XP"
   },
@@ -43,8 +43,8 @@
     "clearSearch": "Limpiar la búsqueda",
     "customRange": "Rango personalizado",
     "immersedDaysOnly": "Solo días con inmersión",
-    "maxLogs": "Máx. registros",
-    "minLogs": "Mín. registros",
+    "maxLogs": "Máx. logs",
+    "minLogs": "Mín. logs",
     "searchTitles": "Buscar títulos",
     "selectAll": "Seleccionar todo",
     "selectNone": "No seleccionar nada"
@@ -107,9 +107,9 @@
   "sort": {
     "azAsc": "Alfabético (A-Z)",
     "azDesc": "Alfabético (Z-A)",
-    "firstLog": "Primer registro (más antiguo)",
-    "lastLog": "Último registro (más reciente)",
-    "mostLogs": "Más registros",
+    "firstLog": "Primer log (más antiguo)",
+    "lastLog": "Último log (más reciente)",
+    "mostLogs": "Más logs",
     "mostTime": "Más tiempo",
     "mostXp": "Más XP"
   },

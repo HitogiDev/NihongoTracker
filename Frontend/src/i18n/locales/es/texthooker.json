@@ -4,13 +4,13 @@
     "subtitle": "Sigue tu progreso de lectura con el texthooker",
     "stats": {
       "sessions": "Sesiones totales",
-      "sessionsDesc": "Sesiones de texthooker registradas",
+      "sessionsDesc": "Sesiones de texthooker logueadas",
       "lines": "Líneas totales",
       "linesDesc": "Líneas capturadas",
       "characters": "Caracteres totales",
       "charactersDesc": "Caracteres japoneses leídos",
       "time": "Tiempo total",
-      "timeDesc": "Tiempo registrado leyendo"
+      "timeDesc": "Tiempo logueado leyendo"
     },
     "recentSessions": "Sesiones recientes",
     "empty": "Todavía no hay sesiones",
@@ -119,14 +119,14 @@
     "toast": {
       "copyInviteFailed": "No se pudo copiar el enlace de invitación",
       "copyLinesFailed": "No se pudieron copiar las líneas",
-      "logFailed": "No se pudo registrar la sesión",
+      "logFailed": "No se pudo loguear la sesión",
       "startFailed": "No se pudo iniciar una sesión nueva"
     }
   },
   "mediaSession": {
     "title": "Iniciar una sesión con contenido",
     "mediaType": "Tipo de contenido",
-    "visualNovel": "Novela visual",
+    "visualNovel": "Novela Visual",
     "videoGame": "Videojuego",
     "searchPlaceholder_vn": "Busca una novela visual...",
     "searchPlaceholder_game": "Busca un videojuego...",
