@@ -1160,6 +1160,7 @@ export type NotificationSectionType =
 export interface INotificationSummaryItem {
   id: string;
   label: string;
+  labelKey?: string;
   count: number;
   type?: NotificationType | 'club_join_requests';
   meta?: Record<string, string>;
@@ -1178,8 +1179,12 @@ export interface INotificationSummaryResponse {
 
 export interface INotificationListItem {
   id: string;
+  /** English text; shown whenever no translation key matches. */
   label: string;
+  /** Translation key for `label`; interpolation values live in `meta`. */
+  labelKey?: string;
   body?: string;
+  bodyKey?: string;
   type?: NotificationType | 'club_join_requests';
   count: number;
   isRead: boolean;

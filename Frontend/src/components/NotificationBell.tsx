@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  getNotificationBody,
+  getNotificationLabel,
+} from '../utils/notificationText';
 import { Link } from 'react-router-dom';
 import {
   useInfiniteQuery,
@@ -236,7 +240,7 @@ function NotificationBell() {
                       : 'text-base-content/65'
                   }`}
                 >
-                  {item.label}
+                  {getNotificationLabel(item)}
                 </p>
                 <span
                   className={`badge badge-sm ${
@@ -248,7 +252,7 @@ function NotificationBell() {
               </div>
               {item.body && (
                 <p className="mt-0.5 text-xs text-base-content/60 line-clamp-1">
-                  {item.body}
+                  {getNotificationBody(item)}
                 </p>
               )}
             </div>
@@ -383,7 +387,7 @@ function NotificationBell() {
           </div>
 
           <p className="text-sm text-base-content/80 mb-4">
-            {deleteConfirmItem?.label}
+            {deleteConfirmItem ? getNotificationLabel(deleteConfirmItem) : ''}
           </p>
 
           <label className="label cursor-pointer justify-start gap-3 py-2 text-base-content">

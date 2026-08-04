@@ -1087,8 +1087,15 @@ export interface INotification extends Document {
   recipient: Types.ObjectId;
   actor?: Types.ObjectId | null;
   type: NotificationType;
+  /**
+   * English text, always written. Rows created before i18n have only this, and
+   * the client falls back to it whenever a key is missing or unknown.
+   */
   title: string;
   body?: string;
+  /** Translation keys written alongside the English text (see `meta` for params). */
+  titleKey?: string | null;
+  bodyKey?: string | null;
   link?: string;
   image?: string;
   entityType?: string | null;
@@ -1106,6 +1113,8 @@ export interface INotification extends Document {
 export interface INotificationSummaryItem {
   id: string;
   label: string;
+  /** Translation key for `label`; the client falls back to `label` without it. */
+  labelKey?: string;
   count: number;
   type: NotificationType | 'club_join_requests';
   meta?: Record<string, string>;

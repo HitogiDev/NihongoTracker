@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ICreateLog, ILog, IMediaDocument, youtubeChannelInfo } from '../types';
 import { createLogFn, getMediaFn, getUserLogsFn } from '../api/trackerApi';
@@ -8,6 +8,7 @@ import { AxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { validateQuickLogData } from '../utils/validation';
+import { LOG_TYPE_OPTIONS } from '../utils/logTypes';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
@@ -111,6 +112,15 @@ function QuickLog({
   const { t: tCommon } = useTranslation('common');
   const vt = useValidationText();
   const { user } = useUserDataStore();
+  // `allowedTypes` narrows the list for callers that log into a fixed context
+  // (a club media, a playlist); it keeps the canonical display order.
+  const logTypeOptions = useMemo(
+    () =>
+      allowedTypes
+        ? LOG_TYPE_OPTIONS.filter(({ value }) => allowedTypes.includes(value))
+        : LOG_TYPE_OPTIONS,
+    [allowedTypes]
+  );
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
   const [logDescription, setLogDescription] = useState<string>('');
   const [episodes, setEpisodes] = useState<number>(0);
@@ -600,33 +610,14 @@ function QuickLog({
                         onChange={(e) =>
                           setLogType(e.target.value as ILog['type'])
                         }
-                        value={logType || t('quick.logType')}
+                        value={logType ?? ''}
                       >
-                        <option disabled value="Log type">
-                          Log type
+                        <option disabled value="">
+                          {t('quick.logType')}
                         </option>
-                        {(
-                          allowedTypes ?? [
-                            'anime',
-                            'manga',
-                            'vn',
-                            'game',
-                            'video',
-                            'movie',
-                            'tv show',
-                            'reading',
-                            'audio',
-                          ]
-                        ).map((type) => (
-                          <option key={type} value={type}>
-                            {type === 'vn'
-                              ? tCommon('mediaTypes.vn')
-                              : type === 'game'
-                                ? tCommon('mediaTypes.game')
-                                : type === 'tv show'
-                                  ? 'TV Show'
-                                  : type.charAt(0).toUpperCase() +
-                                    type.slice(1)}
+                        {logTypeOptions.map(({ value, labelKey }) => (
+                          <option key={value} value={value}>
+                            {tCommon(labelKey)}
                           </option>
                         ))}
                       </select>

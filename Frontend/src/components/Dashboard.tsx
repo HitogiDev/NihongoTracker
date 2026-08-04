@@ -505,7 +505,7 @@ function Dashboard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm uppercase tracking-wide text-primary font-semibold">
-            Welcome back
+            {t('dashboard.welcomeBack')}
           </p>
           <h1 className="text-3xl md:text-4xl font-bold text-base-content">
             {user.username}
@@ -515,18 +515,18 @@ function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
           <Link to="/log" className="btn btn-primary btn-lg">
             <Plus className="w-5 h-5" />
-            Create Log
+            {t('dashboard.actions.createLog')}
           </Link>
           <Link
             to={`/user/${user.username}`}
             className="btn btn-secondary btn-lg"
           >
             <User className="w-5 h-5" />
-            Profile
+            {t('dashboard.actions.profile')}
           </Link>
           <Link to="/ranking" className="btn btn-accent btn-lg">
             <ChartNoAxesColumn className="w-5 h-5" />
-            Rankings
+            {t('dashboard.actions.rankings')}
           </Link>
         </div>
       </div>
@@ -548,13 +548,13 @@ function Dashboard() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-wide text-secondary">
-                  Streak
+                  {t('dashboard.streak.label')}
                 </p>
                 <h3 className="text-2xl font-bold text-base-content">
-                  {streak} day{streak === 1 ? '' : 's'}
+                  {t('dashboard.streak.days', { count: streak })}
                 </h3>
                 <p className="text-base-content/70 text-sm">
-                  Keep it burning with daily immersion
+                  {t('dashboard.streak.hint')}
                 </p>
               </div>
             </div>
@@ -568,7 +568,7 @@ function Dashboard() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-wide text-primary">
-                  Monthly Ranking
+                  {t('dashboard.monthlyRanking')}
                 </p>
                 <h3 className="text-2xl font-bold text-base-content">
                   #{monthlyRanking?.position ?? '—'} /{' '}
@@ -586,10 +586,10 @@ function Dashboard() {
           <div className="card bg-base-100 shadow-sm border border-base-200/60">
             <div className="card-body">
               <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
-                This Month's Immersion
+                {t('dashboard.immersion.title')}
               </h2>
               <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} -mt-1 mb-4`}>
-                Compared to the same period last month
+                {t('dashboard.immersion.subtitle')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
@@ -658,7 +658,7 @@ function Dashboard() {
                     {t('dashboard.feed.globalFeed')}
                   </h2>
                   <p className={DASHBOARD_CARD_DESCRIPTION_CLASS}>
-                    See what the community is immersing in right now
+                    {t('dashboard.feed.subtitle')}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -816,7 +816,7 @@ function Dashboard() {
                       if (items.length === 0) {
                         return (
                           <div className="text-base-content/70 text-sm">
-                            No activity for the selected filters.
+                            {t('dashboard.feed.empty')}
                           </div>
                         );
                       }
@@ -1022,9 +1022,12 @@ function Dashboard() {
         <div className="modal-box">
           <h3 className="font-bold text-lg">{t('dashboard.hideTitle')}</h3>
           <p className="py-4">
-            Are you sure you want to hide{' '}
-            <span className="font-semibold">{mediaToRemove?.title}</span> from
-            your recent media? It will no longer appear in quick actions.
+            <Trans
+              t={t}
+              i18nKey="dashboard.hideConfirm"
+              values={{ title: mediaToRemove?.title ?? '' }}
+              components={{ title: <span className="font-semibold" /> }}
+            />
           </p>
           <div className="modal-action">
             <button
@@ -1032,7 +1035,7 @@ function Dashboard() {
               className="btn"
               onClick={() => setMediaToRemove(null)}
             >
-              Cancel
+              {t('dashboard.actions.cancel')}
             </button>
             <button
               type="button"
@@ -1043,14 +1046,14 @@ function Dashboard() {
               {hideMediaMutation.isPending ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : (
-                'Hide'
+                t('dashboard.actions.hide')
               )}
             </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
           <button type="button" onClick={() => setMediaToRemove(null)}>
-            close
+            {t('common.close')}
           </button>
         </form>
       </dialog>
@@ -1075,6 +1078,8 @@ function RecentMediaPanel({
   onQuickLog,
   onRemove,
 }: RecentMediaPanelProps) {
+  const { t } = useTranslation('home');
+
   return (
     <div className="card bg-base-100 shadow-sm border border-base-200/60">
       <div className="card-body space-y-4">
@@ -1084,16 +1089,16 @@ function RecentMediaPanel({
               className={`${DASHBOARD_CARD_TITLE_CLASS} flex items-center gap-2`}
             >
               <CirclePlus className="w-5 h-5 text-primary" />
-              Recent Media
+              {t('dashboard.recentMedia')}
             </h2>
             <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
-              Quick log shortcuts
+              {t('dashboard.quickShortcuts')}
             </p>
           </div>
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
-            Log something to unlock quick actions here.
+            {t('dashboard.recentEmpty')}
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -1160,7 +1165,7 @@ function RecentMediaRail({
               {t('dashboard.jumpBackIn')}
             </h2>
             <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
-              Quick log shortcuts
+              {t('dashboard.quickShortcuts')}
             </p>
           </div>
           {showSwipeHint && (
@@ -1171,7 +1176,7 @@ function RecentMediaRail({
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
-            Log something to unlock quick actions here.
+            {t('dashboard.recentEmpty')}
           </p>
         ) : (
           <div className="overflow-x-auto -mx-2 px-2 pb-2" ref={scrollRef}>
@@ -1217,7 +1222,7 @@ function RecentMediaRailTile({
   function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (mediaId) {
-      onRemove(mediaId, title || 'this media');
+      onRemove(mediaId, title || t('dashboard.thisMedia'));
     }
   }
 
@@ -1255,7 +1260,7 @@ function RecentMediaRailTile({
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-2 text-left">
         <span className="text-[10px] uppercase tracking-[0.3em] text-white/70">
-          Quick Log
+          {t('dashboard.quickLog')}
         </span>
         <p className="text-xs font-semibold leading-tight text-white line-clamp-2">
           {title}
@@ -1302,7 +1307,7 @@ function RecentMediaTile({
   function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (mediaId) {
-      onRemove(mediaId, title || 'this media');
+      onRemove(mediaId, title || t('dashboard.thisMedia'));
     }
   }
 
@@ -1354,7 +1359,7 @@ function RecentMediaTile({
         }}
       >
         <span className="text-[10px] uppercase tracking-[0.3em] text-white/80">
-          Quick Log
+          {t('dashboard.quickLog')}
         </span>
         <p className="text-xs font-semibold leading-tight line-clamp-2">
           {title}

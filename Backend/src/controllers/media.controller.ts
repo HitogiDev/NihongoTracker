@@ -794,12 +794,22 @@ export async function toggleMediaReviewLike(
                 review.likes.length - 1 === 1 ? '' : 's'
               } liked your review`
             : `${liker?.username ?? 'Someone'} liked your review`,
+        // The client picks the plural form from `count`; no English
+        // pluralisation logic has to be mirrored per language.
+        titleKey: 'review.liked',
         body: review.summary,
         link: `/review/${review._id.toString()}`,
         entityType: 'mediaReview',
         entityId: review._id.toString(),
         groupKey: likeGroupKey,
-        meta: { mediaType: review.mediaType, contentId: review.mediaContentId },
+        meta: {
+          mediaType: review.mediaType,
+          contentId: review.mediaContentId,
+          username: liker?.username ?? '',
+          // `meta` is a Map of String, so the client must Number() this before
+          // using it as an i18next `count` or plural selection silently fails.
+          count: String(review.likes.length - 1),
+        },
       });
     }
 

@@ -21,7 +21,11 @@
   },
   "apiKey": {
     "expired": "That API key has expired",
-    "invalid": "That API key is not valid"
+    "invalid": "That API key is not valid",
+    "limitReached": "You can have a maximum of {{max}} API keys",
+    "nameRequired": "API key name is required",
+    "nameTooLong": "API key name must be 100 characters or less",
+    "notFound": "API key not found"
   },
   "auth": {
     "banned": "Your account has been suspended",
@@ -90,6 +94,24 @@
     "mediaNotFound": "That media is not in your immersion list",
     "noteMustBeString": "The note must be text"
   },
+  "import": {
+    "emptyCsv": "No data found in the CSV file",
+    "emptyJsonl": "No valid data found in the JSONL file",
+    "emptyTsv": "No data found in the TSV file",
+    "fileTooLarge": "File size exceeds the 5MB limit",
+    "invalidType": "Import type is invalid",
+    "noFile": "No file uploaded",
+    "rowMissingColumns": "Each row must have \"Date\", \"Log Name\", \"Media Type\", and \"Duration\" fields",
+    "rowMissingFields": "Each row must have at least a \"date\" and \"type\" field",
+    "unsupportedCsvType": "Unsupported CSV type"
+  },
+  "integration": {
+    "apiUrlNotSet": "API URL not set",
+    "discordIdNotSet": "Discord ID not set",
+    "meiliHostNotSet": "MeiliSearch host environment variable not set",
+    "meiliKeyNotSet": "MeiliSearch api key environment variable not set",
+    "privateKeyNotSet": "Private key is not set"
+  },
   "layout": {
     "cardMustBeObject": "Each card must be an object",
     "cardNeedsVisible": "Each card needs a visible flag",
@@ -117,11 +139,14 @@
     "notFoundOrForbidden": "That log does not exist or is not yours",
     "notFoundPlural_one": "Log not found",
     "notFoundPlural_other": "Logs not found",
+    "notFoundSingle": "Log not found",
     "rangeMinAboveMax": "The minimum for {{field}} cannot be greater than its maximum",
     "saveFailed": "The log could not be saved",
+    "typeNotFound": "Log type not found",
     "typeRequired": "A log type is required"
   },
   "media": {
+    "invalidContentType": "Invalid content type",
     "notFound": "Media not found"
   },
   "mediaRequest": {
@@ -143,6 +168,9 @@
     "notConfigured": "Patreon OAuth is not configured on this server",
     "oauthNotConfigured": "OAuth is not configured properly on this server",
     "useOauthFlow": "Please use the OAuth flow to link your Patreon account"
+  },
+  "search": {
+    "failed": "Search operation failed"
   },
   "tag": {
     "fieldsRequired": "Name and color are required",
@@ -167,10 +195,25 @@
     "avatarCropWithoutFile": "Crop data was sent without an avatar file",
     "bannerCropGifOnly": "Banner cropping is only supported for GIF uploads",
     "bannerCropWithoutFile": "Crop data was sent without a banner file",
+    "cropOutOfBounds": "Crop area exceeds GIF bounds. Please reselect the crop area and try again.",
     "cropWithoutFile": "Crop data was sent without an avatar or banner file",
+    "failed": "File upload failed",
+    "fieldDimensionsPositive": "{{field}} width and height must be greater than 0",
+    "fieldInvalidJson": "{{field}} must be valid JSON",
+    "fieldNegative": "{{field}} coordinates must be 0 or greater",
+    "fieldNotFinite": "{{field}} must be a finite number",
+    "fieldNotJsonString": "{{field}} must be a JSON string",
+    "fileTooLarge": "File size exceeds the {{max}}MB limit",
     "gifAvatarTierRequired": "Animated GIF avatars are only available on the Enthusiast and Consumer Patreon tiers",
     "gifBannerTierRequired": "Animated GIF banners are only available on the Enthusiast and Consumer Patreon tiers",
-    "invalidFieldName": "Only avatar and banner uploads are allowed"
+    "gifCropFailed": "Failed to crop animated GIF",
+    "gifDimensionsUnknown": "Could not determine GIF dimensions for cropping",
+    "gifOnlyMetadata": "GIF crop metadata can only be used with GIF files",
+    "invalidFieldName": "Only avatar and banner uploads are allowed",
+    "invalidImageType": "Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)",
+    "noFile": "No file provided",
+    "sourceDimensionPositive": "{{field}} must be greater than 0",
+    "storageFailed": "Error uploading file to storage"
   },
   "user": {
     "aboutTooLong": "Your bio must be 2000 characters or less",
@@ -184,6 +227,7 @@
     "invalidLanguage": "That language is not supported",
     "invalidTimezone": "That timezone is not valid",
     "newPasswordRequired": "Enter a new password",
+    "noStats": "User does not have stats",
     "notFound": "User not found",
     "oldPasswordRequired": "Enter your current password",
     "passwordConfirmRequired": "Confirm your new password",
@@ -194,7 +238,7 @@
     "usernameConfirmMismatch": "The username does not match. Type your username to confirm.",
     "usernameInvalid": "Username can only contain letters, numbers and underscores",
     "usernameLength": "Your username must be between 1 and 20 characters",
-    "usernameRequired": "A username is required",
+    "usernameRequired": "username is required",
     "usernameTaken": "That username is already taken"
   }
 }

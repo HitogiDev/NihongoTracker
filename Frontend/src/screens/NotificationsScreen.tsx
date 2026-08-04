@@ -7,6 +7,10 @@ import {
 import { Link } from 'react-router-dom';
 import { Bell, Check, Clock3, ChevronRight, Inbox, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import {
+  getNotificationBody,
+  getNotificationLabel,
+} from '../utils/notificationText';
 import { useUserDataStore } from '../store/userData';
 import UserAvatar from '../components/UserAvatar';
 import {
@@ -231,7 +235,7 @@ function NotificationsScreen() {
                       isUnread ? 'text-base-content' : 'text-base-content/65'
                     }`}
                   >
-                    {item.label}
+                    {getNotificationLabel(item)}
                   </p>
                   <span
                     className={`badge badge-sm ${
@@ -244,7 +248,7 @@ function NotificationsScreen() {
 
                 {item.body && (
                   <p className="mt-1 text-sm text-base-content/60 line-clamp-2">
-                    {item.body}
+                    {getNotificationBody(item)}
                   </p>
                 )}
 
@@ -437,7 +441,7 @@ function NotificationsScreen() {
           </div>
 
           <p className="text-sm text-base-content/80 mb-4">
-            {deleteConfirmItem?.label}
+            {deleteConfirmItem ? getNotificationLabel(deleteConfirmItem) : ''}
           </p>
 
           <label className="label cursor-pointer justify-start gap-3 py-2 text-base-content">

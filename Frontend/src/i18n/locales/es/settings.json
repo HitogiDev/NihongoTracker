@@ -263,6 +263,9 @@
       "label": "Estadísticas de progreso"
     }
   },
+  "tagFilter": {
+    "title": "Filtrar por etiquetas"
+  },
   "tags": {
     "subtitle": "Crea y gestiona etiquetas para organizar tus registros",
     "title": "Etiquetas",
@@ -294,6 +297,11 @@
       "loading": "Cargando las etiquetas...",
       "close": "Cerrar"
     }
+  },
+  "timezonePicker": {
+    "placeholder": "Buscar zonas horarias...",
+    "showAll": "Mostrar todas las zonas horarias",
+    "showLess": "Mostrar menos"
   },
   "toast": {
     "aboutMaxLength": "El texto de tu biografía ha llegado al máximo.",

@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom';
+import type { ParseKeys } from 'i18next';
+
+/**
+ * The typing animation cycles these verbs. They are read from the active
+ * language so the animation is translated too, and rebuilt on a language
+ * change because the component keys off the array identity.
+ */
+const TAGLINE_VERB_KEYS = ['track', 'gamify', 'celebrate', 'share'] as const;
 import { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { TypeAnimation } from 'react-type-animation';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   Check,
   ArrowRight,
@@ -64,7 +72,10 @@ function ScreenshotWindow({
 }
 
 function Hero() {
-  const { t } = useTranslation('home');
+  const { t, i18n } = useTranslation('home');
+  const TAGLINE_VERBS = TAGLINE_VERB_KEYS.map((key) =>
+    t(`hero.taglineVerbs.${key}` as ParseKeys<'home'>)
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -221,24 +232,25 @@ function Hero() {
               ref={subtitleRef}
               className="text-xl md:text-2xl text-base-content/65 mb-10 max-w-2xl mx-auto leading-relaxed"
             >
-              The best way to{' '}
-              <TypeAnimation
-                sequence={[
-                  'track',
-                  1800,
-                  'gamify',
-                  1800,
-                  'celebrate',
-                  1800,
-                  'share',
-                  1800,
-                ]}
-                speed={20}
-                deletionSpeed={40}
-                repeat={Infinity}
-                className="font-semibold text-primary"
-              />{' '}
-              your Japanese immersion
+              {/* TypeAnimation memoizes its sequence on mount and ignores
+                  later prop changes, so the verbs stay in whatever language
+                  was active when it mounted. Remount it on language change. */}
+              <Trans
+                key={i18n.language}
+                t={t}
+                i18nKey="hero.tagline"
+                components={{
+                  verb: (
+                    <TypeAnimation
+                      sequence={TAGLINE_VERBS.flatMap((verb) => [verb, 1800])}
+                      speed={20}
+                      deletionSpeed={40}
+                      repeat={Infinity}
+                      className="font-semibold text-primary"
+                    />
+                  ),
+                }}
+              />
             </p>
 
             <div
@@ -308,20 +320,20 @@ function Hero() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               {[
-                { Icon: Tv2, label: 'Anime' },
-                { Icon: BookOpen, label: 'Manga' },
-                { Icon: BookImage, label: 'Visual Novels' },
-                { Icon: Headphones, label: 'Audio & Podcasts' },
-                { Icon: BookMarked, label: 'Books & Reading' },
-                { Icon: Play, label: 'Video' },
-                { Icon: Gamepad2, label: 'Video Games' },
-              ].map(({ Icon, label }) => (
+                { Icon: Tv2, key: 'anime' },
+                { Icon: BookOpen, key: 'manga' },
+                { Icon: BookImage, key: 'vn' },
+                { Icon: Headphones, key: 'audio' },
+                { Icon: BookMarked, key: 'books' },
+                { Icon: Play, key: 'video' },
+                { Icon: Gamepad2, key: 'games' },
+              ].map(({ Icon, key }) => (
                 <span
-                  key={label}
+                  key={key}
                   className="flex items-center gap-2 bg-base-100 rounded-full px-4 py-2 border border-base-300 text-sm font-medium text-base-content/75"
                 >
                   <Icon size={14} className="text-primary" />
-                  {label}
+                  {t(`hero.chips.${key}` as ParseKeys<'home'>)}
                 </span>
               ))}
             </div>
@@ -385,9 +397,11 @@ function Hero() {
                 {t('hero.statistics')}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                {t('hero.seeHowFar')}
-                <br />
-                you've come
+                <Trans
+                  t={t}
+                  i18nKey="hero.seeHowFar"
+                  components={{ br: <br /> }}
+                />
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
                 {t('hero.statsBody')}
@@ -418,9 +432,11 @@ function Hero() {
                 {t('hero.leaderboards')}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                {t('hero.friendly')}
-                <br />
-                competition
+                <Trans
+                  t={t}
+                  i18nKey="hero.friendly"
+                  components={{ br: <br /> }}
+                />
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
                 {t('hero.rankBody')}
@@ -469,9 +485,11 @@ function Hero() {
                 TextHooker
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                {t('hero.builtForVn')}
-                <br />
-                novel readers
+                <Trans
+                  t={t}
+                  i18nKey="hero.builtForVn"
+                  components={{ br: <br /> }}
+                />
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
                 {t('hero.hookerBody')}
@@ -502,9 +520,11 @@ function Hero() {
                 {t('hero.clubs')}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-base-content leading-tight">
-                {t('hero.learnBetter')}
-                <br />
-                together
+                <Trans
+                  t={t}
+                  i18nKey="hero.learnBetter"
+                  components={{ br: <br /> }}
+                />
               </h2>
               <p className="text-lg text-base-content/60 leading-relaxed">
                 {t('hero.clubBody')}

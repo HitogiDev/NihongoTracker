@@ -18,6 +18,13 @@
     "sortField": "Sort field",
     "title": "Recent Activity"
   },
+  "addToList": {
+    "title": "Add to list",
+    "newTitlePlaceholder": "New list title",
+    "created": "List created with this media",
+    "createFailed": "Could not create the list",
+    "updateFailed": "Could not update the list"
+  },
   "chart": {
     "bar": "Bar",
     "hours": "Hours",
@@ -25,6 +32,13 @@
     "metric": "Metric:",
     "title": "Activity Chart",
     "view": "View:"
+  },
+  "comments": {
+    "empty": "No comments yet.",
+    "placeholder": "Leave a comment",
+    "delete": "Delete comment",
+    "postFailed": "Could not post the comment",
+    "deleteFailed": "Could not delete the comment"
   },
   "common": {
     "cancel": "Cancel",
@@ -203,6 +217,12 @@
     "thisWeek": "This week",
     "thisMonth": "This month"
   },
+  "reviewCard": {
+    "options": "Review options",
+    "shareTitle": "NihongoTracker Review",
+    "shareText": "Check out this review!",
+    "linkCopied": "Review link copied to clipboard!"
+  },
   "reviews": {
     "a11y": {
       "maxScore": "Maximum score",
@@ -230,6 +250,14 @@
     "unrated": "Unrated",
     "visibility": "Visibility",
     "write": "Write a review"
+  },
+  "search": {
+    "placeholder": "Search users or media...",
+    "mediaPlaceholder": "Search media to add...",
+    "typeToSearch": "Type at least 2 characters to search",
+    "filterByType": "Filter by media type",
+    "users": "Users",
+    "media": "Media"
   },
   "social": {
     "allTime": "All-time",

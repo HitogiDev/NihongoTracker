@@ -94,6 +94,16 @@
     "thisYear": "Este año",
     "today": "Hoy"
   },
+  "share": {
+    "title": "Comparte tus estadísticas",
+    "allTime": "Histórico",
+    "thisYear": "Este año",
+    "thisMonth": "Este mes",
+    "custom": "Personalizado",
+    "generateFailed": "No se pudo generar la imagen de estadísticas",
+    "shareFailed": "No se pudo compartir la imagen",
+    "downloadedInstead": "Aquí no se puede compartir; se ha descargado la imagen"
+  },
   "sort": {
     "azAsc": "Alfabético (A-Z)",
     "azDesc": "Alfabético (Z-A)",
@@ -105,6 +115,10 @@
   },
   "speed": {
     "empty": "No hay datos para el periodo seleccionado."
+  },
+  "stacked": {
+    "activity": "Actividad",
+    "noData": "No hay datos para el periodo seleccionado."
   },
   "subtitle": "Sigue tu progreso de inmersión con desgloses detallados"
 }

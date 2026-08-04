@@ -1,9 +1,9 @@
 import { Router } from 'express';
+import { apiError } from '../i18n/errorCodes.js';
 import multer from 'multer';
 import { protect } from '../middlewares/authMiddleware.js';
 import uploadFile from '../services/uploadFile.js';
 import { Request, Response, NextFunction } from 'express';
-import { customError } from '../middlewares/errorMiddleware.js';
 
 const router = Router();
 
@@ -22,7 +22,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
-        throw new customError('No file provided', 400);
+        throw apiError('upload.noFile', 400, 'No file provided');
       }
 
       const result = await uploadFile(req.file);
@@ -41,7 +41,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
-        throw new customError('No file provided', 400);
+        throw apiError('upload.noFile', 400, 'No file provided');
       }
 
       const result = await uploadFile(req.file);

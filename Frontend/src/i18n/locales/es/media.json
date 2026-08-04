@@ -18,6 +18,13 @@
     "sortField": "Campo de ordenación",
     "title": "Actividad reciente"
   },
+  "addToList": {
+    "title": "Añadir a una lista",
+    "newTitlePlaceholder": "Título de la lista nueva",
+    "created": "Lista creada con este contenido",
+    "createFailed": "No se pudo crear la lista",
+    "updateFailed": "No se pudo actualizar la lista"
+  },
   "chart": {
     "bar": "Barras",
     "hours": "Horas",
@@ -25,6 +32,13 @@
     "metric": "Métrica:",
     "title": "Gráfico de actividad",
     "view": "Vista:"
+  },
+  "comments": {
+    "empty": "Todavía no hay comentarios.",
+    "placeholder": "Deja un comentario",
+    "delete": "Eliminar el comentario",
+    "postFailed": "No se pudo publicar el comentario",
+    "deleteFailed": "No se pudo eliminar el comentario"
   },
   "common": {
     "cancel": "Cancelar",
@@ -212,6 +226,12 @@
     "thisWeek": "Esta semana",
     "thisMonth": "Este mes"
   },
+  "reviewCard": {
+    "options": "Opciones de la reseña",
+    "shareTitle": "Reseña de NihongoTracker",
+    "shareText": "¡Echa un vistazo a esta reseña!",
+    "linkCopied": "Enlace de la reseña copiado al portapapeles"
+  },
   "reviews": {
     "a11y": {
       "maxScore": "Puntuación máxima",
@@ -239,6 +259,14 @@
     "unrated": "Sin puntuación",
     "visibility": "Visibilidad",
     "write": "Escribir una reseña"
+  },
+  "search": {
+    "placeholder": "Buscar usuarios o contenido...",
+    "mediaPlaceholder": "Buscar contenido para añadir...",
+    "typeToSearch": "Escribe al menos 2 caracteres para buscar",
+    "filterByType": "Filtrar por tipo de contenido",
+    "users": "Usuarios",
+    "media": "Contenido"
   },
   "social": {
     "allTime": "Histórico",

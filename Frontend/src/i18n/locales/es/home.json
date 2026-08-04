@@ -50,7 +50,9 @@
       "logs": "Registros",
       "achievements": "Logros",
       "globalFeed": "Actividad global",
-      "allTypes": "Todos los tipos"
+      "allTypes": "Todos los tipos",
+      "subtitle": "Mira qué está inmersando la comunidad ahora mismo",
+      "empty": "No hay actividad para los filtros seleccionados."
     },
     "time": {
       "day": "Últimas 24 h",
@@ -78,7 +80,32 @@
     "hideAria": "Ocultar de contenido reciente",
     "someone": "Alguien",
     "playlistBatch": "Lote de lista de reproducción",
-    "refreshFailed": "No se pudieron actualizar los datos tras el registro rápido"
+    "refreshFailed": "No se pudieron actualizar los datos tras el registro rápido",
+    "welcomeBack": "Hola de nuevo",
+    "actions": {
+      "createLog": "Crear registro",
+      "profile": "Perfil",
+      "rankings": "Clasificación",
+      "cancel": "Cancelar",
+      "hide": "Ocultar"
+    },
+    "streak": {
+      "label": "Racha",
+      "days_one": "{{count}} día",
+      "days_many": "{{count}} días",
+      "days_other": "{{count}} días",
+      "hint": "Mantén la llama con inmersión diaria"
+    },
+    "monthlyRanking": "Clasificación mensual",
+    "immersion": {
+      "title": "Inmersión de este mes",
+      "subtitle": "Comparado con el mismo periodo del mes pasado"
+    },
+    "quickLog": "Registro rápido",
+    "quickShortcuts": "Atajos de registro rápido",
+    "recentEmpty": "Registra algo para desbloquear acciones rápidas aquí.",
+    "thisMedia": "este contenido",
+    "hideConfirm": "¿Seguro que quieres ocultar <title>{{title}}</title> de tu contenido reciente? Dejará de aparecer en las acciones rápidas."
   },
   "features": {
     "hero": {
@@ -316,7 +343,7 @@
     }
   },
   "hero": {
-    "builtForVn": "Hecho para novelas visuales",
+    "builtForVn": "Hecho para quienes leen<br />novelas visuales",
     "clubBody": "Únete a un club de inmersión o crea el tuyo. Competid en las clasificaciones del club.",
     "clubBullet1": "Votad qué contenido consumir juntos a continuación",
     "clubBullet2": "Clubes públicos y privados con etiquetas",
@@ -324,14 +351,14 @@
     "clubs": "Clubes",
     "dashboardAlt": "Panel de NihongoTracker",
     "freeForever": "Empieza hoy · Las funciones principales son gratis para siempre",
-    "friendly": "Un poco de piques sanos",
+    "friendly": "Un poco de<br />piques sanos",
     "hookerAlt": "Panel del TextHooker",
     "hookerBody": "El texthooker integrado hace fácil registrar tus sesiones.",
     "hookerBullet1": "Salas de texthooker compartidas para leer en grupo",
     "hookerBullet2": "Historial completo de sesiones por título",
     "hookerBullet3": "Registra la sesión de lectura con un clic",
     "leaderboards": "Clasificaciones",
-    "learnBetter": "Aprende mejor acompañado",
+    "learnBetter": "Aprende mejor<br />acompañado",
     "logBody": "Busca un título, rellena los datos y guarda. Se acabó apuntar cosas a mano.",
     "logBullet1": "Anime, manga, novelas visuales, audio, novelas ligeras y más",
     "logBullet2": "Integración con AniList y VNDB para traer los datos al instante",
@@ -343,13 +370,29 @@
     "rankBullet2": "Clasificaciones mensuales e históricas",
     "rankBullet3": "Filtros por periodo, medio y escucha o lectura",
     "seeFeatures": "Ver todas las funciones",
-    "seeHowFar": "Mira exactamente cuánto has avanzado",
+    "seeHowFar": "Mira exactamente<br />cuánto has avanzado",
     "startTracking": "Empezar a registrar",
     "statistics": "Estadísticas",
     "statsBody": "Gráficos y desgloses detallados muestran tu evolución con el tiempo.",
     "statsBullet1": "Progreso de nivel global, de escucha y de lectura",
     "statsBullet2": "Mapa de calor de actividad, rachas y medias diarias",
     "statsBullet3": "Filtra por periodo, medio o etiquetas",
-    "trackEveryType": "Registra cualquier tipo de inmersión"
+    "trackEveryType": "Registra cualquier tipo de inmersión",
+    "tagline": "La mejor forma de <verb></verb> tu inmersión en japonés",
+    "taglineVerbs": {
+      "track": "registrar",
+      "gamify": "gamificar",
+      "celebrate": "celebrar",
+      "share": "compartir"
+    },
+    "chips": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "vn": "Novelas visuales",
+      "audio": "Audio y pódcasts",
+      "books": "Libros y lectura",
+      "video": "Vídeo",
+      "games": "Videojuegos"
+    }
   }
 }

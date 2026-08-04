@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { ParamsDictionary } from 'express-serve-static-core';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IImportLogs, ILog, IUser } from '../types.js';
-import { customError } from './errorMiddleware.js';
 import { cacheMediaJitenDifficulty } from '../services/jiten.js';
 import {
   computeXp,
@@ -107,7 +108,7 @@ export async function calculateXp(
       );
       const consumedFor = makeConsumedDifficultyResolver(user?._id);
       for (const log of req.body.logs) {
-        if (!log.type) throw new customError('Log type not found', 400);
+        if (!log.type) throw apiError('log.typeNotFound', 400, 'Log type not found');
         const { xp, breakdown } = computeXp(
           {
             type: log.type,
@@ -139,7 +140,7 @@ export async function calculateXp(
       ? await Log.findById(req.params.id)
       : null;
     if (req.params.id && !existing) {
-      throw new customError('Log not found', 404);
+      throw apiError('log.notFoundSingle', 404, 'Log not found');
     }
 
     // Speed/level must come from the log owner — admin edits run this
@@ -153,7 +154,7 @@ export async function calculateXp(
     }
 
     const type = body.type || existing?.type;
-    if (!type) throw new customError('Log type not found', 400);
+    if (!type) throw apiError('log.typeNotFound', 400, 'Log type not found');
 
     const personalSpeedCph = await makeSpeedResolver(owner?._id)(type);
 

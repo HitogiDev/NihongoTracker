@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { Club } from '../models/club.model.js';
 import { ClubMediaVoting } from '../models/clubMediaVoting.model.js';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import Log from '../models/log.model.js';
 import uploadFile, { uploadFileWithCleanup } from '../services/uploadFile.js';
-import { customError } from '../middlewares/errorMiddleware.js';
 import { Types } from 'mongoose';
 import {
   ICreateClubRequest,
@@ -417,9 +418,10 @@ export async function createClub(
           return next(error);
         }
         return next(
-          new customError(
-            'File upload failed: ' + (error as Error).message,
-            400
+          apiError(
+            'upload.failed',
+            400,
+            'File upload failed: ' + (error as Error).message
           )
         );
       }
@@ -784,9 +786,10 @@ export async function updateClub(
           return next(error);
         }
         return next(
-          new customError(
-            'File upload failed: ' + (error as Error).message,
-            400
+          apiError(
+            'upload.failed',
+            400,
+            'File upload failed: ' + (error as Error).message
           )
         );
       }
@@ -913,10 +916,12 @@ export async function manageJoinRequests(
         actor: userId,
         type: 'club_join_approved',
         title: `You were accepted into ${club.name}`,
+        titleKey: 'club.joinApproved',
         link: `/clubs/${clubId}`,
         image: club.avatar,
         entityType: 'club',
         entityId: clubId,
+        meta: { clubName: club.name },
       });
 
       return res.status(200).json({ message: 'Member approved' });
@@ -931,10 +936,12 @@ export async function manageJoinRequests(
         actor: userId,
         type: 'club_join_rejected',
         title: `Your request to join ${club.name} was declined`,
+        titleKey: 'club.joinRejected',
         link: '/clubs',
         image: club.avatar,
         entityType: 'club',
         entityId: clubId,
+        meta: { clubName: club.name },
       });
 
       return res.status(200).json({ message: 'Member rejected' });
@@ -1021,10 +1028,12 @@ export async function kickClubMember(
       actor: actorId,
       type: 'club_member_removed',
       title: `You were removed from ${club.name}`,
+      titleKey: 'club.memberRemoved',
       link: '/clubs',
       image: club.avatar,
       entityType: 'club',
       entityId: clubId,
+      meta: { clubName: club.name },
     });
 
     return res.status(200).json({ message: 'Member removed from club' });

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
+import { apiError } from '../i18n/errorCodes.js';
 import { Request, Response, NextFunction } from 'express';
 import ApiKey from '../models/apiKey.model.js';
-import { customError } from '../middlewares/errorMiddleware.js';
 
 const MAX_KEYS_PER_USER = 10;
 
@@ -25,19 +25,21 @@ export async function generateApiKey(
     const { name, expiresAt } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      throw new customError('API key name is required', 400);
+      throw apiError('apiKey.nameRequired', 400, 'API key name is required');
     }
 
     if (name.trim().length > 100) {
-      throw new customError('API key name must be 100 characters or less', 400);
+      throw apiError('apiKey.nameTooLong', 400, 'API key name must be 100 characters or less');
     }
 
     // Check key count limit
     const existingCount = await ApiKey.countDocuments({ user: user._id });
     if (existingCount >= MAX_KEYS_PER_USER) {
-      throw new customError(
+      throw apiError(
+        'apiKey.limitReached',
+        400,
         `You can have a maximum of ${MAX_KEYS_PER_USER} API keys`,
-        400
+        { max: MAX_KEYS_PER_USER }
       );
     }
 
@@ -110,7 +112,7 @@ export async function deleteApiKey(
     });
 
     if (!apiKey) {
-      throw new customError('API key not found', 404);
+      throw apiError('apiKey.notFound', 404, 'API key not found');
     }
 
     return res.json({ message: 'API key revoked successfully' });

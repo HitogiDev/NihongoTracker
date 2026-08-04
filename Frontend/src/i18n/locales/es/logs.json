@@ -121,6 +121,13 @@
     "xpGained": "Experiencia obtenida",
     "xpPoints": "Puntos de XP"
   },
+  "dismiss": {
+    "title": "Descartar registros",
+    "action": "Descartar",
+    "hint": "Descartar los registros seleccionados del emparejado de contenido",
+    "serverError": "Error del servidor al descartar los registros",
+    "unknownError": "Error desconocido al descartar los registros"
+  },
   "edit": {
     "activityDetails": "Detalles de la actividad",
     "basicInfo": "Información básica",
@@ -171,6 +178,20 @@
     "selectGroupOrTitle": "Selecciona un grupo de registros o escribe un título de {{type}} para buscar",
     "selectOne": "Tienes que seleccionar un contenido",
     "unassignedLogs": "Registros sin asignar"
+  },
+  "playlist": {
+    "title": "Lista de reproducción de YouTube",
+    "label": "Lista de reproducción",
+    "fetching": "Obteniendo la lista…",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "noData": "No hay datos de la lista de reproducción.",
+    "noVideos": "No hay vídeos en esta lista",
+    "date": "Fecha",
+    "description": "Descripción",
+    "unknownDate": "Fecha desconocida",
+    "editEntry": "Editar duración, descripción y fecha",
+    "closeModal": "Cerrar la ventana"
   },
   "quick": {
     "title": "Registro rápido",

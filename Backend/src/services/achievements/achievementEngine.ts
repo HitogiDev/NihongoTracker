@@ -22,7 +22,7 @@ import { createNotification } from '../notifications.service.js';
  * Evaluate a single achievement condition for a given user.
  * Returns { met, progress } — progress is the raw current value for progress bars.
  */
-async function evaluateCondition(
+export async function evaluateCondition(
   userId: Types.ObjectId,
   achievement: IAchievement
 ): Promise<{ met: boolean; progress: number }> {
@@ -142,7 +142,10 @@ export async function checkAchievements(
 
     for (const achievement of unearnedAchievements) {
       try {
-        const { met, progress } = await evaluateCondition(userId, achievement as unknown as IAchievement);
+        const { met, progress } = await evaluateCondition(
+          userId,
+          achievement as unknown as IAchievement
+        );
 
         if (met) {
           // Use upsert to avoid race condition duplicate inserts
@@ -165,22 +168,33 @@ export async function checkAchievements(
             recipient: userId,
             type: 'achievement_unlocked',
             title: `Achievement unlocked: ${achievement.name}`,
+            // The client already translates achievement text from its key, so
+            // it only needs the key here, not the English name.
+            titleKey: 'achievement.unlocked',
             body: achievement.description,
             link: '/achievements',
             entityType: 'achievement',
             entityId: achievement._id.toString(),
-            meta: { iconSlug: achievement.iconSlug },
+            meta: {
+              iconSlug: achievement.iconSlug,
+              achievementKey: achievement.key,
+            },
           });
         } else if (progress > 0) {
           // Update progress for countable achievements (non-blocking)
           UserAchievement.findOneAndUpdate(
             { user: userId, achievement: achievement._id },
             { $max: { progress } }
-          ).exec().catch(() => {});
+          )
+            .exec()
+            .catch(() => {});
         }
       } catch (err) {
         // Don't fail the whole check if one achievement errors
-        console.error(`Achievement check failed for key="${achievement.key}":`, err);
+        console.error(
+          `Achievement check failed for key="${achievement.key}":`,
+          err
+        );
       }
     }
 
@@ -223,25 +237,40 @@ export async function grantAchievement(
       recipient: userId,
       type: 'achievement_unlocked',
       title: `Achievement unlocked: ${achievement.name}`,
+      titleKey: 'achievement.unlocked',
       body: achievement.description,
       link: '/achievements',
       entityType: 'achievement',
       entityId: achievementId.toString(),
-      meta: { iconSlug: achievement.iconSlug },
+      meta: {
+        iconSlug: achievement.iconSlug,
+        achievementKey: achievement.key,
+      },
     });
   }
 
   return true;
 }
 
-function getRelevantConditions(trigger: IAchievementCheckContext['trigger']): string[] {
+function getRelevantConditions(
+  trigger: IAchievementCheckContext['trigger']
+): string[] {
   switch (trigger) {
     case 'log':
       return [
-        'logCount', 'mediaType', 'totalXp', 'level',
-        'totalHours', 'mediaTypeHours', 'achievementCount',
-        'logTimeRange', 'logOnDate', 'singleDayHours',
-        'weeklyHours', 'sessionsInDay', 'platformAge',
+        'logCount',
+        'mediaType',
+        'totalXp',
+        'level',
+        'totalHours',
+        'mediaTypeHours',
+        'achievementCount',
+        'logTimeRange',
+        'logOnDate',
+        'singleDayHours',
+        'weeklyHours',
+        'sessionsInDay',
+        'platformAge',
       ];
     case 'streak':
       return ['streak'];

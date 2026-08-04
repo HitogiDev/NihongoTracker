@@ -1,16 +1,31 @@
 {
-  "page": {
-    "title": "Notificaciones",
-    "subtitle": "Consulta todas tus notificaciones, incluidas las que ya has leído."
+  "deleteConfirm": {
+    "title": "¿Eliminar la notificación?",
+    "description": "Se quitará de tus notificaciones.",
+    "dontShowAgain": "No volver a mostrar",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar",
+    "close": "Cerrar la confirmación de eliminación"
   },
-  "summary": {
-    "total": "Total",
+  "item": {
+    "read": "Leída",
     "unread": "Sin leer",
-    "markAsRead": "Marcar como leídas",
-    "markAsReadTitle": "Marcar todas las notificaciones como leídas",
-    "nothingUnread": "No hay notificaciones sin leer",
-    "markAsUnread": "Marcar como no leídas",
-    "markAsUnreadTitle": "Marcar todas las notificaciones como no leídas"
+    "delete": "Eliminar notificación"
+  },
+  "items": {
+    "club.joinApproved": "Te han aceptado en {{clubName}}",
+    "club.joinRejected": "Tu solicitud para unirte a {{clubName}} ha sido rechazada",
+    "club.memberRemoved": "Te han quitado de {{clubName}}",
+    "club.joinRequestSingle": "{{username}} quiere unirse a {{clubName}}",
+    "club.joinRequestMany": "Tienes nuevas solicitudes para unirse a {{clubName}}",
+    "review.liked_one": "A {{username}} y a {{count}} persona más les ha gustado tu reseña",
+    "review.liked_many": "A {{username}} y a {{count}} personas más les ha gustado tu reseña",
+    "review.liked_other": "A {{username}} y a {{count}} personas más les ha gustado tu reseña",
+    "review.liked_zero": "A {{username}} le ha gustado tu reseña",
+    "mediaRequest.rejected": "Tu solicitud de contenido «{{title}}» ha sido rechazada",
+    "mediaRequest.approved": "Tu solicitud de contenido «{{title}}» ha sido aprobada",
+    "achievement.unlocked": "Logro desbloqueado: {{name}}",
+    "changelog.available": "Ya está disponible la versión {{version}}"
   },
   "list": {
     "heading": "Todas las notificaciones",
@@ -28,17 +43,17 @@
       "description": "Ahora mismo no tienes ninguna notificación."
     }
   },
-  "item": {
-    "read": "Leída",
-    "unread": "Sin leer",
-    "delete": "Eliminar notificación"
+  "page": {
+    "title": "Notificaciones",
+    "subtitle": "Consulta todas tus notificaciones, incluidas las que ya has leído."
   },
-  "deleteConfirm": {
-    "title": "¿Eliminar la notificación?",
-    "description": "Se quitará de tus notificaciones.",
-    "dontShowAgain": "No volver a mostrar",
-    "cancel": "Cancelar",
-    "confirm": "Eliminar",
-    "close": "Cerrar la confirmación de eliminación"
+  "summary": {
+    "total": "Total",
+    "unread": "Sin leer",
+    "markAsRead": "Marcar como leídas",
+    "markAsReadTitle": "Marcar todas las notificaciones como leídas",
+    "nothingUnread": "No hay notificaciones sin leer",
+    "markAsUnread": "Marcar como no leídas",
+    "markAsUnreadTitle": "Marcar todas las notificaciones como no leídas"
   }
 }

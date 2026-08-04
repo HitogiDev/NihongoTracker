@@ -135,7 +135,11 @@ export async function register(
     generateToken(res, user._id.toString());
 
     if (normalizedEmail && user.verificationToken)
-      await sendVerificationEmail(normalizedEmail, user.verificationToken);
+      await sendVerificationEmail(
+        normalizedEmail,
+        user.verificationToken,
+        user.settings?.language
+      );
 
     return res.status(201).json({
       _id: user._id,
@@ -321,7 +325,8 @@ export async function forgotPassword(
         'http://localhost:5173';
       await sendPasswordResetEmail(
         email,
-        `${baseUrl}/reset-password/${user.resetPasswordToken}`
+        `${baseUrl}/reset-password/${user.resetPasswordToken}`,
+        user.settings?.language
       );
     }
 
@@ -368,7 +373,7 @@ export async function resetPassword(
     user.resetPasswordToken = undefined;
     user.resetPasswordTokenExpiry = undefined;
     await user.save();
-    sendPasswordResetSuccessEmail(user.email);
+    sendPasswordResetSuccessEmail(user.email, user.settings?.language);
     res.status(200).json({ message: 'Password has been reset successfully!' });
   } catch (error) {
     return next(error as customError);
@@ -427,7 +432,11 @@ export async function resendVerificationEmail(
     await user.save();
 
     // Send verification email
-    await sendVerificationEmail(user.email, user.verificationToken);
+    await sendVerificationEmail(
+      user.email,
+      user.verificationToken,
+      user.settings?.language
+    );
 
     res.status(200).json({
       message: 'Verification email sent successfully',

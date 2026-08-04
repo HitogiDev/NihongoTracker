@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { Download, Share2, X } from 'lucide-react';
@@ -13,11 +15,15 @@ interface ShareStatsModalProps {
 
 type RangeMode = 'total' | 'month' | 'year' | 'custom';
 
-const RANGE_OPTIONS: Array<{ value: RangeMode; label: string }> = [
-  { value: 'total', label: 'All time' },
-  { value: 'month', label: 'This month' },
-  { value: 'year', label: 'This year' },
-  { value: 'custom', label: 'Custom' },
+/** Module scope: key names, never text. */
+const RANGE_OPTIONS: Array<{
+  value: RangeMode;
+  labelKey: ParseKeys<'stats'>;
+}> = [
+  { value: 'total', labelKey: 'share.allTime' },
+  { value: 'month', labelKey: 'share.thisMonth' },
+  { value: 'year', labelKey: 'share.thisYear' },
+  { value: 'custom', labelKey: 'share.custom' },
 ];
 
 // Local date -> YYYY-MM-DD (matches StatsScreen.formatDateForQuery input format).
@@ -42,6 +48,8 @@ export default function ShareStatsModal({
   open,
   onClose,
 }: ShareStatsModalProps) {
+  const { t } = useTranslation('stats');
+  const { t: tCommon } = useTranslation('common');
   const { timezone, formatDate } = useDateFormatting();
   const [mode, setMode] = useState<RangeMode>('month');
   const [customStart, setCustomStart] = useState('');
@@ -94,9 +102,9 @@ export default function ShareStatsModal({
     }
     return {
       statsParams: { timeRange: 'total', timezone },
-      dateLabel: 'All time',
+      dateLabel: t('share.allTime'),
     };
-  }, [mode, customStart, customEnd, timezone, formatDate]);
+  }, [mode, customStart, customEnd, timezone, formatDate, t]);
 
   const { data: stats } = useQuery({
     queryKey: ['shareStats', username, statsParams],
@@ -129,7 +137,7 @@ export default function ShareStatsModal({
         setImageUrl(url);
       })
       .catch(() => {
-        if (!cancelled) toast.error('Failed to generate stats image');
+        if (!cancelled) toast.error(t('share.generateFailed'));
       })
       .finally(() => {
         if (!cancelled) setIsRendering(false);
@@ -138,7 +146,7 @@ export default function ShareStatsModal({
     return () => {
       cancelled = true;
     };
-  }, [open, stats, dateLabel, username]);
+  }, [open, stats, dateLabel, username, t]);
 
   // Clean up the object URL on unmount.
   useEffect(() => {
@@ -177,10 +185,10 @@ export default function ShareStatsModal({
       }
       // Desktop / unsupported: fall back to download.
       handleDownload();
-      toast.info('Sharing not supported here — image downloaded instead');
+      toast.info(t('share.downloadedInstead'));
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return;
-      toast.error('Could not share the image');
+      toast.error(t('share.shareFailed'));
     }
   };
 
@@ -190,12 +198,12 @@ export default function ShareStatsModal({
     <div className="modal modal-open" role="dialog">
       <div className="modal-box max-w-lg">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="text-lg font-bold">Share your stats</h3>
+          <h3 className="text-lg font-bold">{t('share.title')}</h3>
           <button
             type="button"
             className="btn btn-ghost btn-sm btn-square"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tCommon('close')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -212,7 +220,7 @@ export default function ShareStatsModal({
                 mode === opt.value ? 'btn-primary' : 'btn-ghost'
               }`}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>

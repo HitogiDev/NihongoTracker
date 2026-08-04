@@ -451,7 +451,8 @@ export async function updateUser(
       try {
         await sendVerificationEmail(
           updatedUser.email,
-          updatedUser.verificationToken
+          updatedUser.verificationToken,
+          updatedUser.settings?.language
         );
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);

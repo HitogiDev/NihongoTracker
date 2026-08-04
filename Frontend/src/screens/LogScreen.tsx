@@ -39,6 +39,7 @@ import PlaylistSelectorModal, {
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
 import { useTranslation } from 'react-i18next';
+import { LOG_TYPE_OPTIONS } from '../utils/logTypes';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -195,6 +196,7 @@ const getDeckForVolume = (
 
 function LogScreen() {
   const { t } = useTranslation(['logs', 'common']);
+  const { t: tCommon } = useTranslation('common');
   const vt = useValidationText();
   const [logData, setLogData] = useState<logDataType>(() =>
     createInitialLogState()
@@ -768,18 +770,10 @@ function LogScreen() {
       toast.error(t('toast.searchError', { message: searchError.message }));
   }, [searchError, t]);
 
-  const logTypeOptions = [
-    { value: 'anime', label: t('common:mediaTypes.anime') },
-    { value: 'manga', label: t('common:mediaTypes.manga') },
-    { value: 'vn', label: t('common:mediaTypes.vn') },
-    { value: 'game', label: t('common:mediaTypes.game') },
-    { value: 'video', label: t('common:mediaTypes.video') },
-    { value: 'tv show', label: t('common:mediaTypes.tvShow') },
-    { value: 'movie', label: t('common:mediaTypes.movie') },
-    { value: 'reading', label: t('common:mediaTypes.reading') },
-    { value: 'book', label: t('common:mediaTypes.book') },
-    { value: 'audio', label: t('common:mediaTypes.audio') },
-  ];
+  const logTypeOptions = LOG_TYPE_OPTIONS.map(({ value, labelKey }) => ({
+    value,
+    label: tCommon(labelKey),
+  }));
 
   const isSeriesType = logData.type === 'anime' || logData.type === 'tv show';
 

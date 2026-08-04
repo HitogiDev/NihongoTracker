@@ -1,16 +1,17 @@
 import { MeiliSearch } from 'meilisearch';
-import { customError } from '../../middlewares/errorMiddleware.js';
+import { apiError } from '../../i18n/errorCodes.js';
 
 const host = process.env.MEILISEARCH_HOST;
 const apiKey = process.env.MEILISEARCH_API_KEY;
 
 if (!host)
-  throw new customError('MeiliSearch host environment variable not set', 500);
+  throw apiError('integration.meiliHostNotSet', 500, 'MeiliSearch host environment variable not set');
 
 if (!apiKey)
-  throw new customError(
-    'MeiliSearch api key environment variable not set',
-    500
+  throw apiError(
+    'integration.meiliKeyNotSet',
+    500,
+    'MeiliSearch api key environment variable not set'
   );
 
 const client = new MeiliSearch({

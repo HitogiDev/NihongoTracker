@@ -1,4 +1,7 @@
 {
+  "allMediaTypes": "All Media Types",
+  "allTypes": "All types",
+  "close": "Close",
   "errors": {
     "generic": "An error occurred"
   },
@@ -54,5 +57,6 @@
   },
   "time": {
     "justNow": "Just now"
-  }
+  },
+  "unknown": "Unknown"
 }

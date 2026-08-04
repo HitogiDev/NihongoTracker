@@ -6,8 +6,8 @@ import {
   deleteObject,
 } from 'firebase/storage';
 import { firebaseConfig } from '../firebaseConfig.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { initializeApp } from 'firebase/app';
-import { customError } from '../middlewares/errorMiddleware.js';
 
 initializeApp(firebaseConfig);
 
@@ -52,16 +52,19 @@ function validateImageFile(
     options.maxFileSizeBytes ?? DEFAULT_MAX_FILE_SIZE_BYTES;
 
   if (!allowedMimeTypes.includes(file.mimetype)) {
-    throw new customError(
-      'Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)',
-      400
+    throw apiError(
+      'upload.invalidImageType',
+      400,
+      'Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)'
     );
   }
 
   if (file.size > maxFileSizeBytes) {
-    throw new customError(
+    throw apiError(
+      'upload.fileTooLarge',
+      400,
       `File size exceeds the ${formatMaxSize(maxFileSizeBytes)}MB limit`,
-      400
+      { max: formatMaxSize(maxFileSizeBytes) }
     );
   }
 }
@@ -97,7 +100,7 @@ async function uploadFile(
     };
   } catch (error) {
     console.error('Firebase upload error:', error);
-    throw new customError('Error uploading file to storage', 500);
+    throw apiError('upload.storageFailed', 500, 'Error uploading file to storage');
   }
 }
 

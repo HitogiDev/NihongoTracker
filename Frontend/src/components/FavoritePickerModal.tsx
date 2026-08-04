@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import {
   Search,
   X,
@@ -17,16 +19,44 @@ import { useUserDataStore } from '../store/userData';
 
 const MEDIA_TYPE_CONFIG: Record<
   string,
-  { icon: typeof Play; color: string; label: string }
+  { icon: typeof Play; color: string; labelKey: ParseKeys<'common'> }
 > = {
-  anime: { icon: Play, color: 'text-secondary', label: 'Anime' },
-  manga: { icon: Book, color: 'text-warning', label: 'Manga' },
-  reading: { icon: Book, color: 'text-primary', label: 'Light Novel' },
-  vn: { icon: Gamepad, color: 'text-accent', label: 'Visual Novel' },
-  game: { icon: Gamepad, color: 'text-neutral', label: 'Video Game' },
-  video: { icon: Video, color: 'text-info', label: 'Video' },
-  movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
-  'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
+  anime: {
+    icon: Play,
+    color: 'text-secondary',
+    labelKey: 'mediaTypes.anime',
+  },
+  manga: {
+    icon: Book,
+    color: 'text-warning',
+    labelKey: 'mediaTypes.manga',
+  },
+  reading: {
+    icon: Book,
+    color: 'text-primary',
+    labelKey: 'mediaTypes.reading',
+  },
+  vn: { icon: Gamepad, color: 'text-accent', labelKey: 'mediaTypes.vn' },
+  game: {
+    icon: Gamepad,
+    color: 'text-neutral',
+    labelKey: 'mediaTypes.game',
+  },
+  video: {
+    icon: Video,
+    color: 'text-info',
+    labelKey: 'mediaTypes.video',
+  },
+  movie: {
+    icon: Clapperboard,
+    color: 'text-error',
+    labelKey: 'mediaTypes.movie',
+  },
+  'tv show': {
+    icon: MonitorPlay,
+    color: 'text-success',
+    labelKey: 'mediaTypes.tvShow',
+  },
 };
 
 function FavoritePickerModal({
@@ -41,6 +71,8 @@ function FavoritePickerModal({
   /** Set of `${type}:${contentId}` already in favorites, hidden from results. */
   existingKeys: Set<string>;
 }) {
+  const { t } = useTranslation('media');
+  const { t: tCommon } = useTranslation('common');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResultType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -148,7 +180,7 @@ function FavoritePickerModal({
             ref={inputRef}
             type="text"
             className="flex-1 bg-transparent outline-none text-base placeholder:text-base-content/30"
-            placeholder="Search media to add..."
+            placeholder={t('search.mediaPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -164,7 +196,7 @@ function FavoritePickerModal({
           {!hasQuery && (
             <div className="px-4 py-16 text-center text-base-content/40">
               <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Type at least 2 characters to search</p>
+              <p className="text-sm">{t('search.typeToSearch')}</p>
             </div>
           )}
 
@@ -226,7 +258,7 @@ function FavoritePickerModal({
                     </div>
                     <span className="badge badge-sm gap-1 flex-shrink-0 badge-ghost">
                       <TypeIcon className="w-3 h-3" />
-                      {config.label}
+                      {tCommon(config.labelKey)}
                     </span>
                   </button>
                 );

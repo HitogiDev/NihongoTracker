@@ -21,7 +21,11 @@
   },
   "apiKey": {
     "expired": "Esa clave de API ha caducado",
-    "invalid": "Esa clave de API no es válida"
+    "invalid": "Esa clave de API no es válida",
+    "limitReached": "Puedes tener como máximo {{max}} claves de API",
+    "nameRequired": "El nombre de la clave de API es obligatorio",
+    "nameTooLong": "El nombre de la clave de API no puede superar los 100 caracteres",
+    "notFound": "Clave de API no encontrada"
   },
   "auth": {
     "banned": "Tu cuenta ha sido suspendida",
@@ -90,6 +94,24 @@
     "mediaNotFound": "Ese contenido no está en tu lista de inmersión",
     "noteMustBeString": "La nota debe ser texto"
   },
+  "import": {
+    "emptyCsv": "No se han encontrado datos en el archivo CSV",
+    "emptyJsonl": "No se han encontrado datos válidos en el archivo JSONL",
+    "emptyTsv": "No se han encontrado datos en el archivo TSV",
+    "fileTooLarge": "El archivo supera el límite de 5 MB",
+    "invalidType": "El tipo de importación no es válido",
+    "noFile": "No se ha subido ningún archivo",
+    "rowMissingColumns": "Cada fila debe tener los campos \"Date\", \"Log Name\", \"Media Type\" y \"Duration\"",
+    "rowMissingFields": "Cada fila debe tener al menos los campos \"date\" y \"type\"",
+    "unsupportedCsvType": "Tipo de CSV no admitido"
+  },
+  "integration": {
+    "apiUrlNotSet": "La URL de la API no está configurada",
+    "discordIdNotSet": "No has configurado tu ID de Discord",
+    "meiliHostNotSet": "La variable de entorno del host de MeiliSearch no está configurada",
+    "meiliKeyNotSet": "La variable de entorno de la clave de API de MeiliSearch no está configurada",
+    "privateKeyNotSet": "La clave privada no está configurada"
+  },
   "layout": {
     "cardMustBeObject": "Cada tarjeta debe ser un objeto",
     "cardNeedsVisible": "Cada tarjeta necesita un indicador de visibilidad",
@@ -111,17 +133,20 @@
     "descriptionRequired": "Hace falta una descripción",
     "idsRequired": "Los ids deben ser una lista no vacía",
     "manabeNotConfigured": "La integración con Manabe no está configurada",
-    "noneFound": "No se encontraron registros",
+    "noneFound": "No se han encontrado registros",
     "noneFoundOrForbidden": "No se encontraron registros, o no son tuyos",
     "notFound": "Registro no encontrado",
     "notFoundOrForbidden": "Ese registro no existe o no es tuyo",
     "notFoundPlural_one": "Registro no encontrado",
     "notFoundPlural_other": "Registros no encontrados",
+    "notFoundSingle": "Registro no encontrado",
     "rangeMinAboveMax": "El mínimo de {{field}} no puede ser mayor que su máximo",
     "saveFailed": "No se pudo guardar el registro",
+    "typeNotFound": "Tipo de registro no encontrado",
     "typeRequired": "Hace falta un tipo de registro"
   },
   "media": {
+    "invalidContentType": "Tipo de contenido no válido",
     "notFound": "Contenido no encontrado"
   },
   "mediaRequest": {
@@ -143,6 +168,9 @@
     "notConfigured": "El OAuth de Patreon no está configurado en este servidor",
     "oauthNotConfigured": "OAuth no está configurado correctamente en este servidor",
     "useOauthFlow": "Usa el flujo de OAuth para vincular tu cuenta de Patreon"
+  },
+  "search": {
+    "failed": "Falló la operación de búsqueda"
   },
   "tag": {
     "fieldsRequired": "El nombre y el color son obligatorios",
@@ -167,10 +195,25 @@
     "avatarCropWithoutFile": "Se enviaron datos de recorte sin ningún archivo de avatar",
     "bannerCropGifOnly": "El recorte de cabecera solo funciona con archivos GIF",
     "bannerCropWithoutFile": "Se enviaron datos de recorte sin ningún archivo de cabecera",
+    "cropOutOfBounds": "El área de recorte excede los límites del GIF. Vuelve a seleccionarla e inténtalo de nuevo.",
     "cropWithoutFile": "Se enviaron datos de recorte sin ningún archivo de avatar o cabecera",
+    "failed": "Fallo al subir el archivo",
+    "fieldDimensionsPositive": "El ancho y el alto de {{field}} deben ser mayores que 0",
+    "fieldInvalidJson": "{{field}} debe ser JSON válido",
+    "fieldNegative": "Las coordenadas de {{field}} deben ser 0 o mayores",
+    "fieldNotFinite": "{{field}} debe ser un número finito",
+    "fieldNotJsonString": "{{field}} debe ser una cadena JSON",
+    "fileTooLarge": "El archivo supera el límite de {{max}} MB",
     "gifAvatarTierRequired": "Los avatares GIF animados solo están disponibles en los niveles Entusiasta y Consumidor de Patreon",
     "gifBannerTierRequired": "Las cabeceras GIF animadas solo están disponibles en los niveles Entusiasta y Consumidor de Patreon",
-    "invalidFieldName": "Solo se permiten subidas de avatar y cabecera"
+    "gifCropFailed": "No se pudo recortar el GIF animado",
+    "gifDimensionsUnknown": "No se pudieron determinar las dimensiones del GIF para recortarlo",
+    "gifOnlyMetadata": "Los metadatos de recorte de GIF solo pueden usarse con archivos GIF",
+    "invalidFieldName": "Solo se permiten subidas de avatar y cabecera",
+    "invalidImageType": "Solo se permiten archivos de imagen (JPEG, PNG, GIF, WebP, SVG)",
+    "noFile": "No se ha enviado ningún archivo",
+    "sourceDimensionPositive": "{{field}} debe ser mayor que 0",
+    "storageFailed": "Error al subir el archivo al almacenamiento"
   },
   "user": {
     "aboutTooLong": "Tu biografía debe tener 2000 caracteres o menos",
@@ -184,6 +227,7 @@
     "invalidLanguage": "Ese idioma no está soportado",
     "invalidTimezone": "Esa zona horaria no es válida",
     "newPasswordRequired": "Introduce una contraseña nueva",
+    "noStats": "Este usuario no tiene estadísticas",
     "notFound": "Usuario no encontrado",
     "oldPasswordRequired": "Introduce tu contraseña actual",
     "passwordConfirmRequired": "Confirma tu nueva contraseña",
@@ -194,7 +238,7 @@
     "usernameConfirmMismatch": "El nombre de usuario no coincide. Escríbelo para confirmar.",
     "usernameInvalid": "El nombre de usuario solo puede contener letras, números y guiones bajos",
     "usernameLength": "Tu nombre de usuario debe tener entre 1 y 20 caracteres",
-    "usernameRequired": "Hace falta un nombre de usuario",
+    "usernameRequired": "El nombre de usuario es obligatorio",
     "usernameTaken": "Ese nombre de usuario ya está en uso"
   }
 }

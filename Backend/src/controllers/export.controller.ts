@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { IUser } from '../types.js';
 import Log from '../models/log.model.js';
 import Tag from '../models/tag.model.js';
@@ -11,7 +12,7 @@ export async function exportLogsCSV(
 ) {
   try {
     const user: Omit<IUser, 'password'> = res.locals.user;
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     // Fetch all logs for the user with tags populated
     const logs = await Log.find({ user: user._id })

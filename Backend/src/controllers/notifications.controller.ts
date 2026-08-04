@@ -25,9 +25,13 @@ type ClubPendingSummary = {
 
 type NotificationListItem = {
   id: string;
+  /** English text. Always present, and what the client shows when no key matches. */
   label: string;
+  /** Translation key for `label`; interpolation values live in `meta`. */
+  labelKey?: string;
   /** Optional secondary line (stored notifications only). */
   body?: string;
+  bodyKey?: string;
   count: number;
   isRead: boolean;
   createdAt: string;
@@ -91,6 +95,7 @@ async function getLatestChangelogNotificationItem(
   return {
     id: latest._id.toString(),
     label: `Version ${latest.version} is now available`,
+    labelKey: 'changelog.available',
     count: 1,
     isRead: false,
     type: 'changelog',
@@ -200,12 +205,17 @@ function buildClubNotificationItems(
           club.pendingCount === 1 && club.firstPendingUsername
             ? `${club.firstPendingUsername} wants to join ${club.name}`
             : `You have new join requests in ${club.name}`,
+        labelKey:
+          club.pendingCount === 1 && club.firstPendingUsername
+            ? 'club.joinRequestSingle'
+            : 'club.joinRequestMany',
         count: club.pendingCount,
         isRead,
         type: 'club_join_requests',
         createdAt: (latestPendingAt ?? new Date()).toISOString(),
         meta: {
           clubId: club._id.toString(),
+          clubName: club.name,
           ...(club.firstPendingUsername
             ? { username: club.firstPendingUsername }
             : {}),
@@ -343,7 +353,9 @@ async function getStoredNotificationItems(
     return {
       id: notification._id.toString(),
       label: notification.title,
+      ...(notification.titleKey ? { labelKey: notification.titleKey } : {}),
       ...(notification.body ? { body: notification.body } : {}),
+      ...(notification.bodyKey ? { bodyKey: notification.bodyKey } : {}),
       count: notification.count ?? 1,
       isRead: Boolean(notification.isRead),
       createdAt: new Date(notification.createdAt).toISOString(),

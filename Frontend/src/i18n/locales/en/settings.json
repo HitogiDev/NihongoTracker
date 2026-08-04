@@ -263,6 +263,9 @@
       "label": "Progress Stats"
     }
   },
+  "tagFilter": {
+    "title": "Filter by Tags"
+  },
   "tags": {
     "subtitle": "Create and manage tags to organize your logs",
     "title": "Tags",
@@ -294,6 +297,11 @@
       "loading": "Loading tags...",
       "close": "Close"
     }
+  },
+  "timezonePicker": {
+    "placeholder": "Search timezones...",
+    "showAll": "Show all timezones",
+    "showLess": "Show less"
   },
   "toast": {
     "aboutMaxLength": "About Me text is at the maximum length.",

@@ -13,6 +13,10 @@ const NotificationSchema = new Schema<INotification>(
     type: { type: String, required: true, enum: NOTIFICATION_TYPES },
     title: { type: String, required: true, trim: true, maxlength: 300 },
     body: { type: String, trim: true, maxlength: 1000 },
+    // Translation keys written next to the English text. Older rows have none
+    // and keep rendering their stored English, so no backfill is needed.
+    titleKey: { type: String, trim: true, maxlength: 100, default: null },
+    bodyKey: { type: String, trim: true, maxlength: 100, default: null },
     // Frontend route the notification links to (e.g. "/clubs/<id>?tab=members").
     link: { type: String, trim: true, maxlength: 500 },
     // Optional image shown instead of the actor avatar (media cover, etc).

@@ -179,9 +179,15 @@ function Header() {
   return (
     <div className="relative">
       <div className="navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
-        <div className="navbar-start">
+        <div className="navbar-start w-auto">
           <div className="dropdown">
-            <div tabIndex={0} role="button" className="btn btn-ghost xl:hidden">
+            <div
+              tabIndex={0}
+              role="button"
+              className={`btn btn-ghost ${
+                user ? 'min-[1450px]:hidden' : 'xl:hidden'
+              }`}
+            >
               <Menu className="h-6 w-6" />
             </div>
             {user ? (
@@ -358,9 +364,9 @@ function Header() {
           </Link>
         </div>
         {user ? (
-          <div className="hidden xl:inline-flex">
+          <div className="hidden min-[1450px]:inline-flex flex-1 justify-center">
             {/* <QuickLog /> */}
-            <ul className="inline-flex flex-row gap-6">
+            <ul className="inline-flex flex-row gap-3 min-[1600px]:gap-6">
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
@@ -420,7 +426,7 @@ function Header() {
             </ul>
           </div>
         ) : (
-          <div className="navbar-center hidden xl:flex">
+          <div className="navbar-center hidden xl:flex flex-1 justify-center">
             <ul className="inline-flex flex-row gap-6">
               <li>
                 <Link
@@ -450,7 +456,7 @@ function Header() {
           </div>
         )}
 
-        <div className="navbar-end gap-1 sm:gap-3 mx-1 sm:mx-3">
+        <div className="navbar-end w-auto gap-1 sm:gap-3 mx-1 sm:mx-3">
           {/* Search Button */}
           <button
             className="btn btn-ghost btn-sm sm:btn-md gap-2"
@@ -458,7 +464,7 @@ function Header() {
             aria-label={t('a11y.search')}
           >
             <Search className="w-4 h-4" />
-            <span className="hidden 2xl:inline text-xs text-base-content/50">
+            <span className="hidden min-[1750px]:inline text-xs text-base-content/50">
               <kbd className="kbd kbd-xs">
                 {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
                   ? '⌘'

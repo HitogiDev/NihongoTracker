@@ -38,6 +38,13 @@ export default defineConfig({
       // FeaturesScreen looks these up by catalogue id.
       'home:features.categories.*',
       'home:features.howItWorks.steps.*',
+      // Hero builds the media-type chips and the typing-animation verbs from
+      // a key catalogue, so no literal t() call mentions them.
+      'home:hero.chips.*',
+      'home:hero.taglineVerbs.*',
+      // The dashboard feed filters resolve their labels through labelKey.
+      'home:dashboard.feed.*',
+      'home:dashboard.time.*',
       // The legal pages are structured documents rendered by LegalDocument.tsx,
       // so none of their prose is reachable from a literal t() call.
       'legal:*',
@@ -54,6 +61,10 @@ export default defineConfig({
       'texthooker:hooker.settings.useAppTheme',
       'profile:categories.*',
       'profile:favoritesWidget.types.*',
+      // Media-type catalogues resolved through labelKey in search/picker modals.
+      'common:mediaTypes.*',
+      'common:allTypes',
+      'stats:share.*',
       'notifications:*',
       'settings:profileWidgets.*',
       'validation:*',

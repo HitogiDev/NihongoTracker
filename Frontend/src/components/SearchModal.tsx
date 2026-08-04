@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -32,30 +34,61 @@ interface UserResult {
 
 const MEDIA_TYPE_CONFIG: Record<
   string,
-  { icon: typeof Play; color: string; label: string }
+  { icon: typeof Play; color: string; labelKey: ParseKeys<'common'> }
 > = {
-  anime: { icon: Play, color: 'text-secondary', label: 'Anime' },
-  manga: { icon: Book, color: 'text-warning', label: 'Manga' },
-  reading: { icon: Book, color: 'text-primary', label: 'Light Novel' },
-  vn: { icon: Gamepad, color: 'text-accent', label: 'Visual Novel' },
-  game: { icon: Gamepad, color: 'text-neutral', label: 'Video Game' },
-  video: { icon: Video, color: 'text-info', label: 'Video' },
-  movie: { icon: Clapperboard, color: 'text-error', label: 'Movie' },
-  'tv show': { icon: MonitorPlay, color: 'text-success', label: 'TV Show' },
+  anime: {
+    icon: Play,
+    color: 'text-secondary',
+    labelKey: 'mediaTypes.anime',
+  },
+  manga: {
+    icon: Book,
+    color: 'text-warning',
+    labelKey: 'mediaTypes.manga',
+  },
+  reading: {
+    icon: Book,
+    color: 'text-primary',
+    labelKey: 'mediaTypes.reading',
+  },
+  vn: { icon: Gamepad, color: 'text-accent', labelKey: 'mediaTypes.vn' },
+  game: {
+    icon: Gamepad,
+    color: 'text-neutral',
+    labelKey: 'mediaTypes.game',
+  },
+  video: {
+    icon: Video,
+    color: 'text-info',
+    labelKey: 'mediaTypes.video',
+  },
+  movie: {
+    icon: Clapperboard,
+    color: 'text-error',
+    labelKey: 'mediaTypes.movie',
+  },
+  'tv show': {
+    icon: MonitorPlay,
+    color: 'text-success',
+    labelKey: 'mediaTypes.tvShow',
+  },
 };
 
 // Media type filter options for the search bar dropdown (keys map to
 // SearchResultType.type / MEDIA_TYPE_CONFIG).
-const MEDIA_TYPE_FILTERS: { value: MediaTypeFilter; label: string }[] = [
-  { value: 'all', label: 'All types' },
-  { value: 'anime', label: 'Anime' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'reading', label: 'Light Novel' },
-  { value: 'vn', label: 'Visual Novel' },
-  { value: 'game', label: 'Video Game' },
-  { value: 'video', label: 'Video' },
-  { value: 'movie', label: 'Movie' },
-  { value: 'tv show', label: 'TV Show' },
+const MEDIA_TYPE_FILTERS: {
+  value: MediaTypeFilter;
+  labelKey: ParseKeys<'common'>;
+}[] = [
+  { value: 'all', labelKey: 'allTypes' },
+  { value: 'anime', labelKey: 'mediaTypes.anime' },
+  { value: 'manga', labelKey: 'mediaTypes.manga' },
+  { value: 'reading', labelKey: 'mediaTypes.reading' },
+  { value: 'vn', labelKey: 'mediaTypes.vn' },
+  { value: 'game', labelKey: 'mediaTypes.game' },
+  { value: 'video', labelKey: 'mediaTypes.video' },
+  { value: 'movie', labelKey: 'mediaTypes.movie' },
+  { value: 'tv show', labelKey: 'mediaTypes.tvShow' },
 ];
 
 type SearchResultEntry = {
@@ -168,6 +201,7 @@ function MediaResultRow({
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
+  const { t: tCommon } = useTranslation('common');
   const config = MEDIA_TYPE_CONFIG[media.type] || MEDIA_TYPE_CONFIG.anime;
   const TypeIcon = config.icon;
   const shouldBlur =
@@ -245,7 +279,7 @@ function MediaResultRow({
           }`}
         >
           <TypeIcon className="w-3 h-3" />
-          {config.label}
+          {tCommon(config.labelKey)}
         </span>
       </div>
     </button>
@@ -332,6 +366,8 @@ function SearchModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('media');
+  const { t: tCommon } = useTranslation('common');
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('all');
   const [mediaTypeFilter, setMediaTypeFilter] =
@@ -589,7 +625,7 @@ function SearchModal({
             ref={inputRef}
             type="text"
             className="flex-1 bg-transparent outline-none text-base placeholder:text-base-content/30"
-            placeholder="Search users or media..."
+            placeholder={t('search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -602,13 +638,15 @@ function SearchModal({
               tabIndex={0}
               role="button"
               className="btn btn-sm btn-ghost gap-1.5 font-normal"
-              title="Filter by media type"
-              aria-label="Filter by media type"
+              title={t('search.filterByType')}
+              aria-label={t('search.filterByType')}
             >
               <Filter className="w-3.5 h-3.5 opacity-60" />
               <span className="text-sm">
-                {MEDIA_TYPE_FILTERS.find((o) => o.value === mediaTypeFilter)
-                  ?.label ?? 'All types'}
+                {tCommon(
+                  MEDIA_TYPE_FILTERS.find((o) => o.value === mediaTypeFilter)
+                    ?.labelKey ?? 'allTypes'
+                )}
               </span>
               <ChevronDown className="w-3.5 h-3.5 opacity-60" />
             </div>
@@ -632,7 +670,7 @@ function SearchModal({
                       inputRef.current?.focus();
                     }}
                   >
-                    {opt.label}
+                    {tCommon(opt.labelKey)}
                   </button>
                 </li>
               ))}
@@ -648,8 +686,8 @@ function SearchModal({
           {(
             [
               { id: 'all', label: 'All' },
-              { id: 'users', label: 'Users' },
-              { id: 'media', label: 'Media' },
+              { id: 'users', label: t('search.users') },
+              { id: 'media', label: t('search.media') },
             ] as const
           ).map((tab) => (
             <button
@@ -673,7 +711,7 @@ function SearchModal({
           {!hasQuery && (
             <div className="px-4 py-16 text-center text-base-content/40">
               <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Type at least 2 characters to search</p>
+              <p className="text-sm">{t('search.typeToSearch')}</p>
               <p className="text-xs mt-1 text-base-content/25">
                 Search across users and media
               </p>

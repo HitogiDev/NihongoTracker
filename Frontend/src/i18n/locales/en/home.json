@@ -50,7 +50,9 @@
       "logs": "Logs",
       "achievements": "Achievements",
       "globalFeed": "Global Feed",
-      "allTypes": "All types"
+      "allTypes": "All types",
+      "subtitle": "See what the community is immersing in right now",
+      "empty": "No activity for the selected filters."
     },
     "time": {
       "day": "Last 24h",
@@ -78,7 +80,31 @@
     "hideAria": "Hide from recent media",
     "someone": "Someone",
     "playlistBatch": "Playlist batch",
-    "refreshFailed": "Failed to refresh user data after quick log"
+    "refreshFailed": "Failed to refresh user data after quick log",
+    "welcomeBack": "Welcome back",
+    "actions": {
+      "createLog": "Create Log",
+      "profile": "Profile",
+      "rankings": "Rankings",
+      "cancel": "Cancel",
+      "hide": "Hide"
+    },
+    "streak": {
+      "label": "Streak",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "hint": "Keep it burning with daily immersion"
+    },
+    "monthlyRanking": "Monthly Ranking",
+    "immersion": {
+      "title": "This Month's Immersion",
+      "subtitle": "Compared to the same period last month"
+    },
+    "quickLog": "Quick Log",
+    "quickShortcuts": "Quick log shortcuts",
+    "recentEmpty": "Log something to unlock quick actions here.",
+    "thisMedia": "this media",
+    "hideConfirm": "Are you sure you want to hide <title>{{title}}</title> from your recent media? It will no longer appear in quick actions."
   },
   "features": {
     "hero": {
@@ -315,7 +341,7 @@
     }
   },
   "hero": {
-    "builtForVn": "Built for visual",
+    "builtForVn": "Built for visual<br />novel readers",
     "clubBody": "Join or create an immersion club. Compete on club leaderboards,",
     "clubBullet1": "Vote to decide what media to consume together next",
     "clubBullet2": "Public and private clubs with tags",
@@ -323,14 +349,14 @@
     "clubs": "Clubs",
     "dashboardAlt": "NihongoTracker Dashboard",
     "freeForever": "Start tracking today · Core features free forever",
-    "friendly": "A little friendly",
+    "friendly": "A little friendly<br />competition",
     "hookerAlt": "TextHooker Dashboard",
     "hookerBody": "The integrated texthooker makes it easy to log your sessions",
     "hookerBullet1": "Multiplayer texthooker rooms for shared reading sessions",
     "hookerBullet2": "Full session history per title",
     "hookerBullet3": "Easy one-click reading session logging",
     "leaderboards": "Leaderboards",
-    "learnBetter": "Learn better",
+    "learnBetter": "Learn better<br />together",
     "logBody": "Search a title, fill in the details, hit save. No more writing",
     "logBullet1": "Anime, manga, VNs, audio, light novels & more",
     "logBullet2": "AniList & VNDB integration for instant metadata",
@@ -342,13 +368,29 @@
     "rankBullet2": "Monthly & all-time leaderboards",
     "rankBullet3": "Filters for time range, medium, and listening/reading",
     "seeFeatures": "See all features",
-    "seeHowFar": "See exactly how far",
+    "seeHowFar": "See exactly how far<br />you've come",
     "startTracking": "Start Tracking",
     "statistics": "Statistics",
     "statsBody": "Detailed charts and breakdowns show your growth over time.",
     "statsBullet1": "Overall, listening & reading level progress",
     "statsBullet2": "Activity heatmap, streaks & daily averages",
     "statsBullet3": "Filter by time range, medium, or tags",
-    "trackEveryType": "Track every type of immersion"
+    "trackEveryType": "Track every type of immersion",
+    "tagline": "The best way to <verb></verb> your Japanese immersion",
+    "taglineVerbs": {
+      "track": "track",
+      "gamify": "gamify",
+      "celebrate": "celebrate",
+      "share": "share"
+    },
+    "chips": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "vn": "Visual Novels",
+      "audio": "Audio & Podcasts",
+      "books": "Books & Reading",
+      "video": "Video",
+      "games": "Video Games"
+    }
   }
 }

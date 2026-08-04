@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { apiError } from '../i18n/errorCodes.js';
 import {
   clearIndex,
   deleteIndex,
   listIndexes,
   updateIndexSettings,
 } from '../services/meilisearch/meiliSearch.js';
-import { customError } from '../middlewares/errorMiddleware.js';
 import {
   forceSyncAllUsers,
   initUsersIndex,
@@ -65,9 +65,10 @@ export async function deleteMeiliSearchIndex(
       .json({ message: `Index ${indexName} deleted successfully.` });
   } catch (error) {
     return next(
-      new customError(
-        error instanceof Error ? error.message : 'Unknown error',
-        500
+      apiError(
+        'search.failed',
+        500,
+        error instanceof Error ? error.message : 'Unknown error'
       )
     );
   }
@@ -88,9 +89,10 @@ export async function updateMeiliSearchIndexSettings(
     });
   } catch (error) {
     return next(
-      new customError(
-        error instanceof Error ? error.message : 'Unknown error',
-        500
+      apiError(
+        'search.failed',
+        500,
+        error instanceof Error ? error.message : 'Unknown error'
       )
     );
   }
@@ -138,9 +140,10 @@ export async function syncMeiliSearchIndexes(
     });
   } catch (error) {
     return next(
-      new customError(
-        error instanceof Error ? error.message : 'Unknown error',
-        500
+      apiError(
+        'search.failed',
+        500,
+        error instanceof Error ? error.message : 'Unknown error'
       )
     );
   }

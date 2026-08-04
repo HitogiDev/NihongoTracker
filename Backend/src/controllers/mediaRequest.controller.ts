@@ -58,14 +58,10 @@ function sanitizeTitle(raw: unknown): {
   if (!raw || typeof raw !== 'object') return null;
   const t = raw as Record<string, unknown>;
   const native =
-    typeof t.contentTitleNative === 'string'
-      ? t.contentTitleNative.trim()
-      : '';
+    typeof t.contentTitleNative === 'string' ? t.contentTitleNative.trim() : '';
   if (!native) return null;
   const romaji =
-    typeof t.contentTitleRomaji === 'string'
-      ? t.contentTitleRomaji.trim()
-      : '';
+    typeof t.contentTitleRomaji === 'string' ? t.contentTitleRomaji.trim() : '';
   const english =
     typeof t.contentTitleEnglish === 'string'
       ? t.contentTitleEnglish.trim()
@@ -102,7 +98,8 @@ export async function createMediaRequest(
 ) {
   try {
     const userId = res.locals.user?.id;
-    if (!userId) throw apiError('auth.notAuthenticated', 401, 'Authentication required');
+    if (!userId)
+      throw apiError('auth.notAuthenticated', 401, 'Authentication required');
 
     const { type, referenceUrl, coverImage, isAdult, note } =
       req.body as Partial<IMediaRequest> & { isAdult?: boolean };
@@ -110,14 +107,22 @@ export async function createMediaRequest(
 
     const title = sanitizeTitle(req.body.title);
     if (!title) {
-      throw apiError('mediaRequest.nativeTitleRequired', 400, 'A native title is required');
+      throw apiError(
+        'mediaRequest.nativeTitleRequired',
+        400,
+        'A native title is required'
+      );
     }
 
     if (
       typeof type !== 'string' ||
       !MEDIA_REQUEST_TYPES.includes(type as MediaRequestType)
     ) {
-      throw apiError('mediaRequest.invalidType', 400, 'A valid media type is required');
+      throw apiError(
+        'mediaRequest.invalidType',
+        400,
+        'A valid media type is required'
+      );
     }
 
     const pendingCount = await MediaRequest.countDocuments({
@@ -164,7 +169,8 @@ export async function getMyMediaRequests(
 ) {
   try {
     const userId = res.locals.user?.id;
-    if (!userId) throw apiError('auth.notAuthenticated', 401, 'Authentication required');
+    if (!userId)
+      throw apiError('auth.notAuthenticated', 401, 'Authentication required');
 
     const requests = await MediaRequest.find({ user: userId })
       .sort({ createdAt: -1 })
@@ -231,7 +237,8 @@ export async function reviewMediaRequest(
 ) {
   try {
     const reviewerId = res.locals.user?.id;
-    if (!reviewerId) throw apiError('auth.notAuthenticated', 401, 'Authentication required');
+    if (!reviewerId)
+      throw apiError('auth.notAuthenticated', 401, 'Authentication required');
 
     const { id } = req.params;
     if (!Types.ObjectId.isValid(id)) {
@@ -243,11 +250,16 @@ export async function reviewMediaRequest(
       reviewNote?: string;
     };
     if (action !== 'approve' && action !== 'reject') {
-      throw apiError('mediaRequest.invalidAction', 400, 'action must be "approve" or "reject"');
+      throw apiError(
+        'mediaRequest.invalidAction',
+        400,
+        'action must be "approve" or "reject"'
+      );
     }
 
     const request = await MediaRequest.findById(id);
-    if (!request) throw apiError('mediaRequest.notFound', 404, 'Media request not found');
+    if (!request)
+      throw apiError('mediaRequest.notFound', 404, 'Media request not found');
     if (request.status !== 'pending') {
       throw apiError(
         'mediaRequest.alreadyReviewed',
@@ -269,16 +281,16 @@ export async function reviewMediaRequest(
         actor: reviewerId,
         type: 'media_request_rejected',
         title: `Your media request "${request.title.contentTitleNative}" was rejected`,
+        titleKey: 'mediaRequest.rejected',
         body: request.reviewNote,
         link: '/media-request',
         image: request.coverImage,
         entityType: 'mediaRequest',
         entityId: request._id.toString(),
+        meta: { title: request.title.contentTitleNative },
       });
 
-      return res
-        .status(200)
-        .json({ message: 'Request rejected', request });
+      return res.status(200).json({ message: 'Request rejected', request });
     }
 
     // Approve: create the real Media document from the request fields.
@@ -326,11 +338,13 @@ export async function reviewMediaRequest(
       actor: reviewerId,
       type: 'media_request_approved',
       title: `Your media request "${request.title.contentTitleNative}" was approved`,
+      titleKey: 'mediaRequest.approved',
       body: request.reviewNote,
       link: `/${request.type}/${contentId}`,
       image: request.coverImage,
       entityType: 'mediaRequest',
       entityId: request._id.toString(),
+      meta: { title: request.title.contentTitleNative },
     });
 
     return res.status(200).json({

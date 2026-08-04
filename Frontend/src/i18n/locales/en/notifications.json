@@ -1,16 +1,30 @@
 {
-  "page": {
-    "title": "Notifications",
-    "subtitle": "Browse every notification, including the ones you have already read."
+  "deleteConfirm": {
+    "title": "Delete notification?",
+    "description": "This removes it from your notifications.",
+    "dontShowAgain": "Don't show again",
+    "cancel": "Cancel",
+    "confirm": "Delete",
+    "close": "Close delete confirmation"
   },
-  "summary": {
-    "total": "Total",
+  "item": {
+    "read": "Read",
     "unread": "Unread",
-    "markAsRead": "Mark as read",
-    "markAsReadTitle": "Mark all notifications as read",
-    "nothingUnread": "No unread notifications",
-    "markAsUnread": "Mark as unread",
-    "markAsUnreadTitle": "Mark all notifications as unread"
+    "delete": "Delete notification"
+  },
+  "items": {
+    "club.joinApproved": "You were accepted into {{clubName}}",
+    "club.joinRejected": "Your request to join {{clubName}} was declined",
+    "club.memberRemoved": "You were removed from {{clubName}}",
+    "club.joinRequestSingle": "{{username}} wants to join {{clubName}}",
+    "club.joinRequestMany": "You have new join requests in {{clubName}}",
+    "review.liked_one": "{{username}} and {{count}} other liked your review",
+    "review.liked_other": "{{username}} and {{count}} others liked your review",
+    "review.liked_zero": "{{username}} liked your review",
+    "mediaRequest.rejected": "Your media request \"{{title}}\" was rejected",
+    "mediaRequest.approved": "Your media request \"{{title}}\" was approved",
+    "achievement.unlocked": "Achievement unlocked: {{name}}",
+    "changelog.available": "Version {{version}} is now available"
   },
   "list": {
     "heading": "All notifications",
@@ -27,17 +41,17 @@
       "description": "You do not have any notifications right now."
     }
   },
-  "item": {
-    "read": "Read",
-    "unread": "Unread",
-    "delete": "Delete notification"
+  "page": {
+    "title": "Notifications",
+    "subtitle": "Browse every notification, including the ones you have already read."
   },
-  "deleteConfirm": {
-    "title": "Delete notification?",
-    "description": "This removes it from your notifications.",
-    "dontShowAgain": "Don't show again",
-    "cancel": "Cancel",
-    "confirm": "Delete",
-    "close": "Close delete confirmation"
+  "summary": {
+    "total": "Total",
+    "unread": "Unread",
+    "markAsRead": "Mark as read",
+    "markAsReadTitle": "Mark all notifications as read",
+    "nothingUnread": "No unread notifications",
+    "markAsUnread": "Mark as unread",
+    "markAsUnreadTitle": "Mark all notifications as unread"
   }
 }

@@ -1,4 +1,7 @@
 {
+  "allMediaTypes": "Todos los tipos de contenido",
+  "allTypes": "Todos los tipos",
+  "close": "Cerrar",
   "errors": {
     "generic": "Ha ocurrido un error"
   },
@@ -54,5 +57,6 @@
   },
   "time": {
     "justNow": "Justo ahora"
-  }
+  },
+  "unknown": "Desconocido"
 }

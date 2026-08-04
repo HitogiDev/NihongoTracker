@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -79,6 +80,8 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   metric,
   timeframe,
 }) => {
+  const { t } = useTranslation('stats');
+  const { t: tCommon } = useTranslation('common');
   const themeColors = useThemeColors(1);
   const [colorsReady, setColorsReady] = useState(false);
   const { timezone } = useTimezone();
@@ -454,7 +457,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               ></path>
             </svg>
-            <span>No data available for the selected timeframe.</span>
+            <span>{t('stacked.noData')}</span>
           </div>
         </div>
       </div>
@@ -463,7 +466,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
 
   const typeLabel =
     selectedType === 'all'
-      ? 'All Media Types'
+      ? tCommon('allMediaTypes')
       : selectedType === 'vn'
         ? 'Visual Novel'
         : selectedType === 'game'
@@ -486,7 +489,9 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       <div className="h-full w-full">
         <div className="flex items-center justify-between mb-6 px-4">
           <div>
-            <h2 className="text-2xl font-bold text-primary mb-2">Activity</h2>
+            <h2 className="text-2xl font-bold text-primary mb-2">
+              {t('stacked.activity')}
+            </h2>
             <p className="text-sm text-base-content mb-4">
               {typeLabel} - {timeframeLabel}
             </p>

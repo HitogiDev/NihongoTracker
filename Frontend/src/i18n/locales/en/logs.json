@@ -121,6 +121,13 @@
     "xpGained": "Experience Gained",
     "xpPoints": "XP Points"
   },
+  "dismiss": {
+    "title": "Dismiss Logs",
+    "action": "Dismiss",
+    "hint": "Dismiss selected logs from media matching",
+    "serverError": "Server error while dismissing logs",
+    "unknownError": "Unknown error while dismissing logs"
+  },
   "edit": {
     "activityDetails": "Activity Details",
     "basicInfo": "Basic Information",
@@ -171,6 +178,20 @@
     "selectGroupOrTitle": "Select a log group or enter a {{type}} title to search",
     "selectOne": "You need to select a media entry!",
     "unassignedLogs": "Unassigned Logs"
+  },
+  "playlist": {
+    "title": "YouTube Playlist",
+    "label": "Playlist",
+    "fetching": "Fetching playlist…",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "noData": "No playlist data available.",
+    "noVideos": "No videos in this playlist",
+    "date": "Date",
+    "description": "Description",
+    "unknownDate": "Unknown date",
+    "editEntry": "Edit duration, description, date",
+    "closeModal": "Close modal"
   },
   "quick": {
     "title": "Quick Log",
