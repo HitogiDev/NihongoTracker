@@ -73,22 +73,22 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
 
   const sortOptions = [
     {
-      label: 'Total XP',
+      label: t('ranking.sort.totalXp'),
       value: 'totalXp' as const,
       icon: <Zap className="w-4 h-4" />,
     },
     {
-      label: 'Total Logs',
+      label: t('ranking.sort.totalLogs'),
       value: 'totalLogs' as const,
       icon: <ListOrdered className="w-4 h-4" />,
     },
     {
-      label: 'Total Time',
+      label: t('ranking.sort.totalTime'),
       value: 'totalTime' as const,
       icon: <Clock className="w-4 h-4" />,
     },
     {
-      label: 'Level',
+      label: t('ranking.sort.level'),
       value: 'level' as const,
       icon: <Star className="w-4 h-4" />,
     },
@@ -96,17 +96,17 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
 
   const periodOptions = [
     {
-      label: 'All Time',
+      label: t('ranking.period.allTime'),
       value: 'all-time' as const,
       icon: <Trophy className="w-4 h-4" />,
     },
     {
-      label: 'This Month',
+      label: t('ranking.period.month'),
       value: 'month' as const,
       icon: <BarChart className="w-4 h-4" />,
     },
     {
-      label: 'This Week',
+      label: t('ranking.period.week'),
       value: 'week' as const,
       icon: <Calendar1 className="w-4 h-4" />,
     },
@@ -131,9 +131,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
     const val = getDisplayValue(member);
     switch (sortBy) {
       case 'totalTime':
-        return `${numberWithCommas(val)} hrs`;
+        return t('ranking.hoursValue', { value: numberWithCommas(val) });
       case 'level':
-        return `Lv.${val}`;
+        return t('ranking.levelShort', { level: val });
       default:
         return numberWithCommas(val);
     }
@@ -142,20 +142,23 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
   const getValueUnit = () => {
     switch (sortBy) {
       case 'totalXp':
-        return 'XP';
+        return t('ranking.units.xp');
       case 'totalLogs':
-        return 'logs';
+        return t('ranking.units.logs');
       case 'totalTime':
-        return 'hrs';
+        return t('ranking.units.hours');
       case 'level':
         return '';
       default:
-        return 'XP';
+        return t('ranking.units.xp');
     }
   };
 
   const getSortLabel = () => {
-    return sortOptions.find((opt) => opt.value === sortBy)?.label || 'Total XP';
+    return (
+      sortOptions.find((opt) => opt.value === sortBy)?.label ||
+      t('ranking.sort.totalXp')
+    );
   };
 
   const getSortIcon = () => {
@@ -168,7 +171,8 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
 
   const getTimeFilterLabel = () => {
     return (
-      periodOptions.find((opt) => opt.value === period)?.label || 'All Time'
+      periodOptions.find((opt) => opt.value === period)?.label ||
+      t('ranking.period.allTime')
     );
   };
 

@@ -1,6 +1,7 @@
 {
   "allMediaTypes": "Todos los tipos de contenido",
   "allTypes": "Todos los tipos",
+  "cancel": "Cancelar",
   "close": "Cerrar",
   "errors": {
     "generic": "Ha ocurrido un error"
@@ -10,16 +11,16 @@
   },
   "mediaTypeGroups": {
     "anime": "Anime",
-    "manga": "Manga",
-    "reading": "Novelas ligeras",
-    "vn": "Novelas visuales",
-    "game": "Videojuegos",
-    "video": "Vídeo",
-    "movie": "Películas",
-    "tvShow": "Series",
-    "book": "Libros",
     "audio": "Audio",
-    "other": "Otros"
+    "book": "Libros",
+    "game": "Videojuegos",
+    "manga": "Manga",
+    "movie": "Películas",
+    "other": "Otros",
+    "reading": "Novelas ligeras",
+    "tvShow": "Series",
+    "video": "Vídeo",
+    "vn": "Novelas visuales"
   },
   "mediaTypes": {
     "anime": "Anime",
@@ -46,15 +47,16 @@
     "vn": "novelas visuales"
   },
   "notFound": {
-    "title": "404 - Página no encontrada",
     "description": "¡Vaya! La página que buscas no existe.",
-    "hint": "Ya que estamos, ¡vete a hacer un poco de inmersión!"
+    "hint": "Ya que estamos, ¡vete a hacer un poco de inmersión!",
+    "title": "404 - Página no encontrada"
   },
   "patreonTiers": {
     "consumer": "Consumidor",
     "donator": "Donante",
     "enthusiast": "Entusiasta"
   },
+  "save": "Guardar",
   "time": {
     "justNow": "Justo ahora"
   },

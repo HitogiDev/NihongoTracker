@@ -449,7 +449,7 @@ function SpeedChart({
             }`}
             onClick={() => setTimeframe('total')}
           >
-            All Time
+            {t('range.allTime')}
           </button>
         </div>
       )}

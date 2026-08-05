@@ -1,6 +1,7 @@
 {
   "allMediaTypes": "All Media Types",
   "allTypes": "All types",
+  "cancel": "Cancel",
   "close": "Close",
   "errors": {
     "generic": "An error occurred"
@@ -10,16 +11,16 @@
   },
   "mediaTypeGroups": {
     "anime": "Anime",
-    "manga": "Manga",
-    "reading": "Light Novels",
-    "vn": "Visual Novels",
-    "game": "Video Games",
-    "video": "Video",
-    "movie": "Movies",
-    "tvShow": "TV Shows",
-    "book": "Books",
     "audio": "Audio",
-    "other": "Other"
+    "book": "Books",
+    "game": "Video Games",
+    "manga": "Manga",
+    "movie": "Movies",
+    "other": "Other",
+    "reading": "Light Novels",
+    "tvShow": "TV Shows",
+    "video": "Video",
+    "vn": "Visual Novels"
   },
   "mediaTypes": {
     "anime": "Anime",
@@ -46,15 +47,16 @@
     "vn": "visual novels"
   },
   "notFound": {
-    "title": "404 - Page Not Found",
     "description": "Oops! The page you are looking for does not exist.",
-    "hint": "While we are here go immerse a bit!"
+    "hint": "While we are here go immerse a bit!",
+    "title": "404 - Page Not Found"
   },
   "patreonTiers": {
     "consumer": "Consumer",
     "donator": "Donator",
     "enthusiast": "Enthusiast"
   },
+  "save": "Save",
   "time": {
     "justNow": "Just now"
   },

@@ -31,14 +31,14 @@ import { getLocale } from '../../utils/timezone';
 
 type ResultsTimespan = '7' | '30' | '90' | '180' | '365' | 'all';
 
-const RESULTS_TIMESPAN_OPTIONS: { label: string; value: ResultsTimespan }[] = [
-  { label: 'Last 7 days', value: '7' },
-  { label: 'Last 30 days', value: '30' },
-  { label: 'Last 90 days', value: '90' },
-  { label: 'Last 6 months', value: '180' },
-  { label: 'Last 12 months', value: '365' },
-  { label: 'All time', value: 'all' },
-];
+const RESULTS_TIMESPAN_OPTIONS = [
+  { labelKey: 'voting.timespans.d7', value: '7' },
+  { labelKey: 'voting.timespans.d30', value: '30' },
+  { labelKey: 'voting.timespans.d90', value: '90' },
+  { labelKey: 'voting.timespans.m6', value: '180' },
+  { labelKey: 'voting.timespans.m12', value: '365' },
+  { labelKey: 'voting.timespans.all', value: 'all' },
+] as const satisfies readonly { labelKey: string; value: ResultsTimespan }[];
 
 interface VotingSystemProps {
   club: IClubResponse;
@@ -105,7 +105,8 @@ export default function VotingSystem({
       setSelectedCandidate(null);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : 'Failed to vote';
+      const message =
+        error instanceof Error ? error.message : t('voting.voteFailed');
       toast.error(message);
     },
   });
@@ -119,7 +120,7 @@ export default function VotingSystem({
     },
     onError: (error: unknown) => {
       const message =
-        error instanceof Error ? error.message : 'Failed to delete voting';
+        error instanceof Error ? error.message : t('voting.deleteFailed');
       toast.error(message);
       setDeletingVoting(null);
     },
@@ -131,38 +132,54 @@ export default function VotingSystem({
 
     switch (voting.status) {
       case 'setup':
-        return { status: 'setup', label: 'Setting Up', color: 'warning' };
+        return {
+          status: 'setup',
+          label: t('voting.status.setup'),
+          color: 'warning',
+        };
       case 'suggestions_open':
         return {
           status: 'suggestions_open',
-          label: 'Suggestions Open',
+          label: t('voting.status.suggestionsOpen'),
           color: 'info',
         };
       case 'suggestions_closed':
         return {
           status: 'suggestions_closed',
-          label: 'Suggestions Closed',
+          label: t('voting.status.suggestionsClosed'),
           color: 'warning',
         };
       case 'voting_open':
         if (now > votingEnd) {
-          return { status: 'ended', label: 'Voting Ended', color: 'error' };
+          return {
+            status: 'ended',
+            label: t('voting.status.ended'),
+            color: 'error',
+          };
         }
         return {
           status: 'voting_open',
-          label: 'Voting Open',
+          label: t('voting.status.open'),
           color: 'success',
         };
       case 'voting_closed':
         return {
           status: 'voting_closed',
-          label: 'Voting Closed',
+          label: t('voting.status.closed'),
           color: 'error',
         };
       case 'completed':
-        return { status: 'completed', label: 'Completed', color: 'success' };
+        return {
+          status: 'completed',
+          label: t('voting.status.completed'),
+          color: 'success',
+        };
       default:
-        return { status: 'unknown', label: 'Unknown', color: 'neutral' };
+        return {
+          status: 'unknown',
+          label: t('voting.status.unknown'),
+          color: 'neutral',
+        };
     }
   };
 
@@ -178,7 +195,7 @@ export default function VotingSystem({
 
     // Check if the date is valid
     if (isNaN(dateObj.getTime())) {
-      return 'Invalid Date';
+      return t('voting.invalidDate');
     }
 
     return new Intl.DateTimeFormat(getLocale(), {
@@ -310,8 +327,8 @@ export default function VotingSystem({
     if (navigator.share) {
       navigator
         .share({
-          title: `Voting: ${voting.title}`,
-          text: `Check out this voting in ${club.name}!`,
+          title: t('voting.shareTitle', { title: voting.title }),
+          text: t('voting.shareText', { club: club.name }),
           url: shareUrl,
         })
         .catch(() => {
@@ -442,7 +459,7 @@ export default function VotingSystem({
                   >
                     {RESULTS_TIMESPAN_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.labelKey)}
                       </option>
                     ))}
                   </select>
@@ -559,8 +576,7 @@ export default function VotingSystem({
               {t('voting.deleteTitle')}
             </h3>
             <p className="mb-6">
-              Are you sure you want to delete the voting "{deletingVoting.title}
-              "? This action cannot be undone.
+              {t('voting.deleteConfirm', { title: deletingVoting.title })}
             </p>
             <div className="modal-action">
               <button
@@ -578,7 +594,9 @@ export default function VotingSystem({
                 className="btn btn-error"
                 disabled={deleteVotingMutation.isPending}
               >
-                {deleteVotingMutation.isPending ? 'Deleting...' : 'Delete'}
+                {deleteVotingMutation.isPending
+                  ? t('voting.deleting')
+                  : t('common.delete')}
               </button>
             </div>
           </div>
@@ -658,11 +676,11 @@ export default function VotingSystem({
               <div>
                 <h4 className="font-medium">{t('voting.voteSubmitted')}</h4>
                 <p className="text-sm mt-1">
-                  You voted for:{' '}
+                  {t('voting.votedFor')}{' '}
                   <span className="font-medium">
                     {userVotedCandidate !== -1
                       ? voting.candidates[userVotedCandidate].title
-                      : 'Unknown'}
+                      : t('voting.unknownCandidate')}
                   </span>
                 </p>
               </div>
@@ -780,7 +798,9 @@ export default function VotingSystem({
                 className="btn btn-primary btn-lg"
               >
                 <Vote className="w-5 h-5" />
-                {voteMutation.isPending ? 'Submitting Vote...' : 'Submit Vote'}
+                {voteMutation.isPending
+                  ? t('voting.submitting')
+                  : t('voting.submit')}
               </button>
             </div>
           )}
@@ -809,7 +829,9 @@ export default function VotingSystem({
                 </span>
               </div>
               <p className="text-sm text-base-content/70">
-                Consumption begins on {formatDate(voting.consumptionStartDate)}.
+                {t('voting.consumptionBegins', {
+                  date: formatDate(voting.consumptionStartDate),
+                })}
               </p>
               <p className="text-xs text-base-content/50 mt-1">
                 {t('voting.finalizeNote')}

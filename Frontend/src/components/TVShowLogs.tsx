@@ -240,10 +240,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           ></path>
         </svg>
-        <span>
-          View your TV show logs here. Select video logs to convert them to TV
-          show type when needed.
-        </span>
+        <span>{t('video.tvShowHint')}</span>
       </div>
 
       <div className="stats shadow mb-4 w-full">
@@ -311,7 +308,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
                                 <h3 className="text-sm">{log.description}</h3>
                                 <p className="text-xs text-base-content/70">
                                   {log.unknownDate
-                                    ? 'Unknown date'
+                                    ? t('create.unknownDate')
                                     : new Date(log.date).toLocaleDateString()}
                                 </p>
                               </div>
@@ -338,7 +335,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>No unassigned video logs found.</span>
+                <span>{t('video.noUnassigned')}</span>
               </div>
             )}
           </div>
@@ -457,7 +454,9 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
                             ) : null}
                             {show.episodeDuration ? (
                               <span className="badge badge-sm badge-outline">
-                                {show.episodeDuration} min ep
+                                {t('video.episodeDurationShort', {
+                                  minutes: show.episodeDuration,
+                                })}
                               </span>
                             ) : null}
                           </div>
@@ -533,9 +532,9 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
               {t('video.converting')}
             </>
           ) : selectedLogs.some((log) => log.type === 'video') ? (
-            'Convert Video Logs to TV Shows'
+            t('video.convertToTvShows')
           ) : (
-            'Assign TV Show'
+            t('video.assignTvShow')
           )}
         </button>
 

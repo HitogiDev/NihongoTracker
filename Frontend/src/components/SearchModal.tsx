@@ -713,7 +713,7 @@ function SearchModal({
               <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
               <p className="text-sm">{t('search.typeToSearch')}</p>
               <p className="text-xs mt-1 text-base-content/25">
-                Search across users and media
+                {t('search.subtitle')}
               </p>
             </div>
           )}
@@ -721,7 +721,7 @@ function SearchModal({
           {hasQuery && !isSearching && !hasResults && (
             <div className="px-4 py-16 text-center text-base-content/40">
               <p className="text-sm">
-                No results found for &ldquo;{debouncedQuery}&rdquo;
+                {t('search.noResults', { query: debouncedQuery })}
               </p>
             </div>
           )}
@@ -776,15 +776,15 @@ function SearchModal({
             <span className="flex items-center gap-1">
               <kbd className="kbd kbd-xs">↑</kbd>
               <kbd className="kbd kbd-xs">↓</kbd>
-              navigate
+              {t('search.hints.navigate')}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="kbd kbd-xs">↵</kbd>
-              select
+              {t('search.hints.select')}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="kbd kbd-xs">esc</kbd>
-              close
+              {t('search.hints.close')}
             </span>
           </div>
           <span className="flex items-center gap-1">

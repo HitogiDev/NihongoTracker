@@ -54,7 +54,7 @@ import RecentActivity from '../components/club/RecentActivity';
 import UserAvatar from '../components/UserAvatar';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   getMaxClubMemberLimitForUser,
   getClubMemberLimitValidationMessage,
@@ -184,10 +184,10 @@ function ClubDetailScreen() {
     mutationFn: () => joinClubFn(clubId!),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
-      toast.success(data.message || 'Successfully joined the club!');
+      toast.success(data.message || t('toast.joined'));
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to join club';
+      let errorMessage = t('toast.joinFailed');
 
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -222,7 +222,7 @@ function ClubDetailScreen() {
       }
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to leave club';
+      let errorMessage = t('toast.leaveFailed');
 
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -332,7 +332,7 @@ function ClubDetailScreen() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['clubMedia', clubId] });
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
-      toast.success(data.message || 'Media added successfully!');
+      toast.success(data.message || t('toast.mediaAdded'));
       setIsAddMediaModalOpen(false);
       setMediaForm({
         mediaId: '',
@@ -348,7 +348,7 @@ function ClubDetailScreen() {
       setShowResults(false);
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to add media';
+      let errorMessage = t('toast.mediaAddFailed');
 
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -392,7 +392,7 @@ function ClubDetailScreen() {
       refetchPending();
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to update membership';
+      let errorMessage = t('toast.membershipFailed');
       if (error instanceof Error) errorMessage = error.message;
       toast.error(errorMessage);
     },
@@ -401,11 +401,11 @@ function ClubDetailScreen() {
   const kickMemberMutation = useMutation({
     mutationFn: (memberId: string) => kickClubMemberFn(clubId!, memberId),
     onSuccess: (data) => {
-      toast.success(data.message || 'Member removed');
+      toast.success(data.message || t('toast.memberRemoved'));
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to remove member';
+      let errorMessage = t('toast.memberRemoveFailed');
 
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -433,7 +433,7 @@ function ClubDetailScreen() {
       setSelectedNewLeader(null);
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to transfer leadership';
+      let errorMessage = t('toast.transferFailed');
       if (error instanceof Error) errorMessage = error.message;
       toast.error(errorMessage);
     },
@@ -479,7 +479,7 @@ function ClubDetailScreen() {
       setEditPreviews({});
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to update club';
+      let errorMessage = t('toast.clubUpdateFailed');
       if (error instanceof Error) errorMessage = error.message;
       toast.error(errorMessage);
     },
@@ -509,16 +509,16 @@ function ClubDetailScreen() {
   })();
 
   const getLeaveButtonText = (() => {
-    if (!club) return 'Leave';
+    if (!club) return t('detail.leave');
 
     if (club.userRole === 'leader') {
       if (club.memberCount === 1) {
-        return 'Disband Club';
+        return t('detail.disband');
       }
-      return 'Transfer Leadership First';
+      return t('detail.transferFirst');
     }
 
-    return 'Leave Club';
+    return t('detail.leaveClub');
   })();
 
   const handleLeaveClick = () => {
@@ -538,20 +538,20 @@ function ClubDetailScreen() {
         goal.type === 'time' &&
         goal.targetHours * 60 + goal.targetMinutes <= 0
       ) {
-        throw new Error('Time goals need at least 1 minute');
+        throw new Error(t('goals.timeMin'));
       }
 
       if (goal.type !== 'time' && goal.targetValue <= 0) {
-        throw new Error('Goal targets must be greater than 0');
+        throw new Error(t('goals.targetPositive'));
       }
 
       if (goal.period === 'custom') {
         if (!goal.startDate || !goal.endDate) {
-          throw new Error('Custom goals need both start and end dates');
+          throw new Error(t('goals.customDates'));
         }
 
         if (new Date(goal.endDate) < new Date(goal.startDate)) {
-          throw new Error('Custom goal end date must be after the start date');
+          throw new Error(t('goals.customOrder'));
         }
       }
 
@@ -570,7 +570,7 @@ function ClubDetailScreen() {
       setIsClubGoalsModalOpen(false);
     },
     onError: (error: unknown) => {
-      let errorMessage = 'Failed to update club goals';
+      let errorMessage = t('goals.updateFailed');
       if (error instanceof Error) errorMessage = error.message;
       toast.error(errorMessage);
     },
@@ -873,7 +873,10 @@ function ClubDetailScreen() {
                   <div className="flex items-center gap-1">
                     <Users className="text-base w-4 h-4" />
                     <span>
-                      {club.memberCount}/{club.memberLimit} members
+                      {t('browse.memberCount', {
+                        current: club.memberCount,
+                        limit: club.memberLimit,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -906,14 +909,14 @@ function ClubDetailScreen() {
                       disabled={leaveMutation.isPending || !canLeaveClub}
                       title={
                         club.userRole === 'leader' && club.memberCount > 1
-                          ? 'Transfer leadership to another member before leaving'
+                          ? t('detail.transferHint')
                           : undefined
                       }
                     >
                       <DoorOpen className="w-4 h-4" />
                       <span className="hidden sm:inline">
                         {leaveMutation.isPending
-                          ? 'Processing...'
+                          ? t('detail.processing')
                           : getLeaveButtonText}
                       </span>
                     </button>
@@ -929,8 +932,8 @@ function ClubDetailScreen() {
                     <DoorOpen className="text-lg" />
                     <span className="hidden sm:inline">
                       {leaveMutation.isPending
-                        ? 'Canceling...'
-                        : 'Cancel Request'}
+                        ? t('detail.canceling')
+                        : t('detail.cancelRequest')}
                     </span>
                   </button>
                 ) : user ? (
@@ -946,11 +949,11 @@ function ClubDetailScreen() {
                     <span className="hidden sm:inline">
                       {joinMutation.isPending
                         ? club.isPublic
-                          ? 'Joining...'
-                          : 'Requesting...'
+                          ? t('detail.joining')
+                          : t('detail.requesting')
                         : club.isPublic
-                          ? 'Join Club'
-                          : 'Request to Join'}
+                          ? t('detail.joinClub')
+                          : t('detail.requestToJoin')}
                     </span>
                   </button>
                 ) : (
@@ -1034,7 +1037,9 @@ function ClubDetailScreen() {
                         >
                           <Settings className="w-4 h-4" />
                           <span className="hidden sm:inline">
-                            {showVotingManagement ? 'Hide' : 'Manage'}
+                            {showVotingManagement
+                              ? t('detail.hide')
+                              : t('detail.manage')}
                           </span>
                         </button>
                         <button
@@ -1191,16 +1196,20 @@ function ClubDetailScreen() {
               )}
 
               <div className="modal-action">
-                <form method="dialog" className="modal-backdrop">
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => setIsHistoryOpen(false)}
-                  >
-                    {t('common.close')}
-                  </button>
-                </form>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setIsHistoryOpen(false)}
+                >
+                  {t('common.close')}
+                </button>
               </div>
+            </div>
+            <div
+              className="modal-backdrop"
+              onClick={() => setIsHistoryOpen(false)}
+            >
+              <button type="button">{t('common.close')}</button>
             </div>
           </dialog>
         )}
@@ -1288,7 +1297,9 @@ function ClubDetailScreen() {
                                 media.isActive ? 'badge-success' : 'badge-ghost'
                               } badge-sm`}
                             >
-                              {media.isActive ? 'Active' : 'Ended'}
+                              {media.isActive
+                                ? t('detail.active')
+                                : t('detail.ended')}
                             </span>
                           </div>
 
@@ -1414,7 +1425,7 @@ function ClubDetailScreen() {
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4">
-                  Members ({club.memberCount})
+                  {t('detail.membersCount', { count: club.memberCount })}
                 </h2>
                 {club.userRole === 'leader' &&
                   pendingRequests?.pending &&
@@ -1472,7 +1483,7 @@ function ClubDetailScreen() {
                               >
                                 {membershipActionMutation.isPending
                                   ? '...'
-                                  : 'Approve'}
+                                  : t('detail.approve')}
                               </button>
                               <button
                                 className="btn btn-xs btn-error"
@@ -1486,7 +1497,7 @@ function ClubDetailScreen() {
                               >
                                 {membershipActionMutation.isPending
                                   ? '...'
-                                  : 'Reject'}
+                                  : t('detail.reject')}
                               </button>
                             </div>
                           </div>
@@ -1565,10 +1576,11 @@ function ClubDetailScreen() {
                                 <div className="flex flex-col gap-1">
                                   {getRoleBadge(member.role)}
                                   <span className="text-xs text-base-content/70">
-                                    Joined{' '}
-                                    {new Date(
-                                      member.joinedAt
-                                    ).toLocaleDateString()}
+                                    {t('detail.joined', {
+                                      date: new Date(
+                                        member.joinedAt
+                                      ).toLocaleDateString(),
+                                    })}
                                   </span>
                                 </div>
                               </div>
@@ -1612,8 +1624,8 @@ function ClubDetailScreen() {
                                     disabled={kickMemberMutation.isPending}
                                   >
                                     {kickMemberMutation.isPending
-                                      ? 'Removing...'
-                                      : 'Kick Member'}
+                                      ? t('detail.removing')
+                                      : t('detail.kickMember')}
                                   </button>
                                 )}
                               </div>
@@ -1699,7 +1711,9 @@ function ClubDetailScreen() {
                   <input
                     type="text"
                     className="input input-bordered w-full"
-                    placeholder={`Search for ${mediaForm.mediaType}...`}
+                    placeholder={t('detail.searchFor', {
+                      type: mediaForm.mediaType,
+                    })}
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -1855,7 +1869,9 @@ function ClubDetailScreen() {
                     !mediaForm.endDate
                   }
                 >
-                  {addMediaMutation.isPending ? 'Adding...' : 'Add Media'}
+                  {addMediaMutation.isPending
+                    ? t('detail.adding')
+                    : t('detail.addMediaAction')}
                 </button>
               </div>
             </form>
@@ -1925,7 +1941,7 @@ function ClubDetailScreen() {
 
                 if (editForm.memberLimit < club.memberCount) {
                   toast.error(
-                    `Member limit cannot be lower than current active members (${club.memberCount})`
+                    t('detail.memberLimitTooLow', { count: club.memberCount })
                   );
                   return;
                 }
@@ -1946,7 +1962,7 @@ function ClubDetailScreen() {
                   toast.error(
                     error instanceof Error
                       ? error.message
-                      : 'Invalid club goal configuration'
+                      : t('goals.invalidConfig')
                   );
                   return;
                 }
@@ -2008,8 +2024,8 @@ function ClubDetailScreen() {
                   <label className="btn btn-outline btn-sm">
                     <Pencil className="text-base mr-1" />
                     {editPreviews.avatar || club?.avatar
-                      ? 'Change Avatar'
-                      : 'Upload Avatar'}
+                      ? t('detail.changeAvatar')
+                      : t('detail.uploadAvatar')}
                     <input
                       type="file"
                       accept="image/*"
@@ -2070,8 +2086,8 @@ function ClubDetailScreen() {
                   <label className="btn btn-outline btn-sm">
                     <Pencil className="text-base mr-1" />
                     {editPreviews.banner || club?.banner
-                      ? 'Change Banner'
-                      : 'Upload Banner'}
+                      ? t('detail.changeBanner')
+                      : t('detail.uploadBanner')}
                     <input
                       type="file"
                       accept="image/*"
@@ -2173,14 +2189,16 @@ function ClubDetailScreen() {
                 />
                 <div className="mt-1 space-y-1">
                   <p className="text-xs text-base-content/60">
-                    Current tier max: {maxAllowedMemberLimit} members
+                    {t('detail.currentTierMax', {
+                      max: maxAllowedMemberLimit,
+                    })}
                   </p>
                   <p className="text-xs text-base-content/70">
                     {t('create.needMoreMembers')}{' '}
                     <Link to="/support" className="link link-primary">
                       {t('create.donate')}
                     </Link>{' '}
-                    to unlock higher club limits and more perks.
+                    {t('detail.tierUnlock')}
                   </p>
                 </div>
               </div>
@@ -2240,7 +2258,9 @@ function ClubDetailScreen() {
                     updateClubMutation.isPending || !editForm.name.trim()
                   }
                 >
-                  {updateClubMutation.isPending ? 'Updating...' : 'Update Club'}
+                  {updateClubMutation.isPending
+                    ? t('detail.updating')
+                    : t('detail.updateClub')}
                 </button>
               </div>
             </form>
@@ -2270,8 +2290,8 @@ function ClubDetailScreen() {
             <div className="flex items-center justify-between gap-3 mb-4">
               <p className="text-sm text-base-content/70">
                 {clubGoalsForm.length === 0
-                  ? 'No goals yet. Add one to get started.'
-                  : 'Adjust the goals below and save when ready.'}
+                  ? t('goals.empty')
+                  : t('goals.adjustHint')}
               </p>
               <button
                 type="button"
@@ -2569,10 +2589,10 @@ function ClubDetailScreen() {
                       ) : (
                         <div className="md:col-span-2 text-xs text-base-content/60 rounded-lg bg-base-200/50 p-3">
                           {goal.period === 'weekly'
-                            ? 'This goal resets every week.'
+                            ? t('goals.resetsWeekly')
                             : goal.period === 'monthly'
-                              ? 'This goal resets every month.'
-                              : 'This goal stays active until you pause it.'}
+                              ? t('goals.resetsMonthly')
+                              : t('goals.staysActive')}
                         </div>
                       )}
                     </div>
@@ -2600,7 +2620,7 @@ function ClubDetailScreen() {
                     toast.error(
                       error instanceof Error
                         ? error.message
-                        : 'Invalid club goal configuration'
+                        : t('goals.invalidConfig')
                     );
                     return;
                   }
@@ -2608,7 +2628,9 @@ function ClubDetailScreen() {
                   clubGoalsMutation.mutate(clubGoalsForm);
                 }}
               >
-                {clubGoalsMutation.isPending ? 'Saving...' : 'Save Goals'}
+                {clubGoalsMutation.isPending
+                  ? t('goals.saving')
+                  : t('goals.save')}
               </button>
             </div>
           </div>
@@ -2639,7 +2661,9 @@ function ClubDetailScreen() {
                 }}
                 disabled={leaveMutation.isPending}
               >
-                {leaveMutation.isPending ? 'Disbanding...' : 'Disband Club'}
+                {leaveMutation.isPending
+                  ? t('detail.disbanding')
+                  : t('detail.disband')}
               </button>
             </div>
           </div>
@@ -2668,7 +2692,9 @@ function ClubDetailScreen() {
                 }}
                 disabled={leaveMutation.isPending}
               >
-                {leaveMutation.isPending ? 'Leaving...' : 'Leave Club'}
+                {leaveMutation.isPending
+                  ? t('detail.leaving')
+                  : t('detail.leaveClub')}
               </button>
             </div>
           </div>
@@ -2683,11 +2709,12 @@ function ClubDetailScreen() {
               {t('detail.transferLeadership')}
             </h3>
             <p className="py-4">
-              Are you sure you want to transfer club leadership to{' '}
-              <span className="font-semibold">
-                {selectedNewLeader.username}
-              </span>
-              ?
+              <Trans
+                i18nKey="detail.transferQuestion"
+                ns="clubs"
+                values={{ username: selectedNewLeader.username }}
+                components={{ b: <span className="font-semibold" /> }}
+              />
             </p>
             <div className="alert alert-warning mb-4">
               <Info className="text-lg" />
@@ -2715,8 +2742,8 @@ function ClubDetailScreen() {
                 disabled={transferLeadershipMutation.isPending}
               >
                 {transferLeadershipMutation.isPending
-                  ? 'Transferring...'
-                  : 'Transfer Leadership'}
+                  ? t('detail.transferring')
+                  : t('detail.transferLeadershipAction')}
               </button>
             </div>
           </div>
@@ -2731,9 +2758,12 @@ function ClubDetailScreen() {
               {t('detail.removeMember')}
             </h3>
             <p className="py-4">
-              Remove{' '}
-              <span className="font-semibold">{kickTarget.username}</span> from
-              the club?
+              <Trans
+                i18nKey="detail.kickQuestion"
+                ns="clubs"
+                values={{ username: kickTarget.username }}
+                components={{ b: <span className="font-semibold" /> }}
+              />
             </p>
             <div className="modal-action">
               <button
@@ -2748,7 +2778,9 @@ function ClubDetailScreen() {
                 onClick={handleConfirmKick}
                 disabled={kickMemberMutation.isPending}
               >
-                {kickMemberMutation.isPending ? 'Removing...' : 'Confirm'}
+                {kickMemberMutation.isPending
+                  ? t('detail.removing')
+                  : t('detail.confirm')}
               </button>
             </div>
           </div>

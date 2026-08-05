@@ -19,10 +19,10 @@
     "title": "Actividad reciente"
   },
   "addToList": {
-    "title": "Añadir a una lista",
-    "newTitlePlaceholder": "Título de la lista nueva",
-    "created": "Lista creada con este contenido",
     "createFailed": "No se pudo crear la lista",
+    "created": "Lista creada con este contenido",
+    "newTitlePlaceholder": "Título de la lista nueva",
+    "title": "Añadir a una lista",
     "updateFailed": "No se pudo actualizar la lista"
   },
   "chart": {
@@ -34,11 +34,11 @@
     "view": "Vista:"
   },
   "comments": {
+    "delete": "Eliminar el comentario",
+    "deleteFailed": "No se pudo eliminar el comentario",
     "empty": "Todavía no hay comentarios.",
     "placeholder": "Deja un comentario",
-    "delete": "Eliminar el comentario",
-    "postFailed": "No se pudo publicar el comentario",
-    "deleteFailed": "No se pudo eliminar el comentario"
+    "postFailed": "No se pudo publicar el comentario"
   },
   "common": {
     "cancel": "Cancelar",
@@ -77,6 +77,7 @@
     "removeTitle": "¿Quitar de tu lista?"
   },
   "list": {
+    "allTypes": "Todos los tipos",
     "clearFilters": "Quitar filtros",
     "dontShowAgain": "No volver a mostrar",
     "dontShowAgainTitle": "No volver a mostrar este aviso",
@@ -84,35 +85,146 @@
     "emptySearch": "Nada coincide con tu búsqueda de \"{{query}}\". Prueba con otras palabras o filtros.",
     "emptyTypes": "Nada coincide con los tipos seleccionados.",
     "grid": "Cuadrícula",
+    "groupBy": "Agrupar por tipo",
+    "grouped": "Agrupado",
     "hideAlertConfirm": "Sí, ocultar los avisos",
     "hideAlertConfirmBody": "¿Seguro que quieres dejar de ver avisos sobre logs sin emparejar?",
     "hideAlertTitle": "Ocultar el aviso de logs sin emparejar",
+    "itemsCount_many": "{{count}} elementos",
+    "itemsCount_one": "{{count}} elemento",
+    "itemsCount_other": "{{count}} elementos",
     "list": "Lista",
     "loadFailed": "No se pudo cargar la lista de inmersión",
     "logManagement": "Gestión de logs",
     "matchLogs": "Emparejar logs",
+    "noDescription": "Sin descripción",
     "noMedia": "No se encontró contenido",
+    "noTypes": "Ningún tipo",
     "quickLog": "Log rápido",
     "searchPlaceholder": "Buscar por título, romaji o inglés...",
     "selectAll": "Seleccionar todo",
     "selectNone": "No seleccionar nada",
     "setStatus": "Cambiar estado",
     "settings": "Ajustes",
+    "showing": "Mostrando {{shown}} de {{total}} elementos",
+    "showingFor": " para «{{query}}»",
+    "sort": {
+      "byTitle": "Por título (A-Z)",
+      "byType": "Por tipo",
+      "recent": "Reciente",
+      "recentlyLogged": "Logueado recientemente",
+      "title": "Título",
+      "type": "Tipo"
+    },
+    "sortLabel": "Orden: {{sort}}",
+    "status": {
+      "all": "Todos",
+      "allStatuses": "Todos los estados",
+      "completed": "Completado",
+      "dropped": "Abandonado",
+      "inProgress": "En progreso",
+      "paused": "En pausa",
+      "planning": "Pendiente"
+    },
+    "statusLabel": "Estado: {{status}}",
+    "typesCount": "{{count}} tipos",
+    "ungroupBy": "Desagrupar por tipo",
+    "ungrouped": "Sin agrupar",
     "unmatchedFound": "Hay logs sin emparejar",
     "viewDetails": "Ver detalles"
   },
   "lists": {
-    "heading": "Listas",
     "create": "Nueva lista",
-    "emptyOwn": "Todavía no has creado ninguna lista.",
-    "emptyOther": "Esta persona no tiene listas públicas.",
-    "toast": {
-      "created": "Lista creada",
-      "createFailed": "No se pudo crear la lista"
+    "detail": {
+      "browse": "Ver listas",
+      "cancel": "Cancelar",
+      "copy": "Copiar lista",
+      "delete": "Eliminar",
+      "editDetails": "Editar detalles",
+      "empty": "Esta lista está vacía. Añade contenido desde la página de cualquier título.",
+      "notePlaceholder": "¿Por qué está en la lista? (opcional)",
+      "private": "Privada",
+      "ranked": "Ordenada",
+      "removeEntry": "Quitar la entrada",
+      "reorder": "Reordenar",
+      "reorderEntry": "Reordenar la entrada",
+      "save": "Guardar cambios",
+      "toast": {
+        "copied": "Copiada a tus listas",
+        "copyFailed": "No se pudo copiar la lista",
+        "deleteFailed": "No se pudo eliminar la lista",
+        "deleted": "Lista eliminada",
+        "likeFailed": "No se pudo actualizar el me gusta",
+        "saveFailed": "No se pudo guardar la lista",
+        "updateFailed": "No se pudo actualizar la lista",
+        "updated": "Lista actualizada"
+      },
+      "unavailableBody": "Esta lista no existe o es privada.",
+      "unavailableTitle": "Lista no disponible"
     },
     "discover": {
-      "title": "Listas",
-      "subtitle": "Colecciones de contenido creadas por la comunidad."
+      "subtitle": "Colecciones de contenido creadas por la comunidad.",
+      "title": "Listas"
+    },
+    "emptyDiscover": "No se han encontrado listas.",
+    "emptyOther": "Esta persona no tiene listas públicas.",
+    "emptyOwn": "Todavía no has creado ninguna lista.",
+    "entries_anime_many": "{{count}} anime",
+    "entries_anime_one": "{{count}} anime",
+    "entries_anime_other": "{{count}} anime",
+    "entries_book_many": "{{count}} libros",
+    "entries_book_one": "{{count}} libro",
+    "entries_book_other": "{{count}} libros",
+    "entries_game_many": "{{count}} videojuegos",
+    "entries_game_one": "{{count}} videojuego",
+    "entries_game_other": "{{count}} videojuegos",
+    "entries_manga_many": "{{count}} manga",
+    "entries_manga_one": "{{count}} manga",
+    "entries_manga_other": "{{count}} manga",
+    "entries_many": "{{count}} elementos",
+    "entries_movie_many": "{{count}} películas",
+    "entries_movie_one": "{{count}} película",
+    "entries_movie_other": "{{count}} películas",
+    "entries_one": "{{count}} elemento",
+    "entries_other": "{{count}} elementos",
+    "entries_tvShow_many": "{{count}} series",
+    "entries_tvShow_one": "{{count}} serie",
+    "entries_tvShow_other": "{{count}} series",
+    "entries_video_many": "{{count}} vídeos",
+    "entries_video_one": "{{count}} vídeo",
+    "entries_video_other": "{{count}} vídeos",
+    "entries_vn_many": "{{count}} novelas visuales",
+    "entries_vn_one": "{{count}} novela visual",
+    "entries_vn_other": "{{count}} novelas visuales",
+    "filters": {
+      "all": "Todos los tipos",
+      "anime": "Anime",
+      "game": "Videojuegos",
+      "manga": "Manga",
+      "movie": "Películas",
+      "reading": "Novelas ligeras",
+      "tvShow": "Series",
+      "video": "Vídeo",
+      "vn": "Novelas visuales"
+    },
+    "form": {
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "createTitle": "Crear lista",
+      "description": "Descripción",
+      "descriptionPlaceholder": "¿De qué trata esta lista?",
+      "editTitle": "Editar lista",
+      "public": "Pública: cualquiera puede verla",
+      "ranked": "Lista ordenada: muestra posiciones numeradas",
+      "save": "Guardar",
+      "title": "Título",
+      "titlePlaceholder": "Mejores novelas visuales para empezar"
+    },
+    "heading": "Listas",
+    "pagination": {
+      "next": "Siguiente",
+      "page": "Página {{page}}",
+      "previous": "Anterior"
     },
     "searchPlaceholder": "Buscar listas",
     "sort": {
@@ -120,89 +232,9 @@
       "recent": "Más recientes",
       "updated": "Actualizadas hace poco"
     },
-    "filters": {
-      "all": "Todos los tipos",
-      "anime": "Anime",
-      "manga": "Manga",
-      "reading": "Novelas ligeras",
-      "vn": "Novelas visuales",
-      "game": "Videojuegos",
-      "video": "Vídeo",
-      "movie": "Películas",
-      "tvShow": "Series"
-    },
-    "emptyDiscover": "No se han encontrado listas.",
-    "pagination": {
-      "previous": "Anterior",
-      "next": "Siguiente",
-      "page": "Página {{page}}"
-    },
-    "entries_one": "{{count}} elemento",
-    "entries_many": "{{count}} elementos",
-    "entries_other": "{{count}} elementos",
-    "entries_anime_one": "{{count}} anime",
-    "entries_anime_many": "{{count}} anime",
-    "entries_anime_other": "{{count}} anime",
-    "entries_manga_one": "{{count}} manga",
-    "entries_manga_many": "{{count}} manga",
-    "entries_manga_other": "{{count}} manga",
-    "entries_book_one": "{{count}} libro",
-    "entries_book_many": "{{count}} libros",
-    "entries_book_other": "{{count}} libros",
-    "entries_vn_one": "{{count}} novela visual",
-    "entries_vn_many": "{{count}} novelas visuales",
-    "entries_vn_other": "{{count}} novelas visuales",
-    "entries_video_one": "{{count}} vídeo",
-    "entries_video_many": "{{count}} vídeos",
-    "entries_video_other": "{{count}} vídeos",
-    "entries_movie_one": "{{count}} película",
-    "entries_movie_many": "{{count}} películas",
-    "entries_movie_other": "{{count}} películas",
-    "entries_tvShow_one": "{{count}} serie",
-    "entries_tvShow_many": "{{count}} series",
-    "entries_tvShow_other": "{{count}} series",
-    "entries_game_one": "{{count}} videojuego",
-    "entries_game_many": "{{count}} videojuegos",
-    "entries_game_other": "{{count}} videojuegos",
-    "form": {
-      "createTitle": "Crear lista",
-      "editTitle": "Editar lista",
-      "title": "Título",
-      "titlePlaceholder": "Mejores novelas visuales para empezar",
-      "description": "Descripción",
-      "descriptionPlaceholder": "¿De qué trata esta lista?",
-      "ranked": "Lista ordenada: muestra posiciones numeradas",
-      "public": "Pública: cualquiera puede verla",
-      "cancel": "Cancelar",
-      "create": "Crear",
-      "save": "Guardar"
-    },
-    "detail": {
-      "unavailableTitle": "Lista no disponible",
-      "unavailableBody": "Esta lista no existe o es privada.",
-      "browse": "Ver listas",
-      "private": "Privada",
-      "ranked": "Ordenada",
-      "empty": "Esta lista está vacía. Añade contenido desde la página de cualquier título.",
-      "copy": "Copiar lista",
-      "editDetails": "Editar detalles",
-      "reorder": "Reordenar",
-      "delete": "Eliminar",
-      "save": "Guardar cambios",
-      "cancel": "Cancelar",
-      "reorderEntry": "Reordenar la entrada",
-      "removeEntry": "Quitar la entrada",
-      "notePlaceholder": "¿Por qué está en la lista? (opcional)",
-      "toast": {
-        "updated": "Lista actualizada",
-        "saveFailed": "No se pudo guardar la lista",
-        "updateFailed": "No se pudo actualizar la lista",
-        "deleted": "Lista eliminada",
-        "deleteFailed": "No se pudo eliminar la lista",
-        "likeFailed": "No se pudo actualizar el me gusta",
-        "copied": "Copiada a tus listas",
-        "copyFailed": "No se pudo copiar la lista"
-      }
+    "toast": {
+      "createFailed": "No se pudo crear la lista",
+      "created": "Lista creada"
     }
   },
   "markdown": {
@@ -221,16 +253,16 @@
     "spoiler": "Spoiler"
   },
   "progress": {
-    "title": "Tu progreso",
     "loading": "Cargando tu progreso...",
+    "thisMonth": "Este mes",
     "thisWeek": "Esta semana",
-    "thisMonth": "Este mes"
+    "title": "Tu progreso"
   },
   "reviewCard": {
+    "linkCopied": "Enlace de la reseña copiado al portapapeles",
     "options": "Opciones de la reseña",
-    "shareTitle": "Reseña de NihongoTracker",
     "shareText": "¡Echa un vistazo a esta reseña!",
-    "linkCopied": "Enlace de la reseña copiado al portapapeles"
+    "shareTitle": "Reseña de NihongoTracker"
   },
   "reviews": {
     "a11y": {
@@ -261,12 +293,19 @@
     "write": "Escribir una reseña"
   },
   "search": {
-    "placeholder": "Buscar usuarios o contenido...",
-    "mediaPlaceholder": "Buscar contenido para añadir...",
-    "typeToSearch": "Escribe al menos 2 caracteres para buscar",
     "filterByType": "Filtrar por tipo de contenido",
-    "users": "Usuarios",
-    "media": "Contenido"
+    "hints": {
+      "close": "cerrar",
+      "navigate": "navegar",
+      "select": "seleccionar"
+    },
+    "media": "Contenido",
+    "mediaPlaceholder": "Buscar contenido para añadir...",
+    "noResults": "No hay resultados para «{{query}}»",
+    "placeholder": "Buscar usuarios o contenido...",
+    "subtitle": "Busca entre usuarios y contenido",
+    "typeToSearch": "Escribe al menos 2 caracteres para buscar",
+    "users": "Usuarios"
   },
   "social": {
     "allTime": "Histórico",
@@ -311,19 +350,19 @@
     "alreadyPostedTitle": "Ya has publicado una reseña",
     "backToReviews": "Volver a las reseñas",
     "bodyPlaceholder": "Comparte tu opinión sobre este contenido...",
+    "listItem": "Elemento de la lista",
     "login": "Iniciar sesión",
     "loginRequired": "Tienes que iniciar sesión para escribir una reseña.",
     "preview": "Vista previa",
     "previewHint": "Aquí aparece la vista previa mientras escribes.",
+    "quoteText": "Texto de la cita",
     "rating": "Puntuación (opcional)",
+    "ratingOptional": "Puntuación (opcional)",
     "review": "Reseña",
     "summary": "Resumen",
     "summaryPlaceholder": "Resume tu reseña en una frase",
     "title": "Editar reseña",
-    "ratingOptional": "Puntuación (opcional)",
     "update": "Actualizar reseña",
-    "updating": "Actualizando...",
-    "listItem": "Elemento de la lista",
-    "quoteText": "Texto de la cita"
+    "updating": "Actualizando..."
   }
 }

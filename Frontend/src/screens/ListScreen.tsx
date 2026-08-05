@@ -47,6 +47,8 @@ import {
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
 import { getMediaTypeColor } from '../constants/mediaColors';
+import { getLogTypeLabelKey } from '../utils/logTypes';
+import type { ParseKeys } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
 type ViewMode = 'grid' | 'list';
@@ -68,18 +70,34 @@ type MediaStatusPayload = {
 
 const STATUS_CONFIG: Record<
   'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
-  { label: string; badgeClass: string; icon: React.FC<{ className?: string }> }
+  {
+    labelKey: ParseKeys<'media'>;
+    badgeClass: string;
+    icon: React.FC<{ className?: string }>;
+  }
 > = {
   completed: {
-    label: 'Completed',
+    labelKey: 'list.status.completed',
     badgeClass: 'badge-success',
     icon: CircleCheck,
   },
-  dropped: { label: 'Dropped', badgeClass: 'badge-error', icon: Ban },
-  paused: { label: 'Paused', badgeClass: 'badge-warning', icon: Clock },
-  planning: { label: 'Planning', badgeClass: 'badge-info', icon: Sparkles },
+  dropped: {
+    labelKey: 'list.status.dropped',
+    badgeClass: 'badge-error',
+    icon: Ban,
+  },
+  paused: {
+    labelKey: 'list.status.paused',
+    badgeClass: 'badge-warning',
+    icon: Clock,
+  },
+  planning: {
+    labelKey: 'list.status.planning',
+    badgeClass: 'badge-info',
+    icon: Sparkles,
+  },
   in_progress: {
-    label: 'In Progress',
+    labelKey: 'list.status.inProgress',
     badgeClass: 'badge-primary',
     icon: Play,
   },
@@ -87,6 +105,10 @@ const STATUS_CONFIG: Record<
 
 function ListScreen() {
   const { t } = useTranslation(['media', 'common']);
+  const mediaTypeLabel = (type: string) => {
+    const key = getLogTypeLabelKey(type);
+    return key ? t(key, { ns: 'common' }) : type;
+  };
   const { username } = useParams<{ username: string }>();
   const { user, setUser } = useUserDataStore();
   const navigate = useNavigate();
@@ -776,19 +798,14 @@ function ListScreen() {
                       >
                         <Filter className="w-4 h-4" />
                         {selectedTypes.length === 0
-                          ? 'No Types'
+                          ? t('list.noTypes')
                           : selectedTypes.length === MEDIA_TYPES.length
-                            ? 'All Types'
+                            ? t('list.allTypes')
                             : selectedTypes.length === 1
-                              ? selectedTypes[0] === 'vn'
-                                ? 'Visual Novel'
-                                : selectedTypes[0] === 'game'
-                                  ? 'Video Game'
-                                  : selectedTypes[0] === 'tv show'
-                                    ? 'TV Show'
-                                    : selectedTypes[0].charAt(0).toUpperCase() +
-                                      selectedTypes[0].slice(1)
-                              : `${selectedTypes.length} Types`}
+                              ? mediaTypeLabel(selectedTypes[0])
+                              : t('list.typesCount', {
+                                  count: selectedTypes.length,
+                                })}
                         <ChevronDown className="w-4 h-4 ml-1 hidden sm:block" />
                       </div>
                       <div
@@ -798,14 +815,14 @@ function ListScreen() {
                         <div className="flex gap-2 pb-3">
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                            className="btn btn-sm btn-outline flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
                             onClick={() => setSelectedTypes(MEDIA_TYPES)}
                           >
                             {t('list.selectAll')}
                           </button>
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                            className="btn btn-sm btn-outline flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
                             onClick={() => setSelectedTypes([])}
                           >
                             {t('list.selectNone')}
@@ -816,15 +833,7 @@ function ListScreen() {
                           {MEDIA_TYPES.map((type) => {
                             const selected = selectedTypes.includes(type);
                             const color = getMediaTypeColor(type);
-                            const label =
-                              type === 'vn'
-                                ? 'Visual Novel'
-                                : type === 'game'
-                                  ? 'Video Game'
-                                  : type === 'tv show'
-                                    ? 'TV Show'
-                                    : type.charAt(0).toUpperCase() +
-                                      type.slice(1);
+                            const label = mediaTypeLabel(type);
 
                             return (
                               <button
@@ -880,13 +889,12 @@ function ListScreen() {
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
                         <CircleCheck className="w-4 h-4" />
-                        Status:{' '}
-                        {statusFilter === 'all'
-                          ? 'All'
-                          : statusFilter === 'in_progress'
-                            ? 'In Progress'
-                            : statusFilter.charAt(0).toUpperCase() +
-                              statusFilter.slice(1)}
+                        {t('list.statusLabel', {
+                          status:
+                            statusFilter === 'all'
+                              ? t('list.status.all')
+                              : t(STATUS_CONFIG[statusFilter].labelKey),
+                        })}
                       </div>
                       <ul
                         tabIndex={0}
@@ -895,26 +903,34 @@ function ListScreen() {
                         {[
                           {
                             value: 'all',
-                            label: 'All statuses',
+                            label: t('list.status.allStatuses'),
                             icon: undefined,
                           },
                           {
                             value: 'completed',
-                            label: 'Completed',
+                            label: t('list.status.completed'),
                             icon: CircleCheck,
                           },
                           {
                             value: 'in_progress',
-                            label: 'In Progress',
+                            label: t('list.status.inProgress'),
                             icon: Play,
                           },
                           {
                             value: 'planning',
-                            label: 'Planning',
+                            label: t('list.status.planning'),
                             icon: Sparkles,
                           },
-                          { value: 'paused', label: 'Paused', icon: Clock },
-                          { value: 'dropped', label: 'Dropped', icon: Ban },
+                          {
+                            value: 'paused',
+                            label: t('list.status.paused'),
+                            icon: Clock,
+                          },
+                          {
+                            value: 'dropped',
+                            label: t('list.status.dropped'),
+                            icon: Ban,
+                          },
                         ].map((option) => (
                           <li key={option.value}>
                             <button
@@ -942,21 +958,26 @@ function ListScreen() {
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
                         <ListFilter className="w-4 h-4" />
-                        Sort:{' '}
-                        {sortBy === 'title'
-                          ? 'Title'
-                          : sortBy === 'type'
-                            ? 'Type'
-                            : 'Recent'}
+                        {t('list.sortLabel', {
+                          sort:
+                            sortBy === 'title'
+                              ? t('list.sort.title')
+                              : sortBy === 'type'
+                                ? t('list.sort.type')
+                                : t('list.sort.recent'),
+                        })}
                       </div>
                       <ul
                         tabIndex={0}
                         className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
                       >
                         {[
-                          { value: 'title', label: 'By Title (A-Z)' },
-                          { value: 'type', label: 'By Type' },
-                          { value: 'recent', label: 'Recently Logged' },
+                          { value: 'title', label: t('list.sort.byTitle') },
+                          { value: 'type', label: t('list.sort.byType') },
+                          {
+                            value: 'recent',
+                            label: t('list.sort.recentlyLogged'),
+                          },
                         ].map((option) => (
                           <li key={option.value}>
                             <button
@@ -998,7 +1019,7 @@ function ListScreen() {
                       onClick={() =>
                         startGroupTransition(() => setGrouped((prev) => !prev))
                       }
-                      title={grouped ? 'Ungroup by type' : 'Group by type'}
+                      title={grouped ? t('list.ungroupBy') : t('list.groupBy')}
                     >
                       {isPendingGroup ? (
                         <span className="loading loading-spinner loading-xs" />
@@ -1006,7 +1027,7 @@ function ListScreen() {
                         <Layers className="w-4 h-4" />
                       )}
                       <span className="hidden sm:inline">
-                        {grouped ? 'Grouped' : 'Ungrouped'}
+                        {grouped ? t('list.grouped') : t('list.ungrouped')}
                       </span>
                     </button>
                   </div>
@@ -1015,8 +1036,11 @@ function ListScreen() {
 
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <p className="text-sm text-base-content/70">
-                  Showing {stats.filteredCount} of {stats.totalCount} items
-                  {searchQuery && ` for "${searchQuery}"`}
+                  {t('list.showing', {
+                    shown: stats.filteredCount,
+                    total: stats.totalCount,
+                  })}
+                  {searchQuery && t('list.showingFor', { query: searchQuery })}
                 </p>
               </div>
             </div>
@@ -1099,8 +1123,7 @@ function ListScreen() {
                   </div>
                   <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                   <p className="text-base-content/70">
-                    Your immersion library is empty. Start logging your Japanese
-                    learning activities!
+                    {t('list.emptyLibrary')}
                   </p>
                 </div>
               </div>
@@ -1212,7 +1235,7 @@ function MediaGroup({
         <div>
           <h2 className="text-xl font-bold">{config.label}</h2>
           <p className="text-sm text-base-content/60">
-            {count} {count === 1 ? 'item' : 'items'}
+            {tCommon('list.itemsCount', { count, ns: 'media' })}
           </p>
         </div>
       </div>
@@ -1269,6 +1292,10 @@ function MediaCard({
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
   const { t } = useTranslation(['media', 'common']);
+  const mediaTypeLabel = (type: string) => {
+    const key = getLogTypeLabelKey(type);
+    return key ? t(key, { ns: 'common' }) : type;
+  };
   const { user } = useUserDataStore();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -1380,7 +1407,7 @@ function MediaCard({
                     onClick={() => onSetStatus(media, key)}
                   >
                     <cfg.icon className="w-3 h-3" />
-                    {cfg.label}
+                    {t(cfg.labelKey)}
                   </button>
                 </li>
               ))}
@@ -1419,7 +1446,7 @@ function MediaCard({
         {statusCfg && (
           <div className="absolute bottom-2 left-2">
             <div className={`badge ${statusCfg.badgeClass} badge-sm gap-1`}>
-              <statusCfg.icon className="w-3 h-3" /> {statusCfg.label}
+              <statusCfg.icon className="w-3 h-3" /> {t(statusCfg.labelKey)}
             </div>
           </div>
         )}
@@ -1476,15 +1503,7 @@ function MediaCard({
             className={`badge ${config.bg} ${config.color} badge-ghost badge-xs border-0`}
           >
             <TypeIcon className="w-3 h-3 mr-1" />
-            {media.type === 'vn'
-              ? 'VN'
-              : media.type === 'game'
-                ? 'Game'
-                : media.type === 'tv show'
-                  ? 'TV Show'
-                  : media.type === 'reading'
-                    ? 'Light Novel'
-                    : media.type.charAt(0).toUpperCase() + media.type.slice(1)}
+            {mediaTypeLabel(media.type)}
           </span>
         </div>
       </div>
@@ -1511,6 +1530,10 @@ function MediaListItem({
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
   const { t } = useTranslation(['media', 'common']);
+  const mediaTypeLabel = (type: string) => {
+    const key = getLogTypeLabelKey(type);
+    return key ? t(key, { ns: 'common' }) : type;
+  };
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const toggleKey = `${media.type}:${media.contentId}`;
@@ -1538,7 +1561,7 @@ function MediaListItem({
     );
 
     if (!sourceWithoutQuoteMarkers.trim()) {
-      return 'No description available';
+      return t('list.noDescription');
     }
 
     let formattedDescription = sourceWithoutQuoteMarkers;
@@ -1641,7 +1664,8 @@ function MediaListItem({
                     <span
                       className={`badge ${statusCfg.badgeClass} badge-sm gap-1 shrink-0`}
                     >
-                      <statusCfg.icon className="w-3 h-3" /> {statusCfg.label}
+                      <statusCfg.icon className="w-3 h-3" />{' '}
+                      {t(statusCfg.labelKey)}
                     </span>
                   )}
                 </div>
@@ -1674,16 +1698,7 @@ function MediaListItem({
                   className={`badge gap-1 ${config.bg} ${config.color} border-0`}
                 >
                   <TypeIcon className="w-3 h-3" />
-                  {media.type === 'vn'
-                    ? 'Visual Novel'
-                    : media.type === 'game'
-                      ? 'Video Game'
-                      : media.type === 'tv show'
-                        ? 'TV Show'
-                        : media.type === 'reading'
-                          ? 'Light Novel'
-                          : media.type.charAt(0).toUpperCase() +
-                            media.type.slice(1)}
+                  {mediaTypeLabel(media.type)}
                 </div>
 
                 {/* {media.isAdult && (
@@ -1719,7 +1734,7 @@ function MediaListItem({
                         ) : statusCfg ? (
                           <>
                             <statusCfg.icon className="w-3 h-3" />{' '}
-                            {statusCfg.label}
+                            {t(statusCfg.labelKey)}
                           </>
                         ) : (
                           <>
@@ -1744,7 +1759,7 @@ function MediaListItem({
                               onClick={() => onSetStatus(media, key)}
                             >
                               <cfg.icon className="w-3 h-3" />
-                              {cfg.label}
+                              {t(cfg.labelKey)}
                             </button>
                           </li>
                         ))}

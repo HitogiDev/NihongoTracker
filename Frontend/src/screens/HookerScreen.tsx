@@ -135,7 +135,7 @@ function createLineId() {
 }
 
 function TextHooker() {
-  const { t } = useTranslation('texthooker');
+  const { t } = useTranslation(['texthooker', 'common']);
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { contentId: paramContentId, mediaId } = useParams<{
@@ -1143,7 +1143,9 @@ function TextHooker() {
     );
 
     newSocket.on('connect_error', (error) => {
-      toast.error(`Connection failed: ${error.message}`);
+      toast.error(
+        t('hooker.collab.connectionFailed', { message: error.message })
+      );
     });
 
     newSocket.on(
@@ -1235,6 +1237,7 @@ function TextHooker() {
     enqueueSessionLines,
     flushPendingSessionLines,
     flushPendingRoomLines,
+    t,
   ]);
 
   const handleSocketMessage = useCallback(
@@ -1917,11 +1920,13 @@ function TextHooker() {
     }
 
     if (removedIds.length > 0) {
-      toast.success(`Removed ${removedIds.length} duplicate line(s)`);
+      toast.success(
+        t('hooker.duplicates.removed', { count: removedIds.length })
+      );
     }
 
     setIsPreventDuplicateConfirmOpen(false);
-  }, [contentId]);
+  }, [contentId, t]);
 
   const handlePreventGlobalDuplicatesToggle = useCallback(
     (checked: boolean) => {
@@ -2066,7 +2071,7 @@ function TextHooker() {
   if (showTopbarTimer) {
     topbarMetrics.push({
       key: 'timer',
-      title: 'Timer',
+      title: t('hooker.stats.timer'),
       content: (
         <>
           <Clock size={16} className="opacity-70" />
@@ -2092,7 +2097,7 @@ function TextHooker() {
   if (showTopbarCharacters) {
     topbarMetrics.push({
       key: 'characters',
-      title: 'Characters',
+      title: t('hooker.stats.characters'),
       content: (
         <>
           <Type size={16} className="opacity-70" />
@@ -2105,7 +2110,7 @@ function TextHooker() {
   if (showTopbarLines) {
     topbarMetrics.push({
       key: 'lines',
-      title: 'Lines',
+      title: t('hooker.stats.lines'),
       content: (
         <>
           <FileText size={16} className="opacity-70" />
@@ -2230,15 +2235,14 @@ function TextHooker() {
               {t('hooker.controls.openedInPopup')}
             </h2>
             <p className="text-base-content/70 mb-6">
-              Your session continues in the popup window. You can close this
-              tab.
+              {t('hooker.popup.body')}
             </p>
             <button
               type="button"
               onClick={() => setIsPopupOpened(false)}
               className="btn btn-ghost btn-sm"
             >
-              Keep using this tab instead
+              {t('hooker.popup.keepTab')}
             </button>
           </div>
         </div>
@@ -2429,7 +2433,9 @@ function TextHooker() {
                 className="dropdown-content menu menu-sm bg-base-100 rounded-box shadow-lg mt-2 p-2 min-w-52 z-50"
               >
                 <li className="menu-title px-2 py-1 text-xs opacity-70">
-                  Members ({connectedMembers.length})
+                  {t('hooker.collab.membersCount', {
+                    count: connectedMembers.length,
+                  })}
                 </li>
                 {sortedMembers.map((member) => {
                   const isCurrentUser = member.id === socket?.id;
@@ -2451,11 +2457,13 @@ function TextHooker() {
                             )}
                             <span className="font-medium">
                               {displayName}
-                              {isCurrentUser && ' (You)'}
+                              {isCurrentUser && t('hooker.collab.you')}
                             </span>
                           </span>
                           <span className="badge badge-xs capitalize opacity-70">
-                            {member.role === 'host' ? 'Host' : 'Guest'}
+                            {member.role === 'host'
+                              ? t('hooker.collab.host')
+                              : t('hooker.collab.guest')}
                           </span>
                         </a>
                       ) : (
@@ -2465,11 +2473,14 @@ function TextHooker() {
                               <Crown size={12} className="text-warning" />
                             )}
                             <span className="font-medium">
-                              Anonymous{isCurrentUser && ' (You)'}
+                              {t('hooker.collab.anonymous')}
+                              {isCurrentUser && t('hooker.collab.you')}
                             </span>
                           </span>
                           <span className="badge badge-xs capitalize opacity-70">
-                            {member.role === 'host' ? 'Host' : 'Guest'}
+                            {member.role === 'host'
+                              ? t('hooker.collab.host')
+                              : t('hooker.collab.guest')}
                           </span>
                         </span>
                       )}
@@ -2563,10 +2574,10 @@ function TextHooker() {
               onClick={() => setIsTimerEditOpen(false)}
               className="btn btn-ghost"
             >
-              Cancel
+              {t('common:cancel')}
             </button>
             <button onClick={handleSaveTimerEdit} className="btn btn-primary">
-              Save
+              {t('common:save')}
             </button>
           </div>
         </div>
@@ -2584,7 +2595,7 @@ function TextHooker() {
             {t('hooker.timer.resetConfirm')}
           </h3>
           <p className="text-base-content/70 mb-5">
-            This will set the current timer back to 00:00:00.
+            {t('hooker.timer.resetBody')}
           </p>
           <div className="modal-action">
             <button
@@ -2592,14 +2603,14 @@ function TextHooker() {
               className="btn btn-ghost"
               onClick={() => setIsResetTimerConfirmOpen(false)}
             >
-              Cancel
+              {t('common:cancel')}
             </button>
             <button
               type="button"
               className="btn btn-error"
               onClick={handleResetTimer}
             >
-              Reset timer
+              {t('hooker.timer.resetAction')}
             </button>
           </div>
         </div>
@@ -2615,11 +2626,10 @@ function TextHooker() {
       >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-2">
-            Apply duplicate prevention to current lines?
+            {t('hooker.duplicates.title')}
           </h3>
           <p className="text-base-content/70 mb-5">
-            This setting blocks adding new lines that match existing text. You
-            can also remove already duplicated lines in this session now.
+            {t('hooker.duplicates.body')}
           </p>
           <div className="modal-action">
             <button
@@ -2627,14 +2637,14 @@ function TextHooker() {
               className="btn btn-ghost"
               onClick={() => setIsPreventDuplicateConfirmOpen(false)}
             >
-              Keep current lines
+              {t('hooker.duplicates.keep')}
             </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={applyPreventGlobalDuplicatesToCurrentLines}
             >
-              Apply to current lines
+              {t('hooker.duplicates.apply')}
             </button>
           </div>
         </div>
@@ -2652,19 +2662,20 @@ function TextHooker() {
             {t('hooker.session.resumePrevious')}
           </h3>
           <p className="text-base-content/70 mb-5">
-            We found saved progress for this media. Do you want to continue the
-            current session or start a new one?
+            {t('hooker.session.resumeBody')}
           </p>
 
           <div className="bg-base-200 rounded-lg p-4 mb-5">
             <div className="text-sm text-base-content/70 mb-1">
-              Current progress
+              {t('hooker.session.currentProgress')}
             </div>
             <div className="text-sm font-medium">
-              {numberWithCommas(charsNumber)} characters
+              {t('hooker.session.charactersValue', {
+                count: charsNumber,
+              })}
             </div>
             <div className="text-sm font-medium">
-              {formatTime(seconds)} tracked
+              {t('hooker.session.trackedValue', { time: formatTime(seconds) })}
             </div>
           </div>
 
@@ -2676,14 +2687,14 @@ function TextHooker() {
                 void handleStartNewMediaSession();
               }}
             >
-              Start new session
+              {t('hooker.session.startNew')}
             </button>
             <button
               type="button"
               className="btn btn-ghost w-full"
               onClick={handleContinueCurrentSession}
             >
-              Continue current session
+              {t('hooker.session.continueCurrent')}
             </button>
           </div>
         </div>
@@ -2788,7 +2799,7 @@ function TextHooker() {
                       })()
                     ) : (
                       <div className="text-sm opacity-50">
-                        Character count not available
+                        {t('hooker.stats.charCountUnavailable')}
                       </div>
                     )}
                   </div>
@@ -2848,7 +2859,9 @@ function TextHooker() {
                       <span>
                         {isPendingSessionSyncing
                           ? t('hooker.session.syncing')
-                          : `${numberWithCommas(pendingSessionLinesCount)} pending ${pendingSessionLinesCount === 1 ? 'line is' : 'lines are'} waiting to sync.`}
+                          : t('hooker.session.pending', {
+                              count: pendingSessionLinesCount,
+                            })}
                       </span>
                     </div>
                   </div>
@@ -2859,7 +2872,7 @@ function TextHooker() {
 
               <div>
                 <h4 className="text-sm font-semibold uppercase tracking-wider opacity-70 mb-3">
-                  Total (All Time)
+                  {t('hooker.stats.totalAllTime')}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-base-200 p-3 rounded-lg">
@@ -2872,7 +2885,7 @@ function TextHooker() {
                   </div>
                   <div className="bg-base-200 p-3 rounded-lg">
                     <div className="text-xs opacity-70 mb-1">
-                      Total Characters
+                      {t('hooker.stats.totalCharacters')}
                     </div>
                     <div className="text-xl font-bold">
                       {numberWithCommas(charsNumber)}
@@ -2885,11 +2898,11 @@ function TextHooker() {
 
               <div>
                 <h4 className="text-sm font-semibold uppercase tracking-wider opacity-70 mb-3">
-                  Session History
+                  {t('hooker.stats.sessionHistory')}
                 </h4>
                 {sessionHistory.length === 0 ? (
                   <div className="bg-base-200 p-3 rounded-lg text-sm opacity-70">
-                    No logged sessions yet.
+                    {t('hooker.stats.noSessions')}
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -2990,7 +3003,7 @@ function TextHooker() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Settings className="w-5 h-5 text-primary" />
-              Settings
+              {t('hooker.settings.title')}
             </h3>
             <button
               onClick={() => setIsSettingsOpen(false)}
@@ -3006,14 +3019,14 @@ function TextHooker() {
               className={`tab ${activeSettingsTab === 'display' ? 'tab-active' : ''}`}
               onClick={() => setActiveSettingsTab('display')}
             >
-              Display
+              {t('hooker.settings.tabDisplay')}
             </button>
             <button
               role="tab"
               className={`tab ${activeSettingsTab === 'behavior' ? 'tab-active' : ''}`}
               onClick={() => setActiveSettingsTab('behavior')}
             >
-              Behavior & Connection
+              {t('hooker.settings.tabBehavior')}
             </button>
           </div>
 
@@ -3021,7 +3034,7 @@ function TextHooker() {
             <div className="space-y-4">
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                  <Monitor size={16} /> Display
+                  <Monitor size={16} /> {t('hooker.settings.displayHeading')}
                 </h4>
 
                 <div className="form-control">
@@ -3041,7 +3054,7 @@ function TextHooker() {
                 <div className="form-control">
                   <label className="label cursor-pointer">
                     <span className="label-text">
-                      Always vertical control bar
+                      {t('hooker.settings.alwaysVerticalBar')}
                     </span>
                     <input
                       type="checkbox"
@@ -3054,7 +3067,7 @@ function TextHooker() {
 
                 <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
-                    Top Bar Metrics
+                    {t('hooker.settings.topBarMetrics')}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
@@ -3158,7 +3171,7 @@ function TextHooker() {
                   </select>
                   <label className="label">
                     <span className="label-text-alt text-[10px] opacity-60">
-                      Only affects TextHooker screen
+                      {t('hooker.settings.themeScopeNote')}
                     </span>
                   </label>
                 </div>
@@ -3213,8 +3226,7 @@ function TextHooker() {
                     </button>
                   </div>
                   <p className="text-sm text-base-content/70 mb-3">
-                    Add CSS rules to customize the TextHooker layout. Saved
-                    locally in your browser.
+                    {t('hooker.settings.customCssHint')}
                   </p>
                   <textarea
                     className="textarea textarea-bordered w-full h-56 font-mono text-xs"
@@ -3230,7 +3242,7 @@ function TextHooker() {
                       className="btn btn-sm btn-outline"
                       onClick={() => setCustomCss('')}
                     >
-                      Clear Custom CSS
+                      {t('hooker.settings.clearCustomCss')}
                     </button>
                   </div>
                 </div>
@@ -3242,7 +3254,7 @@ function TextHooker() {
             <div className="space-y-4">
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                  <Activity size={16} /> Behavior & Connection
+                  <Activity size={16} /> {t('hooker.settings.behaviorHeading')}
                 </h4>
 
                 <div className="form-control">
@@ -3263,7 +3275,7 @@ function TextHooker() {
 
                 <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
-                    Runtime Behavior
+                    {t('hooker.settings.runtimeBehavior')}
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
@@ -3282,7 +3294,7 @@ function TextHooker() {
 
                     <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
                       <span className="text-sm">
-                        Allow New Line during Pause
+                        {t('hooker.settings.allowNewLineDuringPause')}
                       </span>
                       <input
                         type="checkbox"
@@ -3296,7 +3308,7 @@ function TextHooker() {
 
                     <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
                       <span className="text-sm">
-                        Autostart Timer by Paste during Pause
+                        {t('hooker.settings.autostartByPaste')}
                       </span>
                       <input
                         type="checkbox"
@@ -3310,7 +3322,7 @@ function TextHooker() {
 
                     <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
                       <span className="text-sm">
-                        Autostart Timer by Line during Pause
+                        {t('hooker.settings.autostartByLine')}
                       </span>
                       <input
                         type="checkbox"
@@ -3344,7 +3356,7 @@ function TextHooker() {
                       title={t('hooker.timer.autoPauseHint')}
                     >
                       <span className="text-sm">
-                        Pause timer when disconnected
+                        {t('hooker.settings.pauseOnDisconnect')}
                       </span>
                       <input
                         type="checkbox"
@@ -3432,7 +3444,7 @@ function TextHooker() {
                         {isRoomConnected
                           ? t('hooker.collab.disconnect')
                           : mode === 'host'
-                            ? 'Host'
+                            ? t('hooker.collab.host')
                             : t('hooker.collab.join')}
                       </button>
                     </div>
@@ -3462,13 +3474,13 @@ function TextHooker() {
                           t('hooker.collab.copied')
                         ) : (
                           <span className="inline-flex items-center gap-1">
-                            <Share2 size={14} /> Copy
+                            <Share2 size={14} /> {t('hooker.collab.copy')}
                           </span>
                         )}
                       </button>
                     </div>
                     <span className="text-xs opacity-60 mt-1">
-                      Share this URL so guests auto-join your room.
+                      {t('hooker.collab.inviteHint')}
                     </span>
                   </div>
                 )}
@@ -3481,14 +3493,14 @@ function TextHooker() {
                     onClick={handleCopyAll}
                     className="btn btn-sm btn-outline"
                   >
-                    <Copy size={16} /> Copy All Lines
+                    <Copy size={16} /> {t('hooker.settings.copyAllLines')}
                   </button>
                   <button
                     type="button"
                     onClick={handleClearAll}
                     className="btn btn-sm btn-outline btn-error"
                   >
-                    <Trash2 size={16} /> Clear All Lines
+                    <Trash2 size={16} /> {t('hooker.settings.clearAllLines')}
                   </button>
                 </div>
               </div>
@@ -3511,31 +3523,32 @@ function TextHooker() {
             </button>
           </div>
           <p className="text-sm text-base-content/70 mb-3">
-            Use these classes inside Custom CSS:
+            {t('hooker.classHelp.intro')}
           </p>
           <div className="space-y-2 text-sm">
             <div className="rounded bg-base-200 px-3 py-2">
-              <code>.th-root</code> - full TextHooker page
+              <code>.th-root</code> - {t('hooker.classHelp.root')}
             </div>
             <div className="rounded bg-base-200 px-3 py-2">
-              <code>.th-topbar</code> - top control bar
+              <code>.th-topbar</code> - {t('hooker.classHelp.topbar')}
             </div>
             <div className="rounded bg-base-200 px-3 py-2">
-              <code>.th-settings-panel</code> - settings dropdown panel
+              <code>.th-settings-panel</code> -{' '}
+              {t('hooker.classHelp.settingsPanel')}
             </div>
             <div className="rounded bg-base-200 px-3 py-2">
-              <code>.th-line-list</code> - line list scroller
+              <code>.th-line-list</code> - {t('hooker.classHelp.lineList')}
             </div>
             <div className="rounded bg-base-200 px-3 py-2">
-              <code>.th-line-item</code> - each captured line wrapper
+              <code>.th-line-item</code> - {t('hooker.classHelp.lineItem')}
             </div>
             <div className="rounded bg-base-200 px-3 py-2">
-              <code>.th-line-text</code> - line text content
+              <code>.th-line-text</code> - {t('hooker.classHelp.lineText')}
             </div>
           </div>
           <div className="modal-action">
             <button className="btn" onClick={() => setIsClassHelpOpen(false)}>
-              Close
+              {t('common:close')}
             </button>
           </div>
         </div>

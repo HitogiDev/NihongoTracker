@@ -597,11 +597,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       ) : (
                         <>
                           <Save className="w-4 h-4" />
-                          Create{' '}
-                          {goalDuration === 'daily'
-                            ? t('modal.daily')
-                            : t('modal.longTerm')}{' '}
-                          Goal
+                          {t('modal.createGoal', {
+                            duration:
+                              goalDuration === 'daily'
+                                ? t('modal.daily')
+                                : t('modal.longTerm'),
+                          })}
                         </>
                       )}
                     </button>
@@ -618,10 +619,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           {goals.length === 0 ? (
             <div className="alert alert-info">
               <BookOpen className="w-6 h-6" />
-              <span>
-                No daily goals set. Create your first goal to start tracking
-                your progress!
-              </span>
+              <span>{t('modal.emptyDaily')}</span>
             </div>
           ) : (
             <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -730,9 +728,11 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                 {t(config.labelKey as ParseKeys<'goals'>)}
                               </h4>
                               <p className="text-sm text-base-content/70">
-                                Target: {formatProgress(goal.target, goal.type)}{' '}
-                                {config.unit}
-                                {!goal.isActive && ' (Inactive)'}
+                                {t('modal.target', {
+                                  value: formatProgress(goal.target, goal.type),
+                                  unit: config.unit,
+                                })}
+                                {!goal.isActive && t('modal.inactive')}
                               </p>
                             </div>
                           </div>
@@ -763,7 +763,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
 
         <div className="modal-action">
           <button onClick={onClose} className="btn">
-            Close
+            {t('common:close')}
           </button>
         </div>
       </div>
@@ -792,7 +792,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                 onClick={() => setDailyGoalToDelete(null)}
                 disabled={isDeletingGoal}
               >
-                Cancel
+                {t('common:cancel')}
               </button>
               <button
                 type="button"

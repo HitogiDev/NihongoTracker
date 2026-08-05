@@ -253,7 +253,11 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
         });
 
         toast.success(
-          `Auto-matched ${totalProcessed} logs to ${matches.length} manga`
+          t('matcher.autoMatchedSuccess', {
+            count: totalProcessed,
+            matches: matches.length,
+            type: t('common:mediaTypesPlural.manga'),
+          })
         );
       } else {
         toast.info(t('matcher.noExactMatchesDb'));
@@ -365,9 +369,9 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
               {t('matcher.largeBatchTitle')}
             </h3>
             <p className="py-4">
-              You have {Object.keys(filteredGroupedLogs).length} log groups to
-              process. This may take a few minutes to complete. Do you want to
-              continue?
+              {t('matcher.largeBatchBody', {
+                count: Object.keys(filteredGroupedLogs).length,
+              })}
             </p>
             <div className="modal-action">
               <button
@@ -493,7 +497,7 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
                                 <h3 className="text-sm">{log.description}</h3>
                                 <p className="text-xs text-base-content/70">
                                   {log.unknownDate
-                                    ? 'Unknown date'
+                                    ? t('create.unknownDate')
                                     : new Date(log.date).toLocaleDateString()}
                                 </p>
                               </div>
@@ -715,7 +719,9 @@ function MangaLogs({ username, isActive = true }: MangaLogsProps) {
               {t('matcher.assigning')}
             </>
           ) : (
-            'Assign to Manga'
+            t('matcher.assignTo', {
+              type: t('common:mediaTypes.manga'),
+            })
           )}
         </button>
 

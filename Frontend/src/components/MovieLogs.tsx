@@ -240,10 +240,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           ></path>
         </svg>
-        <span>
-          View your movie logs here. Select video logs to convert them to movie
-          type when needed.
-        </span>
+        <span>{t('video.movieHint')}</span>
       </div>
 
       <div className="stats shadow mb-4 w-full">
@@ -312,7 +309,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
                                 <h3 className="text-sm">{log.description}</h3>
                                 <p className="text-xs text-base-content/70">
                                   {log.unknownDate
-                                    ? 'Unknown date'
+                                    ? t('create.unknownDate')
                                     : new Date(log.date).toLocaleDateString()}
                                 </p>
                               </div>
@@ -339,7 +336,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>No unassigned video logs found.</span>
+                <span>{t('video.noUnassigned')}</span>
               </div>
             )}
           </div>
@@ -523,9 +520,9 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
               {t('video.converting')}
             </>
           ) : selectedLogs.some((log) => log.type === 'video') ? (
-            'Convert Video Logs to Movies'
+            t('video.convertToMovies')
           ) : (
-            'Assign Movie'
+            t('video.assignMovie')
           )}
         </button>
 

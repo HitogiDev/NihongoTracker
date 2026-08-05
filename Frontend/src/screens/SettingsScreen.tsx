@@ -389,7 +389,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
               {isSaving ? (
                 <span className="loading loading-spinner loading-sm"></span>
               ) : (
-                'Save About'
+                t('profile.saveAbout')
               )}
             </button>
           </div>
@@ -406,20 +406,21 @@ type SettingsTab =
   | 'patreon'
   | 'advanced';
 
-const TAB_CONFIG: {
+const TAB_CONFIG = [
+  { id: 'profile', labelKey: 'tabs.profile', icon: UserRound },
+  { id: 'account', labelKey: 'tabs.account', icon: ShieldCheck },
+  { id: 'preferences', labelKey: 'tabs.preferences', icon: Settings2 },
+  { id: 'patreon', labelKey: 'tabs.patreon', icon: Heart },
+  { id: 'advanced', labelKey: 'tabs.advanced', icon: CloudDownload },
+] as const satisfies readonly {
   id: SettingsTab;
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
-}[] = [
-  { id: 'profile', label: 'Profile', icon: UserRound },
-  { id: 'account', label: 'Account & Security', icon: ShieldCheck },
-  { id: 'preferences', label: 'Preferences', icon: Settings2 },
-  { id: 'patreon', label: 'Patreon', icon: Heart },
-  { id: 'advanced', label: 'Data Management', icon: CloudDownload },
-];
+}[];
 
 function SettingsScreen() {
   const { t } = useTranslation('settings');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
@@ -601,7 +602,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -623,7 +624,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -668,7 +669,7 @@ function SettingsScreen() {
       onError: (error) => {
         if (error instanceof AxiosError) {
           const errorMessage =
-            error.response?.data.message || 'An error occurred';
+            error.response?.data.message || tCommon('errors.generic');
           toast.error(errorMessage);
           // If error mentions remaining time, extract it and set cooldown
           const match = errorMessage.match(/wait (\d+) seconds/);
@@ -837,7 +838,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -869,7 +870,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -890,7 +891,7 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || 'Export failed');
+        toast.error(error.response?.data.message || t('toast.exportFailed'));
       } else {
         toast.error(t('toast.exportFailed'));
       }
@@ -910,7 +911,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -931,7 +932,9 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || 'Failed to create API key');
+        toast.error(
+          error.response?.data.message || t('toast.apiKeyCreateFailed')
+        );
       } else {
         toast.error(t('toast.apiKeyCreateFailed'));
       }
@@ -946,7 +949,9 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || 'Failed to revoke API key');
+        toast.error(
+          error.response?.data.message || t('toast.apiKeyRevokeFailed')
+        );
       } else {
         toast.error(t('toast.apiKeyRevokeFailed'));
       }
@@ -1028,30 +1033,29 @@ function SettingsScreen() {
     const message = params.get('message');
 
     if (patreonStatus === 'success') {
-      toast.success('✅ Patreon account linked successfully!');
+      toast.success(`✅ ${t('toast.patreonLinked')}`);
       // Limpiar URL sin recargar la página
       window.history.replaceState({}, '', '/settings');
       // Recargar el estado de Patreon
       fetchPatreonStatus();
     } else if (patreonStatus === 'error') {
-      const errorMessages: Record<string, string> = {
-        missing_params: 'Missing authorization parameters',
-        invalid_state: 'Invalid or expired authorization state',
-        oauth_not_configured: 'Patreon OAuth is not configured on the server',
-        account_already_linked:
-          'This Patreon account is already linked to another user',
-        user_not_found: 'User not found',
-        oauth_failed: 'OAuth authentication failed',
-      };
-      const errorMessage =
-        message && errorMessages[message]
-          ? errorMessages[message]
-          : 'Failed to link Patreon account';
+      const errorKeys = {
+        missing_params: 'patreon.errors.missingParams',
+        invalid_state: 'patreon.errors.invalidState',
+        oauth_not_configured: 'patreon.errors.oauthNotConfigured',
+        account_already_linked: 'patreon.errors.accountAlreadyLinked',
+        user_not_found: 'patreon.errors.userNotFound',
+        oauth_failed: 'patreon.errors.oauthFailed',
+      } as const;
+      const errorMessage = t(
+        (message && errorKeys[message as keyof typeof errorKeys]) ||
+          'patreon.errors.linkFailed'
+      );
       toast.error(`❌ ${errorMessage}`);
       // Limpiar URL
       window.history.replaceState({}, '', '/settings');
     }
-  }, [fetchApiKeys]);
+  }, [fetchApiKeys, t]);
 
   async function fetchPatreonStatus() {
     try {
@@ -1083,7 +1087,7 @@ function SettingsScreen() {
       'logFileImport'
     ) as HTMLInputElement;
     if (!logImportInput.files || logImportInput.files.length === 0) {
-      toast.error('Please select a file');
+      toast.error(t('toast.selectFile'));
       return;
     }
     const file = logImportInput.files[0];
@@ -1118,7 +1122,7 @@ function SettingsScreen() {
     if (!user) return;
     const inputValue = confirmUsernameRef.current?.value || '';
     if (inputValue !== user.username) {
-      toast.error('Username does not match. Data was not deleted.');
+      toast.error(t('toast.usernameMismatch'));
       return;
     }
     (document.getElementById('clear_data_modal') as HTMLDialogElement).close();
@@ -1141,7 +1145,7 @@ function SettingsScreen() {
       window.location.href = authUrl;
     } catch (error) {
       setIsInitiatingOAuth(false);
-      toast.error('Failed to initiate Patreon OAuth');
+      toast.error(t('toast.patreonOauthFailed'));
       console.error('OAuth initiation error:', error);
     }
   }
@@ -1206,60 +1210,86 @@ function SettingsScreen() {
     setPendingBadgeTextColor(null);
   }, [pendingBadgeTextColor, badgeTextColor]);
 
-  const insertHeading = useCallback((level: 1 | 2 | 3) => {
-    const editor = aboutEditorRef.current;
-    if (!editor) return;
-    const hashes = '#'.repeat(level);
-    const prefix = `${editor.needsLineBreak() ? '\n' : ''}${hashes} `;
-    editor.insertSnippet(prefix, '', `Heading ${level}`);
-  }, []);
+  const insertHeading = useCallback(
+    (level: 1 | 2 | 3) => {
+      const editor = aboutEditorRef.current;
+      if (!editor) return;
+      const hashes = '#'.repeat(level);
+      const prefix = `${editor.needsLineBreak() ? '\n' : ''}${hashes} `;
+      editor.insertSnippet(
+        prefix,
+        '',
+        t('markdown.snippets.heading', { level })
+      );
+    },
+    [t]
+  );
 
-  const insertListItem = useCallback((ordered: boolean) => {
-    const editor = aboutEditorRef.current;
-    if (!editor) return;
-    const bullet = ordered ? '1. ' : '- ';
-    const prefix = `${editor.needsLineBreak() ? '\n' : ''}${bullet}`;
-    editor.insertSnippet(prefix, '', 'List item');
-  }, []);
+  const insertListItem = useCallback(
+    (ordered: boolean) => {
+      const editor = aboutEditorRef.current;
+      if (!editor) return;
+      const bullet = ordered ? '1. ' : '- ';
+      const prefix = `${editor.needsLineBreak() ? '\n' : ''}${bullet}`;
+      editor.insertSnippet(prefix, '', t('markdown.snippets.listItem'));
+    },
+    [t]
+  );
 
   const insertQuote = useCallback(() => {
     const editor = aboutEditorRef.current;
     if (!editor) return;
     const prefix = `${editor.needsLineBreak() ? '\n' : ''}> `;
-    editor.insertSnippet(prefix, '', 'Quote text');
-  }, []);
+    editor.insertSnippet(prefix, '', t('markdown.snippets.quote'));
+  }, [t]);
 
   const insertCodeBlock = useCallback(() => {
     const editor = aboutEditorRef.current;
     if (!editor) return;
     const lineBreak = editor.needsLineBreak() ? '\n' : '';
     const prefix = `${lineBreak}\`\`\`\n`;
-    editor.insertSnippet(prefix, '\n```\n', 'code sample');
-  }, []);
+    editor.insertSnippet(prefix, '\n```\n', t('markdown.snippets.code'));
+  }, [t]);
 
   const insertBold = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('**', '**', 'bold text');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '**',
+      '**',
+      t('markdown.snippets.bold')
+    );
+  }, [t]);
 
   const insertItalic = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('*', '*', 'italic text');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '*',
+      '*',
+      t('markdown.snippets.italic')
+    );
+  }, [t]);
 
   const insertInlineCode = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('`', '`', 'code');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '`',
+      '`',
+      t('markdown.snippets.inlineCode')
+    );
+  }, [t]);
 
   const insertLink = useCallback(() => {
     aboutEditorRef.current?.insertSnippet(
       '[',
       '](https://example.com)',
-      'link text'
+      t('markdown.snippets.link')
     );
-  }, []);
+  }, [t]);
 
   const insertSpoiler = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('||', '||', 'spoiler text');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '||',
+      '||',
+      t('markdown.snippets.spoiler')
+    );
+  }, [t]);
 
   async function handleUpdateUser(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -1938,7 +1968,7 @@ function SettingsScreen() {
             <div className="card bg-base-100 shadow-sm border border-base-300/50 sticky top-6">
               <div className="card-body p-2">
                 <nav className="flex flex-row lg:flex-col gap-1">
-                  {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
+                  {TAB_CONFIG.map(({ id, labelKey, icon: Icon }) => (
                     <button
                       key={id}
                       type="button"
@@ -1952,7 +1982,7 @@ function SettingsScreen() {
                       onClick={() => setActiveTab(id)}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="hidden sm:block">{label}</span>
+                      <span className="hidden sm:block">{t(labelKey)}</span>
                     </button>
                   ))}
                 </nav>
@@ -2037,8 +2067,8 @@ function SettingsScreen() {
                               ) : (
                                 <p className="text-base-content/30 text-sm italic">
                                   {aboutViewMode === 'preview'
-                                    ? 'Nothing to preview yet. Start typing in the editor.'
-                                    : 'Preview will appear here...'}
+                                    ? t('profile.previewEmpty')
+                                    : t('profile.previewPlaceholder')}
                                 </p>
                               )}
                             </div>
@@ -2280,13 +2310,17 @@ function SettingsScreen() {
                         <input
                           type="text"
                           className="input input-bordered focus:input-secondary transition-colors w-full"
-                          placeholder={user?.username || 'Enter username'}
+                          placeholder={
+                            user?.username || t('account.usernamePlaceholder')
+                          }
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                         />
                         <label className="label">
                           <span className="label-text-alt text-base-content/60">
-                            Current: {user?.username || 'Not set'}
+                            {t('account.currentUsername', {
+                              username: user?.username || t('account.notSet'),
+                            })}
                           </span>
                         </label>
                       </div>
@@ -2305,7 +2339,9 @@ function SettingsScreen() {
                                   : 'badge-warning'
                               }`}
                             >
-                              {user.verified ? 'Verified' : 'Not Verified'}
+                              {user.verified
+                                ? t('account.verified')
+                                : t('account.notVerified')}
                             </span>
                           )}
                         </label>
@@ -3006,7 +3042,7 @@ function SettingsScreen() {
                             >
                               {importType
                                 ? IMPORT_TYPE_LABELS[importType]
-                                : 'Choose the file format'}
+                                : t('data.chooseFormat')}
                             </div>
                             <ul
                               tabIndex={0}
@@ -3101,8 +3137,8 @@ function SettingsScreen() {
                             >
                               <HelpCircle className="w-4 h-4" />
                               {importType === 'other'
-                                ? 'CSV Format Help'
-                                : 'Kechimochi Import Help'}
+                                ? t('data.csvFormatHelp')
+                                : t('data.kechimochiHelp')}
                             </button>
                           )}
                           <button
@@ -3538,11 +3574,11 @@ function SettingsScreen() {
               className="btn btn-primary"
               onClick={() => {
                 if (!imageUrl.trim()) {
-                  toast.error('Please provide an image URL');
+                  toast.error(t('toast.imageUrlRequired'));
                   return;
                 }
                 const url = imageUrl.trim();
-                const alt = imageAlt.trim() || 'Image';
+                const alt = imageAlt.trim() || t('markdown.snippets.imageAlt');
                 aboutEditorRef.current?.insertSnippet('![', `](${url})`, alt);
                 setIsImageModalOpen(false);
               }}
@@ -3723,7 +3759,7 @@ function SettingsScreen() {
           </h3>
           <div className="py-4">
             <p className="mb-3">
-              We've sent a verification email to{' '}
+              {t('account.verificationSentBody')}{' '}
               <span className="font-semibold">{emailSentTo}</span>
             </p>
             <div className="alert alert-info">
@@ -4027,8 +4063,10 @@ function SortableWidgetRow({
         type="button"
         onClick={onToggle}
         className="btn btn-ghost btn-sm btn-square"
-        title={visible ? 'Hide widget' : 'Show widget'}
-        aria-label={visible ? 'Hide widget' : 'Show widget'}
+        title={visible ? t('profileWidgets.hide') : t('profileWidgets.show')}
+        aria-label={
+          visible ? t('profileWidgets.hide') : t('profileWidgets.show')
+        }
       >
         {visible ? (
           <Eye className="h-4 w-4" />
@@ -4075,10 +4113,12 @@ function ProfileLayoutEditor() {
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(
-          `Failed to save layout: ${error.response?.data?.message ?? ''}`
+          t('toast.layoutSaveFailedDetail', {
+            message: error.response?.data?.message ?? '',
+          })
         );
       } else {
-        toast.error('Failed to save profile layout');
+        toast.error(t('toast.layoutSaveFailed'));
       }
     },
   });

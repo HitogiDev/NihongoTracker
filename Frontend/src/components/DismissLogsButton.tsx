@@ -18,7 +18,7 @@ function DismissLogsButton({
   onDismissed,
   className = 'btn-lg',
 }: DismissLogsButtonProps) {
-  const { t } = useTranslation('logs');
+  const { t } = useTranslation(['logs', 'common']);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const queryClient = useQueryClient();
 
@@ -28,11 +28,7 @@ function DismissLogsButton({
       setShowConfirmModal(false);
       onDismissed();
       queryClient.invalidateQueries({ queryKey: ['untrackedLogs'] });
-      toast.success(
-        `Dismissed ${selectedLogs.length} log${
-          selectedLogs.length !== 1 ? 's' : ''
-        } from media matching`
-      );
+      toast.success(t('dismiss.success', { count: selectedLogs.length }));
     },
     onError: (error) => {
       const errorMessage =
@@ -53,13 +49,10 @@ function DismissLogsButton({
             <h3 className="font-bold text-lg">{t('dismiss.title')}</h3>
             <div className="py-4">
               <p className="mb-4">
-                Dismiss {selectedLogs.length} log
-                {selectedLogs.length !== 1 ? 's' : ''} from media matching? They
-                will no longer show up here or count as unmatched logs.
+                {t('dismiss.confirmBody', { count: selectedLogs.length })}
               </p>
               <p className="text-sm text-base-content/70">
-                Use this for logs that can't be assigned to a single media. The
-                logs themselves are kept and still count towards your stats.
+                {t('dismiss.note')}
               </p>
             </div>
             <div className="modal-action">
@@ -67,7 +60,7 @@ function DismissLogsButton({
                 className="btn btn-ghost"
                 onClick={() => setShowConfirmModal(false)}
               >
-                Cancel
+                {t('common:cancel')}
               </button>
               <button
                 className="btn btn-warning"
@@ -77,7 +70,7 @@ function DismissLogsButton({
                 {isDismissing ? (
                   <>
                     <span className="loading loading-spinner"></span>
-                    Dismissing...
+                    {t('dismiss.dismissing')}
                   </>
                 ) : (
                   t('dismiss.action')
@@ -102,7 +95,7 @@ function DismissLogsButton({
         title={t('dismiss.hint')}
       >
         <EyeOff className="h-5 w-5" />
-        Dismiss
+        {t('dismiss.action')}
       </button>
     </>
   );

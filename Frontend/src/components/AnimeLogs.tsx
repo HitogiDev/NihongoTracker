@@ -119,16 +119,19 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
       toast.success(
-        `Successfully assigned ${selectedLogs.length} logs to anime`
+        t('matcher.assignSuccessCount', {
+          count: selectedLogs.length,
+          type: t('common:mediaTypesPlural.anime'),
+        })
       );
     },
     onError: (error) => {
       const errorMessage =
         error instanceof AxiosError
-          ? error.response?.data.message || 'Server error during assignment'
+          ? error.response?.data.message || t('matcher.serverError')
           : error instanceof Error
             ? error.message
-            : 'Unknown error during assignment';
+            : t('matcher.unknownError');
 
       toast.error(errorMessage);
     },
@@ -256,7 +259,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         });
 
         toast.success(
-          `Auto-matched ${totalProcessed} logs to ${matches.length} anime`
+          t('matcher.autoMatchedSuccess', {
+            count: totalProcessed,
+            matches: matches.length,
+            type: t('common:mediaTypesPlural.anime'),
+          })
         );
       } else {
         toast.info(t('matcher.noExactMatchesDb'));
@@ -369,9 +376,9 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
               {t('matcher.largeBatchTitle')}
             </h3>
             <p className="py-4">
-              You have {Object.keys(filteredGroupedLogs).length} log groups to
-              process. This may take a few minutes to complete. Do you want to
-              continue?
+              {t('matcher.largeBatchBody', {
+                count: Object.keys(filteredGroupedLogs).length,
+              })}
             </p>
             <div className="modal-action">
               <button
@@ -497,7 +504,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
                                 <h3 className="text-sm">{log.description}</h3>
                                 <p className="text-xs text-base-content/70">
                                   {log.unknownDate
-                                    ? 'Unknown date'
+                                    ? t('create.unknownDate')
                                     : new Date(log.date).toLocaleDateString()}
                                 </p>
                               </div>
@@ -711,7 +718,9 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
               {t('matcher.assigning')}
             </>
           ) : (
-            'Assign to Anime'
+            t('matcher.assignTo', {
+              type: t('common:mediaTypes.anime'),
+            })
           )}
         </button>
 

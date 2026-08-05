@@ -17,9 +17,10 @@ interface TagSelectorProps {
 export default function TagSelector({
   selectedTags,
   onChange,
-  label = 'Tags',
+  label,
 }: TagSelectorProps) {
   const { t } = useTranslation('settings');
+  const fieldLabel = label ?? t('tags.selector.label');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6');
   const queryClient = useQueryClient();
@@ -95,7 +96,7 @@ export default function TagSelector({
     return (
       <div className="form-control">
         <label className="label">
-          <span className="label-text">{label}</span>
+          <span className="label-text">{fieldLabel}</span>
         </label>
         <div className="flex gap-2">
           <span className="loading loading-spinner loading-sm"></span>
@@ -111,10 +112,10 @@ export default function TagSelector({
     <>
       <div className="form-control">
         <label className="label">
-          <span className="label-text">{label}</span>
+          <span className="label-text">{fieldLabel}</span>
           {selectedTags.length > 0 && (
             <span className="label-text-alt text-base-content/60">
-              {selectedTags.length} selected
+              {t('tags.selector.selected', { total: selectedTags.length })}
             </span>
           )}
         </label>
@@ -162,8 +163,8 @@ export default function TagSelector({
             data-tip={
               tags.length >= maxTags
                 ? user?.patreon?.tier
-                  ? `You've reached the maximum of ${maxTags} tags for your tier`
-                  : `You've reached the maximum of ${maxTags} tags. Upgrade to Patreon for more!`
+                  ? t('tags.selector.maxReachedTier', { max: maxTags })
+                  : t('tags.selector.maxReachedFree', { max: maxTags })
                 : undefined
             }
           >
@@ -198,7 +199,7 @@ export default function TagSelector({
 
         {tags.length === 0 && (
           <p className="text-sm text-base-content/60 mt-2">
-            No tags yet. Click the + button to create your first tag!
+            {t('tags.selector.emptyHint')}
           </p>
         )}
       </div>
@@ -264,7 +265,7 @@ export default function TagSelector({
                 className="btn btn-ghost"
                 onClick={closeQuickCreateModal}
               >
-                Cancel
+                {t('tags.selector.cancel')}
               </button>
               <button
                 type="button"

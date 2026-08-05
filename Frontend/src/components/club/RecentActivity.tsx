@@ -12,6 +12,7 @@ import { getClubRecentActivityFn } from '../../api/clubApi';
 import { Link } from 'react-router-dom';
 import UserAvatar from '../UserAvatar';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useDateFormatting } from '../../hooks/useDateFormatting';
 
 interface RecentActivityProps {
@@ -52,30 +53,31 @@ const getMediaTypeIcon = (metadata: ActivityMetadata) => {
   return <Clapperboard className="w-4 h-4 text-accent" />;
 };
 
-const formatActivityContent = (activity: Activity) => {
+const formatActivityContent = (
+  activity: Activity,
+  t: TFunction<'clubs'>
+): string => {
   if (activity.type === 'log') {
     const parts = [];
     if (activity.metadata.episodes) {
-      parts.push(
-        `${activity.metadata.episodes} episode${activity.metadata.episodes !== 1 ? 's' : ''}`
-      );
+      parts.push(t('activity.episodes', { count: activity.metadata.episodes }));
     }
     if (activity.metadata.pages) {
-      parts.push(
-        `${activity.metadata.pages} page${activity.metadata.pages !== 1 ? 's' : ''}`
-      );
+      parts.push(t('activity.pages', { count: activity.metadata.pages }));
     }
     if (activity.metadata.time) {
-      parts.push(`${activity.metadata.time} min`);
+      parts.push(t('activity.minutes', { count: activity.metadata.time }));
     }
 
-    const progressText = parts.length > 0 ? parts.join(', ') : 'activity';
-    return `logged ${progressText}`;
-  } else {
-    const rating = activity.metadata.rating;
-    const ratingText = rating ? ` (${rating}★)` : '';
-    return `reviewed${ratingText}`;
+    const progressText =
+      parts.length > 0 ? parts.join(', ') : t('activity.generic');
+    return t('activity.logged', { progress: progressText });
   }
+
+  const rating = activity.metadata.rating;
+  return rating
+    ? t('activity.reviewedRating', { rating })
+    : t('activity.reviewed');
 };
 
 export default function RecentActivity({ clubId }: RecentActivityProps) {
@@ -185,7 +187,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
                     {activity.user.username}
                   </Link>
                   <span className="text-sm text-base-content/70">
-                    {formatActivityContent(activity)}
+                    {formatActivityContent(activity, t)}
                   </span>
                 </div>
 

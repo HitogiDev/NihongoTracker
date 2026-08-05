@@ -292,24 +292,27 @@ function LogScreen() {
     return null;
   }, []);
 
-  const handlePlaylistPaste = useCallback(async (url: string) => {
-    setPlaylistResult(null);
-    setPlaylistModalOpen(true);
-    setIsFetchingPlaylist(true);
-    try {
-      const result = await searchYouTubePlaylistFn(url);
-      setPlaylistResult(result);
-    } catch (err) {
-      toast.error(
-        err instanceof AxiosError
-          ? (err.response?.data?.message ?? 'Failed to load playlist')
-          : 'Failed to load playlist'
-      );
-      setPlaylistModalOpen(false);
-    } finally {
-      setIsFetchingPlaylist(false);
-    }
-  }, []);
+  const handlePlaylistPaste = useCallback(
+    async (url: string) => {
+      setPlaylistResult(null);
+      setPlaylistModalOpen(true);
+      setIsFetchingPlaylist(true);
+      try {
+        const result = await searchYouTubePlaylistFn(url);
+        setPlaylistResult(result);
+      } catch (err) {
+        toast.error(
+          err instanceof AxiosError
+            ? (err.response?.data?.message ?? t('toast.playlistLoadFailed'))
+            : t('toast.playlistLoadFailed')
+        );
+        setPlaylistModalOpen(false);
+      } finally {
+        setIsFetchingPlaylist(false);
+      }
+    },
+    [t]
+  );
 
   const handlePlaylistConfirm = useCallback(
     async (selected: PlaylistVideoWithOverride[]) => {
@@ -511,7 +514,7 @@ function LogScreen() {
       const errorMessage =
         error instanceof AxiosError
           ? error.response?.data.message
-          : 'An error occurred';
+          : tCommon('errors.generic');
       toast.error(errorMessage);
     },
   });
@@ -840,9 +843,7 @@ function LogScreen() {
             {/* Log Type Selection */}
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body">
-                <h2 className="card-title">
-                  1. What did you immerse in today?
-                </h2>
+                <h2 className="card-title">{t('create.stepType')}</h2>
                 <div
                   className={`grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4 p-2 rounded-lg ${
                     errors.type ? 'border-2 border-error' : ''
@@ -886,14 +887,14 @@ function LogScreen() {
                 <div className="lg:col-span-3 space-y-6">
                   <div className="card bg-base-100 shadow-sm">
                     <div className="card-body">
-                      <h2 className="card-title">2. Fill in the details</h2>
+                      <h2 className="card-title">{t('create.stepDetails')}</h2>
                       {/* Media Name Input */}
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text font-medium">
                             {logData.type === 'video'
-                              ? 'YouTube URL or Video Title'
-                              : 'Media Name'}
+                              ? t('create.videoUrlLabel')
+                              : t('create.mediaName')}
                           </span>
                         </label>
                         <div className="relative">
@@ -901,8 +902,8 @@ function LogScreen() {
                             type="text"
                             placeholder={
                               logData.type === 'video'
-                                ? 'https://youtube.com/watch?v=... or video title'
-                                : 'Search for media...'
+                                ? t('create.videoPlaceholder')
+                                : t('create.mediaPlaceholder')
                             }
                             className={`input input-bordered w-full pr-10 ${
                               errors.mediaName
@@ -1040,8 +1041,8 @@ function LogScreen() {
                               <span className="loading loading-spinner loading-sm"></span>
                               <span>
                                 {logData.type === 'video'
-                                  ? 'Searching YouTube...'
-                                  : 'Searching...'}
+                                  ? t('create.searchingYoutube')
+                                  : t('create.searching')}
                               </span>
                             </div>
                           )}
@@ -1053,8 +1054,8 @@ function LogScreen() {
                                 <Info />
                                 <span>
                                   {logData.type === 'video'
-                                    ? 'No YouTube video found. Make sure you entered a valid YouTube URL.'
-                                    : 'No results found. You can still create a log with this name.'}
+                                    ? t('create.noYoutubeResults')
+                                    : t('create.noResults')}
                                 </span>
                               </div>
                             )}
@@ -1071,7 +1072,9 @@ function LogScreen() {
                               </span>
                               {logData.customDuration ? (
                                 <span className="label-text-alt text-sm text-warning">
-                                  Episode Duration: {logData.customDuration} min
+                                  {t('create.episodeDurationBadge', {
+                                    minutes: logData.customDuration,
+                                  })}
                                 </span>
                               ) : null}
                             </label>
@@ -1120,19 +1123,25 @@ function LogScreen() {
                               <div className="alert alert-success mt-2">
                                 <CircleCheck />
                                 <span>
-                                  Auto-calculated time:{' '}
-                                  {autoCalculatedTime.hours}h{' '}
-                                  {autoCalculatedTime.minutes}m (
-                                  {logData.watchedEpisodes} ×{' '}
-                                  {logData.customDuration || logData.duration}{' '}
-                                  min)
+                                  {t('create.autoCalculatedTime', {
+                                    hours: autoCalculatedTime.hours,
+                                    minutes: autoCalculatedTime.minutes,
+                                    episodes: logData.watchedEpisodes,
+                                    duration:
+                                      logData.customDuration ||
+                                      logData.duration,
+                                  })}
                                 </span>
                               </div>
                             ) : null}
                             {logData.episodes > 0 && (
                               <div className="alert alert-info mt-2">
                                 <Info />
-                                <span>Total episodes: {logData.episodes}</span>
+                                <span>
+                                  {t('create.totalEpisodes', {
+                                    total: logData.episodes,
+                                  })}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -1390,7 +1399,7 @@ function LogScreen() {
                                 placeholder={
                                   logData.duration
                                     ? `${logData.duration}`
-                                    : 'Episode duration'
+                                    : t('create.episodeDurationPlaceholder')
                                 }
                                 className="input input-bordered input-sm"
                                 onChange={(e) => {
@@ -1412,7 +1421,9 @@ function LogScreen() {
                               />
                               {logData.duration ? (
                                 <p className="label flex flex-col items-start gap-1">
-                                  Default: {logData.duration} min
+                                  {t('create.defaultDuration', {
+                                    minutes: logData.duration,
+                                  })}
                                 </p>
                               ) : null}
                             </div>
@@ -1572,7 +1583,7 @@ function LogScreen() {
                                   >
                                     {logData.date instanceof Date
                                       ? logData.date.toLocaleDateString()
-                                      : 'Select date (defaults to today)'}
+                                      : t('create.datePlaceholder')}
                                   </span>
                                   <Calendar className="w-4 h-4" />
                                 </div>
@@ -1683,8 +1694,8 @@ function LogScreen() {
                             <Info className="w-12 h-12 mx-auto mb-4" />
                             <p>
                               {logData.type
-                                ? 'Search for media to see a preview'
-                                : 'Select a log type to get started'}
+                                ? t('create.previewEmpty')
+                                : t('create.previewNoType')}
                             </p>
                           </div>
                         )}
@@ -1702,7 +1713,7 @@ function LogScreen() {
                   <TagSelector
                     selectedTags={selectedTags}
                     onChange={setSelectedTags}
-                    label="Tags (Optional)"
+                    label={t('create.tagsLabel')}
                   />
                 </div>
               </div>
@@ -1712,7 +1723,7 @@ function LogScreen() {
             {logData.type && (
               <div className="card bg-base-100 shadow-sm">
                 <div className="card-body items-center text-center">
-                  <h2 className="card-title">3. Ready to log?</h2>
+                  <h2 className="card-title">{t('create.stepReady')}</h2>
                   <p>{t('create.reviewHint')}</p>
                   <div className="card-actions justify-center mt-4">
                     <button
@@ -1725,7 +1736,9 @@ function LogScreen() {
                       ) : (
                         <CircleCheck className="w-6 h-6" />
                       )}
-                      {isLogCreating ? 'Logging...' : 'Create Log'}
+                      {isLogCreating
+                        ? t('create.submitting')
+                        : t('create.submit')}
                     </button>
                   </div>
                 </div>

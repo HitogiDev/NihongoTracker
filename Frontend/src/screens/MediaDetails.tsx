@@ -1160,7 +1160,7 @@ function MediaDetails() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ComparisonStat
-              label="Total XP"
+              label={t('stats.totalXp')}
               myValue={myStats.totalXp}
               theirValue={theirStats.totalXp}
             />

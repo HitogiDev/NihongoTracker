@@ -118,13 +118,13 @@ const LOG_TYPES = [
   'other',
 ];
 
-const CATEGORY_LABELS: Record<TimeRange, string> = {
-  total: 'All Time',
-  today: 'Today',
-  week: 'This Week',
-  month: 'This Month',
-  year: 'This Year',
-  custom: 'Custom Range',
+const CATEGORY_LABEL_KEYS: Record<TimeRange, ParseKeys<'stats'>> = {
+  total: 'range.allTime',
+  today: 'range.today',
+  week: 'range.thisWeek',
+  month: 'range.thisMonth',
+  year: 'range.thisYear',
+  custom: 'filters.customRange',
 };
 
 const PERIOD_LABELS: Record<TimeRange, string> = {
@@ -1068,7 +1068,7 @@ function StatsScreen() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge badge-outline text-sm">
-              {CATEGORY_LABELS[timeRange]}
+              {t(CATEGORY_LABEL_KEYS[timeRange])}
             </span>
             <span className="badge badge-outline text-sm">
               {currentTypeDisplay}
@@ -1099,7 +1099,7 @@ function StatsScreen() {
                     className="btn btn-outline w-full sm:w-auto"
                   >
                     <Calendar className="w-4 h-4" />
-                    {CATEGORY_LABELS[timeRange]}
+                    {t(CATEGORY_LABEL_KEYS[timeRange])}
                     <ChevronDown className="w-4 h-4" />
                   </div>
                   <ul

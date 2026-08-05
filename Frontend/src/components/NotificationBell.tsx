@@ -247,7 +247,7 @@ function NotificationBell() {
                     isUnread ? 'badge-primary' : 'badge-ghost'
                   }`}
                 >
-                  {isUnread ? t('item.unread') : 'Read'}
+                  {isUnread ? t('item.unread') : t('item.read')}
                 </span>
               </div>
               {item.body && (
@@ -281,7 +281,9 @@ function NotificationBell() {
         type="button"
         className="btn btn-ghost btn-sm sm:btn-md btn-circle relative"
         aria-label={
-          totalCount > 0 ? `Notifications (${totalCount})` : t('page.title')
+          totalCount > 0
+            ? t('bell.ariaLabel', { count: totalCount })
+            : t('page.title')
         }
       >
         <Bell className="w-4 h-4" />
@@ -309,22 +311,22 @@ function NotificationBell() {
           {!isLoggedIn ? (
             <div className="px-4 py-6 text-center">
               <p className="mb-3 text-sm text-base-content/60">
-                Sign in to see your notifications.
+                {t('bell.signInPrompt')}
               </p>
               <Link to="/login" className="btn btn-primary btn-sm">
-                Log in
+                {t('bell.logIn')}
               </Link>
             </div>
           ) : dropdownQuery.isLoading ? (
             <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-base-content/60">
               <span className="loading loading-spinner loading-xs"></span>
-              Loading...
+              {t('bell.loading')}
             </div>
           ) : dropdownQuery.isError ? (
             <div className="px-4 py-6 text-center">
               <AlertCircle className="mx-auto mb-2 h-8 w-8 text-error" />
               <p className="text-sm text-base-content/60">
-                Unable to load notifications.
+                {t('list.error.title')}
               </p>
             </div>
           ) : dropdownItems.length === 0 ? (
@@ -332,9 +334,7 @@ function NotificationBell() {
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-base-200">
                 <Inbox className="h-7 w-7 text-base-content/40" />
               </div>
-              <p className="text-sm text-base-content/60">
-                No notifications yet
-              </p>
+              <p className="text-sm text-base-content/60">{t('bell.empty')}</p>
             </div>
           ) : (
             <div className="space-y-2 px-2 py-2">
@@ -342,7 +342,7 @@ function NotificationBell() {
               <div ref={listSentinelRef} className="h-6" />
               {dropdownQuery.isFetchingNextPage && (
                 <div className="px-4 py-2 text-center text-xs text-base-content/50">
-                  Loading more...
+                  {t('list.loadingMore')}
                 </div>
               )}
             </div>
@@ -356,14 +356,14 @@ function NotificationBell() {
                 to="/notifications"
                 className="btn btn-ghost btn-sm text-primary"
               >
-                Go to page
+                {t('bell.goToPage')}
               </Link>
               <button
                 type="button"
                 className="btn btn-outline btn-sm"
                 onClick={() => markNotificationsAsReadMutation.mutate()}
               >
-                Mark as read
+                {t('summary.markAsRead')}
               </button>
             </div>
           </div>
@@ -378,10 +378,10 @@ function NotificationBell() {
             </div>
             <div>
               <h3 className="font-bold text-lg text-base-content">
-                Delete notification?
+                {t('deleteConfirm.title')}
               </h3>
               <p className="text-sm text-base-content/70">
-                This removes it from your notifications.
+                {t('deleteConfirm.description')}
               </p>
             </div>
           </div>
@@ -400,7 +400,7 @@ function NotificationBell() {
               }
             />
             <span className="label-text flex items-center gap-2 text-base-content/90">
-              Don't show again
+              {t('deleteConfirm.dontShowAgain')}
             </span>
           </label>
 
@@ -414,7 +414,7 @@ function NotificationBell() {
                 setDeleteConfirmDontShowAgain(false);
               }}
             >
-              Cancel
+              {t('deleteConfirm.cancel')}
             </button>
             <button
               type="button"
@@ -422,7 +422,7 @@ function NotificationBell() {
               onClick={handleConfirmDelete}
             >
               <Check className="w-4 h-4" />
-              Delete
+              {t('deleteConfirm.confirm')}
             </button>
           </div>
         </div>

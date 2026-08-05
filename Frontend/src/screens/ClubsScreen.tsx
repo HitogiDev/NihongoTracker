@@ -90,9 +90,9 @@ function ClubsScreen() {
   };
 
   const sortOptions = [
-    { value: 'memberCount', label: 'Members' },
-    { value: 'createdAt', label: 'Newest' },
-    { value: 'name', label: 'Name' },
+    { value: 'memberCount', label: t('browse.sort.members') },
+    { value: 'createdAt', label: t('browse.sort.newest') },
+    { value: 'name', label: t('browse.sort.name') },
   ];
 
   if (isLoading) {
@@ -175,7 +175,7 @@ function ClubsScreen() {
                   >
                     <span>
                       {sortOptions.find((opt) => opt.value === sortBy)?.label ||
-                        'Members'}
+                        t('browse.sort.members')}
                     </span>
                     <ChevronDown className="text-lg" />
                   </div>
@@ -267,7 +267,10 @@ function ClubsScreen() {
               <>
                 {/* Results Info */}
                 <div className="mb-6 text-base-content/70">
-                  Showing {clubsData.clubs.length} of {clubsData.total} clubs
+                  {t('browse.showing', {
+                    shown: clubsData.clubs.length,
+                    total: clubsData.total,
+                  })}
                 </div>
 
                 {/* Clubs Grid */}
@@ -310,8 +313,8 @@ function ClubsScreen() {
                 </h3>
                 <p className="text-base-content/70 mb-6">
                   {search || selectedTags.length > 0
-                    ? 'Try adjusting your search or filters'
-                    : 'Be the first to create a club!'}
+                    ? t('browse.emptyFiltered')
+                    : t('browse.emptyFirst')}
                 </p>
                 {user && (
                   <button
@@ -361,7 +364,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
             ) : (
               <Lock className="w-4 h-4" />
             )}
-            {club.isPublic ? 'Public' : 'Private'}
+            {club.isPublic ? t('browse.public') : t('browse.private')}
           </div>
         </div>
       </div>
@@ -402,7 +405,10 @@ function ClubCard({ club }: { club: IClubResponse }) {
           <div className="flex items-center gap-1">
             <Users className="text-base w-4 h-4" />
             <span>
-              {club.memberCount}/{club.memberLimit} members
+              {t('browse.memberCount', {
+                current: club.memberCount,
+                limit: club.memberLimit,
+              })}
             </span>
           </div>
         </div>
@@ -429,10 +435,10 @@ function ClubCard({ club }: { club: IClubResponse }) {
             <div className="badge badge-primary gap-1">
               <Users className="w-4 h-4" />
               {club.userRole === 'leader'
-                ? 'Leader'
+                ? t('roles.leader')
                 : club.userRole === 'moderator'
-                  ? 'Moderator'
-                  : 'Member'}
+                  ? t('roles.moderator')
+                  : t('roles.member')}
             </div>
           ) : club.isUserMember && club.userStatus === 'pending' ? (
             <div className="badge badge-warning gap-1">
@@ -441,7 +447,9 @@ function ClubCard({ club }: { club: IClubResponse }) {
             </div>
           ) : (
             <div className="badge badge-ghost">
-              {club.isPublic ? 'Click to join' : 'Click to request'}
+              {club.isPublic
+                ? t('browse.clickToJoin')
+                : t('browse.clickToRequest')}
             </div>
           )}
         </div>

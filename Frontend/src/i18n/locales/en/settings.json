@@ -6,6 +6,7 @@
     "confirmPasswordPlaceholder": "Confirm new password",
     "currentPassword": "Current Password",
     "currentPasswordPlaceholder": "Enter your current password to confirm changes",
+    "currentUsername": "Current: {{username}}",
     "detailsHeading": "ACCOUNT DETAILS",
     "email": "Email Address (optional)",
     "emailPlaceholder": "Enter your email address",
@@ -14,6 +15,8 @@
     "keepPasswordHint": "Leave blank to keep current password",
     "newPassword": "New Password (optional)",
     "newPasswordPlaceholder": "Enter new password",
+    "notSet": "Not set",
+    "notVerified": "Not Verified",
     "passwordMismatch": "Passwords do not match",
     "passwordRequired": "Password verification required",
     "recoveryHint": "Recommended for account recovery",
@@ -26,7 +29,9 @@
     "updating": "Updating...",
     "username": "Username",
     "usernamePlaceholder": "Enter your username",
-    "verificationSentTitle": "Verification Email Sent!"
+    "verificationSentBody": "We've sent a verification email to",
+    "verificationSentTitle": "Verification Email Sent!",
+    "verified": "Verified"
   },
   "advanced": {
     "aboutTitle": "About Advanced Options",
@@ -100,6 +105,8 @@
     "warning": "Warning!"
   },
   "data": {
+    "chooseFormat": "Choose the file format",
+    "csvFormatHelp": "CSV Format Help",
     "export": "Export Data",
     "exportCsv": "Export as CSV",
     "exportHint": "Download all your logs as a CSV file that can be re-imported later.",
@@ -107,10 +114,11 @@
     "import": "Import File",
     "importFrom": "Import from File",
     "importing": "Importing...",
+    "kechimochiHelp": "Kechimochi Import Help",
     "subtitle": "Import, sync, and export your data",
     "syncExternal": "Sync External Data",
-    "syncing": "Syncing...",
     "syncLogs": "Sync Logs",
+    "syncing": "Syncing...",
     "title": "Data Management"
   },
   "header": {
@@ -168,6 +176,18 @@
     "numberedList": "Numbered list",
     "previewOnly": "Preview only",
     "quote": "Quote",
+    "snippets": {
+      "bold": "bold text",
+      "code": "code sample",
+      "heading": "Heading {{level}}",
+      "imageAlt": "Image",
+      "inlineCode": "code",
+      "italic": "italic text",
+      "link": "link text",
+      "listItem": "List item",
+      "quote": "Quote text",
+      "spoiler": "spoiler text"
+    },
     "splitView": "Split view",
     "spoiler": "Spoiler"
   },
@@ -185,6 +205,15 @@
     "customBadgeText": "Custom Badge Text",
     "customTextPlaceholder": "Enter custom text",
     "enthusiastOnly": "Enthusiast+ exclusive",
+    "errors": {
+      "accountAlreadyLinked": "This Patreon account is already linked to another user",
+      "invalidState": "Invalid or expired authorization state",
+      "linkFailed": "Failed to link Patreon account",
+      "missingParams": "Missing authorization parameters",
+      "oauthFailed": "OAuth authentication failed",
+      "oauthNotConfigured": "Patreon OAuth is not configured on the server",
+      "userNotFound": "User not found"
+    },
     "freeTier": "Free Tier",
     "oauthNote": "Secure OAuth - credentials never shared",
     "pledge": "Pledge on Patreon",
@@ -228,7 +257,10 @@
     "gifCropOnSave": "GIF crop will be applied when you save",
     "markdownSupported": "Markdown supported",
     "preview": "Preview",
+    "previewEmpty": "Nothing to preview yet. Start typing in the editor.",
+    "previewPlaceholder": "Preview will appear here...",
     "save": "Save Profile",
+    "saveAbout": "Save About",
     "saving": "Saving...",
     "subtitle": "Update your avatar, banner and about me",
     "tab": "Profile"
@@ -246,6 +278,7 @@
       "description": "Showcase of your favorite media.",
       "label": "Favorite Media"
     },
+    "hide": "Hide widget",
     "immersionActivity": {
       "description": "Heatmap of your immersion over time.",
       "label": "Immersion Activity"
@@ -261,42 +294,56 @@
     "progressStats": {
       "description": "Overall, listening and reading levels.",
       "label": "Progress Stats"
-    }
+    },
+    "show": "Show widget"
+  },
+  "tabs": {
+    "account": "Account & Security",
+    "advanced": "Data Management",
+    "patreon": "Patreon",
+    "preferences": "Preferences",
+    "profile": "Profile"
   },
   "tagFilter": {
     "title": "Filter by Tags"
   },
   "tags": {
-    "subtitle": "Create and manage tags to organize your logs",
-    "title": "Tags",
     "manager": {
-      "title": "Manage Tags",
-      "createNew": "Create New Tag",
-      "editTag": "Edit Tag",
-      "tagName": "Tag Name",
-      "tagColor": "Tag Color",
-      "namePlaceholder": "e.g., Study, Fun, Practice",
       "colorPlaceholder": "#3b82f6",
-      "preview": "Preview",
       "create": "Create",
-      "empty": "No tags yet. Create your first tag to organize your logs!",
-      "deleteTitle": "Delete tag?",
-      "deleteTag": "Delete tag",
-      "editAction": "Edit tag",
-      "nameRequired": "Tag name is required",
-      "created": "Tag created successfully",
-      "updated": "Tag updated successfully",
-      "deleted": "Tag deleted successfully",
       "createFailed": "Failed to create tag",
+      "createNew": "Create New Tag",
+      "created": "Tag created successfully",
+      "deleteFailed": "Failed to delete tag",
+      "deleteTag": "Delete tag",
+      "deleteTitle": "Delete tag?",
+      "deleted": "Tag deleted successfully",
+      "editAction": "Edit tag",
+      "editTag": "Edit Tag",
+      "empty": "No tags yet. Create your first tag to organize your logs!",
+      "namePlaceholder": "e.g., Study, Fun, Practice",
+      "nameRequired": "Tag name is required",
+      "preview": "Preview",
+      "tagColor": "Tag Color",
+      "tagName": "Tag Name",
+      "title": "Manage Tags",
       "updateFailed": "Failed to update tag",
-      "deleteFailed": "Failed to delete tag"
+      "updated": "Tag updated successfully"
     },
     "selector": {
-      "createNewTag": "Create new tag",
+      "cancel": "Cancel",
+      "close": "Close",
       "createAndAdd": "Create & Add",
+      "createNewTag": "Create new tag",
+      "emptyHint": "No tags yet. Click the + button to create your first tag!",
+      "label": "Tags",
       "loading": "Loading tags...",
-      "close": "Close"
-    }
+      "maxReachedFree": "You've reached the maximum of {{max}} tags. Upgrade to Patreon for more!",
+      "maxReachedTier": "You've reached the maximum of {{max}} tags for your tier",
+      "selected": "{{total}} selected"
+    },
+    "subtitle": "Create and manage tags to organize your logs",
+    "title": "Tags"
   },
   "timezonePicker": {
     "placeholder": "Search timezones...",
@@ -307,17 +354,24 @@
     "aboutMaxLength": "About Me text is at the maximum length.",
     "aboutUpdated": "About updated",
     "apiKeyCreateFailed": "Failed to create API key",
-    "apiKeyRevoked": "API key revoked",
     "apiKeyRevokeFailed": "Failed to revoke API key",
+    "apiKeyRevoked": "API key revoked",
     "badgeColorsFailed": "Failed to update badge colors",
     "badgeColorsUpdated": "Badge colors updated!",
     "badgeTextFailed": "Failed to update badge text",
     "badgeTextUpdated": "Custom badge text updated!",
     "exportFailed": "Failed to export data",
     "exportSuccess": "Data exported successfully!",
+    "imageUrlRequired": "Please provide an image URL",
+    "layoutSaveFailed": "Failed to save profile layout",
+    "layoutSaveFailedDetail": "Failed to save layout: {{message}}",
+    "patreonLinked": "Patreon account linked successfully!",
+    "patreonOauthFailed": "Failed to initiate Patreon OAuth",
     "patreonUnlinkFailed": "Failed to unlink Patreon account",
     "preferenceSaveFailed": "Failed to save preference",
+    "selectFile": "Please select a file",
     "userUpdated": "User updated",
+    "usernameMismatch": "Username does not match. Data was not deleted.",
     "verificationFailed": "Failed to send verification email",
     "verificationSent": "Verification email sent!"
   }

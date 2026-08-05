@@ -19,10 +19,10 @@
     "title": "Recent Activity"
   },
   "addToList": {
-    "title": "Add to list",
-    "newTitlePlaceholder": "New list title",
-    "created": "List created with this media",
     "createFailed": "Could not create the list",
+    "created": "List created with this media",
+    "newTitlePlaceholder": "New list title",
+    "title": "Add to list",
     "updateFailed": "Could not update the list"
   },
   "chart": {
@@ -34,11 +34,11 @@
     "view": "View:"
   },
   "comments": {
+    "delete": "Delete comment",
+    "deleteFailed": "Could not delete the comment",
     "empty": "No comments yet.",
     "placeholder": "Leave a comment",
-    "delete": "Delete comment",
-    "postFailed": "Could not post the comment",
-    "deleteFailed": "Could not delete the comment"
+    "postFailed": "Could not post the comment"
   },
   "common": {
     "cancel": "Cancel",
@@ -77,6 +77,7 @@
     "removeTitle": "Remove from your list?"
   },
   "list": {
+    "allTypes": "All Types",
     "clearFilters": "Clear filters",
     "dontShowAgain": "Don't show again",
     "dontShowAgainTitle": "Don't show this alert again",
@@ -84,35 +85,136 @@
     "emptySearch": "No media matches your search for \"{{query}}\". Try different keywords or filters.",
     "emptyTypes": "No media matches the selected types.",
     "grid": "Grid",
+    "groupBy": "Group by type",
+    "grouped": "Grouped",
     "hideAlertConfirm": "Yes, hide alerts",
     "hideAlertConfirmBody": "Are you sure you want to stop showing alerts about unmatched logs?",
     "hideAlertTitle": "Hide Unmatched Logs Alert",
+    "itemsCount_one": "{{count}} item",
+    "itemsCount_other": "{{count}} items",
     "list": "List",
     "loadFailed": "Failed to load immersion list",
     "logManagement": "Log Management",
     "matchLogs": "Match Logs",
+    "noDescription": "No description available",
     "noMedia": "No media found",
+    "noTypes": "No Types",
     "quickLog": "Quick Log",
     "searchPlaceholder": "Search by title, romaji, or english...",
     "selectAll": "Select All",
     "selectNone": "Select None",
     "setStatus": "Set status",
     "settings": "Settings",
+    "showing": "Showing {{shown}} of {{total}} items",
+    "showingFor": " for \"{{query}}\"",
+    "sort": {
+      "byTitle": "By Title (A-Z)",
+      "byType": "By Type",
+      "recent": "Recent",
+      "recentlyLogged": "Recently Logged",
+      "title": "Title",
+      "type": "Type"
+    },
+    "sortLabel": "Sort: {{sort}}",
+    "status": {
+      "all": "All",
+      "allStatuses": "All statuses",
+      "completed": "Completed",
+      "dropped": "Dropped",
+      "inProgress": "In Progress",
+      "paused": "Paused",
+      "planning": "Planning"
+    },
+    "statusLabel": "Status: {{status}}",
+    "typesCount": "{{count}} Types",
+    "ungroupBy": "Ungroup by type",
+    "ungrouped": "Ungrouped",
     "unmatchedFound": "Unmatched Logs Found",
     "viewDetails": "View Details"
   },
   "lists": {
-    "heading": "Lists",
     "create": "New list",
-    "emptyOwn": "You have not created any lists yet.",
-    "emptyOther": "This user has no public lists.",
-    "toast": {
-      "created": "List created",
-      "createFailed": "Could not create the list"
+    "detail": {
+      "browse": "Browse lists",
+      "cancel": "Cancel",
+      "copy": "Copy list",
+      "delete": "Delete",
+      "editDetails": "Edit details",
+      "empty": "This list is empty. Add media from any media page.",
+      "notePlaceholder": "Why is this on the list? (optional)",
+      "private": "Private",
+      "ranked": "Ranked",
+      "removeEntry": "Remove entry",
+      "reorder": "Reorder items",
+      "reorderEntry": "Reorder entry",
+      "save": "Save changes",
+      "toast": {
+        "copied": "Copied to your lists",
+        "copyFailed": "Could not copy the list",
+        "deleteFailed": "Could not delete the list",
+        "deleted": "List deleted",
+        "likeFailed": "Could not update the like",
+        "saveFailed": "Could not save the list",
+        "updateFailed": "Could not update the list",
+        "updated": "List updated"
+      },
+      "unavailableBody": "This list does not exist or is private.",
+      "unavailableTitle": "List unavailable"
     },
     "discover": {
-      "title": "Lists",
-      "subtitle": "Curated media collections from the community."
+      "subtitle": "Curated media collections from the community.",
+      "title": "Lists"
+    },
+    "emptyDiscover": "No lists found.",
+    "emptyOther": "This user has no public lists.",
+    "emptyOwn": "You have not created any lists yet.",
+    "entries_anime_one": "{{count}} anime",
+    "entries_anime_other": "{{count}} anime",
+    "entries_book_one": "{{count}} book",
+    "entries_book_other": "{{count}} books",
+    "entries_game_one": "{{count}} game",
+    "entries_game_other": "{{count}} games",
+    "entries_manga_one": "{{count}} manga",
+    "entries_manga_other": "{{count}} manga",
+    "entries_movie_one": "{{count}} film",
+    "entries_movie_other": "{{count}} films",
+    "entries_one": "{{count}} item",
+    "entries_other": "{{count}} items",
+    "entries_tvShow_one": "{{count}} show",
+    "entries_tvShow_other": "{{count}} shows",
+    "entries_video_one": "{{count}} video",
+    "entries_video_other": "{{count}} videos",
+    "entries_vn_one": "{{count}} VN",
+    "entries_vn_other": "{{count}} VNs",
+    "filters": {
+      "all": "All types",
+      "anime": "Anime",
+      "game": "Games",
+      "manga": "Manga",
+      "movie": "Movies",
+      "reading": "Light Novels",
+      "tvShow": "TV shows",
+      "video": "Video",
+      "vn": "Visual novels"
+    },
+    "form": {
+      "cancel": "Cancel",
+      "create": "Create",
+      "createTitle": "Create list",
+      "description": "Description",
+      "descriptionPlaceholder": "What is this list about?",
+      "editTitle": "Edit list",
+      "public": "Public — anyone can see this list",
+      "ranked": "Ranked list — show numbered positions",
+      "save": "Save",
+      "title": "Title",
+      "titlePlaceholder": "Best VNs for beginners"
+    },
+    "heading": "Lists",
+    "pagination": {
+      "next": "Next",
+      "page": "Page {{page}}",
+      "previous": "Previous"
     },
     "searchPlaceholder": "Search lists",
     "sort": {
@@ -120,80 +222,9 @@
       "recent": "Newest",
       "updated": "Recently updated"
     },
-    "filters": {
-      "all": "All types",
-      "anime": "Anime",
-      "manga": "Manga",
-      "reading": "Light Novels",
-      "vn": "Visual novels",
-      "game": "Games",
-      "video": "Video",
-      "movie": "Movies",
-      "tvShow": "TV shows"
-    },
-    "emptyDiscover": "No lists found.",
-    "pagination": {
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {{page}}"
-    },
-    "entries_one": "{{count}} item",
-    "entries_other": "{{count}} items",
-    "entries_anime_one": "{{count}} anime",
-    "entries_anime_other": "{{count}} anime",
-    "entries_manga_one": "{{count}} manga",
-    "entries_manga_other": "{{count}} manga",
-    "entries_book_one": "{{count}} book",
-    "entries_book_other": "{{count}} books",
-    "entries_vn_one": "{{count}} VN",
-    "entries_vn_other": "{{count}} VNs",
-    "entries_video_one": "{{count}} video",
-    "entries_video_other": "{{count}} videos",
-    "entries_movie_one": "{{count}} film",
-    "entries_movie_other": "{{count}} films",
-    "entries_tvShow_one": "{{count}} show",
-    "entries_tvShow_other": "{{count}} shows",
-    "entries_game_one": "{{count}} game",
-    "entries_game_other": "{{count}} games",
-    "form": {
-      "createTitle": "Create list",
-      "editTitle": "Edit list",
-      "title": "Title",
-      "titlePlaceholder": "Best VNs for beginners",
-      "description": "Description",
-      "descriptionPlaceholder": "What is this list about?",
-      "ranked": "Ranked list — show numbered positions",
-      "public": "Public — anyone can see this list",
-      "cancel": "Cancel",
-      "create": "Create",
-      "save": "Save"
-    },
-    "detail": {
-      "unavailableTitle": "List unavailable",
-      "unavailableBody": "This list does not exist or is private.",
-      "browse": "Browse lists",
-      "private": "Private",
-      "ranked": "Ranked",
-      "empty": "This list is empty. Add media from any media page.",
-      "copy": "Copy list",
-      "editDetails": "Edit details",
-      "reorder": "Reorder items",
-      "delete": "Delete",
-      "save": "Save changes",
-      "cancel": "Cancel",
-      "reorderEntry": "Reorder entry",
-      "removeEntry": "Remove entry",
-      "notePlaceholder": "Why is this on the list? (optional)",
-      "toast": {
-        "updated": "List updated",
-        "saveFailed": "Could not save the list",
-        "updateFailed": "Could not update the list",
-        "deleted": "List deleted",
-        "deleteFailed": "Could not delete the list",
-        "likeFailed": "Could not update the like",
-        "copied": "Copied to your lists",
-        "copyFailed": "Could not copy the list"
-      }
+    "toast": {
+      "createFailed": "Could not create the list",
+      "created": "List created"
     }
   },
   "markdown": {
@@ -212,16 +243,16 @@
     "spoiler": "Spoiler"
   },
   "progress": {
-    "title": "Your Progress",
     "loading": "Loading your progress...",
+    "thisMonth": "This month",
     "thisWeek": "This week",
-    "thisMonth": "This month"
+    "title": "Your Progress"
   },
   "reviewCard": {
+    "linkCopied": "Review link copied to clipboard!",
     "options": "Review options",
-    "shareTitle": "NihongoTracker Review",
     "shareText": "Check out this review!",
-    "linkCopied": "Review link copied to clipboard!"
+    "shareTitle": "NihongoTracker Review"
   },
   "reviews": {
     "a11y": {
@@ -252,12 +283,19 @@
     "write": "Write a review"
   },
   "search": {
-    "placeholder": "Search users or media...",
-    "mediaPlaceholder": "Search media to add...",
-    "typeToSearch": "Type at least 2 characters to search",
     "filterByType": "Filter by media type",
-    "users": "Users",
-    "media": "Media"
+    "hints": {
+      "close": "close",
+      "navigate": "navigate",
+      "select": "select"
+    },
+    "media": "Media",
+    "mediaPlaceholder": "Search media to add...",
+    "noResults": "No results found for “{{query}}”",
+    "placeholder": "Search users or media...",
+    "subtitle": "Search across users and media",
+    "typeToSearch": "Type at least 2 characters to search",
+    "users": "Users"
   },
   "social": {
     "allTime": "All-time",
@@ -302,19 +340,19 @@
     "alreadyPostedTitle": "You already posted a review",
     "backToReviews": "Back to reviews",
     "bodyPlaceholder": "Share your thoughts about this media...",
+    "listItem": "List item",
     "login": "Login",
     "loginRequired": "You need to be logged in to write a review.",
     "preview": "Preview",
     "previewHint": "Your live preview appears here as you write.",
+    "quoteText": "Quote text",
     "rating": "Rating (optional)",
+    "ratingOptional": "Rating (Optional)",
     "review": "Review",
     "summary": "Summary",
     "summaryPlaceholder": "One-sentence summary of your review",
     "title": "Edit Review",
-    "ratingOptional": "Rating (Optional)",
     "update": "Update Review",
-    "updating": "Updating...",
-    "listItem": "List item",
-    "quoteText": "Quote text"
+    "updating": "Updating..."
   }
 }

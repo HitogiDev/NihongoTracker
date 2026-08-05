@@ -182,7 +182,10 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
         toast.success(
-          `Successfully assigned ${totalLogs} video logs to ${channelCount} YouTube channels`
+          t('video.assignedChannels', {
+            logs: totalLogs,
+            channels: channelCount,
+          })
         );
       }
     },
@@ -245,8 +248,8 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         } catch (err) {
           toast.error(
             err instanceof AxiosError
-              ? (err.response?.data?.message ?? 'Failed to load playlist')
-              : 'Failed to load playlist'
+              ? (err.response?.data?.message ?? t('toast.playlistLoadFailed'))
+              : t('toast.playlistLoadFailed')
           );
           setPlaylistModalOpen(false);
         } finally {
@@ -469,7 +472,10 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         // Show final success message
         const totalChannels = assignmentData.length;
         toast.success(
-          `Successfully assigned ${totalProcessed} video logs to ${totalChannels} YouTube channels`
+          t('video.assignedChannels', {
+            logs: totalProcessed,
+            channels: totalChannels,
+          })
         );
 
         // Update state after all batches are processed
@@ -617,8 +623,9 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
               {t('video.autoMatchYoutube')}
             </h3>
             <p className="text-sm mb-4">
-              Found {logsWithYouTubeUrls.length} video logs with YouTube URLs
-              that can be automatically matched to their channels.
+              {t('video.autoMatchFound', {
+                count: logsWithYouTubeUrls.length,
+              })}
             </p>
 
             {autoMatchingProgress.isRunning ? (
@@ -703,7 +710,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                     {isMatchingPaste ? (
                       <span className="loading loading-spinner loading-sm"></span>
                     ) : (
-                      'Match Link'
+                      t('video.matchLink')
                     )}
                   </button>
                   <DismissLogsButton
@@ -775,7 +782,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                             <h3 className="text-sm">{log.description}</h3>
                             <p className="text-xs text-base-content/70">
                               {log.unknownDate
-                                ? 'Unknown date'
+                                ? t('create.unknownDate')
                                 : new Date(log.date).toLocaleDateString()}
                             </p>
                             {extractYouTubeUrl(log.description || '') && (
