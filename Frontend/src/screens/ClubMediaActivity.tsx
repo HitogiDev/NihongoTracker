@@ -4,8 +4,10 @@ import { History } from 'lucide-react';
 import { getClubMediaLogsFn } from '../api/clubApi';
 import { OutletClubMediaContextType } from '../types';
 import UserAvatar from '../components/UserAvatar';
+import { useTranslation } from 'react-i18next';
 
 export default function ClubMediaActivity() {
+  const { t } = useTranslation('clubs');
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const { clubMedia } = useOutletContext<OutletClubMediaContextType>();
 
@@ -20,7 +22,7 @@ export default function ClubMediaActivity() {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="text-center py-12 text-base-content/60">
-          <h3 className="text-lg font-semibold mb-2">Loading...</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
         </div>
       </div>
     );
@@ -31,7 +33,7 @@ export default function ClubMediaActivity() {
       <div className="space-y-6">
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h3 className="card-title">Club Member Activity</h3>
+            <h3 className="card-title">{t('media.activityTitle')}</h3>
             <p className="text-base-content/70 mb-4">
               Logs from club members for this media since{' '}
               {clubMedia?.startDate
@@ -103,11 +105,10 @@ export default function ClubMediaActivity() {
             ) : (
               <div className="text-center py-12 text-base-content/60">
                 <History className="mx-auto text-4xl mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
-                <p>
-                  No club members have logged this media since the consumption
-                  period started.
-                </p>
+                <h3 className="text-lg font-semibold mb-2">
+                  {t('media.activityEmpty')}
+                </h3>
+                <p>{t('media.noLogsSincePeriod')}</p>
               </div>
             )}
           </div>

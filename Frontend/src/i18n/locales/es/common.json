@@ -1,0 +1,66 @@
+{
+  "allMediaTypes": "Todos los tipos de contenido",
+  "allTypes": "Todos los tipos",
+  "avatarAlt": "Avatar de {{username}}",
+  "cancel": "Cancelar",
+  "close": "Cerrar",
+  "errors": {
+    "generic": "Ha ocurrido un error"
+  },
+  "language": {
+    "saveError": "No se pudo guardar tu preferencia de idioma"
+  },
+  "mediaTypeGroups": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Libros",
+    "game": "Videojuegos",
+    "manga": "Manga",
+    "movie": "Películas",
+    "other": "Otros",
+    "reading": "Novelas ligeras",
+    "tvShow": "Series",
+    "video": "Vídeo",
+    "vn": "Novelas visuales"
+  },
+  "mediaTypes": {
+    "anime": "Anime",
+    "audio": "Audio",
+    "book": "Libro",
+    "game": "Juego",
+    "manga": "Manga",
+    "movie": "Película",
+    "other": "Otro",
+    "reading": "Novela Ligera",
+    "tvShow": "Serie",
+    "video": "Vídeo",
+    "vn": "Novela Visual"
+  },
+  "mediaTypesPlural": {
+    "anime": "anime",
+    "book": "libros",
+    "game": "juegos",
+    "manga": "manga",
+    "movie": "películas",
+    "reading": "novelas ligeras",
+    "tvShow": "series",
+    "video": "vídeos",
+    "vn": "novelas visuales"
+  },
+  "notFound": {
+    "description": "¡Vaya! La página que buscas no existe.",
+    "hint": "Ya que estamos, ¡vete a hacer un poco de inmersión!",
+    "title": "404 - Página no encontrada"
+  },
+  "patreonTiers": {
+    "consumer": "Consumidor",
+    "donator": "Donante",
+    "enthusiast": "Entusiasta"
+  },
+  "save": "Guardar",
+  "time": {
+    "justNow": "Justo ahora"
+  },
+  "unknown": "Desconocido",
+  "viewProfile": "Ver el perfil de {{username}}"
+}

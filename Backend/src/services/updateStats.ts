@@ -1,8 +1,9 @@
 import { Response, NextFunction } from 'express';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { Types } from 'mongoose';
 import { IEditedFields, ILog, IStats, IUser } from '../types.js';
 import { calculateLevel, calculateXp } from './calculateLevel.js';
-import { customError } from '../middlewares/errorMiddleware.js';
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 
@@ -33,7 +34,7 @@ export async function recalculateUserXpFromLogs(
 ): Promise<void> {
   const user = await User.findById(userId);
   if (!user || !user.stats) {
-    throw new customError('User not found', 404);
+    throw apiError('user.notFound', 404, 'User not found');
   }
 
   const aggregated = await Log.aggregate([
@@ -92,7 +93,7 @@ export default async function updateStats(
   try {
     const user: IUser | null = await User.findById(res.locals.user.id);
     if (!user || !user.stats) {
-      throw new customError('User does not have stats', 404);
+      throw apiError('user.noStats', 404, 'User does not have stats');
     }
     let type: string,
       xp: number,
@@ -138,7 +139,7 @@ export default async function updateStats(
         userStats.readingXp += res.locals.importedStats.readingXp;
         break;
       default:
-        throw new customError('Invalid content type', 400);
+        throw apiError('media.invalidContentType', 400, 'Invalid content type');
     }
 
     // Update levels and XP

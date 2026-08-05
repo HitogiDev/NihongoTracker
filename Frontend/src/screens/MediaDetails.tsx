@@ -44,6 +44,7 @@ import EditReviewModal from '../components/EditReviewModal';
 import MediaReviewCard from '../components/MediaReviewCard';
 import ReviewRatingSummary from '../components/ReviewRatingSummary';
 import { getClubFn, getClubMediaStatsFn } from '../api/clubApi';
+import { useTranslation } from 'react-i18next';
 
 const difficultyLevels = [
   ['Beginner', '#4caf50'],
@@ -92,6 +93,7 @@ const getDeckForVolume = (
 };
 
 function MediaDetails() {
+  const { t } = useTranslation(['media', 'common']);
   const { mediaDocument, mediaType, username } =
     useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
@@ -321,7 +323,7 @@ function MediaDetails() {
         ],
       });
       setEditingReview(null);
-      toast.success('Review updated successfully');
+      toast.success(t('toast.reviewUpdated'));
     },
     onError: (error: unknown) => {
       const errorMessage =
@@ -373,7 +375,7 @@ function MediaDetails() {
           mediaDocument?.type,
         ],
       });
-      toast.success('Review deleted successfully');
+      toast.success(t('toast.reviewDeleted'));
     },
     onError: (error: unknown) => {
       const errorMessage =
@@ -689,8 +691,11 @@ function MediaDetails() {
     totalEpisodeCount > 0 && totalEpisodesWatched >= totalEpisodeCount;
   const shouldAutoCompleteMedia =
     !mediaDocument?.isCompleted &&
-    (!isAutoCompleteSuppressed || mediaDocument?.mediaStatus === 'in_progress') &&
-    (isLastVolumeCompleted || isCharacterProgressCompleted || isEpisodeProgressCompleted);
+    (!isAutoCompleteSuppressed ||
+      mediaDocument?.mediaStatus === 'in_progress') &&
+    (isLastVolumeCompleted ||
+      isCharacterProgressCompleted ||
+      isEpisodeProgressCompleted);
   const effectiveIsCompleted =
     !!mediaDocument?.isCompleted || shouldAutoCompleteMedia;
 
@@ -1178,7 +1183,7 @@ function MediaDetails() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ComparisonStat
-              label="Total XP"
+              label={t('stats.totalXp')}
               myValue={myStats.totalXp}
               theirValue={theirStats.totalXp}
             />
@@ -1288,7 +1293,7 @@ function MediaDetails() {
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Media Details
+                    {t('details.title')}
                   </h2>
 
                   {mediaDocument && (
@@ -1324,7 +1329,7 @@ function MediaDetails() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-base-content/70 min-w-20">
-                      Type:
+                      {t('details.type')}
                     </span>
                     <div className="badge badge-primary badge-lg capitalize font-medium">
                       {mediaDocument?.type === 'vn'
@@ -1340,7 +1345,7 @@ function MediaDetails() {
                   {difficultyInfo && (
                     <div className="flex items-center gap-3">
                       <span className="font-medium text-base-content/70 min-w-20">
-                        Difficulty:
+                        {t('details.difficulty')}
                       </span>
                       <div
                         className="badge badge-lg gap-2"
@@ -1359,14 +1364,14 @@ function MediaDetails() {
                     <>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-base-content/70 min-w-20">
-                          Episodes:
+                          {t('details.episodes')}
                         </span>
                         <span>{mediaDocument?.episodes ?? 'Unknown'}</span>
                       </div>
                       {mediaType === 'anime' && (
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-base-content/70 min-w-20">
-                            Duration:
+                            {t('details.duration')}
                           </span>
                           <span>
                             {mediaDocument?.episodeDuration &&
@@ -1415,14 +1420,14 @@ function MediaDetails() {
                     <>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-base-content/70 min-w-20">
-                          Volumes:
+                          {t('details.volumes')}
                         </span>
                         <span>{mediaDocument?.volumes ?? 'Unknown'}</span>
                       </div>
                       {mediaType === 'manga' && (
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-base-content/70 min-w-20">
-                            Chapters:
+                            {t('details.chapters')}
                           </span>
                           <span>{mediaDocument?.chapters ?? 'Unknown'}</span>
                         </div>
@@ -1433,7 +1438,7 @@ function MediaDetails() {
                   {mediaDocument?.jiten?.mainDeck.characterCount ? (
                     <div className="flex items-center gap-3">
                       <span className="font-medium text-base-content/70 min-w-20">
-                        Characters:
+                        {t('details.characters')}
                       </span>
                       <span>
                         {numberWithCommas(
@@ -1460,7 +1465,7 @@ function MediaDetails() {
                           d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                         />
                       </svg>
-                      External Links
+                      {t('details.externalLinks')}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {(mediaDocument?.type === 'anime' ||
@@ -1639,7 +1644,7 @@ function MediaDetails() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                            Total XP
+                            {t('stats.totalXp')}
                           </h3>
                           <p className="text-3xl font-bold text-primary mt-1">
                             {numberWithCommas(totalXp || 0)}
@@ -1670,7 +1675,7 @@ function MediaDetails() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                              Total Time
+                              {t('stats.totalTime')}
                             </h3>
                             <p className="text-3xl font-bold text-secondary mt-1">
                               {totalTime >= 60
@@ -1710,7 +1715,7 @@ function MediaDetails() {
                           <div className="flex items-center justify-between">
                             <div>
                               <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Episodes Watched
+                                {t('stats.episodesWatched')}
                               </h3>
                               <p className="text-3xl font-bold text-accent mt-1">
                                 {totalEpisodesWatched}
@@ -1743,10 +1748,10 @@ function MediaDetails() {
                               {isEpisodeProgressCompleted ? (
                                 <>
                                   <p className="text-xs text-base-content/60">
-                                    Completed
+                                    {t('stats.completed')}
                                   </p>
                                   <p className="text-xs text-base-content/60">
-                                    All caught up
+                                    {t('stats.allCaughtUp')}
                                   </p>
                                 </>
                               ) : (
@@ -1770,7 +1775,7 @@ function MediaDetails() {
                           <div className="flex items-center justify-between">
                             <div>
                               <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Pages Read
+                                {t('stats.pagesRead')}
                               </h3>
                               <p className="text-3xl font-bold text-accent mt-1">
                                 {numberWithCommas(
@@ -1809,7 +1814,7 @@ function MediaDetails() {
                           <div className="flex items-center justify-between">
                             <div>
                               <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Current Volume
+                                {t('stats.currentVolume')}
                               </h3>
                               <p className="text-3xl font-bold text-accent mt-1">
                                 {currentVolume ?? '?'}
@@ -1866,7 +1871,7 @@ function MediaDetails() {
                           <div className="flex items-center justify-between">
                             <div>
                               <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Characters Read
+                                {t('stats.charsRead')}
                               </h3>
                               <p className="text-3xl font-bold text-info mt-1">
                                 {numberWithCommas(totalCharsRead)}
@@ -1950,7 +1955,7 @@ function MediaDetails() {
                           <div className="flex items-center justify-between">
                             <div>
                               <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                Reading Speed
+                                {t('stats.readingSpeed')}
                               </h3>
                               <p className="text-3xl font-bold text-warning mt-1">
                                 {numberWithCommas(Math.round(readingSpeed))}
@@ -1997,7 +2002,7 @@ function MediaDetails() {
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium">
-                            Completion
+                            {t('stats.completion')}
                           </span>
                           <span className="text-sm font-bold">
                             {progressPercentage.toFixed(1)}%
@@ -2026,7 +2031,7 @@ function MediaDetails() {
                               <div className="card bg-base-100 shadow-md">
                                 <div className="card-body">
                                   <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                    Recent Speed
+                                    {t('stats.recentSpeed')}
                                   </h3>
                                   <p className="text-2xl font-bold mt-1">
                                     {numberWithCommas(
@@ -2046,7 +2051,7 @@ function MediaDetails() {
                               <div className="card bg-base-100 shadow-md">
                                 <div className="card-body">
                                   <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
-                                    Time to Finish
+                                    {t('stats.timeToFinish')}
                                   </h3>
                                   <p className="text-2xl font-bold mt-1">
                                     {progressEstimatedTimeToFinish >= 1
@@ -2092,13 +2097,13 @@ function MediaDetails() {
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    Activity Chart
+                    {t('chart.title')}
                   </h2>
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-base-content/70">
-                        Metric:
+                        {t('chart.metric')}
                       </span>
                       <div className="join">
                         <button
@@ -2119,14 +2124,14 @@ function MediaDetails() {
                           onClick={() => setChartMetric('hours')}
                         >
                           <Clock3 className="w-4 h-4" />
-                          Hours
+                          {t('chart.hours')}
                         </button>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-base-content/70">
-                        View:
+                        {t('chart.view')}
                       </span>
                       <div className="join">
                         <button
@@ -2136,7 +2141,7 @@ function MediaDetails() {
                           onClick={() => setChartView('line')}
                         >
                           <LineChart className="w-4 h-4" />
-                          Line
+                          {t('chart.line')}
                         </button>
                         <button
                           className={`join-item btn btn-sm ${
@@ -2145,7 +2150,7 @@ function MediaDetails() {
                           onClick={() => setChartView('bar')}
                         >
                           <BarChart3 className="w-4 h-4" />
-                          Bar
+                          {t('chart.bar')}
                         </button>
                       </div>
                     </div>
@@ -2167,7 +2172,7 @@ function MediaDetails() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h2 className="card-title text-xl flex items-center gap-2">
                     <MessageSquareText className="w-5 h-5" />
-                    Reviews
+                    {t('reviews.title')}
                   </h2>
                   {currentUser && !userReview && mediaBasePath && (
                     <Link
@@ -2175,13 +2180,13 @@ function MediaDetails() {
                       className="btn btn-outline btn-sm gap-2"
                     >
                       <Pencil className="w-4 h-4" />
-                      Write a review
+                      {t('reviews.write')}
                     </Link>
                   )}
                 </div>
                 {currentUser && userReview && (
                   <p className="text-sm text-base-content/70 mb-4">
-                    You already posted a review for this title.
+                    {t('reviews.alreadyPosted')}
                   </p>
                 )}
 
@@ -2212,9 +2217,9 @@ function MediaDetails() {
                   <div className="text-center py-8 text-base-content/60">
                     <MessageSquareText className="mx-auto text-4xl mb-3 opacity-50" />
                     <h3 className="text-lg font-semibold mb-1">
-                      No Reviews Yet
+                      {t('reviews.emptyTitle')}
                     </h3>
-                    <p>Be the first to share your thoughts about this media.</p>
+                    <p>{t('reviews.emptyBody')}</p>
                   </div>
                 )}
               </div>
@@ -2239,7 +2244,7 @@ function MediaDetails() {
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Recent Activity
+                    {t('activity.title')}
                   </h2>
                   {logsArray.length > 0 && (
                     <div className="badge badge-neutral">
@@ -2256,13 +2261,13 @@ function MediaDetails() {
                         type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search descriptions, tags, or values"
+                        placeholder={t('activity.searchPlaceholder')}
                         className="grow"
                       />
                       {searchTerm && (
                         <button
                           type="button"
-                          aria-label="Clear search"
+                          aria-label={t('activity.a11y.clearSearch')}
                           className="btn btn-ghost btn-xs"
                           onClick={() => setSearchTerm('')}
                         >
@@ -2325,7 +2330,7 @@ function MediaDetails() {
                           className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-64 p-2 shadow"
                         >
                           <li className="menu-title">
-                            <span>Sort field</span>
+                            <span>{t('activity.sortField')}</span>
                           </li>
                           {sortOptions.map((option) => (
                             <li key={option.value}>
@@ -2341,7 +2346,7 @@ function MediaDetails() {
                           ))}
                           <div className="divider my-1"></div>
                           <li className="menu-title">
-                            <span>Direction</span>
+                            <span>{t('activity.direction')}</span>
                           </li>
                           <li>
                             <a
@@ -2351,7 +2356,7 @@ function MediaDetails() {
                               onClick={() => setSortDirection('desc')}
                             >
                               <ArrowDown className="w-3 h-3" />
-                              Highest to lowest
+                              {t('activity.desc')}
                             </a>
                           </li>
                           <li>
@@ -2362,7 +2367,7 @@ function MediaDetails() {
                               onClick={() => setSortDirection('asc')}
                             >
                               <ArrowUp className="w-3 h-3" />
-                              Lowest to highest
+                              {t('activity.asc')}
                             </a>
                           </li>
                         </ul>
@@ -2452,7 +2457,7 @@ function MediaDetails() {
                   {hasActiveFilters && (
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="text-base-content/60">
-                        Active filters:
+                        {t('activity.activeFilters')}
                       </span>
 
                       {searchTerm && (
@@ -2461,7 +2466,7 @@ function MediaDetails() {
                           <button
                             type="button"
                             className="ml-1 hover:bg-primary-focus rounded-full"
-                            aria-label="Clear search"
+                            aria-label={t('activity.a11y.clearSearch')}
                             onClick={() => setSearchTerm('')}
                           >
                             ✕
@@ -2477,7 +2482,7 @@ function MediaDetails() {
                           <button
                             type="button"
                             className="ml-1 hover:bg-secondary-focus rounded-full"
-                            aria-label="Clear date filter"
+                            aria-label={t('activity.a11y.clearDate')}
                             onClick={() => setDateFilter('all')}
                           >
                             ✕
@@ -2492,7 +2497,7 @@ function MediaDetails() {
                           <button
                             type="button"
                             className="ml-1 hover:bg-info-focus rounded-full"
-                            aria-label="Reset sort"
+                            aria-label={t('activity.a11y.resetSort')}
                             onClick={() => {
                               setSortBy('date');
                               setSortDirection('desc');
@@ -2508,7 +2513,7 @@ function MediaDetails() {
                         className="btn btn-ghost btn-xs text-base-content/60 hover:text-base-content"
                         onClick={handleClearFilters}
                       >
-                        Clear all
+                        {t('activity.clearAll')}
                       </button>
                     </div>
                   )}
@@ -2563,11 +2568,10 @@ function MediaDetails() {
                         </svg>
                       </div>
                       <h3 className="text-lg font-semibold text-base-content/70 mb-2">
-                        No logs match your filters
+                        {t('activity.noMatches')}
                       </h3>
                       <p className="text-base-content/50 max-w-md mx-auto">
-                        Try adjusting your search, date range, or sorting to see
-                        more entries for this media.
+                        {t('activity.noMatchesBody')}
                       </p>
                     </div>
                   )
@@ -2589,11 +2593,10 @@ function MediaDetails() {
                       </svg>
                     </div>
                     <h3 className="text-lg font-semibold text-base-content/70 mb-2">
-                      No activity found
+                      {t('activity.empty')}
                     </h3>
                     <p className="text-base-content/50 max-w-md mx-auto">
-                      Start logging your progress to see your activity timeline
-                      here. Your journey begins with the first entry!
+                      {t('activity.emptyBody')}
                     </p>
                   </div>
                 )}
@@ -2621,17 +2624,16 @@ function MediaDetails() {
       {deletingReviewId && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-sm">
-            <h3 className="font-bold text-lg">Delete Review</h3>
+            <h3 className="font-bold text-lg">{t('reviews.deleteTitle')}</h3>
             <p className="py-4 text-base-content/70">
-              Are you sure you want to delete your review? This cannot be
-              undone.
+              {t('reviews.deleteConfirm')}
             </p>
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
                 onClick={() => setDeletingReviewId(null)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error"

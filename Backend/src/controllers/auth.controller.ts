@@ -2,8 +2,15 @@ import User from '../models/user.model.js';
 import { Request, Response, NextFunction } from 'express';
 import generateToken from '../libs/jwt.js';
 import { FilterQuery } from 'mongoose';
-import { ILogin, IRegister, IUser } from '../types.js';
+import {
+  ILogin,
+  IRegister,
+  IUser,
+  SUPPORTED_LANGUAGES,
+  SupportedLanguage,
+} from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import {
   sendPasswordResetEmail,
   sendPasswordResetSuccessEmail,
@@ -55,6 +62,7 @@ export async function register(
     password,
     passwordConfirmation,
     timezone,
+    language,
   }: IRegister = req.body;
   const trimmedEmail = email?.trim();
   const normalizedEmail = trimmedEmail?.length
@@ -63,6 +71,12 @@ export async function register(
   const trimmedTimezone = timezone?.trim();
   const normalizedTimezone = isValidTimezone(trimmedTimezone)
     ? trimmedTimezone
+    : undefined;
+  const trimmedLanguage = language?.trim();
+  const normalizedLanguage = SUPPORTED_LANGUAGES.includes(
+    trimmedLanguage as SupportedLanguage
+  )
+    ? (trimmedLanguage as SupportedLanguage)
     : undefined;
   try {
     const uniqueConditions: FilterQuery<IUser>[] = [{ username }];
@@ -81,14 +95,15 @@ export async function register(
     });
 
     if (userExists) {
-      throw new customError(
-        'An user with that username or email already exists!',
-        400
+      throw apiError(
+        'auth.userExists',
+        400,
+        'An user with that username or email already exists!'
       );
     }
 
     if (password !== passwordConfirmation) {
-      throw new customError('Passwords do not match!', 400);
+      throw apiError('auth.passwordMismatch', 400, 'Passwords do not match!');
     }
 
     const verificationToken = normalizedEmail
@@ -104,12 +119,15 @@ export async function register(
       verificationTokenExpiry: normalizedEmail
         ? new Date(Date.now() + 15 * 60 * 1000)
         : undefined,
-      ...(normalizedTimezone && {
-        settings: { timezone: normalizedTimezone },
+      ...((normalizedTimezone || normalizedLanguage) && {
+        settings: {
+          ...(normalizedTimezone && { timezone: normalizedTimezone }),
+          ...(normalizedLanguage && { language: normalizedLanguage }),
+        },
       }),
     });
 
-    if (!user) throw new customError('Invalid user data', 400);
+    if (!user) throw apiError('auth.invalidUserData', 400, 'Invalid user data');
 
     // Index new user in Meilisearch
     indexUser(user);
@@ -117,7 +135,11 @@ export async function register(
     generateToken(res, user._id.toString());
 
     if (normalizedEmail && user.verificationToken)
-      await sendVerificationEmail(normalizedEmail, user.verificationToken);
+      await sendVerificationEmail(
+        normalizedEmail,
+        user.verificationToken,
+        user.settings?.language
+      );
 
     return res.status(201).json({
       _id: user._id,
@@ -141,7 +163,11 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   const { login, password }: ILogin = req.body;
   try {
     if (!login || !password)
-      throw new customError('Please provide username and password', 400);
+      throw apiError(
+        'auth.credentialsRequired',
+        400,
+        'Please provide username and password'
+      );
 
     const user = await User.findOne({
       $or: [{ username: login }, { email: { $exists: true, $eq: login } }],
@@ -154,9 +180,10 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     if (user && (await user.matchPassword(password))) {
       if (user.moderation?.banned) {
-        throw new customError(
-          user.moderation?.banReason || 'Your account has been banned',
-          403
+        throw apiError(
+          'auth.banned',
+          403,
+          user.moderation?.banReason || 'Your account has been banned'
         );
       }
 
@@ -186,7 +213,11 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         moderation: user.moderation,
       });
     } else {
-      throw new customError('Incorrect login or password', 401);
+      throw apiError(
+        'auth.invalidCredentials',
+        401,
+        'Incorrect login or password'
+      );
     }
   } catch (error) {
     return next(error as customError);
@@ -218,17 +249,25 @@ export async function verifyEmail(
   const { token } = req.body;
   try {
     if (!token) {
-      throw new customError('Token is required', 400);
+      throw apiError('auth.tokenRequired', 400, 'Token is required');
     }
     const user = await User.findOne({
       verificationToken: token,
       verificationTokenExpiry: { $gt: new Date() },
     });
     if (!user) {
-      throw new customError('Invalid or expired token', 400);
+      throw apiError(
+        'auth.invalidVerificationToken',
+        400,
+        'Invalid or expired token'
+      );
     }
     if (user.verified) {
-      throw new customError('Email is already verified', 400);
+      throw apiError(
+        'auth.emailAlreadyVerified',
+        400,
+        'Email is already verified'
+      );
     }
     user.verified = true;
     user.verificationToken = undefined;
@@ -265,7 +304,7 @@ export async function forgotPassword(
   const { email } = req.body;
   try {
     if (!email) {
-      throw new customError('Email is required', 400);
+      throw apiError('auth.emailRequired', 400, 'Email is required');
     }
     const user = await User.findOne({
       email: { $exists: true, $eq: email },
@@ -286,7 +325,8 @@ export async function forgotPassword(
         'http://localhost:5173';
       await sendPasswordResetEmail(
         email,
-        `${baseUrl}/reset-password/${user.resetPasswordToken}`
+        `${baseUrl}/reset-password/${user.resetPasswordToken}`,
+        user.settings?.language
       );
     }
 
@@ -308,31 +348,32 @@ export async function resetPassword(
 
   try {
     if (!token) {
-      throw new customError('Token is required', 400);
+      throw apiError('auth.tokenRequired', 400, 'Token is required');
     }
     if (!password || !passwordConfirmation) {
-      throw new customError(
-        'Password and password confirmation are required',
-        400
+      throw apiError(
+        'auth.passwordConfirmationRequired',
+        400,
+        'Password and password confirmation are required'
       );
     }
     if (password !== passwordConfirmation) {
-      throw new customError('Passwords do not match', 400);
+      throw apiError('auth.passwordMismatch', 400, 'Passwords do not match');
     }
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordTokenExpiry: { $gt: new Date() },
     });
     if (!user) {
-      throw new customError('Invalid or expired token', 400);
+      throw apiError('auth.invalidResetToken', 400, 'Invalid or expired token');
     }
     if (!user.email)
-      throw new customError('User does not have an email set', 400);
+      throw apiError('auth.noEmailSet', 400, 'User does not have an email set');
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordTokenExpiry = undefined;
     await user.save();
-    sendPasswordResetSuccessEmail(user.email);
+    sendPasswordResetSuccessEmail(user.email, user.settings?.language);
     res.status(200).json({ message: 'Password has been reset successfully!' });
   } catch (error) {
     return next(error as customError);
@@ -348,15 +389,19 @@ export async function resendVerificationEmail(
     const user = res.locals.user;
 
     if (!user) {
-      throw new customError('User not authenticated', 401);
+      throw apiError('auth.notAuthenticated', 401, 'User not authenticated');
     }
 
     if (!user.email) {
-      throw new customError('User does not have an email set', 400);
+      throw apiError('auth.noEmailSet', 400, 'User does not have an email set');
     }
 
     if (user.verified) {
-      throw new customError('Email is already verified', 400);
+      throw apiError(
+        'auth.emailAlreadyVerified',
+        400,
+        'Email is already verified'
+      );
     }
 
     // Check if email was sent within the last 60 seconds
@@ -369,9 +414,11 @@ export async function resendVerificationEmail(
         const remainingTime = Math.ceil(
           (cooldownPeriod - timeSinceLastEmail) / 1000
         );
-        throw new customError(
+        throw apiError(
+          'auth.resendCooldown',
+          429,
           `Please wait ${remainingTime} seconds before requesting another email`,
-          429
+          { seconds: remainingTime }
         );
       }
     }
@@ -385,7 +432,11 @@ export async function resendVerificationEmail(
     await user.save();
 
     // Send verification email
-    await sendVerificationEmail(user.email, user.verificationToken);
+    await sendVerificationEmail(
+      user.email,
+      user.verificationToken,
+      user.settings?.language
+    );
 
     res.status(200).json({
       message: 'Verification email sent successfully',

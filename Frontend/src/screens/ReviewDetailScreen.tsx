@@ -24,6 +24,7 @@ import LikeButton from '../components/LikeButton';
 import { IMediaReview } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
+import { useTranslation } from 'react-i18next';
 
 function getMediaTitle(mediaTitle?: {
   contentTitleEnglish?: string;
@@ -39,6 +40,7 @@ function getMediaTitle(mediaTitle?: {
 }
 
 function ReviewDetailScreen() {
+  const { t } = useTranslation(['media', 'common']);
   const { reviewId } = useParams<{ reviewId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -125,7 +127,7 @@ function ReviewDetailScreen() {
           });
         }
         setIsEditing(false);
-        toast.success('Review updated successfully');
+        toast.success(t('toast.reviewUpdated'));
       },
       onError: (error: unknown) => {
         const errorMessage =
@@ -154,7 +156,7 @@ function ReviewDetailScreen() {
             queryKey: ['mediaReviews', review.mediaContentId, review.mediaType],
           });
         }
-        toast.success('Review deleted successfully');
+        toast.success(t('toast.reviewDeleted'));
         navigate(mediaPath);
       },
       onError: (error: unknown) => {
@@ -180,11 +182,11 @@ function ReviewDetailScreen() {
     return (
       <div className="container mx-auto mt-16 px-4 py-16 max-w-3xl">
         <div className="alert alert-error">
-          <span>Review not found or unavailable.</span>
+          <span>{t('detail.notFound')}</span>
         </div>
         <div className="mt-6">
           <Link to="/" className="btn btn-primary btn-sm">
-            Back to home
+            {t('detail.backHome')}
           </Link>
         </div>
       </div>
@@ -198,7 +200,7 @@ function ReviewDetailScreen() {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        toast.success('Review link copied to clipboard!');
+        toast.success(t('toast.reviewLinkCopied'));
       })
       .catch(() => {
         const textArea = document.createElement('textarea');
@@ -207,7 +209,7 @@ function ReviewDetailScreen() {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        toast.success('Review link copied to clipboard!');
+        toast.success(t('toast.reviewLinkCopied'));
       });
   }
 
@@ -251,7 +253,7 @@ function ReviewDetailScreen() {
             className="btn btn-sm bg-neutral/75 text-neutral-content border border-neutral-content/20 hover:bg-neutral/90 hover:border-neutral-content/35 backdrop-blur-md"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to media
+            {t('detail.backToMedia')}
           </Link>
 
           <div className="mt-8 max-w-3xl">
@@ -304,7 +306,7 @@ function ReviewDetailScreen() {
                 )}
                 {review.hasSpoilers && (
                   <span className="badge badge-error badge-outline">
-                    Spoilers
+                    {t('detail.spoilers')}
                   </span>
                 )}
               </div>
@@ -321,7 +323,7 @@ function ReviewDetailScreen() {
                   <button
                     tabIndex={0}
                     className="btn btn-ghost btn-sm btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
-                    aria-label="Review options"
+                    aria-label={t('detail.a11y.options')}
                   >
                     <Ellipsis className="w-4 h-4" />
                   </button>
@@ -332,7 +334,7 @@ function ReviewDetailScreen() {
                         className="text-success hover:bg-success/10 gap-2"
                       >
                         <Share2 className="w-4 h-4" />
-                        Share
+                        {t('detail.share')}
                       </button>
                     </li>
                     {isAuthor && (
@@ -343,7 +345,7 @@ function ReviewDetailScreen() {
                             className="text-warning hover:bg-warning/10 gap-2"
                           >
                             <Pencil className="w-4 h-4" />
-                            Edit
+                            {t('detail.edit')}
                           </button>
                         </li>
                         <li>
@@ -352,7 +354,7 @@ function ReviewDetailScreen() {
                             className="text-error hover:bg-error/10 gap-2"
                           >
                             <Trash className="w-4 h-4" />
-                            Delete
+                            {t('detail.delete')}
                           </button>
                         </li>
                       </>
@@ -385,17 +387,16 @@ function ReviewDetailScreen() {
       {isDeleteDialogOpen && (
         <dialog className="modal modal-open">
           <div className="modal-box max-w-sm">
-            <h3 className="font-bold text-lg">Delete Review</h3>
+            <h3 className="font-bold text-lg">{t('reviews.deleteTitle')}</h3>
             <p className="py-4 text-base-content/70">
-              Are you sure you want to delete your review? This cannot be
-              undone.
+              {t('reviews.deleteConfirm')}
             </p>
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
                 onClick={() => setIsDeleteDialogOpen(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error"

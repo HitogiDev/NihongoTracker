@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { createMediaListFn, getUserMediaListsFn } from '../api/listsApi';
 import { useUserDataStore } from '../store/userData';
 import MediaListCard from '../components/MediaListCard';
@@ -11,6 +12,7 @@ import MediaListFormModal, {
 } from '../components/MediaListFormModal';
 
 function UserListsScreen() {
+  const { t } = useTranslation('media');
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -30,10 +32,10 @@ function UserListsScreen() {
     onSuccess: (result) => {
       setShowCreateModal(false);
       void queryClient.invalidateQueries({ queryKey: ['userMediaLists'] });
-      toast.success('List created');
+      toast.success(t('lists.toast.created'));
       navigate(`/lists/${result.list._id}`);
     },
-    onError: () => toast.error('Could not create the list'),
+    onError: () => toast.error(t('lists.toast.createFailed')),
   });
 
   const lists = data?.lists ?? [];
@@ -42,14 +44,14 @@ function UserListsScreen() {
     <div className="px-4 py-6">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between gap-3 mb-6">
-          <h2 className="text-2xl font-bold">Lists</h2>
+          <h2 className="text-2xl font-bold">{t('lists.heading')}</h2>
           {isOwnProfile && (
             <button
               type="button"
               className="btn btn-primary btn-sm"
               onClick={() => setShowCreateModal(true)}
             >
-              <Plus className="w-4 h-4" /> New list
+              <Plus className="w-4 h-4" /> {t('lists.create')}
             </button>
           )}
         </div>
@@ -60,9 +62,7 @@ function UserListsScreen() {
           </div>
         ) : lists.length === 0 ? (
           <p className="text-base-content/60 py-12 text-center">
-            {isOwnProfile
-              ? 'You have not created any lists yet.'
-              : 'This user has no public lists.'}
+            {isOwnProfile ? t('lists.emptyOwn') : t('lists.emptyOther')}
           </p>
         ) : (
           <div className="border-t border-base-content/10">

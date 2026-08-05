@@ -2,8 +2,10 @@ import { useOutletContext } from 'react-router-dom';
 import { OutletProfileContextType } from '../types';
 import ImmersionGoals from '../components/ImmersionGoals';
 import { useUserDataStore } from '../store/userData';
+import { useTranslation } from 'react-i18next';
 
 function GoalsScreen() {
+  const { t } = useTranslation('goals');
   const { username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedInUser } = useUserDataStore();
 
@@ -17,9 +19,7 @@ function GoalsScreen() {
                 {username}'s Goals
               </h1>
               {username === loggedInUser?.username ? (
-                <p className="text-base-content/70">
-                  Set and track your daily and long-term immersion goals
-                </p>
+                <p className="text-base-content/70">{t('subtitle')}</p>
               ) : null}
             </div>
           </div>
@@ -47,11 +47,9 @@ function GoalsScreen() {
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                   ></path>
                 </svg>
-                Goal Statistics
+                {t('statsTitle')}
               </h2>
-              <p className="text-base-content/70 mb-4">
-                Track your goal completion rates and consistency over time.
-              </p>
+              <p className="text-base-content/70 mb-4">{t('statsHint')}</p>
               <div className="alert alert-info">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -66,7 +64,7 @@ function GoalsScreen() {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>Coming soon: Goal completion history and analytics!</span>
+                <span>{t('statsSoon')}</span>
               </div>
             </div>
           </div>
@@ -87,11 +85,9 @@ function GoalsScreen() {
                     d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                   ></path>
                 </svg>
-                Goal Analytics
+                {t('analyticsTitle')}
               </h2>
-              <p className="text-base-content/70 mb-4">
-                Analyze your goal patterns, streaks, and improvement over time.
-              </p>
+              <p className="text-base-content/70 mb-4">{t('analyticsHint')}</p>
               <div className="alert alert-info">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +102,7 @@ function GoalsScreen() {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>Coming soon: Advanced goal analytics and insights!</span>
+                <span>{t('analyticsSoon')}</span>
               </div>
             </div>
           </div>

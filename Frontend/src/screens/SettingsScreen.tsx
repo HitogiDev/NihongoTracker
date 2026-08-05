@@ -54,6 +54,8 @@ import {
   PROFILE_WIDGET_META,
   resolveProfileLayout,
 } from '../utils/profileWidgets';
+import { useTranslation } from 'react-i18next';
+import LanguagePicker from '../components/LanguagePicker';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
@@ -153,6 +155,11 @@ const MAX_AVATAR_SIZE_MB_DEFAULT = 3;
 const MAX_BANNER_SIZE_MB_DEFAULT = 6;
 const MAX_MEDIA_SIZE_MB_PATREON = 8;
 
+// Kept out of the t() call: inline string options confuse the i18next
+// extractor, which reads them as namespace names.
+const AVATAR_DIMENSIONS = '230x230';
+const BANNER_DIMENSIONS = '1700x330';
+
 const toBytesFromMb = (mb: number): number => mb * 1024 * 1024;
 
 const isGifMimeType = (mimeType?: string | null): boolean =>
@@ -244,6 +251,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
     },
     ref
   ) {
+    const { t } = useTranslation('settings');
     const [length, setLength] = useState(aboutRef.current.length);
     const [value, setValue] = useState(aboutRef.current);
     const [isDirty, setIsDirty] = useState(false);
@@ -297,7 +305,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
           value.slice(selectionEnd);
 
         if (newValue.length > maxLength) {
-          toast.error('About Me text is at the maximum length.');
+          toast.error(t('toast.aboutMaxLength'));
           return;
         }
 
@@ -314,7 +322,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
           textarea.setSelectionRange(startPos, endPos);
         });
       },
-      [value, maxLength, aboutRef, onPreviewChange]
+      [value, maxLength, aboutRef, onPreviewChange, t]
     );
 
     useImperativeHandle(
@@ -331,7 +339,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
       <>
         <textarea
           className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-48 font-mono text-sm"
-          placeholder="Share a bit about your immersion journey (Markdown supported)"
+          placeholder={t('profile.aboutPlaceholder')}
           value={value}
           maxLength={maxLength}
           ref={textareaRef}
@@ -381,7 +389,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
               {isSaving ? (
                 <span className="loading loading-spinner loading-sm"></span>
               ) : (
-                'Save About'
+                t('profile.saveAbout')
               )}
             </button>
           </div>
@@ -398,19 +406,21 @@ type SettingsTab =
   | 'patreon'
   | 'advanced';
 
-const TAB_CONFIG: {
+const TAB_CONFIG = [
+  { id: 'profile', labelKey: 'tabs.profile', icon: UserRound },
+  { id: 'account', labelKey: 'tabs.account', icon: ShieldCheck },
+  { id: 'preferences', labelKey: 'tabs.preferences', icon: Settings2 },
+  { id: 'patreon', labelKey: 'tabs.patreon', icon: Heart },
+  { id: 'advanced', labelKey: 'tabs.advanced', icon: CloudDownload },
+] as const satisfies readonly {
   id: SettingsTab;
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
-}[] = [
-  { id: 'profile', label: 'Profile', icon: UserRound },
-  { id: 'account', label: 'Account & Security', icon: ShieldCheck },
-  { id: 'preferences', label: 'Preferences', icon: Settings2 },
-  { id: 'patreon', label: 'Patreon', icon: Heart },
-  { id: 'advanced', label: 'Data Management', icon: CloudDownload },
-];
+}[];
 
 function SettingsScreen() {
+  const { t } = useTranslation('settings');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
@@ -544,7 +554,7 @@ function SettingsScreen() {
         setResendCooldown(60); // Start cooldown immediately after sending verification email
       } else {
         // Only show toast if email wasn't changed (no modal will be shown)
-        toast.success('User updated');
+        toast.success(t('toast.userUpdated'));
       }
 
       setUser(data);
@@ -592,7 +602,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -601,7 +611,7 @@ function SettingsScreen() {
   const { mutate: saveAbout, isPending: isSavingAbout } = useMutation({
     mutationFn: updateUserFn,
     onSuccess: (data: ILoginResponse) => {
-      toast.success('About updated');
+      toast.success(t('toast.aboutUpdated'));
       setUser(data);
       aboutRef.current = data.about || '';
       void queryClient.invalidateQueries({
@@ -614,7 +624,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -643,7 +653,7 @@ function SettingsScreen() {
             `Failed to save preference: ${error.response?.data.message}`
           );
         } else {
-          toast.error('Failed to save preference');
+          toast.error(t('toast.preferenceSaveFailed'));
         }
       },
     });
@@ -653,13 +663,13 @@ function SettingsScreen() {
     useMutation({
       mutationFn: resendVerificationEmailFn,
       onSuccess: () => {
-        toast.success('Verification email sent!');
+        toast.success(t('toast.verificationSent'));
         setResendCooldown(60); // Start 60-second cooldown
       },
       onError: (error) => {
         if (error instanceof AxiosError) {
           const errorMessage =
-            error.response?.data.message || 'An error occurred';
+            error.response?.data.message || tCommon('errors.generic');
           toast.error(errorMessage);
           // If error mentions remaining time, extract it and set cooldown
           const match = errorMessage.match(/wait (\d+) seconds/);
@@ -667,7 +677,7 @@ function SettingsScreen() {
             setResendCooldown(parseInt(match[1], 10));
           }
         } else {
-          toast.error('Failed to send verification email');
+          toast.error(t('toast.verificationFailed'));
         }
       },
     });
@@ -828,7 +838,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -860,7 +870,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -877,13 +887,13 @@ function SettingsScreen() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success('Data exported successfully!');
+      toast.success(t('toast.exportSuccess'));
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || 'Export failed');
+        toast.error(error.response?.data.message || t('toast.exportFailed'));
       } else {
-        toast.error('Failed to export data');
+        toast.error(t('toast.exportFailed'));
       }
     },
   });
@@ -901,7 +911,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : tCommon('errors.generic'));
       }
     },
   });
@@ -922,9 +932,11 @@ function SettingsScreen() {
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || 'Failed to create API key');
+        toast.error(
+          error.response?.data.message || t('toast.apiKeyCreateFailed')
+        );
       } else {
-        toast.error('Failed to create API key');
+        toast.error(t('toast.apiKeyCreateFailed'));
       }
     },
   });
@@ -932,14 +944,16 @@ function SettingsScreen() {
   const { mutate: deleteApiKey, isPending: isDeletingKey } = useMutation({
     mutationFn: deleteApiKeyFn,
     onSuccess: () => {
-      toast.success('API key revoked');
+      toast.success(t('toast.apiKeyRevoked'));
       fetchApiKeys();
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data.message || 'Failed to revoke API key');
+        toast.error(
+          error.response?.data.message || t('toast.apiKeyRevokeFailed')
+        );
       } else {
-        toast.error('Failed to revoke API key');
+        toast.error(t('toast.apiKeyRevokeFailed'));
       }
     },
   });
@@ -962,7 +976,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error('Failed to unlink Patreon account');
+        toast.error(t('toast.patreonUnlinkFailed'));
       }
     },
   });
@@ -970,7 +984,7 @@ function SettingsScreen() {
   const { mutate: updateBadgeText, isPending: isUpdatingBadge } = useMutation({
     mutationFn: updateCustomBadgeTextFn,
     onSuccess: (data) => {
-      toast.success('Custom badge text updated!');
+      toast.success(t('toast.badgeTextUpdated'));
       setUser(data.user);
       fetchPatreonStatus();
       // Invalidate user query to update profile display
@@ -982,7 +996,7 @@ function SettingsScreen() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error('Failed to update badge text');
+        toast.error(t('toast.badgeTextFailed'));
       }
     },
   });
@@ -991,7 +1005,7 @@ function SettingsScreen() {
     useMutation({
       mutationFn: () => updateBadgeColorsFn(badgeColor, badgeTextColor),
       onSuccess: (data) => {
-        toast.success('Badge colors updated!');
+        toast.success(t('toast.badgeColorsUpdated'));
         setUser(data.user);
         fetchPatreonStatus();
         // Invalidate user queries to update ProfileHeader
@@ -1003,7 +1017,7 @@ function SettingsScreen() {
         if (error instanceof AxiosError) {
           toast.error(error.response?.data.message);
         } else {
-          toast.error('Failed to update badge colors');
+          toast.error(t('toast.badgeColorsFailed'));
         }
       },
     });
@@ -1019,30 +1033,29 @@ function SettingsScreen() {
     const message = params.get('message');
 
     if (patreonStatus === 'success') {
-      toast.success('✅ Patreon account linked successfully!');
+      toast.success(`✅ ${t('toast.patreonLinked')}`);
       // Limpiar URL sin recargar la página
       window.history.replaceState({}, '', '/settings');
       // Recargar el estado de Patreon
       fetchPatreonStatus();
     } else if (patreonStatus === 'error') {
-      const errorMessages: Record<string, string> = {
-        missing_params: 'Missing authorization parameters',
-        invalid_state: 'Invalid or expired authorization state',
-        oauth_not_configured: 'Patreon OAuth is not configured on the server',
-        account_already_linked:
-          'This Patreon account is already linked to another user',
-        user_not_found: 'User not found',
-        oauth_failed: 'OAuth authentication failed',
-      };
-      const errorMessage =
-        message && errorMessages[message]
-          ? errorMessages[message]
-          : 'Failed to link Patreon account';
+      const errorKeys = {
+        missing_params: 'patreon.errors.missingParams',
+        invalid_state: 'patreon.errors.invalidState',
+        oauth_not_configured: 'patreon.errors.oauthNotConfigured',
+        account_already_linked: 'patreon.errors.accountAlreadyLinked',
+        user_not_found: 'patreon.errors.userNotFound',
+        oauth_failed: 'patreon.errors.oauthFailed',
+      } as const;
+      const errorMessage = t(
+        (message && errorKeys[message as keyof typeof errorKeys]) ||
+          'patreon.errors.linkFailed'
+      );
       toast.error(`❌ ${errorMessage}`);
       // Limpiar URL
       window.history.replaceState({}, '', '/settings');
     }
-  }, [fetchApiKeys]);
+  }, [fetchApiKeys, t]);
 
   async function fetchPatreonStatus() {
     try {
@@ -1074,7 +1087,7 @@ function SettingsScreen() {
       'logFileImport'
     ) as HTMLInputElement;
     if (!logImportInput.files || logImportInput.files.length === 0) {
-      toast.error('Please select a file');
+      toast.error(t('toast.selectFile'));
       return;
     }
     const file = logImportInput.files[0];
@@ -1109,7 +1122,7 @@ function SettingsScreen() {
     if (!user) return;
     const inputValue = confirmUsernameRef.current?.value || '';
     if (inputValue !== user.username) {
-      toast.error('Username does not match. Data was not deleted.');
+      toast.error(t('toast.usernameMismatch'));
       return;
     }
     (document.getElementById('clear_data_modal') as HTMLDialogElement).close();
@@ -1132,7 +1145,7 @@ function SettingsScreen() {
       window.location.href = authUrl;
     } catch (error) {
       setIsInitiatingOAuth(false);
-      toast.error('Failed to initiate Patreon OAuth');
+      toast.error(t('toast.patreonOauthFailed'));
       console.error('OAuth initiation error:', error);
     }
   }
@@ -1197,60 +1210,86 @@ function SettingsScreen() {
     setPendingBadgeTextColor(null);
   }, [pendingBadgeTextColor, badgeTextColor]);
 
-  const insertHeading = useCallback((level: 1 | 2 | 3) => {
-    const editor = aboutEditorRef.current;
-    if (!editor) return;
-    const hashes = '#'.repeat(level);
-    const prefix = `${editor.needsLineBreak() ? '\n' : ''}${hashes} `;
-    editor.insertSnippet(prefix, '', `Heading ${level}`);
-  }, []);
+  const insertHeading = useCallback(
+    (level: 1 | 2 | 3) => {
+      const editor = aboutEditorRef.current;
+      if (!editor) return;
+      const hashes = '#'.repeat(level);
+      const prefix = `${editor.needsLineBreak() ? '\n' : ''}${hashes} `;
+      editor.insertSnippet(
+        prefix,
+        '',
+        t('markdown.snippets.heading', { level })
+      );
+    },
+    [t]
+  );
 
-  const insertListItem = useCallback((ordered: boolean) => {
-    const editor = aboutEditorRef.current;
-    if (!editor) return;
-    const bullet = ordered ? '1. ' : '- ';
-    const prefix = `${editor.needsLineBreak() ? '\n' : ''}${bullet}`;
-    editor.insertSnippet(prefix, '', 'List item');
-  }, []);
+  const insertListItem = useCallback(
+    (ordered: boolean) => {
+      const editor = aboutEditorRef.current;
+      if (!editor) return;
+      const bullet = ordered ? '1. ' : '- ';
+      const prefix = `${editor.needsLineBreak() ? '\n' : ''}${bullet}`;
+      editor.insertSnippet(prefix, '', t('markdown.snippets.listItem'));
+    },
+    [t]
+  );
 
   const insertQuote = useCallback(() => {
     const editor = aboutEditorRef.current;
     if (!editor) return;
     const prefix = `${editor.needsLineBreak() ? '\n' : ''}> `;
-    editor.insertSnippet(prefix, '', 'Quote text');
-  }, []);
+    editor.insertSnippet(prefix, '', t('markdown.snippets.quote'));
+  }, [t]);
 
   const insertCodeBlock = useCallback(() => {
     const editor = aboutEditorRef.current;
     if (!editor) return;
     const lineBreak = editor.needsLineBreak() ? '\n' : '';
     const prefix = `${lineBreak}\`\`\`\n`;
-    editor.insertSnippet(prefix, '\n```\n', 'code sample');
-  }, []);
+    editor.insertSnippet(prefix, '\n```\n', t('markdown.snippets.code'));
+  }, [t]);
 
   const insertBold = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('**', '**', 'bold text');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '**',
+      '**',
+      t('markdown.snippets.bold')
+    );
+  }, [t]);
 
   const insertItalic = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('*', '*', 'italic text');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '*',
+      '*',
+      t('markdown.snippets.italic')
+    );
+  }, [t]);
 
   const insertInlineCode = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('`', '`', 'code');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '`',
+      '`',
+      t('markdown.snippets.inlineCode')
+    );
+  }, [t]);
 
   const insertLink = useCallback(() => {
     aboutEditorRef.current?.insertSnippet(
       '[',
       '](https://example.com)',
-      'link text'
+      t('markdown.snippets.link')
     );
-  }, []);
+  }, [t]);
 
   const insertSpoiler = useCallback(() => {
-    aboutEditorRef.current?.insertSnippet('||', '||', 'spoiler text');
-  }, []);
+    aboutEditorRef.current?.insertSnippet(
+      '||',
+      '||',
+      t('markdown.snippets.spoiler')
+    );
+  }, [t]);
 
   async function handleUpdateUser(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -1652,8 +1691,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={() => insertHeading(1)}
-        title="Heading 1"
-        aria-label="Insert heading level 1"
+        title={t('markdown.heading1')}
+        aria-label={t('markdown.a11y.heading1')}
       >
         <Heading1 className="w-4 h-4" />
       </button>
@@ -1661,8 +1700,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={() => insertHeading(2)}
-        title="Heading 2"
-        aria-label="Insert heading level 2"
+        title={t('markdown.heading2')}
+        aria-label={t('markdown.a11y.heading2')}
       >
         <Heading2 className="w-4 h-4" />
       </button>
@@ -1670,8 +1709,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={() => insertHeading(3)}
-        title="Heading 3"
-        aria-label="Insert heading level 3"
+        title={t('markdown.heading3')}
+        aria-label={t('markdown.a11y.heading3')}
       >
         <Heading3 className="w-4 h-4" />
       </button>
@@ -1683,8 +1722,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertBold}
-        title="Bold"
-        aria-label="Insert bold text"
+        title={t('markdown.bold')}
+        aria-label={t('markdown.a11y.bold')}
       >
         <Bold className="w-4 h-4" />
       </button>
@@ -1692,8 +1731,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertItalic}
-        title="Italic"
-        aria-label="Insert italic text"
+        title={t('markdown.italic')}
+        aria-label={t('markdown.a11y.italic')}
       >
         <Italic className="w-4 h-4" />
       </button>
@@ -1701,8 +1740,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertInlineCode}
-        title="Inline code"
-        aria-label="Insert inline code"
+        title={t('markdown.inlineCode')}
+        aria-label={t('markdown.a11y.inlineCode')}
       >
         <Type className="w-4 h-4" />
       </button>
@@ -1710,8 +1749,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertCodeBlock}
-        title="Code block"
-        aria-label="Insert code block"
+        title={t('markdown.codeBlock')}
+        aria-label={t('markdown.a11y.codeBlock')}
       >
         <Code className="w-4 h-4" />
       </button>
@@ -1723,8 +1762,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={() => insertListItem(false)}
-        title="Bulleted list"
-        aria-label="Insert bulleted list"
+        title={t('markdown.bulletedList')}
+        aria-label={t('markdown.a11y.bulletedList')}
       >
         <List className="w-4 h-4" />
       </button>
@@ -1732,8 +1771,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={() => insertListItem(true)}
-        title="Numbered list"
-        aria-label="Insert numbered list"
+        title={t('markdown.numberedList')}
+        aria-label={t('markdown.a11y.numberedList')}
       >
         <ListOrdered className="w-4 h-4" />
       </button>
@@ -1741,8 +1780,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertQuote}
-        title="Quote"
-        aria-label="Insert quote"
+        title={t('markdown.quote')}
+        aria-label={t('markdown.a11y.quote')}
       >
         <Quote className="w-4 h-4" />
       </button>
@@ -1754,8 +1793,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertLink}
-        title="Link"
-        aria-label="Insert link"
+        title={t('markdown.link')}
+        aria-label={t('markdown.a11y.link')}
       >
         <LinkIcon className="w-4 h-4" />
       </button>
@@ -1763,8 +1802,8 @@ function SettingsScreen() {
         type="button"
         className="btn btn-ghost btn-xs"
         onClick={insertSpoiler}
-        title="Spoiler"
-        aria-label="Insert spoiler"
+        title={t('markdown.spoiler')}
+        aria-label={t('markdown.a11y.spoiler')}
       >
         <EyeOff className="w-4 h-4" />
       </button>
@@ -1776,8 +1815,8 @@ function SettingsScreen() {
           setImageAlt('');
           setIsImageModalOpen(true);
         }}
-        title="Image"
-        aria-label="Insert image"
+        title={t('markdown.image')}
+        aria-label={t('markdown.a11y.image')}
       >
         <ImageIcon className="w-4 h-4" />
       </button>
@@ -1788,7 +1827,7 @@ function SettingsScreen() {
           type="button"
           className={`btn btn-xs ${aboutViewMode === 'edit' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setAboutViewMode('edit')}
-          title="Edit only"
+          title={t('markdown.editOnly')}
         >
           <Code className="w-3 h-3" />
         </button>
@@ -1796,7 +1835,7 @@ function SettingsScreen() {
           type="button"
           className={`btn btn-xs ${aboutViewMode === 'split' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setAboutViewMode('split')}
-          title="Split view"
+          title={t('markdown.splitView')}
         >
           <SplitSquareHorizontal className="w-3 h-3" />
         </button>
@@ -1804,7 +1843,7 @@ function SettingsScreen() {
           type="button"
           className={`btn btn-xs ${aboutViewMode === 'preview' ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => setAboutViewMode('preview')}
-          title="Preview only"
+          title={t('markdown.previewOnly')}
         >
           <Eye className="w-3 h-3" />
         </button>
@@ -1817,20 +1856,24 @@ function SettingsScreen() {
       {/* Clear Data Modal */}
       <dialog id="clear_data_modal" className="modal">
         <div className="modal-box">
-          <h3 className="font-bold text-lg text-error mb-2">Clear All Data</h3>
+          <h3 className="font-bold text-lg text-error mb-2">
+            {t('danger.clearAll')}
+          </h3>
           <p className="text-base-content/70 mb-4">
-            This will permanently delete all your logs and statistics. This
-            action{' '}
-            <span className="font-bold text-error">cannot be undone</span>.
+            {t('danger.deleteWarning')}{' '}
+            <span className="font-bold text-error">
+              {t('danger.cannotBeUndone')}
+            </span>
+            .
           </p>
           <p className="text-base-content/70 mb-4">
-            To confirm, type your username:{' '}
+            {t('danger.confirmUsername')}{' '}
             <span className="font-bold">{user?.username}</span>
           </p>
           <input
             type="text"
             className="input input-bordered w-full mb-4"
-            placeholder="Enter your username"
+            placeholder={t('account.usernamePlaceholder')}
             ref={confirmUsernameRef}
             onChange={(e) => {
               setIsUsernameMatch(e.target.value === user?.username);
@@ -1847,7 +1890,7 @@ function SettingsScreen() {
                   setIsUsernameMatch(false);
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </form>
             <button
@@ -1860,7 +1903,7 @@ function SettingsScreen() {
               ) : (
                 <>
                   <Trash2 className="h-4 w-4" />
-                  Clear All Data
+                  {t('danger.clearAll')}
                 </>
               )}
             </button>
@@ -1881,7 +1924,7 @@ function SettingsScreen() {
       </dialog>
 
       <ImageCropDialog
-        title="Crop Avatar"
+        title={t('crop.avatarTitle')}
         imageSrc={avatarSrc}
         isOpen={showAvatarCrop}
         aspect={1}
@@ -1894,7 +1937,7 @@ function SettingsScreen() {
       />
 
       <ImageCropDialog
-        title="Crop Banner"
+        title={t('crop.bannerTitle')}
         imageSrc={bannerSrc}
         isOpen={showBannerCrop}
         aspect={21 / 9}
@@ -1911,10 +1954,10 @@ function SettingsScreen() {
       {/* Page Header */}
       <div className="bg-base-100 border-b border-base-300">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-base-content">Settings</h1>
-          <p className="text-base-content/60 mt-1">
-            Manage your account and preferences
-          </p>
+          <h1 className="text-3xl font-bold text-base-content">
+            {t('header.title')}
+          </h1>
+          <p className="text-base-content/60 mt-1">{t('header.subtitle')}</p>
         </div>
       </div>
 
@@ -1925,7 +1968,7 @@ function SettingsScreen() {
             <div className="card bg-base-100 shadow-sm border border-base-300/50 sticky top-6">
               <div className="card-body p-2">
                 <nav className="flex flex-row lg:flex-col gap-1">
-                  {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
+                  {TAB_CONFIG.map(({ id, labelKey, icon: Icon }) => (
                     <button
                       key={id}
                       type="button"
@@ -1939,7 +1982,7 @@ function SettingsScreen() {
                       onClick={() => setActiveTab(id)}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="hidden sm:block">{label}</span>
+                      <span className="hidden sm:block">{t(labelKey)}</span>
                     </button>
                   ))}
                 </nav>
@@ -1959,9 +2002,11 @@ function SettingsScreen() {
                         <UserRound className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold">Profile</h2>
+                        <h2 className="text-2xl font-bold">
+                          {t('profile.tab')}
+                        </h2>
                         <p className="text-base-content/70">
-                          Update your avatar, banner and about me
+                          {t('profile.subtitle')}
                         </p>
                       </div>
                     </div>
@@ -1971,10 +2016,10 @@ function SettingsScreen() {
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text font-medium text-base">
-                            About Me
+                            {t('profile.about')}
                           </span>
                           <span className="label-text-alt text-base-content/50 text-xs">
-                            Markdown supported
+                            {t('profile.markdownSupported')}
                           </span>
                         </label>
 
@@ -2009,7 +2054,7 @@ function SettingsScreen() {
                               {aboutViewMode === 'split' && (
                                 <div className="text-xs text-base-content/40 font-medium uppercase tracking-wide mb-3 flex items-center gap-1">
                                   <Eye className="w-3 h-3" />
-                                  Preview
+                                  {t('profile.preview')}
                                 </div>
                               )}
                               {renderedAboutPreview ? (
@@ -2022,8 +2067,8 @@ function SettingsScreen() {
                               ) : (
                                 <p className="text-base-content/30 text-sm italic">
                                   {aboutViewMode === 'preview'
-                                    ? 'Nothing to preview yet. Start typing in the editor.'
-                                    : 'Preview will appear here...'}
+                                    ? t('profile.previewEmpty')
+                                    : t('profile.previewPlaceholder')}
                                 </p>
                               )}
                             </div>
@@ -2034,7 +2079,9 @@ function SettingsScreen() {
                       {/* Avatar */}
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text font-medium">Avatar</span>
+                          <span className="label-text font-medium">
+                            {t('profile.avatar')}
+                          </span>
                         </label>
                         <div className="flex flex-col sm:flex-row gap-4 items-start">
                           <div className="flex-1 w-full">
@@ -2052,14 +2099,15 @@ function SettingsScreen() {
                             />
                             <label className="label pt-1 flex flex-col items-start gap-1">
                               <span className="label-text-alt text-base-content/60 leading-relaxed">
-                                Allowed Formats: JPEG, PNG, WebP
-                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
-                                size: {avatarMaxSizeMb} MB. Optimal dimensions:
-                                230x230
+                                {t('profile.allowedFormats', {
+                                  gif: hasPatreonMediaAccess ? ', GIF' : '',
+                                  maxSize: avatarMaxSizeMb,
+                                  dimensions: AVATAR_DIMENSIONS,
+                                })}
                               </span>
                               {(croppedAvatarFile || avatarCropMetadata) && (
                                 <span className="label-text-alt text-success">
-                                  Cropped avatar ready to upload
+                                  {t('profile.avatarCropped')}
                                 </span>
                               )}
                             </label>
@@ -2071,7 +2119,7 @@ function SettingsScreen() {
                               {user?.avatar && !croppedAvatarFile && (
                                 <img
                                   src={user.avatar}
-                                  alt="Current avatar"
+                                  alt={t('profile.currentAvatarAlt')}
                                   className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
                                   style={{
                                     width: 120,
@@ -2090,7 +2138,7 @@ function SettingsScreen() {
                               />
                               {avatarCropMetadata && !croppedAvatarFile && (
                                 <span className="text-xs text-success text-center max-w-[120px]">
-                                  GIF crop will be applied when you save
+                                  {t('profile.gifCropOnSave')}
                                 </span>
                               )}
                             </div>
@@ -2101,7 +2149,9 @@ function SettingsScreen() {
                       {/* Banner */}
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text font-medium">Banner</span>
+                          <span className="label-text font-medium">
+                            {t('profile.banner')}
+                          </span>
                         </label>
                         <div className="flex flex-col gap-4">
                           <div className="w-full">
@@ -2119,14 +2169,15 @@ function SettingsScreen() {
                             />
                             <label className="label pt-1 flex flex-col items-start gap-1">
                               <span className="label-text-alt text-base-content/60 leading-relaxed">
-                                Allowed Formats: JPEG, PNG, WebP
-                                {hasPatreonMediaAccess ? ', GIF' : ''}. Max
-                                size: {bannerMaxSizeMb} MB. Optimal dimensions:
-                                1700x330
+                                {t('profile.allowedFormats', {
+                                  gif: hasPatreonMediaAccess ? ', GIF' : '',
+                                  maxSize: bannerMaxSizeMb,
+                                  dimensions: BANNER_DIMENSIONS,
+                                })}
                               </span>
                               {(croppedBannerFile || bannerCropMetadata) && (
                                 <span className="label-text-alt text-success">
-                                  Cropped banner ready to upload
+                                  {t('profile.bannerCropped')}
                                 </span>
                               )}
                             </label>
@@ -2138,7 +2189,7 @@ function SettingsScreen() {
                               {user?.banner && !croppedBannerFile && (
                                 <img
                                   src={user.banner}
-                                  alt="Current banner"
+                                  alt={t('profile.currentBannerAlt')}
                                   className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
                                   style={{
                                     maxHeight: 150,
@@ -2155,7 +2206,7 @@ function SettingsScreen() {
                               />
                               {bannerCropMetadata && !croppedBannerFile && (
                                 <span className="text-xs text-success">
-                                  GIF crop will be applied when you save
+                                  {t('profile.gifCropOnSave')}
                                 </span>
                               )}
                             </>
@@ -2172,12 +2223,12 @@ function SettingsScreen() {
                           {isPending ? (
                             <>
                               <span className="loading loading-spinner loading-sm"></span>
-                              Saving...
+                              {t('profile.saving')}
                             </>
                           ) : (
                             <>
                               <Check className="h-4 w-4" />
-                              Save Profile
+                              {t('profile.save')}
                             </>
                           )}
                         </button>
@@ -2201,11 +2252,10 @@ function SettingsScreen() {
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold">
-                          Account & Security
+                          {t('account.tab')}
                         </h2>
                         <p className="text-base-content/70">
-                          Update username, email and password. Your current
-                          password is required to confirm sensitive changes.
+                          {t('account.subtitle')}
                         </p>
                       </div>
                     </div>
@@ -2215,12 +2265,9 @@ function SettingsScreen() {
                       <ShieldCheck className="h-5 w-5 shrink-0" />
                       <div>
                         <p className="font-semibold text-sm">
-                          Password verification required
+                          {t('account.passwordRequired')}
                         </p>
-                        <p className="text-xs">
-                          Changing your username, email or password requires
-                          your current password to confirm your identity.
-                        </p>
+                        <p className="text-xs">{t('account.identityNote')}</p>
                       </div>
                     </div>
 
@@ -2230,10 +2277,10 @@ function SettingsScreen() {
                         <label className="label pt-0">
                           <span className="label-text font-semibold flex items-center gap-2">
                             <Lock className="h-4 w-4 text-secondary" />
-                            Current Password
+                            {t('account.currentPassword')}
                           </span>
                           <span className="label-text-alt text-base-content/50">
-                            Required for changes below
+                            {t('account.requiredForChanges')}
                           </span>
                         </label>
                         <input
@@ -2242,7 +2289,7 @@ function SettingsScreen() {
                           type="password"
                           autoComplete="new-password"
                           className="input input-bordered focus:input-secondary transition-colors w-full"
-                          placeholder="Enter your current password to confirm changes"
+                          placeholder={t('account.currentPasswordPlaceholder')}
                           onChange={(e) =>
                             setHasPassword(e.target.value.trim().length > 0)
                           }
@@ -2250,26 +2297,30 @@ function SettingsScreen() {
                       </div>
 
                       <div className="divider text-xs text-base-content/40">
-                        ACCOUNT DETAILS
+                        {t('account.detailsHeading')}
                       </div>
 
                       {/* Username */}
                       <div className="form-control w-full">
                         <label className="label">
                           <span className="label-text font-medium">
-                            Username
+                            {t('account.username')}
                           </span>
                         </label>
                         <input
                           type="text"
                           className="input input-bordered focus:input-secondary transition-colors w-full"
-                          placeholder={user?.username || 'Enter username'}
+                          placeholder={
+                            user?.username || t('account.usernamePlaceholder')
+                          }
                           value={username}
                           onChange={(e) => setUsername(e.target.value)}
                         />
                         <label className="label">
                           <span className="label-text-alt text-base-content/60">
-                            Current: {user?.username || 'Not set'}
+                            {t('account.currentUsername', {
+                              username: user?.username || t('account.notSet'),
+                            })}
                           </span>
                         </label>
                       </div>
@@ -2278,7 +2329,7 @@ function SettingsScreen() {
                       <div className="form-control w-full">
                         <label className="label">
                           <span className="label-text font-medium">
-                            Email Address (optional)
+                            {t('account.email')}
                           </span>
                           {user?.email && (
                             <span
@@ -2288,7 +2339,9 @@ function SettingsScreen() {
                                   : 'badge-warning'
                               }`}
                             >
-                              {user.verified ? 'Verified' : 'Not Verified'}
+                              {user.verified
+                                ? t('account.verified')
+                                : t('account.notVerified')}
                             </span>
                           )}
                         </label>
@@ -2298,7 +2351,7 @@ function SettingsScreen() {
                           type="email"
                           autoComplete="off"
                           className="input input-bordered focus:input-secondary transition-colors w-full"
-                          placeholder="Enter your email address"
+                          placeholder={t('account.emailPlaceholder')}
                           defaultValue={user?.email || ''}
                           onChange={(e) => {
                             const emailValue = e.target.value;
@@ -2323,7 +2376,7 @@ function SettingsScreen() {
                               {isResendingEmail ? (
                                 <>
                                   <span className="loading loading-spinner loading-sm"></span>
-                                  Sending...
+                                  {t('account.sending')}
                                 </>
                               ) : resendCooldown > 0 ? (
                                 <>
@@ -2333,7 +2386,7 @@ function SettingsScreen() {
                               ) : (
                                 <>
                                   <Mail className="w-4 h-4" />
-                                  Resend Verification Email
+                                  {t('account.resendVerification')}
                                 </>
                               )}
                             </button>
@@ -2343,28 +2396,28 @@ function SettingsScreen() {
                         {!user?.email && (
                           <label className="label">
                             <span className="label-text-alt text-base-content/60">
-                              Recommended for account recovery
+                              {t('account.recoveryHint')}
                             </span>
                           </label>
                         )}
                       </div>
 
                       <div className="divider text-xs text-base-content/40">
-                        CHANGE PASSWORD
+                        {t('account.changePasswordHeading')}
                       </div>
 
                       {/* New Password */}
                       <div className="form-control w-full">
                         <label className="label">
                           <span className="label-text font-medium">
-                            New Password (optional)
+                            {t('account.newPassword')}
                           </span>
                         </label>
                         <input
                           ref={newPasswordRef}
                           type="password"
                           className="input input-bordered focus:input-secondary transition-colors w-full"
-                          placeholder="Enter new password"
+                          placeholder={t('account.newPasswordPlaceholder')}
                           onChange={(e) => {
                             const newPwd = e.target.value;
                             setHasNewPassword(newPwd.trim().length > 0);
@@ -2375,7 +2428,7 @@ function SettingsScreen() {
                         />
                         <label className="label">
                           <span className="label-text-alt text-base-content/60">
-                            Leave blank to keep current password
+                            {t('account.keepPasswordHint')}
                           </span>
                         </label>
                       </div>
@@ -2384,14 +2437,14 @@ function SettingsScreen() {
                       <div className="form-control w-full">
                         <label className="label">
                           <span className="label-text font-medium">
-                            Confirm New Password
+                            {t('account.confirmPassword')}
                           </span>
                         </label>
                         <input
                           ref={newPasswordConfirmRef}
                           type="password"
                           className={`input input-bordered focus:input-secondary transition-colors w-full ${!passwordsMatch ? 'input-error' : ''}`}
-                          placeholder="Confirm new password"
+                          placeholder={t('account.confirmPasswordPlaceholder')}
                           onChange={(e) => {
                             const confirmPwd = e.target.value;
                             const newPwd = newPasswordRef.current?.value || '';
@@ -2401,7 +2454,7 @@ function SettingsScreen() {
                         {!passwordsMatch && (
                           <label className="label">
                             <span className="label-text-alt text-error">
-                              Passwords do not match
+                              {t('account.passwordMismatch')}
                             </span>
                           </label>
                         )}
@@ -2423,12 +2476,12 @@ function SettingsScreen() {
                           {isPending ? (
                             <>
                               <span className="loading loading-spinner loading-sm"></span>
-                              Updating...
+                              {t('account.updating')}
                             </>
                           ) : (
                             <>
                               <KeyRound className="h-4 w-4" />
-                              Update Account
+                              {t('account.update')}
                             </>
                           )}
                         </button>
@@ -2446,10 +2499,10 @@ function SettingsScreen() {
                       </div>
                       <div>
                         <h2 className="text-xl font-bold text-error">
-                          Danger Zone
+                          {t('danger.title')}
                         </h2>
                         <p className="text-error/70 text-sm">
-                          Irreversible actions
+                          {t('danger.subtitle')}
                         </p>
                       </div>
                     </div>
@@ -2457,10 +2510,9 @@ function SettingsScreen() {
                     <div className="alert alert-error alert-soft mb-4">
                       <XCircle className="stroke-current shrink-0 h-6 w-6" />
                       <div>
-                        <h3 className="font-bold">Warning!</h3>
+                        <h3 className="font-bold">{t('danger.warning')}</h3>
                         <div className="text-xs">
-                          This action cannot be undone and will permanently
-                          delete all your data.
+                          {t('danger.irreversibleNote')}
                         </div>
                       </div>
                     </div>
@@ -2476,7 +2528,7 @@ function SettingsScreen() {
                       }
                     >
                       <Trash2 className="h-5 w-5" />
-                      Clear All Data
+                      {t('danger.clearAll')}
                     </button>
                   </div>
                 </div>
@@ -2493,54 +2545,53 @@ function SettingsScreen() {
                         <Settings2 className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold">Preferences</h2>
+                        <h2 className="text-2xl font-bold">
+                          {t('preferences.title')}
+                        </h2>
                         <p className="text-base-content/70">
-                          Customize your experience
+                          {t('preferences.subtitle')}
                         </p>
                       </div>
                     </div>
 
                     <div className="space-y-6">
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">Theme</span>
-                        </label>
-                        <ThemeSwitcher />
-                      </div>
+                      <LanguagePicker />
 
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            Timezone
-                          </span>
+                      <fieldset className="fieldset w-full p-0">
+                        <legend className="fieldset-legend font-medium">
+                          {t('preferences.theme')}
+                        </legend>
+                        <ThemeSwitcher />
+                      </fieldset>
+
+                      <fieldset className="fieldset w-full p-0">
+                        <legend className="fieldset-legend font-medium gap-2">
+                          {t('preferences.timezone')}
                           {isPreferencesPending && (
                             <span className="loading loading-spinner loading-sm"></span>
                           )}
-                        </label>
+                        </legend>
                         <TimezonePicker
                           value={timezone}
                           onChange={setTimezone}
                           disabled={isPending || isPreferencesPending}
                         />
-                        <label className="label">
-                          <span className="label-text-alt text-base-content/60 text-wrap">
-                            All dates and times will be displayed in your
-                            selected timezone
-                          </span>
-                        </label>
-                      </div>
+                        <p className="label text-base-content/60 text-wrap">
+                          {t('preferences.timezoneHint')}
+                        </p>
+                      </fieldset>
 
-                      <div className="form-control">
-                        <label className="label cursor-pointer">
-                          <div>
-                            <span className="label-text font-medium">
-                              Blur Adult Content
+                      <div>
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-4">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-medium">
+                              {t('preferences.blurAdult')}
                             </span>
-                            <p className="text-sm text-base-content/60">
-                              Hide explicit content by default
-                            </p>
+                            <span className="text-sm text-base-content/60">
+                              {t('preferences.blurAdultHint')}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
                               <span className="loading loading-spinner loading-sm"></span>
                             )}
@@ -2555,17 +2606,17 @@ function SettingsScreen() {
                         </label>
                       </div>
 
-                      <div className="form-control">
-                        <label className="label cursor-pointer">
-                          <div>
-                            <span className="label-text font-medium">
-                              Hide Unmatched Logs Alert
+                      <div>
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-4">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-medium">
+                              {t('preferences.hideUnmatched')}
                             </span>
-                            <p className="text-sm text-base-content/60">
-                              Don't show alerts about unmatched logs
-                            </p>
+                            <span className="text-sm text-base-content/60">
+                              {t('preferences.hideUnmatchedHint')}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
                               <span className="loading loading-spinner loading-sm"></span>
                             )}
@@ -2593,9 +2644,11 @@ function SettingsScreen() {
                         <Tag className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold">Tags</h2>
+                        <h2 className="text-2xl font-bold">
+                          {t('tags.title')}
+                        </h2>
                         <p className="text-base-content/70">
-                          Create and manage tags to organize your logs
+                          {t('tags.subtitle')}
                         </p>
                       </div>
                     </div>
@@ -2616,9 +2669,11 @@ function SettingsScreen() {
                         <Heart className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold">Patreon</h2>
+                        <h2 className="text-2xl font-bold">
+                          {t('patreon.title')}
+                        </h2>
                         <p className="text-base-content/70">
-                          Link your Patreon account to unlock supporter perks
+                          {t('patreon.subtitle')}
                         </p>
                       </div>
                     </div>
@@ -2632,7 +2687,7 @@ function SettingsScreen() {
                               <HeartHandshake className="w-5 h-5 text-success" />
                               <div>
                                 <div className="font-semibold text-success">
-                                  Connected
+                                  {t('patreon.connected')}
                                 </div>
                                 {patreonStatus.patreonEmail && (
                                   <div className="text-xs text-base-content/70">
@@ -2656,7 +2711,7 @@ function SettingsScreen() {
                                 </span>
                               ) : (
                                 <span className="badge badge-ghost badge-sm">
-                                  Free Tier
+                                  {t('patreon.freeTier')}
                                 </span>
                               )}
                             </div>
@@ -2673,7 +2728,7 @@ function SettingsScreen() {
                             ) : (
                               <>
                                 <Unlink2 className="h-4 w-4" />
-                                Unlink Patreon
+                                {t('patreon.unlink')}
                               </>
                             )}
                           </button>
@@ -2692,7 +2747,7 @@ function SettingsScreen() {
                               ) : (
                                 <>
                                   <HeartHandshake className="size-5" />
-                                  Connect with Patreon
+                                  {t('patreon.connect')}
                                 </>
                               )}
                             </button>
@@ -2703,12 +2758,12 @@ function SettingsScreen() {
                               className="btn btn-ghost btn-sm gap-1"
                             >
                               <Info className="h-4 w-4" />
-                              Benefits
+                              {t('patreon.benefits')}
                             </a>
                           </div>
                           <div className="text-xs text-center text-base-content/60">
                             <Lock className="h-4 w-4" />
-                            Secure OAuth - credentials never shared
+                            {t('patreon.oauthNote')}
                           </div>
                         </div>
                       )}
@@ -2728,10 +2783,10 @@ function SettingsScreen() {
                           </div>
                           <div>
                             <h3 className="text-xl font-bold">
-                              Custom Badge Text
+                              {t('patreon.customBadgeText')}
                             </h3>
                             <p className="text-base-content/70 text-sm">
-                              Enthusiast+ exclusive
+                              {t('patreon.enthusiastOnly')}
                             </p>
                           </div>
                         </div>
@@ -2739,7 +2794,7 @@ function SettingsScreen() {
                           <input
                             type="text"
                             className="input input-bordered focus:input-primary transition-colors flex-1"
-                            placeholder="Enter custom text"
+                            placeholder={t('patreon.customTextPlaceholder')}
                             value={customBadgeText}
                             onChange={(e) =>
                               setCustomBadgeText(e.target.value.slice(0, 20))
@@ -2757,7 +2812,7 @@ function SettingsScreen() {
                             ) : (
                               <>
                                 <Check className="h-4 w-4" />
-                                Save
+                                {t('common.save')}
                               </>
                             )}
                           </button>
@@ -2783,13 +2838,12 @@ function SettingsScreen() {
                         <div className="p-4 bg-base-100/80 rounded-lg inline-block">
                           <Lock className="h-12 w-12 text-primary mx-auto mb-3" />
                           <h3 className="text-xl font-bold mb-2">
-                            Consumer Tier Only
+                            {t('patreon.consumerOnly')}
                           </h3>
                           {patreonStatus.patreonId ? (
                             <>
                               <p className="text-sm text-base-content/70 mb-4">
-                                Become a Consumer patron to unlock custom badge
-                                colors
+                                {t('patreon.becomeConsumer')}
                               </p>
                               <a
                                 href="https://www.patreon.com/nihongotracker"
@@ -2798,14 +2852,13 @@ function SettingsScreen() {
                                 className="btn btn-primary btn-sm gap-2"
                               >
                                 <HeartHandshake className="w-4 h-4" />
-                                Pledge on Patreon
+                                {t('patreon.pledge')}
                               </a>
                             </>
                           ) : (
                             <>
                               <p className="text-sm text-base-content/70 mb-4">
-                                Unlock custom badge colors by becoming a
-                                Consumer patron
+                                {t('patreon.unlockBadgeColors')}
                               </p>
                               <button
                                 className="btn btn-primary btn-sm gap-2"
@@ -2813,7 +2866,7 @@ function SettingsScreen() {
                                 disabled={isInitiatingOAuth}
                               >
                                 <HeartHandshake className="size-5" />
-                                Support on Patreon
+                                {t('patreon.support')}
                               </button>
                             </>
                           )}
@@ -2829,10 +2882,10 @@ function SettingsScreen() {
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold">
-                          Badge Color Customization
+                          {t('patreon.badgeColors')}
                         </h2>
                         <p className="text-base-content/70">
-                          Personalize your Consumer tier badge colors
+                          {t('patreon.badgeColorsSubtitle')}
                         </p>
                       </div>
                     </div>
@@ -2891,7 +2944,7 @@ function SettingsScreen() {
                             }
                           />
                           <span className="text-xs text-base-content/70">
-                            Background
+                            {t('patreon.background')}
                           </span>
                         </button>
 
@@ -2911,7 +2964,7 @@ function SettingsScreen() {
                             }
                           />
                           <span className="text-xs text-base-content/70">
-                            Text
+                            {t('patreon.text')}
                           </span>
                         </button>
                       </div>
@@ -2926,12 +2979,12 @@ function SettingsScreen() {
                         {isUpdatingColors ? (
                           <>
                             <span className="loading loading-spinner loading-sm"></span>
-                            Saving...
+                            {t('profile.saving')}
                           </>
                         ) : (
                           <>
                             <Check className="h-5 w-5" />
-                            Save Badge Colors
+                            {t('patreon.saveBadgeColors')}
                           </>
                         )}
                       </button>
@@ -2952,9 +3005,11 @@ function SettingsScreen() {
                         <CloudDownload className="h-6 w-6 text-info" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold">Data Management</h2>
+                        <h2 className="text-2xl font-bold">
+                          {t('data.title')}
+                        </h2>
                         <p className="text-base-content/70">
-                          Import, sync, and export your data
+                          {t('data.subtitle')}
                         </p>
                       </div>
                     </div>
@@ -2964,7 +3019,7 @@ function SettingsScreen() {
                       <div>
                         <h3 className="font-semibold mb-3 text-base-content flex items-center gap-2">
                           <CloudUpload className="h-4 w-4 text-info" />
-                          Import from File
+                          {t('data.importFrom')}
                         </h3>
                         <form onSubmit={handleFileImport} className="space-y-3">
                           <input
@@ -2981,7 +3036,7 @@ function SettingsScreen() {
                             >
                               {importType
                                 ? IMPORT_TYPE_LABELS[importType]
-                                : 'Choose the file format'}
+                                : t('data.chooseFormat')}
                             </div>
                             <ul
                               tabIndex={0}
@@ -3076,8 +3131,8 @@ function SettingsScreen() {
                             >
                               <HelpCircle className="w-4 h-4" />
                               {importType === 'other'
-                                ? 'CSV Format Help'
-                                : 'Kechimochi Import Help'}
+                                ? t('data.csvFormatHelp')
+                                : t('data.kechimochiHelp')}
                             </button>
                           )}
                           <button
@@ -3088,12 +3143,12 @@ function SettingsScreen() {
                             {isImportPending ? (
                               <>
                                 <span className="loading loading-spinner loading-sm"></span>
-                                Importing...
+                                {t('data.importing')}
                               </>
                             ) : (
                               <>
                                 <CloudUpload className="h-5 w-5" />
-                                Import File
+                                {t('data.import')}
                               </>
                             )}
                           </button>
@@ -3106,11 +3161,10 @@ function SettingsScreen() {
                       <div>
                         <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
                           <Download className="h-4 w-4 text-success" />
-                          Export Data
+                          {t('data.export')}
                         </h3>
                         <p className="text-base-content/70 text-sm mb-3">
-                          Download all your logs as a CSV file that can be
-                          re-imported later.
+                          {t('data.exportHint')}
                         </p>
                         <button
                           type="button"
@@ -3121,12 +3175,12 @@ function SettingsScreen() {
                           {isExportPending ? (
                             <>
                               <span className="loading loading-spinner loading-sm"></span>
-                              Exporting...
+                              {t('data.exporting')}
                             </>
                           ) : (
                             <>
                               <Download className="h-5 w-5" />
-                              Export as CSV
+                              {t('data.exportCsv')}
                             </>
                           )}
                         </button>
@@ -3138,20 +3192,19 @@ function SettingsScreen() {
                       <div>
                         <h3 className="font-semibold mb-1 text-base-content flex items-center gap-2">
                           <Key className="h-4 w-4" />
-                          API Keys
+                          {t('apiKeys.title')}
                         </h3>
                         <p className="text-base-content/70 text-sm mb-3">
-                          Generate API keys to interact with the NihongoTracker
-                          API programmatically. Use the{' '}
+                          {t('apiKeys.intro')}{' '}
                           <a
                             href="/api/docs"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="link link-primary"
                           >
-                            API documentation
+                            {t('apiKeys.docs')}
                           </a>{' '}
-                          to explore available endpoints.
+                          {t('apiKeys.introEnd')}
                         </p>
 
                         {/* New key creation */}
@@ -3159,7 +3212,7 @@ function SettingsScreen() {
                           <input
                             type="text"
                             className="input input-bordered focus:input-primary transition-colors flex-1"
-                            placeholder="Key name (e.g. My Script)"
+                            placeholder={t('apiKeys.namePlaceholder')}
                             value={apiKeyName}
                             maxLength={100}
                             onChange={(e) => setApiKeyName(e.target.value)}
@@ -3182,7 +3235,7 @@ function SettingsScreen() {
                             ) : (
                               <Plus className="h-4 w-4" />
                             )}
-                            Generate
+                            {t('apiKeys.generate')}
                           </button>
                         </div>
 
@@ -3229,7 +3282,7 @@ function SettingsScreen() {
                                   className="btn btn-ghost btn-xs"
                                   onClick={() => setNewlyCreatedKey(null)}
                                 >
-                                  Dismiss
+                                  {t('common.dismiss')}
                                 </button>
                               </div>
                             </div>
@@ -3243,7 +3296,7 @@ function SettingsScreen() {
                           </div>
                         ) : apiKeys.length === 0 ? (
                           <p className="text-base-content/50 text-sm text-center py-4">
-                            No API keys yet.
+                            {t('apiKeys.empty')}
                           </p>
                         ) : (
                           <div className="space-y-2">
@@ -3289,7 +3342,7 @@ function SettingsScreen() {
                                   className="btn btn-sm btn-ghost text-error hover:bg-error/10"
                                   disabled={isDeletingKey}
                                   onClick={() => deleteApiKey(key._id)}
-                                  title="Revoke key"
+                                  title={t('apiKeys.revoke')}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
@@ -3308,7 +3361,7 @@ function SettingsScreen() {
                         onToggle={handleAdvancedOptionsToggle}
                       >
                         <summary className="collapse-title font-semibold text-base-content">
-                          Advanced Options
+                          {t('advanced.title')}
                         </summary>
                         <div className="collapse-content space-y-6 pt-2">
                           {/* Discord ID */}
@@ -3317,24 +3370,28 @@ function SettingsScreen() {
                             className="space-y-4"
                           >
                             <h3 className="font-semibold text-base-content flex items-center gap-2">
-                              Discord ID
+                              {t('advanced.discordId')}
                             </h3>
                             <div className="form-control w-full">
                               <label className="label pt-0">
-                                <span className="label-text">Discord ID</span>
+                                <span className="label-text">
+                                  {t('advanced.discordId')}
+                                </span>
                               </label>
                               <div className="relative w-full">
                                 <input
                                   type="text"
                                   className="input input-bordered focus:input-primary transition-colors w-full pr-10"
-                                  placeholder="Discord ID (e.g., 123456789012345678)"
+                                  placeholder={t(
+                                    'advanced.discordIdPlaceholder'
+                                  )}
                                   value={discordId}
                                   onChange={(e) => setDiscordId(e.target.value)}
                                 />
                                 {discordId && (
                                   <button
                                     type="button"
-                                    aria-label="Clear Discord ID"
+                                    aria-label={t('advanced.clearDiscordId')}
                                     className="btn btn-ghost btn-xs btn-circle absolute right-2 top-1/2 -translate-y-1/2 text-base-content/60 hover:text-error"
                                     onClick={() => setDiscordId('')}
                                   >
@@ -3349,7 +3406,7 @@ function SettingsScreen() {
                                     : null}
                                 </span>
                                 <span className="label-text-alt text-base-content/60">
-                                  Leave empty and save to unlink
+                                  {t('advanced.unlinkHint')}
                                 </span>
                               </label>
                             </div>
@@ -3357,10 +3414,10 @@ function SettingsScreen() {
                               <label className="label">
                                 <span className="label-text flex items-center gap-2">
                                   <Lock className="h-4 w-4 text-base-content/60" />
-                                  Current Password
+                                  {t('account.currentPassword')}
                                 </span>
                                 <span className="label-text-alt text-base-content/50">
-                                  Required to save changes
+                                  {t('advanced.requiredToSave')}
                                 </span>
                               </label>
                               <input
@@ -3368,7 +3425,7 @@ function SettingsScreen() {
                                 type="password"
                                 autoComplete="new-password"
                                 className="input input-bordered focus:input-primary transition-colors w-full"
-                                placeholder="Enter your password to confirm"
+                                placeholder={t('danger.passwordPlaceholder')}
                               />
                             </div>
                             <div className="flex justify-end">
@@ -3385,7 +3442,7 @@ function SettingsScreen() {
                                 ) : (
                                   <>
                                     <Check className="h-4 w-4" />
-                                    Save Discord ID
+                                    {t('advanced.saveDiscordId')}
                                   </>
                                 )}
                               </button>
@@ -3397,7 +3454,7 @@ function SettingsScreen() {
                           {/* Sync External Data */}
                           <div>
                             <h3 className="font-semibold mb-3 text-base-content">
-                              Sync External Data
+                              {t('data.syncExternal')}
                             </h3>
                             <form onSubmit={handleSyncLogs}>
                               <button
@@ -3408,12 +3465,12 @@ function SettingsScreen() {
                                 {isSyncPending ? (
                                   <>
                                     <span className="loading loading-spinner loading-sm"></span>
-                                    Syncing...
+                                    {t('data.syncing')}
                                   </>
                                 ) : (
                                   <>
                                     <RefreshCw className="h-5 w-5" />
-                                    Sync Logs
+                                    {t('data.syncLogs')}
                                   </>
                                 )}
                               </button>
@@ -3433,9 +3490,9 @@ function SettingsScreen() {
                         <Link2 className="h-6 w-6 text-warning" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold">Log Management</h2>
+                        <h2 className="text-xl font-bold">{t('logs.title')}</h2>
                         <p className="text-base-content/70 text-sm">
-                          Match untracked logs with media
+                          {t('logs.matchSubtitle')}
                         </p>
                       </div>
                     </div>
@@ -3444,10 +3501,8 @@ function SettingsScreen() {
                       <div className="alert alert-info">
                         <Info className="stroke-current shrink-0 h-6 w-6" />
                         <div>
-                          <h3 className="font-bold">Match Media</h3>
-                          <div className="text-xs">
-                            Link your untracked logs to the correct media type.
-                          </div>
+                          <h3 className="font-bold">{t('logs.matchMedia')}</h3>
+                          <div className="text-xs">{t('logs.matchHint')}</div>
                         </div>
                       </div>
 
@@ -3456,7 +3511,7 @@ function SettingsScreen() {
                         onClick={() => navigate('/matchmedia')}
                       >
                         <Link2 className="h-5 w-5" />
-                        Go to Match Media
+                        {t('logs.goToMatch')}
                       </button>
                     </div>
                   </div>
@@ -3474,24 +3529,28 @@ function SettingsScreen() {
         onClose={() => setIsImageModalOpen(false)}
       >
         <div className="modal-box space-y-4">
-          <h3 className="font-bold text-lg">Insert Image</h3>
+          <h3 className="font-bold text-lg">
+            {t('markdown.insertImageTitle')}
+          </h3>
           <fieldset className="fieldset">
-            <legend className="fieldset-legend">Image URL</legend>
+            <legend className="fieldset-legend">
+              {t('markdown.imageUrl')}
+            </legend>
             <input
               type="url"
               className="input input-bordered"
-              placeholder="https://example.com/image.png"
+              placeholder={t('markdown.imageUrlPlaceholder')}
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               ref={imageUrlInputRef}
             />
           </fieldset>
           <fieldset className="fieldset">
-            <legend className="fieldset-legend">Alt text</legend>
+            <legend className="fieldset-legend">{t('markdown.altText')}</legend>
             <input
               type="text"
               className="input input-bordered"
-              placeholder="Describe the image"
+              placeholder={t('markdown.imageAltPlaceholder')}
               value={imageAlt}
               onChange={(e) => setImageAlt(e.target.value)}
             />
@@ -3502,23 +3561,23 @@ function SettingsScreen() {
               className="btn btn-ghost"
               onClick={() => setIsImageModalOpen(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={() => {
                 if (!imageUrl.trim()) {
-                  toast.error('Please provide an image URL');
+                  toast.error(t('toast.imageUrlRequired'));
                   return;
                 }
                 const url = imageUrl.trim();
-                const alt = imageAlt.trim() || 'Image';
+                const alt = imageAlt.trim() || t('markdown.snippets.imageAlt');
                 aboutEditorRef.current?.insertSnippet('![', `](${url})`, alt);
                 setIsImageModalOpen(false);
               }}
             >
-              Insert
+              {t('markdown.insert')}
             </button>
           </div>
         </div>
@@ -3534,7 +3593,9 @@ function SettingsScreen() {
         onClose={handleBadgeColorModalClose}
       >
         <div className="modal-box max-w-md">
-          <h3 className="font-bold text-lg mb-4">Badge Background Color</h3>
+          <h3 className="font-bold text-lg mb-4">
+            {t('patreon.badgeBackgroundColor')}
+          </h3>
 
           {/* Theme Presets */}
           <div className="space-y-3 mb-4">
@@ -3544,7 +3605,7 @@ function SettingsScreen() {
               onClick={() => setPendingBadgeColor('primary')}
             >
               <div className="w-6 h-6 rounded bg-primary"></div>
-              <span>Primary</span>
+              <span>{t('patreon.primary')}</span>
             </button>
             <button
               type="button"
@@ -3552,7 +3613,7 @@ function SettingsScreen() {
               onClick={() => setPendingBadgeColor('secondary')}
             >
               <div className="w-6 h-6 rounded bg-secondary"></div>
-              <span>Secondary</span>
+              <span>{t('patreon.secondary')}</span>
             </button>
             <button
               type="button"
@@ -3598,7 +3659,7 @@ function SettingsScreen() {
               type="button"
               onClick={handleBadgeColorDone}
             >
-              Done
+              {t('common.done')}
             </button>
           </div>
         </div>
@@ -3614,7 +3675,9 @@ function SettingsScreen() {
         onClose={handleBadgeTextModalClose}
       >
         <div className="modal-box max-w-md">
-          <h3 className="font-bold text-lg mb-4">Badge Text Color</h3>
+          <h3 className="font-bold text-lg mb-4">
+            {t('patreon.badgeTextColor')}
+          </h3>
 
           {/* Theme Presets */}
           <div className="space-y-3 mb-4">
@@ -3624,7 +3687,7 @@ function SettingsScreen() {
               onClick={() => setPendingBadgeTextColor('primary-content')}
             >
               <div className="w-6 h-6 rounded bg-primary-content border border-base-300"></div>
-              <span>Primary Text</span>
+              <span>{t('patreon.primaryText')}</span>
             </button>
             <button
               type="button"
@@ -3632,7 +3695,7 @@ function SettingsScreen() {
               onClick={() => setPendingBadgeTextColor('secondary-content')}
             >
               <div className="w-6 h-6 rounded bg-secondary-content border border-base-300"></div>
-              <span>Secondary Text</span>
+              <span>{t('patreon.secondaryText')}</span>
             </button>
           </div>
 
@@ -3669,7 +3732,7 @@ function SettingsScreen() {
               type="button"
               onClick={handleBadgeTextDone}
             >
-              Done
+              {t('common.done')}
             </button>
           </div>
         </div>
@@ -3685,18 +3748,17 @@ function SettingsScreen() {
         onClose={() => setShowEmailSentModal(false)}
       >
         <div className="modal-box">
-          <h3 className="text-lg font-bold">Verification Email Sent!</h3>
+          <h3 className="text-lg font-bold">
+            {t('account.verificationSentTitle')}
+          </h3>
           <div className="py-4">
             <p className="mb-3">
-              We've sent a verification email to{' '}
+              {t('account.verificationSentBody')}{' '}
               <span className="font-semibold">{emailSentTo}</span>
             </p>
             <div className="alert alert-info">
               <Info className="h-6 w-6 shrink-0 stroke-current" />
-              <span>
-                Please check your spam or junk folder if you don't see the email
-                in your inbox.
-              </span>
+              <span>{t('account.checkSpam')}</span>
             </div>
           </div>
           <div className="modal-action">
@@ -3704,7 +3766,7 @@ function SettingsScreen() {
               className="btn btn-primary"
               onClick={() => setShowEmailSentModal(false)}
             >
-              Got it!
+              {t('account.gotIt')}
             </button>
           </div>
         </div>
@@ -3719,13 +3781,13 @@ function SettingsScreen() {
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Info className="h-5 w-5 text-info" />
-              <h3 className="text-lg font-bold">About Advanced Options</h3>
+              <h3 className="text-lg font-bold">{t('advanced.aboutTitle')}</h3>
             </div>
             <form method="dialog">
               <button
                 className="btn btn-ghost btn-sm btn-circle"
                 type="submit"
-                aria-label="Close"
+                aria-label={t('common.close')}
               >
                 ✕
               </button>
@@ -3733,14 +3795,8 @@ function SettingsScreen() {
           </div>
 
           <div className="space-y-3 text-base-content/80">
-            <p>
-              This menu is only useful for members of the Manabe Discord server
-              and users of Iniesta bot.
-            </p>
-            <p>
-              If you do not know what that is, you can safely ignore this
-              section.
-            </p>
+            <p>{t('advanced.manabeNote')}</p>
+            <p>{t('advanced.ignoreNote')}</p>
           </div>
 
           <div className="modal-action">
@@ -3750,12 +3806,12 @@ function SettingsScreen() {
                 type="submit"
                 onClick={closeAdvancedOptions}
               >
-                Okay, forget it
+                {t('advanced.decline')}
               </button>
             </form>
             <form method="dialog">
               <button className="btn btn-primary" type="submit">
-                I know what I'm doing
+                {t('advanced.confirm')}
               </button>
             </form>
           </div>
@@ -3768,18 +3824,15 @@ function SettingsScreen() {
       {/* Other CSV Help Modal */}
       <dialog id="other_csv_help_modal" className="modal">
         <div className="modal-box max-w-lg">
-          <h3 className="text-lg font-bold mb-4">Custom CSV Format</h3>
-          <p className="text-base-content/70 mb-4">
-            Your CSV file should have the following columns as headers in the
-            first row:
-          </p>
+          <h3 className="text-lg font-bold mb-4">{t('csvHelp.title')}</h3>
+          <p className="text-base-content/70 mb-4">{t('csvHelp.headerNote')}</p>
           <div className="overflow-x-auto">
             <table className="table table-sm">
               <thead>
                 <tr>
-                  <th>Field</th>
-                  <th>Required</th>
-                  <th>Description</th>
+                  <th>{t('csvHelp.field')}</th>
+                  <th>{t('csvHelp.required')}</th>
+                  <th>{t('csvHelp.description')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3788,7 +3841,9 @@ function SettingsScreen() {
                     <code className="badge badge-neutral badge-sm">date</code>
                   </td>
                   <td>
-                    <span className="text-error font-semibold">Yes</span>
+                    <span className="text-error font-semibold">
+                      {t('csvHelp.yes')}
+                    </span>
                   </td>
                   <td>
                     Date of the log (e.g.{' '}
@@ -3800,7 +3855,9 @@ function SettingsScreen() {
                     <code className="badge badge-neutral badge-sm">type</code>
                   </td>
                   <td>
-                    <span className="text-error font-semibold">Yes</span>
+                    <span className="text-error font-semibold">
+                      {t('csvHelp.yes')}
+                    </span>
                   </td>
                   <td>
                     Log type:{' '}
@@ -3817,14 +3874,14 @@ function SettingsScreen() {
                     </code>
                   </td>
                   <td>No</td>
-                  <td>AniList, VNDB or content ID for the media</td>
+                  <td>{t('csvHelp.mediaId')}</td>
                 </tr>
                 <tr>
                   <td>
                     <code className="badge badge-neutral badge-sm">time</code>
                   </td>
                   <td>No</td>
-                  <td>Time spent in minutes</td>
+                  <td>{t('csvHelp.time')}</td>
                 </tr>
                 <tr>
                   <td>
@@ -3833,7 +3890,7 @@ function SettingsScreen() {
                     </code>
                   </td>
                   <td>No</td>
-                  <td>Number of characters read</td>
+                  <td>{t('csvHelp.chars')}</td>
                 </tr>
                 <tr>
                   <td>
@@ -3842,14 +3899,14 @@ function SettingsScreen() {
                     </code>
                   </td>
                   <td>No</td>
-                  <td>Number of episodes watched</td>
+                  <td>{t('csvHelp.episodes')}</td>
                 </tr>
                 <tr>
                   <td>
                     <code className="badge badge-neutral badge-sm">pages</code>
                   </td>
                   <td>No</td>
-                  <td>Number of pages read</td>
+                  <td>{t('csvHelp.pages')}</td>
                 </tr>
                 <tr>
                   <td>
@@ -3858,7 +3915,7 @@ function SettingsScreen() {
                     </code>
                   </td>
                   <td>No</td>
-                  <td>Description or title of the media</td>
+                  <td>{t('csvHelp.descriptionField')}</td>
                 </tr>
                 <tr>
                   <td>
@@ -3874,14 +3931,14 @@ function SettingsScreen() {
             </table>
           </div>
           <div className="mt-4 p-3 bg-base-200 rounded-lg">
-            <p className="text-sm font-semibold mb-1">Example:</p>
+            <p className="text-sm font-semibold mb-1">{t('csvHelp.example')}</p>
             <code className="text-xs block whitespace-pre-wrap text-base-content/80">
               {`date,type,mediaId,time,characters,episodes,pages,description,tags\n2025-01-15,reading,,60,5000,,,My Novel,novels;fiction\n2025-01-16,anime,21,24,,2,,Anime Title,`}
             </code>
           </div>
           <div className="modal-action">
             <form method="dialog">
-              <button className="btn btn-primary">Got it!</button>
+              <button className="btn btn-primary">{t('account.gotIt')}</button>
             </form>
           </div>
         </div>
@@ -3893,41 +3950,34 @@ function SettingsScreen() {
       {/* Kechimochi CSV Help Modal */}
       <dialog id="kechimochi_csv_help_modal" className="modal">
         <div className="modal-box max-w-lg">
-          <h3 className="text-lg font-bold mb-4">Kechimochi Import Help</h3>
+          <h3 className="text-lg font-bold mb-4">
+            {t('csvHelp.kechimochiTitle')}
+          </h3>
           <div role="alert" className="alert alert-info alert-soft mb-4">
-            <span>
-              Export your Activity Logs from Kechimochi and upload that file
-              directly here. You do not need to edit the CSV format manually.
-            </span>
+            <span>{t('csvHelp.kechimochiHint')}</span>
           </div>
           <div role="alert" className="alert alert-warning alert-soft mb-4">
-            <span>
-              Use only the Activity Logs export. Milestones and Media Library
-              exports are not imported by this option.
-            </span>
+            <span>{t('csvHelp.kechimochiOnlyActivity')}</span>
           </div>
           <div className="mt-3 p-3 bg-base-200 rounded-lg">
-            <p className="text-sm font-semibold mb-2">Imported as Other</p>
+            <p className="text-sm font-semibold mb-2">
+              {t('csvHelp.importedAsOther')}
+            </p>
             <ul className="list-disc pl-5 text-sm text-base-content/80 space-y-1">
-              <li>Entries marked as None or Unknown.</li>
-              <li>Any unrecognized Media Type or Activity Type.</li>
+              <li>{t('csvHelp.noneOrUnknown')}</li>
+              <li>{t('csvHelp.unrecognized')}</li>
             </ul>
           </div>
           <div className="mt-3 p-3 bg-base-200 rounded-lg">
-            <p className="text-sm font-semibold mb-2">Notes</p>
+            <p className="text-sm font-semibold mb-2">{t('csvHelp.notes')}</p>
             <ul className="list-disc pl-5 text-sm text-base-content/80 space-y-1">
-              <li>
-                Watching logs are imported as video unless Kechimochi provides a
-                specific subtype like anime, movie, or TV show.
-              </li>
-              <li>
-                Reading and listening logs keep their corresponding log types.
-              </li>
+              <li>{t('csvHelp.kechimochiWatching')}</li>
+              <li>{t('csvHelp.readingListening')}</li>
             </ul>
           </div>
           <div className="modal-action">
             <form method="dialog">
-              <button className="btn btn-primary">Got it!</button>
+              <button className="btn btn-primary">{t('account.gotIt')}</button>
             </form>
           </div>
         </div>
@@ -3959,6 +4009,7 @@ function SortableWidgetRow({
   ownerOnly,
   onToggle,
 }: SortableWidgetRowProps) {
+  const { t } = useTranslation('settings');
   const {
     attributes,
     listeners,
@@ -3985,7 +4036,7 @@ function SortableWidgetRow({
       <button
         type="button"
         className="cursor-grab touch-none text-base-content/40 hover:text-base-content/70 active:cursor-grabbing"
-        aria-label="Drag to reorder"
+        aria-label={t('layout.dragToReorder')}
         {...attributes}
         {...listeners}
       >
@@ -3995,7 +4046,9 @@ function SortableWidgetRow({
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">{label}</span>
           {ownerOnly && (
-            <span className="badge badge-ghost badge-xs shrink-0">Only you</span>
+            <span className="badge badge-ghost badge-xs shrink-0">
+              {t('layout.onlyYou')}
+            </span>
           )}
         </div>
         <p className="truncate text-xs text-base-content/60">{description}</p>
@@ -4004,8 +4057,10 @@ function SortableWidgetRow({
         type="button"
         onClick={onToggle}
         className="btn btn-ghost btn-sm btn-square"
-        title={visible ? 'Hide widget' : 'Show widget'}
-        aria-label={visible ? 'Hide widget' : 'Show widget'}
+        title={visible ? t('profileWidgets.hide') : t('profileWidgets.show')}
+        aria-label={
+          visible ? t('profileWidgets.hide') : t('profileWidgets.show')
+        }
       >
         {visible ? (
           <Eye className="h-4 w-4" />
@@ -4018,6 +4073,8 @@ function SortableWidgetRow({
 }
 
 function ProfileLayoutEditor() {
+  const { t } = useTranslation('settings');
+  const tSettings = t;
   const { user, setUser } = useUserDataStore();
   const queryClient = useQueryClient();
   const [layout, setLayout] = useState<ProfileWidgetLayout[]>(() =>
@@ -4050,10 +4107,12 @@ function ProfileLayoutEditor() {
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(
-          `Failed to save layout: ${error.response?.data?.message ?? ''}`
+          t('toast.layoutSaveFailedDetail', {
+            message: error.response?.data?.message ?? '',
+          })
         );
       } else {
-        toast.error('Failed to save profile layout');
+        toast.error(t('toast.layoutSaveFailed'));
       }
     },
   });
@@ -4091,11 +4150,8 @@ function ProfileLayoutEditor() {
               <LayoutList className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">Profile Layout</h2>
-              <p className="text-base-content/70">
-                Drag to reorder the widgets on your profile, or hide the ones
-                you don't want to show.
-              </p>
+              <h2 className="text-2xl font-bold">{t('layout.title')}</h2>
+              <p className="text-base-content/70">{t('layout.subtitle')}</p>
             </div>
           </div>
           <button
@@ -4103,10 +4159,10 @@ function ProfileLayoutEditor() {
             onClick={resetDefault}
             className="btn btn-ghost btn-sm gap-1"
             disabled={isPending}
-            title="Reset to default order"
+            title={t('layout.resetTitle')}
           >
             <RotateCcw className="h-4 w-4" />
-            Reset
+            {t('common.reset')}
           </button>
         </div>
 
@@ -4127,8 +4183,8 @@ function ProfileLayoutEditor() {
                   <SortableWidgetRow
                     key={w.id}
                     id={w.id}
-                    label={meta.label}
-                    description={meta.description}
+                    label={tSettings(meta.labelKey)}
+                    description={tSettings(meta.descriptionKey)}
                     visible={w.visible}
                     ownerOnly={meta.ownerOnly}
                     onToggle={() => toggleVisibility(w.id)}
@@ -4140,8 +4196,7 @@ function ProfileLayoutEditor() {
         </DndContext>
 
         <p className="mt-3 text-xs text-base-content/50">
-          Changes save automatically and apply to how everyone sees your
-          profile.
+          {t('layout.autosaveNote')}
         </p>
       </div>
     </div>

@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 
 function ProfileNavbar({ username }: { username: string | undefined }) {
+  const { t } = useTranslation('profile');
   const location = useLocation();
   const loggedUser = useUserDataStore((state) => state.user);
   const isAdmin = loggedUser?.roles?.includes('admin');
@@ -36,7 +38,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                   : ''
               }
             >
-              Overview
+              {t('tabs.overview')}
             </Link>
           </li>
           <li>
@@ -48,7 +50,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                   : ''
               }
             >
-              Stats
+              {t('tabs.stats')}
             </Link>
           </li>
           <li>
@@ -60,7 +62,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                   : ''
               }
             >
-              Immersion List
+              {t('tabs.immersionList')}
             </Link>
           </li>
           <li>
@@ -72,7 +74,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                   : ''
               }
             >
-              Lists
+              {t('tabs.lists')}
             </Link>
           </li>
           <li>
@@ -84,7 +86,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                   : ''
               }
             >
-              Goals
+              {t('tabs.goals')}
             </Link>
           </li>
           <li>
@@ -96,7 +98,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                   : ''
               }
             >
-              Achievements
+              {t('tabs.achievements')}
             </Link>
           </li>
           {showModerationTab && (
@@ -109,7 +111,7 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
                     : ''
                 }
               >
-                Moderation
+                {t('tabs.moderation')}
               </Link>
             </li>
           )}

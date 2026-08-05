@@ -1,12 +1,13 @@
 import jwt from 'jsonwebtoken';
-import { Response } from 'express';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
+import { Response } from 'express';
 
 export default function generateToken(res: Response, id: string) {
   const privateKey = process.env.TOKEN_SECRET;
 
   if (!privateKey) {
-    throw new customError('Private key is not set', 500);
+    throw apiError('integration.privateKeyNotSet', 500, 'Private key is not set');
   }
   try {
     const token = jwt.sign({ id }, privateKey, {

@@ -11,6 +11,7 @@ import { useUserDataStore } from '../store/userData';
 import useSearch from '../hooks/useSearch';
 import { useGroupLogs } from '../hooks/useGroupLogs.tsx';
 import DismissLogsButton from './DismissLogsButton';
+import { useTranslation } from 'react-i18next';
 
 interface GameLogsProps {
   username?: string;
@@ -18,6 +19,7 @@ interface GameLogsProps {
 }
 
 function GameLogs({ username, isActive = true }: GameLogsProps) {
+  const { t } = useTranslation(['logs', 'common']);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedGame, setSelectedGame] = useState<IMediaDocument | undefined>(
     undefined
@@ -119,24 +121,26 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
       // Invalidate daily goals as XP changes affect goal progress
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-      toast.success('Media assigned successfully');
+      toast.success(t('matcher.assignSuccess'));
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error('Error assigning media');
+        toast.error(t('matcher.assignError'));
       }
     },
   });
 
   const handleAssignMedia = useCallback(() => {
     if (!selectedGame) {
-      toast.error('You need to select a video game!');
+      toast.error(
+        t('matcher.selectOne', { type: t('common:mediaTypesPlural.game') })
+      );
       return;
     }
     if (selectedLogs.length === 0) {
-      toast.error('You need to select at least one log!');
+      toast.error(t('matcher.selectAtLeastOneLog'));
       return;
     }
     assignMedia([
@@ -146,7 +150,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
       },
     ]);
     setShouldSearch(false);
-  }, [selectedGame, selectedLogs, assignMedia]);
+  }, [selectedGame, selectedLogs, assignMedia, t]);
 
   const [isAutoMatching, setIsAutoMatching] = useState(false);
   const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
@@ -234,22 +238,26 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         });
 
         toast.success(
-          `Auto-matched ${totalProcessed} logs to ${matches.length} video games`
+          t('matcher.autoMatchedSuccess', {
+            count: totalProcessed,
+            matches: matches.length,
+            type: t('common:mediaTypesPlural.game'),
+          })
         );
       } else {
-        toast.info('No exact matches found in database');
+        toast.info(t('matcher.noExactMatchesDb'));
       }
     } catch (error) {
       console.error('Auto-match error:', error);
-      toast.error('Failed to auto-match logs');
+      toast.error(t('matcher.autoMatchFailed'));
     } finally {
       setIsAutoMatching(false);
     }
-  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username]);
+  }, [filteredGroupedLogs, assignMedia, logs, queryClient, username, t]);
 
   const handleAutoMatch = useCallback(async () => {
     if (Object.keys(filteredGroupedLogs).length === 0) {
-      toast.info('No log groups available to match');
+      toast.info(t('matcher.noGroups'));
       return;
     }
 
@@ -260,7 +268,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
     }
 
     await performAutoMatch();
-  }, [filteredGroupedLogs, performAutoMatch]);
+  }, [filteredGroupedLogs, performAutoMatch, t]);
 
   if (isLoadingLogs) {
     return (
@@ -272,14 +280,14 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
-              Loading Media Matcher
+              {t('matcher.loadingTitle')}
             </h2>
 
             <p className="text-base-content/70 mb-4">
-              Preparing your logs for media matching...
+              {t('matcher.preparing')}
             </p>
 
-            <div className="divider">Please wait</div>
+            <div className="divider">{t('matcher.pleaseWait')}</div>
 
             <div className="alert alert-info">
               <svg
@@ -296,8 +304,10 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                 ></path>
               </svg>
               <div className="text-sm">
-                <div className="font-semibold">This may take a moment</div>
-                <div>Loading and processing your media logs</div>
+                <div className="font-semibold">
+                  {t('matcher.mayTakeAMoment')}
+                </div>
+                <div>{t('matcher.loadingLogs')}</div>
               </div>
             </div>
 
@@ -314,7 +324,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
             </div>
 
             <div className="text-xs text-base-content/50 mt-2">
-              Fetching logs from database...
+              {t('matcher.fetching')}
             </div>
           </div>
         </div>
@@ -325,7 +335,11 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
   if (logError) {
     return (
       <div className="alert alert-error">
-        <span>Error loading game logs</span>
+        <span>
+          {t('matcher.errorLoading', {
+            type: t('common:mediaTypesPlural.game'),
+          })}
+        </span>
       </div>
     );
   }
@@ -336,21 +350,23 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
       {showAutoMatchModal && (
         <dialog open className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Large Batch Auto-Match</h3>
+            <h3 className="font-bold text-lg">
+              {t('matcher.largeBatchTitle')}
+            </h3>
             <p className="py-4">
-              You have {Object.keys(filteredGroupedLogs).length} log groups to
-              process. This may take a few minutes to complete. Do you want to
-              continue?
+              {t('matcher.largeBatchBody', {
+                count: Object.keys(filteredGroupedLogs).length,
+              })}
             </p>
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
                 onClick={() => setShowAutoMatchModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn btn-primary" onClick={performAutoMatch}>
-                Continue
+                {t('common.continue')}
               </button>
             </div>
           </div>
@@ -365,17 +381,17 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
       )}
 
       <h1 className="text-2xl font-bold text-center mb-4">
-        Assign Video Games to Logs
+        {t('matcher.assignTitle', { type: t('common:mediaTypesPlural.game') })}
       </h1>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-4 w-full">
         <div className="stats shadow flex-1">
           <div className="stat">
-            <div className="stat-title">Selected Logs</div>
+            <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value">{selectedLogs.length}</div>
           </div>
           <div className="stat">
-            <div className="stat-title">Available Groups</div>
+            <div className="stat-title">{t('matcher.availableGroups')}</div>
             <div className="stat-value">
               {Object.keys(filteredGroupedLogs).length}
             </div>
@@ -391,7 +407,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
           {isAutoMatching ? (
             <>
               <span className="loading loading-spinner"></span>
-              Auto-matching...
+              {t('matcher.autoMatching')}
             </>
           ) : (
             <>
@@ -407,7 +423,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                   clipRule="evenodd"
                 />
               </svg>
-              Auto-Match All
+              {t('matcher.autoMatchAll')}
             </>
           )}
         </button>
@@ -417,7 +433,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         {/* Left panel - Log groups */}
         <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
-            <h2 className="card-title">Unassigned Logs</h2>
+            <h2 className="card-title">{t('matcher.unassignedLogs')}</h2>
             <div className="divider my-1"></div>
 
             {Object.keys(filteredGroupedLogs).length > 0 ? (
@@ -466,7 +482,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                                 <h3 className="text-sm">{log.description}</h3>
                                 <p className="text-xs text-base-content/70">
                                   {log.unknownDate
-                                    ? 'Unknown date'
+                                    ? t('create.unknownDate')
                                     : new Date(log.date).toLocaleDateString()}
                                 </p>
                               </div>
@@ -493,7 +509,11 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   ></path>
                 </svg>
-                <span>No unassigned video game logs found.</span>
+                <span>
+                  {t('matcher.noUnassigned', {
+                    type: t('common:mediaTypesPlural.game'),
+                  })}
+                </span>
               </div>
             )}
           </div>
@@ -502,7 +522,11 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
         {/* Right panel - Game search */}
         <div className="card bg-base-200 shadow-sm">
           <div className="card-body p-4">
-            <h2 className="card-title">Find Matching Video Games</h2>
+            <h2 className="card-title">
+              {t('matcher.findMatching', {
+                type: t('common:mediaTypesPlural.game'),
+              })}
+            </h2>
             <div className="divider my-1"></div>
 
             <label className="input input-bordered input-primary flex items-center gap-2 mb-4">
@@ -521,7 +545,9 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
               <input
                 type="text"
                 className="grow"
-                placeholder="Search video games..."
+                placeholder={t('matcher.searchPlaceholder', {
+                  type: t('common:mediaTypesPlural.game'),
+                })}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -534,7 +560,11 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center py-8">
                   <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <p className="mt-2">Searching video games...</p>
+                  <p className="mt-2">
+                    {t('matcher.searching', {
+                      type: t('common:mediaTypesPlural.game'),
+                    })}
+                  </p>
                 </div>
               ) : searchResult && searchResult.length > 0 ? (
                 <div className="space-y-2">
@@ -610,7 +640,11 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <span>No video games found. Try different keywords.</span>
+                  <span>
+                    {t('matcher.noneFound', {
+                      type: t('common:mediaTypesPlural.game'),
+                    })}
+                  </span>
                 </div>
               ) : (
                 <div className="alert alert-info">
@@ -628,7 +662,9 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
                     ></path>
                   </svg>
                   <span>
-                    Select a log group or enter a video game title to search
+                    {t('matcher.selectGroupOrTitle', {
+                      type: t('common:mediaTypesPlural.game'),
+                    })}
                   </span>
                 </div>
               )}
@@ -640,7 +676,7 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
         <div className="stats shadow">
           <div className="stat">
-            <div className="stat-title">Selected Logs</div>
+            <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value text-primary">{selectedLogs.length}</div>
           </div>
         </div>
@@ -653,10 +689,12 @@ function GameLogs({ username, isActive = true }: GameLogsProps) {
           {isAssigning ? (
             <>
               <span className="loading loading-spinner"></span>
-              Assigning...
+              {t('matcher.assigning')}
             </>
           ) : (
-            'Assign to Video Game'
+            t('matcher.assignTo', {
+              type: t('common:mediaTypes.game'),
+            })
           )}
         </button>
 

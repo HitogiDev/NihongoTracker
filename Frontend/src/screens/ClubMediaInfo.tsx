@@ -15,8 +15,10 @@ import {
 } from 'lucide-react';
 import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
+import { useTranslation } from 'react-i18next';
 
 export default function ClubMediaInfo() {
+  const { t } = useTranslation('clubs');
   const { club, clubMedia } = useOutletContext<OutletClubMediaContextType>();
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const [period, setPeriod] = useState<'consumption' | 'alltime'>(
@@ -47,7 +49,7 @@ export default function ClubMediaInfo() {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="text-center py-12 text-base-content/60">
-          <h3 className="text-lg font-semibold mb-2">Loading...</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('common.loading')}</h3>
         </div>
       </div>
     );
@@ -58,7 +60,9 @@ export default function ClubMediaInfo() {
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="text-center py-12">
           <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="mt-4 text-base-content/60">Loading statistics...</p>
+          <p className="mt-4 text-base-content/60">
+            {t('mediaInfo.loadingStats')}
+          </p>
         </div>
       </div>
     );
@@ -212,7 +216,7 @@ export default function ClubMediaInfo() {
           <div className="card-body p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
               <div>
-                <h3 className="card-title text-lg">Club Media Statistics</h3>
+                <h3 className="card-title text-lg">{t('mediaInfo.title')}</h3>
                 <p className="text-sm text-base-content/60">
                   Statistics for{' '}
                   {mediaStats?.mediaInfo.title || clubMedia.title} from club
@@ -229,8 +233,10 @@ export default function ClubMediaInfo() {
                   onClick={() => setPeriod('consumption')}
                 >
                   <Calendar className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">Consumption Period</span>
-                  <span className="sm:hidden">Period</span>
+                  <span className="hidden sm:inline">
+                    {t('media.consumptionPeriod')}
+                  </span>
+                  <span className="sm:hidden">{t('media.period')}</span>
                 </button>
                 <button
                   className={`btn btn-sm join-item ${
@@ -241,8 +247,8 @@ export default function ClubMediaInfo() {
                   onClick={() => setPeriod('alltime')}
                 >
                   <TrendingUp className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">All Time</span>
-                  <span className="sm:hidden">All</span>
+                  <span className="hidden sm:inline">{t('media.allTime')}</span>
+                  <span className="sm:hidden">{t('mediaInfo.all')}</span>
                 </button>
               </div>
             </div>
@@ -257,7 +263,7 @@ export default function ClubMediaInfo() {
               <div className="stat-figure text-primary">
                 <Files className="w-8 h-8" />
               </div>
-              <div className="stat-title">Total Logs</div>
+              <div className="stat-title">{t('mediaInfo.totalLogs')}</div>
               <div className="stat-value text-primary">
                 {mediaStats.total.logs.toLocaleString()}
               </div>
@@ -271,7 +277,7 @@ export default function ClubMediaInfo() {
               <div className="stat-figure text-secondary">
                 <Users className="w-8 h-8" />
               </div>
-              <div className="stat-title">Active Members</div>
+              <div className="stat-title">{t('mediaInfo.activeMembers')}</div>
               <div className="stat-value text-secondary">
                 {mediaStats.total.members}
               </div>
@@ -294,7 +300,7 @@ export default function ClubMediaInfo() {
                 <div className="stat-value text-accent">
                   {typeSpecificStats.primary.value.toLocaleString()}
                 </div>
-                <div className="stat-desc">Club total</div>
+                <div className="stat-desc">{t('mediaInfo.clubTotal')}</div>
               </div>
             )}
 
@@ -303,11 +309,11 @@ export default function ClubMediaInfo() {
               <div className="stat-figure text-warning">
                 <Star className="w-8 h-8" />
               </div>
-              <div className="stat-title">Total XP</div>
+              <div className="stat-title">{t('common.totalXp')}</div>
               <div className="stat-value text-warning">
                 {mediaStats.total.xp.toLocaleString()}
               </div>
-              <div className="stat-desc">Experience earned</div>
+              <div className="stat-desc">{t('mediaInfo.xpEarned')}</div>
             </div>
           </div>
         )}
@@ -316,45 +322,53 @@ export default function ClubMediaInfo() {
         {mediaStats && (
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body">
-              <h3 className="card-title mb-4">Your Activity Overview</h3>
+              <h3 className="card-title mb-4">{t('mediaInfo.yourActivity')}</h3>
 
               {/* This Week Stats - Horizontal Layout */}
               <div className="mb-6">
                 <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
-                  This Week
+                  {t('mediaInfo.thisWeekTitle')}
                 </h4>
                 <div className="stats stats-horizontal shadow w-full">
                   <div className="stat">
                     <div className="stat-figure text-primary">
                       <Files className="w-6 h-6" />
                     </div>
-                    <div className="stat-title">Logs</div>
+                    <div className="stat-title">{t('mediaInfo.logs')}</div>
                     <div className="stat-value text-primary">
                       {mediaStats.thisWeek.logs}
                     </div>
-                    <div className="stat-desc">New entries</div>
+                    <div className="stat-desc">{t('mediaInfo.newEntries')}</div>
                   </div>
 
                   <div className="stat">
                     <div className="stat-figure text-secondary">
                       <Users className="w-6 h-6" />
                     </div>
-                    <div className="stat-title">Active Members</div>
+                    <div className="stat-title">
+                      {t('mediaInfo.activeMembers')}
+                    </div>
                     <div className="stat-value text-secondary">
                       {mediaStats.thisWeek.activeMembers}
                     </div>
-                    <div className="stat-desc">Contributing</div>
+                    <div className="stat-desc">
+                      {t('mediaInfo.contributing')}
+                    </div>
                   </div>
 
                   <div className="stat">
                     <div className="stat-figure text-accent">
                       <Star className="w-6 h-6" />
                     </div>
-                    <div className="stat-title">XP Earned</div>
+                    <div className="stat-title">
+                      {t('mediaInfo.xpEarnedTitle')}
+                    </div>
                     <div className="stat-value text-accent">
                       {mediaStats.thisWeek.xp.toLocaleString()}
                     </div>
-                    <div className="stat-desc">Experience points</div>
+                    <div className="stat-desc">
+                      {t('mediaInfo.experiencePoints')}
+                    </div>
                   </div>
 
                   {typeSpecificStats && (
@@ -379,7 +393,7 @@ export default function ClubMediaInfo() {
                                 ) / 100
                         ).toLocaleString()}
                       </div>
-                      <div className="stat-desc">This week</div>
+                      <div className="stat-desc">{t('mediaInfo.thisWeek')}</div>
                     </div>
                   )}
                 </div>
@@ -389,40 +403,50 @@ export default function ClubMediaInfo() {
               {isConsumptionPeriodLongerThanMonth() && (
                 <div>
                   <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
-                    This Month
+                    {t('mediaInfo.thisMonthTitle')}
                   </h4>
                   <div className="stats stats-horizontal shadow w-full">
                     <div className="stat">
                       <div className="stat-figure text-primary">
                         <Files className="w-6 h-6" />
                       </div>
-                      <div className="stat-title">Logs</div>
+                      <div className="stat-title">{t('mediaInfo.logs')}</div>
                       <div className="stat-value text-primary">
                         {mediaStats.thisMonth.logs}
                       </div>
-                      <div className="stat-desc">New entries</div>
+                      <div className="stat-desc">
+                        {t('mediaInfo.newEntries')}
+                      </div>
                     </div>
 
                     <div className="stat">
                       <div className="stat-figure text-secondary">
                         <Users className="w-6 h-6" />
                       </div>
-                      <div className="stat-title">Active Members</div>
+                      <div className="stat-title">
+                        {t('mediaInfo.activeMembers')}
+                      </div>
                       <div className="stat-value text-secondary">
                         {mediaStats.thisMonth.activeMembers}
                       </div>
-                      <div className="stat-desc">Contributing</div>
+                      <div className="stat-desc">
+                        {t('mediaInfo.contributing')}
+                      </div>
                     </div>
 
                     <div className="stat">
                       <div className="stat-figure text-accent">
                         <Star className="w-6 h-6" />
                       </div>
-                      <div className="stat-title">XP Earned</div>
+                      <div className="stat-title">
+                        {t('mediaInfo.xpEarnedTitle')}
+                      </div>
                       <div className="stat-value text-accent">
                         {mediaStats.thisMonth.xp.toLocaleString()}
                       </div>
-                      <div className="stat-desc">Experience points</div>
+                      <div className="stat-desc">
+                        {t('mediaInfo.experiencePoints')}
+                      </div>
                     </div>
 
                     {typeSpecificStats && (
@@ -447,7 +471,9 @@ export default function ClubMediaInfo() {
                                   ) / 100
                           ).toLocaleString()}
                         </div>
-                        <div className="stat-desc">This month</div>
+                        <div className="stat-desc">
+                          {t('mediaInfo.thisMonth')}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -462,7 +488,7 @@ export default function ClubMediaInfo() {
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body">
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-4">
-                <h3 className="card-title">Activity Visualization</h3>
+                <h3 className="card-title">{t('mediaInfo.visualization')}</h3>
                 <div className="join">
                   <button
                     className={`btn btn-sm join-item ${
@@ -473,7 +499,7 @@ export default function ClubMediaInfo() {
                     onClick={() => setChartView('progress')}
                   >
                     <ChartLine className="w-4 h-4 mr-1" />
-                    Progress
+                    {t('mediaInfo.progress')}
                   </button>
                   <button
                     className={`btn btn-sm join-item ${
@@ -484,7 +510,7 @@ export default function ClubMediaInfo() {
                     onClick={() => setChartView('bar')}
                   >
                     <ChartNoAxesColumn className="w-4 h-4 mr-1" />
-                    Bar Chart
+                    {t('mediaInfo.barChart')}
                   </button>
                 </div>
               </div>
@@ -499,7 +525,7 @@ export default function ClubMediaInfo() {
                     <LineChart data={memberChartData} />
                   ) : (
                     <div className="alert alert-info mx-4">
-                      <span>No club member logs found for this media yet.</span>
+                      <span>{t('mediaInfo.noLogs')}</span>
                     </div>
                   )
                 ) : (
@@ -661,12 +687,12 @@ export default function ClubMediaInfo() {
         {mediaStats && (
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body">
-              <h3 className="card-title">Activity Period</h3>
+              <h3 className="card-title">{t('mediaInfo.activityPeriod')}</h3>
               <div className="text-base-content/70">
                 {period === 'consumption' ? (
                   <>
                     <p className="mb-2">
-                      <strong>Consumption Period:</strong>{' '}
+                      <strong>{t('mediaInfo.consumptionPeriodLabel')}</strong>{' '}
                       {new Date(
                         mediaStats.mediaInfo.startDate
                       ).toLocaleDateString()}{' '}
@@ -675,15 +701,12 @@ export default function ClubMediaInfo() {
                         mediaStats.mediaInfo.endDate
                       ).toLocaleDateString()}
                     </p>
-                    <p className="text-sm">
-                      Showing statistics for club member activity since the
-                      consumption period started.
-                    </p>
+                    <p className="text-sm">{t('mediaInfo.sincePeriodNote')}</p>
                   </>
                 ) : (
                   <>
                     <p className="mb-2">
-                      <strong>All Time Activity:</strong>{' '}
+                      <strong>{t('mediaInfo.allTimeLabel')}</strong>{' '}
                       {mediaStats.total.firstLogDate
                         ? `${new Date(mediaStats.total.firstLogDate).toLocaleDateString()} - ${
                             mediaStats.total.lastLogDate
@@ -694,10 +717,7 @@ export default function ClubMediaInfo() {
                           }`
                         : 'No activity yet'}
                     </p>
-                    <p className="text-sm">
-                      Showing all-time statistics for this media from club
-                      members.
-                    </p>
+                    <p className="text-sm">{t('mediaInfo.allTimeNote')}</p>
                   </>
                 )}
               </div>

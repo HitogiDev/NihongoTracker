@@ -24,6 +24,7 @@ import {
   Layers,
 } from 'lucide-react';
 
+import LanguageSwitcher, { LanguageMenuItem } from './LanguageSwitcher';
 import { useUserDataStore } from '../store/userData';
 import { useMutation } from '@tanstack/react-query';
 import { logoutUserFn } from '../api/trackerApi';
@@ -35,6 +36,7 @@ import SearchModal from './SearchModal';
 import NotificationBell from './NotificationBell';
 import { useNotificationCount } from '../hooks/useNotificationCount';
 import { getAvatarInitials } from '../utils/avatar';
+import { useTranslation } from 'react-i18next';
 
 type ThemeMode = 'dark' | 'light' | 'system';
 
@@ -63,6 +65,7 @@ const resolveThemeForDocument = (theme: ThemeMode) => {
 };
 
 function Header() {
+  const { t } = useTranslation(['nav', 'common']);
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -104,7 +107,7 @@ function Header() {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error(error.message ? error.message : 'An error occurred');
+        toast.error(error.message ? error.message : t('common:errors.generic'));
       }
     },
   });
@@ -176,9 +179,15 @@ function Header() {
   return (
     <div className="relative">
       <div className="navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
-        <div className="navbar-start">
+        <div className="navbar-start flex-1 w-auto">
           <div className="dropdown">
-            <div tabIndex={0} role="button" className="btn btn-ghost xl:hidden">
+            <div
+              tabIndex={0}
+              role="button"
+              className={`btn btn-ghost ${
+                user ? 'min-[1450px]:hidden' : 'xl:hidden'
+              }`}
+            >
               <Menu className="h-6 w-6" />
             </div>
             {user ? (
@@ -194,7 +203,7 @@ function Header() {
                         className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                       >
                         <ShieldUser className="w-4 h-4" />
-                        Admin
+                        {t('links.admin')}
                       </Link>
                     </li>
                     <li>
@@ -206,7 +215,7 @@ function Header() {
                 {/* Main Navigation */}
                 <li className="menu-title px-2">
                   <span className="text-xs font-bold text-base-content/70">
-                    Navigation
+                    {t('sections.navigation')}
                   </span>
                 </li>
                 <li>
@@ -215,7 +224,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <ChartLine className="w-4 h-4" />
-                    Stats
+                    {t('links.stats')}
                   </Link>
                 </li>
                 <li>
@@ -224,7 +233,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <BarChart className="w-4 h-4" />
-                    Ranking
+                    {t('links.ranking')}
                   </Link>
                 </li>
                 <li>
@@ -233,7 +242,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <Users className="w-4 h-4" />
-                    Clubs
+                    {t('links.clubs')}
                   </Link>
                 </li>
                 <li>
@@ -242,7 +251,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <Layers className="w-4 h-4" />
-                    Lists
+                    {t('links.lists')}
                   </Link>
                 </li>
                 <li>
@@ -251,7 +260,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <Calculator className="w-4 h-4" />
-                    Calculator
+                    {t('links.calculator')}
                   </Link>
                 </li>
                 <li>
@@ -260,7 +269,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <List className="w-4 h-4" />
-                    Immersion List
+                    {t('links.immersionList')}
                   </Link>
                 </li>
                 <li>
@@ -269,7 +278,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <FileText className="w-4 h-4" />
-                    Texthooker
+                    {t('links.texthooker')}
                   </Link>
                 </li>
 
@@ -279,7 +288,7 @@ function Header() {
                 </li>
                 <li className="menu-title px-2">
                   <span className="text-xs font-bold text-base-content/70">
-                    Account
+                    {t('sections.account')}
                   </span>
                 </li>
                 <li>
@@ -288,7 +297,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <User className="w-4 h-4" />
-                    Profile
+                    {t('links.profile')}
                   </Link>
                 </li>
                 <li>
@@ -297,7 +306,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <Settings className="w-4 h-4" />
-                    Settings
+                    {t('links.settings')}
                   </Link>
                 </li>
                 <li>
@@ -306,7 +315,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
                   >
                     <LogOut className="text-lg w-4 h-4" />
-                    Logout
+                    {t('links.logout')}
                   </a>
                 </li>
               </ul>
@@ -321,7 +330,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <House className="text-lg" />
-                    Home
+                    {t('links.home')}
                   </Link>
                 </li>
                 <li>
@@ -330,7 +339,7 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <Star className="text-lg" />
-                    Features
+                    {t('links.features')}
                   </Link>
                 </li>
                 <li>
@@ -339,9 +348,10 @@ function Header() {
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                   >
                     <BarChart className="w-4 h-4" />
-                    Ranking
+                    {t('links.ranking')}
                   </Link>
                 </li>
+                <LanguageMenuItem />
               </ul>
             )}
           </div>
@@ -353,15 +363,15 @@ function Header() {
           </Link>
         </div>
         {user ? (
-          <div className="hidden xl:inline-flex">
+          <div className="hidden min-[1450px]:inline-flex flex-none justify-center">
             {/* <QuickLog /> */}
-            <ul className="inline-flex flex-row gap-6">
+            <ul className="inline-flex flex-row gap-3 min-[1600px]:gap-6">
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to={`/user/${user.username}/stats`}
                 >
-                  Stats
+                  {t('links.stats')}
                 </Link>
               </li>
               <li>
@@ -369,7 +379,7 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/ranking"
                 >
-                  Ranking
+                  {t('links.ranking')}
                 </Link>
               </li>
               <li>
@@ -377,7 +387,7 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/clubs"
                 >
-                  Clubs
+                  {t('links.clubs')}
                 </Link>
               </li>
               <li>
@@ -385,7 +395,7 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/lists"
                 >
-                  Lists
+                  {t('links.lists')}
                 </Link>
               </li>
               <li>
@@ -393,7 +403,7 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/calculator"
                 >
-                  Calculator
+                  {t('links.calculator')}
                 </Link>
               </li>
               <li>
@@ -401,7 +411,7 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to={`/user/${user.username}/list`}
                 >
-                  Immersion List
+                  {t('links.immersionList')}
                 </Link>
               </li>
               <li>
@@ -409,20 +419,20 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/texthooker"
                 >
-                  Texthooker
+                  {t('links.texthooker')}
                 </Link>
               </li>
             </ul>
           </div>
         ) : (
-          <div className="navbar-center hidden xl:flex">
+          <div className="navbar-center hidden xl:flex flex-none justify-center">
             <ul className="inline-flex flex-row gap-6">
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/"
                 >
-                  Home
+                  {t('links.home')}
                 </Link>
               </li>
               <li>
@@ -430,7 +440,7 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/features"
                 >
-                  Features
+                  {t('links.features')}
                 </Link>
               </li>
               <li>
@@ -438,22 +448,22 @@ function Header() {
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/ranking"
                 >
-                  Ranking
+                  {t('links.ranking')}
                 </Link>
               </li>
             </ul>
           </div>
         )}
 
-        <div className="navbar-end gap-1 sm:gap-3 mx-1 sm:mx-3">
+        <div className="navbar-end flex-1 w-auto gap-1 sm:gap-3 mx-1 sm:mx-3">
           {/* Search Button */}
           <button
             className="btn btn-ghost btn-sm sm:btn-md gap-2"
             onClick={() => setIsSearchOpen(true)}
-            aria-label="Search"
+            aria-label={t('a11y.search')}
           >
             <Search className="w-4 h-4" />
-            <span className="hidden 2xl:inline text-xs text-base-content/50">
+            <span className="hidden min-[1750px]:inline text-xs text-base-content/50">
               <kbd className="kbd kbd-xs">
                 {/Mac|iPod|iPhone|iPad/.test(navigator.userAgent)
                   ? '⌘'
@@ -468,7 +478,7 @@ function Header() {
             <Link
               to="/notifications"
               className="btn btn-ghost btn-sm sm:btn-md btn-circle md:hidden relative"
-              aria-label="Notifications"
+              aria-label={t('a11y.notifications')}
             >
               <Bell className="w-4 h-4" />
               {totalCount > 0 && (
@@ -487,14 +497,18 @@ function Header() {
           {user ? (
             <>
               <Link className="btn btn-primary btn-sm sm:btn-md" to="/log">
-                <span className="hidden sm:inline">Create Log</span>
-                <span className="inline sm:hidden">Log</span>
+                <span className="hidden sm:inline">
+                  {t('actions.createLog')}
+                </span>
+                <span className="inline sm:hidden">
+                  {t('actions.createLogShort')}
+                </span>
               </Link>
               <div className="dropdown dropdown-hover dropdown-bottom dropdown-end">
                 <div
                   tabIndex={0}
                   role="button"
-                  aria-label={`${user.username} menu`}
+                  aria-label={t('a11y.userMenu', { username: user.username })}
                   // Not btn-circle: that pins the button to the same 40px as the
                   // avatar, so the ring would spill outside it. p-1 leaves room.
                   className="btn btn-ghost avatar m-1 h-auto min-h-0 w-auto rounded-full p-1"
@@ -530,7 +544,7 @@ function Header() {
                         className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                       >
                         <ShieldUser className="w-4 h-4" />
-                        Admin
+                        {t('links.admin')}
                       </Link>
                     </li>
                   )}
@@ -540,7 +554,7 @@ function Header() {
                       className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                     >
                       <User className="w-4 h-4" />
-                      Profile
+                      {t('links.profile')}
                     </Link>
                   </li>
                   <li>
@@ -549,7 +563,7 @@ function Header() {
                       className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                     >
                       <Settings className="w-4 h-4" />
-                      Settings
+                      {t('links.settings')}
                     </Link>
                   </li>
                   <li>
@@ -558,7 +572,7 @@ function Header() {
                       className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
                     >
                       <Heart className="w-4 h-4" />
-                      Donate
+                      {t('links.donate')}
                     </Link>
                   </li>
                   <li>
@@ -567,7 +581,7 @@ function Header() {
                       className="rounded-lg font-medium hover:bg-error/10 hover:text-error transition-all duration-200 whitespace-nowrap"
                     >
                       <LogOut className="w-4 h-4" />
-                      Logout
+                      {t('links.logout')}
                     </a>
                   </li>
                 </ul>
@@ -575,10 +589,13 @@ function Header() {
             </>
           ) : (
             <>
+              <LanguageSwitcher />
               <button
                 className="btn btn-ghost btn-sm sm:btn-md btn-circle"
                 onClick={toggleTheme}
-                aria-label={`Theme: ${themeMode}. Click to cycle dark, light, system.`}
+                aria-label={t('a11y.themeToggle', {
+                  mode: t(`themeModes.${themeMode}`),
+                })}
               >
                 {themeIcon}
               </button>
@@ -586,10 +603,10 @@ function Header() {
                 className="btn btn-primary btn-ghost btn-sm sm:btn-md"
                 to="/login"
               >
-                Login
+                {t('links.login')}
               </Link>
               <Link className="btn btn-primary btn-sm sm:btn-md" to="/register">
-                Sign Up
+                {t('links.signUp')}
               </Link>
             </>
           )}

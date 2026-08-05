@@ -1,29 +1,37 @@
+import type { ParseKeys } from 'i18next';
 import { ILog } from '../types';
+
+/**
+ * Validators return translation keys, not sentences — this module is pure and
+ * has no access to the active language. Callers translate with
+ * `useValidationText()`. An empty string still means "valid".
+ */
+export type ValidationKey = ParseKeys<'validation'> | '';
 
 export interface ValidationResult {
   isValid: boolean;
-  errors: Record<string, string>;
+  errors: Record<string, ValidationKey>;
 }
 
-export const validateUsername = (username: string): string => {
-  if (!username.trim()) return 'Username is required';
-  if (username.length < 1) return 'Username must be at least 1 character';
-  if (username.length > 20) return 'Username must be less than 20 characters';
+export const validateUsername = (username: string): ValidationKey => {
+  if (!username.trim()) return 'username.required';
+  if (username.length < 1) return 'username.minLength';
+  if (username.length > 20) return 'username.maxLength';
   if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-    return 'Username can only contain letters, numbers, hyphens, and underscores';
+    return 'username.charset';
   }
   return '';
 };
 
-export const validateEmail = (email: string): string => {
+export const validateEmail = (email: string): ValidationKey => {
   if (!email.trim()) return '';
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) return 'Please enter a valid email address';
+  if (!emailRegex.test(email)) return 'email.invalid';
   return '';
 };
 
-export const validateLogin = (usernameOrEmail: string): string => {
-  if (!usernameOrEmail.trim()) return 'Username or email is required';
+export const validateLogin = (usernameOrEmail: string): ValidationKey => {
+  if (!usernameOrEmail.trim()) return 'login.required';
 
   // Check if it looks like an email (contains @)
   if (usernameOrEmail.includes('@')) {
@@ -39,9 +47,9 @@ export const validateLogin = (usernameOrEmail: string): string => {
   return '';
 };
 
-export const validatePassword = (password: string): string | null => {
+export const validatePassword = (password: string): ValidationKey | null => {
   if (password.length < 8) {
-    return 'Password must be at least 8 characters long';
+    return 'password.minLength';
   }
   return null;
 };
@@ -49,16 +57,16 @@ export const validatePassword = (password: string): string | null => {
 export const validatePasswordMatch = (
   password: string,
   confirmPassword: string
-): string => {
-  if (!confirmPassword && password) return 'Please confirm your password';
-  if (password !== confirmPassword) return 'Passwords do not match';
+): ValidationKey => {
+  if (!confirmPassword && password) return 'password.confirmRequired';
+  if (password !== confirmPassword) return 'password.mismatch';
   return '';
 };
 
-export const validateDiscordId = (discordId: string): string => {
+export const validateDiscordId = (discordId: string): ValidationKey => {
   if (!discordId.trim()) return '';
   if (!/^\d{17,19}$/.test(discordId.trim())) {
-    return 'Discord ID must be 17-19 digits';
+    return 'discordId.format';
   }
   return '';
 };
@@ -75,26 +83,25 @@ export const validateLogData = (
   },
   touched: Record<string, boolean> = {}
 ): ValidationResult => {
-  const errors: Record<string, string> = {};
+  const errors: Record<string, ValidationKey> = {};
 
   if (touched.type && !logData.type) {
-    errors.type = 'Please select a log type';
+    errors.type = 'log.typeRequired';
   }
 
   if (touched.mediaName) {
     if (!logData.mediaName.trim()) {
-      errors.mediaName = 'Please enter a title or description';
+      errors.mediaName = 'log.titleRequired';
     } else if (logData.mediaName.length > 200) {
-      errors.mediaName = 'Title must be less than 200 characters';
+      errors.mediaName = 'log.titleMaxLength';
     }
   }
 
   if (logData.type === 'anime' && touched.episodes) {
     if (logData.watchedEpisodes <= 0) {
-      errors.episodes =
-        'Please enter the number of episodes watched (must be greater than 0)';
+      errors.episodes = 'log.episodesRequired';
     } else if (logData.watchedEpisodes > 1000) {
-      errors.episodes = 'Episode count seems unreasonably high (max: 1000)';
+      errors.episodes = 'log.episodesTooHigh';
     }
   }
 
@@ -102,10 +109,9 @@ export const validateLogData = (
   if (logData.type === 'movie' && touched.time) {
     const totalMinutes = logData.hours * 60 + logData.minutes;
     if (totalMinutes <= 0) {
-      errors.time = 'Please enter the movie duration (must be greater than 0)';
+      errors.time = 'log.movieDurationRequired';
     } else if (totalMinutes > 1440) {
-      errors.time =
-        'Movie duration seems unreasonably high (max: 1000 minutes)';
+      errors.time = 'log.movieDurationTooHigh';
     }
   }
 
@@ -116,9 +122,9 @@ export const validateLogData = (
     ['video', 'movie', 'audio', 'other', 'game'].includes(logData.type || '')
   ) {
     if (totalMinutes <= 0) {
-      errors.time = 'Please enter the time spent (must be greater than 0)';
+      errors.time = 'log.timeRequired';
     } else if (totalMinutes > 1440) {
-      errors.time = 'Time seems unreasonably high (max: 24 hours)';
+      errors.time = 'log.timeTooHigh';
     }
   }
 
@@ -127,7 +133,7 @@ export const validateLogData = (
     (logData.type === 'video' || logData.type === 'audio') &&
     totalMinutes <= 0
   ) {
-    errors.time = 'Please enter the time spent (must be greater than 0)';
+    errors.time = 'log.timeRequired';
   }
 
   if (
@@ -140,7 +146,7 @@ export const validateLogData = (
       logData.readChars <= 0 &&
       totalMinutes <= 0
     ) {
-      errors.activity = 'Please enter either characters read or time spent';
+      errors.activity = 'log.charsOrTime';
     }
   }
 
@@ -151,17 +157,16 @@ export const validateLogData = (
       logData.readChars <= 0 &&
       totalMinutes <= 0
     ) {
-      errors.activity =
-        'Please enter pages read, characters read, or time spent';
+      errors.activity = 'log.pagesCharsOrTime';
     }
   }
 
   if (touched.chars && logData.readChars > 1000000) {
-    errors.chars = 'Character count seems unreasonably high (max: 1,000,000)';
+    errors.chars = 'log.charsTooHigh';
   }
 
   if (touched.pages && logData.readPages > 10000) {
-    errors.pages = 'Page count seems unreasonably high (max: 10,000)';
+    errors.pages = 'log.pagesTooHigh';
   }
 
   return {
@@ -179,14 +184,14 @@ export const validateQuickLogData = (logData: {
   hours: number;
   minutes: number;
 }): ValidationResult => {
-  const errors: Record<string, string> = {};
+  const errors: Record<string, ValidationKey> = {};
 
   if (!logData.type) {
-    errors.type = 'Please select a log type';
+    errors.type = 'log.typeRequired';
   }
 
   if (!logData.description.trim()) {
-    errors.description = 'Please enter a description';
+    errors.description = 'log.descriptionRequired';
   }
 
   const totalMinutes = logData.hours * 60 + logData.minutes;
@@ -197,14 +202,14 @@ export const validateQuickLogData = (logData: {
     totalMinutes > 0;
 
   if (logData.type === 'anime' && logData.episodes <= 0) {
-    errors.episodes = 'Please enter the number of episodes watched';
+    errors.episodes = 'log.episodesRequiredShort';
   }
 
   if (
     (logData.type === 'video' || logData.type === 'audio') &&
     totalMinutes <= 0
   ) {
-    errors.time = 'Please enter the time spent';
+    errors.time = 'log.timeRequiredShort';
   }
 
   if (
@@ -213,7 +218,7 @@ export const validateQuickLogData = (logData: {
     logData.chars <= 0 &&
     totalMinutes <= 0
   ) {
-    errors.activity = 'Please enter pages read, characters read, or time spent';
+    errors.activity = 'log.pagesCharsOrTime';
   }
 
   if (
@@ -222,19 +227,19 @@ export const validateQuickLogData = (logData: {
     logData.chars <= 0 &&
     totalMinutes <= 0
   ) {
-    errors.activity = 'Please enter pages read, characters read, or time spent';
+    errors.activity = 'log.pagesCharsOrTime';
   }
 
   if (logData.type === 'vn' && logData.chars <= 0 && totalMinutes <= 0) {
-    errors.activity = 'Please enter characters read or time spent';
+    errors.activity = 'log.charsOrTimeShort';
   }
 
   if (logData.type === 'game' && logData.chars <= 0 && totalMinutes <= 0) {
-    errors.activity = 'Please enter characters read or time spent';
+    errors.activity = 'log.charsOrTimeShort';
   }
 
   if (logData.type && !hasActivity) {
-    errors.activity = 'Please log some progress before submitting';
+    errors.activity = 'log.noProgress';
   }
 
   return {
@@ -253,39 +258,39 @@ export const validateUpdateLogData = (logData: {
   chars: number;
   pages: number;
 }): ValidationResult => {
-  const errors: Record<string, string> = {};
+  const errors: Record<string, ValidationKey> = {};
 
   if (!logData.description.trim()) {
-    errors.description = 'Description is required';
+    errors.description = 'log.descriptionMissing';
   }
 
   if (logData.hours > 24) {
-    errors.hours = 'Hours cannot exceed 24';
+    errors.hours = 'log.hoursMax';
   }
 
   if (logData.minutes > 59) {
-    errors.minutes = 'Minutes cannot exceed 59';
+    errors.minutes = 'log.minutesMax';
   }
 
   const totalMinutes = logData.hours * 60 + logData.minutes;
   if (totalMinutes > 1440) {
-    errors.time = 'Total time cannot exceed 24 hours';
+    errors.time = 'log.totalTimeMax';
   }
 
   if (logData.type === 'anime' && logData.episodes > 1000) {
-    errors.episodes = 'Episode count seems unreasonably high (max: 1000)';
+    errors.episodes = 'log.episodesTooHigh';
   }
 
   if (logData.chars > 1000000) {
-    errors.chars = 'Character count seems unreasonably high (max: 1,000,000)';
+    errors.chars = 'log.charsTooHigh';
   }
 
   if (logData.pages > 10000) {
-    errors.pages = 'Page count seems unreasonably high (max: 10,000)';
+    errors.pages = 'log.pagesTooHigh';
   }
 
   if (logData.volume > 10000) {
-    errors.volume = 'Volume number seems unreasonably high (max: 10,000)';
+    errors.volume = 'log.volumeTooHigh';
   }
 
   return {
@@ -294,25 +299,24 @@ export const validateUpdateLogData = (logData: {
   };
 };
 
-export const validateGoalTarget = (type: string, target: number): string => {
-  if (target <= 0) return 'Target must be greater than 0';
+export const validateGoalTarget = (
+  type: string,
+  target: number
+): ValidationKey => {
+  if (target <= 0) return 'goal.targetPositive';
 
   switch (type) {
     case 'time':
-      if (target > 1440)
-        return 'Daily time target cannot exceed 24 hours (1440 minutes)';
+      if (target > 1440) return 'goal.timeMax';
       break;
     case 'chars':
-      if (target > 100000)
-        return 'Daily character target seems unreasonably high (max: 100,000)';
+      if (target > 100000) return 'goal.charsMax';
       break;
     case 'episodes':
-      if (target > 50)
-        return 'Daily episode target seems unreasonably high (max: 50)';
+      if (target > 50) return 'goal.episodesMax';
       break;
     case 'pages':
-      if (target > 500)
-        return 'Daily page target seems unreasonably high (max: 500)';
+      if (target > 500) return 'goal.pagesMax';
       break;
   }
 
@@ -326,26 +330,26 @@ export const validateSharedLogData = (logData: {
   chars: number;
   pages: number;
 }): ValidationResult => {
-  const errors: Record<string, string> = {};
+  const errors: Record<string, ValidationKey> = {};
 
   if (!logData.description.trim()) {
-    errors.description = 'Description is required';
+    errors.description = 'log.descriptionMissing';
   }
 
   if (logData.episodes < 0) {
-    errors.episodes = 'Episodes cannot be negative';
+    errors.episodes = 'log.episodesNegative';
   }
 
   if (logData.time < 0) {
-    errors.time = 'Time cannot be negative';
+    errors.time = 'log.timeNegative';
   }
 
   if (logData.chars < 0) {
-    errors.chars = 'Characters cannot be negative';
+    errors.chars = 'log.charsNegative';
   }
 
   if (logData.pages < 0) {
-    errors.pages = 'Pages cannot be negative';
+    errors.pages = 'log.pagesNegative';
   }
 
   return {

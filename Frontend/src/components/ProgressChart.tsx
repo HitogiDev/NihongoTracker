@@ -5,7 +5,8 @@ import BarChart from './BarChart';
 import { useEffect, useState } from 'react';
 import { useTimezone } from '../hooks/useTimezone';
 import { useThemeColors } from '../hooks/useThemeColors';
-import { convertToUserTimezone } from '../utils/timezone';
+import { convertToUserTimezone, getLocale } from '../utils/timezone';
+import { useTranslation } from 'react-i18next';
 
 interface LocalDateInfo {
   iso: string;
@@ -111,6 +112,7 @@ export default function ProgressChart({
   chartType = 'line',
   showTitle = true,
 }: ProgressChartProps) {
+  const { t } = useTranslation('stats');
   const { timezone } = useTimezone();
   const themeColors = useThemeColors(1);
   const [timeframe, setTimeframe] = useState<
@@ -257,7 +259,7 @@ export default function ProgressChart({
       labels = sortedKeys.map((key) => {
         const [year, month] = key.split('-');
         return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(
-          'en-US',
+          getLocale(),
           {
             year: 'numeric',
             month: 'short',
@@ -524,7 +526,9 @@ export default function ProgressChart({
         <div className="flex items-center justify-between mb-6 px-4">
           <div>
             {showTitle && (
-              <h2 className="text-2xl font-bold text-primary mb-2">Activity</h2>
+              <h2 className="text-2xl font-bold text-primary mb-2">
+                {t('progress.activity')}
+              </h2>
             )}
             {hasData ? (
               <p className="text-sm text-base-content mb-4">
@@ -557,10 +561,10 @@ export default function ProgressChart({
                 }
                 className="select select-bordered"
               >
-                <option value="total">Total</option>
-                <option value="year">Year</option>
-                <option value="month">Month</option>
-                <option value="week">Week</option>
+                <option value="total">{t('progress.total')}</option>
+                <option value="year">{t('progress.year')}</option>
+                <option value="month">{t('progress.month')}</option>
+                <option value="week">{t('progress.week')}</option>
                 <option value="today">Today</option>
               </select>
             </div>

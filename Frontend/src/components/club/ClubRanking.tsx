@@ -13,6 +13,7 @@ import {
 
 import { getUserClubsFn, getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
+import { useTranslation } from 'react-i18next';
 
 const DASHBOARD_CARD_TITLE_CLASS =
   'card-title text-xl font-semibold leading-snug text-base-content';
@@ -23,6 +24,7 @@ interface ClubRankingProps {
 }
 
 function ClubRanking({ username }: ClubRankingProps) {
+  const { t } = useTranslation('clubs');
   // Fetch user's clubs
   const {
     data: userClubs,
@@ -94,10 +96,10 @@ function ClubRanking({ username }: ClubRankingProps) {
         <div className="card-body">
           <h3 className="card-title text-lg flex items-center gap-2">
             <BarChart className="text-primary w-4 h-4" />
-            Club Ranking
+            {t('ranking.title')}
           </h3>
           <div className="text-center py-4 text-error">
-            <p className="text-sm">Failed to load club ranking</p>
+            <p className="text-sm">{t('ranking.loadFailed')}</p>
           </div>
         </div>
       </div>
@@ -113,10 +115,10 @@ function ClubRanking({ username }: ClubRankingProps) {
               className={`${DASHBOARD_CARD_TITLE_CLASS} flex items-center gap-2`}
             >
               <BarChart className="text-primary w-5 h-5" />
-              Club Ranking
+              {t('ranking.title')}
             </h3>
             <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
-              Check your standing among your club members.
+              {t('ranking.subtitle')}
             </p>
           </div>
 
@@ -183,7 +185,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[11px] uppercase tracking-wide text-base-content/60">
-                        Selected Club
+                        {t('ranking.selectedClub')}
                       </p>
                       <Link
                         to={`/clubs/${selectedClub._id}`}
@@ -212,7 +214,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-base-content/60">
-                        Your Position
+                        {t('ranking.yourPosition')}
                       </p>
                       <div className="flex items-end gap-2">
                         <p className="text-3xl leading-none font-bold tabular-nums text-base-content">
@@ -227,7 +229,7 @@ function ClubRanking({ username }: ClubRankingProps) {
 
                   <div className="sm:text-right">
                     <p className="text-[11px] uppercase tracking-wide text-base-content/60">
-                      Total XP
+                      {t('common.totalXp')}
                     </p>
                     <p className="text-2xl sm:text-3xl leading-none font-bold tabular-nums text-primary mt-1">
                       {numberWithCommas(userRanking.totalXp)}
@@ -237,10 +239,7 @@ function ClubRanking({ username }: ClubRankingProps) {
               </div>
             ) : (
               <div className="alert alert-soft">
-                <span className="text-sm">
-                  No ranking data available yet. Start logging to appear in club
-                  rankings.
-                </span>
+                <span className="text-sm">{t('ranking.emptyBody')}</span>
               </div>
             )}
 
@@ -249,7 +248,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                 to={`/clubs/${selectedClub?._id}?tab=rankings`}
                 className="btn btn-sm btn-primary btn-outline"
               >
-                View Club Rankings
+                {t('ranking.viewAll')}
               </Link>
             </div>
           </div>

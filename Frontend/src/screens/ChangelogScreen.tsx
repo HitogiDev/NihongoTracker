@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getChangelogsFn } from '../api/trackerApi';
+import { getLocale } from '../utils/timezone';
 
 export default function ChangelogScreen() {
+  const { t } = useTranslation('legal');
   const { data: changelogs, isLoading } = useQuery({
     queryKey: ['changelogs'],
     queryFn: getChangelogsFn,
@@ -94,13 +97,29 @@ export default function ChangelogScreen() {
   const getChangeLabel = (type: string) => {
     switch (type) {
       case 'feature':
-        return <span className="badge badge-success badge-sm">New</span>;
+        return (
+          <span className="badge badge-success badge-sm">
+            {t('changelog.labels.feature')}
+          </span>
+        );
       case 'improvement':
-        return <span className="badge badge-info badge-sm">Improved</span>;
+        return (
+          <span className="badge badge-info badge-sm">
+            {t('changelog.labels.improvement')}
+          </span>
+        );
       case 'bugfix':
-        return <span className="badge badge-warning badge-sm">Fixed</span>;
+        return (
+          <span className="badge badge-warning badge-sm">
+            {t('changelog.labels.bugfix')}
+          </span>
+        );
       case 'breaking':
-        return <span className="badge badge-error badge-sm">Breaking</span>;
+        return (
+          <span className="badge badge-error badge-sm">
+            {t('changelog.labels.breaking')}
+          </span>
+        );
       default:
         return null;
     }
@@ -110,11 +129,8 @@ export default function ChangelogScreen() {
     <div className="min-h-screen bg-base-200 py-12 pt-24">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Changelog</h1>
-          <p className="text-base-content/70">
-            Stay up to date with the latest features, improvements, and bug
-            fixes
-          </p>
+          <h1 className="text-4xl font-bold mb-4">{t('changelog.title')}</h1>
+          <p className="text-base-content/70">{t('changelog.subtitle')}</p>
         </div>
 
         {isLoading ? (
@@ -132,12 +148,15 @@ export default function ChangelogScreen() {
                     </span>
                     <h2 className="text-2xl font-bold">{changelog.title}</h2>
                     <span className="text-base-content/60 ml-auto">
-                      {new Date(changelog.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        timeZone: 'UTC',
-                      })}
+                      {new Date(changelog.date).toLocaleDateString(
+                        getLocale(),
+                        {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          timeZone: 'UTC',
+                        }
+                      )}
                     </span>
                   </div>
 
@@ -183,10 +202,10 @@ export default function ChangelogScreen() {
                 />
               </svg>
               <p className="text-lg text-base-content/70">
-                No changelogs available yet
+                {t('changelog.empty.title')}
               </p>
               <p className="text-sm text-base-content/50 mt-2">
-                Check back later for updates and new features
+                {t('changelog.empty.description')}
               </p>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Ellipsis, Pencil, Share2, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 import LikeButton from './LikeButton';
@@ -24,13 +25,14 @@ function MediaReviewCard({
   likeDisabled = false,
   ratingColorClass = 'bg-primary',
 }: MediaReviewCardProps) {
+  const { t } = useTranslation('media');
   const isOwner = review.user._id === currentUserId;
 
   function copyToClipboard(text: string) {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        toast.success('Review link copied to clipboard!');
+        toast.success(t('reviewCard.linkCopied'));
       })
       .catch(() => {
         const textArea = document.createElement('textarea');
@@ -39,7 +41,7 @@ function MediaReviewCard({
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        toast.success('Review link copied to clipboard!');
+        toast.success(t('reviewCard.linkCopied'));
       });
   }
 
@@ -49,8 +51,8 @@ function MediaReviewCard({
     if (navigator.share) {
       navigator
         .share({
-          title: 'NihongoTracker Review',
-          text: 'Check out this review!',
+          title: t('reviewCard.shareTitle'),
+          text: t('reviewCard.shareText'),
           url: shareUrl,
         })
         .catch(() => {
@@ -107,7 +109,7 @@ function MediaReviewCard({
               <button
                 tabIndex={0}
                 className="btn btn-ghost btn-xs btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
-                aria-label="Review options"
+                aria-label={t('reviewCard.options')}
               >
                 <Ellipsis className="w-4 h-4" />
               </button>

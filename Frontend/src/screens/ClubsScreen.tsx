@@ -14,8 +14,10 @@ import {
 import { getClubsFn } from '../api/clubApi';
 import { IClubResponse } from '../types';
 import { useUserDataStore } from '../store/userData';
+import { useTranslation } from 'react-i18next';
 
 function ClubsScreen() {
+  const { t } = useTranslation('clubs');
   const navigate = useNavigate();
   const { user } = useUserDataStore();
 
@@ -88,9 +90,9 @@ function ClubsScreen() {
   };
 
   const sortOptions = [
-    { value: 'memberCount', label: 'Members' },
-    { value: 'createdAt', label: 'Newest' },
-    { value: 'name', label: 'Name' },
+    { value: 'memberCount', label: t('browse.sort.members') },
+    { value: 'createdAt', label: t('browse.sort.newest') },
+    { value: 'name', label: t('browse.sort.name') },
   ];
 
   if (isLoading) {
@@ -106,9 +108,9 @@ function ClubsScreen() {
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-error mb-4">
-            Error loading clubs
+            {t('browse.loadFailed')}
           </h2>
-          <p className="text-base-content/70">Please try again later</p>
+          <p className="text-base-content/70">{t('common.tryAgainLater')}</p>
         </div>
       </div>
     );
@@ -121,13 +123,10 @@ function ClubsScreen() {
           <div className="flex items-center justify-center gap-3 mb-2">
             <Users className="w-10 h-10 text-primary" />
             <h1 className="text-4xl font-bold text-base-content">
-              Immersion Clubs
+              {t('browse.title')}
             </h1>
           </div>
-          <p className="text-base-content/70">
-            Join clubs to immerse with others, participate in challenges, and
-            share your Japanese immersion milestones
-          </p>
+          <p className="text-base-content/70">{t('browse.subtitle')}</p>
         </div>
 
         {/* Search and Actions */}
@@ -137,7 +136,7 @@ function ClubsScreen() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 text-xl" />
             <input
               type="text"
-              placeholder="Search clubs..."
+              placeholder={t('browse.searchPlaceholder')}
               className="input input-bordered w-full pl-12 pr-4"
               value={searchInput}
               onChange={(e) => {
@@ -153,7 +152,7 @@ function ClubsScreen() {
               onClick={() => navigate('/clubs/create')}
             >
               <Plus className="text-lg" />
-              Create Club
+              {t('browse.create')}
             </button>
           )}
         </div>
@@ -166,7 +165,7 @@ function ClubsScreen() {
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
                   <ListFilter className="w-5 h-5" />
-                  Sort By
+                  {t('browse.sortBy')}
                 </h3>
                 <div className="dropdown w-full">
                   <div
@@ -176,7 +175,7 @@ function ClubsScreen() {
                   >
                     <span>
                       {sortOptions.find((opt) => opt.value === sortBy)?.label ||
-                        'Members'}
+                        t('browse.sort.members')}
                     </span>
                     <ChevronDown className="text-lg" />
                   </div>
@@ -205,7 +204,7 @@ function ClubsScreen() {
                 </div>
                 <div className="mt-2">
                   <label className="label cursor-pointer">
-                    <span className="label-text">Descending</span>
+                    <span className="label-text">{t('browse.descending')}</span>
                     <input
                       type="checkbox"
                       className="toggle toggle-sm"
@@ -222,10 +221,10 @@ function ClubsScreen() {
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
                   <Funnel className="w-5 h-5" />
-                  Visibility
+                  {t('common.visibility')}
                 </h3>
                 <label className="label cursor-pointer">
-                  <span className="label-text">Public Only</span>
+                  <span className="label-text">{t('browse.publicOnly')}</span>
                   <input
                     type="checkbox"
                     className="toggle toggle-sm"
@@ -240,7 +239,9 @@ function ClubsScreen() {
 
               {/* Tags Filter */}
               <div>
-                <h3 className="font-semibold text-base-content mb-3">Tags</h3>
+                <h3 className="font-semibold text-base-content mb-3">
+                  {t('common.tags')}
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {availableTags.map((tag) => (
                     <button
@@ -266,7 +267,10 @@ function ClubsScreen() {
               <>
                 {/* Results Info */}
                 <div className="mb-6 text-base-content/70">
-                  Showing {clubsData.clubs.length} of {clubsData.total} clubs
+                  {t('browse.showing', {
+                    shown: clubsData.clubs.length,
+                    total: clubsData.total,
+                  })}
                 </div>
 
                 {/* Clubs Grid */}
@@ -285,7 +289,7 @@ function ClubsScreen() {
                         disabled={page === 1}
                         onClick={() => setPage(page - 1)}
                       >
-                        Previous
+                        {t('browse.previous')}
                       </button>
                       <button className="join-item btn btn-active">
                         Page {page}
@@ -295,7 +299,7 @@ function ClubsScreen() {
                         disabled={page * 12 >= clubsData.total}
                         onClick={() => setPage(page + 1)}
                       >
-                        Next
+                        {t('browse.next')}
                       </button>
                     </div>
                   </div>
@@ -305,12 +309,12 @@ function ClubsScreen() {
               <div className="text-center py-16">
                 <Users className="text-6xl text-base-content/30 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-base-content mb-2">
-                  No clubs found
+                  {t('browse.empty')}
                 </h3>
                 <p className="text-base-content/70 mb-6">
                   {search || selectedTags.length > 0
-                    ? 'Try adjusting your search or filters'
-                    : 'Be the first to create a club!'}
+                    ? t('browse.emptyFiltered')
+                    : t('browse.emptyFirst')}
                 </p>
                 {user && (
                   <button
@@ -318,7 +322,7 @@ function ClubsScreen() {
                     onClick={() => navigate('/clubs/create')}
                   >
                     <Plus className="text-lg" />
-                    Create First Club
+                    {t('browse.createFirst')}
                   </button>
                 )}
               </div>
@@ -332,6 +336,7 @@ function ClubsScreen() {
 
 // Club Card Component
 function ClubCard({ club }: { club: IClubResponse }) {
+  const { t } = useTranslation('clubs');
   const navigate = useNavigate();
 
   return (
@@ -359,7 +364,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
             ) : (
               <Lock className="w-4 h-4" />
             )}
-            {club.isPublic ? 'Public' : 'Private'}
+            {club.isPublic ? t('browse.public') : t('browse.private')}
           </div>
         </div>
       </div>
@@ -400,7 +405,10 @@ function ClubCard({ club }: { club: IClubResponse }) {
           <div className="flex items-center gap-1">
             <Users className="text-base w-4 h-4" />
             <span>
-              {club.memberCount}/{club.memberLimit} members
+              {t('browse.memberCount', {
+                current: club.memberCount,
+                limit: club.memberLimit,
+              })}
             </span>
           </div>
         </div>
@@ -427,19 +435,21 @@ function ClubCard({ club }: { club: IClubResponse }) {
             <div className="badge badge-primary gap-1">
               <Users className="w-4 h-4" />
               {club.userRole === 'leader'
-                ? 'Leader'
+                ? t('roles.leader')
                 : club.userRole === 'moderator'
-                  ? 'Moderator'
-                  : 'Member'}
+                  ? t('roles.moderator')
+                  : t('roles.member')}
             </div>
           ) : club.isUserMember && club.userStatus === 'pending' ? (
             <div className="badge badge-warning gap-1">
               <Users className="text-xs" />
-              Pending
+              {t('browse.pending')}
             </div>
           ) : (
             <div className="badge badge-ghost">
-              {club.isPublic ? 'Click to join' : 'Click to request'}
+              {club.isPublic
+                ? t('browse.clickToJoin')
+                : t('browse.clickToRequest')}
             </div>
           )}
         </div>

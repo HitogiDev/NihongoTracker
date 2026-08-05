@@ -108,7 +108,9 @@ export default function AchievementShowcase({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-sm opacity-60 uppercase tracking-wider">Showcase</h3>
+        <h3 className="font-bold text-sm opacity-60 uppercase tracking-wider">
+          Showcase
+        </h3>
         {isOwner && (
           <button
             className="btn btn-xs btn-ghost opacity-50 hover:opacity-100"
@@ -125,7 +127,11 @@ export default function AchievementShowcase({
         {showcaseItems.slice(0, 5).map((item) => (
           <AchievementCard
             key={item.userAchievementId}
-            achievement={{ ...item.achievement, isEarned: true, unlockedAt: item.unlockedAt }}
+            achievement={{
+              ...item.achievement,
+              isEarned: true,
+              unlockedAt: item.unlockedAt,
+            }}
             compact
           />
         ))}

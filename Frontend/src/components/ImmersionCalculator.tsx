@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 
 // XP formula v2 constants (matching Backend/src/services/xp.ts).
 // Base rate: 135 XP/hour. Chars/pages are converted to time at the
@@ -31,6 +33,7 @@ interface ImmersionToXpResult {
 type CalculationMode = 'xp-to-immersion' | 'immersion-to-xp';
 
 const ImmersionCalculator: React.FC = () => {
+  const { t } = useTranslation('home');
   const [mode, setMode] = useState<CalculationMode>('xp-to-immersion');
   const [targetXp, setTargetXp] = useState<string>('');
   const [immersionValue, setImmersionValue] = useState<string>('');
@@ -99,13 +102,13 @@ const ImmersionCalculator: React.FC = () => {
 
   const getAvailableInputTypes = (): Array<{
     value: string;
-    label: string;
+    labelKey: ParseKeys<'home'>;
   }> => {
     return [
-      { value: 'time', label: 'Minutes' },
-      { value: 'characters', label: 'Characters' },
-      { value: 'pages', label: 'Pages' },
-      { value: 'episodes', label: 'Episodes' },
+      { value: 'time', labelKey: 'calculator.minutes' },
+      { value: 'characters', labelKey: 'calculator.charactersLabel' },
+      { value: 'pages', labelKey: 'calculator.pagesLabel' },
+      { value: 'episodes', labelKey: 'calculator.episodesLabel' },
     ];
   };
 
@@ -157,9 +160,9 @@ const ImmersionCalculator: React.FC = () => {
             <Calculator />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Calculator</h2>
+            <h2 className="text-xl font-bold">{t('calculator.heading')}</h2>
             <p className="text-sm text-base-content/60">
-              Configure your calculation
+              {t('calculator.configure')}
             </p>
           </div>
         </div>
@@ -167,20 +170,22 @@ const ImmersionCalculator: React.FC = () => {
         {/* Mode Selection */}
         <div className="form-control mb-6">
           <label className="label">
-            <span className="label-text font-medium">Calculation Mode</span>
+            <span className="label-text font-medium">
+              {t('calculator.mode')}
+            </span>
           </label>
           <div className="join w-full">
             <button
               className={`btn join-item flex-1 ${mode === 'xp-to-immersion' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('xp-to-immersion')}
             >
-              XP → Immersion
+              {t('calculator.xpToImmersion')}
             </button>
             <button
               className={`btn join-item flex-1 ${mode === 'immersion-to-xp' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('immersion-to-xp')}
             >
-              Immersion → XP
+              {t('calculator.immersionToXp')}
             </button>
           </div>
         </div>
@@ -190,7 +195,9 @@ const ImmersionCalculator: React.FC = () => {
             {/* XP to Immersion Mode */}
             <div className="form-control mb-6">
               <label className="label">
-                <span className="label-text font-medium">Target XP</span>
+                <span className="label-text font-medium">
+                  {t('calculator.targetXp')}
+                </span>
               </label>
               <div className="relative">
                 <input
@@ -233,13 +240,17 @@ const ImmersionCalculator: React.FC = () => {
 
                 <div className="grid gap-3">
                   <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                    <span className="text-base-content/70">Episodes:</span>
+                    <span className="text-base-content/70">
+                      {t('calculator.episodes')}
+                    </span>
                     <span className="font-mono text-lg font-semibold">
                       {xpToImmersionResult.episodes} episodes
                     </span>
                   </div>
                   <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                    <span className="text-base-content/70">Time:</span>
+                    <span className="text-base-content/70">
+                      {t('calculator.time')}
+                    </span>
                     <span className="font-mono text-lg font-semibold">
                       {xpToImmersionResult.timeHours > 0 &&
                         `${xpToImmersionResult.timeHours}h `}
@@ -247,14 +258,18 @@ const ImmersionCalculator: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                    <span className="text-base-content/70">Characters:</span>
+                    <span className="text-base-content/70">
+                      {t('calculator.characters')}
+                    </span>
                     <span className="font-mono text-lg font-semibold">
                       {xpToImmersionResult.characters.toLocaleString()}{' '}
                       characters
                     </span>
                   </div>
                   <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                    <span className="text-base-content/70">Pages:</span>
+                    <span className="text-base-content/70">
+                      {t('calculator.pages')}
+                    </span>
                     <span className="font-mono text-lg font-semibold">
                       {Math.round(xpToImmersionResult.pages)} pages
                     </span>
@@ -269,7 +284,9 @@ const ImmersionCalculator: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-4 mb-6">
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-medium">Immersion Type</span>
+                  <span className="label-text font-medium">
+                    {t('calculator.immersionType')}
+                  </span>
                 </label>
                 <select
                   className="select select-bordered select-secondary"
@@ -278,7 +295,7 @@ const ImmersionCalculator: React.FC = () => {
                 >
                   {availableInputTypes.map((type) => (
                     <option key={type.value} value={type.value}>
-                      {type.label}
+                      {t(type.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -286,7 +303,9 @@ const ImmersionCalculator: React.FC = () => {
 
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text font-medium">Quantity</span>
+                  <span className="label-text font-medium">
+                    {t('calculator.quantity')}
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -299,9 +318,12 @@ const ImmersionCalculator: React.FC = () => {
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <span className="text-sm text-base-content/60">
-                      {availableInputTypes
-                        .find((t) => t.value === immersionType)
-                        ?.label.toLowerCase()}
+                      {(() => {
+                        const match = availableInputTypes.find(
+                          (option) => option.value === immersionType
+                        );
+                        return match ? t(match.labelKey).toLowerCase() : '';
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -327,19 +349,25 @@ const ImmersionCalculator: React.FC = () => {
                       />
                     </svg>
                   </div>
-                  <span className="font-semibold text-lg">XP Calculation</span>
+                  <span className="font-semibold text-lg">
+                    {t('calculator.xpCalculation')}
+                  </span>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between bg-base-100/50 rounded-lg p-3">
-                    <span className="text-base-content/70">Input:</span>
+                    <span className="text-base-content/70">
+                      {t('calculator.input')}
+                    </span>
                     <span className="font-mono text-lg">
                       {immersionToXpResult.inputValue}{' '}
                       {immersionToXpResult.inputLabel}
                     </span>
                   </div>
                   <div className="flex items-center justify-between bg-primary/10 rounded-lg p-3">
-                    <span className="text-primary font-medium">XP Gained:</span>
+                    <span className="text-primary font-medium">
+                      {t('calculator.xpGained')}
+                    </span>
                     <span className="font-mono text-xl font-bold text-primary">
                       {immersionToXpResult.xpGained} XP
                     </span>

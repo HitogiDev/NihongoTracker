@@ -13,7 +13,9 @@ import {
 import { getClubMemberRankingsFn } from '../../api/clubApi';
 import { numberWithCommas } from '../../utils/utils';
 import { getPatreonBadgeProps } from '../../utils/patreonBadge';
+import { usePatreonBadgeText } from '../../hooks/usePatreonBadgeText';
 import UserAvatar from '../UserAvatar';
+import { useTranslation } from 'react-i18next';
 
 interface ClubRankingsTabProps {
   clubId: string;
@@ -45,6 +47,9 @@ type ClubMember = {
 };
 
 function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
+  const { t } = useTranslation('clubs');
+  const { t: tCommon } = useTranslation('common');
+  const badgeText = usePatreonBadgeText();
   const [sortBy, setSortBy] = useState<
     'totalXp' | 'totalLogs' | 'totalTime' | 'level'
   >('totalXp');
@@ -69,22 +74,22 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
 
   const sortOptions = [
     {
-      label: 'Total XP',
+      label: t('ranking.sort.totalXp'),
       value: 'totalXp' as const,
       icon: <Zap className="w-4 h-4" />,
     },
     {
-      label: 'Total Logs',
+      label: t('ranking.sort.totalLogs'),
       value: 'totalLogs' as const,
       icon: <ListOrdered className="w-4 h-4" />,
     },
     {
-      label: 'Total Time',
+      label: t('ranking.sort.totalTime'),
       value: 'totalTime' as const,
       icon: <Clock className="w-4 h-4" />,
     },
     {
-      label: 'Level',
+      label: t('ranking.sort.level'),
       value: 'level' as const,
       icon: <Star className="w-4 h-4" />,
     },
@@ -92,17 +97,17 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
 
   const periodOptions = [
     {
-      label: 'All Time',
+      label: t('ranking.period.allTime'),
       value: 'all-time' as const,
       icon: <Trophy className="w-4 h-4" />,
     },
     {
-      label: 'This Month',
+      label: t('ranking.period.month'),
       value: 'month' as const,
       icon: <BarChart className="w-4 h-4" />,
     },
     {
-      label: 'This Week',
+      label: t('ranking.period.week'),
       value: 'week' as const,
       icon: <Calendar1 className="w-4 h-4" />,
     },
@@ -127,9 +132,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
     const val = getDisplayValue(member);
     switch (sortBy) {
       case 'totalTime':
-        return `${numberWithCommas(val)} hrs`;
+        return t('ranking.hoursValue', { value: numberWithCommas(val) });
       case 'level':
-        return `Lv.${val}`;
+        return t('ranking.levelShort', { level: val });
       default:
         return numberWithCommas(val);
     }
@@ -138,20 +143,23 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
   const getValueUnit = () => {
     switch (sortBy) {
       case 'totalXp':
-        return 'XP';
+        return t('ranking.units.xp');
       case 'totalLogs':
-        return 'logs';
+        return t('ranking.units.logs');
       case 'totalTime':
-        return 'hrs';
+        return t('ranking.units.hours');
       case 'level':
         return '';
       default:
-        return 'XP';
+        return t('ranking.units.xp');
     }
   };
 
   const getSortLabel = () => {
-    return sortOptions.find((opt) => opt.value === sortBy)?.label || 'Total XP';
+    return (
+      sortOptions.find((opt) => opt.value === sortBy)?.label ||
+      t('ranking.sort.totalXp')
+    );
   };
 
   const getSortIcon = () => {
@@ -164,7 +172,8 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
 
   const getTimeFilterLabel = () => {
     return (
-      periodOptions.find((opt) => opt.value === period)?.label || 'All Time'
+      periodOptions.find((opt) => opt.value === period)?.label ||
+      t('ranking.period.allTime')
     );
   };
 
@@ -205,8 +214,8 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           <div className="card-body">
             <div className="text-center py-8 text-error">
               <Trophy className="mx-auto w-10 h-10 mb-2" />
-              <p>Failed to load rankings</p>
-              <p className="text-sm mt-1">Please try again later</p>
+              <p>{t('ranking.tabLoadFailed')}</p>
+              <p className="text-sm mt-1">{t('common.tryAgainLater')}</p>
             </div>
           </div>
         </div>
@@ -219,11 +228,11 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-2">
           <Trophy className="w-10 h-10 text-warning" />
-          <h1 className="text-4xl font-bold text-base-content">Club Ranking</h1>
+          <h1 className="text-4xl font-bold text-base-content">
+            {t('ranking.title')}
+          </h1>
         </div>
-        <p className="text-base-content/70">
-          See how club members stack up against each other
-        </p>
+        <p className="text-base-content/70">{t('ranking.tabSubtitle')}</p>
       </div>
 
       {/* Filters */}
@@ -308,7 +317,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
         <div className="flex justify-center items-center py-16">
           <div className="text-center">
             <span className="loading loading-spinner loading-lg text-primary"></span>
-            <p className="mt-4 text-base-content/70">Loading rankings...</p>
+            <p className="mt-4 text-base-content/70">{t('ranking.loading')}</p>
           </div>
         </div>
       ) : members.length === 0 ? (
@@ -316,10 +325,8 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           <div className="card-body">
             <div className="text-center py-12 text-base-content/60">
               <Trophy className="mx-auto w-12 h-12 mb-4 opacity-30" />
-              <p className="text-lg font-medium">No ranking data available</p>
-              <p className="text-sm mt-2">
-                Members need to log activities to appear in rankings
-              </p>
+              <p className="text-lg font-medium">{t('ranking.empty')}</p>
+              <p className="text-sm mt-2">{t('ranking.emptyHint')}</p>
             </div>
           </div>
         </div>
@@ -337,7 +344,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <UserAvatar
                           username={secondUser?.user.username}
                           avatar={secondUser?.user.avatar}
-                          alt={`${secondUser?.user.username ?? 'User'}'s Avatar`}
+                          alt={tCommon('avatarAlt', {
+                            username: secondUser?.user.username ?? '',
+                          })}
                           containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
                           imageClassName="w-full h-full rounded-full object-cover"
                           fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -374,7 +383,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               />
                             </svg>
                             <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                              {secondBadge.text}
+                              {badgeText(secondBadge)}
                             </span>
                           </div>
                         )}
@@ -395,7 +404,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <UserAvatar
                           username={firstUser?.user.username}
                           avatar={firstUser?.user.avatar}
-                          alt={`${firstUser?.user.username ?? 'User'}'s Avatar`}
+                          alt={tCommon('avatarAlt', {
+                            username: firstUser?.user.username ?? '',
+                          })}
                           containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
                           imageClassName="w-full h-full rounded-full object-cover"
                           fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -443,7 +454,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               />
                             </svg>
                             <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                              {firstBadge.text}
+                              {badgeText(firstBadge)}
                             </span>
                           </div>
                         )}
@@ -464,7 +475,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <UserAvatar
                           username={thirdUser?.user.username}
                           avatar={thirdUser?.user.avatar}
-                          alt={`${thirdUser?.user.username ?? 'User'}'s Avatar`}
+                          alt={tCommon('avatarAlt', {
+                            username: thirdUser?.user.username ?? '',
+                          })}
                           containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
                           imageClassName="w-full h-full rounded-full object-cover"
                           fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -501,7 +514,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               />
                             </svg>
                             <span className="font-bold max-w-[5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                              {thirdBadge.text}
+                              {badgeText(thirdBadge)}
                             </span>
                           </div>
                         )}
@@ -523,9 +536,13 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
               <table className="table w-full">
                 <thead>
                   <tr className="border-b border-base-300">
-                    <th className="text-center w-10 sm:w-16">Rank</th>
-                    <th>Member</th>
-                    <th className="text-center hidden sm:table-cell">Level</th>
+                    <th className="text-center w-10 sm:w-16">
+                      {t('ranking.rank')}
+                    </th>
+                    <th>{t('ranking.member')}</th>
+                    <th className="text-center hidden sm:table-cell">
+                      {t('ranking.level')}
+                    </th>
                     <th className="text-end">{getSortLabel()}</th>
                   </tr>
                 </thead>
@@ -554,7 +571,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               <UserAvatar
                                 username={member.user.username}
                                 avatar={member.user.avatar}
-                                alt={`${member.user.username}'s Avatar`}
+                                alt={tCommon('avatarAlt', {
+                                  username: member.user.username,
+                                })}
                                 containerClassName="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10"
                                 imageClassName="w-full h-full rounded-full object-cover"
                                 fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -565,7 +584,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               <Link
                                 to={`/user/${member.user.username}`}
                                 className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-nowrap max-w-full"
-                                title={`View ${member.user.username}'s profile`}
+                                title={tCommon('viewProfile', {
+                                  username: member.user.username,
+                                })}
                               >
                                 <span className="hidden md:inline">
                                   {member.user.username}
@@ -591,7 +612,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                                       />
                                     </svg>
                                     <span className="font-bold md:max-w-none md:overflow-visible md:whitespace-normal max-w-[5.5rem] overflow-hidden text-ellipsis whitespace-nowrap">
-                                      {patreonBadge.text}
+                                      {badgeText(patreonBadge)}
                                     </span>
                                   </div>
                                 )}

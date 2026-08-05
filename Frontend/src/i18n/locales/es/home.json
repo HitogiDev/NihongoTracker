@@ -1,0 +1,398 @@
+{
+  "calculator": {
+    "characters": "Caracteres:",
+    "charactersLabel": "Caracteres",
+    "configure": "Configura tu cálculo",
+    "episodes": "Episodios:",
+    "episodesLabel": "Episodios",
+    "heading": "Calculadora",
+    "immersionToXp": "Inmersión → XP",
+    "immersionType": "Tipo de inmersión",
+    "input": "Entrada:",
+    "minutes": "Minutos",
+    "mode": "Modo de cálculo",
+    "pages": "Páginas:",
+    "pagesLabel": "Páginas",
+    "quantity": "Cantidad",
+    "subtitle": "Descubre cuánta inmersión necesitas para llegar a tus objetivos",
+    "targetXp": "XP objetivo",
+    "time": "Tiempo:",
+    "tip1": "Cada tipo de contenido usa reglas de cálculo distintas",
+    "tip2": "En anime, la XP se calcula sobre todo por tiempo y episodios",
+    "tip3": "En lectura, cuentan sobre todo los caracteres y las páginas",
+    "tip4": "Úsala para fijar objetivos diarios realistas",
+    "tips": "Consejos rápidos",
+    "title": "Calculadora de inmersión",
+    "xpCalculation": "Cálculo de XP",
+    "xpGained": "XP obtenida:",
+    "xpToImmersion": "XP → inmersión"
+  },
+  "common": {
+    "close": "Cerrar"
+  },
+  "cta": {
+    "body": "Gratis. Empieza a loguear tu inmersión.",
+    "joinNow": "Únete ahora",
+    "madeBy": "Hecho con ❤️ por otro estudiante",
+    "seeFeatures": "Ver todas las funciones →",
+    "title": "¿Listo para empezar?"
+  },
+  "dashboard": {
+    "greetings": {
+      "immersion": "¡Vamos a hacer algo de inmersión!",
+      "track": "¡Toca loguear tu progreso!",
+      "fluency": "Otro día, otro paso hacia la fluidez.",
+      "keepUp": "¡Sigue así!",
+      "journey": "Un viaje de mil millas empieza con un solo paso."
+    },
+    "feed": {
+      "all": "Toda la actividad",
+      "logs": "Logs",
+      "achievements": "Logros",
+      "globalFeed": "Actividad global",
+      "allTypes": "Todos los tipos",
+      "subtitle": "Mira qué está inmersando la comunidad ahora mismo",
+      "empty": "No hay actividad para los filtros seleccionados."
+    },
+    "time": {
+      "day": "Últimas 24 h",
+      "week": "Últimos 7 días",
+      "month": "Últimos 30 días",
+      "year": "Último año",
+      "all": "Histórico"
+    },
+    "stats": {
+      "reading": "Lectura",
+      "listening": "Escucha",
+      "total": "Total",
+      "change": "{{percent}} % frente al mes pasado",
+      "noChange": "Sin cambios"
+    },
+    "ranking": {
+      "gap": "<xp>{{xp}} XP por detrás de </xp><user>{{username}}</user> este mes",
+      "leading": "¡Vas en cabeza de la clasificación mensual!",
+      "notRanked": "Loguea algo para entrar en la clasificación de este mes."
+    },
+    "recentMedia": "Contenido reciente",
+    "jumpBackIn": "Retomar",
+    "swipe": "Desliza",
+    "hideTitle": "¿Ocultar de Contenido reciente?",
+    "hideAria": "Ocultar de contenido reciente",
+    "someone": "Alguien",
+    "playlistBatch": "Lote de lista de reproducción",
+    "refreshFailed": "No se pudieron actualizar los datos tras el log rápido",
+    "welcomeBack": "Hola de nuevo",
+    "actions": {
+      "createLog": "Crear log",
+      "profile": "Perfil",
+      "rankings": "Clasificación",
+      "cancel": "Cancelar",
+      "hide": "Ocultar"
+    },
+    "streak": {
+      "label": "Racha",
+      "days_one": "{{count}} día",
+      "days_many": "{{count}} días",
+      "days_other": "{{count}} días",
+      "hint": "Mantén la llama con inmersión diaria"
+    },
+    "monthlyRanking": "Clasificación mensual",
+    "immersion": {
+      "title": "Inmersión de este mes",
+      "subtitle": "Comparado con el mismo periodo del mes pasado"
+    },
+    "quickLog": "Log rápido",
+    "quickShortcuts": "Atajos de log rápido",
+    "recentEmpty": "Loguea algo para desbloquear acciones rápidas aquí.",
+    "thisMedia": "este contenido",
+    "hideConfirm": "¿Seguro que quieres ocultar <title>{{title}}</title> de tu contenido reciente? Dejará de aparecer en las acciones rápidas."
+  },
+  "features": {
+    "hero": {
+      "badge": "Todas las funciones",
+      "title": "Todo lo que necesitas para <hl>dominar el japonés</hl>",
+      "subtitle": "Cada función está pensada específicamente para quienes aprenden japonés por inmersión. De las gráficas a la gamificación, y del texthooker a los clubes, lo tienes todo cubierto.",
+      "ctaPrimary": "Empieza gratis",
+      "ctaSecondary": "Ver la clasificación"
+    },
+    "stats": {
+      "features": "Funciones",
+      "mediaTypes": "Tipos de contenido",
+      "progressTracking": "Seguimiento del progreso",
+      "freeCore": "Funciones básicas gratis"
+    },
+    "count_one": "{{count}} función",
+    "count_many": "{{count}} funciones",
+    "count_other": "{{count}} funciones",
+    "planned": "Previsto",
+    "categories": {
+      "tracking": {
+        "title": "Seguimiento inteligente de la inmersión",
+        "description": "Sistema completo para loguear todo tu contenido en japonés",
+        "items": {
+          "multiMedia": {
+            "title": "Compatible con todo tipo de contenido",
+            "description": "Loguea anime, manga, novelas visuales, libros, audiolibros, películas, series y más"
+          },
+          "durationEstimates": {
+            "title": "Estimación automática de duración",
+            "description": "Cálculo inteligente del tiempo de episodios y sesiones de lectura"
+          },
+          "characterCount": {
+            "title": "Recuento de caracteres",
+            "description": "Controla los caracteres leídos en novelas visuales, libros y manga"
+          },
+          "episodePages": {
+            "title": "Progreso de episodios y páginas",
+            "description": "Lleva la cuenta de los episodios vistos y las páginas leídas"
+          },
+          "databaseIntegration": {
+            "title": "Integración con bases de datos",
+            "description": "Emparejado automático con AniList, VNDB y nuestra amplia base de datos para loguear sin esfuerzo"
+          },
+          "importExport": {
+            "title": "Importar y exportar logs",
+            "description": "Importa desde otros trackers y exporta tus datos"
+          },
+          "texthooker": {
+            "title": "Integración con el texthooker",
+            "description": "Loguea tus sesiones de lectura de novelas visuales en tiempo real, con analíticas de caracteres y líneas sincronizadas con tus logs"
+          }
+        }
+      },
+      "analytics": {
+        "title": "Analíticas y estadísticas avanzadas",
+        "description": "Información detallada sobre tu progreso y tus hábitos de aprendizaje",
+        "items": {
+          "readingSpeed": {
+            "title": "Análisis de velocidad de lectura",
+            "description": "Sigue cómo mejoran tus caracteres por hora con el tiempo"
+          },
+          "charts": {
+            "title": "Gráficas de progreso",
+            "description": "Visualizaciones cuidadas de tu viaje de inmersión"
+          },
+          "timeBased": {
+            "title": "Estadísticas por periodo",
+            "description": "Desgloses de progreso diarios, semanales, mensuales y anuales"
+          },
+          "mediaSpecific": {
+            "title": "Estadísticas por contenido",
+            "description": "Estadísticas detalladas de cada anime, manga o libro"
+          },
+          "typeBased": {
+            "title": "Análisis por tipo",
+            "description": "Compara tu progreso entre distintos tipos de contenido"
+          },
+          "completion": {
+            "title": "Porcentajes de avance",
+            "description": "Comprueba cuánto has completado de cada contenido"
+          }
+        }
+      },
+      "gamification": {
+        "title": "Gamificación y motivación",
+        "description": "Sistema de progresión estilo RPG para mantenerte enganchado",
+        "items": {
+          "xpLeveling": {
+            "title": "Sistema de XP y niveles",
+            "description": "Gana puntos de experiencia y sube de nivel tu japonés"
+          },
+          "streaks": {
+            "title": "Seguimiento de rachas diarias",
+            "description": "Crea y mantén hábitos de inmersión constantes"
+          },
+          "achievements": {
+            "title": "Sistema de logros",
+            "description": "Desbloquea hitos y celebra tu progreso"
+          },
+          "goals": {
+            "title": "Objetivos diarios y a largo plazo",
+            "description": "Fija metas para distintos tipos de contenido y periodos"
+          },
+          "progressIndicators": {
+            "title": "Indicadores de progreso",
+            "description": "Información visual sobre tus metas diarias y mensuales"
+          },
+          "dashboard": {
+            "title": "Panel de motivación",
+            "description": "Consulta tus logros, tus rachas y tus próximos objetivos"
+          }
+        }
+      },
+      "social": {
+        "title": "Funciones sociales y competición",
+        "description": "Conecta con otras personas que aprenden y compara tu progreso",
+        "items": {
+          "rankings": {
+            "title": "Clasificaciones globales",
+            "description": "Compite en las tablas de clasificación por XP, tiempo y otras métricas"
+          },
+          "comparison": {
+            "title": "Comparación entre usuarios",
+            "description": "Compara tus estadísticas con las de otras personas en un contenido concreto"
+          },
+          "profiles": {
+            "title": "Páginas de perfil",
+            "description": "Muestra tu viaje de inmersión y tus estadísticas"
+          },
+          "sharedMedia": {
+            "title": "Páginas de contenido compartidas",
+            "description": "Consulta las estadísticas de la comunidad y la actividad reciente de cualquier contenido"
+          },
+          "logSharing": {
+            "title": "Compartir logs",
+            "description": "Comparte con la comunidad logs y descubrimientos interesantes"
+          },
+          "activityFeed": {
+            "title": "Actividad reciente",
+            "description": "Mira qué están leyendo y viendo otras personas"
+          }
+        }
+      },
+      "clubs": {
+        "title": "Clubes de inmersión",
+        "description": "Únete a comunidades sobre contenidos concretos o crea la tuya",
+        "items": {
+          "createJoin": {
+            "title": "Crear y unirse a clubes",
+            "description": "Forma grupos alrededor de anime, manga o clubes de lectura"
+          },
+          "mediaTracking": {
+            "title": "Seguimiento del contenido del club",
+            "description": "Sigue en común el progreso del contenido elegido por el club"
+          },
+          "memberRankings": {
+            "title": "Clasificación de miembros",
+            "description": "Comprueba tu posición frente al resto de miembros del club"
+          },
+          "statistics": {
+            "title": "Estadísticas del club",
+            "description": "Consulta las estadísticas agregadas de todos los miembros"
+          },
+          "voting": {
+            "title": "Votación de contenido",
+            "description": "Vota qué contenido leerá o verá el club a continuación"
+          },
+          "activity": {
+            "title": "Seguimiento de actividad",
+            "description": "Controla la participación y el progreso del club con el tiempo"
+          }
+        }
+      },
+      "tools": {
+        "title": "Herramientas de productividad",
+        "description": "Funciones adicionales para mejorar tu aprendizaje",
+        "items": {
+          "calculator": {
+            "title": "Calculadora de tiempo",
+            "description": "Convierte entre unidades de tiempo y estima tiempos de lectura"
+          },
+          "discovery": {
+            "title": "Descubrir contenido",
+            "description": "Encuentra contenido nuevo según tus preferencias y su dificultad"
+          },
+          "lists": {
+            "title": "Listas personales",
+            "description": "Crea listas propias de contenido para seguirlo y organizarlo"
+          },
+          "goals": {
+            "title": "Gestión de objetivos",
+            "description": "Configura y sigue objetivos diarios y a largo plazo"
+          },
+          "export": {
+            "title": "Exportación de datos",
+            "description": "Exporta tus logs y estadísticas para analizarlos por fuera"
+          },
+          "sync": {
+            "title": "Sincronización entre dispositivos",
+            "description": "Accede a tus datos sin fricción desde cualquier dispositivo"
+          }
+        }
+      }
+    },
+    "howItWorks": {
+      "badge": "El sistema completo",
+      "title": "Cómo encaja todo",
+      "step": "Paso {{number}}",
+      "steps": {
+        "track": {
+          "title": "Regístralo todo",
+          "description": "Loguea anime, manga, libros y cualquier contenido en japonés con métricas detalladas."
+        },
+        "analyze": {
+          "title": "Analiza tu progreso",
+          "description": "Obtén información sobre tu velocidad de lectura, el tiempo invertido y tu mejora."
+        },
+        "motivate": {
+          "title": "Mantén la motivación",
+          "description": "Gana XP, mantén rachas y cumple objetivos mientras creas hábitos."
+        },
+        "connect": {
+          "title": "Conecta y compite",
+          "description": "Únete a clubes, compara tu progreso y escala en la clasificación."
+        }
+      }
+    },
+    "cta": {
+      "title": "¿Listo para empezar?",
+      "subtitle": "Gratis, empieza a loguear tu inmersión.",
+      "primary": "Empezar a loguear",
+      "secondary": "Ver clasificaciones →",
+      "madeWith": "Hecho con ❤️ por alguien que también aprende"
+    }
+  },
+  "hero": {
+    "builtForVn": "Hecho para quienes leen<br />novelas visuales",
+    "clubBody": "Únete a un club de inmersión o crea el tuyo. Compite en las clasificaciones del club.",
+    "clubBullet1": "Vota qué contenido consumir juntos a continuación",
+    "clubBullet2": "Clubes públicos y privados con etiquetas",
+    "clubBullet3": "Encuentra clubes por género, estilo o nivel",
+    "clubs": "Clubes",
+    "dashboardAlt": "Panel de NihongoTracker",
+    "freeForever": "Empieza hoy · Las funciones principales son gratis para siempre",
+    "friendly": "Un poco de<br />competitividad sana",
+    "hookerAlt": "Panel del TextHooker",
+    "hookerBody": "El texthooker integrado hace fácil loguear tus sesiones.",
+    "hookerBullet1": "Salas de texthooker compartidas para leer en grupo",
+    "hookerBullet2": "Historial completo de sesiones por título",
+    "hookerBullet3": "Loguea la sesión de lectura con un clic",
+    "leaderboards": "Clasificaciones",
+    "learnBetter": "Aprende mejor<br />acompañado",
+    "logBody": "Busca un título, rellena los datos y guarda. Se acabó apuntar cosas a mano.",
+    "logBullet1": "Anime, manga, novelas visuales, audio, novelas ligeras y más",
+    "logBullet2": "Integración con AniList y VNDB para traer los datos al instante",
+    "logBullet3": "XP y rachas calculadas solas",
+    "logInstant": "Loguea en un momento",
+    "logTracking": "Logueo de sesiones",
+    "rankBody": "Mira cómo te comparas con otros estudiantes, en global o por medio.",
+    "rankBullet1": "Clasificaciones globales y por medio",
+    "rankBullet2": "Clasificaciones mensuales e históricas",
+    "rankBullet3": "Filtros por periodo, medio y escucha o lectura",
+    "seeFeatures": "Ver todas las funciones",
+    "seeHowFar": "Mira exactamente<br />cuánto has avanzado",
+    "startTracking": "Empezar a loguear",
+    "statistics": "Estadísticas",
+    "statsBody": "Gráficos y desgloses detallados muestran tu evolución con el tiempo.",
+    "statsBullet1": "Progreso de nivel global, de escucha y de lectura",
+    "statsBullet2": "Mapa de calor de actividad, rachas y medias diarias",
+    "statsBullet3": "Filtra por periodo, medio o etiquetas",
+    "trackEveryType": "Loguea cualquier tipo de inmersión",
+    "tagline": "La mejor forma de <verb></verb> tu inmersión en japonés",
+    "taglineVerbs": {
+      "track": "loguear",
+      "gamify": "gamificar",
+      "celebrate": "celebrar",
+      "share": "compartir"
+    },
+    "chips": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "vn": "Novelas visuales",
+      "audio": "Audio y pódcasts",
+      "books": "Libros y lectura",
+      "video": "Vídeo",
+      "games": "Videojuegos"
+    }
+  }
+}

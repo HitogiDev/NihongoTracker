@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -40,7 +42,14 @@ import ClubRanking from './club/ClubRanking';
 import QuickLog from './QuickLog';
 import UserAvatar from './UserAvatar';
 import AchievementFeedItem from './achievements/AchievementFeedItem';
-import { IMediaDocument, ILog, ILoginResponse, IPendingAchievement, UnifiedFeedItem, UnifiedFeedFilter } from '../types';
+import {
+  IMediaDocument,
+  ILog,
+  ILoginResponse,
+  IPendingAchievement,
+  UnifiedFeedItem,
+  UnifiedFeedFilter,
+} from '../types';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
   reading: Book,
@@ -64,31 +73,46 @@ type GlobalFeedGroup = {
   isPlaylistGroup: boolean;
 };
 
-const feedKindOptions: Array<{ label: string; value: UnifiedFeedFilter; icon: React.ElementType }> = [
-  { label: 'All activity', value: 'all', icon: Sparkles },
-  { label: 'Logs', value: 'logs', icon: LayoutList },
-  { label: 'Achievements', value: 'achievements', icon: Trophy },
+const feedKindOptions: Array<{
+  labelKey: ParseKeys<'home'>;
+  value: UnifiedFeedFilter;
+  icon: React.ElementType;
+}> = [
+  { labelKey: 'dashboard.feed.all', value: 'all', icon: Sparkles },
+  { labelKey: 'dashboard.feed.logs', value: 'logs', icon: LayoutList },
+  {
+    labelKey: 'dashboard.feed.achievements',
+    value: 'achievements',
+    icon: Trophy,
+  },
 ];
 
-const feedTypeOptions: Array<{ label: string; value: FeedType }> = [
-  { label: 'All types', value: 'all' },
-  { label: 'Anime', value: 'anime' },
-  { label: 'Manga', value: 'manga' },
-  { label: 'Reading', value: 'reading' },
-  { label: 'Visual Novel', value: 'vn' },
-  { label: 'Video Game', value: 'game' },
-  { label: 'Video', value: 'video' },
-  { label: 'Movie', value: 'movie' },
-  { label: 'Audio', value: 'audio' },
-  { label: 'Book', value: 'book' },
+const feedTypeOptions: Array<{
+  labelKey: ParseKeys<'home'> | ParseKeys<'common'>;
+  ns: 'home' | 'common';
+  value: FeedType;
+}> = [
+  { labelKey: 'dashboard.feed.allTypes', ns: 'home', value: 'all' },
+  { labelKey: 'mediaTypes.anime', ns: 'common', value: 'anime' },
+  { labelKey: 'mediaTypes.manga', ns: 'common', value: 'manga' },
+  { labelKey: 'mediaTypes.reading', ns: 'common', value: 'reading' },
+  { labelKey: 'mediaTypes.vn', ns: 'common', value: 'vn' },
+  { labelKey: 'mediaTypes.game', ns: 'common', value: 'game' },
+  { labelKey: 'mediaTypes.video', ns: 'common', value: 'video' },
+  { labelKey: 'mediaTypes.movie', ns: 'common', value: 'movie' },
+  { labelKey: 'mediaTypes.audio', ns: 'common', value: 'audio' },
+  { labelKey: 'mediaTypes.book', ns: 'common', value: 'book' },
 ];
 
-const feedTimeOptions: Array<{ label: string; value: FeedTimeRange }> = [
-  { label: 'Last 24h', value: 'day' },
-  { label: 'Last 7 days', value: 'week' },
-  { label: 'Last 30 days', value: 'month' },
-  { label: 'Last year', value: 'year' },
-  { label: 'All time', value: 'all' },
+const feedTimeOptions: Array<{
+  labelKey: ParseKeys<'home'>;
+  value: FeedTimeRange;
+}> = [
+  { labelKey: 'dashboard.time.day', value: 'day' },
+  { labelKey: 'dashboard.time.week', value: 'week' },
+  { labelKey: 'dashboard.time.month', value: 'month' },
+  { labelKey: 'dashboard.time.year', value: 'year' },
+  { labelKey: 'dashboard.time.all', value: 'all' },
 ];
 
 const RECENT_MEDIA_PANEL_LIMIT = 4;
@@ -105,19 +129,26 @@ function getRecentMediaRailLimit(width: number) {
 }
 
 function Dashboard() {
+  const { t } = useTranslation('home');
+  const { t: tCommon } = useTranslation('common');
+  // feedTypeOptions mixes the `home` and `common` namespaces, which the typed
+  // `t` signature cannot express in one call.
+  const tAny = t as unknown as (key: string, options?: object) => string;
   const { user, setUser } = useUserDataStore();
   const username = user?.username;
   const userTimezone = user?.settings?.timezone ?? 'UTC';
 
-  const [randomGreeting] = useState(() => {
-    const greetings = [
-      "Let's get some immersion done!",
-      'Time to track your progress!',
-      'Another day, another step towards fluency!',
-      'Keep up the great work!',
-      'The journey of a thousand miles begins with a single step.',
+  // Pick the key once so the greeting stays put, but translate on every render
+  // so it follows a language change.
+  const [greetingKey] = useState<ParseKeys<'home'>>(() => {
+    const keys: ParseKeys<'home'>[] = [
+      'dashboard.greetings.immersion',
+      'dashboard.greetings.track',
+      'dashboard.greetings.fluency',
+      'dashboard.greetings.keepUp',
+      'dashboard.greetings.journey',
     ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
+    return keys[Math.floor(Math.random() * keys.length)];
   });
 
   const { formatRelativeDate } = useDateFormatting();
@@ -134,7 +165,6 @@ function Dashboard() {
     mediaId: string;
     title: string;
   } | null>(null);
-
 
   const queryClient = useQueryClient();
 
@@ -190,11 +220,13 @@ function Dashboard() {
     staleTime: 1000 * 60 * 2,
   });
 
-  const { data: achievementFeed, isLoading: achievementFeedLoading } = useQuery({
-    queryKey: ['achievementFeed', feedFilters.timeRange],
-    queryFn: () => getAchievementFeedFn(20),
-    staleTime: 60_000,
-  });
+  const { data: achievementFeed, isLoading: achievementFeedLoading } = useQuery(
+    {
+      queryKey: ['achievementFeed', feedFilters.timeRange],
+      queryFn: () => getAchievementFeedFn(20),
+      staleTime: 60_000,
+    }
+  );
 
   // Build unified chronological feed (logs + achievements)
   const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
@@ -207,10 +239,10 @@ function Dashboard() {
     // Filter achievements by timeRange
     const now = Date.now();
     const rangeMs: Record<string, number> = {
-      day:   1 * 24 * 60 * 60 * 1000,
-      week:  7 * 24 * 60 * 60 * 1000,
+      day: 1 * 24 * 60 * 60 * 1000,
+      week: 7 * 24 * 60 * 60 * 1000,
       month: 30 * 24 * 60 * 60 * 1000,
-      year:  365 * 24 * 60 * 60 * 1000,
+      year: 365 * 24 * 60 * 60 * 1000,
     };
     const achievementItems: UnifiedFeedItem[] = (achievementFeed ?? [])
       .filter((a) => {
@@ -237,13 +269,21 @@ function Dashboard() {
     const order: string[] = [];
     for (const log of feedLogs) {
       const key = log.playlistBatchId?.trim() || `single:${log._id}`;
-      if (!grouped.has(key)) { grouped.set(key, []); order.push(key); }
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+        order.push(key);
+      }
       grouped.get(key)!.push(log);
     }
     return order.map((key) => {
       const logs = grouped.get(key) ?? [];
       const representative = logs[0];
-      return { key, logs, representative, isPlaylistGroup: Boolean(representative?.playlistBatchId) };
+      return {
+        key,
+        logs,
+        representative,
+        isPlaylistGroup: Boolean(representative?.playlistBatchId),
+      };
     });
   }, [globalFeed]);
 
@@ -403,7 +443,7 @@ function Dashboard() {
 
       setUser(loginResponse);
     } catch (error) {
-      console.error('Failed to refresh user data after quick log', error);
+      console.error(t('dashboard.refreshFailed'), error);
     }
   }
 
@@ -416,20 +456,29 @@ function Dashboard() {
   const xpGapContent = monthlyRanking ? (
     monthlyRanking.nextUser ? (
       <>
-        <span>{numberWithCommas(monthlyRanking.nextUser.gap)} XP behind </span>
-        <Link
-          to={`/user/${monthlyRanking.nextUser.username}`}
-          className="hover:underline"
-        >
-          {monthlyRanking.nextUser.username}
-        </Link>
-        <span> this month</span>
+        <Trans
+          t={t}
+          i18nKey="dashboard.ranking.gap"
+          values={{
+            xp: numberWithCommas(monthlyRanking.nextUser.gap),
+            username: monthlyRanking.nextUser.username,
+          }}
+          components={{
+            xp: <span />,
+            user: (
+              <Link
+                to={`/user/${monthlyRanking.nextUser.username}`}
+                className="hover:underline"
+              />
+            ),
+          }}
+        />
       </>
     ) : (
-      'You are leading the monthly ranking!'
+      t('dashboard.ranking.leading')
     )
   ) : (
-    'Log something to enter this month’s ranking.'
+    t('dashboard.ranking.notRanked')
   );
 
   const closeQuickLog = () => {
@@ -459,28 +508,28 @@ function Dashboard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm uppercase tracking-wide text-primary font-semibold">
-            Welcome back
+            {t('dashboard.welcomeBack')}
           </p>
           <h1 className="text-3xl md:text-4xl font-bold text-base-content">
             {user.username}
           </h1>
-          <p className="text-base-content/70 mt-1">{randomGreeting}</p>
+          <p className="text-base-content/70 mt-1">{t(greetingKey)}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
           <Link to="/log" className="btn btn-primary btn-lg">
             <Plus className="w-5 h-5" />
-            Create Log
+            {t('dashboard.actions.createLog')}
           </Link>
           <Link
             to={`/user/${user.username}`}
             className="btn btn-secondary btn-lg"
           >
             <User className="w-5 h-5" />
-            Profile
+            {t('dashboard.actions.profile')}
           </Link>
           <Link to="/ranking" className="btn btn-accent btn-lg">
             <ChartNoAxesColumn className="w-5 h-5" />
-            Rankings
+            {t('dashboard.actions.rankings')}
           </Link>
         </div>
       </div>
@@ -502,13 +551,13 @@ function Dashboard() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-wide text-secondary">
-                  Streak
+                  {t('dashboard.streak.label')}
                 </p>
                 <h3 className="text-2xl font-bold text-base-content">
-                  {streak} day{streak === 1 ? '' : 's'}
+                  {t('dashboard.streak.days', { count: streak })}
                 </h3>
                 <p className="text-base-content/70 text-sm">
-                  Keep it burning with daily immersion
+                  {t('dashboard.streak.hint')}
                 </p>
               </div>
             </div>
@@ -522,7 +571,7 @@ function Dashboard() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-wide text-primary">
-                  Monthly Ranking
+                  {t('dashboard.monthlyRanking')}
                 </p>
                 <h3 className="text-2xl font-bold text-base-content">
                   #{monthlyRanking?.position ?? '—'} /{' '}
@@ -540,27 +589,27 @@ function Dashboard() {
           <div className="card bg-base-100 shadow-sm border border-base-200/60">
             <div className="card-body">
               <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
-                This Month's Immersion
+                {t('dashboard.immersion.title')}
               </h2>
               <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} -mt-1 mb-4`}>
-                Compared to the same period last month
+                {t('dashboard.immersion.subtitle')}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
-                    label: 'Reading',
+                    label: t('dashboard.stats.reading'),
                     value: `${immersionStats.currentMonth.reading}h`,
                     change: immersionStats.changes.reading,
                     accent: 'text-primary',
                   },
                   {
-                    label: 'Listening',
+                    label: t('dashboard.stats.listening'),
                     value: `${immersionStats.currentMonth.listening}h`,
                     change: immersionStats.changes.listening,
                     accent: 'text-secondary',
                   },
                   {
-                    label: 'Total',
+                    label: t('dashboard.stats.total'),
                     value: `${immersionStats.currentMonth.total}h`,
                     change: immersionStats.changes.total,
                     accent: 'text-base-content',
@@ -592,8 +641,10 @@ function Dashboard() {
                         <ChevronDown className="w-4 h-4 shrink-0" />
                       )}
                       {stat.change !== 0
-                        ? `${Math.abs(stat.change)}% vs. last month`
-                        : 'No change'}
+                        ? t('dashboard.stats.change', {
+                            percent: Math.abs(stat.change),
+                          })
+                        : t('dashboard.stats.noChange')}
                     </p>
                   </div>
                 ))}
@@ -605,25 +656,32 @@ function Dashboard() {
             <div className="card-body space-y-4">
               {/* Header */}
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Global Feed</h2>
+                <div className="min-w-0">
+                  <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
+                    {t('dashboard.feed.globalFeed')}
+                  </h2>
                   <p className={DASHBOARD_CARD_DESCRIPTION_CLASS}>
-                    See what the community is immersing in right now
+                    {t('dashboard.feed.subtitle')}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
                   {/* Kind filter */}
                   <div className="dropdown dropdown-end">
                     <div
                       tabIndex={0}
                       role="button"
-                      className="btn btn-sm btn-outline gap-2 justify-start"
+                      className="btn btn-sm btn-outline gap-2 justify-start whitespace-nowrap"
                     >
                       {(() => {
-                        const Icon = feedKindOptions.find((o) => o.value === feedKind)?.icon;
+                        const Icon = feedKindOptions.find(
+                          (o) => o.value === feedKind
+                        )?.icon;
                         return Icon ? <Icon className="w-3.5 h-3.5" /> : null;
                       })()}
-                      {feedKindOptions.find((o) => o.value === feedKind)?.label}
+                      {t(
+                        feedKindOptions.find((o) => o.value === feedKind)
+                          ?.labelKey ?? 'dashboard.feed.all'
+                      )}
                       <ChevronDown className="w-3.5 h-3.5 ml-auto" />
                     </div>
                     <ul
@@ -635,11 +693,13 @@ function Dashboard() {
                         return (
                           <li key={option.value}>
                             <a
-                              className={feedKind === option.value ? 'active' : ''}
+                              className={
+                                feedKind === option.value ? 'active' : ''
+                              }
                               onClick={() => setFeedKind(option.value)}
                             >
                               <Icon className="w-4 h-4" />
-                              {option.label}
+                              {t(option.labelKey)}
                             </a>
                           </li>
                         );
@@ -653,10 +713,20 @@ function Dashboard() {
                       <div
                         tabIndex={0}
                         role="button"
-                        className="btn btn-sm btn-outline gap-2"
+                        className="btn btn-sm btn-outline gap-2 whitespace-nowrap"
                       >
                         <Funnel className="w-3.5 h-3.5" />
-                        {feedTypeOptions.find((o) => o.value === feedFilters.type)?.label}
+                        {tAny(
+                          feedTypeOptions.find(
+                            (o) => o.value === feedFilters.type
+                          )?.labelKey ?? 'dashboard.feed.allTypes',
+                          {
+                            ns:
+                              feedTypeOptions.find(
+                                (o) => o.value === feedFilters.type
+                              )?.ns ?? 'home',
+                          }
+                        )}
                         <ChevronDown className="w-3.5 h-3.5" />
                       </div>
                       <ul
@@ -667,7 +737,9 @@ function Dashboard() {
                           <li key={option.value}>
                             <a
                               className={
-                                feedFilters.type === option.value ? 'active' : ''
+                                feedFilters.type === option.value
+                                  ? 'active'
+                                  : ''
                               }
                               onClick={() =>
                                 setFeedFilters((prev) => ({
@@ -676,7 +748,7 @@ function Dashboard() {
                                 }))
                               }
                             >
-                              {option.label}
+                              {tAny(option.labelKey, { ns: option.ns })}
                             </a>
                           </li>
                         ))}
@@ -689,10 +761,14 @@ function Dashboard() {
                     <div
                       tabIndex={0}
                       role="button"
-                      className="btn btn-sm btn-outline gap-2"
+                      className="btn btn-sm btn-outline gap-2 whitespace-nowrap"
                     >
                       <Clock className="w-3.5 h-3.5" />
-                      {feedTimeOptions.find((o) => o.value === feedFilters.timeRange)?.label}
+                      {t(
+                        feedTimeOptions.find(
+                          (o) => o.value === feedFilters.timeRange
+                        )?.labelKey ?? 'dashboard.time.all'
+                      )}
                       <ChevronDown className="w-3.5 h-3.5" />
                     </div>
                     <ul
@@ -703,7 +779,9 @@ function Dashboard() {
                         <li key={option.value}>
                           <a
                             className={
-                              feedFilters.timeRange === option.value ? 'active' : ''
+                              feedFilters.timeRange === option.value
+                                ? 'active'
+                                : ''
                             }
                             onClick={() =>
                               setFeedFilters((prev) => ({
@@ -712,7 +790,7 @@ function Dashboard() {
                               }))
                             }
                           >
-                            {option.label}
+                            {t(option.labelKey)}
                           </a>
                         </li>
                       ))}
@@ -723,172 +801,206 @@ function Dashboard() {
 
               {/* Feed items */}
               <div className="space-y-3">
-                {(globalFeedLoading || achievementFeedLoading) ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="skeleton h-16 w-full rounded-2xl" />
-                  ))
-                ) : (() => {
-                  const items = unifiedFeed.filter((item) => {
-                    if (feedKind === 'logs') return item.kind === 'log';
-                    if (feedKind === 'achievements') return item.kind === 'achievement';
-                    return true;
-                  });
-
-                  if (items.length === 0) {
-                    return (
-                      <div className="text-base-content/70 text-sm">
-                        No activity for the selected filters.
-                      </div>
-                    );
-                  }
-
-                  return items.map((item) => {
-                    if (item.kind === 'achievement') {
-                      return (
-                        <AchievementFeedItem
-                          key={`ach-${item.data.userAchievementId}`}
-                          item={item.data as IPendingAchievement}
-                          showUser
-                          relativeDate={formatRelativeDate(item.data.unlockedAt)}
-                        />
-                      );
-                    }
-
-                    // Log item — find its group
-                    const log = item.data;
-                    const groupKey = log.playlistBatchId?.trim() || `single:${log._id}`;
-                    const entry = groupedGlobalFeed.find((g) => g.key === groupKey);
-                    if (!entry) return null;
-
-                    // Skip if not the representative (avoid duplicates from grouped playlists)
-                    if (entry.representative._id !== log._id) return null;
-
-                    const Icon = logTypeIcons[log.type] || Book;
-                    const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
-                    const image = log.media?.contentImage || mediaCover;
-                    const feedUsername = log.user?.username ?? 'Someone';
-                    const userAvatar = log.user?.avatar;
-                    const mediaType = (log.media as IMediaDocument | undefined)?.type ?? log.type;
-                    const mediaContentId = log.media?.contentId;
-                    const mediaDoc = log.media as IMediaDocument | undefined;
-                    const shouldBlurAdult = user?.settings?.blurAdultContent ?? true;
-                    const feedIsAdultImage = mediaDoc?.isAdultImage ?? false;
-                    const blurAdult = shouldBlurAdult && feedIsAdultImage;
-                    const mediaLink =
-                      !entry.isPlaylistGroup && mediaType && mediaContentId
-                        ? `/${mediaType}/${mediaContentId}`
-                        : undefined;
-                    const playlistTitle = log.playlistBatchTitle ?? 'Playlist batch';
-                    const playlistXp = entry.logs.reduce(
-                      (sum, playlistLog) => sum + playlistLog.xp,
-                      0
-                    );
-
-                    return (
+                {globalFeedLoading || achievementFeedLoading
+                  ? Array.from({ length: 5 }).map((_, index) => (
                       <div
-                        key={entry.key}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
-                      >
-                        {log.user?.username ? (
-                          <Link
-                            to={`/user/${log.user.username}`}
-                            className="shrink-0"
-                            aria-label={`View ${log.user.username}'s profile`}
-                          >
-                            <div className="avatar">
-                              <UserAvatar
-                                username={feedUsername}
-                                avatar={userAvatar}
-                                containerClassName="w-12 rounded-full border border-base-300 overflow-hidden"
-                                imageClassName="w-full h-full object-cover"
-                                fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
-                                textClassName="text-sm font-semibold"
-                              />
-                            </div>
-                          </Link>
-                        ) : (
-                          <div className="avatar">
-                            <UserAvatar
-                              username={feedUsername}
-                              avatar={userAvatar}
-                              containerClassName="w-12 rounded-full border border-base-300"
-                              imageClassName="w-full h-full rounded-full object-cover"
-                              fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
-                              textClassName="text-sm font-semibold"
-                            />
+                        key={index}
+                        className="skeleton h-16 w-full rounded-2xl"
+                      />
+                    ))
+                  : (() => {
+                      const items = unifiedFeed.filter((item) => {
+                        if (feedKind === 'logs') return item.kind === 'log';
+                        if (feedKind === 'achievements')
+                          return item.kind === 'achievement';
+                        return true;
+                      });
+
+                      if (items.length === 0) {
+                        return (
+                          <div className="text-base-content/70 text-sm">
+                            {t('dashboard.feed.empty')}
                           </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                        );
+                      }
+
+                      return items.map((item) => {
+                        if (item.kind === 'achievement') {
+                          return (
+                            <AchievementFeedItem
+                              key={`ach-${item.data.userAchievementId}`}
+                              item={item.data as IPendingAchievement}
+                              showUser
+                              relativeDate={formatRelativeDate(
+                                item.data.unlockedAt
+                              )}
+                            />
+                          );
+                        }
+
+                        // Log item — find its group
+                        const log = item.data;
+                        const groupKey =
+                          log.playlistBatchId?.trim() || `single:${log._id}`;
+                        const entry = groupedGlobalFeed.find(
+                          (g) => g.key === groupKey
+                        );
+                        if (!entry) return null;
+
+                        // Skip if not the representative (avoid duplicates from grouped playlists)
+                        if (entry.representative._id !== log._id) return null;
+
+                        const Icon = logTypeIcons[log.type] || Book;
+                        const mediaCover = (
+                          log.media as IMediaDocument | undefined
+                        )?.coverImage;
+                        const image = log.media?.contentImage || mediaCover;
+                        const feedUsername =
+                          log.user?.username ?? t('dashboard.someone');
+                        const userAvatar = log.user?.avatar;
+                        const mediaType =
+                          (log.media as IMediaDocument | undefined)?.type ??
+                          log.type;
+                        const mediaContentId = log.media?.contentId;
+                        const mediaDoc = log.media as
+                          | IMediaDocument
+                          | undefined;
+                        const shouldBlurAdult =
+                          user?.settings?.blurAdultContent ?? true;
+                        const feedIsAdultImage =
+                          mediaDoc?.isAdultImage ?? false;
+                        const blurAdult = shouldBlurAdult && feedIsAdultImage;
+                        const mediaLink =
+                          !entry.isPlaylistGroup && mediaType && mediaContentId
+                            ? `/${mediaType}/${mediaContentId}`
+                            : undefined;
+                        const playlistTitle =
+                          log.playlistBatchTitle ??
+                          t('dashboard.playlistBatch');
+                        const playlistXp = entry.logs.reduce(
+                          (sum, playlistLog) => sum + playlistLog.xp,
+                          0
+                        );
+
+                        return (
+                          <div
+                            key={entry.key}
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-base-200/60 border border-base-300 hover:border-primary/40 transition"
+                          >
                             {log.user?.username ? (
                               <Link
                                 to={`/user/${log.user.username}`}
-                                className="font-semibold hover:underline"
+                                className="shrink-0"
+                                aria-label={tCommon('viewProfile', {
+                                  username: log.user.username,
+                                })}
                               >
-                                {log.user.username}
+                                <div className="avatar">
+                                  <UserAvatar
+                                    username={feedUsername}
+                                    avatar={userAvatar}
+                                    containerClassName="w-12 rounded-full border border-base-300 overflow-hidden"
+                                    imageClassName="w-full h-full object-cover"
+                                    fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
+                                    textClassName="text-sm font-semibold"
+                                  />
+                                </div>
                               </Link>
                             ) : (
-                              <span className="font-semibold">{feedUsername}</span>
+                              <div className="avatar">
+                                <UserAvatar
+                                  username={feedUsername}
+                                  avatar={userAvatar}
+                                  containerClassName="w-12 rounded-full border border-base-300"
+                                  imageClassName="w-full h-full rounded-full object-cover"
+                                  fallbackClassName="w-full h-full bg-base-300 flex items-center justify-center"
+                                  textClassName="text-sm font-semibold"
+                                />
+                              </div>
                             )}
-                            <span className="text-base-content/60">tracked</span>
-                            <Icon className="text-primary w-4 h-4" />
-                            {entry.isPlaylistGroup ? (
-                              <span className="font-medium">{playlistTitle}</span>
-                            ) : mediaLink ? (
-                              <Link to={mediaLink} className="font-medium hover:underline">
-                                {log.media?.title?.contentTitleNative ?? log.description}
-                              </Link>
-                            ) : (
-                              <span className="font-medium">
-                                {log.media?.title?.contentTitleNative ?? log.description}
-                              </span>
-                            )}
-                            {entry.isPlaylistGroup && (
-                              <span className="badge badge-secondary badge-sm">
-                                {entry.logs.length} videos
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-base-content/70">
-                            {formatRelativeDate(log.date)} · +
-                            {numberWithCommas(
-                              entry.isPlaylistGroup ? playlistXp : log.xp
-                            )}{' '}
-                            XP
-                          </p>
-                          {entry.isPlaylistGroup && (
-                            <p className="text-xs text-base-content/60 mt-1">
-                              Logged {entry.logs.length} videos from this playlist
-                            </p>
-                          )}
-                        </div>
-                        {!entry.isPlaylistGroup &&
-                          image &&
-                          (mediaLink ? (
-                            <Link
-                              to={mediaLink}
-                              className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden"
-                              aria-label={`View ${log.media?.title?.contentTitleNative ?? 'media'}`}
-                            >
-                              <img
-                                src={image}
-                                alt={log.media?.title?.contentTitleNative}
-                                className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
-                              />
-                            </Link>
-                          ) : (
-                            <div className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden">
-                              <img
-                                src={image}
-                                alt={log.media?.title?.contentTitleNative}
-                                className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
-                              />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 text-sm">
+                                {log.user?.username ? (
+                                  <Link
+                                    to={`/user/${log.user.username}`}
+                                    className="font-semibold hover:underline"
+                                  >
+                                    {log.user.username}
+                                  </Link>
+                                ) : (
+                                  <span className="font-semibold">
+                                    {feedUsername}
+                                  </span>
+                                )}
+                                <span className="text-base-content/60">
+                                  tracked
+                                </span>
+                                <Icon className="text-primary w-4 h-4" />
+                                {entry.isPlaylistGroup ? (
+                                  <span className="font-medium">
+                                    {playlistTitle}
+                                  </span>
+                                ) : mediaLink ? (
+                                  <Link
+                                    to={mediaLink}
+                                    className="font-medium hover:underline"
+                                  >
+                                    {log.media?.title?.contentTitleNative ??
+                                      log.description}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium">
+                                    {log.media?.title?.contentTitleNative ??
+                                      log.description}
+                                  </span>
+                                )}
+                                {entry.isPlaylistGroup && (
+                                  <span className="badge badge-secondary badge-sm">
+                                    {entry.logs.length} videos
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-base-content/70">
+                                {formatRelativeDate(log.date)} · +
+                                {numberWithCommas(
+                                  entry.isPlaylistGroup ? playlistXp : log.xp
+                                )}{' '}
+                                XP
+                              </p>
+                              {entry.isPlaylistGroup && (
+                                <p className="text-xs text-base-content/60 mt-1">
+                                  Logged {entry.logs.length} videos from this
+                                  playlist
+                                </p>
+                              )}
                             </div>
-                          ))}
-                      </div>
-                    );
-                  });
-                })()}
+                            {!entry.isPlaylistGroup &&
+                              image &&
+                              (mediaLink ? (
+                                <Link
+                                  to={mediaLink}
+                                  className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden"
+                                  aria-label={`View ${log.media?.title?.contentTitleNative ?? 'media'}`}
+                                >
+                                  <img
+                                    src={image}
+                                    alt={log.media?.title?.contentTitleNative}
+                                    className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
+                                  />
+                                </Link>
+                              ) : (
+                                <div className="shrink-0 w-20 h-28 rounded-2xl overflow-hidden">
+                                  <img
+                                    src={image}
+                                    alt={log.media?.title?.contentTitleNative}
+                                    className={`w-full h-full object-cover ${blurAdult ? 'blur-sm scale-110' : ''}`}
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        );
+                      });
+                    })()}
               </div>
             </div>
           </div>
@@ -913,11 +1025,14 @@ function Dashboard() {
         open={mediaToRemove !== null}
       >
         <div className="modal-box">
-          <h3 className="font-bold text-lg">Hide from Recent Media?</h3>
+          <h3 className="font-bold text-lg">{t('dashboard.hideTitle')}</h3>
           <p className="py-4">
-            Are you sure you want to hide{' '}
-            <span className="font-semibold">{mediaToRemove?.title}</span> from
-            your recent media? It will no longer appear in quick actions.
+            <Trans
+              t={t}
+              i18nKey="dashboard.hideConfirm"
+              values={{ title: mediaToRemove?.title ?? '' }}
+              components={{ title: <span className="font-semibold" /> }}
+            />
           </p>
           <div className="modal-action">
             <button
@@ -925,7 +1040,7 @@ function Dashboard() {
               className="btn"
               onClick={() => setMediaToRemove(null)}
             >
-              Cancel
+              {t('dashboard.actions.cancel')}
             </button>
             <button
               type="button"
@@ -936,14 +1051,14 @@ function Dashboard() {
               {hideMediaMutation.isPending ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : (
-                'Hide'
+                t('dashboard.actions.hide')
               )}
             </button>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
           <button type="button" onClick={() => setMediaToRemove(null)}>
-            close
+            {t('common.close')}
           </button>
         </form>
       </dialog>
@@ -968,6 +1083,8 @@ function RecentMediaPanel({
   onQuickLog,
   onRemove,
 }: RecentMediaPanelProps) {
+  const { t } = useTranslation('home');
+
   return (
     <div className="card bg-base-100 shadow-sm border border-base-200/60">
       <div className="card-body space-y-4">
@@ -977,16 +1094,16 @@ function RecentMediaPanel({
               className={`${DASHBOARD_CARD_TITLE_CLASS} flex items-center gap-2`}
             >
               <CirclePlus className="w-5 h-5 text-primary" />
-              Recent Media
+              {t('dashboard.recentMedia')}
             </h2>
             <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
-              Quick log shortcuts
+              {t('dashboard.quickShortcuts')}
             </p>
           </div>
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
-            Log something to unlock quick actions here.
+            {t('dashboard.recentEmpty')}
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -1017,6 +1134,7 @@ function RecentMediaRail({
   onQuickLog,
   onRemove,
 }: RecentMediaRailProps) {
+  const { t } = useTranslation('home');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(false);
   const [limit, setLimit] = useState(() =>
@@ -1045,19 +1163,25 @@ function RecentMediaRail({
       <div className="card-body space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className={DASHBOARD_CARD_EYEBROW_CLASS}>Recent Media</p>
-            <h2 className={DASHBOARD_CARD_TITLE_CLASS}>Jump back in</h2>
+            <p className={DASHBOARD_CARD_EYEBROW_CLASS}>
+              {t('dashboard.recentMedia')}
+            </p>
+            <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
+              {t('dashboard.jumpBackIn')}
+            </h2>
             <p className={`${DASHBOARD_CARD_DESCRIPTION_CLASS} mt-1`}>
-              Quick log shortcuts
+              {t('dashboard.quickShortcuts')}
             </p>
           </div>
           {showSwipeHint && (
-            <span className="text-xs text-base-content/60">Swipe</span>
+            <span className="text-xs text-base-content/60">
+              {t('dashboard.swipe')}
+            </span>
           )}
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
-            Log something to unlock quick actions here.
+            {t('dashboard.recentEmpty')}
           </p>
         ) : (
           <div className="overflow-x-auto -mx-2 px-2 pb-2" ref={scrollRef}>
@@ -1089,6 +1213,7 @@ function RecentMediaRailTile({
   onQuickLog,
   onRemove,
 }: RecentMediaRailTileProps) {
+  const { t } = useTranslation('home');
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -1102,7 +1227,7 @@ function RecentMediaRailTile({
   function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (mediaId) {
-      onRemove(mediaId, title || 'this media');
+      onRemove(mediaId, title || t('dashboard.thisMedia'));
     }
   }
 
@@ -1119,7 +1244,7 @@ function RecentMediaRailTile({
           type="button"
           onClick={handleRemoveClick}
           className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover/tile:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
-          aria-label="Hide from recent media"
+          aria-label={t('dashboard.hideAria')}
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -1140,7 +1265,7 @@ function RecentMediaRailTile({
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-2 text-left">
         <span className="text-[10px] uppercase tracking-[0.3em] text-white/70">
-          Quick Log
+          {t('dashboard.quickLog')}
         </span>
         <p className="text-xs font-semibold leading-tight text-white line-clamp-2">
           {title}
@@ -1166,6 +1291,7 @@ function RecentMediaTile({
   onQuickLog,
   onRemove,
 }: RecentMediaTileProps) {
+  const { t } = useTranslation('home');
   const mediaCover = (log.media as IMediaDocument | undefined)?.coverImage;
   const image = log.media?.contentImage || mediaCover;
   const title = log.media?.title?.contentTitleNative || log.description;
@@ -1186,7 +1312,7 @@ function RecentMediaTile({
   function handleRemoveClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (mediaId) {
-      onRemove(mediaId, title || 'this media');
+      onRemove(mediaId, title || t('dashboard.thisMedia'));
     }
   }
 
@@ -1203,7 +1329,7 @@ function RecentMediaTile({
           type="button"
           onClick={handleRemoveClick}
           className="absolute top-1.5 left-1.5 z-10 w-6 h-6 rounded-full bg-error/90 text-error-content flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error focus:opacity-100"
-          aria-label="Hide from recent media"
+          aria-label={t('dashboard.hideAria')}
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -1238,7 +1364,7 @@ function RecentMediaTile({
         }}
       >
         <span className="text-[10px] uppercase tracking-[0.3em] text-white/80">
-          Quick Log
+          {t('dashboard.quickLog')}
         </span>
         <p className="text-xs font-semibold leading-tight line-clamp-2">
           {title}

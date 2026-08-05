@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import Tag from '../models/tag.model.js';
 import User from '../models/user.model.js';
 import { Types } from 'mongoose';
@@ -13,14 +13,14 @@ export async function getUserTagsByUsername(req: Request, res: Response) {
 
     const user = await User.findOne({ username });
     if (!user) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const tags = await Tag.find({ user: user._id }).sort({ name: 1 });
 
     res.json(tags);
   } catch (error) {
-    throw new customError((error as Error).message, 500);
+    throw apiError('common.internal', 500, (error as Error).message);
   }
 }
 
@@ -34,13 +34,13 @@ export async function createTag(req: Request, res: Response) {
     const { name, color } = req.body;
 
     if (!name || !color) {
-      throw new customError('Name and color are required', 400);
+      throw apiError('tag.fieldsRequired', 400, 'Name and color are required');
     }
 
     // Check if user already has a tag with this name
     const existingTag = await Tag.findOne({ user: userId, name });
     if (existingTag) {
-      throw new customError('A tag with this name already exists', 400);
+      throw apiError('tag.nameExists', 400, 'A tag with this name already exists');
     }
 
     // Determine tag limit based on Patreon tier
@@ -58,9 +58,11 @@ export async function createTag(req: Request, res: Response) {
     // Check tag limit
     const tagCount = await Tag.countDocuments({ user: userId });
     if (tagCount >= maxTags) {
-      throw new customError(
+      throw apiError(
+        patreonTier ? 'tag.limitReachedTier' : 'tag.limitReached',
+        400,
         `You can only create up to ${maxTags} tags${patreonTier ? ' with your current tier' : '. Upgrade to Patreon for more tags'}`,
-        400
+        { max: maxTags }
       );
     }
 
@@ -72,7 +74,7 @@ export async function createTag(req: Request, res: Response) {
 
     res.status(201).json(tag);
   } catch (error) {
-    throw new customError((error as Error).message, 500);
+    throw apiError('common.internal', 500, (error as Error).message);
   }
 }
 
@@ -86,19 +88,19 @@ export async function updateTag(req: Request, res: Response) {
     const { name, color } = req.body;
 
     if (!Types.ObjectId.isValid(id)) {
-      throw new customError('Invalid tag ID', 400);
+      throw apiError('tag.invalidId', 400, 'Invalid tag ID');
     }
 
     const tag = await Tag.findOne({ _id: id, user: userId });
     if (!tag) {
-      throw new customError('Tag not found', 404);
+      throw apiError('tag.notFound', 404, 'Tag not found');
     }
 
     // Check if new name conflicts with existing tag
     if (name && name !== tag.name) {
       const existingTag = await Tag.findOne({ user: userId, name });
       if (existingTag) {
-        throw new customError('A tag with this name already exists', 400);
+        throw apiError('tag.nameExists', 400, 'A tag with this name already exists');
       }
       tag.name = name.trim();
     }
@@ -111,7 +113,7 @@ export async function updateTag(req: Request, res: Response) {
 
     res.json(tag);
   } catch (error) {
-    throw new customError((error as Error).message, 500);
+    throw apiError('common.internal', 500, (error as Error).message);
   }
 }
 
@@ -124,12 +126,12 @@ export async function deleteTag(req: Request, res: Response) {
     const { id } = req.params;
 
     if (!Types.ObjectId.isValid(id)) {
-      throw new customError('Invalid tag ID', 400);
+      throw apiError('tag.invalidId', 400, 'Invalid tag ID');
     }
 
     const tag = await Tag.findOne({ _id: id, user: userId });
     if (!tag) {
-      throw new customError('Tag not found', 404);
+      throw apiError('tag.notFound', 404, 'Tag not found');
     }
 
     await tag.deleteOne();
@@ -139,6 +141,6 @@ export async function deleteTag(req: Request, res: Response) {
 
     res.json({ message: 'Tag deleted successfully' });
   } catch (error) {
-    throw new customError((error as Error).message, 500);
+    throw apiError('common.internal', 500, (error as Error).message);
   }
 }

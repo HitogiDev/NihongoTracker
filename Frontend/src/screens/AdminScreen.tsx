@@ -41,6 +41,7 @@ import { Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
 import MediaRequestQueue from '../components/MediaRequestQueue';
 import MediaEditPanel from '../components/MediaEditPanel';
+import { getLocale } from '../utils/timezone';
 
 // Format a Date as the local "YYYY-MM-DD" a native <input type="date"> expects.
 // `toISOString()` would convert to UTC first, which can shift the calendar
@@ -127,7 +128,7 @@ function formatAdminDate(value?: string | Date | null): string {
   if (!value) return 'Unknown';
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return 'Unknown';
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(getLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -1977,7 +1978,10 @@ function AdminScreen() {
                     title: '',
                     description: '',
                     changes: [{ type: 'feature', description: '' }],
-                    date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
+                    date: (() => {
+                      const d = new Date();
+                      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    })(),
                     published: false,
                   });
                   setChangelogModalOpen(true);
@@ -2047,7 +2051,10 @@ function AdminScreen() {
                                 {changelog.title}
                               </td>
                               <td>
-                                {new Date(changelog.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}
+                                {new Date(changelog.date).toLocaleDateString(
+                                  undefined,
+                                  { timeZone: 'UTC' }
+                                )}
                               </td>
                               <td>
                                 <span className="text-sm text-base-content/70">
@@ -2078,7 +2085,9 @@ function AdminScreen() {
                                         description:
                                           changelog.description || '',
                                         changes: changelog.changes,
-                                        date: new Date(changelog.date).toISOString().split('T')[0],
+                                        date: new Date(changelog.date)
+                                          .toISOString()
+                                          .split('T')[0],
                                         published: changelog.published,
                                       });
                                       setChangelogModalOpen(true);

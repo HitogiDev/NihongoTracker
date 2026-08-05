@@ -10,6 +10,7 @@ import {
   IMediaDocument,
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -21,13 +22,13 @@ export async function getLongTermGoals(
   try {
     const { username } = req.params;
     if (!username) {
-      throw new customError('Username is required', 400);
+      throw apiError('user.usernameRequired', 400, 'Username is required');
     }
 
     // Find user by username
     const foundUser = await User.findOne({ username });
     if (!foundUser) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     // Get user's long-term goals
@@ -73,35 +74,48 @@ export async function createLongTermGoal(
     } = req.body;
 
     if (!type || !totalTarget || !targetDate || !startDate) {
-      throw new customError(
-        'Type, totalTarget, targetDate, and startDate are required',
-        400
+      throw apiError(
+        'goal.longTermFieldsRequired',
+        400,
+        'Type, totalTarget, targetDate, and startDate are required'
       );
     }
 
     if (totalTarget <= 0) {
-      throw new customError('Total target must be greater than 0', 400);
+      throw apiError(
+        'goal.totalTargetPositive',
+        400,
+        'Total target must be greater than 0'
+      );
     }
 
     const validTypes = ['time', 'chars', 'episodes', 'pages'];
     if (!validTypes.includes(type)) {
-      throw new customError('Invalid goal type', 400);
+      throw apiError('goal.invalidType', 400, 'Invalid goal type');
     }
 
     const validTimeframes = ['daily', 'weekly', 'monthly'];
     if (displayTimeframe && !validTimeframes.includes(displayTimeframe)) {
-      throw new customError('Invalid display timeframe', 400);
+      throw apiError('goal.invalidTimeframe', 400, 'Invalid display timeframe');
     }
 
     const targetDateObj = new Date(targetDate);
     const startDateObj = new Date(startDate);
 
     if (targetDateObj <= new Date()) {
-      throw new customError('Target date must be in the future', 400);
+      throw apiError(
+        'goal.targetInFuture',
+        400,
+        'Target date must be in the future'
+      );
     }
 
     if (startDateObj >= targetDateObj) {
-      throw new customError('Start date must be before target date', 400);
+      throw apiError(
+        'goal.startBeforeTarget',
+        400,
+        'Start date must be before target date'
+      );
     }
 
     const newGoal = new LongTermGoal({
@@ -151,29 +165,37 @@ export async function updateLongTermGoal(
     });
 
     if (!goal) {
-      throw new customError('Goal not found', 404);
+      throw apiError('goal.notFound', 404, 'Goal not found');
     }
 
     // Validate updates
     if (totalTarget && totalTarget <= 0) {
-      throw new customError('Total target must be greater than 0', 400);
+      throw apiError(
+        'goal.totalTargetPositive',
+        400,
+        'Total target must be greater than 0'
+      );
     }
 
     if (type && !['time', 'chars', 'episodes', 'pages'].includes(type)) {
-      throw new customError('Invalid goal type', 400);
+      throw apiError('goal.invalidType', 400, 'Invalid goal type');
     }
 
     if (
       displayTimeframe &&
       !['daily', 'weekly', 'monthly'].includes(displayTimeframe)
     ) {
-      throw new customError('Invalid display timeframe', 400);
+      throw apiError('goal.invalidTimeframe', 400, 'Invalid display timeframe');
     }
 
     if (targetDate) {
       const targetDateObj = new Date(targetDate);
       if (targetDateObj <= new Date()) {
-        throw new customError('Target date must be in the future', 400);
+        throw apiError(
+          'goal.targetInFuture',
+          400,
+          'Target date must be in the future'
+        );
       }
       goal.targetDate = targetDateObj;
     }
@@ -183,7 +205,11 @@ export async function updateLongTermGoal(
       if (
         startDateObj >= (targetDate ? new Date(targetDate) : goal.targetDate)
       ) {
-        throw new customError('Start date must be before target date', 400);
+        throw apiError(
+          'goal.startBeforeTarget',
+          400,
+          'Start date must be before target date'
+        );
       }
       goal.startDate = startDateObj;
     }
@@ -223,7 +249,7 @@ export async function deleteLongTermGoal(
     });
 
     if (!goal) {
-      throw new customError('Goal not found', 404);
+      throw apiError('goal.notFound', 404, 'Goal not found');
     }
 
     return res
@@ -360,9 +386,11 @@ async function calculateLongTermGoalProgress(
   const totalDurationMs = targetDate.getTime() - startDate.getTime();
   const elapsedDurationMs = now.getTime() - startDate.getTime();
 
-  const expectedProgress = totalDurationMs > 0
-    ? goal.totalTarget * Math.min(1, Math.max(0, elapsedDurationMs / totalDurationMs))
-    : 0;
+  const expectedProgress =
+    totalDurationMs > 0
+      ? goal.totalTarget *
+        Math.min(1, Math.max(0, elapsedDurationMs / totalDurationMs))
+      : 0;
 
   const isOnTrack = remainingTarget <= 0 || totalProgress >= expectedProgress;
 

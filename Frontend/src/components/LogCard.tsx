@@ -31,16 +31,23 @@ import {
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import queryClient from '../queryClient';
-import { AxiosError } from 'axios';
 import { useUserDataStore } from '../store/userData';
 import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import TagSelector from './TagSelector';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '../utils/apiError';
 
+/**
+ * Module scope, so the label is a key into `common:mediaTypes` rather than
+ * text — a literal here would never update on a language change.
+ */
 const logTypeConfig = {
   reading: {
-    label: 'Reading',
+    labelKey: 'mediaTypes.reading',
     icon: Book,
     color: 'text-[#b34ce6]',
     bgColor: 'bg-[#b34ce6]/10',
@@ -48,7 +55,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#b34ce6]',
   },
   anime: {
-    label: 'Anime',
+    labelKey: 'mediaTypes.anime',
     icon: Play,
     color: 'text-[#26b2f2]',
     bgColor: 'bg-[#26b2f2]/10',
@@ -56,7 +63,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#26b2f2]',
   },
   vn: {
-    label: 'Visual Novel',
+    labelKey: 'mediaTypes.vn',
     icon: GamepadDirectional,
     color: 'text-[#3a70e4]',
     bgColor: 'bg-[#3a70e4]/10',
@@ -64,7 +71,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#3a70e4]',
   },
   game: {
-    label: 'Video Game',
+    labelKey: 'mediaTypes.game',
     icon: GamepadDirectional,
     color: 'text-[#59c94e]',
     bgColor: 'bg-[#59c94e]/10',
@@ -72,7 +79,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#59c94e]',
   },
   video: {
-    label: 'Video',
+    labelKey: 'mediaTypes.video',
     icon: Video,
     color: 'text-[#2cc9a4]',
     bgColor: 'bg-[#2cc9a4]/10',
@@ -80,7 +87,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#2cc9a4]',
   },
   manga: {
-    label: 'Manga',
+    labelKey: 'mediaTypes.manga',
     icon: Book,
     color: 'text-[#ee4466]',
     bgColor: 'bg-[#ee4466]/10',
@@ -88,7 +95,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#ee4466]',
   },
   audio: {
-    label: 'Audio',
+    labelKey: 'mediaTypes.audio',
     icon: Volume2,
     color: 'text-[#f2a15a]',
     bgColor: 'bg-[#f2a15a]/10',
@@ -96,7 +103,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#f2a15a]',
   },
   movie: {
-    label: 'Movie',
+    labelKey: 'mediaTypes.movie',
     icon: Clapperboard,
     color: 'text-[#f77118]',
     bgColor: 'bg-[#f77118]/10',
@@ -104,7 +111,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#f77118]',
   },
   'tv show': {
-    label: 'TV Show',
+    labelKey: 'mediaTypes.tvShow',
     icon: MonitorPlay,
     color: 'text-[#f8b420]',
     bgColor: 'bg-[#f8b420]/10',
@@ -112,7 +119,7 @@ const logTypeConfig = {
     accentColor: 'bg-[#f8b420]',
   },
   book: {
-    label: 'Book',
+    labelKey: 'mediaTypes.book',
     icon: BookOpen,
     color: 'text-[#7c6cf0]',
     bgColor: 'bg-[#7c6cf0]/10',
@@ -120,14 +127,14 @@ const logTypeConfig = {
     accentColor: 'bg-[#7c6cf0]',
   },
   other: {
-    label: 'Other',
+    labelKey: 'mediaTypes.other',
     icon: Ellipsis,
     color: 'text-[#6b7280]',
     bgColor: 'bg-[#6b7280]/10',
     borderColor: 'border-[#6b7280]/30',
     accentColor: 'bg-[#6b7280]',
   },
-};
+} as const;
 
 type EditLogFormState = {
   description: string;
@@ -182,6 +189,8 @@ function LogCard({
   user?: string;
   selectionMode?: boolean;
 }) {
+  const { t } = useTranslation(['logs', 'common']);
+  const vt = useValidationText();
   const {
     description,
     xp,
@@ -198,7 +207,17 @@ function LogCard({
     unknownDate,
   } = log;
   const { user } = useUserDataStore();
-  const { formatRelativeDate, formatDateTime } = useDateFormatting();
+  const { formatRelativeDate, formatDateTime, formatNumber } =
+    useDateFormatting();
+
+  /** "1h 30m" in English, "1 h 30 min" in Spanish. */
+  const formatDuration = (minutes: number) =>
+    minutes >= 60
+      ? t('card.hoursMinutes', {
+          hours: Math.floor(minutes / 60),
+          minutes: minutes % 60,
+        })
+      : t('card.minutesOnly', { minutes });
   const deleteModalRef = useRef<HTMLDialogElement>(null);
   const editModalRef = useRef<HTMLDialogElement>(null);
   const detailsModalRef = useRef<HTMLDialogElement>(null);
@@ -227,18 +246,21 @@ function LogCard({
   const [editData, setEditData] = useState<EditLogFormState>(() =>
     buildEditState()
   );
-  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [editErrors, setEditErrors] = useState<Record<string, ValidationKey>>(
+    {}
+  );
 
   const typeConfig = logTypeConfig[type];
   const TypeIcon = typeConfig.icon;
+  const typeLabel = t(typeConfig.labelKey, { ns: 'common' });
 
   const relativeDate = unknownDate
-    ? 'Unknown'
+    ? t('card.unknown')
     : date
       ? formatRelativeDate(date)
       : '';
   const fullDate = unknownDate
-    ? 'Unknown date'
+    ? t('card.unknownDate')
     : date
       ? formatDateTime(date)
       : '';
@@ -246,7 +268,7 @@ function LogCard({
   const logTitle =
     media && typeof media === 'object' && media.title?.contentTitleNative
       ? media.title.contentTitleNative
-      : description || 'Untitled Log';
+      : description || t('card.untitled');
 
   const displayTitle =
     logTitle.length > 35 ? `${logTitle.slice(0, 35)}...` : logTitle;
@@ -263,15 +285,11 @@ function LogCard({
         },
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
-      toast.success('Log deleted successfully!');
+      toast.success(t('toast.deleted'));
       deleteModalRef.current?.close();
     },
     onError: (error) => {
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data.message
-          : 'An error occurred';
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -289,15 +307,11 @@ function LogCard({
         },
       });
       queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
-      toast.success('Log updated successfully!');
+      toast.success(t('toast.updated'));
       editModalRef.current?.close();
     },
     onError: (error) => {
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data.message
-          : 'An error occurred';
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -328,7 +342,7 @@ function LogCard({
     setEditErrors(validation.errors);
 
     if (!validation.isValid) {
-      toast.error('Please fix validation errors');
+      toast.error(t('toast.fixValidation'));
       return;
     }
 
@@ -386,63 +400,68 @@ function LogCard({
 
     if ((type === 'anime' || type === 'tv show') && episodes) {
       info.push({
-        label: 'Episodes',
+        label: t('card.metrics.episodes'),
         value: episodes,
         icon: Play,
         tooltip: time
-          ? `${episodes} episodes • ${time} minutes total`
-          : `${episodes} episodes watched`,
+          ? t('card.tooltips.episodesWithTime', { episodes, time })
+          : t('card.tooltips.episodesWatched', { episodes }),
       });
     } else if (type === 'manga' || type === 'book') {
       if (pages) {
         info.push({
-          label: 'Pages',
+          label: t('card.metrics.pages'),
           value: pages,
           icon: Book,
           tooltip: chars
-            ? `${pages} pages • ${chars.toLocaleString()} characters`
-            : `${pages} pages read`,
+            ? t('card.tooltips.pagesWithChars', {
+                pages,
+                chars: formatNumber(chars),
+              })
+            : t('card.tooltips.pagesRead', { pages }),
         });
       }
       if (chars) {
         const readingSpeed =
           time && chars ? Math.round((chars / time) * 60) : null;
         info.push({
-          label: 'Characters',
-          value: chars.toLocaleString(),
+          label: t('card.metrics.characters'),
+          value: formatNumber(chars),
           icon: Book,
           tooltip: readingSpeed
-            ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
-            : `${chars.toLocaleString()} characters read`,
+            ? t('card.tooltips.charsWithSpeed', {
+                chars: formatNumber(chars),
+                time,
+                speed: readingSpeed,
+              })
+            : t('card.tooltips.charsRead', { chars: formatNumber(chars) }),
         });
 
         if (readingSpeed && time) {
           info.push({
-            label: 'Speed',
-            value: `${readingSpeed}/hr`,
+            label: t('card.metrics.speed'),
+            value: t('card.speedValue', { speed: readingSpeed }),
             icon: Gauge,
-            tooltip: `Reading speed: ${readingSpeed} characters per hour`,
+            tooltip: t('card.tooltips.readingSpeed', { speed: readingSpeed }),
           });
         }
 
         if (time) {
-          const timeStr =
-            time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+          const timeStr = formatDuration(time);
           info.push({
-            label: 'Time',
+            label: t('card.metrics.time'),
             value: timeStr,
             icon: Timer,
-            tooltip: `${time} minutes spent reading manga`,
+            tooltip: t('card.tooltips.minutesManga', { time }),
           });
         }
       } else if (time && !chars) {
-        const timeStr =
-          time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+        const timeStr = formatDuration(time);
         info.push({
-          label: 'Time',
+          label: t('card.metrics.time'),
           value: timeStr,
           icon: Clock,
-          tooltip: `${time} minutes spent reading`,
+          tooltip: t('card.tooltips.minutesReading', { time }),
         });
       }
     } else if (type === 'vn' || type === 'game' || type === 'reading') {
@@ -450,54 +469,58 @@ function LogCard({
         const readingSpeed =
           time && chars ? Math.round((chars / time) * 60) : null;
         info.push({
-          label: 'Characters',
-          value: chars.toLocaleString(),
+          label: t('card.metrics.characters'),
+          value: formatNumber(chars),
           icon: Book,
           tooltip: readingSpeed
-            ? `${chars.toLocaleString()} characters • ${time} min • ${readingSpeed} chars/hour`
-            : `${chars.toLocaleString()} characters read`,
+            ? t('card.tooltips.charsWithSpeed', {
+                chars: formatNumber(chars),
+                time,
+                speed: readingSpeed,
+              })
+            : t('card.tooltips.charsRead', { chars: formatNumber(chars) }),
         });
 
         if (readingSpeed && time) {
           info.push({
-            label: 'Speed',
-            value: `${readingSpeed}/hr`,
+            label: t('card.metrics.speed'),
+            value: t('card.speedValue', { speed: readingSpeed }),
             icon: Gauge,
-            tooltip: `Reading speed: ${readingSpeed} characters per hour`,
+            tooltip: t('card.tooltips.readingSpeed', { speed: readingSpeed }),
           });
         }
 
         if (time) {
-          const timeStr =
-            time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+          const timeStr = formatDuration(time);
           info.push({
-            label: 'Time',
+            label: t('card.metrics.time'),
             value: timeStr,
             icon: Timer,
-            tooltip: `${time} minutes spent reading`,
+            tooltip: t('card.tooltips.minutesReading', { time }),
           });
         }
       } else if (time && !chars) {
-        const timeStr =
-          time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+        const timeStr = formatDuration(time);
         info.push({
-          label: 'Time',
+          label: t('card.metrics.time'),
           value: timeStr,
           icon: Clock,
-          tooltip: `${time} minutes spent reading`,
+          tooltip: t('card.tooltips.minutesReading', { time }),
         });
       }
     } else if (
       (type === 'video' || type === 'audio' || type === 'movie') &&
       time
     ) {
-      const timeStr =
-        time >= 60 ? `${Math.floor(time / 60)}h ${time % 60}m` : `${time}m`;
+      const timeStr = formatDuration(time);
       info.push({
-        label: 'Time',
+        label: t('card.metrics.time'),
         value: timeStr,
         icon: Clock,
-        tooltip: `${time} minutes of ${type} content`,
+        tooltip: t('card.tooltips.minutesOfType', {
+          time,
+          type: typeLabel.toLowerCase(),
+        }),
       });
     }
 
@@ -545,7 +568,7 @@ function LogCard({
       // Use native sharing if available
       navigator
         .share({
-          title: `Check out this ${typeConfig.label} log: ${logTitle}`,
+          title: `Check out this ${typeLabel} log: ${logTitle}`,
           text: `I logged "${logTitle}" and thought you might want to create a similar log!`,
           url: shareUrl,
         })
@@ -563,7 +586,7 @@ function LogCard({
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        toast.success('Share link copied to clipboard!');
+        toast.success(t('toast.linkCopied'));
       })
       .catch(() => {
         // Fallback for older browsers
@@ -573,7 +596,7 @@ function LogCard({
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        toast.success('Share link copied to clipboard!');
+        toast.success(t('toast.linkCopied'));
       });
   }
 
@@ -595,7 +618,7 @@ function LogCard({
                 className={`badge badge-outline ${typeConfig.color} gap-1 shrink-0`}
               >
                 <TypeIcon className="w-3 h-3" />
-                <span className="text-xs font-medium">{typeConfig.label}</span>
+                <span className="text-xs font-medium">{typeLabel}</span>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -654,7 +677,7 @@ function LogCard({
                 <button
                   tabIndex={0}
                   className="btn btn-ghost btn-sm btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
-                  aria-label="Log options"
+                  aria-label={t('card.a11y.options')}
                 >
                   <Ellipsis className="w-4 h-4" />
                 </button>
@@ -665,7 +688,7 @@ function LogCard({
                       className="text-success hover:bg-success/10 gap-2"
                     >
                       <Share2 className="w-4 h-4" />
-                      Share
+                      {t('card.share')}
                     </button>
                   </li>
                   <li>
@@ -674,7 +697,7 @@ function LogCard({
                       className="text-info hover:bg-info/10 gap-2"
                     >
                       <Book className="w-4 h-4" />
-                      Details
+                      {t('card.details')}
                     </button>
                   </li>
                   <li>
@@ -683,7 +706,7 @@ function LogCard({
                       className="text-warning hover:bg-warning/10 gap-2"
                     >
                       <Pencil className="w-4 h-4" />
-                      Edit
+                      {t('card.edit')}
                     </button>
                   </li>
                   <li>
@@ -692,7 +715,7 @@ function LogCard({
                       className="text-error hover:bg-error/10 gap-2"
                     >
                       <Trash className="w-4 h-4" />
-                      Delete
+                      {t('card.delete')}
                     </button>
                   </li>
                 </ul>
@@ -801,11 +824,11 @@ function LogCard({
               </div>
               <div>
                 <h3 id="details-modal-title" className="font-bold text-xl">
-                  Log Details
+                  {t('details.title')}
                 </h3>
                 <div className={`badge ${typeConfig.color} gap-1 mt-1`}>
                   <TypeIcon className="w-3 h-3" />
-                  {typeConfig.label}
+                  {typeLabel}
                 </div>
               </div>
             </div>
@@ -820,12 +843,14 @@ function LogCard({
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Book className="w-5 h-5" />
-                  Content Information
+                  {t('details.contentInfo')}
                 </h4>
 
                 <div className="space-y-3">
                   <div>
-                    <span className="label-text font-medium">Title:</span>
+                    <span className="label-text font-medium">
+                      {t('details.titleLabel')}
+                    </span>
                     <p className="text-base-content mt-1">{logTitle}</p>
                   </div>
 
@@ -834,7 +859,7 @@ function LogCard({
                     media.title?.contentTitleEnglish && (
                       <div>
                         <span className="label-text font-medium">
-                          English Title:
+                          {t('details.englishTitle')}
                         </span>
                         <p className="text-base-content mt-1">
                           {media.title.contentTitleEnglish}
@@ -847,7 +872,7 @@ function LogCard({
                     media.title?.contentTitleRomaji && (
                       <div>
                         <span className="label-text font-medium">
-                          Romaji Title:
+                          {t('details.romajiTitle')}
                         </span>
                         <p className="text-base-content mt-1">
                           {media.title.contentTitleRomaji}
@@ -858,7 +883,7 @@ function LogCard({
                   {description && description !== logTitle && (
                     <div>
                       <span className="label-text font-medium">
-                        Description:
+                        {t('details.descriptionLabel')}
                       </span>
                       <p className="text-base-content mt-1">{description}</p>
                     </div>
@@ -867,15 +892,15 @@ function LogCard({
                   {media && typeof media === 'object' && media.type && (
                     <div>
                       <span className="label-text font-medium">
-                        Media Type:
+                        {t('details.mediaType')}
                       </span>
                       <span className="badge badge-outline ml-2 capitalize">
                         {media.type === 'vn'
-                          ? 'Visual Novel'
+                          ? t('common:mediaTypes.vn')
                           : media.type === 'game'
-                            ? 'Video Game'
+                            ? t('common:mediaTypes.game')
                             : media.type === 'reading'
-                              ? 'Light Novel'
+                              ? t('details.lightNovel')
                               : media.type}
                       </span>
                     </div>
@@ -884,7 +909,7 @@ function LogCard({
                   {media && typeof media === 'object' && media.contentId && (
                     <div>
                       <span className="label-text font-medium">
-                        Content ID:
+                        {t('details.contentId')}
                       </span>
                       <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
                         {media.contentId}
@@ -900,25 +925,27 @@ function LogCard({
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  Activity Statistics
+                  {t('details.activityStats')}
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="stat bg-base-100 rounded-lg p-3">
-                    <div className="stat-title text-xs">Experience Gained</div>
+                    <div className="stat-title text-xs">
+                      {t('details.xpGained')}
+                    </div>
                     <div className={`stat-value text-2xl ${typeConfig.color}`}>
                       {xp}
                     </div>
-                    <div className="stat-desc">XP Points</div>
+                    <div className="stat-desc">{t('details.xpPoints')}</div>
                   </div>
 
                   {time && time > 0 ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
-                      <div className="stat-title text-xs">Time Spent</div>
+                      <div className="stat-title text-xs">
+                        {t('details.timeSpent')}
+                      </div>
                       <div className="stat-value text-2xl text-info">
-                        {time >= 60
-                          ? `${Math.floor(time / 60)}h ${time % 60}m`
-                          : `${time}m`}
+                        {formatDuration(time)}
                       </div>
                       <div className="stat-desc">{time} minutes</div>
                     </div>
@@ -926,37 +953,45 @@ function LogCard({
 
                   {episodes ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
-                      <div className="stat-title text-xs">Episodes</div>
+                      <div className="stat-title text-xs">
+                        {t('details.episodes')}
+                      </div>
                       <div className="stat-value text-2xl text-secondary">
                         {episodes}
                       </div>
-                      <div className="stat-desc">Watched</div>
+                      <div className="stat-desc">{t('details.watched')}</div>
                     </div>
                   ) : null}
 
                   {pages && pages > 0 ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
-                      <div className="stat-title text-xs">Pages</div>
+                      <div className="stat-title text-xs">
+                        {t('details.pages')}
+                      </div>
                       <div className="stat-value text-2xl text-warning">
                         {pages}
                       </div>
-                      <div className="stat-desc">Read</div>
+                      <div className="stat-desc">{t('details.read')}</div>
                     </div>
                   ) : null}
 
                   {chars ? (
                     <div className="stat bg-base-100 rounded-lg p-3">
-                      <div className="stat-title text-xs">Characters</div>
-                      <div className="stat-value text-lg text-accent">
-                        {chars.toLocaleString()}
+                      <div className="stat-title text-xs">
+                        {t('details.characters')}
                       </div>
-                      <div className="stat-desc">Read</div>
+                      <div className="stat-value text-lg text-accent">
+                        {formatNumber(chars)}
+                      </div>
+                      <div className="stat-desc">{t('details.read')}</div>
                     </div>
                   ) : null}
 
                   {readingSpeed && (
                     <div className="stat bg-base-100 rounded-lg p-3">
-                      <div className="stat-title text-xs">Reading Speed</div>
+                      <div className="stat-title text-xs">
+                        {t('details.readingSpeed')}
+                      </div>
                       <div className="stat-value text-xl text-success">
                         {readingSpeed}
                       </div>
@@ -985,7 +1020,7 @@ function LogCard({
                         d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                       />
                     </svg>
-                    Tags
+                    {t('details.tags')}
                   </h4>
 
                   <div className="flex flex-wrap gap-2">
@@ -1017,12 +1052,14 @@ function LogCard({
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  Date & Time
+                  {t('details.dateAndTime')}
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span className="label-text font-medium">Created:</span>
+                    <span className="label-text font-medium">
+                      {t('details.created')}
+                    </span>
                     <p className="text-base-content mt-1">{fullDate}</p>
                     {!unknownDate ? (
                       <p className="text-sm text-base-content/60">
@@ -1033,7 +1070,9 @@ function LogCard({
 
                   {time ? (
                     <div>
-                      <span className="label-text font-medium">Duration:</span>
+                      <span className="label-text font-medium">
+                        {t('details.duration')}
+                      </span>
                       <p className="text-base-content mt-1">
                         {time >= 60
                           ? `${Math.floor(time / 60)} hour${Math.floor(time / 60) !== 1 ? 's' : ''} and ${time % 60} minute${time % 60 !== 1 ? 's' : ''}`
@@ -1051,13 +1090,13 @@ function LogCard({
                 <div className="card-body p-4">
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                     <Video className="w-5 h-5" />
-                    Media Details
+                    {t('details.mediaDetails')}
                   </h4>
 
                   <div className="space-y-3">
                     <div>
                       <span className="label-text font-medium">
-                        Content ID:
+                        {t('details.contentId')}
                       </span>
                       <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
                         {media.contentId}
@@ -1066,39 +1105,45 @@ function LogCard({
 
                     <div>
                       <span className="label-text font-medium">
-                        Media Type:
+                        {t('details.mediaType')}
                       </span>
                       <span className="badge badge-outline ml-2 capitalize">
                         {media.type === 'vn'
-                          ? 'Visual Novel'
+                          ? t('common:mediaTypes.vn')
                           : media.type === 'game'
-                            ? 'Video Game'
+                            ? t('common:mediaTypes.game')
                             : media.type === 'reading'
-                              ? 'Light Novel'
+                              ? t('details.lightNovel')
                               : media.type}
                       </span>
                     </div>
 
                     <div>
                       <span className="label-text font-medium">
-                        Available Titles:
+                        {t('details.availableTitles')}
                       </span>
                       <div className="mt-1 space-y-1">
                         {media.title?.contentTitleNative && (
                           <div className="text-sm">
-                            <span className="font-medium">Native:</span>{' '}
+                            <span className="font-medium">
+                              {t('details.native')}
+                            </span>{' '}
                             {media.title.contentTitleNative}
                           </div>
                         )}
                         {media.title?.contentTitleEnglish && (
                           <div className="text-sm">
-                            <span className="font-medium">English:</span>{' '}
+                            <span className="font-medium">
+                              {t('details.english')}
+                            </span>{' '}
                             {media.title.contentTitleEnglish}
                           </div>
                         )}
                         {media.title?.contentTitleRomaji && (
                           <div className="text-sm">
-                            <span className="font-medium">Romaji:</span>{' '}
+                            <span className="font-medium">
+                              {t('details.romaji')}
+                            </span>{' '}
                             {media.title.contentTitleRomaji}
                           </div>
                         )}
@@ -1114,12 +1159,14 @@ function LogCard({
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Gauge className="w-5 h-5" />
-                  Technical Details
+                  {t('details.technical')}
                 </h4>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="label-text font-medium">Log ID:</span>
+                    <span className="label-text font-medium">
+                      {t('details.logId')}
+                    </span>
                     <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded">
                       {log._id}
                     </span>
@@ -1127,21 +1174,25 @@ function LogCard({
 
                   {logUser ? (
                     <div className="flex justify-between">
-                      <span className="label-text font-medium">User:</span>
+                      <span className="label-text font-medium">
+                        {t('details.user')}
+                      </span>
                       <span>{logUser}</span>
                     </div>
                   ) : null}
 
                   {manabeId ? (
                     <div className="flex justify-between">
-                      <span className="label-text font-medium">Manabe id:</span>
+                      <span className="label-text font-medium">
+                        {t('details.manabeId')}
+                      </span>
                       <span>{manabeId}</span>
                     </div>
                   ) : null}
 
                   <div className="flex justify-between">
                     <span className="label-text font-medium">
-                      Content Type:
+                      {t('details.contentType')}
                     </span>
                     <span className="capitalize">
                       {type === 'vn'
@@ -1160,12 +1211,14 @@ function LogCard({
 
           <div className="modal-action mt-6">
             <form method="dialog" className="w-full">
-              <button className="btn btn-outline w-full">Close</button>
+              <button className="btn btn-outline w-full">
+                {t('common.close')}
+              </button>
             </form>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button aria-label="Close modal">close</button>
+          <button aria-label={t('common.a11y.closeModal')}>close</button>
         </form>
       </dialog>
 
@@ -1186,10 +1239,10 @@ function LogCard({
                 id="delete-modal-title"
                 className="font-bold text-lg text-error"
               >
-                Delete Log Entry
+                {t('delete.title')}
               </h3>
               <p className="text-sm text-base-content/60">
-                This action cannot be undone
+                {t('delete.irreversible')}
               </p>
             </div>
           </div>
@@ -1197,9 +1250,7 @@ function LogCard({
           <div className="divider my-4"></div>
 
           <div id="delete-modal-description" className="space-y-3">
-            <p className="text-base-content">
-              Are you sure you want to delete this log entry?
-            </p>
+            <p className="text-base-content">{t('delete.confirm')}</p>
             <div className="alert alert-warning">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1217,7 +1268,7 @@ function LogCard({
               <div>
                 <h4 className="font-semibold">"{displayTitle}"</h4>
                 <div className="text-sm opacity-80">
-                  {xp} XP • {typeConfig.label} • {relativeDate}
+                  {xp} XP • {typeLabel} • {relativeDate}
                   {readingSpeed && ` • ${readingSpeed} chars/hour`}
                 </div>
               </div>
@@ -1233,12 +1284,12 @@ function LogCard({
               {loadingDeleteLog ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  Deleting...
+                  {t('delete.deleting')}
                 </>
               ) : (
                 <>
                   <Trash className="w-4 h-4" />
-                  Delete Log
+                  {t('delete.confirmButton')}
                 </>
               )}
             </button>
@@ -1247,13 +1298,13 @@ function LogCard({
               className="w-full sm:w-auto order-1 sm:order-2"
             >
               <button className="btn btn-outline w-full" type="submit">
-                Cancel
+                {t('common.cancel')}
               </button>
             </form>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button aria-label="Close modal">close</button>
+          <button aria-label={t('common.a11y.closeModal')}>close</button>
         </form>
       </dialog>
 
@@ -1267,10 +1318,10 @@ function LogCard({
               </div>
               <div>
                 <h3 id="edit-modal-title" className="font-bold text-xl">
-                  Edit Log Entry
+                  {t('edit.title')}
                 </h3>
                 <p className="text-sm text-base-content/60 mt-1">
-                  Modify your log details below
+                  {t('edit.subtitle')}
                 </p>
               </div>
             </div>
@@ -1297,12 +1348,10 @@ function LogCard({
                   />
                 </svg>
                 <div>
-                  <h4 className="font-bold">
-                    Please fix the following errors:
-                  </h4>
+                  <h4 className="font-bold">{t('edit.fixErrors')}</h4>
                   <ul className="list-disc list-inside text-sm mt-1">
                     {Object.entries(editErrors).map(([field, error]) => (
-                      <li key={field}>{error}</li>
+                      <li key={field}>{vt(error)}</li>
                     ))}
                   </ul>
                 </div>
@@ -1313,14 +1362,14 @@ function LogCard({
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4">
-                  Basic Information
+                  {t('edit.basicInfo')}
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="label">
                       <span className="label-text font-medium">
-                        Description
+                        {t('edit.description')}
                       </span>
                       <span className="label-text-alt text-error">*</span>
                     </label>
@@ -1334,14 +1383,16 @@ function LogCard({
                           description: e.target.value,
                         })
                       }
-                      placeholder="Enter description"
+                      placeholder={t('edit.descriptionPlaceholder')}
                       required
                     />
                   </div>
 
                   <div>
                     <label className="label">
-                      <span className="label-text font-medium">Type</span>
+                      <span className="label-text font-medium">
+                        {t('edit.type')}
+                      </span>
                     </label>
                     <select
                       className="select select-bordered w-full"
@@ -1370,23 +1421,45 @@ function LogCard({
                         }));
                       }}
                     >
-                      <option value="reading">Reading</option>
-                      <option value="anime">Anime</option>
-                      <option value="vn">Visual Novel</option>
-                      <option value="game">Video Game</option>
-                      <option value="video">Video</option>
-                      <option value="manga">Manga</option>
-                      <option value="book">Book</option>
-                      <option value="audio">Audio</option>
-                      <option value="movie">Movie</option>
-                      <option value="tv show">TV Show</option>
-                      <option value="other">Other</option>
+                      <option value="reading">
+                        {t('common:mediaTypes.reading')}
+                      </option>
+                      <option value="anime">
+                        {t('common:mediaTypes.anime')}
+                      </option>
+                      <option value="vn">{t('common:mediaTypes.vn')}</option>
+                      <option value="game">
+                        {t('common:mediaTypes.game')}
+                      </option>
+                      <option value="video">
+                        {t('common:mediaTypes.video')}
+                      </option>
+                      <option value="manga">
+                        {t('common:mediaTypes.manga')}
+                      </option>
+                      <option value="book">
+                        {t('common:mediaTypes.book')}
+                      </option>
+                      <option value="audio">
+                        {t('common:mediaTypes.audio')}
+                      </option>
+                      <option value="movie">
+                        {t('common:mediaTypes.movie')}
+                      </option>
+                      <option value="tv show">
+                        {t('common:mediaTypes.tvShow')}
+                      </option>
+                      <option value="other">
+                        {t('common:mediaTypes.other')}
+                      </option>
                     </select>
                   </div>
 
                   <div>
                     <label className="label">
-                      <span className="label-text font-medium">Date</span>
+                      <span className="label-text font-medium">
+                        {t('edit.date')}
+                      </span>
                     </label>
                     <input
                       type="date"
@@ -1404,13 +1477,17 @@ function LogCard({
             {/* Activity Details Section */}
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body p-4">
-                <h4 className="font-semibold text-lg mb-4">Activity Details</h4>
+                <h4 className="font-semibold text-lg mb-4">
+                  {t('edit.activityDetails')}
+                </h4>
 
                 <div className="space-y-4">
                   {/* Time Section */}
                   <div>
                     <label className="label">
-                      <span className="label-text font-medium">Time Spent</span>
+                      <span className="label-text font-medium">
+                        {t('details.timeSpent')}
+                      </span>
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1426,10 +1503,12 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Hours"
+                          placeholder={t('card.hoursPlaceholder')}
                         />
                         <div className="label">
-                          <span className="label-text-alt">Hours</span>
+                          <span className="label-text-alt">
+                            {t('edit.hours')}
+                          </span>
                         </div>
                       </div>
                       <div>
@@ -1446,10 +1525,12 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Minutes"
+                          placeholder={t('card.minutesPlaceholder')}
                         />
                         <div className="label">
-                          <span className="label-text-alt">Minutes</span>
+                          <span className="label-text-alt">
+                            {t('edit.minutes')}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1461,7 +1542,7 @@ function LogCard({
                       <div>
                         <label className="label">
                           <span className="label-text font-medium">
-                            Episodes
+                            {t('details.episodes')}
                           </span>
                         </label>
                         <input
@@ -1476,7 +1557,7 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Number of episodes"
+                          placeholder={t('edit.episodesPlaceholder')}
                         />
                       </div>
                     )}
@@ -1489,7 +1570,7 @@ function LogCard({
                       <div>
                         <label className="label">
                           <span className="label-text font-medium">
-                            Characters
+                            {t('details.characters')}
                           </span>
                         </label>
                         <input
@@ -1504,7 +1585,7 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Number of characters"
+                          placeholder={t('edit.charsPlaceholder')}
                         />
                       </div>
                     )}
@@ -1513,7 +1594,9 @@ function LogCard({
                       editData.type === 'reading') && (
                       <div>
                         <label className="label">
-                          <span className="label-text font-medium">Volume</span>
+                          <span className="label-text font-medium">
+                            {t('edit.volume')}
+                          </span>
                         </label>
                         <input
                           type="number"
@@ -1527,7 +1610,7 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Volume number"
+                          placeholder={t('edit.volumePlaceholder')}
                         />
                       </div>
                     )}
@@ -1536,7 +1619,9 @@ function LogCard({
                       editData.type === 'book') && (
                       <div>
                         <label className="label">
-                          <span className="label-text font-medium">Pages</span>
+                          <span className="label-text font-medium">
+                            {t('details.pages')}
+                          </span>
                         </label>
                         <input
                           type="number"
@@ -1550,7 +1635,7 @@ function LogCard({
                             })
                           }
                           onInput={preventNegativeValues}
-                          placeholder="Number of pages"
+                          placeholder={t('edit.pagesPlaceholder')}
                         />
                       </div>
                     )}
@@ -1564,7 +1649,7 @@ function LogCard({
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
                   <Tag className="w-5 h-5" />
-                  Tags
+                  {t('details.tags')}
                 </h4>
                 <TagSelector
                   selectedTags={editData.tags}
@@ -1591,12 +1676,12 @@ function LogCard({
                 {loadingUpdateLog ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Updating...
+                    {t('edit.updating')}
                   </>
                 ) : (
                   <>
                     <Pencil className="w-4 h-4" />
-                    Update Log
+                    {t('edit.update')}
                   </>
                 )}
               </button>
@@ -1606,13 +1691,13 @@ function LogCard({
                 onClick={() => editModalRef.current?.close()}
                 disabled={loadingUpdateLog}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </form>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button aria-label="Close modal">close</button>
+          <button aria-label={t('common.a11y.closeModal')}>close</button>
         </form>
       </dialog>
     </>

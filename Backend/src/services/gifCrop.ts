@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 
 export type GifCropMetadata = {
   x: number;
@@ -15,7 +15,12 @@ const GIF_MIME_TYPE = 'image/gif';
 function validateCropNumber(value: unknown, fieldName: string): number {
   const parsedValue = Number(value);
   if (!Number.isFinite(parsedValue)) {
-    throw new customError(`${fieldName} must be a finite number`, 400);
+    throw apiError(
+      'upload.fieldNotFinite',
+      400,
+      `${fieldName} must be a finite number`,
+      { field: fieldName }
+    );
   }
   return Math.round(parsedValue);
 }
@@ -29,14 +34,24 @@ export function parseGifCropMetadata(
   }
 
   if (typeof rawValue !== 'string') {
-    throw new customError(`${fieldName} must be a JSON string`, 400);
+    throw apiError(
+      'upload.fieldNotJsonString',
+      400,
+      `${fieldName} must be a JSON string`,
+      { field: fieldName }
+    );
   }
 
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(rawValue) as Record<string, unknown>;
   } catch {
-    throw new customError(`${fieldName} must be valid JSON`, 400);
+    throw apiError(
+      'upload.fieldInvalidJson',
+      400,
+      `${fieldName} must be valid JSON`,
+      { field: fieldName }
+    );
   }
 
   const x = validateCropNumber(parsed.x, `${fieldName}.x`);
@@ -45,13 +60,20 @@ export function parseGifCropMetadata(
   const height = validateCropNumber(parsed.height, `${fieldName}.height`);
 
   if (x < 0 || y < 0) {
-    throw new customError(`${fieldName} coordinates must be 0 or greater`, 400);
+    throw apiError(
+      'upload.fieldNegative',
+      400,
+      `${fieldName} coordinates must be 0 or greater`,
+      { field: fieldName }
+    );
   }
 
   if (width <= 0 || height <= 0) {
-    throw new customError(
+    throw apiError(
+      'upload.fieldDimensionsPositive',
+      400,
       `${fieldName} width and height must be greater than 0`,
-      400
+      { field: fieldName }
     );
   }
 
@@ -65,16 +87,20 @@ export function parseGifCropMetadata(
       : undefined;
 
   if (sourceWidth !== undefined && sourceWidth <= 0) {
-    throw new customError(
+    throw apiError(
+      'upload.sourceDimensionPositive',
+      400,
       `${fieldName}.sourceWidth must be greater than 0`,
-      400
+      { field: `${fieldName}.sourceWidth` }
     );
   }
 
   if (sourceHeight !== undefined && sourceHeight <= 0) {
-    throw new customError(
+    throw apiError(
+      'upload.sourceDimensionPositive',
+      400,
       `${fieldName}.sourceHeight must be greater than 0`,
-      400
+      { field: `${fieldName}.sourceHeight` }
     );
   }
 
@@ -95,9 +121,10 @@ export async function cropAnimatedGifBuffer(
   const metadata = await sharp(buffer, { animated: true }).metadata();
 
   if ((metadata.format ?? '').toLowerCase() !== 'gif') {
-    throw new customError(
-      'GIF crop metadata can only be used with GIF files',
-      400
+    throw apiError(
+      'upload.gifOnlyMetadata',
+      400,
+      'GIF crop metadata can only be used with GIF files'
     );
   }
 
@@ -105,9 +132,10 @@ export async function cropAnimatedGifBuffer(
   const sourceHeight = metadata.pageHeight ?? metadata.height;
 
   if (!sourceWidth || !sourceHeight) {
-    throw new customError(
-      'Could not determine GIF dimensions for cropping',
-      400
+    throw apiError(
+      'upload.gifDimensionsUnknown',
+      400,
+      'Could not determine GIF dimensions for cropping'
     );
   }
 
@@ -115,9 +143,10 @@ export async function cropAnimatedGifBuffer(
   const maxY = crop.y + crop.height;
 
   if (maxX > sourceWidth || maxY > sourceHeight) {
-    throw new customError(
-      'Crop area exceeds GIF bounds. Please reselect the crop area and try again.',
-      400
+    throw apiError(
+      'upload.cropOutOfBounds',
+      400,
+      'Crop area exceeds GIF bounds. Please reselect the crop area and try again.'
     );
   }
 
@@ -137,7 +166,7 @@ export async function cropAnimatedGifBuffer(
       .toBuffer();
   } catch (error) {
     console.error('Animated GIF crop failed:', error);
-    throw new customError('Failed to crop animated GIF', 500);
+    throw apiError('upload.gifCropFailed', 500, 'Failed to crop animated GIF');
   }
 }
 

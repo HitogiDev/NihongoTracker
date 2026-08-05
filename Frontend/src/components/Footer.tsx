@@ -1,8 +1,11 @@
 import { FilePlus, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
+import LanguageSwitcher from './LanguageSwitcher';
 
 function Footer() {
+  const { t } = useTranslation('nav');
   const { user } = useUserDataStore();
 
   return (
@@ -12,7 +15,9 @@ function Footer() {
           <p className="text-base-content text-sm sm:text-base">
             © {new Date().getFullYear()} NihongoTracker
             <span className="text-base-content/50 mx-2">•</span>
-            <span className="text-base-content/70">Data provided by </span>
+            <span className="text-base-content/70">
+              {t('footer.dataProvidedBy')}{' '}
+            </span>
             <a
               href="https://anilist.co"
               target="_blank"
@@ -21,7 +26,7 @@ function Footer() {
             >
               AniList
             </a>
-            <span className="text-base-content/70"> and </span>
+            <span className="text-base-content/70"> {t('footer.and')} </span>
             <a
               href="https://vndb.org"
               target="_blank"
@@ -34,25 +39,25 @@ function Footer() {
           </p>
         </aside>
 
-        <div className="flex flex-col items-center gap-3 md:items-end">
-          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-end">
+        <div className="flex flex-col items-center gap-3 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-x-4">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-end xl:flex-nowrap">
             <Link
               to="/privacy"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Privacy Policy
+              {t('footer.privacy')}
             </Link>
             <Link
               to="/terms"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Terms of Service
+              {t('footer.terms')}
             </Link>
             <Link
               to="/refund-policy"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Refund Policy
+              {t('footer.refund')}
             </Link>
             {user && (
               <Link
@@ -60,31 +65,36 @@ function Footer() {
                 className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
               >
                 <FilePlus className="w-4 h-4" />
-                <span>Request Media</span>
+                <span>{t('footer.requestMedia')}</span>
               </Link>
             )}
             <Link
               to="/changelog"
               className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
-              Changelog
+              {t('footer.changelog')}
             </Link>
             <Link
               to="/support"
               className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
             >
               <Heart className="w-4 h-4" />
-              <span className="font-medium">Support</span>
+              <span className="font-medium">{t('footer.support')}</span>
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
+            <LanguageSwitcher
+              className="dropdown-top dropdown-end"
+              buttonClassName="btn btn-ghost btn-sm gap-2 font-medium"
+              showLabel
+            />
             <a
               href="https://github.com/ElaxDev/NihongoTracker"
               target="_blank"
               rel="noreferrer"
               className="btn btn-ghost btn-sm btn-circle"
-              aria-label="NihongoTracker GitHub"
+              aria-label={t('footer.github')}
             >
               <svg
                 role="img"
@@ -100,7 +110,7 @@ function Footer() {
               target="_blank"
               rel="noreferrer"
               className="btn btn-ghost btn-sm btn-circle"
-              aria-label="NihongoTracker Discord"
+              aria-label={t('footer.discord')}
             >
               <svg
                 role="img"

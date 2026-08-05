@@ -5,6 +5,8 @@ import { IPendingAchievement } from '../../types';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
 import { playAchievement } from '../../utils/sfx';
+import { getAchievementName } from '../../utils/achievementText';
+import { useTranslation } from 'react-i18next';
 
 /** Per-rarity particle intensity for the flip-reveal burst. */
 const RARITY_BURST: Record<string, number> = {
@@ -24,6 +26,7 @@ export default function AchievementRevealModal({
   achievements,
   onClose,
 }: AchievementRevealModalProps) {
+  const { t } = useTranslation('achievements');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -43,7 +46,11 @@ export default function AchievementRevealModal({
 
   // Overlay fades in once — not again on every card.
   useEffect(() => {
-    gsap.fromTo(overlayRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+    gsap.fromTo(
+      overlayRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.3 }
+    );
   }, []);
 
   // Per-card timing: hold the face-down card, flip it, then reveal the text.
@@ -195,7 +202,9 @@ export default function AchievementRevealModal({
           >
             {/* Front — unrevealed ? card */}
             <div className="achievement-flip-front rounded-2xl border border-base-300 bg-base-200 flex items-center justify-center">
-              <span className="text-7xl font-black text-base-content/20">?</span>
+              <span className="text-7xl font-black text-base-content/20">
+                ?
+              </span>
             </div>
 
             {/* Back — real achievement */}
@@ -232,7 +241,7 @@ export default function AchievementRevealModal({
               className="text-2xl font-extrabold text-white"
               style={{ opacity: 0 }}
             >
-              {a.name ?? 'Secret Achievement'}
+              {getAchievementName(a) || t('secretName')}
             </h2>
 
             <span
@@ -261,7 +270,8 @@ export default function AchievementRevealModal({
               className="text-xs text-white/40 mt-2"
               style={{ opacity: 0 }}
             >
-              {a.rarityPercent !== undefined && `${a.rarityPercent}% of users • `}
+              {a.rarityPercent !== undefined &&
+                `${a.rarityPercent}% of users • `}
               {a.points > 0 && `${a.points} pts`}
             </div>
           </div>
@@ -270,7 +280,9 @@ export default function AchievementRevealModal({
         {/* Action buttons */}
         <div className="flex gap-3 mt-2">
           <button onClick={handleNext} className="btn btn-sm btn-primary px-6">
-            {isLast ? 'Awesome!' : `Next (${currentIndex + 1}/${achievements.length})`}
+            {isLast
+              ? 'Awesome!'
+              : `Next (${currentIndex + 1}/${achievements.length})`}
           </button>
           {!isLast && (
             <button

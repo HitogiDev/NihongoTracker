@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IPlaylistVideo, IPlaylistResult } from '../api/trackerApi';
 import {
   Pencil,
@@ -65,6 +66,7 @@ interface VideoEditorProps {
 }
 
 function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
+  const { t } = useTranslation('logs');
   const [local, setLocal] = useState<VideoOverride>({ ...override });
   const [showCal, setShowCal] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -101,7 +103,9 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
       {/* Description */}
       <div className="form-control">
         <label className="label py-0">
-          <span className="label-text text-xs font-medium">Description</span>
+          <span className="label-text text-xs font-medium">
+            {t('playlist.description')}
+          </span>
         </label>
         <input
           type="text"
@@ -134,7 +138,9 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
       {/* Date */}
       <div className="form-control">
         <label className="label py-0">
-          <span className="label-text text-xs font-medium">Date</span>
+          <span className="label-text text-xs font-medium">
+            {t('playlist.date')}
+          </span>
         </label>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-1 cursor-pointer">
@@ -146,7 +152,7 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
                 setLocal((p) => ({ ...p, unknownDate: e.target.checked }))
               }
             />
-            <span className="text-xs">Unknown date</span>
+            <span className="text-xs">{t('playlist.unknownDate')}</span>
           </label>
           {!local.unknownDate && (
             <button
@@ -218,6 +224,7 @@ export default function PlaylistSelectorModal({
   onConfirm,
   isSubmitting = false,
 }: PlaylistSelectorModalProps) {
+  const { t } = useTranslation('logs');
   const [rows, setRows] = useState<PlaylistVideoWithOverride[]>([]);
   const [globalDate, setGlobalDate] = useState<Date>(new Date());
   const [showGlobalCal, setShowGlobalCal] = useState(false);
@@ -328,10 +335,10 @@ export default function PlaylistSelectorModal({
           <div className="min-w-0">
             <h2 className="text-lg font-bold truncate">
               {isFetching
-                ? 'Fetching playlist…'
+                ? t('playlist.fetching')
                 : playlistResult
                   ? playlistResult.playlistTitle
-                  : 'YouTube Playlist'}
+                  : t('playlist.title')}
             </h2>
             {!isFetching && playlistResult && (
               <p className="text-sm text-base-content/60 mt-0.5">
@@ -384,7 +391,9 @@ export default function PlaylistSelectorModal({
                   onChange={toggleAll}
                 />
                 <span className="text-base font-medium">
-                  {allSelected ? 'Deselect all' : 'Select all'}
+                  {allSelected
+                    ? t('playlist.deselectAll')
+                    : t('playlist.selectAll')}
                 </span>
               </label>
 
@@ -428,7 +437,7 @@ export default function PlaylistSelectorModal({
                 const isEditing = editingIndex === idx;
                 const durationLabel = formatMinutes(override.durationMinutes);
                 const dateLabel = override.unknownDate
-                  ? 'Unknown date'
+                  ? t('playlist.unknownDate')
                   : override.date.toLocaleDateString();
 
                 return (
@@ -490,7 +499,7 @@ export default function PlaylistSelectorModal({
                         className={`btn btn-sm btn-ghost btn-circle flex-shrink-0 mt-0.5 ${
                           isEditing ? 'btn-active' : ''
                         }`}
-                        title="Edit duration, description, date"
+                        title={t('playlist.editEntry')}
                         onClick={() => setEditingIndex(isEditing ? null : idx)}
                       >
                         {isEditing ? (
@@ -548,7 +557,7 @@ export default function PlaylistSelectorModal({
         {/* Empty / error state */}
         {!isFetching && !playlistResult && (
           <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3 text-base-content/50">
-            <p className="text-sm">No playlist data available.</p>
+            <p className="text-sm">{t('playlist.noData')}</p>
             <button className="btn btn-ghost btn-sm" onClick={onClose}>
               Close
             </button>

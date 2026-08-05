@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserTagsByUsernameFn, createTagFn } from '../api/trackerApi';
 import { ITag } from '../types';
@@ -16,8 +17,10 @@ interface TagSelectorProps {
 export default function TagSelector({
   selectedTags,
   onChange,
-  label = 'Tags',
+  label,
 }: TagSelectorProps) {
+  const { t } = useTranslation('settings');
+  const fieldLabel = label ?? t('tags.selector.label');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6');
   const queryClient = useQueryClient();
@@ -53,7 +56,7 @@ export default function TagSelector({
     mutationFn: createTagFn,
     onSuccess: (newTag) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
-      toast.success('Tag created successfully');
+      toast.success(t('tags.manager.created'));
       // Auto-select the newly created tag
       onChange([...selectedTags, newTag._id]);
       closeQuickCreateModal();
@@ -61,7 +64,9 @@ export default function TagSelector({
       setNewTagColor('#3b82f6');
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      toast.error(error.response?.data?.message || 'Failed to create tag');
+      toast.error(
+        error.response?.data?.message || t('tags.manager.createFailed')
+      );
     },
   });
 
@@ -75,7 +80,7 @@ export default function TagSelector({
 
   const handleQuickCreate = () => {
     if (!newTagName.trim()) {
-      toast.error('Tag name is required');
+      toast.error(t('tags.manager.nameRequired'));
       return;
     }
     createMutation.mutate({ name: newTagName.trim(), color: newTagColor });
@@ -91,11 +96,13 @@ export default function TagSelector({
     return (
       <div className="form-control">
         <label className="label">
-          <span className="label-text">{label}</span>
+          <span className="label-text">{fieldLabel}</span>
         </label>
         <div className="flex gap-2">
           <span className="loading loading-spinner loading-sm"></span>
-          <span className="text-sm text-base-content/60">Loading tags...</span>
+          <span className="text-sm text-base-content/60">
+            {t('tags.selector.loading')}
+          </span>
         </div>
       </div>
     );
@@ -105,10 +112,10 @@ export default function TagSelector({
     <>
       <div className="form-control">
         <label className="label">
-          <span className="label-text">{label}</span>
+          <span className="label-text">{fieldLabel}</span>
           {selectedTags.length > 0 && (
             <span className="label-text-alt text-base-content/60">
-              {selectedTags.length} selected
+              {t('tags.selector.selected', { total: selectedTags.length })}
             </span>
           )}
         </label>
@@ -156,8 +163,8 @@ export default function TagSelector({
             data-tip={
               tags.length >= maxTags
                 ? user?.patreon?.tier
-                  ? `You've reached the maximum of ${maxTags} tags for your tier`
-                  : `You've reached the maximum of ${maxTags} tags. Upgrade to Patreon for more!`
+                  ? t('tags.selector.maxReachedTier', { max: maxTags })
+                  : t('tags.selector.maxReachedFree', { max: maxTags })
                 : undefined
             }
           >
@@ -166,7 +173,11 @@ export default function TagSelector({
               className="btn btn-square btn-sm btn-outline btn-primary"
               onClick={openQuickCreateModal}
               disabled={tags.length >= maxTags}
-              title={tags.length < maxTags ? 'Create new tag' : undefined}
+              title={
+                tags.length < maxTags
+                  ? t('tags.selector.createNewTag')
+                  : undefined
+              }
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -188,7 +199,7 @@ export default function TagSelector({
 
         {tags.length === 0 && (
           <p className="text-sm text-base-content/60 mt-2">
-            No tags yet. Click the + button to create your first tag!
+            {t('tags.selector.emptyHint')}
           </p>
         )}
       </div>
@@ -196,16 +207,18 @@ export default function TagSelector({
       {/* Quick Create Tag Modal */}
       <dialog id="quick_create_tag_modal" className="modal">
         <div className="modal-box max-w-md">
-          <h3 className="font-bold text-lg mb-4">Create New Tag</h3>
+          <h3 className="font-bold text-lg mb-4">
+            {t('tags.manager.createNew')}
+          </h3>
           <div>
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Tag Name</span>
+                <span className="label-text">{t('tags.manager.tagName')}</span>
               </label>
               <input
                 type="text"
                 className="input input-bordered"
-                placeholder="e.g., Study, Fun, Practice"
+                placeholder={t('tags.manager.namePlaceholder')}
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
                 maxLength={30}
@@ -215,7 +228,7 @@ export default function TagSelector({
 
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text">Tag Color</span>
+                <span className="label-text">{t('tags.manager.tagColor')}</span>
               </label>
               <div className="flex flex-col items-center gap-3">
                 <div
@@ -226,7 +239,7 @@ export default function TagSelector({
                     color: newTagColor,
                   }}
                 >
-                  {newTagName || 'Preview'}
+                  {newTagName || t('tags.manager.preview')}
                 </div>
                 <div style={{ width: '200px', height: '200px' }}>
                   <Wheel
@@ -241,7 +254,7 @@ export default function TagSelector({
                   className="input input-bordered input-sm w-full text-center"
                   value={newTagColor}
                   onChange={(e) => setNewTagColor(e.target.value)}
-                  placeholder="#3b82f6"
+                  placeholder={t('tags.manager.colorPlaceholder')}
                 />
               </div>
             </div>
@@ -252,7 +265,7 @@ export default function TagSelector({
                 className="btn btn-ghost"
                 onClick={closeQuickCreateModal}
               >
-                Cancel
+                {t('tags.selector.cancel')}
               </button>
               <button
                 type="button"
@@ -263,7 +276,7 @@ export default function TagSelector({
                 {createMutation.isPending ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : (
-                  'Create & Add'
+                  t('tags.selector.createAndAdd')
                 )}
               </button>
             </div>
@@ -273,7 +286,7 @@ export default function TagSelector({
           type="button"
           className="modal-backdrop"
           onClick={closeQuickCreateModal}
-          aria-label="Close"
+          aria-label={t('tags.selector.close')}
         >
           close
         </button>

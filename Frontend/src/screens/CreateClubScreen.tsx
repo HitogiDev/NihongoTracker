@@ -25,12 +25,14 @@ import {
 import { createClubFn } from '../api/clubApi';
 import { ICreateClubRequest } from '../types';
 import { useUserDataStore } from '../store/userData';
+import { useTranslation } from 'react-i18next';
 import {
   getMaxClubMemberLimitForUser,
   getClubMemberLimitValidationMessage,
 } from '../utils/patreonClubLimits';
 
 function CreateClubScreen() {
+  const { t } = useTranslation(['clubs', 'common']);
   const navigate = useNavigate();
   const { user } = useUserDataStore();
   const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
@@ -83,7 +85,7 @@ function CreateClubScreen() {
   const createClubMutation = useMutation({
     mutationFn: createClubFn,
     onSuccess: (data) => {
-      toast.success('Club created successfully!');
+      toast.success(t('toast.created'));
       navigate(`/clubs/${data._id}`);
     },
     onError: (error: AxiosError<{ message: string }>) => {
@@ -392,10 +394,10 @@ function CreateClubScreen() {
             </button>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-base-content">
-                Create New Club
+                {t('create.title')}
               </h1>
               <p className="text-base-content/70 mt-2">
-                Start your own immersion community
+                {t('create.subtitle')}
               </p>
             </div>
           </div>
@@ -411,19 +413,20 @@ function CreateClubScreen() {
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Info className="text-primary" />
-                  Basic Information
+                  {t('create.basicInfo')}
                 </h2>
 
                 {/* Club Name */}
                 <div className="form-control">
                   <fieldset className="fieldset">
                     <legend className="fieldset-legend font-medium">
-                      Club Name<span className="text-error">*</span>
+                      {t('create.name')}
+                      <span className="text-error">*</span>
                     </legend>
                     <input
                       type="text"
                       className={`input input-bordered ${errors.name ? 'input-error' : ''}`}
-                      placeholder="Enter your club name"
+                      placeholder={t('create.namePlaceholder')}
                       value={formData.name}
                       onChange={(e) =>
                         handleInputChange('name', e.target.value)
@@ -447,11 +450,11 @@ function CreateClubScreen() {
                 <div className="form-control">
                   <fieldset className="fieldset w-full">
                     <legend className="fieldset-legend font-medium">
-                      Description
+                      {t('common.description')}
                     </legend>
                     <textarea
                       className={`textarea textarea-bordered w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
-                      placeholder="Tell others what your club is about..."
+                      placeholder={t('create.descriptionPlaceholder')}
                       value={formData.description}
                       onChange={(e) =>
                         handleInputChange('description', e.target.value)
@@ -474,16 +477,20 @@ function CreateClubScreen() {
                 {/* Privacy Settings */}
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">Privacy</span>
+                    <span className="label-text font-medium">
+                      {t('create.privacy')}
+                    </span>
                   </label>
                   <div className="flex gap-4">
                     <label className="label cursor-pointer flex-1 bg-base-200 rounded-lg p-4">
                       <div className="flex items-center gap-3">
                         <Earth className="text-xl text-success" />
                         <div>
-                          <span className="label-text font-medium">Public</span>
+                          <span className="label-text font-medium">
+                            {t('create.public')}
+                          </span>
                           <div className="text-xs text-base-content/60">
-                            Anyone can join immediately
+                            {t('create.publicHint')}
                           </div>
                         </div>
                       </div>
@@ -501,10 +508,10 @@ function CreateClubScreen() {
                         <Lock className="text-xl text-warning" />
                         <div>
                           <span className="label-text font-medium">
-                            Private
+                            {t('create.private')}
                           </span>
                           <div className="text-xs text-base-content/60">
-                            Requires approval to join
+                            {t('create.privateHint')}
                           </div>
                         </div>
                       </div>
@@ -522,7 +529,9 @@ function CreateClubScreen() {
                 {/* Member Limit */}
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text font-medium">Member Limit</span>
+                    <span className="label-text font-medium">
+                      {t('create.memberLimit')}
+                    </span>
                   </label>
                   <div className="flex items-center gap-4">
                     <input
@@ -555,9 +564,9 @@ function CreateClubScreen() {
                       Current tier max: {maxAllowedMemberLimit} members
                     </p>
                     <p className="text-xs text-base-content/70">
-                      Need more members?{' '}
+                      {t('create.needMoreMembers')}{' '}
                       <Link to="/support" className="link link-primary">
-                        Donate
+                        {t('create.donate')}
                       </Link>{' '}
                       to unlock higher club limits and more perks.
                     </p>
@@ -571,11 +580,10 @@ function CreateClubScreen() {
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Tag className="text-primary w-6 h-6" />
-                  Tags
+                  {t('common.tags')}
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
-                  Add tags to help others find your club. You can add up to 10
-                  tags.
+                  {t('create.tagsHint')}
                 </p>
 
                 {/* Add Tag Input */}
@@ -583,7 +591,7 @@ function CreateClubScreen() {
                   <input
                     type="text"
                     className="input input-bordered flex-1"
-                    placeholder="Add a tag..."
+                    placeholder={t('create.tagPlaceholder')}
                     value={currentTag}
                     onChange={(e) => setCurrentTag(e.target.value)}
                     onKeyDown={(e) => {
@@ -609,7 +617,9 @@ function CreateClubScreen() {
                 {/* Current Tags */}
                 {(formData.tags?.length || 0) > 0 && (
                   <div className="mb-4">
-                    <p className="text-sm font-medium mb-2">Your tags:</p>
+                    <p className="text-sm font-medium mb-2">
+                      {t('create.yourTags')}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {formData.tags?.map((tag) => (
                         <div key={tag} className="badge badge-primary gap-2">
@@ -629,7 +639,9 @@ function CreateClubScreen() {
 
                 {/* Predefined Tags */}
                 <div>
-                  <p className="text-sm font-medium mb-2">Suggested tags:</p>
+                  <p className="text-sm font-medium mb-2">
+                    {t('create.suggestedTags')}
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {predefinedTags
                       .filter((tag) => !(formData.tags?.includes(tag) || false))
@@ -654,18 +666,17 @@ function CreateClubScreen() {
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Image className="text-primary w-6 h-6" />
-                  Club Media
+                  {t('activity.clubMedia')}
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
-                  Upload a profile picture and banner for your club (optional).
-                  Images must be appropriate and non-offensive.
+                  {t('create.imagesHint')}
                 </p>
 
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Club Profile Picture */}
                   <div className="flex-1">
                     <label className="label font-medium">
-                      <span className="label-text">Club Icon</span>
+                      <span className="label-text">{t('create.icon')}</span>
                     </label>
                     <div className="flex flex-col items-center gap-3 p-4 border border-dashed rounded-lg bg-base-200">
                       <div className="avatar">
@@ -673,7 +684,7 @@ function CreateClubScreen() {
                           {avatarPreview ? (
                             <img
                               src={avatarPreview}
-                              alt="Club icon preview"
+                              alt={t('create.iconPreviewAlt')}
                               className="w-full h-full object-cover rounded-full"
                             />
                           ) : (
@@ -686,7 +697,7 @@ function CreateClubScreen() {
                       <div className="flex gap-2">
                         <label className="btn btn-sm btn-primary">
                           <Upload className="w-4 h-4" />
-                          Upload
+                          {t('create.upload')}
                           <input
                             type="file"
                             accept="image/*"
@@ -701,12 +712,12 @@ function CreateClubScreen() {
                             onClick={() => clearFile('avatar')}
                           >
                             <Trash className="w-4 h-4" />
-                            Remove
+                            {t('common.remove')}
                           </button>
                         )}
                       </div>
                       <span className="text-xs text-base-content/60">
-                        Max size: 3MB
+                        {t('create.maxSize')}
                       </span>
                     </div>
                   </div>
@@ -714,14 +725,14 @@ function CreateClubScreen() {
                   {/* Club Banner */}
                   <div className="flex-1">
                     <label className="label font-medium">
-                      <span className="label-text">Club Banner</span>
+                      <span className="label-text">{t('create.banner')}</span>
                     </label>
                     <div className="flex flex-col items-center gap-3 p-4 border border-dashed rounded-lg bg-base-200">
                       <div className="w-full h-32 bg-base-300 rounded-lg flex items-center justify-center overflow-hidden">
                         {bannerPreview ? (
                           <img
                             src={bannerPreview}
-                            alt="Banner preview"
+                            alt={t('create.bannerPreviewAlt')}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -731,7 +742,7 @@ function CreateClubScreen() {
                       <div className="flex gap-2">
                         <label className="btn btn-sm btn-primary">
                           <Upload className="w-4 h-4" />
-                          Upload
+                          {t('create.upload')}
                           <input
                             type="file"
                             accept="image/*"
@@ -746,12 +757,12 @@ function CreateClubScreen() {
                             onClick={() => clearFile('banner')}
                           >
                             <Trash className="w-4 h-4" />
-                            Remove
+                            {t('common.remove')}
                           </button>
                         )}
                       </div>
                       <span className="text-xs text-base-content/60">
-                        Recommended size: 1200x400px, Max size: 3MB
+                        {t('create.bannerHint')}
                       </span>
                     </div>
                   </div>
@@ -764,18 +775,17 @@ function CreateClubScreen() {
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Info className="text-primary w-6 h-6" />
-                  Club Rules
+                  {t('create.rules')}
                 </h2>
                 <p className="text-sm text-base-content/60 mb-4">
-                  Set clear guidelines for your club members (optional).
+                  {t('create.rulesHint')}
                 </p>
 
                 <div className="alert alert-warning mb-4 text-sm">
                   <TriangleAlert className="text-lg" />
                   <span>
-                    <strong>Important:</strong> Club names, profile pictures,
-                    and banners must not contain offensive content. Violation of
-                    this rule may result in account suspension or club removal.
+                    <strong>{t('create.important')}</strong>{' '}
+                    {t('create.contentPolicy')}
                   </span>
                 </div>
 
@@ -817,7 +827,7 @@ function CreateClubScreen() {
                 className="btn btn-ghost"
                 onClick={() => navigate('/clubs')}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -829,7 +839,7 @@ function CreateClubScreen() {
                 ) : (
                   <Users className="w-4 h-4" />
                 )}
-                Create Club
+                {t('create.submit')}
               </button>
             </div>
           </form>
@@ -837,7 +847,7 @@ function CreateClubScreen() {
       </div>
 
       <ImageCropDialog
-        title="Crop Club Icon"
+        title={t('create.cropIcon')}
         imageSrc={avatarSrc}
         isOpen={showAvatarCrop}
         aspect={1}
@@ -848,7 +858,7 @@ function CreateClubScreen() {
       />
 
       <ImageCropDialog
-        title="Crop Club Banner"
+        title={t('create.cropBanner')}
         imageSrc={bannerSrc}
         isOpen={showBannerCrop}
         aspect={21 / 9}

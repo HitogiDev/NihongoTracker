@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { customError } from './errorMiddleware.js';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import csvtojson from 'csvtojson';
 import {
   TMWLog,
@@ -16,17 +17,17 @@ export async function csvToArray(
 ) {
   try {
     if (!req.file) {
-      throw new customError('No file uploaded', 400);
+      throw apiError('import.noFile', 400, 'No file uploaded');
     }
     if (
       !['tmw', 'manabe', 'vncr', 'other', 'kechimochi'].includes(
         req.body.logImportType
       )
     ) {
-      throw new customError('Import type is invalid', 400);
+      throw apiError('import.invalidType', 400, 'Import type is invalid');
     }
     if (req.file.size > 5 * 1024 * 1024) {
-      throw new customError('File size exceeds the 5MB limit', 400);
+      throw apiError('import.fileTooLarge', 400, 'File size exceeds the 5MB limit');
     }
 
     const csvString = req.file.buffer.toString('utf8');
@@ -39,7 +40,7 @@ export async function csvToArray(
       }).fromString(csvString);
 
       if (results.length === 0) {
-        throw new customError('No data found in the CSV file', 400);
+        throw apiError('import.emptyCsv', 400, 'No data found in the CSV file');
       }
       req.body.logs = results;
     } else if (csvType === 'manabe') {
@@ -49,7 +50,7 @@ export async function csvToArray(
       }).fromString(csvString);
 
       if (results.length === 0) {
-        throw new customError('No data found in the TSV file', 400);
+        throw apiError('import.emptyTsv', 400, 'No data found in the TSV file');
       }
       req.body.logs = results;
     } else if (csvType === 'vncr') {
@@ -69,7 +70,7 @@ export async function csvToArray(
       }
 
       if (results.length === 0) {
-        throw new customError('No valid data found in the JSONL file', 400);
+        throw apiError('import.emptyJsonl', 400, 'No valid data found in the JSONL file');
       }
       req.body.logs = results;
     } else if (csvType === 'other') {
@@ -79,15 +80,16 @@ export async function csvToArray(
       }).fromString(csvString);
 
       if (results.length === 0) {
-        throw new customError('No data found in the CSV file', 400);
+        throw apiError('import.emptyCsv', 400, 'No data found in the CSV file');
       }
 
       // Validate required fields
       for (const row of results) {
         if (!row.date || !row.type) {
-          throw new customError(
-            'Each row must have at least a "date" and "type" field',
-            400
+          throw apiError(
+            'import.rowMissingFields',
+            400,
+            'Each row must have at least a "date" and "type" field'
           );
         }
       }
@@ -100,7 +102,7 @@ export async function csvToArray(
       }).fromString(csvString);
 
       if (results.length === 0) {
-        throw new customError('No data found in the CSV file', 400);
+        throw apiError('import.emptyCsv', 400, 'No data found in the CSV file');
       }
 
       for (const row of results) {
@@ -110,9 +112,10 @@ export async function csvToArray(
           !row['Media Type'] ||
           !row.Duration
         ) {
-          throw new customError(
-            'Each row must have "Date", "Log Name", "Media Type", and "Duration" fields',
-            400
+          throw apiError(
+            'import.rowMissingColumns',
+            400,
+            'Each row must have "Date", "Log Name", "Media Type", and "Duration" fields'
           );
         }
       }

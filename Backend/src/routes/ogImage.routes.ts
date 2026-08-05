@@ -1,11 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import User from '../models/user.model.js';
 import { generateProfileOgImage } from '../services/generateOgImage.js';
 import {
   generateStatsCardImage,
   StatsCardTiles,
 } from '../services/generateStatsCardImage.js';
-import { customError } from '../middlewares/errorMiddleware.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
 const router = Router();
@@ -27,7 +28,7 @@ router.get(
         .select('username stats avatar banner');
 
       if (!user) {
-        return next(new customError('User not found', 404));
+        return next(apiError('user.notFound', 404, 'User not found'));
       }
 
       // Generate the OG image
@@ -58,7 +59,7 @@ router.post(
       };
 
       if (!username || typeof username !== 'string') {
-        return next(new customError('username is required', 400));
+        return next(apiError('user.usernameRequired', 400, 'username is required'));
       }
 
       const user = await User.findOne({ username })
@@ -66,7 +67,7 @@ router.post(
         .select('username avatar banner');
 
       if (!user) {
-        return next(new customError('User not found', 404));
+        return next(apiError('user.notFound', 404, 'User not found'));
       }
 
       const safeTiles: StatsCardTiles = {

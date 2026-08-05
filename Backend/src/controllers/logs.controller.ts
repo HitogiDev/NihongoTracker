@@ -16,6 +16,7 @@ import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
 import { ObjectId, PipelineStage, Types } from 'mongoose';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import updateStats from '../services/updateStats.js';
 import {
   recalculateStreaksForUser,
@@ -132,7 +133,11 @@ export async function dismissMatchLogs(
     };
 
     if (!Array.isArray(logsId) || logsId.length === 0) {
-      throw new customError('You need to provide at least one log id', 400);
+      throw apiError(
+        'log.atLeastOneId',
+        400,
+        'You need to provide at least one log id'
+      );
     }
 
     const result = await Log.updateMany(
@@ -687,7 +692,7 @@ export async function getUserLogs(
 
   try {
     if (!req.params.username) {
-      throw new customError('Username is required', 400);
+      throw apiError('user.usernameRequired', 400, 'Username is required');
     }
 
     const parseNumberParam = (value: unknown): number | null => {
@@ -713,9 +718,11 @@ export async function getUserLogs(
       }
 
       if (minValue !== null && maxValue !== null && minValue > maxValue) {
-        throw new customError(
+        throw apiError(
+          'log.rangeMinAboveMax',
+          400,
           `${field}Min cannot be greater than ${field}Max`,
-          400
+          { field }
         );
       }
 
@@ -743,7 +750,7 @@ export async function getUserLogs(
       username: req.params.username,
     }).select('_id');
     if (!userExists) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     const viewer = res.locals.user as IUser | undefined;
@@ -1136,11 +1143,11 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
     ]);
 
     const foundLog = logAggregation[0];
-    if (!foundLog) throw new customError('Log not found', 404);
+    if (!foundLog) throw apiError('log.notFound', 404, 'Log not found');
 
     const viewer = res.locals.user as IUser | undefined;
     if (foundLog.private && !canViewPrivateLog(viewer, foundLog.user)) {
-      throw new customError('Log not found', 404);
+      throw apiError('log.notFound', 404, 'Log not found');
     }
 
     const sharedLogData = {
@@ -1184,7 +1191,11 @@ export async function deleteLog(
     res.locals.log = deletedLog;
 
     if (!deletedLog) {
-      throw new customError('Log not found or not authorized', 404);
+      throw apiError(
+        'log.notFoundOrForbidden',
+        404,
+        'Log not found or not authorized'
+      );
     }
 
     await updateStats(res, next, true);
@@ -1229,7 +1240,7 @@ export async function deleteLogsBulk(
     const { ids } = req.body as { ids?: unknown };
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      throw new customError('ids must be a non-empty array', 400);
+      throw apiError('log.idsRequired', 400, 'ids must be a non-empty array');
     }
 
     const userId = res.locals.user.id;
@@ -1241,7 +1252,11 @@ export async function deleteLogsBulk(
     });
 
     if (result.deletedCount === 0) {
-      throw new customError('No logs found or not authorized', 404);
+      throw apiError(
+        'log.noneFoundOrForbidden',
+        404,
+        'No logs found or not authorized'
+      );
     }
 
     // Recalculate stats from scratch for the user (single write, no race)
@@ -1271,7 +1286,7 @@ export async function adminDeleteLogsBulk(
     const { ids } = req.body as { ids?: unknown };
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      throw new customError('ids must be a non-empty array', 400);
+      throw apiError('log.idsRequired', 400, 'ids must be a non-empty array');
     }
 
     // Find the logs first to know which user(s) to update stats for
@@ -1280,7 +1295,7 @@ export async function adminDeleteLogsBulk(
       .lean();
 
     if (logsToDelete.length === 0) {
-      throw new customError('No logs found', 404);
+      throw apiError('log.noneFound', 404, 'No logs found');
     }
 
     await Log.deleteMany({ _id: { $in: ids } });
@@ -1362,7 +1377,7 @@ export async function adminDeleteLog(
     const deletedLog = await Log.findByIdAndDelete(req.params.id);
 
     if (!deletedLog) {
-      throw new customError('Log not found', 404);
+      throw apiError('log.notFound', 404, 'Log not found');
     }
 
     // Set locals so updateStats can update the correct user's stats
@@ -1407,7 +1422,7 @@ export async function updateLog(
       user: res.locals.user.id,
     });
 
-    if (!log) throw new customError('Log not found', 404);
+    if (!log) throw apiError('log.notFound', 404, 'Log not found');
 
     const validKeys: (keyof IEditedFields)[] = [
       'episodes',
@@ -1501,7 +1516,7 @@ export async function adminUpdateLog(
       new Types.ObjectId(req.params.id)
     );
 
-    if (!log) throw new customError('Log not found', 404);
+    if (!log) throw apiError('log.notFound', 404, 'Log not found');
 
     const validKeys: (keyof IEditedFields)[] = [
       'episodes',
@@ -1605,8 +1620,9 @@ export async function createLog(
   } = req.body;
 
   try {
-    if (!type) throw new customError('Log type is required', 400);
-    if (!description) throw new customError('Description is required', 400);
+    if (!type) throw apiError('log.typeRequired', 400, 'Log type is required');
+    if (!description)
+      throw apiError('log.descriptionRequired', 400, 'Description is required');
 
     const isUnknownDate = Boolean(unknownDate);
 
@@ -1706,9 +1722,11 @@ export async function createLog(
       chars,
       tags: tags || [],
     });
-    if (!newLog) throw new customError('Log could not be created', 500);
+    if (!newLog)
+      throw apiError('log.createFailed', 500, 'Log could not be created');
     const savedLog = await newLog.save();
-    if (!savedLog) throw new customError('Log could not be saved', 500);
+    if (!savedLog)
+      throw apiError('log.saveFailed', 500, 'Log could not be saved');
 
     const levelBeforeLog: number = res.locals.user.stats?.userLevel ?? 1;
 
@@ -2062,10 +2080,11 @@ export async function importLogs(
     await updateStats(res, next);
 
     const user = await User.findById(res.locals.user.id);
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
     user.firstImport = false;
     const savedUser = await user.save();
-    if (!savedUser) throw new customError('User could not be updated', 500);
+    if (!savedUser)
+      throw apiError('user.updateFailed', 500, 'User could not be updated');
 
     const createdMedia = await createImportedMedia(
       res.locals.user._id,
@@ -2151,9 +2170,11 @@ export async function assignMedia(
         );
 
         if (!updatedLogs)
-          throw new customError(
+          throw apiError(
+            'log.notFoundPlural',
+            404,
             `Log${logsData.logsId.length > 1 ? 's' : ''} not found`,
-            404
+            { count: logsData.logsId.length }
           );
 
         return updatedLogs;
@@ -2866,7 +2887,11 @@ export async function syncManabeIds(
 
     const apiUrl = process.env.MANABE_API_URL;
     if (!apiUrl) {
-      throw new customError('Manabe API URL not configured', 500);
+      throw apiError(
+        'log.manabeNotConfigured',
+        500,
+        'Manabe API URL not configured'
+      );
     }
 
     // Get all users with Discord ID

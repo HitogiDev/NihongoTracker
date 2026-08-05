@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getUserTagsByUsernameFn } from '../api/trackerApi';
 import { ITag } from '../types';
 
@@ -17,6 +18,7 @@ export default function TagFilter({
   onExcludeChange,
   username,
 }: TagFilterProps) {
+  const { t } = useTranslation('settings');
   const { data: tags = [], isLoading } = useQuery({
     queryKey: ['tags', username],
     queryFn: () => getUserTagsByUsernameFn(username),
@@ -101,7 +103,7 @@ export default function TagFilter({
         className="dropdown-content menu p-4 shadow-sm bg-base-100 rounded-box w-[calc(100vw-2rem)] max-w-sm sm:w-96 border border-base-300 max-h-[500px] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-sm">Filter by Tags</h3>
+          <h3 className="font-semibold text-sm">{t('tagFilter.title')}</h3>
           {hasActiveFilters && (
             <button className="btn btn-ghost btn-xs" onClick={clearFilters}>
               Clear

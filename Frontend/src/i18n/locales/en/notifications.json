@@ -1,0 +1,65 @@
+{
+  "bell": {
+    "ariaLabel": "Notifications ({{count}})",
+    "empty": "No notifications yet",
+    "goToPage": "Go to page",
+    "loading": "Loading...",
+    "logIn": "Log in",
+    "signInPrompt": "Sign in to see your notifications."
+  },
+  "deleteConfirm": {
+    "cancel": "Cancel",
+    "close": "Close delete confirmation",
+    "confirm": "Delete",
+    "description": "This removes it from your notifications.",
+    "dontShowAgain": "Don't show again",
+    "title": "Delete notification?"
+  },
+  "item": {
+    "delete": "Delete notification",
+    "read": "Read",
+    "unread": "Unread"
+  },
+  "items": {
+    "achievement.unlocked": "Achievement unlocked: {{name}}",
+    "changelog.available": "Version {{version}} is now available",
+    "club.joinApproved": "You were accepted into {{clubName}}",
+    "club.joinRejected": "Your request to join {{clubName}} was declined",
+    "club.joinRequestMany": "You have new join requests in {{clubName}}",
+    "club.joinRequestSingle": "{{username}} wants to join {{clubName}}",
+    "club.memberRemoved": "You were removed from {{clubName}}",
+    "mediaRequest.approved": "Your media request \"{{title}}\" was approved",
+    "mediaRequest.rejected": "Your media request \"{{title}}\" was rejected",
+    "review.liked_one": "{{username}} and {{count}} other liked your review",
+    "review.liked_other": "{{username}} and {{count}} others liked your review",
+    "review.liked_zero": "{{username}} liked your review"
+  },
+  "list": {
+    "empty": {
+      "description": "You do not have any notifications right now.",
+      "title": "All caught up"
+    },
+    "endReached": "You have reached the end.",
+    "error": {
+      "description": "Something went wrong while fetching your notifications. Please try again later.",
+      "title": "Unable to load notifications"
+    },
+    "heading": "All notifications",
+    "loadingMore": "Loading more...",
+    "showing_one": "Showing {{shown}} of {{count}} notification",
+    "showing_other": "Showing {{shown}} of {{count}} notifications"
+  },
+  "page": {
+    "subtitle": "Browse every notification, including the ones you have already read.",
+    "title": "Notifications"
+  },
+  "summary": {
+    "markAsRead": "Mark as read",
+    "markAsReadTitle": "Mark all notifications as read",
+    "markAsUnread": "Mark as unread",
+    "markAsUnreadTitle": "Mark all notifications as unread",
+    "nothingUnread": "No unread notifications",
+    "total": "Total",
+    "unread": "Unread"
+  }
+}

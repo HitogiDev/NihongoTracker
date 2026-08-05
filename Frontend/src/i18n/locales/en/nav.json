@@ -1,0 +1,98 @@
+{
+  "a11y": {
+    "notifications": "Notifications",
+    "search": "Search",
+    "themeToggle": "Theme: {{mode}}. Click to cycle dark, light, system.",
+    "userMenu": "{{username}} menu"
+  },
+  "actions": {
+    "createLog": "Create Log",
+    "createLogShort": "Log"
+  },
+  "footer": {
+    "and": "and",
+    "changelog": "Changelog",
+    "dataProvidedBy": "Data provided by",
+    "discord": "NihongoTracker Discord",
+    "github": "NihongoTracker GitHub",
+    "privacy": "Privacy Policy",
+    "refund": "Refund Policy",
+    "requestMedia": "Request Media",
+    "support": "Support",
+    "terms": "Terms of Service"
+  },
+  "language": {
+    "switcherLabel": "Change language"
+  },
+  "links": {
+    "admin": "Admin",
+    "calculator": "Calculator",
+    "clubs": "Clubs",
+    "donate": "Donate",
+    "features": "Features",
+    "home": "Home",
+    "immersionList": "Immersion List",
+    "lists": "Lists",
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Profile",
+    "ranking": "Ranking",
+    "settings": "Settings",
+    "signUp": "Sign Up",
+    "stats": "Stats",
+    "texthooker": "Texthooker"
+  },
+  "sections": {
+    "account": "Account",
+    "navigation": "Navigation"
+  },
+  "themeModes": {
+    "dark": "dark",
+    "light": "light",
+    "system": "system"
+  },
+  "titles": {
+    "about": "About",
+    "admin": "Admin",
+    "calculator": "Calculator",
+    "changelog": "Changelog",
+    "club": "Club",
+    "clubs": "Clubs",
+    "clubSection": "{{section}} • Club",
+    "createClub": "Create Club",
+    "createLog": "Create Log",
+    "features": "Features",
+    "forgotPassword": "Forgot Password",
+    "goals": "Goals",
+    "home": "Home",
+    "list": "List",
+    "lists": "Lists",
+    "login": "Login",
+    "matchMedia": "Match Media",
+    "mediaDetails": "{{type}} Details",
+    "notifications": "Notifications",
+    "privacy": "Privacy Policy",
+    "ranking": "Ranking",
+    "register": "Register",
+    "requestMedia": "Request Media",
+    "resetPassword": "Reset Password",
+    "sections": {
+      "activity": "Activity",
+      "goals": "goals",
+      "immersionList": "immersion list",
+      "lists": "lists",
+      "media": "Media",
+      "moderation": "moderation",
+      "profile": "profile",
+      "rankings": "Rankings",
+      "reviews": "Reviews",
+      "stats": "stats"
+    },
+    "settings": "Settings",
+    "sharedLog": "Shared Log",
+    "support": "Support",
+    "terms": "Terms of Service",
+    "userSection": "{{username}}'s {{section}}",
+    "verifyEmail": "Verify Email"
+  }
+}

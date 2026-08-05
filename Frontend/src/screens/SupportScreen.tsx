@@ -7,92 +7,69 @@ import {
   Check,
   ArrowRight,
 } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 
+/**
+ * Like FeaturesScreen, the catalogues below hold only presentation: which
+ * icon, which accent, which tier is highlighted. Names stay untranslated —
+ * they are the actual tier names on Patreon — while descriptions and benefits
+ * are looked up in `legal:support.tiers.items.*` by id.
+ */
 interface PatreonTier {
+  id: string;
   name: string;
   price: string;
-  description: string;
   color: string;
   icon: React.ReactNode;
-  benefits: string[];
   popular?: boolean;
 }
 
+const TIERS: PatreonTier[] = [
+  {
+    id: 'donator',
+    name: 'Donator',
+    price: '$1',
+    color: 'badge-accent',
+    icon: <Heart className="w-5 h-5" />,
+  },
+  {
+    id: 'enthusiast',
+    name: 'Immersion Enthusiast',
+    price: '$5',
+    color: 'badge-secondary',
+    icon: <Award className="w-5 h-5" />,
+    popular: true,
+  },
+  {
+    id: 'consumer',
+    name: 'Avid Consumer',
+    price: '$10',
+    color: 'badge-primary',
+    icon: <Rocket className="w-5 h-5" />,
+  },
+];
+
+const WHY_SUPPORT = [
+  { id: 'lights', icon: <Lightbulb className="text-5xl text-warning" /> },
+  { id: 'development', icon: <Rocket className="text-5xl text-info" /> },
+  { id: 'community', icon: <Heart className="text-5xl text-error" /> },
+  { id: 'openSource', icon: <Earth className="text-5xl text-success" /> },
+];
+
+const FAQ_IDS = ['alwaysFree', 'benefits', 'cancel', 'notApplying'] as const;
+
+const PATREON_URL = 'https://www.patreon.com/nihongotracker';
+
 function SupportScreen() {
-  const patreonUrl = 'https://www.patreon.com/nihongotracker';
+  const { t } = useTranslation('legal');
 
-  const tiers: PatreonTier[] = [
-    {
-      name: 'Donator',
-      price: '$1',
-      description:
-        'You like what NihongoTracker strives for: "helping self-learners track their Japanese immersion", and you want to show a little love. Every dollar helps keep the servers running and the project alive 💕',
-      color: 'badge-accent',
-      icon: <Heart className="w-5 h-5" />,
-      benefits: [
-        'Show your symbolic support for the project',
-        'Donator Badge on the profile',
-        'Increase maximum log tags to 7',
-        'Unlock more themes',
-      ],
-    },
-    {
-      name: 'Immersion Enthusiast',
-      price: '$5',
-      description:
-        'For those who use NihongoTracker daily and want to contribute a little more to its development. This tier helps fund hosting, testing, and small feature improvements.',
-      color: 'badge-secondary',
-      icon: <Award className="w-5 h-5" />,
-      benefits: [
-        'Animated GIF avatars and banners',
-        'Custom text in the profile donator badge',
-        'Increase maximum log tags to 15',
-        'Increase maximum club members to 250',
-      ],
-      popular: true,
-    },
-    {
-      name: 'Avid Consumer',
-      price: '$10',
-      description:
-        "You're going above and beyond to support NihongoTracker. This tier helps cover development and server costs while allowing the project to grow sustainably. Every update, every improvement, and every new feature is made possible thanks to people like you.",
-      color: 'badge-primary',
-      icon: <Rocket className="w-5 h-5" />,
-      benefits: [
-        'Custom donator badge color (rainbow included)',
-        'Site-wide donator badge',
-        'Increase the maximum log tags to 25',
-        'Increase maximum club members to 1000',
-      ],
-    },
-  ];
-
-  const whySupport = [
-    {
-      title: 'Keep the Lights On',
-      description:
-        "Server costs, database hosting, and API integrations aren't free. Your support helps me maintain reliable service.",
-      icon: <Lightbulb className="text-5xl text-warning" />,
-    },
-    {
-      title: 'Continuous Development',
-      description:
-        "We're constantly adding new features, improving performance, and fixing bugs. Support enables full-time development.",
-      icon: <Rocket className="text-5xl text-info" />,
-    },
-    {
-      title: 'Community First',
-      description:
-        'NihongoTracker will always have a generous free tier. Supporters help me keep it that way for everyone.',
-      icon: <Heart className="text-5xl text-error" />,
-    },
-    {
-      title: 'Open Source Values',
-      description:
-        'Your support helps me contribute back to the open source community and keep our codebase transparent.',
-      icon: <Earth className="text-5xl text-success" />,
-    },
-  ];
+  // Catalogue ids are runtime strings, so the typed `t` signature does not
+  // apply to these lookups; `benefits` is a JSON array rather than a string.
+  const tf = t as unknown as (key: string, options?: object) => string;
+  const tList = t as unknown as (
+    key: string,
+    options: { returnObjects: true }
+  ) => string[];
 
   return (
     <div className="pt-16 bg-base-100 min-h-screen">
@@ -100,24 +77,26 @@ function SupportScreen() {
       <section className="py-24 px-4 text-center">
         <div className="max-w-3xl mx-auto">
           <span className="badge badge-primary badge-outline mb-6">
-            Support the Project
+            {t('support.hero.badge')}
           </span>
           <h1 className="text-4xl md:text-6xl font-bold text-base-content mb-6 leading-tight">
-            Keep NihongoTracker <span className="text-primary">free</span>,
-            fast, and growing
+            <Trans
+              t={t}
+              i18nKey="support.hero.title"
+              components={{ hl: <span className="text-primary" /> }}
+            />
           </h1>
           <p className="text-xl text-base-content/60 mb-10 leading-relaxed">
-            Your support helps cover infrastructure and development so I can
-            keep building the best immersion tracker for Japanese learners.
+            {t('support.hero.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href={patreonUrl}
+              href={PATREON_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary btn-lg gap-2 px-10"
             >
-              Become a Patron
+              {t('support.hero.cta')}
               <ArrowRight size={18} />
             </a>
           </div>
@@ -130,25 +109,25 @@ function SupportScreen() {
           <div>
             <div className="text-3xl font-bold text-primary">3</div>
             <div className="text-sm text-base-content/50 mt-1">
-              Patreon Tiers
+              {t('support.stats.tiers')}
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-secondary">100%</div>
             <div className="text-sm text-base-content/50 mt-1">
-              Core Features Free
+              {t('support.stats.freeCore')}
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-accent">24/7</div>
             <div className="text-sm text-base-content/50 mt-1">
-              Community Access
+              {t('support.stats.community')}
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-success">1</div>
             <div className="text-sm text-base-content/50 mt-1">
-              Independent Creator
+              {t('support.stats.creator')}
             </div>
           </div>
         </div>
@@ -159,25 +138,25 @@ function SupportScreen() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <span className="badge badge-accent badge-outline mb-4">
-              Why It Matters
+              {t('support.why.badge')}
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-base-content">
-              Where your support goes
+              {t('support.why.title')}
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {whySupport.map((item) => (
+            {WHY_SUPPORT.map((item) => (
               <div
-                key={item.title}
+                key={item.id}
                 className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
               >
                 <div className="mb-4">{item.icon}</div>
                 <h3 className="text-lg font-bold text-base-content mb-2">
-                  {item.title}
+                  {tf(`support.why.items.${item.id}.title`)}
                 </h3>
                 <p className="text-sm text-base-content/60 leading-relaxed">
-                  {item.description}
+                  {tf(`support.why.items.${item.id}.description`)}
                 </p>
               </div>
             ))}
@@ -190,28 +169,27 @@ function SupportScreen() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <span className="badge badge-secondary badge-outline mb-4">
-              Patreon Tiers
+              {t('support.tiers.badge')}
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-base-content mb-4">
-              Pick the support level that fits you
+              {t('support.tiers.title')}
             </h2>
             <p className="text-base-content/60 mb-6 max-w-2xl mx-auto">
-              Benefits are cumulative. Higher tiers include all lower tier
-              benefits.
+              {t('support.tiers.subtitle')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {tiers.map((tier) => (
+            {TIERS.map((tier) => (
               <div
-                key={tier.name}
+                key={tier.id}
                 className={`relative rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm transition-all duration-300 hover:shadow-md ${
                   tier.popular ? 'ring-2 ring-secondary' : ''
                 }`}
               >
                 {tier.popular && (
                   <div className="badge badge-secondary absolute -top-3 left-1/2 -translate-x-1/2">
-                    Highlighted Tier
+                    {t('support.tiers.highlighted')}
                   </div>
                 )}
 
@@ -225,16 +203,18 @@ function SupportScreen() {
                 <div className="text-3xl font-bold text-base-content mb-3">
                   {tier.price}
                   <span className="text-sm font-normal text-base-content/60">
-                    /month
+                    {t('support.tiers.perMonth')}
                   </span>
                 </div>
 
                 <p className="text-sm text-base-content/60 leading-relaxed mb-5 min-h-24">
-                  {tier.description}
+                  {tf(`support.tiers.items.${tier.id}.description`)}
                 </p>
 
                 <ul className="space-y-3 mb-6">
-                  {tier.benefits.map((benefit, index) => (
+                  {tList(`support.tiers.items.${tier.id}.benefits`, {
+                    returnObjects: true,
+                  }).map((benefit, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <Check size={14} className="text-success shrink-0 mt-1" />
                       <span className="text-sm text-base-content/75">
@@ -245,14 +225,14 @@ function SupportScreen() {
                 </ul>
 
                 <a
-                  href={patreonUrl}
+                  href={PATREON_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`btn ${
                     tier.popular ? 'btn-secondary' : 'btn-outline btn-primary'
                   } w-full gap-2`}
                 >
-                  Become a Patron
+                  {t('support.tiers.cta')}
                 </a>
               </div>
             ))}
@@ -265,11 +245,10 @@ function SupportScreen() {
         <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl border border-base-300 bg-base-100 p-8 shadow-sm text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-base-content mb-4">
-              Prefer a one-time donation?
+              {t('support.oneTime.title')}
             </h2>
             <p className="text-base-content/60 mb-6 max-w-2xl mx-auto">
-              Not ready for a monthly commitment? You can still support the
-              project through Ko-fi.
+              {t('support.oneTime.subtitle')}
             </p>
             <div className="flex gap-4 flex-wrap justify-center">
               <a
@@ -298,76 +277,48 @@ function SupportScreen() {
       <section className="py-20 px-4 bg-base-100">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <span className="badge badge-outline mb-4">FAQ</span>
+            <span className="badge badge-outline mb-4">
+              {t('support.faq.badge')}
+            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-base-content">
-              Frequently asked questions
+              {t('support.faq.title')}
             </h2>
           </div>
 
           <div className="space-y-4 max-w-3xl mx-auto">
-            <div className="collapse collapse-arrow bg-base-100 shadow border border-base-300">
-              <input type="radio" name="faq-accordion" defaultChecked />
-              <div className="collapse-title text-lg font-medium">
-                Will NihongoTracker always be free?
+            {FAQ_IDS.map((id, index) => (
+              <div
+                key={id}
+                className="collapse collapse-arrow bg-base-100 shadow border border-base-300"
+              >
+                <input
+                  type="radio"
+                  name="faq-accordion"
+                  defaultChecked={index === 0}
+                />
+                <div className="collapse-title text-lg font-medium">
+                  {tf(`support.faq.${id}.question`)}
+                </div>
+                <div className="collapse-content">
+                  <p className="text-base-content/70">
+                    <Trans
+                      t={t}
+                      i18nKey={`support.faq.${id}.answer`}
+                      components={{
+                        code: <span className="font-mono" />,
+                        br: <br />,
+                        mail: (
+                          <a
+                            href="mailto:support@nihongotracker.app"
+                            className="link underline"
+                          />
+                        ),
+                      }}
+                    />
+                  </p>
+                </div>
               </div>
-              <div className="collapse-content">
-                <p className="text-base-content/70">
-                  Yes! Core features will always remain free. Premium tiers
-                  unlock additional features and customization options, but
-                  you'll always be able to track your immersion, view stats, and
-                  compete on leaderboards for free.
-                </p>
-              </div>
-            </div>
-
-            <div className="collapse collapse-arrow bg-base-100 shadow border border-base-300">
-              <input type="radio" name="faq-accordion" />
-              <div className="collapse-title text-lg font-medium">
-                How do I get my supporter benefits?
-              </div>
-              <div className="collapse-content">
-                <p className="text-base-content/70">
-                  After becoming a Patreon supporter, link your Patreon account
-                  in your settings. Benefits will be automatically applied to
-                  your account within 24 hours.
-                </p>
-              </div>
-            </div>
-
-            <div className="collapse collapse-arrow bg-base-100 shadow border border-base-300">
-              <input type="radio" name="faq-accordion" />
-              <div className="collapse-title text-lg font-medium">
-                Can I cancel anytime?
-              </div>
-              <div className="collapse-content">
-                <p className="text-base-content/70">
-                  Absolutely. You can cancel your Patreon membership at any
-                  time, and you'll keep your benefits until the end of your
-                  current billing period.
-                </p>
-              </div>
-            </div>
-
-            <div className="collapse collapse-arrow bg-base-100 shadow border border-base-300">
-              <input type="radio" name="faq-accordion" />
-              <div className="collapse-title text-lg font-medium">
-                I linked my patreon and my benefits are not applying, what
-                should I do?
-              </div>
-              <div className="collapse-content">
-                <p className="text-base-content/70">
-                  You can contact me through Discord:
-                  <span className="font-mono">hitogi</span>.<br /> Or email me
-                  at:{' '}
-                  <a
-                    href="mailto:support@nihongotracker.app"
-                    className="link underline"
-                  >
-                    support@nihongotracker.app
-                  </a>
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -376,25 +327,23 @@ function SupportScreen() {
       <section className="py-28 px-4 bg-gradient-to-b from-base-100 to-base-200/60">
         <div className="max-w-xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
-            Ready to support?
+            {t('support.cta.title')}
           </h2>
           <p className="text-lg text-base-content/55 mb-10">
-            Join the supporters helping NihongoTracker stay free and keep
-            improving.
+            {t('support.cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
-              href={patreonUrl}
+              href={PATREON_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary btn-lg px-12"
             >
-              Become a Patron
+              {t('support.cta.button')}
             </a>
           </div>
           <p className="mt-8 text-sm text-base-content/50 flex items-center justify-center gap-2">
-            Thank you for supporting the project{' '}
-            <Heart className="text-error" size={16} />
+            {t('support.cta.thanks')} <Heart className="text-error" size={16} />
           </p>
         </div>
       </section>

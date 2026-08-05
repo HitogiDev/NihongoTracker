@@ -1,0 +1,60 @@
+{
+  "discordId": {
+    "format": "Discord ID must be 17-19 digits"
+  },
+  "email": {
+    "invalid": "Please enter a valid email address",
+    "required": "Email is required"
+  },
+  "goal": {
+    "charsMax": "Daily character target seems unreasonably high (max: 100,000)",
+    "episodesMax": "Daily episode target seems unreasonably high (max: 50)",
+    "pagesMax": "Daily page target seems unreasonably high (max: 500)",
+    "targetPositive": "Target must be greater than 0",
+    "timeMax": "Daily time target cannot exceed 24 hours (1440 minutes)"
+  },
+  "log": {
+    "charsNegative": "Characters cannot be negative",
+    "charsOrTime": "Please enter either characters read or time spent",
+    "charsOrTimeShort": "Please enter characters read or time spent",
+    "charsTooHigh": "Character count seems unreasonably high (max: 1,000,000)",
+    "descriptionMissing": "Description is required",
+    "descriptionRequired": "Please enter a description",
+    "episodesNegative": "Episodes cannot be negative",
+    "episodesRequired": "Please enter the number of episodes watched (must be greater than 0)",
+    "episodesRequiredShort": "Please enter the number of episodes watched",
+    "episodesTooHigh": "Episode count seems unreasonably high (max: 1000)",
+    "hoursMax": "Hours cannot exceed 24",
+    "minutesMax": "Minutes cannot exceed 59",
+    "movieDurationRequired": "Please enter the movie duration (must be greater than 0)",
+    "movieDurationTooHigh": "Movie duration seems unreasonably high (max: 1000 minutes)",
+    "noProgress": "Please log some progress before submitting",
+    "pagesCharsOrTime": "Please enter pages read, characters read, or time spent",
+    "pagesNegative": "Pages cannot be negative",
+    "pagesTooHigh": "Page count seems unreasonably high (max: 10,000)",
+    "timeNegative": "Time cannot be negative",
+    "timeRequired": "Please enter the time spent (must be greater than 0)",
+    "timeRequiredShort": "Please enter the time spent",
+    "timeTooHigh": "Time seems unreasonably high (max: 24 hours)",
+    "titleMaxLength": "Title must be less than 200 characters",
+    "titleRequired": "Please enter a title or description",
+    "totalTimeMax": "Total time cannot exceed 24 hours",
+    "typeRequired": "Please select a log type",
+    "volumeTooHigh": "Volume number seems unreasonably high (max: 10,000)"
+  },
+  "login": {
+    "required": "Username or email is required"
+  },
+  "password": {
+    "confirmRequired": "Please confirm your password",
+    "minLength": "Password must be at least 8 characters long",
+    "mismatch": "Passwords do not match",
+    "required": "Password is required"
+  },
+  "username": {
+    "charset": "Username can only contain letters, numbers, hyphens, and underscores",
+    "maxLength": "Username must be less than 20 characters",
+    "minLength": "Username must be at least 1 character",
+    "required": "Username is required"
+  }
+}

@@ -47,6 +47,9 @@ import {
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
 import { getMediaTypeColor } from '../constants/mediaColors';
+import { getLogTypeLabelKey } from '../utils/logTypes';
+import type { ParseKeys } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'title' | 'type' | 'recent';
@@ -67,24 +70,45 @@ type MediaStatusPayload = {
 
 const STATUS_CONFIG: Record<
   'completed' | 'dropped' | 'paused' | 'planning' | 'in_progress',
-  { label: string; badgeClass: string; icon: React.FC<{ className?: string }> }
+  {
+    labelKey: ParseKeys<'media'>;
+    badgeClass: string;
+    icon: React.FC<{ className?: string }>;
+  }
 > = {
   completed: {
-    label: 'Completed',
+    labelKey: 'list.status.completed',
     badgeClass: 'badge-success',
     icon: CircleCheck,
   },
-  dropped: { label: 'Dropped', badgeClass: 'badge-error', icon: Ban },
-  paused: { label: 'Paused', badgeClass: 'badge-warning', icon: Clock },
-  planning: { label: 'Planning', badgeClass: 'badge-info', icon: Sparkles },
+  dropped: {
+    labelKey: 'list.status.dropped',
+    badgeClass: 'badge-error',
+    icon: Ban,
+  },
+  paused: {
+    labelKey: 'list.status.paused',
+    badgeClass: 'badge-warning',
+    icon: Clock,
+  },
+  planning: {
+    labelKey: 'list.status.planning',
+    badgeClass: 'badge-info',
+    icon: Sparkles,
+  },
   in_progress: {
-    label: 'In Progress',
+    labelKey: 'list.status.inProgress',
     badgeClass: 'badge-primary',
     icon: Play,
   },
 };
 
 function ListScreen() {
+  const { t } = useTranslation(['media', 'common']);
+  const mediaTypeLabel = (type: string) => {
+    const key = getLogTypeLabelKey(type);
+    return key ? t(key, { ns: 'common' }) : type;
+  };
   const { username } = useParams<{ username: string }>();
   const { user, setUser } = useUserDataStore();
   const navigate = useNavigate();
@@ -559,7 +583,7 @@ function ListScreen() {
               d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span>Failed to load immersion list</span>
+          <span>{t('list.loadFailed')}</span>
         </div>
       </div>
     );
@@ -570,16 +594,15 @@ function ListScreen() {
       {showHideAlertModal && (
         <dialog className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Hide Unmatched Logs Alert</h3>
+            <h3 className="font-bold text-lg">{t('list.hideAlertTitle')}</h3>
             <div className="py-4">
-              <p className="mb-4">
-                Are you sure you want to stop showing alerts about unmatched
-                logs?
-              </p>
+              <p className="mb-4">{t('list.hideAlertConfirmBody')}</p>
               <p className="text-sm text-base-content/70">
                 You can still access the match media page from your{' '}
-                <span className="font-semibold">Settings</span> under the{' '}
-                <span className="font-semibold">Log Management</span> section.
+                <span className="font-semibold">{t('list.settings')}</span>{' '}
+                under the{' '}
+                <span className="font-semibold">{t('list.logManagement')}</span>{' '}
+                section.
               </p>
             </div>
             <div className="modal-action">
@@ -587,13 +610,13 @@ function ListScreen() {
                 className="btn btn-warning"
                 onClick={handleHideUnmatchedAlert}
               >
-                Yes, hide alerts
+                {t('list.hideAlertConfirm')}
               </button>
               <button
                 className="btn btn-outline"
                 onClick={() => setShowHideAlertModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -612,7 +635,7 @@ function ListScreen() {
                 <Trash2 className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-lg">Remove from your list?</h3>
+                <h3 className="font-bold text-lg">{t('header.removeTitle')}</h3>
                 <p className="text-sm text-base-content/70 mt-1 break-words">
                   {mediaToRemove.title.contentTitleNative}
                 </p>
@@ -661,7 +684,7 @@ function ListScreen() {
                 </>
               ) : (
                 <p className="text-sm text-base-content/70">
-                  This entry has no logs — only its status will be removed.
+                  {t('header.noLogsNote')}
                 </p>
               )}
             </div>
@@ -672,7 +695,7 @@ function ListScreen() {
                 onClick={closeRemoveModal}
                 disabled={removeMediaMutation.isPending}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn btn-error gap-2"
@@ -723,7 +746,7 @@ function ListScreen() {
               >
                 <TriangleAlert className="h-6 w-6 flex-shrink-0" />
                 <div>
-                  <h3 className="font-bold">Unmatched Logs Found</h3>
+                  <h3 className="font-bold">{t('list.unmatchedFound')}</h3>
                   <div className="text-sm">
                     You have {untrackedLogs.length} log
                     {untrackedLogs.length !== 1 ? 's' : ''} without media. Match
@@ -736,15 +759,15 @@ function ListScreen() {
                     onClick={() => navigate('/matchmedia')}
                   >
                     <Link2 className="h-4 w-4" />
-                    <span>Match Logs</span>
+                    <span>{t('list.matchLogs')}</span>
                   </button>
                   <button
                     className="btn btn-sm btn-ghost gap-2"
                     onClick={() => setShowHideAlertModal(true)}
-                    title="Don't show this alert again"
+                    title={t('list.dontShowAgainTitle')}
                   >
                     <X className="h-4 w-4" />
-                    <span>Don't show again</span>
+                    <span>{t('list.dontShowAgain')}</span>
                   </button>
                 </div>
               </div>
@@ -762,7 +785,7 @@ function ListScreen() {
                     <input
                       type="text"
                       className="grow"
-                      placeholder="Search by title, romaji, or english..."
+                      placeholder={t('list.searchPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -770,9 +793,9 @@ function ListScreen() {
                 </div>
 
                 {/* Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center sm:justify-between">
                   {/* Filter and Sort Dropdowns */}
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1 min-w-0">
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
                       <div
                         tabIndex={0}
@@ -781,19 +804,14 @@ function ListScreen() {
                       >
                         <Filter className="w-4 h-4" />
                         {selectedTypes.length === 0
-                          ? 'No Types'
+                          ? t('list.noTypes')
                           : selectedTypes.length === MEDIA_TYPES.length
-                            ? 'All Types'
+                            ? t('list.allTypes')
                             : selectedTypes.length === 1
-                              ? selectedTypes[0] === 'vn'
-                                ? 'Visual Novel'
-                                : selectedTypes[0] === 'game'
-                                  ? 'Video Game'
-                                  : selectedTypes[0] === 'tv show'
-                                    ? 'TV Show'
-                                    : selectedTypes[0].charAt(0).toUpperCase() +
-                                      selectedTypes[0].slice(1)
-                              : `${selectedTypes.length} Types`}
+                              ? mediaTypeLabel(selectedTypes[0])
+                              : t('list.typesCount', {
+                                  count: selectedTypes.length,
+                                })}
                         <ChevronDown className="w-4 h-4 ml-1 hidden sm:block" />
                       </div>
                       <div
@@ -803,17 +821,17 @@ function ListScreen() {
                         <div className="flex gap-2 pb-3">
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                            className="btn btn-sm btn-outline flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
                             onClick={() => setSelectedTypes(MEDIA_TYPES)}
                           >
-                            Select All
+                            {t('list.selectAll')}
                           </button>
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                            className="btn btn-sm btn-outline flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
                             onClick={() => setSelectedTypes([])}
                           >
-                            Select None
+                            {t('list.selectNone')}
                           </button>
                         </div>
                         <div className="divider my-1"></div>
@@ -821,15 +839,7 @@ function ListScreen() {
                           {MEDIA_TYPES.map((type) => {
                             const selected = selectedTypes.includes(type);
                             const color = getMediaTypeColor(type);
-                            const label =
-                              type === 'vn'
-                                ? 'Visual Novel'
-                                : type === 'game'
-                                  ? 'Video Game'
-                                  : type === 'tv show'
-                                    ? 'TV Show'
-                                    : type.charAt(0).toUpperCase() +
-                                      type.slice(1);
+                            const label = mediaTypeLabel(type);
 
                             return (
                               <button
@@ -885,13 +895,12 @@ function ListScreen() {
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
                         <CircleCheck className="w-4 h-4" />
-                        Status:{' '}
-                        {statusFilter === 'all'
-                          ? 'All'
-                          : statusFilter === 'in_progress'
-                            ? 'In Progress'
-                            : statusFilter.charAt(0).toUpperCase() +
-                              statusFilter.slice(1)}
+                        {t('list.statusLabel', {
+                          status:
+                            statusFilter === 'all'
+                              ? t('list.status.all')
+                              : t(STATUS_CONFIG[statusFilter].labelKey),
+                        })}
                       </div>
                       <ul
                         tabIndex={0}
@@ -900,26 +909,34 @@ function ListScreen() {
                         {[
                           {
                             value: 'all',
-                            label: 'All statuses',
+                            label: t('list.status.allStatuses'),
                             icon: undefined,
                           },
                           {
                             value: 'completed',
-                            label: 'Completed',
+                            label: t('list.status.completed'),
                             icon: CircleCheck,
                           },
                           {
                             value: 'in_progress',
-                            label: 'In Progress',
+                            label: t('list.status.inProgress'),
                             icon: Play,
                           },
                           {
                             value: 'planning',
-                            label: 'Planning',
+                            label: t('list.status.planning'),
                             icon: Sparkles,
                           },
-                          { value: 'paused', label: 'Paused', icon: Clock },
-                          { value: 'dropped', label: 'Dropped', icon: Ban },
+                          {
+                            value: 'paused',
+                            label: t('list.status.paused'),
+                            icon: Clock,
+                          },
+                          {
+                            value: 'dropped',
+                            label: t('list.status.dropped'),
+                            icon: Ban,
+                          },
                         ].map((option) => (
                           <li key={option.value}>
                             <button
@@ -947,21 +964,26 @@ function ListScreen() {
                         className="btn btn-outline gap-2 w-full sm:w-auto justify-start"
                       >
                         <ListFilter className="w-4 h-4" />
-                        Sort:{' '}
-                        {sortBy === 'title'
-                          ? 'Title'
-                          : sortBy === 'type'
-                            ? 'Type'
-                            : 'Recent'}
+                        {t('list.sortLabel', {
+                          sort:
+                            sortBy === 'title'
+                              ? t('list.sort.title')
+                              : sortBy === 'type'
+                                ? t('list.sort.type')
+                                : t('list.sort.recent'),
+                        })}
                       </div>
                       <ul
                         tabIndex={0}
                         className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
                       >
                         {[
-                          { value: 'title', label: 'By Title (A-Z)' },
-                          { value: 'type', label: 'By Type' },
-                          { value: 'recent', label: 'Recently Logged' },
+                          { value: 'title', label: t('list.sort.byTitle') },
+                          { value: 'type', label: t('list.sort.byType') },
+                          {
+                            value: 'recent',
+                            label: t('list.sort.recentlyLogged'),
+                          },
                         ].map((option) => (
                           <li key={option.value}>
                             <button
@@ -981,21 +1003,21 @@ function ListScreen() {
                   </div>
 
                   {/* View Mode + Group Toggle */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <div className="join flex-1 sm:flex-none">
                       <button
                         className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
                         onClick={() => setViewMode('grid')}
                       >
                         <LayoutGrid className="w-4 h-4" />
-                        <span className="sm:hidden ml-2">Grid</span>
+                        <span className="sm:hidden ml-2">{t('list.grid')}</span>
                       </button>
                       <button
                         className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
                         onClick={() => setViewMode('list')}
                       >
                         <LayoutList className="w-4 h-4" />
-                        <span className="sm:hidden ml-2">List</span>
+                        <span className="sm:hidden ml-2">{t('list.list')}</span>
                       </button>
                     </div>
                     <button
@@ -1003,7 +1025,7 @@ function ListScreen() {
                       onClick={() =>
                         startGroupTransition(() => setGrouped((prev) => !prev))
                       }
-                      title={grouped ? 'Ungroup by type' : 'Group by type'}
+                      title={grouped ? t('list.ungroupBy') : t('list.groupBy')}
                     >
                       {isPendingGroup ? (
                         <span className="loading loading-spinner loading-xs" />
@@ -1011,7 +1033,7 @@ function ListScreen() {
                         <Layers className="w-4 h-4" />
                       )}
                       <span className="hidden sm:inline">
-                        {grouped ? 'Grouped' : 'Ungrouped'}
+                        {grouped ? t('list.grouped') : t('list.ungrouped')}
                       </span>
                     </button>
                   </div>
@@ -1020,8 +1042,11 @@ function ListScreen() {
 
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <p className="text-sm text-base-content/70">
-                  Showing {stats.filteredCount} of {stats.totalCount} items
-                  {searchQuery && ` for "${searchQuery}"`}
+                  {t('list.showing', {
+                    shown: stats.filteredCount,
+                    total: stats.totalCount,
+                  })}
+                  {searchQuery && t('list.showingFor', { query: searchQuery })}
                 </p>
               </div>
             </div>
@@ -1044,13 +1069,13 @@ function ListScreen() {
                     <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
                       <Bookmark className="w-12 h-12 text-base-content/40" />
                     </div>
-                    <h3 className="text-2xl font-bold">No media found</h3>
+                    <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                     <p className="text-base-content/70">
                       {searchQuery
-                        ? `No media matches your search for "${searchQuery}". Try different keywords or filters.`
+                        ? t('list.emptySearch', { query: searchQuery })
                         : selectedTypes.length !== MEDIA_TYPES.length
-                          ? `No media matches the selected types.`
-                          : 'Your immersion library is empty. Start logging your Japanese learning activities!'}
+                          ? t('list.emptyTypes')
+                          : t('list.emptyLibrary')}
                     </p>
                     {(searchQuery ||
                       selectedTypes.length !== MEDIA_TYPES.length) && (
@@ -1061,7 +1086,7 @@ function ListScreen() {
                           setSelectedTypes(MEDIA_TYPES);
                         }}
                       >
-                        Clear filters
+                        {t('list.clearFilters')}
                       </button>
                     )}
                   </div>
@@ -1102,10 +1127,9 @@ function ListScreen() {
                   <div className="w-24 h-24 mx-auto bg-base-300 rounded-full flex items-center justify-center">
                     <Bookmark className="w-12 h-12 text-base-content/40" />
                   </div>
-                  <h3 className="text-2xl font-bold">No media found</h3>
+                  <h3 className="text-2xl font-bold">{t('list.noMedia')}</h3>
                   <p className="text-base-content/70">
-                    Your immersion library is empty. Start logging your Japanese
-                    learning activities!
+                    {t('list.emptyLibrary')}
                   </p>
                 </div>
               </div>
@@ -1159,46 +1183,47 @@ function MediaGroup({
   onLogMedia: (media: IMediaDocument) => void;
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
+  const { t: tCommon } = useTranslation('common');
   const typeConfig = {
     anime: {
       icon: Play,
       color: 'text-[#26b2f2]',
-      label: 'Anime',
+      label: tCommon('mediaTypeGroups.anime'),
     },
     manga: {
       icon: Book,
       color: 'text-[#ee4466]',
-      label: 'Manga',
+      label: tCommon('mediaTypeGroups.manga'),
     },
     reading: {
       icon: Book,
       color: 'text-[#b34ce6]',
-      label: 'Reading',
+      label: tCommon('mediaTypeGroups.reading'),
     },
     vn: {
       icon: Gamepad,
       color: 'text-[#3a70e4]',
-      label: 'Visual Novels',
+      label: tCommon('mediaTypeGroups.vn'),
     },
     game: {
       icon: Gamepad,
       color: 'text-[#59c94e]',
-      label: 'Video Games',
+      label: tCommon('mediaTypeGroups.game'),
     },
     video: {
       icon: Video,
       color: 'text-[#2cc9a4]',
-      label: 'Video',
+      label: tCommon('mediaTypeGroups.video'),
     },
     movie: {
       icon: Clapperboard,
       color: 'text-[#f77118]',
-      label: 'Movies',
+      label: tCommon('mediaTypeGroups.movie'),
     },
     'tv show': {
       icon: MonitorPlay,
       color: 'text-[#f8b420]',
-      label: 'TV Shows',
+      label: tCommon('mediaTypeGroups.tvShow'),
     },
     book: {
       icon: Book,
@@ -1221,7 +1246,7 @@ function MediaGroup({
         <div>
           <h2 className="text-xl font-bold">{config.label}</h2>
           <p className="text-sm text-base-content/60">
-            {count} {count === 1 ? 'item' : 'items'}
+            {tCommon('list.itemsCount', { count, ns: 'media' })}
           </p>
         </div>
       </div>
@@ -1277,6 +1302,11 @@ function MediaCard({
   onLogMedia: (media: IMediaDocument) => void;
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
+  const { t } = useTranslation(['media', 'common']);
+  const mediaTypeLabel = (type: string) => {
+    const key = getLogTypeLabelKey(type);
+    return key ? t(key, { ns: 'common' }) : type;
+  };
   const { user } = useUserDataStore();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -1394,7 +1424,7 @@ function MediaCard({
                     onClick={() => onSetStatus(media, key)}
                   >
                     <cfg.icon className="w-3 h-3" />
-                    {cfg.label}
+                    {t(cfg.labelKey)}
                   </button>
                 </li>
               ))}
@@ -1407,7 +1437,7 @@ function MediaCard({
                   onClick={() => onRemoveMedia(media)}
                 >
                   <Trash2 className="w-3 h-3" />
-                  Remove
+                  {t('header.remove')}
                 </button>
               </li>
             </ul>
@@ -1433,7 +1463,7 @@ function MediaCard({
         {statusCfg && (
           <div className="absolute bottom-2 left-2">
             <div className={`badge ${statusCfg.badgeClass} badge-sm gap-1`}>
-              <statusCfg.icon className="w-3 h-3" /> {statusCfg.label}
+              <statusCfg.icon className="w-3 h-3" /> {t(statusCfg.labelKey)}
             </div>
           </div>
         )}
@@ -1447,7 +1477,7 @@ function MediaCard({
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none">
           <div className="text-white text-center p-4">
             <TrendingUp className="w-6 h-6 mx-auto mb-2" />
-            <p className="text-sm font-medium">View Details</p>
+            <p className="text-sm font-medium">{t('list.viewDetails')}</p>
           </div>
         </div>
 
@@ -1459,7 +1489,7 @@ function MediaCard({
               e.stopPropagation();
               onLogMedia(media);
             }}
-            title="Quick Log"
+            title={t('list.quickLog')}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -1490,15 +1520,7 @@ function MediaCard({
             className={`badge ${config.bg} ${config.color} badge-ghost badge-xs border-0`}
           >
             <TypeIcon className="w-3 h-3 mr-1" />
-            {media.type === 'vn'
-              ? 'VN'
-              : media.type === 'game'
-                ? 'Game'
-                : media.type === 'tv show'
-                  ? 'TV Show'
-                  : media.type === 'reading'
-                    ? 'Light Novel'
-                    : media.type.charAt(0).toUpperCase() + media.type.slice(1)}
+            {mediaTypeLabel(media.type)}
           </span>
         </div>
       </div>
@@ -1524,6 +1546,11 @@ function MediaListItem({
   onLogMedia: (media: IMediaDocument) => void;
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
+  const { t } = useTranslation(['media', 'common']);
+  const mediaTypeLabel = (type: string) => {
+    const key = getLogTypeLabelKey(type);
+    return key ? t(key, { ns: 'common' }) : type;
+  };
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const toggleKey = `${media.type}:${media.contentId}`;
@@ -1551,7 +1578,7 @@ function MediaListItem({
     );
 
     if (!sourceWithoutQuoteMarkers.trim()) {
-      return 'No description available';
+      return t('list.noDescription');
     }
 
     let formattedDescription = sourceWithoutQuoteMarkers;
@@ -1659,7 +1686,8 @@ function MediaListItem({
                     <span
                       className={`badge ${statusCfg.badgeClass} badge-sm gap-1 shrink-0`}
                     >
-                      <statusCfg.icon className="w-3 h-3" /> {statusCfg.label}
+                      <statusCfg.icon className="w-3 h-3" />{' '}
+                      {t(statusCfg.labelKey)}
                     </span>
                   )}
                 </div>
@@ -1692,16 +1720,7 @@ function MediaListItem({
                   className={`badge gap-1 ${config.bg} ${config.color} border-0`}
                 >
                   <TypeIcon className="w-3 h-3" />
-                  {media.type === 'vn'
-                    ? 'Visual Novel'
-                    : media.type === 'game'
-                      ? 'Video Game'
-                      : media.type === 'tv show'
-                        ? 'TV Show'
-                        : media.type === 'reading'
-                          ? 'Light Novel'
-                          : media.type.charAt(0).toUpperCase() +
-                            media.type.slice(1)}
+                  {mediaTypeLabel(media.type)}
                 </div>
 
                 {/* {media.isAdult && (
@@ -1720,9 +1739,9 @@ function MediaListItem({
                         e.stopPropagation();
                         onLogMedia(media);
                       }}
-                      title="Quick Log"
+                      title={t('list.quickLog')}
                     >
-                      <Plus className="w-3 h-3" /> Log
+                      <Plus className="w-3 h-3" /> {t('header.log')}
                     </button>
                     {/* Status dropdown */}
                     <div className="dropdown dropdown-end">
@@ -1737,11 +1756,11 @@ function MediaListItem({
                         ) : statusCfg ? (
                           <>
                             <statusCfg.icon className="w-3 h-3" />{' '}
-                            {statusCfg.label}
+                            {t(statusCfg.labelKey)}
                           </>
                         ) : (
                           <>
-                            <Circle className="w-3 h-3" /> Set status
+                            <Circle className="w-3 h-3" /> {t('list.setStatus')}
                           </>
                         )}
                         <ChevronDown className="w-3 h-3 ml-auto" />
@@ -1762,7 +1781,7 @@ function MediaListItem({
                               onClick={() => onSetStatus(media, key)}
                             >
                               <cfg.icon className="w-3 h-3" />
-                              {cfg.label}
+                              {t(cfg.labelKey)}
                             </button>
                           </li>
                         ))}
@@ -1775,9 +1794,9 @@ function MediaListItem({
                         e.stopPropagation();
                         onRemoveMedia(media);
                       }}
-                      title="Remove from list"
+                      title={t('header.removeFromList')}
                     >
-                      <Trash2 className="w-3 h-3" /> Remove
+                      <Trash2 className="w-3 h-3" /> {t('header.remove')}
                     </button>
                   </div>
                 )}

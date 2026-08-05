@@ -75,10 +75,19 @@ export interface ProfileWidgetLayout {
   visible: boolean;
 }
 
+/**
+ * UI languages the app ships translations for.
+ * Mirrored in Frontend/src/i18n/languages.ts — there is no shared package in
+ * this monorepo, so both lists must be updated together when adding a locale.
+ */
+export const SUPPORTED_LANGUAGES = ['en', 'es'] as const;
+export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
 export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
   timezone?: string;
+  language?: SupportedLanguage;
   hiddenRecentMedia?: string[];
   statsLayout?: StatsGroupLayout[];
   profileLayout?: ProfileWidgetLayout[];
@@ -699,6 +708,8 @@ export interface IUpdateRequest {
   hideUnmatchedLogsAlert?: string;
   hiddenRecentMedia?: string;
   timezone?: string;
+  // string, not SupportedLanguage: PUT /users is multipart/form-data
+  language?: string;
   about?: string;
   avatarCrop?: string;
   bannerCrop?: string;
@@ -710,6 +721,7 @@ export interface IRegister {
   password: string;
   passwordConfirmation: string;
   timezone?: string;
+  language?: string;
 }
 
 export interface ILogin {
@@ -1089,8 +1101,15 @@ export interface INotification extends Document {
   recipient: Types.ObjectId;
   actor?: Types.ObjectId | null;
   type: NotificationType;
+  /**
+   * English text, always written. Rows created before i18n have only this, and
+   * the client falls back to it whenever a key is missing or unknown.
+   */
   title: string;
   body?: string;
+  /** Translation keys written alongside the English text (see `meta` for params). */
+  titleKey?: string | null;
+  bodyKey?: string | null;
   link?: string;
   image?: string;
   entityType?: string | null;
@@ -1108,6 +1127,8 @@ export interface INotification extends Document {
 export interface INotificationSummaryItem {
   id: string;
   label: string;
+  /** Translation key for `label`; the client falls back to `label` without it. */
+  labelKey?: string;
   count: number;
   type: NotificationType | 'club_join_requests';
   meta?: Record<string, string>;

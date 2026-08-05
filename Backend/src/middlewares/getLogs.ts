@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 import axios from 'axios';
-import { customError } from './errorMiddleware.js';
 import {
   IUser,
   ILog,
@@ -111,11 +112,11 @@ export async function getLogsFromAPI(
 ) {
   try {
     const user: Omit<IUser, 'password'> = res.locals.user;
-    if (!user) throw new customError('User not found', 404);
-    if (!user.discordId) throw new customError('Discord ID not set', 400);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    if (!user.discordId) throw apiError('integration.discordIdNotSet', 400, 'Discord ID not set');
     const apiUrl = process.env.MANABE_API_URL;
     if (!apiUrl) {
-      throw new customError('API URL not set', 500);
+      throw apiError('integration.apiUrlNotSet', 500, 'API URL not set');
     }
     const response = await axios.get(apiUrl, {
       params: {
@@ -713,10 +714,10 @@ export async function getLogsFromCSV(
     } else if (importType === 'kechimochi') {
       logs = transformKechimochiLogsList(req.body.logs, res.locals.user);
     } else {
-      throw new customError('Unsupported CSV type', 400);
+      throw apiError('import.unsupportedCsvType', 400, 'Unsupported CSV type');
     }
 
-    if (!logs) throw new customError('No logs found', 404);
+    if (!logs) throw apiError('log.noneFound', 404, 'No logs found');
     req.body.logs = logs;
     return next();
   } catch (error) {

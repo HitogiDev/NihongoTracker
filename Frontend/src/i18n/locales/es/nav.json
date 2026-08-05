@@ -1,0 +1,98 @@
+{
+  "a11y": {
+    "notifications": "Notificaciones",
+    "search": "Buscar",
+    "themeToggle": "Tema: {{mode}}. Pulsa para alternar oscuro, claro y sistema.",
+    "userMenu": "Menú de {{username}}"
+  },
+  "actions": {
+    "createLog": "Crear log",
+    "createLogShort": "Log"
+  },
+  "footer": {
+    "and": "y",
+    "changelog": "Novedades",
+    "dataProvidedBy": "Datos proporcionados por",
+    "discord": "Discord de NihongoTracker",
+    "github": "GitHub de NihongoTracker",
+    "privacy": "Política de privacidad",
+    "refund": "Política de reembolso",
+    "requestMedia": "Solicitar contenido",
+    "support": "Apoyar",
+    "terms": "Términos del servicio"
+  },
+  "language": {
+    "switcherLabel": "Cambiar idioma"
+  },
+  "links": {
+    "admin": "Administración",
+    "calculator": "Calculadora",
+    "clubs": "Clubes",
+    "donate": "Apoyar",
+    "features": "Funciones",
+    "home": "Inicio",
+    "immersionList": "Lista de inmersión",
+    "lists": "Listas",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "profile": "Perfil",
+    "ranking": "Clasificación",
+    "settings": "Ajustes",
+    "signUp": "Crear cuenta",
+    "stats": "Estadísticas",
+    "texthooker": "Texthooker"
+  },
+  "sections": {
+    "account": "Cuenta",
+    "navigation": "Navegación"
+  },
+  "themeModes": {
+    "dark": "oscuro",
+    "light": "claro",
+    "system": "sistema"
+  },
+  "titles": {
+    "about": "Acerca de",
+    "admin": "Administración",
+    "calculator": "Calculadora",
+    "changelog": "Novedades",
+    "club": "Club",
+    "clubs": "Clubes",
+    "clubSection": "{{section}} • Club",
+    "createClub": "Crear club",
+    "createLog": "Crear log",
+    "features": "Funciones",
+    "forgotPassword": "Recuperar contraseña",
+    "goals": "Objetivos",
+    "home": "Inicio",
+    "list": "Lista",
+    "lists": "Listas",
+    "login": "Iniciar sesión",
+    "matchMedia": "Emparejar contenido",
+    "mediaDetails": "Detalles de {{type}}",
+    "notifications": "Notificaciones",
+    "privacy": "Política de privacidad",
+    "ranking": "Clasificación",
+    "register": "Crear cuenta",
+    "requestMedia": "Solicitar contenido",
+    "resetPassword": "Restablecer contraseña",
+    "sections": {
+      "activity": "Actividad",
+      "goals": "objetivos",
+      "immersionList": "lista de inmersión",
+      "lists": "listas",
+      "media": "Contenido",
+      "moderation": "moderación",
+      "profile": "perfil",
+      "rankings": "Clasificaciones",
+      "reviews": "Reseñas",
+      "stats": "estadísticas"
+    },
+    "settings": "Ajustes",
+    "sharedLog": "Log compartido",
+    "support": "Apoyo",
+    "terms": "Términos del servicio",
+    "userSection": "{{section}} de {{username}}",
+    "verifyEmail": "Verificar correo"
+  }
+}

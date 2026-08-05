@@ -1,3 +1,12 @@
+import i18n from '../i18n';
+
+/**
+ * The active UI language. This module is inherently locale-aware, so it reads
+ * the i18next singleton directly rather than taking a locale parameter — that
+ * keeps the ~40 existing call sites correct without touching any of them.
+ */
+export const getLocale = (): string => i18n.language || 'en';
+
 /**
  * Timezone utility functions for handling user timezone preferences
  */
@@ -258,20 +267,33 @@ export const formatDateInTimezone = (
   };
 
   if (!timezone || timezone === 'UTC') {
-    return dateObj.toLocaleDateString('en-US', {
+    return dateObj.toLocaleDateString(getLocale(), {
       ...defaultOptions,
       timeZone: 'UTC',
     });
   }
 
   try {
-    return dateObj.toLocaleDateString('en-US', {
+    return dateObj.toLocaleDateString(getLocale(), {
       ...defaultOptions,
       timeZone: timezone,
     });
   } catch (error) {
     console.warn('Failed to format date in timezone:', error);
-    return dateObj.toLocaleDateString('en-US', defaultOptions);
+    return dateObj.toLocaleDateString(getLocale(), defaultOptions);
+  }
+};
+
+const relativeTime = (value: number, unit: Intl.RelativeTimeFormatUnit) => {
+  try {
+    return new Intl.RelativeTimeFormat(getLocale(), {
+      numeric: 'auto',
+    }).format(value, unit);
+  } catch {
+    return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
+      value,
+      unit
+    );
   }
 };
 
@@ -292,16 +314,18 @@ export const formatRelativeDateInTimezone = (
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
+  // Intl.RelativeTimeFormat handles grammar and pluralisation per language, so
+  // "hace 2 horas" / "ayer" come for free instead of needing a key each.
+  // Only "just now" needs one: a zero delta renders as "this minute", which
+  // reads wrong.
   if (diffMinutes < 1) {
-    return 'Just now';
+    return i18n.t('common:time.justNow');
   } else if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+    return relativeTime(-diffMinutes, 'minute');
   } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-  } else if (diffDays === 1) {
-    return 'Yesterday';
+    return relativeTime(-diffHours, 'hour');
   } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
+    return relativeTime(-diffDays, 'day');
   } else {
     return formatDateInTimezone(dateObj, timezone, {
       year: 'numeric',

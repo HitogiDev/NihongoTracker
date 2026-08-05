@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Info, BarChart, History } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function ClubMediaNavbar({
   clubId,
@@ -14,6 +15,7 @@ function ClubMediaNavbar({
   contentId?: string;
   clubMediaId?: string;
 }) {
+  const { t } = useTranslation('clubs');
   const buildUnified = (tab?: string) => {
     if (mediaType && contentId && clubId && clubMediaId) {
       const base = `/${mediaType}/${contentId}?clubId=${encodeURIComponent(
@@ -35,19 +37,19 @@ function ClubMediaNavbar({
           <li>
             <Link to={buildUnified()}>
               <Info className="mr-1 w-4 h-4" />
-              Information
+              {t('media.tabs.info')}
             </Link>
           </li>
           <li>
             <Link to={buildUnified('activity')}>
               <History className="mr-1 w-4 h-4" />
-              Member Activity
+              {t('media.tabs.activity')}
             </Link>
           </li>
           <li>
             <Link to={buildUnified('rankings')}>
               <BarChart className="mr-1 w-4 h-4" />
-              Club Rankings
+              {t('media.tabs.rankings')}
             </Link>
           </li>
         </ul>

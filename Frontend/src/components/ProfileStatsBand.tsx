@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useDateFormatting } from '../hooks/useDateFormatting';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, Share2 } from 'lucide-react';
@@ -80,6 +82,8 @@ function formatTotalTime(totalMinutes: number): string {
 }
 
 export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
+  const { t } = useTranslation('profile');
+  const { formatNumber, formatDate } = useDateFormatting();
   const location = useLocation();
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -209,7 +213,10 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const hoverPoint = hoverIndex !== null ? history[hoverIndex] : null;
   const hoverPos = hoverIndex !== null ? positions[hoverIndex] : null;
   const hoverDate = hoverPoint
-    ? new Date(hoverPoint.date).toLocaleDateString(undefined, {
+    ? formatDate(hoverPoint.date, {
+        hour: undefined,
+        minute: undefined,
+        timeZoneName: undefined,
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -217,10 +224,10 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     : null;
 
   const compactGlobal = rankingSummary?.position
-    ? `#${rankingSummary.position.toLocaleString()}`
+    ? `#${formatNumber(rankingSummary.position)}`
     : '—';
   const compactMonthly = rankingSummary?.monthly?.position
-    ? `#${rankingSummary.monthly.position.toLocaleString()}`
+    ? `#${formatNumber(rankingSummary.monthly.position)}`
     : '—';
 
   return (
@@ -239,7 +246,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                 collapsed ? '-rotate-90' : ''
               }`}
             />
-            Profile Stats
+            {t('stats.title')}
           </button>
           <div className="flex items-center gap-3">
             {collapsed && (
@@ -262,10 +269,10 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
               type="button"
               onClick={() => setShareOpen(true)}
               className="btn btn-ghost btn-xs gap-1.5 text-base-content/70 hover:text-base-content"
-              title="Share stats as an image"
+              title={t('stats.shareTitle')}
             >
               <Share2 className="w-3.5 h-3.5" />
-              Share
+              {t('stats.share')}
             </button>
           </div>
         </div>
@@ -276,7 +283,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             <div className="flex flex-wrap items-end gap-x-10 gap-y-2">
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
-                  Global Ranking
+                  {t('stats.globalRanking')}
                 </div>
                 <div className="text-3xl font-bold leading-tight">
                   {compactGlobal}
@@ -284,7 +291,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
-                  Monthly Ranking
+                  {t('stats.monthlyRanking')}
                 </div>
                 <div className="text-3xl font-bold leading-tight">
                   {compactMonthly}
@@ -297,7 +304,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs uppercase tracking-wide text-base-content/60">
-                    Ranking over time
+                    {t('stats.rankingOverTime')}
                   </span>
                   <div className="join">
                     <button
@@ -307,7 +314,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                         rankMode === 'monthly' ? 'btn-primary' : 'btn-ghost'
                       }`}
                     >
-                      Monthly
+                      {t('stats.monthly')}
                     </button>
                     <button
                       type="button"
@@ -316,7 +323,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                         rankMode === 'global' ? 'btn-primary' : 'btn-ghost'
                       }`}
                     >
-                      Global
+                      {t('stats.global')}
                     </button>
                   </div>
                 </div>
@@ -379,7 +386,10 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                           transform: `translate(${hoverIndex > positions.length / 2 ? '-100%' : '0'}, -100%)`,
                         }}
                       >
-                        {hoverDate}: #{hoverPos.toLocaleString()}
+                        {t('stats.hoverPosition', {
+                          date: hoverDate,
+                          position: formatNumber(hoverPos),
+                        })}
                       </div>
                     )}
                   </div>
@@ -395,23 +405,23 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
-                  Achievements
+                  {t('stats.achievements')}
                 </div>
                 <div className="text-lg font-semibold leading-tight">
-                  {earnedAchievements.toLocaleString()}
+                  {formatNumber(earnedAchievements)}
                 </div>
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
-                  Total XP
+                  {t('stats.totalXp')}
                 </div>
                 <div className="text-lg font-semibold leading-tight">
-                  {totalXp.toLocaleString()}
+                  {formatNumber(totalXp)}
                 </div>
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
-                  Total Immersion Time
+                  {t('stats.totalTime')}
                 </div>
                 <div className="text-lg font-semibold leading-tight">
                   {formatTotalTime(totalMinutes)}

@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import AchievementRevealHost from './achievements/AchievementRevealHost';
+import LanguageSync from './LanguageSync';
 import LogCelebrationHost from './LogCelebrationHost';
 
 /**
@@ -10,6 +11,7 @@ import LogCelebrationHost from './LogCelebrationHost';
 export default function RootLayout() {
   return (
     <>
+      <LanguageSync />
       <LogCelebrationHost />
       <AchievementRevealHost />
       <Outlet />

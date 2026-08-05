@@ -1,0 +1,67 @@
+{
+  "bell": {
+    "ariaLabel": "Notificaciones ({{count}})",
+    "empty": "Todavía no hay notificaciones",
+    "goToPage": "Ir a la página",
+    "loading": "Cargando...",
+    "logIn": "Iniciar sesión",
+    "signInPrompt": "Inicia sesión para ver tus notificaciones."
+  },
+  "deleteConfirm": {
+    "cancel": "Cancelar",
+    "close": "Cerrar la confirmación de eliminación",
+    "confirm": "Eliminar",
+    "description": "Se quitará de tus notificaciones.",
+    "dontShowAgain": "No volver a mostrar",
+    "title": "¿Eliminar la notificación?"
+  },
+  "item": {
+    "delete": "Eliminar notificación",
+    "read": "Leída",
+    "unread": "Sin leer"
+  },
+  "items": {
+    "achievement.unlocked": "Logro desbloqueado: {{name}}",
+    "changelog.available": "Ya está disponible la versión {{version}}",
+    "club.joinApproved": "Te han aceptado en {{clubName}}",
+    "club.joinRejected": "Tu solicitud para unirte a {{clubName}} ha sido rechazada",
+    "club.joinRequestMany": "Tienes nuevas solicitudes para unirse a {{clubName}}",
+    "club.joinRequestSingle": "{{username}} quiere unirse a {{clubName}}",
+    "club.memberRemoved": "Te han quitado de {{clubName}}",
+    "mediaRequest.approved": "Tu solicitud de contenido «{{title}}» ha sido aprobada",
+    "mediaRequest.rejected": "Tu solicitud de contenido «{{title}}» ha sido rechazada",
+    "review.liked_many": "A {{username}} y a {{count}} personas más les ha gustado tu reseña",
+    "review.liked_one": "A {{username}} y a {{count}} persona más les ha gustado tu reseña",
+    "review.liked_other": "A {{username}} y a {{count}} personas más les ha gustado tu reseña",
+    "review.liked_zero": "A {{username}} le ha gustado tu reseña"
+  },
+  "list": {
+    "empty": {
+      "description": "Ahora mismo no tienes ninguna notificación.",
+      "title": "Todo al día"
+    },
+    "endReached": "Has llegado al final.",
+    "error": {
+      "description": "Algo ha fallado al obtener tus notificaciones. Inténtalo de nuevo más tarde.",
+      "title": "No se pudieron cargar las notificaciones"
+    },
+    "heading": "Todas las notificaciones",
+    "loadingMore": "Cargando más...",
+    "showing_many": "Mostrando {{shown}} de {{count}} notificaciones",
+    "showing_one": "Mostrando {{shown}} de {{count}} notificación",
+    "showing_other": "Mostrando {{shown}} de {{count}} notificaciones"
+  },
+  "page": {
+    "subtitle": "Consulta todas tus notificaciones, incluidas las que ya has leído.",
+    "title": "Notificaciones"
+  },
+  "summary": {
+    "markAsRead": "Marcar como leídas",
+    "markAsReadTitle": "Marcar todas las notificaciones como leídas",
+    "markAsUnread": "Marcar como no leídas",
+    "markAsUnreadTitle": "Marcar todas las notificaciones como no leídas",
+    "nothingUnread": "No hay notificaciones sin leer",
+    "total": "Total",
+    "unread": "Sin leer"
+  }
+}

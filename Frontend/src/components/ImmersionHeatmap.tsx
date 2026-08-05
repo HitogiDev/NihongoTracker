@@ -2,6 +2,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserLogsFn } from '../api/trackerApi';
 import { useTimezone } from '../hooks/useTimezone';
+import { getLocale } from '../utils/timezone';
+import { useTranslation } from 'react-i18next';
 
 interface HeatmapCell {
   date: string; // YYYY-MM-DD in user timezone
@@ -24,6 +26,7 @@ interface LogData {
  *  constructing a new Date (avoids the double-shift bug). */
 function toDateKey(utcDate: Date, timezone: string): string {
   try {
+    // 'en-CA' is intentional: it yields ISO-ordered, Latin-digit parts that are reassembled into a YYYY-MM-DD key below. NOT user-facing — do not localize.
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone || 'UTC',
       year: 'numeric',
@@ -64,6 +67,7 @@ const WEEKS = 24;
 const DAYS = WEEKS * 7; // 168
 
 const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
+  const { t } = useTranslation('stats');
   const { timezone } = useTimezone();
 
   const { data: logs, isLoading } = useQuery({
@@ -157,7 +161,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
   const tooltip = (cell: HeatmapCell) => {
     // Format date for display — parse as UTC noon so timezone doesn't shift the day
     const d = new Date(`${cell.date}T12:00:00Z`);
-    const label = d.toLocaleDateString('en-US', {
+    const label = d.toLocaleDateString(getLocale(), {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -200,7 +204,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
       </div>
 
       <div className="flex items-center justify-between mt-3 text-xs text-base-content/60">
-        <span>Less</span>
+        <span>{t('heatmap.less')}</span>
         <div className="flex items-center gap-1">
           {[0, 1, 2, 3, 4].map((level) => (
             <div
@@ -209,7 +213,7 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
             />
           ))}
         </div>
-        <span>More</span>
+        <span>{t('heatmap.more')}</span>
       </div>
     </div>
   );

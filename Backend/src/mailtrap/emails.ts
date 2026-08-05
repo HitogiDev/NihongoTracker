@@ -1,8 +1,9 @@
 import {
-  VERIFICATION_EMAIL_TEMPLATE,
-  PASSWORD_RESET_REQUEST_TEMPLATE,
-  PASSWORD_RESET_SUCCESS_TEMPLATE,
+  verificationEmailTemplate,
+  passwordResetRequestTemplate,
+  passwordResetSuccessTemplate,
 } from './emailTemplates.js';
+import { getEmailStrings } from '../i18n/emailStrings.js';
 import { sendEmail } from './mailtrap.config.js';
 
 function getBaseUrl() {
@@ -13,34 +14,48 @@ function getBaseUrl() {
   );
 }
 
-export async function sendVerificationEmail(to: string, token: string) {
+/**
+ * `language` is always the **recipient's** `settings.language`. Using the
+ * request's Accept-Language would be wrong for any email triggered by someone
+ * else's action; it is only equivalent during signup, where the two coincide.
+ * Unset or unknown values fall back to English.
+ */
+export async function sendVerificationEmail(
+  to: string,
+  token: string,
+  language?: string | null
+) {
   try {
-    const subject = 'Verify Your Email Address';
+    const subject = getEmailStrings(language).verification.subject;
     const verificationURL = `${getBaseUrl()}/verify-email/${token}`;
-    const html = VERIFICATION_EMAIL_TEMPLATE.replace(
-      /{verificationURL}/g,
-      verificationURL
-    );
+    const html = verificationEmailTemplate(verificationURL, language ?? 'en');
     return await sendEmail(to, subject, html, 'Verification');
   } catch (error) {
     console.error('Error in sendVerificationEmail:', error);
   }
 }
 
-export async function sendPasswordResetEmail(to: string, link: string) {
+export async function sendPasswordResetEmail(
+  to: string,
+  link: string,
+  language?: string | null
+) {
   try {
-    const subject = 'Reset Your Password';
-    const html = PASSWORD_RESET_REQUEST_TEMPLATE.replace('{resetURL}', link);
+    const subject = getEmailStrings(language).passwordReset.subject;
+    const html = passwordResetRequestTemplate(link, language ?? 'en');
     return await sendEmail(to, subject, html, 'PasswordReset');
   } catch (error) {
     console.error('Error in sendPasswordResetEmail:', error);
   }
 }
 
-export async function sendPasswordResetSuccessEmail(to: string) {
+export async function sendPasswordResetSuccessEmail(
+  to: string,
+  language?: string | null
+) {
   try {
-    const subject = 'Your Password Has Been Reset';
-    const html = PASSWORD_RESET_SUCCESS_TEMPLATE;
+    const subject = getEmailStrings(language).passwordResetSuccess.subject;
+    const html = passwordResetSuccessTemplate(language ?? 'en');
     return await sendEmail(to, subject, html, 'PasswordResetSuccess');
   } catch (error) {
     console.error('Error in sendPasswordResetSuccessEmail:', error);

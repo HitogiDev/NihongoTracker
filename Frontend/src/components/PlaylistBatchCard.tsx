@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import { ILog } from '../types';
 import {
@@ -33,6 +34,8 @@ const videoTypeConfig = {
 };
 
 function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
+  const { t } = useTranslation('logs');
+  const { t: tCommon } = useTranslation('common');
   const modalRef = useRef<HTMLDialogElement>(null);
   const deleteConfirmModalRef = useRef<HTMLDialogElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -55,43 +58,39 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   // ── Bulk delete mutation ────────────────────────────────────────────────────
   // onSuccess receives (data, variables) — variables is the logIds array,
   // so we can always show the correct count in the toast without stale closures.
-  const { mutate: bulkDeleteLogs, isPending: loadingBulkDelete } = useMutation(
-    {
-      mutationFn: async (logIds: string[]) => {
-        // Single bulk-delete request — avoids concurrent Mongoose VersionError
-        await (
-          shouldUseAdminEndpoints
-            ? adminDeleteLogsBulkFn(logIds)
-            : deleteLogsBulkFn(logIds)
-        );
-      },
-      onSuccess: (_data, variables) => {
-        void queryClient.invalidateQueries({
-          predicate: (query) => {
-            const key = query.queryKey;
-            if (!Array.isArray(key)) return false;
-            return key.some((k) => k === 'logs' || k === 'user');
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
+  const { mutate: bulkDeleteLogs, isPending: loadingBulkDelete } = useMutation({
+    mutationFn: async (logIds: string[]) => {
+      // Single bulk-delete request — avoids concurrent Mongoose VersionError
+      await (shouldUseAdminEndpoints
+        ? adminDeleteLogsBulkFn(logIds)
+        : deleteLogsBulkFn(logIds));
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          if (!Array.isArray(key)) return false;
+          return key.some((k) => k === 'logs' || k === 'user');
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
-        // variables = the logIds array passed to mutate() — always correct
-        const count = variables.length;
-        toast.success(
-          `${count} log${count !== 1 ? 's' : ''} deleted successfully!`
-        );
-        deleteConfirmModalRef.current?.close();
-        setSelectedLogIds(new Set());
-      },
-      onError: (error) => {
-        const errorMessage =
-          error instanceof AxiosError
-            ? error.response?.data.message
-            : 'An error occurred';
-        toast.error(errorMessage);
-      },
-    }
-  );
+      // variables = the logIds array passed to mutate() — always correct
+      const count = variables.length;
+      toast.success(
+        `${count} log${count !== 1 ? 's' : ''} deleted successfully!`
+      );
+      deleteConfirmModalRef.current?.close();
+      setSelectedLogIds(new Set());
+    },
+    onError: (error) => {
+      const errorMessage =
+        error instanceof AxiosError
+          ? error.response?.data.message
+          : tCommon('errors.generic');
+      toast.error(errorMessage);
+    },
+  });
 
   // ── Open / close modal ──────────────────────────────────────────────────────
   const openModal = useCallback(() => {
@@ -154,7 +153,8 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   if (logs.length === 0) return null;
 
   const representative = logs[0];
-  const playlistTitle = representative.playlistBatchTitle ?? 'Playlist';
+  const playlistTitle =
+    representative.playlistBatchTitle ?? t('playlist.label');
 
   // Aggregate stats
   const totalXp = logs.reduce((sum, l) => sum + l.xp, 0);
@@ -162,12 +162,12 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   const videoCount = logs.length;
 
   const relativeDate = representative.unknownDate
-    ? 'Unknown'
+    ? tCommon('unknown')
     : representative.date
       ? formatRelativeDate(representative.date)
       : '';
   const fullDate = representative.unknownDate
-    ? 'Unknown date'
+    ? t('playlist.unknownDate')
     : representative.date
       ? formatDateTime(representative.date)
       : '';
@@ -253,7 +253,9 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 className={`badge badge-outline ${videoTypeConfig.color} gap-1 shrink-0`}
               >
                 <ListVideo className="w-3 h-3" />
-                <span className="text-xs font-medium">Playlist</span>
+                <span className="text-xs font-medium">
+                  {t('playlist.label')}
+                </span>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -352,7 +354,9 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`p-1.5 rounded-lg ${videoTypeConfig.bgColor}`}>
+                  <div
+                    className={`p-1.5 rounded-lg ${videoTypeConfig.bgColor}`}
+                  >
                     <ListVideo className={`w-4 h-4 ${videoTypeConfig.color}`} />
                   </div>
                   <h3
@@ -375,7 +379,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 type="button"
                 className="btn btn-sm btn-circle btn-ghost flex-shrink-0"
                 onClick={closeModal}
-                aria-label="Close"
+                aria-label={tCommon('close')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -398,10 +402,10 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                   )}
                   <span>
                     {allSelected
-                      ? 'Deselect all'
+                      ? t('playlist.deselectAll')
                       : someSelected
                         ? `${selectedLogIds.size} selected`
-                        : 'Select all'}
+                        : t('playlist.selectAll')}
                   </span>
                 </button>
 
@@ -519,7 +523,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             {isModalOpen && contentReady && logs.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-base-content/50">
                 <ListVideo className="w-10 h-10 mb-3 opacity-40" />
-                <p className="text-sm">No videos in this playlist</p>
+                <p className="text-sm">{t('playlist.noVideos')}</p>
               </div>
             )}
           </div>
@@ -527,7 +531,8 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
           {/* Footer: loaded count indicator */}
           {isModalOpen && contentReady && logs.length > 0 && (
             <div className="flex-shrink-0 border-t border-base-content/10 px-5 py-2 text-xs text-base-content/40 text-center">
-              Showing {Math.min(visibleCount, logs.length)} of {logs.length} videos
+              Showing {Math.min(visibleCount, logs.length)} of {logs.length}{' '}
+              videos
             </div>
           )}
         </div>
@@ -632,7 +637,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button aria-label="Close modal">close</button>
+          <button aria-label={t('playlist.closeModal')}>close</button>
         </form>
       </dialog>
     </>

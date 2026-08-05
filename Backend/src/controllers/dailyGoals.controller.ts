@@ -6,6 +6,7 @@ import User from '../models/user.model.js';
 import { Anime } from '../models/media.model.js';
 import { IDailyGoal, IDailyGoalProgress, IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
+import { apiError } from '../i18n/errorCodes.js';
 const FALLBACK_TIMEZONE = 'UTC';
 
 export async function getDailyGoals(
@@ -16,13 +17,13 @@ export async function getDailyGoals(
   try {
     const { username } = req.params;
     if (!username) {
-      throw new customError('Username is required', 400);
+      throw apiError('user.usernameRequired', 400, 'Username is required');
     }
     // Find user by username
     const foundUser = await User.findOne({ username });
 
     if (!foundUser) {
-      throw new customError('User not found', 404);
+      throw apiError('user.notFound', 404, 'User not found');
     }
 
     // Get user's goals
@@ -137,16 +138,24 @@ export async function createDailyGoal(
     const { type, target, isActive } = req.body;
 
     if (!type || !target) {
-      throw new customError('Type and target are required', 400);
+      throw apiError(
+        'goal.typeAndTargetRequired',
+        400,
+        'Type and target are required'
+      );
     }
 
     if (target <= 0) {
-      throw new customError('Target must be greater than 0', 400);
+      throw apiError(
+        'goal.targetPositive',
+        400,
+        'Target must be greater than 0'
+      );
     }
 
     const validTypes = ['time', 'chars', 'episodes', 'pages'];
     if (!validTypes.includes(type)) {
-      throw new customError('Invalid goal type', 400);
+      throw apiError('goal.invalidType', 400, 'Invalid goal type');
     }
 
     // Check if user already has an active goal of this type
@@ -157,9 +166,11 @@ export async function createDailyGoal(
     });
 
     if (existingGoal) {
-      throw new customError(
+      throw apiError(
+        'goal.alreadyActive',
+        400,
         `You already have an active ${type} goal. Please deactivate it first.`,
-        400
+        { type: String(type) }
       );
     }
 
@@ -193,19 +204,23 @@ export async function updateDailyGoal(
     });
 
     if (!goal) {
-      throw new customError('Goal not found', 404);
+      throw apiError('goal.notFound', 404, 'Goal not found');
     }
 
     // Validate target if provided
     if (target !== undefined && target <= 0) {
-      throw new customError('Target must be greater than 0', 400);
+      throw apiError(
+        'goal.targetPositive',
+        400,
+        'Target must be greater than 0'
+      );
     }
 
     // Validate type if provided
     if (type !== undefined) {
       const validTypes = ['time', 'chars', 'episodes', 'pages'];
       if (!validTypes.includes(type)) {
-        throw new customError('Invalid goal type', 400);
+        throw apiError('goal.invalidType', 400, 'Invalid goal type');
       }
 
       // Check if changing type would conflict with existing active goals
@@ -218,9 +233,11 @@ export async function updateDailyGoal(
         });
 
         if (existingGoal) {
-          throw new customError(
+          throw apiError(
+            'goal.alreadyActive',
+            400,
             `You already have an active ${type} goal. Please deactivate it first.`,
-            400
+            { type: String(type) }
           );
         }
       }
@@ -253,7 +270,7 @@ export async function deleteDailyGoal(
     });
 
     if (!deletedGoal) {
-      throw new customError('Goal not found', 404);
+      throw apiError('goal.notFound', 404, 'Goal not found');
     }
 
     return res.status(204).send();

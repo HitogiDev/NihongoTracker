@@ -1,0 +1,60 @@
+{
+  "discordId": {
+    "format": "El ID de Discord debe tener entre 17 y 19 dígitos"
+  },
+  "email": {
+    "invalid": "Introduce una dirección de correo válida",
+    "required": "El correo electrónico es obligatorio"
+  },
+  "goal": {
+    "charsMax": "El objetivo diario de caracteres parece excesivo (máx.: 100.000)",
+    "episodesMax": "El objetivo diario de episodios parece excesivo (máx.: 50)",
+    "pagesMax": "El objetivo diario de páginas parece excesivo (máx.: 500)",
+    "targetPositive": "El objetivo debe ser mayor que 0",
+    "timeMax": "El objetivo diario de tiempo no puede superar 24 horas (1440 minutos)"
+  },
+  "log": {
+    "charsNegative": "Los caracteres no pueden ser negativos",
+    "charsOrTime": "Introduce los caracteres leídos o el tiempo dedicado",
+    "charsOrTimeShort": "Introduce los caracteres leídos o el tiempo dedicado",
+    "charsTooHigh": "El número de caracteres parece excesivo (máx.: 1.000.000)",
+    "descriptionMissing": "La descripción es obligatoria",
+    "descriptionRequired": "Introduce una descripción",
+    "episodesNegative": "Los episodios no pueden ser negativos",
+    "episodesRequired": "Introduce el número de episodios vistos (debe ser mayor que 0)",
+    "episodesRequiredShort": "Introduce el número de episodios vistos",
+    "episodesTooHigh": "El número de episodios parece excesivo (máx.: 1000)",
+    "hoursMax": "Las horas no pueden superar 24",
+    "minutesMax": "Los minutos no pueden superar 59",
+    "movieDurationRequired": "Introduce la duración de la película (debe ser mayor que 0)",
+    "movieDurationTooHigh": "La duración de la película parece excesiva (máx.: 1000 minutos)",
+    "noProgress": "Loguea algo de progreso antes de enviar",
+    "pagesCharsOrTime": "Introduce las páginas leídas, los caracteres leídos o el tiempo dedicado",
+    "pagesNegative": "Las páginas no pueden ser negativas",
+    "pagesTooHigh": "El número de páginas parece excesivo (máx.: 10.000)",
+    "timeNegative": "El tiempo no puede ser negativo",
+    "timeRequired": "Introduce el tiempo dedicado (debe ser mayor que 0)",
+    "timeRequiredShort": "Introduce el tiempo dedicado",
+    "timeTooHigh": "El tiempo parece excesivo (máx.: 24 horas)",
+    "titleMaxLength": "El título debe tener menos de 200 caracteres",
+    "titleRequired": "Introduce un título o una descripción",
+    "totalTimeMax": "El tiempo total no puede superar 24 horas",
+    "typeRequired": "Selecciona un tipo de log",
+    "volumeTooHigh": "El número de volumen parece excesivo (máx.: 10.000)"
+  },
+  "login": {
+    "required": "El nombre de usuario o el correo es obligatorio"
+  },
+  "password": {
+    "confirmRequired": "Confirma tu contraseña",
+    "minLength": "La contraseña debe tener al menos 8 caracteres",
+    "mismatch": "Las contraseñas no coinciden",
+    "required": "La contraseña es obligatoria"
+  },
+  "username": {
+    "charset": "El nombre de usuario solo puede contener letras, números, guiones y guiones bajos",
+    "maxLength": "El nombre de usuario debe tener menos de 20 caracteres",
+    "minLength": "El nombre de usuario debe tener al menos 1 carácter",
+    "required": "El nombre de usuario es obligatorio"
+  }
+}

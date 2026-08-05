@@ -1,0 +1,360 @@
+{
+  "card": {
+    "points": "points",
+    "ofUsers": "of users",
+    "unlocked": "unlocked",
+    "rarityPercent": "{{percent}}% of users",
+    "pts_one": "{{count}} pt",
+    "pts_other": "{{count}} pts"
+  },
+  "category": {
+    "all": "All",
+    "milestone": "Milestones",
+    "streaks": "Streaks",
+    "immersion": "Immersion",
+    "social": "Social",
+    "secret": "Secret"
+  },
+  "feed": {
+    "earned": "earned",
+    "unlocked": "Achievement unlocked:"
+  },
+  "items": {
+    "achievements_100": {
+      "description": "Unlock 100 other achievements.",
+      "name": "Achievement Hunter"
+    },
+    "achievements_50": {
+      "description": "Unlock 50 other achievements.",
+      "name": "Completionist"
+    },
+    "bookworm_hours": {
+      "description": "Log 50 hours of reading (manga and novels combined).",
+      "name": "Bookworm"
+    },
+    "century_club": {
+      "name": "Century Club",
+      "description": "Log 100 different titles."
+    },
+    "cinephile": {
+      "description": "Log 100 hours of anime.",
+      "name": "Cinephile"
+    },
+    "clockwork": {
+      "description": "Log at the same hour every day for 2 weeks.",
+      "name": "Clockwork"
+    },
+    "club_founder": {
+      "description": "Create an immersion club.",
+      "name": "Club Founder"
+    },
+    "club_mvp": {
+      "description": "Finish as the top contributor in a club challenge.",
+      "name": "Club MVP"
+    },
+    "culture_day": {
+      "description": "Log immersion on November 3rd (文化の日).",
+      "name": "Culture Day"
+    },
+    "currently_airing": {
+      "description": "Log an anime during its airing season.",
+      "name": "Currently Airing"
+    },
+    "early_bird": {
+      "description": "Log immersion before 7am 10 times.",
+      "name": "Early Bird"
+    },
+    "first_log": {
+      "description": "Log your first immersion session.",
+      "name": "First Step"
+    },
+    "full_immersion_month": {
+      "description": "Log every single day for a full month.",
+      "name": "Full Immersion"
+    },
+    "gamer": {
+      "description": "Log 50 hours of visual novels.",
+      "name": "Gamer"
+    },
+    "hours_100": {
+      "description": "Log 100 total hours of immersion.",
+      "name": "Dedicated"
+    },
+    "hours_1000": {
+      "description": "Log 1,000 total hours of immersion.",
+      "name": "This Is My Life Now"
+    },
+    "hours_2000": {
+      "description": "Log 2,000 total hours of immersion.",
+      "name": "Immersion Machine"
+    },
+    "hours_500": {
+      "description": "Log 500 total hours of immersion.",
+      "name": "Otaku"
+    },
+    "level_10": {
+      "description": "Reach level 10.",
+      "name": "Level Up"
+    },
+    "level_100": {
+      "description": "Reach level 100. An extraordinary achievement.",
+      "name": "Elite"
+    },
+    "level_25": {
+      "description": "Reach level 25.",
+      "name": "Intermediate"
+    },
+    "level_5": {
+      "description": "Reach level 5.",
+      "name": "First Steps"
+    },
+    "level_50": {
+      "description": "Reach level 50.",
+      "name": "Advanced"
+    },
+    "logs_10": {
+      "description": "Create 10 immersion logs.",
+      "name": "Getting Started"
+    },
+    "logs_100": {
+      "description": "Create 100 immersion logs.",
+      "name": "Regular"
+    },
+    "logs_1000": {
+      "description": "Create 1,000 immersion logs.",
+      "name": "Veteran"
+    },
+    "logs_50": {
+      "description": "Create 50 immersion logs.",
+      "name": "Regular Immersion"
+    },
+    "logs_500": {
+      "description": "Create 500 immersion logs.",
+      "name": "Prolific Logger"
+    },
+    "lunch_break": {
+      "description": "Log immersion between 12pm and 1pm 10 times.",
+      "name": "Lunch Break"
+    },
+    "marathon_day": {
+      "description": "Log 10 or more hours of immersion in a single day.",
+      "name": "Marathon"
+    },
+    "monday_motivation": {
+      "description": "Log on 10 consecutive Mondays.",
+      "name": "Monday Motivation"
+    },
+    "new_year": {
+      "description": "Log immersion on January 1st.",
+      "name": "New Year New Me"
+    },
+    "night_owl": {
+      "description": "Log immersion after midnight 10 times.",
+      "name": "Night Owl"
+    },
+    "no_days_off": {
+      "description": "Log on Christmas, New Year's Day, and your account anniversary.",
+      "name": "No Days Off"
+    },
+    "old_school": {
+      "description": "Log a visual novel released before 2005.",
+      "name": "Old School"
+    },
+    "platform_year": {
+      "description": "Be an active member of NihongoTracker for one full year.",
+      "name": "The Long Game"
+    },
+    "podcast_brain": {
+      "description": "Log 30 hours of audio-only content.",
+      "name": "Podcast Brain"
+    },
+    "rank_consistent": {
+      "description": "Appear in the top 25 for 4 consecutive weeks.",
+      "name": "Consistent"
+    },
+    "rank_king": {
+      "description": "Reach #1 on any leaderboard.",
+      "name": "King"
+    },
+    "rank_podium": {
+      "description": "Reach the top 3 on any leaderboard.",
+      "name": "Podium"
+    },
+    "rank_top10": {
+      "description": "Reach the top 10 on the weekly leaderboard.",
+      "name": "Top 10"
+    },
+    "renaissance_learner": {
+      "description": "Log all 6 media types within a single week.",
+      "name": "Renaissance Learner"
+    },
+    "secret_absorbed": {
+      "description": "Log 6 or more hours of a single title in one session.",
+      "hint": "Completely absorbed...",
+      "name": "夢中"
+    },
+    "secret_club_hopper": {
+      "name": "Club Hopper",
+      "description": "One crowd was never going to be enough.",
+      "hint": "Why settle for one crowd?"
+    },
+    "secret_dethroned": {
+      "description": "You held the #1 spot — and someone took it from you.",
+      "hint": "The higher you climb...",
+      "name": "Dethroned"
+    },
+    "secret_early_adopter": {
+      "description": "One of the first 100 users to join NihongoTracker.",
+      "hint": "Were you here at the beginning?",
+      "name": "創始者"
+    },
+    "secret_floor_lava": {
+      "description": "Switch between 4 different media types in a single day.",
+      "hint": "You cannot stay in one place...",
+      "name": "The Floor Is Lava"
+    },
+    "secret_iron_will": {
+      "name": "鉄の意志",
+      "description": "Rest is for people with lesser plans.",
+      "hint": "No day off, no excuses..."
+    },
+    "secret_keeper": {
+      "description": "Discover 5 hidden achievements.",
+      "hint": "There is more here than meets the eye...",
+      "name": "Secret Keeper"
+    },
+    "secret_long_streak": {
+      "description": "Maintain a 500-day streak. Some say it cannot be done.",
+      "hint": "A legendary feat of consistency...",
+      "name": "不屈の精神"
+    },
+    "secret_loyal": {
+      "description": "Log every day for a week immediately after breaking a streak.",
+      "hint": "Loyalty is not given up easily...",
+      "name": "Loyal"
+    },
+    "secret_phoenix": {
+      "description": "Break a streak, then come back and surpass your personal best.",
+      "hint": "Rise from the ashes...",
+      "name": "Phoenix"
+    },
+    "secret_speedrunner": {
+      "description": "Log a session within 60 seconds of your previous log.",
+      "hint": "You are moving very fast...",
+      "name": "Speedrunner"
+    },
+    "secret_xp_10m": {
+      "description": "Earn 10,000,000 total XP. You have transcended.",
+      "hint": "Beyond legendary...",
+      "name": "一千万の証"
+    },
+    "sprinter_day": {
+      "description": "Log 5 separate immersion sessions in a single day.",
+      "name": "Sprinter"
+    },
+    "streak_100": {
+      "description": "Maintain a 100-day immersion streak.",
+      "name": "Unbreakable"
+    },
+    "streak_3": {
+      "description": "Maintain a 3-day immersion streak.",
+      "name": "Getting into It"
+    },
+    "streak_30": {
+      "description": "Maintain a 30-day immersion streak.",
+      "name": "Habit Formed"
+    },
+    "streak_365": {
+      "description": "Maintain a 365-day immersion streak. A whole year. Incredible.",
+      "name": "Legendary"
+    },
+    "streak_7": {
+      "description": "Maintain a 7-day immersion streak.",
+      "name": "Getting Started"
+    },
+    "tanabata": {
+      "description": "Log immersion on July 7th (七夕).",
+      "name": "Tanabata"
+    },
+    "week_24h": {
+      "description": "Log 24 hours of immersion in a single week.",
+      "name": "Did You Sleep?"
+    },
+    "weekend_warrior": {
+      "description": "Log every Saturday and Sunday for a full month.",
+      "name": "Weekend Warrior"
+    },
+    "xp_1000": {
+      "description": "Earn 1,000 total XP.",
+      "name": "Apprentice"
+    },
+    "xp_10000": {
+      "description": "Earn 10,000 total XP.",
+      "name": "Journeyman"
+    },
+    "xp_100000": {
+      "description": "Earn 100,000 total XP.",
+      "name": "Master"
+    },
+    "xp_1000000": {
+      "description": "Earn 1,000,000 total XP. An almost mythical feat.",
+      "name": "Legend"
+    },
+    "xp_50000": {
+      "description": "Earn 50,000 total XP.",
+      "name": "Scholar"
+    },
+    "xp_500000": {
+      "description": "Earn 500,000 total XP.",
+      "name": "Grand Master"
+    }
+  },
+  "rarity": {
+    "common": "Common",
+    "rare": "Rare",
+    "epic": "Epic",
+    "legendary": "Legendary",
+    "secret": "Secret"
+  },
+  "screen": {
+    "titleOwn": "Achievements",
+    "titleOther": "{{username}}'s Achievements",
+    "documentTitleOwn": "My Achievements — NihongoTracker",
+    "documentTitleOther": "{{username}}'s Achievements — NihongoTracker",
+    "subtitle": "Track your immersion milestones and unlock hidden secrets.",
+    "loadError": "Failed to load achievements.",
+    "stats": {
+      "earned": "Earned",
+      "total": "Total",
+      "points": "Points",
+      "completion": "Completion"
+    },
+    "searchPlaceholder": "Search achievements...",
+    "clearSearch": "Clear search",
+    "categoryLabel": "Category: {{value}}",
+    "statusLabel": "Status: {{value}}",
+    "sortLabel": "Sort: {{value}}",
+    "status": {
+      "all": "All",
+      "earned": "Earned",
+      "locked": "Locked"
+    },
+    "sort": {
+      "order": "Default",
+      "rarity": "Rarity",
+      "earned": "Earned first",
+      "orderLong": "Default order",
+      "rarityLong": "By rarity",
+      "earnedLong": "Earned first"
+    },
+    "grouped": "Grouped",
+    "ungrouped": "Ungrouped",
+    "groupTitle": "Group by rarity",
+    "ungroupTitle": "Ungroup by rarity",
+    "noMatches": "No achievements match your filters.",
+    "earnedOfTotal": "{{earned}}/{{total}} earned",
+    "attribution": "Achievement icons by <icons>game-icons.net</icons> under <license>CC BY 3.0</license>."
+  },
+  "secretHint": "Complete a secret condition to reveal this achievement.",
+  "secretName": "Secret Achievement"
+}

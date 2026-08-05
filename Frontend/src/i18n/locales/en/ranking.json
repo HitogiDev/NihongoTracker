@@ -1,0 +1,57 @@
+{
+  "title": "Leaderboard",
+  "subtitle": "See how you stack up against other learners",
+  "modes": {
+    "global": "Global",
+    "medium": "By Medium"
+  },
+  "scope": {
+    "total": "Total",
+    "reading": "Reading",
+    "listening": "Listening"
+  },
+  "metrics": {
+    "xp": "XP",
+    "hours": "Hours",
+    "chars": "Chars",
+    "time": "Time",
+    "episodes": "Episodes",
+    "characters": "Characters",
+    "pages": "Pages"
+  },
+  "filterLabel": "{{scope}} · {{metric}}",
+  "columnHeader": "{{filter}} ({{unit}})",
+  "units": {
+    "hours": "Hours",
+    "xp": "XP"
+  },
+  "time": {
+    "allTime": "All Time",
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
+    "year": "This Year",
+    "custom": "Custom",
+    "customRange": "Custom range",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "to": "to",
+    "apply": "Apply",
+    "clear": "Clear"
+  },
+  "defaults": {
+    "save": "Save as default",
+    "remove": "Remove default",
+    "menu": "Ranking defaults"
+  },
+  "table": {
+    "rank": "Rank",
+    "user": "User",
+    "level": "Level"
+  },
+  "avatarAlt": "{{username}}'s Avatar",
+  "unknownUser": "User",
+  "loading": "Loading rankings...",
+  "loadingMore": "Loading more...",
+  "loadMore": "Load More Rankings"
+}

@@ -3,17 +3,22 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { resetPasswordFn } from '../api/trackerApi';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { AxiosError } from 'axios';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, TriangleAlert, CircleCheck } from 'lucide-react';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import { getApiErrorMessage } from '../utils/apiError';
 
 function ResetPasswordScreen() {
+  const { t } = useTranslation('auth');
+  const vt = useValidationText();
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [touched, setTouched] = useState({
     password: false,
     passwordConfirmation: false,
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirmation, setShowPasswordConfirmation] =
     useState(false);
@@ -23,21 +28,21 @@ function ResetPasswordScreen() {
 
   // Validate fields when touched
   useEffect(() => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, ValidationKey> = {};
 
     if (touched.password) {
       if (!password) {
-        newErrors.password = 'Password is required';
+        newErrors.password = 'password.required';
       } else if (password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters';
+        newErrors.password = 'password.minLength';
       }
     }
 
     if (touched.passwordConfirmation) {
       if (!passwordConfirmation) {
-        newErrors.passwordConfirmation = 'Password confirmation is required';
+        newErrors.passwordConfirmation = 'password.confirmRequired';
       } else if (password !== passwordConfirmation) {
-        newErrors.passwordConfirmation = 'Passwords do not match';
+        newErrors.passwordConfirmation = 'password.mismatch';
       }
     }
 
@@ -71,14 +76,11 @@ function ResetPasswordScreen() {
       passwordConfirmation: string;
     }) => resetPasswordFn(token, password, passwordConfirmation),
     onSuccess: () => {
-      toast.success('Password reset successfully');
+      toast.success(t('resetPassword.toast.success'));
       setTimeout(() => navigate('/login'), 2000);
     },
     onError: (error) => {
-      const axiosError = error as AxiosError<{ message: string }>;
-      toast.error(
-        axiosError.response?.data?.message || 'Failed to reset password'
-      );
+      toast.error(getApiErrorMessage(error));
     },
   });
 
@@ -96,14 +98,14 @@ function ResetPasswordScreen() {
           <div className="card-body text-center">
             <TriangleAlert className="w-16 h-16 mx-auto mb-4 text-warning" />
             <h2 className="card-title justify-center text-2xl mb-4">
-              Invalid Reset Link
+              {t('resetPassword.invalidToken.title')}
             </h2>
             <p className="text-base-content/70 mb-6">
-              This password reset link is invalid or has expired.
+              {t('resetPassword.invalidToken.description')}
             </p>
             <div className="card-actions justify-center">
               <Link to="/forgot-password" className="btn btn-primary">
-                Request New Reset Link
+                {t('resetPassword.invalidToken.action')}
               </Link>
             </div>
           </div>
@@ -119,15 +121,14 @@ function ResetPasswordScreen() {
           <div className="card-body text-center">
             <CircleCheck className="w-16 h-16 mx-auto mb-4 text-success" />
             <h2 className="card-title justify-center text-2xl mb-4">
-              Password Reset Successfully
+              {t('resetPassword.success.title')}
             </h2>
             <p className="text-base-content/70 mb-6">
-              Your password has been updated. You will be redirected to the
-              login page.
+              {t('resetPassword.success.description')}
             </p>
             <div className="card-actions justify-center">
               <Link to="/login" className="btn btn-primary">
-                Go to Login
+                {t('resetPassword.success.action')}
               </Link>
             </div>
           </div>
@@ -141,21 +142,23 @@ function ResetPasswordScreen() {
       <div className="card w-full max-w-md bg-base-100 shadow-sm">
         <div className="card-body">
           <h2 className="card-title justify-center text-2xl mb-6">
-            Reset Password
+            {t('resetPassword.title')}
           </h2>
           <p className="text-base-content/70 mb-6 text-center">
-            Enter your new password below.
+            {t('resetPassword.description')}
           </p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-control w-full mb-4">
               <label className="label">
-                <span className="label-text">New Password</span>
+                <span className="label-text">
+                  {t('resetPassword.password.label')}
+                </span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter new password"
+                  placeholder={t('resetPassword.password.placeholder')}
                   className={`input input-bordered w-full pr-12 ${
                     errors.password ? 'input-error' : ''
                   }`}
@@ -181,7 +184,7 @@ function ResetPasswordScreen() {
               {errors.password && (
                 <label className="label">
                   <span className="label-text-alt text-error">
-                    {errors.password}
+                    {vt(errors.password)}
                   </span>
                 </label>
               )}
@@ -189,12 +192,16 @@ function ResetPasswordScreen() {
 
             <div className="form-control w-full mb-4">
               <label className="label">
-                <span className="label-text">Confirm New Password</span>
+                <span className="label-text">
+                  {t('resetPassword.passwordConfirmation.label')}
+                </span>
               </label>
               <div className="relative">
                 <input
                   type={showPasswordConfirmation ? 'text' : 'password'}
-                  placeholder="Confirm new password"
+                  placeholder={t(
+                    'resetPassword.passwordConfirmation.placeholder'
+                  )}
                   className={`input input-bordered w-full pr-12 ${
                     errors.passwordConfirmation ? 'input-error' : ''
                   }`}
@@ -222,7 +229,7 @@ function ResetPasswordScreen() {
               {errors.passwordConfirmation && (
                 <label className="label">
                   <span className="label-text-alt text-error">
-                    {errors.passwordConfirmation}
+                    {vt(errors.passwordConfirmation)}
                   </span>
                 </label>
               )}
@@ -237,20 +244,20 @@ function ResetPasswordScreen() {
                 {isPending ? (
                   <span className="loading loading-spinner loading-sm" />
                 ) : (
-                  'Reset Password'
+                  t('resetPassword.submit')
                 )}
               </button>
             </div>
           </form>
 
-          <div className="divider">OR</div>
+          <div className="divider">{t('resetPassword.or')}</div>
 
           <div className="text-center">
             <span className="text-base-content/70">
-              Remember your password?{' '}
+              {t('resetPassword.rememberPassword')}{' '}
             </span>
             <Link to="/login" className="link link-primary">
-              Back to Login
+              {t('resetPassword.backToLogin')}
             </Link>
           </div>
         </div>

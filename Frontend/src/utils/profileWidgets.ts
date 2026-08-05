@@ -1,9 +1,11 @@
+import type { ParseKeys } from 'i18next';
 import { ProfileWidgetId, ProfileWidgetLayout } from '../types';
 
 interface ProfileWidgetMeta {
   id: ProfileWidgetId;
-  label: string;
-  description: string;
+  /** Translation keys — this module is pure, callers render them with `t`. */
+  labelKey: ParseKeys<'settings'>;
+  descriptionKey: ParseKeys<'settings'>;
   /** Only shown on the owner's own profile (never rendered for other visitors). */
   ownerOnly?: boolean;
 }
@@ -12,39 +14,39 @@ interface ProfileWidgetMeta {
 export const PROFILE_WIDGETS: ProfileWidgetMeta[] = [
   {
     id: 'profileStats',
-    label: 'Profile Stats',
-    description: 'Rankings, totals and ranking-over-time graph.',
+    labelKey: 'profileWidgets.profileStats.label',
+    descriptionKey: 'profileWidgets.profileStats.description',
   },
   {
     id: 'about',
-    label: 'About',
-    description: 'Your bio / introduction.',
+    labelKey: 'profileWidgets.about.label',
+    descriptionKey: 'profileWidgets.about.description',
   },
   {
     id: 'favorites',
-    label: 'Favorite Media',
-    description: 'Showcase of your favorite media.',
+    labelKey: 'profileWidgets.favorites.label',
+    descriptionKey: 'profileWidgets.favorites.description',
   },
   {
     id: 'progressStats',
-    label: 'Progress Stats',
-    description: 'Overall, listening and reading levels.',
+    labelKey: 'profileWidgets.progressStats.label',
+    descriptionKey: 'profileWidgets.progressStats.description',
   },
   {
     id: 'immersionActivity',
-    label: 'Immersion Activity',
-    description: 'Heatmap of your immersion over time.',
+    labelKey: 'profileWidgets.immersionActivity.label',
+    descriptionKey: 'profileWidgets.immersionActivity.description',
   },
   {
     id: 'immersionGoals',
-    label: 'Immersion Goals',
-    description: 'Your active goals (only visible to you).',
+    labelKey: 'profileWidgets.immersionGoals.label',
+    descriptionKey: 'profileWidgets.immersionGoals.description',
     ownerOnly: true,
   },
   {
     id: 'achievements',
-    label: 'Achievement Showcase',
-    description: 'Your top earned achievements.',
+    labelKey: 'profileWidgets.achievements.label',
+    descriptionKey: 'profileWidgets.achievements.description',
   },
 ];
 

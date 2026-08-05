@@ -1,0 +1,124 @@
+{
+  "cards": {
+    "avgReadingSpeed": "Velocidad media de lectura",
+    "avgReadingSpeedHint": "Basada en lectura, manga y novelas visuales",
+    "balance": "Equilibrio",
+    "balanceHint": "Proporción entre lectura y escucha",
+    "charsRead": "Caracteres leídos",
+    "currentStreak": "Racha actual",
+    "currentStreakHint": "Días seguidos con actividad de inmersión",
+    "dailyAverage": "Media diaria",
+    "dailyAvgChars": "Media diaria de caracteres",
+    "listening": "Escucha",
+    "listeningHint": "Anime, vídeo, audio, películas y series",
+    "logCount": "Número de logs",
+    "longestStreak": "Racha más larga",
+    "longestStreakHint": "La racha más larga que has mantenido",
+    "pages": "Páginas",
+    "reading": "Lectura",
+    "readingHint": "Lectura, manga, novelas visuales y videojuegos",
+    "timeSpent": "Tiempo dedicado",
+    "totalXp": "XP total"
+  },
+  "charts": {
+    "bar": "Barras",
+    "hours": "Horas",
+    "immersionTimeline": "Cronología de inmersión",
+    "line": "Líneas",
+    "metric": "Métrica:",
+    "progressTimeline": "Progreso en el tiempo",
+    "readingSpeedOverTime": "Velocidad de lectura en el tiempo",
+    "timeDistribution": "Distribución del tiempo",
+    "timelineFailed": "No se pudieron cargar los datos de la cronología.",
+    "timelineHint": "Cada barra va desde tu primera hasta tu última sesión logueada",
+    "view": "Vista:",
+    "xpDistribution": "Distribución de la XP"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "clear": "Limpiar"
+  },
+  "filters": {
+    "apply": "Aplicar",
+    "clearSearch": "Limpiar la búsqueda",
+    "customRange": "Rango personalizado",
+    "immersedDaysOnly": "Solo días con inmersión",
+    "maxLogs": "Máx. logs",
+    "minLogs": "Mín. logs",
+    "searchTitles": "Buscar títulos",
+    "selectAll": "Seleccionar todo",
+    "selectNone": "No seleccionar nada"
+  },
+  "gantt": {
+    "completed": "Completado",
+    "done": "Hecho",
+    "empty": "No hay datos de inmersión para este filtro.",
+    "hint": "Ctrl+rueda para acercar · arrastra con el botón central para desplazar",
+    "resetZoom": "Restablecer el zoom",
+    "started": "Empezado:",
+    "viewMedia": "Ver la página del contenido",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar"
+  },
+  "groups": {
+    "totals": "Totales",
+    "streaks": "Rachas",
+    "timeBreakdown": "Desglose del tiempo",
+    "readingMetrics": "Métricas de lectura",
+    "chartDistribution": "Distribuciones",
+    "chartProgress": "Progreso",
+    "chartReading": "Lectura"
+  },
+  "heatmap": {
+    "less": "Menos",
+    "more": "Más"
+  },
+  "layout": {
+    "edit": "Editar diseño",
+    "hint": "Arrastra grupos o tarjetas · pulsa 👁 para mostrar u ocultar"
+  },
+  "loadFailed": "No hemos podido recuperar tus estadísticas ahora mismo.",
+  "loadFailedHint": "Prueba a cambiar los filtros o a recargar la página.",
+  "loading": "Cargando tus estadísticas...",
+  "progress": {
+    "activity": "Actividad",
+    "month": "Mes",
+    "total": "Total",
+    "week": "Semana",
+    "year": "Año"
+  },
+  "range": {
+    "allTime": "Histórico",
+    "thisMonth": "Este mes",
+    "thisWeek": "Esta semana",
+    "thisYear": "Este año",
+    "today": "Hoy"
+  },
+  "share": {
+    "title": "Comparte tus estadísticas",
+    "allTime": "Histórico",
+    "thisYear": "Este año",
+    "thisMonth": "Este mes",
+    "custom": "Personalizado",
+    "generateFailed": "No se pudo generar la imagen de estadísticas",
+    "shareFailed": "No se pudo compartir la imagen",
+    "downloadedInstead": "Aquí no se puede compartir; se ha descargado la imagen"
+  },
+  "sort": {
+    "azAsc": "Alfabético (A-Z)",
+    "azDesc": "Alfabético (Z-A)",
+    "firstLog": "Primer log (más antiguo)",
+    "lastLog": "Último log (más reciente)",
+    "mostLogs": "Más logs",
+    "mostTime": "Más tiempo",
+    "mostXp": "Más XP"
+  },
+  "speed": {
+    "empty": "No hay datos para el periodo seleccionado."
+  },
+  "stacked": {
+    "activity": "Actividad",
+    "noData": "No hay datos para el periodo seleccionado."
+  },
+  "subtitle": "Sigue tu progreso de inmersión con desgloses detallados"
+}

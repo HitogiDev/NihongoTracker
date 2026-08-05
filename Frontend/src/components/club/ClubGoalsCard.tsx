@@ -1,5 +1,6 @@
 import { Target, CalendarRange, FlagTriangleRight, Plus } from 'lucide-react';
 import { IClubGoal } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface ClubGoalsCardProps {
   clubGoals?: IClubGoal[];
@@ -84,6 +85,7 @@ export default function ClubGoalsCard({
   canManage = false,
   onManage,
 }: ClubGoalsCardProps) {
+  const { t } = useTranslation('clubs');
   const activeGoals = (clubGoals || []).filter((goal) => goal.isActive);
 
   return (
@@ -93,16 +95,16 @@ export default function ClubGoalsCard({
           <div>
             <h2 className="card-title text-lg flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Club Goals
+              {t('goals.title')}
             </h2>
             <p className="text-sm text-base-content/60">
-              Shared progress for the current club cycle.
+              {t('goals.subtitle')}
             </p>
           </div>
 
           {canManage && onManage && (
             <button className="btn btn-outline btn-sm" onClick={onManage}>
-              Manage
+              {t('goals.manage')}
             </button>
           )}
         </div>
@@ -123,13 +125,13 @@ export default function ClubGoalsCard({
                 </div>
                 <div className="space-y-1 max-w-sm">
                   <p className="text-xl font-semibold text-base-content">
-                    Add a club goal
+                    {t('goals.addTitle')}
                   </p>
                   <p className="text-sm text-base-content/70">
-                    Club goals can make club members be more consistent.
+                    {t('goals.addBody')}
                   </p>
                   <p className="text-sm font-medium text-primary">
-                    Click to create the first one.
+                    {t('goals.addCta')}
                   </p>
                 </div>
               </div>
@@ -145,10 +147,10 @@ export default function ClubGoalsCard({
                 </div>
                 <div className="space-y-1 max-w-sm">
                   <p className="text-xl font-semibold text-base-content">
-                    No club goals
+                    {t('goals.emptyTitle')}
                   </p>
                   <p className="text-sm text-base-content/70">
-                    No shared goals have been set for this club.
+                    {t('goals.emptyBody')}
                   </p>
                 </div>
               </div>
@@ -211,7 +213,7 @@ export default function ClubGoalsCard({
         {clubGoals && clubGoals.length > activeGoals.length && (
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-wide text-base-content/50">
-              Archived goals
+              {t('goals.archived')}
             </p>
             {clubGoals
               .filter((goal) => !goal.isActive)
@@ -222,7 +224,9 @@ export default function ClubGoalsCard({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">{getGoalLabel(goal)}</span>
-                    <span className="text-xs text-base-content/50">Paused</span>
+                    <span className="text-xs text-base-content/50">
+                      {t('goals.paused')}
+                    </span>
                   </div>
                   <p className="text-xs text-base-content/60 mt-1 flex items-center gap-1">
                     <CalendarRange className="w-3 h-3" />

@@ -10,8 +10,12 @@ export interface CreateNotificationInput {
   /** User that caused it. Self-notifications are skipped automatically. */
   actor?: IdLike | null;
   type: NotificationType;
+  /** English text; always required so nothing regresses if a key is missing. */
   title: string;
   body?: string;
+  /** Translation keys; interpolation values travel in `meta`. */
+  titleKey?: string;
+  bodyKey?: string;
   /** Frontend route to open when the notification is clicked. */
   link?: string;
   /** Image override (media cover, club icon…). Falls back to actor avatar. */
@@ -58,6 +62,8 @@ export async function createNotification(
       type: input.type,
       title: input.title,
       body: input.body,
+      titleKey: input.titleKey ?? null,
+      bodyKey: input.bodyKey ?? null,
       link: input.link,
       image: input.image,
       entityType: input.entityType ?? null,

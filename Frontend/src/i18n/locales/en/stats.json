@@ -1,0 +1,124 @@
+{
+  "cards": {
+    "avgReadingSpeed": "Average Reading Speed",
+    "avgReadingSpeedHint": "Based on reading, manga, and visual novels",
+    "balance": "Balance",
+    "balanceHint": "Reading vs. listening ratio",
+    "charsRead": "Characters Read",
+    "currentStreak": "Current Streak",
+    "currentStreakHint": "Consecutive days of immersion activity",
+    "dailyAverage": "Daily Average",
+    "dailyAvgChars": "Daily Avg Characters",
+    "listening": "Listening",
+    "listeningHint": "Anime, video, audio, movies, and TV",
+    "logCount": "Log Count",
+    "longestStreak": "Longest Streak",
+    "longestStreakHint": "Longest streak you have maintained",
+    "pages": "Pages",
+    "reading": "Reading",
+    "readingHint": "Reading, manga, visual novels, and video games",
+    "timeSpent": "Time Spent",
+    "totalXp": "Total XP"
+  },
+  "charts": {
+    "bar": "Bar",
+    "hours": "Hours",
+    "immersionTimeline": "Immersion Timeline",
+    "line": "Line",
+    "metric": "Metric:",
+    "progressTimeline": "Progress Timeline",
+    "readingSpeedOverTime": "Reading Speed Over Time",
+    "timeDistribution": "Time Distribution",
+    "timelineFailed": "Could not load timeline data.",
+    "timelineHint": "Each bar spans from your first to your last log session for",
+    "view": "View:",
+    "xpDistribution": "XP Distribution"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "clear": "Clear"
+  },
+  "filters": {
+    "apply": "Apply",
+    "clearSearch": "Clear search",
+    "customRange": "Custom range",
+    "immersedDaysOnly": "Immersed days only",
+    "maxLogs": "Max logs",
+    "minLogs": "Min logs",
+    "searchTitles": "Search titles",
+    "selectAll": "Select All",
+    "selectNone": "Select None"
+  },
+  "gantt": {
+    "completed": "Completed",
+    "done": "Done",
+    "empty": "No immersion data to display for this filter.",
+    "hint": "Ctrl+Scroll to zoom · Middle-click drag to pan",
+    "resetZoom": "Reset zoom",
+    "started": "Started:",
+    "viewMedia": "View media page",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
+  },
+  "groups": {
+    "totals": "Totals",
+    "streaks": "Streaks",
+    "timeBreakdown": "Time Breakdown",
+    "readingMetrics": "Reading Metrics",
+    "chartDistribution": "Distributions",
+    "chartProgress": "Progress",
+    "chartReading": "Reading"
+  },
+  "heatmap": {
+    "less": "Less",
+    "more": "More"
+  },
+  "layout": {
+    "edit": "Edit Layout",
+    "hint": "Drag groups or cards · click 👁 to hide/show"
+  },
+  "loadFailed": "We could not retrieve your statistics right now.",
+  "loadFailedHint": "Try adjusting your filters or refreshing the page.",
+  "loading": "Loading your stats...",
+  "progress": {
+    "activity": "Activity",
+    "month": "Month",
+    "total": "Total",
+    "week": "Week",
+    "year": "Year"
+  },
+  "range": {
+    "allTime": "All Time",
+    "thisMonth": "This Month",
+    "thisWeek": "This Week",
+    "thisYear": "This Year",
+    "today": "Today"
+  },
+  "share": {
+    "title": "Share your stats",
+    "allTime": "All time",
+    "thisYear": "This year",
+    "thisMonth": "This month",
+    "custom": "Custom",
+    "generateFailed": "Failed to generate stats image",
+    "shareFailed": "Could not share the image",
+    "downloadedInstead": "Sharing not supported here — image downloaded instead"
+  },
+  "sort": {
+    "azAsc": "Alphabetical (A-Z)",
+    "azDesc": "Alphabetical (Z-A)",
+    "firstLog": "First log (oldest)",
+    "lastLog": "Last log (newest)",
+    "mostLogs": "Most logs",
+    "mostTime": "Most time",
+    "mostXp": "Most XP"
+  },
+  "speed": {
+    "empty": "No data available for the selected timeframe."
+  },
+  "stacked": {
+    "activity": "Activity",
+    "noData": "No data available for the selected timeframe."
+  },
+  "subtitle": "Track your immersion progress with detailed breakdowns and"
+}

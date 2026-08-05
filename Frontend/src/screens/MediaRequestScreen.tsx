@@ -1,28 +1,31 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { AxiosError } from 'axios';
+import { useTranslation } from 'react-i18next';
+import type { ParseKeys } from 'i18next';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
-import {
-  createMediaRequestFn,
-  getMyMediaRequestsFn,
-} from '../api/trackerApi';
+import { createMediaRequestFn, getMyMediaRequestsFn } from '../api/trackerApi';
 import MediaRequestQueue from '../components/MediaRequestQueue';
+import { getApiErrorMessage } from '../utils/apiError';
 import type {
   ICreateMediaRequest,
   IMediaRequest,
   MediaRequestType,
 } from '../types';
 
-const MEDIA_TYPES: { value: MediaRequestType; label: string }[] = [
-  { value: 'anime', label: 'Anime' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'reading', label: 'Reading (LN/book)' },
-  { value: 'vn', label: 'Visual Novel' },
-  { value: 'movie', label: 'Movie' },
-  { value: 'tv show', label: 'TV Show' },
-  { value: 'game', label: 'Game' },
+/** Module scope: key names, never text — see the note in ListsDiscoverScreen. */
+const MEDIA_TYPES: {
+  value: MediaRequestType;
+  labelKey: ParseKeys<'admin'>;
+}[] = [
+  { value: 'anime', labelKey: 'mediaRequest.types.anime' },
+  { value: 'manga', labelKey: 'mediaRequest.types.manga' },
+  { value: 'reading', labelKey: 'mediaRequest.types.reading' },
+  { value: 'vn', labelKey: 'mediaRequest.types.vn' },
+  { value: 'movie', labelKey: 'mediaRequest.types.movie' },
+  { value: 'tv show', labelKey: 'mediaRequest.types.tvShow' },
+  { value: 'game', labelKey: 'mediaRequest.types.game' },
 ];
 
 const EMPTY_FORM: ICreateMediaRequest = {
@@ -46,24 +49,28 @@ const EMPTY_DESCRIPTIONS: DescriptionDraft = { eng: '', jpn: '', spa: '' };
 const DESCRIPTION_LANGUAGES: {
   key: keyof DescriptionDraft;
   language: 'eng' | 'jpn' | 'spa';
-  label: string;
+  labelKey: ParseKeys<'admin'>;
 }[] = [
-  { key: 'eng', language: 'eng', label: 'English' },
-  { key: 'jpn', language: 'jpn', label: 'Japanese' },
-  { key: 'spa', language: 'spa', label: 'Spanish' },
+  { key: 'eng', language: 'eng', labelKey: 'mediaRequest.languages.eng' },
+  { key: 'jpn', language: 'jpn', labelKey: 'mediaRequest.languages.jpn' },
+  { key: 'spa', language: 'spa', labelKey: 'mediaRequest.languages.spa' },
 ];
 
-function statusBadge(status: IMediaRequest['status']) {
+function StatusBadge({ status }: { status: IMediaRequest['status'] }) {
+  const { t } = useTranslation('admin');
   const cls =
     status === 'pending'
       ? 'badge-warning'
       : status === 'approved'
         ? 'badge-success'
         : 'badge-error';
-  return <span className={`badge ${cls} capitalize`}>{status}</span>;
+  return (
+    <span className={`badge ${cls}`}>{t(`mediaRequest.status.${status}`)}</span>
+  );
 }
 
 export default function MediaRequestScreen() {
+  const { t } = useTranslation('admin');
   const { user } = useUserDataStore();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ICreateMediaRequest>(EMPTY_FORM);
@@ -91,18 +98,14 @@ export default function MediaRequestScreen() {
       queryClient.invalidateQueries({ queryKey: ['mediaRequests'] });
     },
     onError: (error) => {
-      const message =
-        error instanceof AxiosError
-          ? error.response?.data?.message
-          : 'Failed to submit request';
-      toast.error(message || 'Failed to submit request');
+      toast.error(getApiErrorMessage(error));
     },
   });
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.contentTitleNative.trim()) {
-      toast.error('A native title is required');
+      toast.error(t('mediaRequest.toast.nativeTitleRequired'));
       return;
     }
     createMutation.mutate({
@@ -113,8 +116,8 @@ export default function MediaRequestScreen() {
         contentTitleEnglish:
           form.title.contentTitleEnglish?.trim() || undefined,
       },
-      description: DESCRIPTION_LANGUAGES.filter(
-        ({ key }) => descriptions[key].trim()
+      description: DESCRIPTION_LANGUAGES.filter(({ key }) =>
+        descriptions[key].trim()
       ).map(({ key, language }) => ({
         description: descriptions[key].trim(),
         language,
@@ -129,22 +132,20 @@ export default function MediaRequestScreen() {
     <div className="min-h-screen bg-base-200 pt-20">
       <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Request Media</h1>
-          <p className="text-base-content/70">
-            Can't find a title in the database? Submit it here and an admin or
-            moderator will review it.
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{t('mediaRequest.title')}</h1>
+          <p className="text-base-content/70">{t('mediaRequest.subtitle')}</p>
         </div>
 
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title mb-4">New request</h2>
+            <h2 className="card-title mb-4">{t('mediaRequest.newRequest')}</h2>
             <form onSubmit={submit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="form-control">
                   <div className="label">
                     <span className="label-text">
-                      Native title <span className="text-error">*</span>
+                      {t('mediaRequest.nativeTitle')}{' '}
+                      <span className="text-error">*</span>
                     </span>
                   </div>
                   <input
@@ -160,13 +161,15 @@ export default function MediaRequestScreen() {
                         },
                       }))
                     }
-                    placeholder="日本語のタイトル"
+                    placeholder={t('mediaRequest.nativeTitlePlaceholder')}
                     required
                   />
                 </label>
                 <label className="form-control">
                   <div className="label">
-                    <span className="label-text">Media type</span>
+                    <span className="label-text">
+                      {t('mediaRequest.mediaType')}
+                    </span>
                   </div>
                   <select
                     className="select select-bordered w-full"
@@ -178,16 +181,18 @@ export default function MediaRequestScreen() {
                       }))
                     }
                   >
-                    {MEDIA_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
+                    {MEDIA_TYPES.map((mediaType) => (
+                      <option key={mediaType.value} value={mediaType.value}>
+                        {t(mediaType.labelKey)}
                       </option>
                     ))}
                   </select>
                 </label>
                 <label className="form-control">
                   <div className="label">
-                    <span className="label-text">Romaji title</span>
+                    <span className="label-text">
+                      {t('mediaRequest.romajiTitle')}
+                    </span>
                   </div>
                   <input
                     type="text"
@@ -206,7 +211,9 @@ export default function MediaRequestScreen() {
                 </label>
                 <label className="form-control">
                   <div className="label">
-                    <span className="label-text">English title</span>
+                    <span className="label-text">
+                      {t('mediaRequest.englishTitle')}
+                    </span>
                   </div>
                   <input
                     type="text"
@@ -225,7 +232,9 @@ export default function MediaRequestScreen() {
                 </label>
                 <label className="form-control">
                   <div className="label">
-                    <span className="label-text">Reference URL</span>
+                    <span className="label-text">
+                      {t('mediaRequest.referenceUrl')}
+                    </span>
                   </div>
                   <input
                     type="url"
@@ -234,12 +243,14 @@ export default function MediaRequestScreen() {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, referenceUrl: e.target.value }))
                     }
-                    placeholder="AniList / VNDB / IGDB link"
+                    placeholder={t('mediaRequest.referenceUrlPlaceholder')}
                   />
                 </label>
                 <label className="form-control">
                   <div className="label">
-                    <span className="label-text">Cover image URL</span>
+                    <span className="label-text">
+                      {t('mediaRequest.coverImage')}
+                    </span>
                   </div>
                   <input
                     type="url"
@@ -254,18 +265,18 @@ export default function MediaRequestScreen() {
 
               <div className="space-y-1">
                 <p className="text-sm font-medium">
-                  Descriptions{' '}
+                  {t('mediaRequest.descriptions')}{' '}
                   <span className="text-base-content/50 font-normal">
-                    (all optional — fill in any languages you can)
+                    {t('mediaRequest.descriptionsHint')}
                   </span>
                 </p>
-                {DESCRIPTION_LANGUAGES.map(({ key, label }) => (
+                {DESCRIPTION_LANGUAGES.map(({ key, labelKey }) => (
                   <label key={key} className="form-control">
                     <div className="label">
                       <span className="label-text">
-                        {label}{' '}
+                        {t(labelKey)}{' '}
                         <span className="label-text-alt text-base-content/50">
-                          optional
+                          {t('mediaRequest.optional')}
                         </span>
                       </span>
                     </div>
@@ -284,22 +295,22 @@ export default function MediaRequestScreen() {
                 ))}
               </div>
 
-              <label className="form-control">
-                <div className="label">
-                  <span className="label-text">Note to reviewer</span>
-                </div>
+              <fieldset className="fieldset w-full p-0">
+                <legend className="fieldset-legend">
+                  {t('mediaRequest.note')}
+                </legend>
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   rows={2}
                   value={form.note ?? ''}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, note: e.target.value }))
                   }
-                  placeholder="Anything the reviewer should know"
+                  placeholder={t('mediaRequest.notePlaceholder')}
                 />
-              </label>
+              </fieldset>
 
-              <label className="label cursor-pointer justify-start gap-3">
+              <label className="flex cursor-pointer items-center gap-3">
                 <input
                   type="checkbox"
                   className="checkbox checkbox-error"
@@ -308,7 +319,7 @@ export default function MediaRequestScreen() {
                     setForm((f) => ({ ...f, isAdult: e.target.checked }))
                   }
                 />
-                <span className="label-text">Contains adult content (18+)</span>
+                <span>{t('mediaRequest.isAdult')}</span>
               </label>
 
               <div className="flex justify-end">
@@ -320,7 +331,7 @@ export default function MediaRequestScreen() {
                   {createMutation.isPending ? (
                     <span className="loading loading-spinner loading-sm"></span>
                   ) : (
-                    'Submit request'
+                    t('mediaRequest.submit')
                   )}
                 </button>
               </div>
@@ -330,14 +341,14 @@ export default function MediaRequestScreen() {
 
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body">
-            <h2 className="card-title mb-4">My requests</h2>
+            <h2 className="card-title mb-4">{t('mediaRequest.myRequests')}</h2>
             {mineLoading ? (
               <div className="py-8 text-center">
                 <span className="loading loading-spinner loading-md"></span>
               </div>
             ) : !mine?.requests.length ? (
               <p className="text-base-content/60 py-4">
-                You haven't requested any media yet.
+                {t('mediaRequest.empty')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -354,7 +365,7 @@ export default function MediaRequestScreen() {
                         <span className="badge badge-ghost capitalize">
                           {request.type}
                         </span>
-                        {statusBadge(request.status)}
+                        <StatusBadge status={request.status} />
                       </div>
                       {request.reviewNote ? (
                         <p className="text-xs text-base-content/60 italic mt-1">
@@ -369,7 +380,7 @@ export default function MediaRequestScreen() {
                         to={`/${request.createdMediaType}/${request.createdMediaContentId}`}
                         className="btn btn-sm btn-ghost"
                       >
-                        View media
+                        {t('mediaRequest.viewMedia')}
                       </Link>
                     ) : null}
                   </div>

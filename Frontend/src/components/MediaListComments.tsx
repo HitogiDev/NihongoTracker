@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -23,6 +24,7 @@ function MediaListComments({
   listOwnerId,
   currentUserId,
 }: MediaListCommentsProps) {
+  const { t } = useTranslation('media');
   const queryClient = useQueryClient();
   const [content, setContent] = useState('');
 
@@ -44,14 +46,14 @@ function MediaListComments({
       setContent('');
       refresh();
     },
-    onError: () => toast.error('Could not post the comment'),
+    onError: () => toast.error(t('comments.postFailed')),
   });
 
   const deleteComment = useMutation({
     mutationFn: (commentId: string) =>
       deleteMediaListCommentFn(listId, commentId),
     onSuccess: () => refresh(),
-    onError: () => toast.error('Could not delete the comment'),
+    onError: () => toast.error(t('comments.deleteFailed')),
   });
 
   const comments = data?.comments ?? [];
@@ -73,7 +75,7 @@ function MediaListComments({
         >
           <textarea
             className="textarea textarea-bordered w-full"
-            placeholder="Leave a comment"
+            placeholder={t('comments.placeholder')}
             maxLength={COMMENT_MAX_LENGTH}
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -102,7 +104,7 @@ function MediaListComments({
           <span className="loading loading-spinner" />
         </div>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-base-content/60">No comments yet.</p>
+        <p className="text-sm text-base-content/60">{t('comments.empty')}</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {comments.map((comment) => {
@@ -136,7 +138,7 @@ function MediaListComments({
                         type="button"
                         className="btn btn-ghost btn-xs ml-auto"
                         onClick={() => deleteComment.mutate(comment._id)}
-                        aria-label="Delete comment"
+                        aria-label={t('comments.delete')}
                       >
                         <Trash className="w-3.5 h-3.5" />
                       </button>

@@ -17,6 +17,7 @@ import DismissLogsButton from './DismissLogsButton';
 import PlaylistSelectorModal, {
   PlaylistVideoWithOverride,
 } from './PlaylistSelectorModal';
+import { useTranslation } from 'react-i18next';
 
 interface VideoLogsProps {
   username?: string;
@@ -24,6 +25,7 @@ interface VideoLogsProps {
 }
 
 function VideoLogs({ username, isActive = true }: VideoLogsProps) {
+  const { t } = useTranslation(['logs', 'common']);
   const [selectedLogs, setSelectedLogs] = useState<ILog[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [assignedLogs, setAssignedLogs] = useState<ILog[]>([]);
@@ -180,7 +182,10 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
 
         toast.success(
-          `Successfully assigned ${totalLogs} video logs to ${channelCount} YouTube channels`
+          t('video.assignedChannels', {
+            logs: totalLogs,
+            channels: channelCount,
+          })
         );
       }
     },
@@ -188,7 +193,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data.message);
       } else {
-        toast.error('Error assigning media');
+        toast.error(t('matcher.assignError'));
       }
     },
   });
@@ -220,7 +225,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         : null;
 
     if (!logsToAssign || logsToAssign.length === 0) {
-      toast.info('Select one or more logs or open a group to match');
+      toast.info(t('video.selectToMatch'));
       return;
     }
 
@@ -243,8 +248,8 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         } catch (err) {
           toast.error(
             err instanceof AxiosError
-              ? (err.response?.data?.message ?? 'Failed to load playlist')
-              : 'Failed to load playlist'
+              ? (err.response?.data?.message ?? t('toast.playlistLoadFailed'))
+              : t('toast.playlistLoadFailed')
           );
           setPlaylistModalOpen(false);
         } finally {
@@ -260,7 +265,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
 
     const videoId = extractYouTubeVideoId(pasteUrl || '');
     if (!videoId) {
-      toast.error('Please paste a valid YouTube URL or ID');
+      toast.error(t('video.invalidUrl'));
       return;
     }
 
@@ -270,7 +275,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     try {
       const result = await searchYouTubeVideoFn(normalizedUrl);
       if (!result || !result.channel) {
-        toast.error('Could not find YouTube channel for the provided link');
+        toast.error(t('video.channelNotFound'));
         return;
       }
 
@@ -296,7 +301,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       });
     } catch (error) {
       console.error('Paste match error', error);
-      toast.error('Error matching pasted URL');
+      toast.error(t('video.pasteMatchError'));
     } finally {
       setIsMatchingPaste(false);
       setPasteUrl('');
@@ -308,6 +313,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     filteredGroupedLogs,
     assignMedia,
     extractYouTubeVideoId,
+    t,
   ]);
 
   // ── Handle playlist confirm (assign each channel to the selected logs) ──
@@ -328,7 +334,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
           : null;
 
       if (!logsToAssign || logsToAssign.length === 0) {
-        toast.info('Select one or more logs or open a group first');
+        toast.info(t('video.selectFirst'));
         setPlaylistModalOpen(false);
         return;
       }
@@ -364,20 +370,20 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         );
       } catch (err) {
         console.error('Playlist assign error', err);
-        toast.error('Error assigning playlist channels');
+        toast.error(t('video.playlistAssignError'));
       } finally {
         setIsBatchAssigning(false);
         setPlaylistModalOpen(false);
         setPlaylistResult(null);
       }
     },
-    [selectedLogs, selectedGroup, filteredGroupedLogs, assignMedia]
+    [selectedLogs, selectedGroup, filteredGroupedLogs, assignMedia, t]
   );
   // ── End playlist confirm ─────────────────────────────────────────────────
 
   const handleAutoMatch = useCallback(async () => {
     if (logsWithYouTubeUrls.length === 0) {
-      toast.info('No video logs with YouTube URLs found to auto-match');
+      toast.info(t('video.noUrlsToMatch'));
       return;
     }
 
@@ -466,7 +472,10 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         // Show final success message
         const totalChannels = assignmentData.length;
         toast.success(
-          `Successfully assigned ${totalProcessed} video logs to ${totalChannels} YouTube channels`
+          t('video.assignedChannels', {
+            logs: totalProcessed,
+            channels: totalChannels,
+          })
         );
 
         // Update state after all batches are processed
@@ -491,10 +500,10 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         });
         queryClient.invalidateQueries({ queryKey: ['dailyGoals'] });
       } else {
-        toast.info('No valid YouTube channels found for auto-matching');
+        toast.info(t('video.noValidChannels'));
       }
     } catch (error) {
-      toast.error('Error during auto-matching process');
+      toast.error(t('video.autoMatchError'));
       console.error('Auto-matching error:', error);
     } finally {
       setAutoMatchingProgress({ current: 0, total: 0, isRunning: false });
@@ -507,6 +516,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
     currentUsername,
     username,
     selectedLogs,
+    t,
   ]);
 
   if (isLoadingLogs) {
@@ -519,14 +529,14 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
             </div>
 
             <h2 className="card-title justify-center text-2xl mb-2">
-              Loading Media Matcher
+              {t('matcher.loadingTitle')}
             </h2>
 
             <p className="text-base-content/70 mb-4">
-              Preparing your logs for media matching...
+              {t('matcher.preparing')}
             </p>
 
-            <div className="divider">Please wait</div>
+            <div className="divider">{t('matcher.pleaseWait')}</div>
 
             <div className="alert alert-info">
               <svg
@@ -543,8 +553,10 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                 ></path>
               </svg>
               <div className="text-sm">
-                <div className="font-semibold">This may take a moment</div>
-                <div>Loading and processing your media logs</div>
+                <div className="font-semibold">
+                  {t('matcher.mayTakeAMoment')}
+                </div>
+                <div>{t('matcher.loadingLogs')}</div>
               </div>
             </div>
           </div>
@@ -556,7 +568,11 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
   if (logError) {
     return (
       <div className="alert alert-error">
-        <span>Error loading video logs</span>
+        <span>
+          {t('matcher.errorLoading', {
+            type: t('common:mediaTypesPlural.video'),
+          })}
+        </span>
       </div>
     );
   }
@@ -564,22 +580,22 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
   return (
     <div className="w-full p-4">
       <h1 className="text-2xl font-bold text-center mb-4">
-        Assign YouTube Channels to Video Logs
+        {t('video.assignChannels')}
       </h1>
 
       <div className="stats shadow mb-4 w-full">
         <div className="stat">
-          <div className="stat-title">Selected Logs</div>
+          <div className="stat-title">{t('matcher.selectedLogs')}</div>
           <div className="stat-value">{selectedLogs.length}</div>
         </div>
         <div className="stat">
-          <div className="stat-title">Available Groups</div>
+          <div className="stat-title">{t('matcher.availableGroups')}</div>
           <div className="stat-value">
             {Object.keys(filteredGroupedLogs).length}
           </div>
         </div>
         <div className="stat">
-          <div className="stat-title">Auto-Matchable</div>
+          <div className="stat-title">{t('video.autoMatchable')}</div>
           <div className="stat-value text-success">
             {logsWithYouTubeUrls.length}
           </div>
@@ -604,18 +620,19 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              Auto-Match YouTube Videos
+              {t('video.autoMatchYoutube')}
             </h3>
             <p className="text-sm mb-4">
-              Found {logsWithYouTubeUrls.length} video logs with YouTube URLs
-              that can be automatically matched to their channels.
+              {t('video.autoMatchFound', {
+                count: logsWithYouTubeUrls.length,
+              })}
             </p>
 
             {autoMatchingProgress.isRunning ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <span className="loading loading-spinner loading-sm"></span>
-                  <span>Auto-matching in progress...</span>
+                  <span>{t('video.autoMatchInProgress')}</span>
                 </div>
                 <progress
                   className="progress progress-primary w-full"
@@ -656,7 +673,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       {/* Manual matching section */}
       <div className="card bg-base-200 shadow-lg">
         <div className="card-body p-4">
-          <h2 className="card-title">Manual Video Log Groups</h2>
+          <h2 className="card-title">{t('video.manualGroups')}</h2>
           <div className="divider my-1"></div>
 
           <div className="mb-4 flex gap-2 items-center">
@@ -673,7 +690,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                 <>
                   <input
                     type="text"
-                    placeholder="Paste YouTube URL or video ID"
+                    placeholder={t('video.pasteUrlPlaceholder')}
                     className="input input-sm flex-grow"
                     value={pasteUrl}
                     onChange={(e) => setPasteUrl(e.target.value)}
@@ -693,7 +710,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                     {isMatchingPaste ? (
                       <span className="loading loading-spinner loading-sm"></span>
                     ) : (
-                      'Match Link'
+                      t('video.matchLink')
                     )}
                   </button>
                   <DismissLogsButton
@@ -765,12 +782,12 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                             <h3 className="text-sm">{log.description}</h3>
                             <p className="text-xs text-base-content/70">
                               {log.unknownDate
-                                ? 'Unknown date'
+                                ? t('create.unknownDate')
                                 : new Date(log.date).toLocaleDateString()}
                             </p>
                             {extractYouTubeUrl(log.description || '') && (
                               <div className="text-xs text-success mt-1">
-                                Contains YouTube URL
+                                {t('video.containsYoutubeUrl')}
                               </div>
                             )}
                           </div>
@@ -796,7 +813,11 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 ></path>
               </svg>
-              <span>No unassigned video logs found.</span>
+              <span>
+                {t('matcher.noUnassigned', {
+                  type: t('common:mediaTypesPlural.video'),
+                })}
+              </span>
             </div>
           )}
         </div>

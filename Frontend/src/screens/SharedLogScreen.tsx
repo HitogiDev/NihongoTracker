@@ -20,88 +20,93 @@ import {
   MonitorPlay,
 } from 'lucide-react';
 import { validateSharedLogData } from '../utils/validation';
+import type { ValidationKey } from '../utils/validation';
+import { useValidationText } from '../hooks/useValidationText';
+import { useTranslation } from 'react-i18next';
 
 const logTypeConfig = {
   reading: {
-    label: 'Reading',
+    labelKey: 'common:mediaTypes.reading',
     icon: Book,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
   },
   anime: {
-    label: 'Anime',
+    labelKey: 'common:mediaTypes.anime',
     icon: Play,
     color: 'text-secondary',
     bgColor: 'bg-secondary/10',
     borderColor: 'border-secondary/20',
   },
   vn: {
-    label: 'Visual Novel',
+    labelKey: 'common:mediaTypes.vn',
     icon: GamepadDirectional,
     color: 'text-accent',
     bgColor: 'bg-accent/10',
     borderColor: 'border-accent/20',
   },
   game: {
-    label: 'Video Game',
+    labelKey: 'common:mediaTypes.game',
     icon: GamepadDirectional,
     color: 'text-primary',
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
   },
   video: {
-    label: 'Video',
+    labelKey: 'common:mediaTypes.video',
     icon: Video,
     color: 'text-info',
     bgColor: 'bg-info/10',
     borderColor: 'border-info/20',
   },
   manga: {
-    label: 'Manga',
+    labelKey: 'common:mediaTypes.manga',
     icon: Book,
     color: 'text-warning',
     bgColor: 'bg-warning/10',
     borderColor: 'border-warning/20',
   },
   audio: {
-    label: 'Audio',
+    labelKey: 'common:mediaTypes.audio',
     icon: Volume2,
     color: 'text-success',
     bgColor: 'bg-success/10',
     borderColor: 'border-success/20',
   },
   movie: {
-    label: 'Movie',
+    labelKey: 'common:mediaTypes.movie',
     icon: Clapperboard,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     borderColor: 'border-purple-500/30',
   },
   'tv show': {
-    label: 'TV Show',
+    labelKey: 'common:mediaTypes.tvShow',
     icon: MonitorPlay,
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     borderColor: 'border-emerald-500/30',
   },
   book: {
-    label: 'Book',
+    labelKey: 'common:mediaTypes.book',
     icon: BookOpen,
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
     borderColor: 'border-amber-500/30',
   },
   other: {
-    label: 'Other',
+    labelKey: 'common:mediaTypes.other',
     icon: Ellipsis,
     color: 'text-neutral',
     bgColor: 'bg-neutral/10',
     borderColor: 'border-neutral/20',
   },
-};
+} as const;
 
 function SharedLogScreen() {
+  const { t } = useTranslation(['logs', 'common']);
+  const vt = useValidationText();
   const { logId } = useParams<{ logId: string }>();
   const navigate = useNavigate();
   const { user } = useUserDataStore();
@@ -114,7 +119,7 @@ function SharedLogScreen() {
     pages: 0,
     description: '',
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const {
@@ -135,7 +140,7 @@ function SharedLogScreen() {
           ['logs', 'user'].includes(query.queryKey[0] as string),
       });
       invalidateLogScreenQueries(queryClient, sharedLog?.type, user?.username);
-      toast.success('Log created successfully from shared link!');
+      toast.success(t('toast.createdFromShared'));
       navigate(`/user/${user?.username}`);
     },
   });
@@ -182,12 +187,12 @@ function SharedLogScreen() {
     setErrors(validation.errors);
 
     if (!validation.isValid) {
-      toast.error('Please fix validation errors');
+      toast.error(t('toast.fixValidation'));
       return;
     }
 
     if (!sharedLog) {
-      toast.error('Shared log data is not available');
+      toast.error(t('toast.sharedUnavailable'));
       return;
     }
 
@@ -220,11 +225,10 @@ function SharedLogScreen() {
                 <Share2 className="w-10 h-10 text-primary" />
               </div>
               <h2 className="text-3xl font-bold text-base-content mb-2">
-                Check Out This Log!
+                {t('shared.ctaTitle')}
               </h2>
               <p className="text-base-content/70 text-lg">
-                Someone shared an amazing log with you! Join our community to
-                create your own immersion journey.
+                {t('shared.ctaBody')}
               </p>
             </div>
 
@@ -232,12 +236,11 @@ function SharedLogScreen() {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <div className="badge badge-primary badge-outline">
                   <Book className="w-3 h-3 mr-1" />
-                  Shared Progress
+                  {t('shared.sharedProgress')}
                 </div>
               </div>
               <p className="text-sm text-base-content/60">
-                Join our community to track your own progress and share
-                achievements
+                {t('shared.joinBody')}
               </p>
             </div>
 
@@ -247,19 +250,19 @@ function SharedLogScreen() {
                 onClick={() => navigate('/login')}
               >
                 <Play className="w-5 h-5" />
-                Sign In to Continue
+                {t('shared.signIn')}
               </button>
               <div className="divider text-xs">or</div>
               <button
                 className="btn btn-outline btn-lg w-full"
                 onClick={() => navigate('/register')}
               >
-                Create New Account
+                {t('shared.createAccount')}
               </button>
             </div>
 
             <p className="text-xs text-base-content/50 mt-6">
-              Join thousands of learners tracking their progress
+              {t('shared.joinPitch')}
             </p>
           </div>
         </div>
@@ -275,9 +278,11 @@ function SharedLogScreen() {
             <div className="flex justify-center mb-6">
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
-            <h2 className="text-xl font-semibold mb-2">Loading Shared Log</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              {t('shared.loadingTitle')}
+            </h2>
             <p className="text-base-content/60">
-              Fetching the shared content for you...
+              {t('shared.loadingSubtitle')}
             </p>
             <div className="flex justify-center gap-1 mt-4">
               <span className="loading loading-dots loading-sm"></span>
@@ -297,24 +302,23 @@ function SharedLogScreen() {
               <span className="text-4xl">😔</span>
             </div>
             <h2 className="text-2xl font-bold text-base-content mb-4">
-              Oops! Log Not Found
+              {t('shared.notFoundTitle')}
             </h2>
             <p className="text-base-content/70 mb-6">
-              The shared log could not be found. It may have been deleted or the
-              link might be incorrect.
+              {t('shared.notFoundBody')}
             </p>
             <div className="space-y-3">
               <button
                 onClick={() => navigate('/')}
                 className="btn btn-primary w-full"
               >
-                Go to Dashboard
+                {t('shared.goToDashboard')}
               </button>
               <button
                 onClick={() => navigate(-1)}
                 className="btn btn-ghost w-full"
               >
-                Go Back
+                {t('shared.goBack')}
               </button>
             </div>
           </div>
@@ -344,14 +348,13 @@ function SharedLogScreen() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 bg-base-100 rounded-full px-6 py-3 shadow-lg mb-4">
             <Share2 className="w-6 h-6 text-primary" />
-            <span className="font-semibold text-lg">Shared Log</span>
+            <span className="font-semibold text-lg">{t('shared.title')}</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-base-content mb-2">
-            Add This to Your Progress
+            {t('shared.addHeading')}
           </h1>
           <p className="text-base-content/70 text-lg max-w-2xl mx-auto">
-            Someone shared their learning achievement with you. Add it to your
-            own log collection.
+            {t('shared.subtitle')}
           </p>
         </div>
 
@@ -379,10 +382,10 @@ function SharedLogScreen() {
                     <div>
                       <div className={`badge ${typeConfig.color} gap-1`}>
                         <TypeIcon className="w-3 h-3" />
-                        {typeConfig.label}
+                        {t(typeConfig.labelKey)}
                       </div>
                       <h3 className="font-semibold text-lg mt-1">
-                        Shared Progress
+                        {t('shared.sharedProgress')}
                       </h3>
                     </div>
                   </div>
@@ -390,7 +393,7 @@ function SharedLogScreen() {
                   <div className="space-y-3">
                     <div>
                       <span className="text-sm font-medium text-base-content/60">
-                        Title
+                        {t('shared.titleLabel')}
                       </span>
                       <p className="font-semibold">{logTitle}</p>
                     </div>
@@ -400,7 +403,7 @@ function SharedLogScreen() {
                       sharedLog.media.title?.contentTitleEnglish && (
                         <div>
                           <span className="text-sm font-medium text-base-content/60">
-                            English Title
+                            {t('shared.englishTitle')}
                           </span>
                           <p className="text-sm">
                             {sharedLog.media.title.contentTitleEnglish}
@@ -413,7 +416,9 @@ function SharedLogScreen() {
                     <div className="space-y-2">
                       {sharedLog.type === 'anime' && sharedLog.episodes ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
-                          <span className="text-sm font-medium">Episodes</span>
+                          <span className="text-sm font-medium">
+                            {t('shared.episodes')}
+                          </span>
                           <span className="font-bold">
                             {sharedLog.episodes}
                           </span>
@@ -421,7 +426,9 @@ function SharedLogScreen() {
                       ) : null}
                       {sharedLog.time ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
-                          <span className="text-sm font-medium">Time</span>
+                          <span className="text-sm font-medium">
+                            {t('shared.time')}
+                          </span>
                           <span className="font-bold">
                             {sharedLog.time >= 60
                               ? `${Math.floor(sharedLog.time / 60)}h ${sharedLog.time % 60}m`
@@ -432,7 +439,7 @@ function SharedLogScreen() {
                       {sharedLog.chars ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
                           <span className="text-sm font-medium">
-                            Characters
+                            {t('shared.characters')}
                           </span>
                           <span className="font-bold">
                             {sharedLog.chars.toLocaleString()}
@@ -441,12 +448,16 @@ function SharedLogScreen() {
                       ) : null}
                       {sharedLog.pages ? (
                         <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
-                          <span className="text-sm font-medium">Pages</span>
+                          <span className="text-sm font-medium">
+                            {t('shared.pages')}
+                          </span>
                           <span className="font-bold">{sharedLog.pages}</span>
                         </div>
                       ) : null}
                       <div className="flex justify-between items-center py-2 px-3 bg-primary/10 rounded-lg">
-                        <span className="text-sm font-medium">XP Earned</span>
+                        <span className="text-sm font-medium">
+                          {t('shared.xpEarned')}
+                        </span>
                         <span className="font-bold text-primary">
                           {sharedLog.xp}
                         </span>
@@ -466,9 +477,11 @@ function SharedLogScreen() {
                     <Plus className="w-6 h-6 text-success" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">Add to Your Progress</h2>
+                    <h2 className="text-2xl font-bold">
+                      {t('shared.addToProgress')}
+                    </h2>
                     <p className="text-base-content/60">
-                      Copy this log to your own profile
+                      {t('shared.copyHint')}
                     </p>
                   </div>
                 </div>
@@ -488,10 +501,10 @@ function SharedLogScreen() {
                     />
                   </svg>
                   <div>
-                    <h3 className="font-bold">Ready to add!</h3>
+                    <h3 className="font-bold">{t('shared.readyToAdd')}</h3>
                     <div className="text-sm">
                       This log will be added to your profile: "
-                      {customValues.description}" • {typeConfig.label}
+                      {customValues.description}" • {t(typeConfig.labelKey)}
                       {customValues.time > 0 && ` • ${customValues.time} min`}
                       {sharedLog.type === 'anime' &&
                         customValues.episodes > 0 &&
@@ -506,14 +519,14 @@ function SharedLogScreen() {
 
                 <details className="collapse collapse-arrow bg-base-200">
                   <summary className="collapse-title text-lg font-medium">
-                    Want to adjust the values? (Optional)
+                    {t('shared.adjustValues')}
                   </summary>
                   <div className="collapse-content">
                     <div className="space-y-4 pt-4">
                       <div>
                         <label className="label">
                           <span className="label-text font-semibold">
-                            Description
+                            {t('shared.description')}
                           </span>
                         </label>
                         <input
@@ -531,12 +544,12 @@ function SharedLogScreen() {
                           onChange={(e) =>
                             handleFieldChange('description', e.target.value)
                           }
-                          placeholder="Enter your description"
+                          placeholder={t('shared.descriptionPlaceholder')}
                         />
                         {errors.description && (
                           <label className="label">
                             <span className="label-text-alt text-error">
-                              {errors.description}
+                              {vt(errors.description)}
                             </span>
                           </label>
                         )}
@@ -546,7 +559,9 @@ function SharedLogScreen() {
                         {sharedLog.type === 'anime' && (
                           <div>
                             <label className="label">
-                              <span className="label-text">Episodes</span>
+                              <span className="label-text">
+                                {t('shared.episodes')}
+                              </span>
                             </label>
                             <input
                               type="number"
@@ -561,12 +576,12 @@ function SharedLogScreen() {
                                   Number(e.target.value)
                                 )
                               }
-                              placeholder="Number of episodes"
+                              placeholder={t('shared.episodesPlaceholder')}
                             />
                             {errors.episodes && (
                               <label className="label">
                                 <span className="label-text-alt text-error">
-                                  {errors.episodes}
+                                  {vt(errors.episodes)}
                                 </span>
                               </label>
                             )}
@@ -575,7 +590,9 @@ function SharedLogScreen() {
 
                         <div>
                           <label className="label">
-                            <span className="label-text">Time (minutes)</span>
+                            <span className="label-text">
+                              {t('shared.timeMinutes')}
+                            </span>
                           </label>
                           <input
                             type="number"
@@ -588,7 +605,7 @@ function SharedLogScreen() {
                                 time: Number(e.target.value),
                               })
                             }
-                            placeholder="Time in minutes"
+                            placeholder={t('shared.timePlaceholder')}
                           />
                         </div>
 
@@ -597,7 +614,9 @@ function SharedLogScreen() {
                           sharedLog.type === 'manga') && (
                           <div>
                             <label className="label">
-                              <span className="label-text">Characters</span>
+                              <span className="label-text">
+                                {t('shared.characters')}
+                              </span>
                             </label>
                             <input
                               type="number"
@@ -610,7 +629,7 @@ function SharedLogScreen() {
                                   chars: Number(e.target.value),
                                 })
                               }
-                              placeholder="Character count"
+                              placeholder={t('shared.charsPlaceholder')}
                             />
                           </div>
                         )}
@@ -618,7 +637,9 @@ function SharedLogScreen() {
                         {sharedLog.type === 'manga' && (
                           <div>
                             <label className="label">
-                              <span className="label-text">Pages</span>
+                              <span className="label-text">
+                                {t('shared.pages')}
+                              </span>
                             </label>
                             <input
                               type="number"
@@ -631,7 +652,7 @@ function SharedLogScreen() {
                                   pages: Number(e.target.value),
                                 })
                               }
-                              placeholder="Number of pages"
+                              placeholder={t('shared.pagesPlaceholder')}
                             />
                           </div>
                         )}
@@ -646,7 +667,7 @@ function SharedLogScreen() {
                     className="btn btn-outline btn-lg w-full sm:w-auto"
                     disabled={isCreating}
                   >
-                    Maybe Later
+                    {t('shared.maybeLater')}
                   </button>
                   <button
                     onClick={handleCreateLog}
@@ -656,12 +677,12 @@ function SharedLogScreen() {
                     {isCreating ? (
                       <>
                         <span className="loading loading-spinner loading-sm"></span>
-                        Adding to Your Log...
+                        {t('shared.adding')}
                       </>
                     ) : (
                       <>
                         <Plus className="w-5 h-5" />
-                        Add to My Progress
+                        {t('shared.addToMyProgress')}
                       </>
                     )}
                   </button>

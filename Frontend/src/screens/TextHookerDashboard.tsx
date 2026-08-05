@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   getRecentTextSessionsFn,
@@ -27,6 +28,7 @@ import { toast } from 'react-toastify';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 function TextHookerDashboard() {
+  const { t } = useTranslation('texthooker');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isJoinRoomOpen, setIsJoinRoomOpen] = useState(false);
@@ -75,12 +77,12 @@ function TextHookerDashboard() {
         });
         setSearchResults(results);
       } catch (error) {
-        toast.error('Failed to search media');
+        toast.error(t('toast.searchFailed'));
       } finally {
         setIsSearching(false);
       }
     },
-    []
+    [t]
   );
 
   useEffect(() => {
@@ -125,7 +127,7 @@ function TextHookerDashboard() {
       navigate(`/texthooker/${session.blankId}`);
     },
     onError: () => {
-      toast.error('Failed to create session');
+      toast.error(t('toast.createFailed'));
     },
   });
 
@@ -138,13 +140,13 @@ function TextHookerDashboard() {
   const deleteMutation = useMutation({
     mutationFn: deleteTextSessionFn,
     onSuccess: () => {
-      toast.success('Session deleted successfully');
+      toast.success(t('toast.sessionDeleted'));
       queryClient.invalidateQueries({ queryKey: ['textSessions', 'recent'] });
       setIsDeleteModalOpen(false);
       setSessionToDelete(null);
     },
     onError: () => {
-      toast.error('Failed to delete session');
+      toast.error(t('toast.deleteFailed'));
       setIsDeleteModalOpen(false);
     },
   });
@@ -181,26 +183,27 @@ function TextHookerDashboard() {
   const formatDuration = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
+    if (h > 0) return t('duration.hoursMinutes', { hours: h, minutes: m });
+    return t('duration.minutes', { minutes: m });
   };
 
   const formatDurationShort = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
-    if (h > 0) return `${h}h${m > 0 ? ` ${m}m` : ''}`;
-    if (m > 0) return `${m}m`;
-    return `${totalSeconds}s`;
+    if (h > 0)
+      return m > 0
+        ? t('duration.hoursMinutes', { hours: h, minutes: m })
+        : t('duration.hours', { hours: h });
+    if (m > 0) return t('duration.minutes', { minutes: m });
+    return t('duration.seconds', { seconds: totalSeconds });
   };
 
   return (
     <div className="min-h-screen pt-16 bg-base-200">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Texthooker Dashboard</h1>
-          <p className="text-base-content/70">
-            Track your reading progress with the texthooker
-          </p>
+          <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
+          <p className="text-base-content/70">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* Stats Cards */}
@@ -210,11 +213,13 @@ function TextHookerDashboard() {
               <div className="stat-figure text-primary">
                 <BookOpen className="w-8 h-8" />
               </div>
-              <div className="stat-title">Total Sessions</div>
+              <div className="stat-title">{t('dashboard.stats.sessions')}</div>
               <div className="stat-value text-primary">
                 {stats.totalSessions}
               </div>
-              <div className="stat-desc">Logged texthooker sessions</div>
+              <div className="stat-desc">
+                {t('dashboard.stats.sessionsDesc')}
+              </div>
             </div>
           </div>
 
@@ -223,11 +228,11 @@ function TextHookerDashboard() {
               <div className="stat-figure text-secondary">
                 <List className="w-8 h-8" />
               </div>
-              <div className="stat-title">Total Lines</div>
+              <div className="stat-title">{t('dashboard.stats.lines')}</div>
               <div className="stat-value text-secondary">
                 {numberWithCommas(stats.totalLines)}
               </div>
-              <div className="stat-desc">Lines captured</div>
+              <div className="stat-desc">{t('dashboard.stats.linesDesc')}</div>
             </div>
           </div>
 
@@ -236,11 +241,15 @@ function TextHookerDashboard() {
               <div className="stat-figure text-accent">
                 <Type className="w-8 h-8" />
               </div>
-              <div className="stat-title">Total Characters</div>
+              <div className="stat-title">
+                {t('dashboard.stats.characters')}
+              </div>
               <div className="stat-value text-accent">
                 {numberWithCommas(stats.totalChars)}
               </div>
-              <div className="stat-desc">Japanese characters read</div>
+              <div className="stat-desc">
+                {t('dashboard.stats.charactersDesc')}
+              </div>
             </div>
           </div>
 
@@ -249,29 +258,31 @@ function TextHookerDashboard() {
               <div className="stat-figure text-info">
                 <Clock className="w-8 h-8" />
               </div>
-              <div className="stat-title">Total Time</div>
+              <div className="stat-title">{t('dashboard.stats.time')}</div>
               <div className="stat-value text-info">
                 {formatDuration(stats.totalTimerSeconds || 0)}
               </div>
-              <div className="stat-desc">Time tracked reading</div>
+              <div className="stat-desc">{t('dashboard.stats.timeDesc')}</div>
             </div>
           </div>
         </div>
 
         {/* Recent Sessions */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold">Recent Sessions</h2>
+          <h2 className="text-2xl font-bold">
+            {t('dashboard.recentSessions')}
+          </h2>
           <div className="flex gap-2">
             <button
               onClick={() => setIsJoinRoomOpen(true)}
               className="btn btn-outline btn-primary btn-sm"
             >
               <Users size={16} />
-              Join Room
+              {t('dashboard.joinRoom')}
             </button>
             <details className="dropdown dropdown-end">
               <summary className="btn btn-primary btn-sm">
-                Start Session
+                {t('dashboard.startSession')}
                 <ChevronDown size={16} />
               </summary>
               <ul className="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow-sm mt-1">
@@ -301,7 +312,7 @@ function TextHookerDashboard() {
             const sessionKey = media ? media.contentId : session.blankId!;
             const title = media
               ? media.title.contentTitleNative
-              : session.name || 'Untitled Session';
+              : session.name || t('dashboard.untitledSession');
 
             // Logging a session clears session.lines, so per-card totals
             // must include past logged history, not just the live buffer.
@@ -352,7 +363,7 @@ function TextHookerDashboard() {
                     <button
                       onClick={(e) => handleDelete(e, sessionKey, title)}
                       className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
-                      title="Delete Session"
+                      title={t('dashboard.deleteSession')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -367,11 +378,19 @@ function TextHookerDashboard() {
                     <div className="text-xs text-base-content/70 space-y-1">
                       <div className="flex items-center gap-1">
                         <List className="w-3 h-3" />
-                        <span>{numberWithCommas(totalLines)} lines</span>
+                        <span>
+                          {t('dashboard.linesCount', {
+                            count: totalLines,
+                          })}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Type className="w-3 h-3" />
-                        <span>{numberWithCommas(totalChars)} chars</span>
+                        <span>
+                          {t('dashboard.charsCount', {
+                            count: totalChars,
+                          })}
+                        </span>
                       </div>
                       {(session.timerSeconds ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
@@ -397,10 +416,11 @@ function TextHookerDashboard() {
         {sessions?.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
             <BookOpen className="w-16 h-16 text-base-content/30 mb-4" />
-            <p className="text-xl text-base-content/70 mb-2">No sessions yet</p>
+            <p className="text-xl text-base-content/70 mb-2">
+              {t('dashboard.empty')}
+            </p>
             <p className="text-base-content/50 mb-4 text-center">
-              Start a TextHooker session from a media page or launch a blank
-              session anytime.
+              {t('dashboard.emptyBody')}
             </p>
             <button
               className="btn btn-primary"
@@ -418,7 +438,7 @@ function TextHookerDashboard() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
-              Join Collaborative Room
+              {t('room.title')}
             </h3>
             <button
               onClick={() => setIsJoinRoomOpen(false)}
@@ -431,17 +451,21 @@ function TextHookerDashboard() {
           <div className="space-y-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">Join as</span>
+                <span className="label-text font-semibold">
+                  {t('room.joinAs')}
+                </span>
               </label>
               <div className="flex gap-2">
                 <label className="label cursor-pointer border rounded-lg p-3 flex-1 border-base-300 hover:border-primary transition-colors">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <Crown size={16} className="text-warning" />
-                      <span className="label-text font-medium">Host</span>
+                      <span className="label-text font-medium">
+                        {t('room.host')}
+                      </span>
                     </div>
                     <span className="text-xs opacity-70">
-                      Create & share room
+                      {t('room.createTab')}
                     </span>
                   </div>
                   <input
@@ -457,10 +481,12 @@ function TextHookerDashboard() {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <Users size={16} />
-                      <span className="label-text font-medium">Guest</span>
+                      <span className="label-text font-medium">
+                        {t('room.guest')}
+                      </span>
                     </div>
                     <span className="text-xs opacity-70">
-                      Join existing room
+                      {t('room.joinTab')}
                     </span>
                   </div>
                   <input
@@ -488,17 +514,19 @@ function TextHookerDashboard() {
                 }}
                 className={`input input-bordered w-full ${roomError ? 'input-error' : ''}`}
                 placeholder={
-                  roomMode === 'host' ? 'Create a room name' : 'Enter room ID'
+                  roomMode === 'host'
+                    ? t('room.createPlaceholder')
+                    : t('room.joinPlaceholder')
                 }
-                aria-label="Room ID"
+                aria-label={t('room.roomId')}
               />
               <span
                 className={`text-xs leading-snug ${roomError ? 'text-error' : 'opacity-70'}`}
               >
                 {roomError ||
                   (roomMode === 'host'
-                    ? 'Choose a unique name for your room'
-                    : 'Get the room ID from the host')}
+                    ? t('room.createHint')
+                    : t('room.joinHint'))}
               </span>
             </div>
 
@@ -529,17 +557,13 @@ function TextHookerDashboard() {
                     const { exists } = await checkRoomExistsFn(roomId.trim());
 
                     if (roomMode === 'host' && exists) {
-                      setRoomError(
-                        'Room ID already exists. Please choose another name.'
-                      );
+                      setRoomError(t('room.idTaken'));
                       setIsCheckingRoom(false);
                       return;
                     }
 
                     if (roomMode === 'guest' && !exists) {
-                      setRoomError(
-                        'Room not found. Check the Room ID or ask the host.'
-                      );
+                      setRoomError(t('room.notFound'));
                       setIsCheckingRoom(false);
                       return;
                     }
@@ -548,7 +572,7 @@ function TextHookerDashboard() {
                       `/texthooker/session?mode=${roomMode}&roomId=${roomId.trim()}`
                     );
                   } catch (error) {
-                    toast.error('Failed to check room availability');
+                    toast.error(t('room.checkFailed'));
                     setIsCheckingRoom(false);
                   }
                 }}
@@ -556,16 +580,18 @@ function TextHookerDashboard() {
                 {isCheckingRoom ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : roomMode === 'host' ? (
-                  'Create Room'
+                  t('room.create')
                 ) : (
-                  'Join Room'
+                  t('room.join')
                 )}
               </button>
             </div>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button onClick={() => setIsJoinRoomOpen(false)}>close</button>
+          <button onClick={() => setIsJoinRoomOpen(false)}>
+            {t('room.close')}
+          </button>
         </form>
       </dialog>
 
@@ -575,7 +601,7 @@ function TextHookerDashboard() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
-              Start Media Session
+              {t('mediaSession.title')}
             </h3>
             <button
               onClick={resetMediaModal}
@@ -589,7 +615,9 @@ function TextHookerDashboard() {
             {/* Media Type Selector */}
             <div className="form-control">
               <label className="label mb-2">
-                <span className="label-text font-semibold">Media Type</span>
+                <span className="label-text font-semibold">
+                  {t('mediaSession.mediaType')}
+                </span>
               </label>
               <div className="flex gap-2">
                 <label
@@ -631,7 +659,9 @@ function TextHookerDashboard() {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <Gamepad2 size={16} className="text-primary" />
-                      <span className="label-text font-medium">Video Game</span>
+                      <span className="label-text font-medium">
+                        {t('mediaSession.videoGame')}
+                      </span>
                     </div>
                   </div>
                   <input
@@ -660,7 +690,9 @@ function TextHookerDashboard() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="grow"
-                  placeholder={`Search for a ${mediaSessionType === 'vn' ? 'visual novel' : 'video game'}...`}
+                  placeholder={t('mediaSession.searchPlaceholder', {
+                    context: mediaSessionType === 'vn' ? 'vn' : 'game',
+                  })}
                 />
                 {isSearching && (
                   <span className="loading loading-spinner loading-sm"></span>
@@ -684,7 +716,10 @@ function TextHookerDashboard() {
                     >
                       <img
                         src={media.contentImage || media.coverImage}
-                        alt={media.title?.contentTitleNative || 'Cover'}
+                        alt={
+                          media.title?.contentTitleNative ||
+                          t('dashboard.cover')
+                        }
                         className="w-12 h-16 object-cover rounded"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -695,7 +730,7 @@ function TextHookerDashboard() {
                         <p className="font-medium text-sm line-clamp-2">
                           {media.title?.contentTitleNative ||
                             media.title?.contentTitleEnglish ||
-                            'Unknown Title'}
+                            t('dashboard.unknownTitle')}
                         </p>
                         {media.title?.contentTitleEnglish &&
                           media.title?.contentTitleNative && (
@@ -715,7 +750,7 @@ function TextHookerDashboard() {
               ) : searchQuery.trim() && !isSearching ? (
                 <div className="text-center py-8 text-base-content/50">
                   <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p>No results found</p>
+                  <p>{t('mediaSession.noResults')}</p>
                 </div>
               ) : !searchQuery.trim() ? (
                 <div className="text-center py-8 text-base-content/50">
@@ -748,13 +783,13 @@ function TextHookerDashboard() {
                 disabled={!selectedMedia}
                 onClick={handleStartMediaSession}
               >
-                Start Session
+                {t('dashboard.startSession')}
               </button>
             </div>
           </div>
         </div>
         <form method="dialog" className="modal-backdrop">
-          <button onClick={resetMediaModal}>close</button>
+          <button onClick={resetMediaModal}>{t('room.close')}</button>
         </form>
       </dialog>
 
@@ -792,8 +827,8 @@ function TextHookerDashboard() {
                 }}
                 maxLength={100}
                 className="input input-bordered w-full"
-                placeholder="e.g. Random reading practice"
-                aria-label="Session name"
+                placeholder={t('mediaSession.namePlaceholder')}
+                aria-label={t('room.sessionName')}
               />
             </div>
 
@@ -812,14 +847,15 @@ function TextHookerDashboard() {
                 type="button"
                 className="btn btn-primary"
                 disabled={
-                  !blankSessionName.trim() || createBlankSessionMutation.isPending
+                  !blankSessionName.trim() ||
+                  createBlankSessionMutation.isPending
                 }
                 onClick={handleCreateBlankSession}
               >
                 {createBlankSessionMutation.isPending ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : (
-                  'Start Session'
+                  t('dashboard.startSession')
                 )}
               </button>
             </div>

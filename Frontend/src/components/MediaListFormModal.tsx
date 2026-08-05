@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IMediaList } from '../types';
 
 export interface MediaListFormValues {
@@ -26,6 +27,7 @@ function MediaListFormModal({
   onClose,
   onSubmit,
 }: MediaListFormModalProps) {
+  const { t } = useTranslation('media');
   const [values, setValues] = useState<MediaListFormValues>({
     title: '',
     description: '',
@@ -51,7 +53,7 @@ function MediaListFormModal({
     <div className="modal modal-open">
       <div className="modal-box">
         <h3 className="font-bold text-lg mb-4">
-          {list ? 'Edit list' : 'Create list'}
+          {list ? t('lists.form.editTitle') : t('lists.form.createTitle')}
         </h3>
 
         <form
@@ -64,7 +66,7 @@ function MediaListFormModal({
         >
           <div className="form-control">
             <label className="label" htmlFor="media-list-title">
-              <span className="label-text">Title</span>
+              <span className="label-text">{t('lists.form.title')}</span>
               <span className="label-text-alt">
                 {values.title.length}/{TITLE_MAX_LENGTH}
               </span>
@@ -74,7 +76,7 @@ function MediaListFormModal({
               className="input input-bordered w-full"
               value={values.title}
               maxLength={TITLE_MAX_LENGTH}
-              placeholder="Best VNs for beginners"
+              placeholder={t('lists.form.titlePlaceholder')}
               onChange={(e) =>
                 setValues((prev) => ({ ...prev, title: e.target.value }))
               }
@@ -83,7 +85,7 @@ function MediaListFormModal({
 
           <div className="form-control">
             <label className="label" htmlFor="media-list-description">
-              <span className="label-text">Description</span>
+              <span className="label-text">{t('lists.form.description')}</span>
               <span className="label-text-alt">
                 {values.description.length}/{DESCRIPTION_MAX_LENGTH}
               </span>
@@ -93,7 +95,7 @@ function MediaListFormModal({
               className="textarea textarea-bordered w-full h-28"
               value={values.description}
               maxLength={DESCRIPTION_MAX_LENGTH}
-              placeholder="What is this list about?"
+              placeholder={t('lists.form.descriptionPlaceholder')}
               onChange={(e) =>
                 setValues((prev) => ({ ...prev, description: e.target.value }))
               }
@@ -109,9 +111,7 @@ function MediaListFormModal({
                 setValues((prev) => ({ ...prev, isRanked: e.target.checked }))
               }
             />
-            <span className="label-text">
-              Ranked list — show numbered positions
-            </span>
+            <span className="label-text">{t('lists.form.ranked')}</span>
           </label>
 
           <label className="label cursor-pointer justify-start gap-3">
@@ -123,14 +123,12 @@ function MediaListFormModal({
                 setValues((prev) => ({ ...prev, isPublic: e.target.checked }))
               }
             />
-            <span className="label-text">
-              Public — anyone can see this list
-            </span>
+            <span className="label-text">{t('lists.form.public')}</span>
           </label>
 
           <div className="modal-action">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
-              Cancel
+              {t('lists.form.cancel')}
             </button>
             <button
               type="submit"
@@ -140,7 +138,7 @@ function MediaListFormModal({
               {isSubmitting && (
                 <span className="loading loading-spinner loading-xs" />
               )}
-              {list ? 'Save' : 'Create'}
+              {list ? t('lists.form.save') : t('lists.form.create')}
             </button>
           </div>
         </form>

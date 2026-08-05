@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { backfillAchievementsForAllUsers } from '../services/achievements/backfill.service.js';
+import { apiError } from '../i18n/errorCodes.js';
 import Achievement from '../models/achievement.model.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { grantAchievement } from '../services/achievements/achievementEngine.js';
-import { backfillAchievementsForAllUsers } from '../services/achievements/backfill.service.js';
 import { Types } from 'mongoose';
 
 /**
@@ -136,9 +137,14 @@ export async function getUserAchievementsByUsername(
     const user = await User.findOne({ username: req.params.username })
       .select('_id')
       .lean();
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
-    return getUserAchievementsById(user._id as Types.ObjectId, false, res, next);
+    return getUserAchievementsById(
+      user._id as Types.ObjectId,
+      false,
+      res,
+      next
+    );
   } catch (error) {
     return next(error as customError);
   }
@@ -153,9 +159,7 @@ async function getUserAchievementsById(
   try {
     const [achievements, userAchievements, totalUsers] = await Promise.all([
       Achievement.find({ isActive: true }).sort({ order: 1 }).lean(),
-      UserAchievement.find({ user: userId })
-        .populate('achievement')
-        .lean(),
+      UserAchievement.find({ user: userId }).populate('achievement').lean(),
       User.countDocuments(),
     ]);
 
@@ -180,9 +184,7 @@ async function getUserAchievementsById(
       const isEarned = Boolean(earned);
       const earnedCount = earnedCountMap.get(a._id.toString()) ?? 0;
       const rarityPercent =
-        totalUsers > 0
-          ? Math.round((earnedCount / totalUsers) * 1000) / 10
-          : 0;
+        totalUsers > 0 ? Math.round((earnedCount / totalUsers) * 1000) / 10 : 0;
 
       // Unearned secret — hide completely from non-owners
       if (a.isSecret && !isEarned && !isOwner) {
@@ -299,13 +301,13 @@ export async function getShowcase(
 ) {
   try {
     const userId = res.locals.user._id as Types.ObjectId;
-    const user = await User.findById(userId)
-      .select('settings')
-      .lean();
+    const user = await User.findById(userId).select('settings').lean();
 
     const showcaseIds: string[] = (
       (user?.settings as any)?.achievementShowcase ?? []
-    ).filter((id: unknown) => typeof id === 'string' && Types.ObjectId.isValid(id));
+    ).filter(
+      (id: unknown) => typeof id === 'string' && Types.ObjectId.isValid(id)
+    );
 
     if (showcaseIds.length === 0) {
       return res.status(200).json([]);
@@ -327,9 +329,7 @@ export async function getShowcase(
           ua,
         ])
     );
-    const ordered = showcaseIds
-      .map((id) => earnedMap.get(id))
-      .filter(Boolean);
+    const ordered = showcaseIds.map((id) => earnedMap.get(id)).filter(Boolean);
 
     return res.status(200).json(ordered);
   } catch (error) {
@@ -351,20 +351,36 @@ export async function updateShowcase(
     const { showcaseIds } = req.body as { showcaseIds: string[] };
 
     if (!Array.isArray(showcaseIds)) {
-      throw new customError('showcaseIds must be an array', 400);
+      throw apiError(
+        'achievement.showcaseNotArray',
+        400,
+        'showcaseIds must be an array'
+      );
     }
     if (showcaseIds.length > 5) {
-      throw new customError('Maximum 5 achievements in showcase', 400);
+      throw apiError(
+        'achievement.showcaseMax',
+        400,
+        'Maximum 5 achievements in showcase'
+      );
     }
     if (
       showcaseIds.some(
         (id) => typeof id !== 'string' || !Types.ObjectId.isValid(id)
       )
     ) {
-      throw new customError('showcaseIds must be valid achievement ids', 400);
+      throw apiError(
+        'achievement.showcaseInvalidIds',
+        400,
+        'showcaseIds must be valid achievement ids'
+      );
     }
     if (new Set(showcaseIds).size !== showcaseIds.length) {
-      throw new customError('showcaseIds must not contain duplicates', 400);
+      throw apiError(
+        'achievement.showcaseDuplicates',
+        400,
+        'showcaseIds must not contain duplicates'
+      );
     }
 
     // Validate that all provided IDs are achievements the user has earned
@@ -379,9 +395,10 @@ export async function updateShowcase(
         .lean();
 
       if (earned.length !== showcaseIds.length) {
-        throw new customError(
-          'One or more achievements are not earned by this user',
-          400
+        throw apiError(
+          'achievement.notEarned',
+          400,
+          'One or more achievements are not earned by this user'
         );
       }
     }
@@ -404,9 +421,7 @@ export async function adminGetAchievements(
   next: NextFunction
 ) {
   try {
-    const achievements = await Achievement.find({})
-      .sort({ order: 1 })
-      .lean();
+    const achievements = await Achievement.find({}).sort({ order: 1 }).lean();
 
     const earnedCounts = await UserAchievement.aggregate([
       { $group: { _id: '$achievement', count: { $sum: 1 } } },
@@ -442,11 +457,20 @@ export async function adminCreateAchievement(
   try {
     const data = req.body;
     if (!data.key || !data.name || !data.condition) {
-      throw new customError('key, name, and condition are required', 400);
+      throw apiError(
+        'achievement.fieldsRequired',
+        400,
+        'key, name, and condition are required'
+      );
     }
 
     const existing = await Achievement.findOne({ key: data.key });
-    if (existing) throw new customError('Achievement key already exists', 409);
+    if (existing)
+      throw apiError(
+        'achievement.keyExists',
+        409,
+        'Achievement key already exists'
+      );
 
     const achievement = await Achievement.create(data);
     return res.status(201).json(achievement);
@@ -462,7 +486,7 @@ export async function adminUpdateAchievement(
 ) {
   try {
     if (!Types.ObjectId.isValid(req.params.id)) {
-      throw new customError('Invalid achievement id', 400);
+      throw apiError('achievement.invalidId', 400, 'Invalid achievement id');
     }
     const update = { ...req.body };
     delete update._id;
@@ -472,7 +496,8 @@ export async function adminUpdateAchievement(
       { $set: update },
       { new: true, runValidators: true }
     );
-    if (!achievement) throw new customError('Achievement not found', 404);
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
     return res.status(200).json(achievement);
   } catch (error) {
     return next(error as customError);
@@ -486,7 +511,7 @@ export async function adminDeleteAchievement(
 ) {
   try {
     if (!Types.ObjectId.isValid(req.params.id)) {
-      throw new customError('Invalid achievement id', 400);
+      throw apiError('achievement.invalidId', 400, 'Invalid achievement id');
     }
     // Soft delete
     const achievement = await Achievement.findByIdAndUpdate(
@@ -494,8 +519,11 @@ export async function adminDeleteAchievement(
       { $set: { isActive: false } },
       { new: true }
     );
-    if (!achievement) throw new customError('Achievement not found', 404);
-    return res.status(200).json({ message: 'Achievement deactivated', achievement });
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
+    return res
+      .status(200)
+      .json({ message: 'Achievement deactivated', achievement });
   } catch (error) {
     return next(error as customError);
   }
@@ -513,14 +541,21 @@ export async function adminGrantAchievement(
     };
 
     if (!username || !achievementKey) {
-      throw new customError('username and achievementKey are required', 400);
+      throw apiError(
+        'achievement.unlockFieldsRequired',
+        400,
+        'username and achievementKey are required'
+      );
     }
 
     const user = await User.findOne({ username }).select('_id').lean();
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
-    const achievement = await Achievement.findOne({ key: achievementKey }).lean();
-    if (!achievement) throw new customError('Achievement not found', 404);
+    const achievement = await Achievement.findOne({
+      key: achievementKey,
+    }).lean();
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
 
     const granted = await grantAchievement(
       user._id as Types.ObjectId,
@@ -555,14 +590,21 @@ export async function adminRevokeAchievement(
     };
 
     if (!username || !achievementKey) {
-      throw new customError('username and achievementKey are required', 400);
+      throw apiError(
+        'achievement.unlockFieldsRequired',
+        400,
+        'username and achievementKey are required'
+      );
     }
 
     const user = await User.findOne({ username }).select('_id').lean();
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
-    const achievement = await Achievement.findOne({ key: achievementKey }).lean();
-    if (!achievement) throw new customError('Achievement not found', 404);
+    const achievement = await Achievement.findOne({
+      key: achievementKey,
+    }).lean();
+    if (!achievement)
+      throw apiError('achievement.notFound', 404, 'Achievement not found');
 
     const result = await UserAchievement.findOneAndDelete({
       user: user._id,
@@ -570,7 +612,9 @@ export async function adminRevokeAchievement(
     });
 
     if (!result) {
-      return res.status(200).json({ message: 'User did not have this achievement' });
+      return res
+        .status(200)
+        .json({ message: 'User did not have this achievement' });
     }
 
     return res.status(200).json({
@@ -680,7 +724,7 @@ export async function getUserAchievementActivity(
     const user = await User.findOne({ username: req.params.username })
       .select('_id username avatar')
       .lean();
-    if (!user) throw new customError('User not found', 404);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
 
     const recentUnlocks = await UserAchievement.find({ user: user._id })
       .populate({

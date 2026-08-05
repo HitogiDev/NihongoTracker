@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { Check, Plus, Lock, ListOrdered } from 'lucide-react';
@@ -23,6 +24,7 @@ function AddToListModal({
   mediaType,
   onClose,
 }: AddToListModalProps) {
+  const { t } = useTranslation('media');
   const queryClient = useQueryClient();
   const [newListTitle, setNewListTitle] = useState('');
 
@@ -52,7 +54,7 @@ function AddToListModal({
       invalidate();
       toast.success(result.message);
     },
-    onError: () => toast.error('Could not update the list'),
+    onError: () => toast.error(t('addToList.updateFailed')),
   });
 
   const createList = useMutation({
@@ -66,9 +68,9 @@ function AddToListModal({
     onSuccess: () => {
       setNewListTitle('');
       invalidate();
-      toast.success('List created with this media');
+      toast.success(t('addToList.created'));
     },
-    onError: () => toast.error('Could not create the list'),
+    onError: () => toast.error(t('addToList.createFailed')),
   });
 
   if (!open) return null;
@@ -78,7 +80,7 @@ function AddToListModal({
   return (
     <div className="modal modal-open">
       <div className="modal-box max-w-md">
-        <h3 className="font-bold text-lg mb-4">Add to list</h3>
+        <h3 className="font-bold text-lg mb-4">{t('addToList.title')}</h3>
 
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -142,7 +144,7 @@ function AddToListModal({
         >
           <input
             className="input input-bordered join-item flex-1"
-            placeholder="New list title"
+            placeholder={t('addToList.newTitlePlaceholder')}
             maxLength={100}
             value={newListTitle}
             onChange={(e) => setNewListTitle(e.target.value)}

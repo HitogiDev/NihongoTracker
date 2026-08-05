@@ -59,7 +59,7 @@ const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
  * conditions, so "10 hours in one day" or "logged between 0-6h" mean what the
  * user experienced rather than what UTC saw.
  */
-async function evaluateCondition(
+export async function evaluateCondition(
   userId: Types.ObjectId,
   achievement: IAchievement,
   timezone: string
@@ -296,22 +296,33 @@ export async function checkAchievements(
             recipient: userId,
             type: 'achievement_unlocked',
             title: `Achievement unlocked: ${achievement.name}`,
+            // The client already translates achievement text from its key, so
+            // it only needs the key here, not the English name.
+            titleKey: 'achievement.unlocked',
             body: achievement.description,
             link: '/achievements',
             entityType: 'achievement',
             entityId: achievement._id.toString(),
-            meta: { iconSlug: achievement.iconSlug },
+            meta: {
+              iconSlug: achievement.iconSlug,
+              achievementKey: achievement.key,
+            },
           });
         } else if (progress > 0) {
           // Update progress for countable achievements (non-blocking)
           UserAchievement.findOneAndUpdate(
             { user: userId, achievement: achievement._id },
             { $max: { progress } }
-          ).exec().catch(() => {});
+          )
+            .exec()
+            .catch(() => {});
         }
       } catch (err) {
         // Don't fail the whole check if one achievement errors
-        console.error(`Achievement check failed for key="${achievement.key}":`, err);
+        console.error(
+          `Achievement check failed for key="${achievement.key}":`,
+          err
+        );
       }
     }
 
@@ -425,30 +436,54 @@ export async function grantAchievement(
       recipient: userId,
       type: 'achievement_unlocked',
       title: `Achievement unlocked: ${achievement.name}`,
+      titleKey: 'achievement.unlocked',
       body: achievement.description,
       link: '/achievements',
       entityType: 'achievement',
       entityId: achievementId.toString(),
-      meta: { iconSlug: achievement.iconSlug },
+      meta: {
+        iconSlug: achievement.iconSlug,
+        achievementKey: achievement.key,
+      },
     });
   }
 
   return true;
 }
 
-function getRelevantConditions(trigger: IAchievementCheckContext['trigger']): string[] {
+function getRelevantConditions(
+  trigger: IAchievementCheckContext['trigger']
+): string[] {
   switch (trigger) {
     case 'log':
       return [
-        'logCount', 'mediaType', 'totalXp', 'level',
-        'totalHours', 'mediaTypeHours', 'achievementCount',
-        'logTimeRange', 'logOnDate', 'singleDayHours',
-        'weeklyHours', 'sessionsInDay', 'platformAge',
-        'clubsCreated', 'clubMvp', 'mediaTypesInWeek',
-        'mediaReleasedBefore', 'logDuringAiring',
-        'clubsJoined', 'distinctMediaCount', 'consecutiveDaysWithHours',
-        'singleSessionHours', 'rapidSuccession', 'streakComeback',
-        'streakAfterBreak', 'rankDethroned', 'secretAchievementCount',
+        'logCount',
+        'mediaType',
+        'totalXp',
+        'level',
+        'totalHours',
+        'mediaTypeHours',
+        'achievementCount',
+        'logTimeRange',
+        'logOnDate',
+        'singleDayHours',
+        'weeklyHours',
+        'sessionsInDay',
+        'platformAge',
+        'clubsCreated',
+        'clubMvp',
+        'mediaTypesInWeek',
+        'mediaReleasedBefore',
+        'logDuringAiring',
+        'clubsJoined',
+        'distinctMediaCount',
+        'consecutiveDaysWithHours',
+        'singleSessionHours',
+        'rapidSuccession',
+        'streakComeback',
+        'streakAfterBreak',
+        'rankDethroned',
+        'secretAchievementCount',
         'earlyAdopter',
       ];
     case 'streak':

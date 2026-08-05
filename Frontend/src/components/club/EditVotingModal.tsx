@@ -5,6 +5,8 @@ import { X, Calendar, Save } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { editMediaVotingFn } from '../../api/clubApi';
 import { IClub, IClubMediaVoting } from '../../types.d';
+import { useTranslation } from 'react-i18next';
+import { getLocale } from '../../utils/timezone';
 
 interface EditVotingModalProps {
   isOpen: boolean;
@@ -54,6 +56,7 @@ export default function EditVotingModal({
   club,
   voting,
 }: EditVotingModalProps) {
+  const { t } = useTranslation('clubs');
   const queryClient = useQueryClient();
   const invalidateVotingQueries = () => {
     queryClient.invalidateQueries({
@@ -67,7 +70,7 @@ export default function EditVotingModal({
   // Helper function to format date for display
   const formatDateForDisplay = (date: Date | undefined) => {
     if (!date) return 'Select date';
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(getLocale(), {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -119,7 +122,7 @@ export default function EditVotingModal({
       return editMediaVotingFn(club._id, voting._id, data);
     },
     onSuccess: () => {
-      toast.success('Voting updated successfully!');
+      toast.success(t('toast.votingUpdated'));
       invalidateVotingQueries();
       queryClient.invalidateQueries({ queryKey: ['club', club._id] });
       onClose();
@@ -144,7 +147,7 @@ export default function EditVotingModal({
     } = votingData;
 
     if (!title.trim()) {
-      toast.error('Please enter a voting title');
+      toast.error(t('toast.votingTitleRequired'));
       return false;
     }
 
@@ -154,34 +157,34 @@ export default function EditVotingModal({
       !consumptionStartDate ||
       !consumptionEndDate
     ) {
-      toast.error('Please fill in all required dates');
+      toast.error(t('toast.datesRequiredAll'));
       return false;
     }
 
     if (votingStartDate >= votingEndDate) {
-      toast.error('Voting end date must be after start date');
+      toast.error(t('toast.votingEndAfterStart'));
       return false;
     }
 
     if (consumptionStartDate >= consumptionEndDate) {
-      toast.error('Consumption end date must be after start date');
+      toast.error(t('toast.consumptionEndAfterStart'));
       return false;
     }
 
     // Validate suggestion period if member suggestions are enabled
     if (candidateSubmissionType === 'member_suggestions') {
       if (!suggestionStartDate || !suggestionEndDate) {
-        toast.error('Please fill in suggestion period dates');
+        toast.error(t('toast.suggestionDatesRequired'));
         return false;
       }
 
       if (suggestionStartDate >= suggestionEndDate) {
-        toast.error('Suggestion end date must be after start date');
+        toast.error(t('toast.suggestionEndAfterStart'));
         return false;
       }
 
       if (suggestionEndDate >= votingStartDate) {
-        toast.error('Suggestions must end before voting starts');
+        toast.error(t('toast.suggestionsBeforeVoting'));
         return false;
       }
     }
@@ -212,7 +215,7 @@ export default function EditVotingModal({
       <div className="modal modal-open">
         <div className="modal-box">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-xl">Cannot Edit Voting</h3>
+            <h3 className="font-bold text-xl">{t('editVoting.cannotEdit')}</h3>
             <button
               className="btn btn-sm btn-circle btn-ghost"
               onClick={onClose}
@@ -222,7 +225,7 @@ export default function EditVotingModal({
           </div>
           <div className="alert alert-warning">
             <div>
-              <h4 className="font-medium">Voting Not Editable</h4>
+              <h4 className="font-medium">{t('editVoting.notEditable')}</h4>
               <p className="text-sm mt-1">
                 Votings can only be edited when they are in "Setup" or
                 "Suggestions Closed" status. This voting is currently in "
@@ -232,7 +235,7 @@ export default function EditVotingModal({
           </div>
           <div className="modal-action">
             <button onClick={onClose} className="btn">
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
@@ -245,7 +248,7 @@ export default function EditVotingModal({
     <div className="modal modal-open">
       <div className="modal-box max-w-4xl">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-xl">Edit Voting</h3>
+          <h3 className="font-bold text-xl">{t('editVoting.title')}</h3>
           <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
@@ -255,10 +258,9 @@ export default function EditVotingModal({
           {onlyConsumptionEditable && (
             <div className="alert alert-info">
               <div>
-                <h4 className="font-medium">Limited Editing Mode</h4>
+                <h4 className="font-medium">{t('editVoting.limitedMode')}</h4>
                 <p className="text-sm mt-1">
-                  Voting has progressed beyond the setup phase. Only consumption
-                  period dates can be modified.
+                  {t('editVoting.limitedModeBody')}
                 </p>
               </div>
             </div>
@@ -267,11 +269,13 @@ export default function EditVotingModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="label">
-                <span className="label-text">Voting Title *</span>
+                <span className="label-text">
+                  {t('editVoting.votingTitle')}
+                </span>
               </label>
               <input
                 type="text"
-                placeholder="e.g., Summer 2024 Anime Selection"
+                placeholder={t('editVoting.titlePlaceholder')}
                 value={votingData.title}
                 onChange={(e) =>
                   setVotingData((prev) => ({
@@ -300,20 +304,20 @@ export default function EditVotingModal({
                   disabled={onlyConsumptionEditable}
                 />
                 <span className="label-text">
-                  Testing Mode (Allow past dates for testing)
+                  {t('editVoting.testingMode')}
                 </span>
               </label>
               <div className="text-xs text-base-content/60 ml-6">
-                Enable this to test the voting system with past dates
+                {t('editVoting.testingModeHint')}
               </div>
             </div>
 
             <div className="md:col-span-2">
               <label className="label">
-                <span className="label-text">Description</span>
+                <span className="label-text">{t('common.description')}</span>
               </label>
               <textarea
-                placeholder="Describe what this voting is for..."
+                placeholder={t('editVoting.descriptionPlaceholder')}
                 value={votingData.description}
                 onChange={(e) =>
                   setVotingData((prev) => ({
@@ -329,7 +333,9 @@ export default function EditVotingModal({
 
             <div>
               <label className="label">
-                <span className="label-text">Media Type *</span>
+                <span className="label-text">
+                  {t('editVoting.mediaTypeRequired')}
+                </span>
               </label>
               <select
                 value={votingData.mediaType}
@@ -353,11 +359,13 @@ export default function EditVotingModal({
             {votingData.mediaType === 'custom' && (
               <div>
                 <label className="label">
-                  <span className="label-text">Custom Media Type *</span>
+                  <span className="label-text">
+                    {t('editVoting.customMediaType')}
+                  </span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Podcast, Book, Game..."
+                  placeholder={t('editVoting.customTypePlaceholder')}
                   value={votingData.customMediaType}
                   onChange={(e) =>
                     setVotingData((prev) => ({
@@ -374,7 +382,7 @@ export default function EditVotingModal({
             <div className="md:col-span-2">
               <label className="label">
                 <span className="label-text">
-                  How will candidates be added? *
+                  {t('editVoting.howCandidates')}
                 </span>
               </label>
               <div className="space-y-2">
@@ -393,9 +401,7 @@ export default function EditVotingModal({
                     className="radio radio-primary"
                     disabled={onlyConsumptionEditable}
                   />
-                  <span>
-                    I'll add candidates manually (leaders/moderators only)
-                  </span>
+                  <span>{t('editVoting.manualCandidates')}</span>
                 </label>
                 <label className="cursor-pointer label justify-start gap-3">
                   <input
@@ -415,9 +421,7 @@ export default function EditVotingModal({
                     className="radio radio-primary"
                     disabled={onlyConsumptionEditable}
                   />
-                  <span>
-                    Members can suggest candidates during a suggestion period
-                  </span>
+                  <span>{t('editVoting.memberSuggestions')}</span>
                 </label>
               </div>
             </div>
@@ -429,7 +433,7 @@ export default function EditVotingModal({
                   <div>
                     <label className="label">
                       <span className="label-text">
-                        Suggestion Period Start *
+                        {t('editVoting.suggestionStart')}
                       </span>
                     </label>
                     <div className="dropdown dropdown-top dropdown-end w-full">
@@ -489,7 +493,7 @@ export default function EditVotingModal({
                   <div>
                     <label className="label">
                       <span className="label-text">
-                        Suggestion Period End *
+                        {t('editVoting.suggestionEnd')}
                       </span>
                     </label>
                     <div className="dropdown dropdown-top dropdown-end w-full">
@@ -551,7 +555,9 @@ export default function EditVotingModal({
               <>
                 <div>
                   <label className="label">
-                    <span className="label-text">Voting Start *</span>
+                    <span className="label-text">
+                      {t('editVoting.votingStart')}
+                    </span>
                   </label>
                   <div className="dropdown dropdown-top dropdown-end w-full">
                     <div
@@ -630,7 +636,9 @@ export default function EditVotingModal({
 
                 <div>
                   <label className="label">
-                    <span className="label-text">Voting End *</span>
+                    <span className="label-text">
+                      {t('editVoting.votingEnd')}
+                    </span>
                   </label>
                   <div className="dropdown dropdown-top dropdown-end w-full">
                     <div
@@ -695,7 +703,9 @@ export default function EditVotingModal({
             {/* Consumption Period */}
             <div>
               <label className="label">
-                <span className="label-text">Consumption Period Start *</span>
+                <span className="label-text">
+                  {t('editVoting.consumptionStart')}
+                </span>
               </label>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
@@ -761,7 +771,9 @@ export default function EditVotingModal({
 
             <div>
               <label className="label">
-                <span className="label-text">Consumption Period End *</span>
+                <span className="label-text">
+                  {t('editVoting.consumptionEnd')}
+                </span>
               </label>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
@@ -826,7 +838,7 @@ export default function EditVotingModal({
             className="btn btn-outline"
             disabled={editVotingMutation.isPending}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
@@ -838,7 +850,7 @@ export default function EditVotingModal({
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {t('common.saveChanges')}
               </>
             )}
           </button>

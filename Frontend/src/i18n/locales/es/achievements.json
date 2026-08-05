@@ -1,0 +1,361 @@
+{
+  "card": {
+    "points": "puntos",
+    "ofUsers": "de usuarios",
+    "unlocked": "desbloqueado",
+    "rarityPercent": "{{percent}} % de usuarios",
+    "pts_one": "{{count}} pt",
+    "pts_many": "{{count}} pts",
+    "pts_other": "{{count}} pts"
+  },
+  "category": {
+    "all": "Todos",
+    "milestone": "Hitos",
+    "streaks": "Rachas",
+    "immersion": "Inmersión",
+    "social": "Social",
+    "secret": "Secretos"
+  },
+  "feed": {
+    "earned": "ha conseguido",
+    "unlocked": "Logro desbloqueado:"
+  },
+  "items": {
+    "achievements_100": {
+      "description": "Desbloquea otros 100 logros.",
+      "name": "Cazador de logros"
+    },
+    "achievements_50": {
+      "description": "Desbloquea otros 50 logros.",
+      "name": "Completista"
+    },
+    "bookworm_hours": {
+      "description": "Loguea 50 horas de lectura (manga y novelas juntos).",
+      "name": "Ratón de biblioteca"
+    },
+    "century_club": {
+      "name": "Club del centenar",
+      "description": "Loguea 100 títulos distintos."
+    },
+    "cinephile": {
+      "description": "Loguea 100 horas de anime.",
+      "name": "Cinéfilo"
+    },
+    "clockwork": {
+      "description": "Loguea a la misma hora todos los días durante 2 semanas.",
+      "name": "Como un reloj"
+    },
+    "club_founder": {
+      "description": "Crea un club de inmersión.",
+      "name": "Fundador de club"
+    },
+    "club_mvp": {
+      "description": "Termina como quien más aporta en un reto de club.",
+      "name": "MVP del club"
+    },
+    "culture_day": {
+      "description": "Loguea inmersión el 3 de noviembre (文化の日).",
+      "name": "Día de la Cultura"
+    },
+    "currently_airing": {
+      "description": "Loguea un anime durante su temporada de emisión.",
+      "name": "En emisión"
+    },
+    "early_bird": {
+      "description": "Loguea inmersión antes de las 7 de la mañana 10 veces.",
+      "name": "Madrugador"
+    },
+    "first_log": {
+      "description": "Loguea tu primera sesión de inmersión.",
+      "name": "Primer paso"
+    },
+    "full_immersion_month": {
+      "description": "Loguea todos los días de un mes entero.",
+      "name": "Inmersión total"
+    },
+    "gamer": {
+      "description": "Loguea 50 horas de novelas visuales.",
+      "name": "Jugador"
+    },
+    "hours_100": {
+      "description": "Loguea 100 horas de inmersión en total.",
+      "name": "Constante"
+    },
+    "hours_1000": {
+      "description": "Loguea 1.000 horas de inmersión en total.",
+      "name": "Esto ya es mi vida"
+    },
+    "hours_2000": {
+      "description": "Loguea 2.000 horas de inmersión en total.",
+      "name": "Máquina de inmersión"
+    },
+    "hours_500": {
+      "description": "Loguea 500 horas de inmersión en total.",
+      "name": "Otaku"
+    },
+    "level_10": {
+      "description": "Llega al nivel 10.",
+      "name": "Subiendo de nivel"
+    },
+    "level_100": {
+      "description": "Llega al nivel 100. Un logro extraordinario.",
+      "name": "Élite"
+    },
+    "level_25": {
+      "description": "Llega al nivel 25.",
+      "name": "Intermedio"
+    },
+    "level_5": {
+      "description": "Llega al nivel 5.",
+      "name": "Primeros pasos"
+    },
+    "level_50": {
+      "description": "Llega al nivel 50.",
+      "name": "Avanzado"
+    },
+    "logs_10": {
+      "description": "Crea 10 logs de inmersión.",
+      "name": "Arrancando"
+    },
+    "logs_100": {
+      "description": "Crea 100 logs de inmersión.",
+      "name": "Habitual"
+    },
+    "logs_1000": {
+      "description": "Crea 1.000 logs de inmersión.",
+      "name": "Veterano"
+    },
+    "logs_50": {
+      "description": "Crea 50 logs de inmersión.",
+      "name": "Inmersión habitual"
+    },
+    "logs_500": {
+      "description": "Crea 500 logs de inmersión.",
+      "name": "Logueador prolífico"
+    },
+    "lunch_break": {
+      "description": "Loguea inmersión entre las 12 y la 1 del mediodía 10 veces.",
+      "name": "Pausa para comer"
+    },
+    "marathon_day": {
+      "description": "Loguea 10 horas o más de inmersión en un solo día.",
+      "name": "Maratón"
+    },
+    "monday_motivation": {
+      "description": "Loguea 10 lunes seguidos.",
+      "name": "Motivación de lunes"
+    },
+    "new_year": {
+      "description": "Loguea inmersión el 1 de enero.",
+      "name": "Año nuevo, yo nuevo"
+    },
+    "night_owl": {
+      "description": "Loguea inmersión después de medianoche 10 veces.",
+      "name": "Ave nocturna"
+    },
+    "no_days_off": {
+      "description": "Loguea en Navidad, en Año Nuevo y en el aniversario de tu cuenta.",
+      "name": "Sin días libres"
+    },
+    "old_school": {
+      "description": "Loguea una novela visual publicada antes de 2005.",
+      "name": "De la vieja escuela"
+    },
+    "platform_year": {
+      "description": "Sé miembro activo de NihongoTracker durante un año entero.",
+      "name": "A largo plazo"
+    },
+    "podcast_brain": {
+      "description": "Loguea 30 horas de contenido solo de audio.",
+      "name": "Cerebro de pódcast"
+    },
+    "rank_consistent": {
+      "description": "Aparece en el top 25 durante 4 semanas seguidas.",
+      "name": "Regularidad"
+    },
+    "rank_king": {
+      "description": "Llega al puesto 1 de cualquier clasificación.",
+      "name": "Número uno"
+    },
+    "rank_podium": {
+      "description": "Entra en el top 3 de cualquier clasificación.",
+      "name": "Podio"
+    },
+    "rank_top10": {
+      "description": "Entra en el top 10 de la clasificación semanal.",
+      "name": "Top 10"
+    },
+    "renaissance_learner": {
+      "description": "Loguea los 6 tipos de contenido en una misma semana.",
+      "name": "Estudiante renacentista"
+    },
+    "secret_absorbed": {
+      "description": "Loguea 6 horas o más de un mismo título en una sola sesión.",
+      "hint": "Absorto por completo...",
+      "name": "夢中"
+    },
+    "secret_club_hopper": {
+      "name": "Saltaclubes",
+      "description": "Un solo grupo nunca iba a bastarte.",
+      "hint": "¿Por qué conformarse con un solo grupo?"
+    },
+    "secret_dethroned": {
+      "description": "Tuviste el puesto 1 y alguien te lo quitó.",
+      "hint": "Cuanto más alto subes...",
+      "name": "Destronado"
+    },
+    "secret_early_adopter": {
+      "description": "Uno de los primeros 100 usuarios de NihongoTracker.",
+      "hint": "¿Estabas aquí desde el principio?",
+      "name": "創始者"
+    },
+    "secret_floor_lava": {
+      "description": "Cambia entre 4 tipos de contenido distintos en un mismo día.",
+      "hint": "No puedes quedarte quieto...",
+      "name": "El suelo es lava"
+    },
+    "secret_iron_will": {
+      "name": "鉄の意志",
+      "description": "El descanso es para quien tiene planes más modestos.",
+      "hint": "Ni un día libre, sin excusas..."
+    },
+    "secret_keeper": {
+      "description": "Descubre 5 logros ocultos.",
+      "hint": "Aquí hay más de lo que parece...",
+      "name": "Guardián de secretos"
+    },
+    "secret_long_streak": {
+      "description": "Mantén una racha de 500 días. Hay quien dice que no se puede.",
+      "hint": "Una hazaña legendaria de constancia...",
+      "name": "不屈の精神"
+    },
+    "secret_loyal": {
+      "description": "Loguea todos los días de una semana justo después de romper una racha.",
+      "hint": "La lealtad no se abandona fácilmente...",
+      "name": "Leal"
+    },
+    "secret_phoenix": {
+      "description": "Rompe una racha y vuelve para superar tu récord personal.",
+      "hint": "Resurge de las cenizas...",
+      "name": "Fénix"
+    },
+    "secret_speedrunner": {
+      "description": "Loguea una sesión antes de 60 segundos desde el log anterior.",
+      "hint": "Vas muy rápido...",
+      "name": "Speedrunner"
+    },
+    "secret_xp_10m": {
+      "description": "Consigue 10.000.000 XP en total. Has trascendido.",
+      "hint": "Más allá de lo legendario...",
+      "name": "一千万の証"
+    },
+    "sprinter_day": {
+      "description": "Loguea 5 sesiones de inmersión distintas en un solo día.",
+      "name": "Esprínter"
+    },
+    "streak_100": {
+      "description": "Mantén una racha de 100 días.",
+      "name": "Inquebrantable"
+    },
+    "streak_3": {
+      "description": "Mantén una racha de 3 días.",
+      "name": "Cogiéndole el gusto"
+    },
+    "streak_30": {
+      "description": "Mantén una racha de 30 días.",
+      "name": "Hábito formado"
+    },
+    "streak_365": {
+      "description": "Mantén una racha de 365 días. Un año entero. Increíble.",
+      "name": "Legendario"
+    },
+    "streak_7": {
+      "description": "Mantén una racha de 7 días.",
+      "name": "Arrancando la racha"
+    },
+    "tanabata": {
+      "description": "Loguea inmersión el 7 de julio (七夕).",
+      "name": "Tanabata"
+    },
+    "week_24h": {
+      "description": "Loguea 24 horas de inmersión en una sola semana.",
+      "name": "¿Has dormido?"
+    },
+    "weekend_warrior": {
+      "description": "Loguea todos los sábados y domingos de un mes entero.",
+      "name": "Guerrero de fin de semana"
+    },
+    "xp_1000": {
+      "description": "Consigue 1.000 XP en total.",
+      "name": "Aprendiz"
+    },
+    "xp_10000": {
+      "description": "Consigue 10.000 XP en total.",
+      "name": "Oficial"
+    },
+    "xp_100000": {
+      "description": "Consigue 100.000 XP en total.",
+      "name": "Maestro"
+    },
+    "xp_1000000": {
+      "description": "Consigue 1.000.000 XP en total. Una hazaña casi mítica.",
+      "name": "Leyenda"
+    },
+    "xp_50000": {
+      "description": "Consigue 50.000 XP en total.",
+      "name": "Erudito"
+    },
+    "xp_500000": {
+      "description": "Consigue 500.000 XP en total.",
+      "name": "Gran maestro"
+    }
+  },
+  "rarity": {
+    "common": "Común",
+    "rare": "Rara",
+    "epic": "Épica",
+    "legendary": "Legendaria",
+    "secret": "Secreta"
+  },
+  "screen": {
+    "titleOwn": "Logros",
+    "titleOther": "Logros de {{username}}",
+    "documentTitleOwn": "Mis logros — NihongoTracker",
+    "documentTitleOther": "Logros de {{username}} — NihongoTracker",
+    "subtitle": "Sigue tus hitos de inmersión y desbloquea secretos ocultos.",
+    "loadError": "No se pudieron cargar los logros.",
+    "stats": {
+      "earned": "Conseguidos",
+      "total": "Total",
+      "points": "Puntos",
+      "completion": "Progreso"
+    },
+    "searchPlaceholder": "Buscar logros...",
+    "clearSearch": "Limpiar la búsqueda",
+    "categoryLabel": "Categoría: {{value}}",
+    "statusLabel": "Estado: {{value}}",
+    "sortLabel": "Orden: {{value}}",
+    "status": {
+      "all": "Todos",
+      "earned": "Conseguidos",
+      "locked": "Bloqueados"
+    },
+    "sort": {
+      "order": "Predeterminado",
+      "rarity": "Rareza",
+      "earned": "Conseguidos primero",
+      "orderLong": "Orden predeterminado",
+      "rarityLong": "Por rareza",
+      "earnedLong": "Conseguidos primero"
+    },
+    "grouped": "Agrupados",
+    "ungrouped": "Sin agrupar",
+    "groupTitle": "Agrupar por rareza",
+    "ungroupTitle": "Dejar de agrupar por rareza",
+    "noMatches": "Ningún logro coincide con tus filtros.",
+    "earnedOfTotal": "{{earned}}/{{total}} conseguidos",
+    "attribution": "Iconos de logros por <icons>game-icons.net</icons> con licencia <license>CC BY 3.0</license>."
+  },
+  "secretHint": "Cumple una condición secreta para revelar este logro.",
+  "secretName": "Logro secreto"
+}

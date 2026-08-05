@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   getCommonTimezones,
   getTimezones,
@@ -16,6 +17,7 @@ function TimezonePicker({
   onChange,
   disabled = false,
 }: TimezonePickerProps) {
+  const { t } = useTranslation('settings');
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAllTimezones, setShowAllTimezones] = useState(false);
@@ -128,7 +130,7 @@ function TimezonePicker({
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Search timezones..."
+              placeholder={t('timezonePicker.placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input input-sm input-bordered w-full"
@@ -202,7 +204,9 @@ function TimezonePicker({
                 onClick={() => setShowAllTimezones(!showAllTimezones)}
                 className="w-full text-center text-sm text-primary hover:text-primary-focus py-1"
               >
-                {showAllTimezones ? 'Show less' : 'Show all timezones'}
+                {showAllTimezones
+                  ? t('timezonePicker.showLess')
+                  : t('timezonePicker.showAll')}
               </button>
             </div>
           )}

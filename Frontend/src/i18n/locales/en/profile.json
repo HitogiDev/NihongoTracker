@@ -1,0 +1,147 @@
+{
+  "about": {
+    "title": "About",
+    "edit": "Edit profile",
+    "readMore": "Read more",
+    "showLess": "Show less",
+    "emptyOwn": "Add a short introduction from Settings → Profile Information.",
+    "emptyOther": "This user has not added an about section yet."
+  },
+  "achievements": {
+    "title": "Achievements",
+    "viewAll": "View all",
+    "none": "No achievements yet",
+    "noMatches": "No achievements match your filters"
+  },
+  "activity": {
+    "title": "Immersion Activity"
+  },
+  "categories": {
+    "all": "All Categories",
+    "streaks": "Streaks",
+    "immersion": "Immersion",
+    "social": "Social",
+    "milestone": "Milestone",
+    "secret": "Secret"
+  },
+  "favorites": {
+    "title": "Favorites"
+  },
+  "favoritesWidget": {
+    "empty": "No favorites yet.",
+    "emptyOwn": "Add your favorite media to showcase them here.",
+    "hint": "{{current}}/{{max}} · drag to reorder, tap the note icon to add a note.",
+    "viewInfo": "View info",
+    "viewNote": "View note and info",
+    "drag": "Drag to reorder",
+    "editNote": "Edit note",
+    "remove": "Remove favorite",
+    "notePlaceholder": "Why a favorite?",
+    "unknown": "Unknown",
+    "updated": "Favorites updated",
+    "updateFailed": "Could not update favorites",
+    "types": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "reading": "Light Novels",
+      "vn": "Visual Novels",
+      "game": "Games",
+      "video": "Videos",
+      "movie": "Movies",
+      "book": "Books",
+      "tvShow": "TV Shows"
+    },
+    "noteTitle": "Note",
+    "cancel": "Cancel",
+    "saveNote": "Save note"
+  },
+  "feed": {
+    "all": "All activity",
+    "logs": "Logs",
+    "achievements": "Achievements"
+  },
+  "filters": {
+    "active": "Active filters:",
+    "clearAll": "Clear all",
+    "allTypes": "All Types",
+    "clearType": "Clear type filter",
+    "clearCategory": "Clear category filter",
+    "clearDate": "Clear date filter",
+    "clearSort": "Clear sort filter",
+    "includeUnknownDates": "Include unknown dates",
+    "hideUnknownDates": "Hide unknown dates",
+    "categoryBadge": "Category:",
+    "sortBadge": "Sort:"
+  },
+  "header": {
+    "shareStats": "Share stats",
+    "shareStatsTitle": "Share stats as an image",
+    "avatarAlt": "{{username}} avatar"
+  },
+  "loadMore": "Load More",
+  "loadMoreLogs": "Load More Logs",
+  "nothingMore": "Nothing more to load",
+  "progress": {
+    "title": "Progress Stats",
+    "overall": "Overall Progress",
+    "listening": "Listening Progress",
+    "reading": "Reading Progress",
+    "level": "Level {{level}}",
+    "xp": "{{current}}/{{total}} XP"
+  },
+  "search": {
+    "placeholder": "Search logs...",
+    "clear": "Clear search"
+  },
+  "sort": {
+    "date": "Date",
+    "rarity": "Rarity",
+    "points": "Points",
+    "xp": "XP",
+    "episodes": "Episodes",
+    "chars": "Characters",
+    "pages": "Pages",
+    "time": "Time",
+    "readingSpeed": "Reading Speed",
+    "newestFirst": "Newest First",
+    "oldestFirst": "Oldest First",
+    "highestToLowest": "Highest to Lowest",
+    "lowestToHighest": "Lowest to Highest"
+  },
+  "stats": {
+    "title": "Profile Stats",
+    "share": "Share",
+    "shareTitle": "Share stats as an image",
+    "globalRanking": "Global Ranking",
+    "monthlyRanking": "Monthly Ranking",
+    "rankingOverTime": "Ranking over time",
+    "monthly": "Monthly",
+    "global": "Global",
+    "achievements": "Achievements",
+    "totalXp": "Total XP",
+    "totalTime": "Total Immersion Time",
+    "hoverPosition": "{{date}}: #{{position}}"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "stats": "Stats",
+    "immersionList": "Immersion List",
+    "lists": "Lists",
+    "goals": "Goals",
+    "achievements": "Achievements",
+    "moderation": "Moderation"
+  },
+  "time": {
+    "all": "All Time",
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
+    "year": "This Year",
+    "custom": "Custom Range",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "start": "Start",
+    "end": "End",
+    "range": "{{start}} to {{end}}"
+  }
+}

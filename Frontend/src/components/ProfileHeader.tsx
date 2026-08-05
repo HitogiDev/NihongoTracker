@@ -1,4 +1,6 @@
 import ProfileNavbar from './ProfileNavbar';
+import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '../utils/apiError';
 import ShareStatsModal from './ShareStatsModal';
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
@@ -9,9 +11,12 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { OutletProfileContextType } from '../types';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
+import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
 import { getAvatarInitials } from '../utils/avatar';
 
 export default function ProfileHeader() {
+  const { t } = useTranslation('profile');
+  const badgeText = usePatreonBadgeText();
   const { username = '' } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
@@ -32,7 +37,7 @@ export default function ProfileHeader() {
       if (userError.status === 404) navigate('/404', { replace: true });
       toast.error(userError.response?.data.message);
     } else {
-      toast.error(userError.message ? userError.message : 'An error occurred');
+      toast.error(getApiErrorMessage(userError));
     }
   }
 
@@ -63,7 +68,9 @@ export default function ProfileHeader() {
                     {user?.avatar && !avatarLoadFailed ? (
                       <img
                         src={user.avatar}
-                        alt={`${user.username ?? 'User'} avatar`}
+                        alt={t('header.avatarAlt', {
+                          username: user.username ?? '',
+                        })}
                         onError={() => setAvatarLoadFailed(true)}
                       />
                     ) : (
@@ -97,7 +104,7 @@ export default function ProfileHeader() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="font-bold">{patreonBadge.text}</span>
+                    <span className="font-bold">{badgeText(patreonBadge)}</span>
                   </div>
                 )}
               </div>
@@ -107,10 +114,10 @@ export default function ProfileHeader() {
                 type="button"
                 onClick={() => setShareOpen(true)}
                 className="btn btn-sm gap-2 sm:ml-auto sm:mb-2 bg-black/30 hover:bg-black/50 border-white/20 text-white backdrop-blur-sm"
-                title="Share stats as an image"
+                title={t('header.shareStatsTitle')}
               >
                 <Share2 className="h-4 w-4" />
-                Share stats
+                {t('header.shareStats')}
               </button>
             )}
           </div>

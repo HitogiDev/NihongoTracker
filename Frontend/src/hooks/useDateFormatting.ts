@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useTimezone } from './useTimezone';
 import {
   formatDateInTimezone,
@@ -10,6 +11,10 @@ import {
 
 export function useDateFormatting() {
   const { timezone } = useTimezone();
+  // Subscribing to the language matters even though the formatters read the
+  // i18next singleton themselves: without it, a component that formats dates
+  // but never calls `t` would keep rendering stale text after a switch.
+  const { i18n } = useTranslation();
 
   const formatDate = (
     date: Date | string,
@@ -52,8 +57,20 @@ export function useDateFormatting() {
       minute: '2-digit',
     });
 
+  const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
+    try {
+      return new Intl.NumberFormat(i18n.language || 'en', options).format(
+        value
+      );
+    } catch {
+      return new Intl.NumberFormat('en', options).format(value);
+    }
+  };
+
   return {
     timezone,
+    language: i18n.language,
+    formatNumber,
     formatDate,
     formatRelativeDate,
     convertToUserTime,

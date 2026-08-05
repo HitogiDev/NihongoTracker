@@ -1,0 +1,111 @@
+{
+  "mediaRequest": {
+    "title": "Solicitar contenido",
+    "subtitle": "¿No encuentras un título en la base de datos? Envíalo aquí y lo revisará alguien del equipo de administración o moderación.",
+    "newRequest": "Nueva solicitud",
+    "nativeTitle": "Título original",
+    "nativeTitlePlaceholder": "日本語のタイトル",
+    "mediaType": "Tipo de contenido",
+    "romajiTitle": "Título en romaji",
+    "englishTitle": "Título en inglés",
+    "referenceUrl": "URL de referencia",
+    "referenceUrlPlaceholder": "Enlace de AniList / VNDB / IGDB",
+    "coverImage": "URL de la portada",
+    "descriptions": "Descripciones",
+    "descriptionsHint": "(todas opcionales; rellena los idiomas que puedas)",
+    "optional": "opcional",
+    "note": "Nota para quien revise",
+    "notePlaceholder": "Cualquier cosa que deba saber quien revise",
+    "isAdult": "Contiene contenido para adultos (+18)",
+    "submit": "Enviar solicitud",
+    "myRequests": "Mis solicitudes",
+    "empty": "Todavía no has solicitado ningún contenido.",
+    "viewMedia": "Ver contenido",
+    "types": {
+      "anime": "Anime",
+      "manga": "Manga",
+      "reading": "Novela Ligera",
+      "vn": "Novela Visual",
+      "movie": "Película",
+      "tvShow": "Serie",
+      "game": "Videojuego"
+    },
+    "languages": {
+      "eng": "Inglés",
+      "jpn": "Japonés",
+      "spa": "Español"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "approved": "Aprobada",
+      "rejected": "Rechazada"
+    },
+    "toast": {
+      "nativeTitleRequired": "El título original es obligatorio",
+      "submitFailed": "No se pudo enviar la solicitud"
+    }
+  },
+  "moderation": {
+    "accessDeniedTitle": "Acceso denegado",
+    "accessDeniedBody": "Necesitas permisos de administración para usar las herramientas de moderación de perfiles.",
+    "title": "Moderación",
+    "subtitle": "Gestiona las acciones de moderación de <b>{{username}}</b>.",
+    "refresh": "Actualizar",
+    "recalculateTitle": "Recalcular la racha de esta persona",
+    "recalculateBody": "Reconstruye la racha a partir de todos los logs de <b>{{username}}</b>.",
+    "recalculateAction": "Recalcular racha",
+    "rankingBanTitle": "Vetar de las clasificaciones",
+    "rankingBanBody": "No aparecerá en la clasificación global ni en el resumen de clasificación.",
+    "banTitle": "Vetar la cuenta",
+    "banBody": "No podrá iniciar sesión mientras esté vetada.",
+    "banReason": "Motivo del veto",
+    "banReasonPlaceholder": "Nota de moderación o motivo del veto (opcional)",
+    "save": "Guardar moderación",
+    "timeline": "Historial de moderación",
+    "timelineEmpty": "Todavía no hay acciones de moderación registradas.",
+    "by": "por {{username}}",
+    "unknownAdmin": "Administración desconocida",
+    "unknownDate": "Fecha desconocida",
+    "reasonSnapshot": "Motivo registrado: {{reason}}",
+    "history": {
+      "rankingBanEnabled": "Veto de clasificación activado",
+      "rankingBanRemoved": "Veto de clasificación retirado",
+      "accountBanned": "Cuenta vetada",
+      "accountUnbanned": "Veto de cuenta retirado",
+      "banReasonUpdated": "Motivo del veto actualizado",
+      "banReasonCleared": "Motivo del veto borrado",
+      "reasonSet": "Motivo establecido: {{reason}}",
+      "reasonCleared": "Se borró el motivo",
+      "reasonChanged": "Motivo cambiado a: {{reason}}",
+      "reasonEmpty": "vacío",
+      "changed": "Cambiado de {{previous}} a {{next}}",
+      "enabled": "activado",
+      "disabled": "desactivado"
+    },
+    "toast": {
+      "updated": "Moderación actualizada",
+      "updateFailed": "No se pudo actualizar la moderación",
+      "streakRecalculated": "Racha de {{username}} recalculada (actual: {{streak}})",
+      "streakFailed": "No se pudo recalcular la racha de esta persona"
+    }
+  },
+  "queue": {
+    "title": "Solicitudes de contenido",
+    "empty_pending": "No hay solicitudes pendientes.",
+    "empty_approved": "No hay solicitudes aprobadas.",
+    "empty_rejected": "No hay solicitudes rechazadas.",
+    "requestedBy": "Solicitado por <b>{{username}}</b> el {{date}}",
+    "unknownRequester": "Desconocido",
+    "note": "Nota: {{note}}",
+    "reviewNotePlaceholder": "Nota de revisión (opcional, visible para quien solicita)",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "reviewedBy": "Revisado por {{username}}.",
+    "viewMedia": "Ver contenido",
+    "reviewFailed": "No se pudo revisar la solicitud",
+    "pendingCount_one": "{{count}} pendiente",
+    "pendingCount_many": "{{count}} pendientes",
+    "pendingCount_other": "{{count}} pendientes",
+    "empty": "No hay solicitudes."
+  }
+}
