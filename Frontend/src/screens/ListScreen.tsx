@@ -787,9 +787,9 @@ function ListScreen() {
                 </div>
 
                 {/* Filters Row */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center sm:justify-between">
                   {/* Filter and Sort Dropdowns */}
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1 min-w-0">
                     <div className="dropdown dropdown-end sm:dropdown-start flex-1 sm:flex-none relative z-40">
                       <div
                         tabIndex={0}
@@ -997,7 +997,7 @@ function ListScreen() {
                   </div>
 
                   {/* View Mode + Group Toggle */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <div className="join flex-1 sm:flex-none">
                       <button
                         className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}

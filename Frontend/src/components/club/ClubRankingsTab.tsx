@@ -48,6 +48,7 @@ type ClubMember = {
 
 function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
   const { t } = useTranslation('clubs');
+  const { t: tCommon } = useTranslation('common');
   const badgeText = usePatreonBadgeText();
   const [sortBy, setSortBy] = useState<
     'totalXp' | 'totalLogs' | 'totalTime' | 'level'
@@ -343,7 +344,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <UserAvatar
                           username={secondUser?.user.username}
                           avatar={secondUser?.user.avatar}
-                          alt={`${secondUser?.user.username ?? 'User'}'s Avatar`}
+                          alt={tCommon('avatarAlt', {
+                            username: secondUser?.user.username ?? '',
+                          })}
                           containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-base-content/40"
                           imageClassName="w-full h-full rounded-full object-cover"
                           fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -401,7 +404,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <UserAvatar
                           username={firstUser?.user.username}
                           avatar={firstUser?.user.avatar}
-                          alt={`${firstUser?.user.username ?? 'User'}'s Avatar`}
+                          alt={tCommon('avatarAlt', {
+                            username: firstUser?.user.username ?? '',
+                          })}
                           containerClassName="w-14 h-14 sm:w-20 sm:h-20 rounded-full ring ring-warning ring-offset-2"
                           imageClassName="w-full h-full rounded-full object-cover"
                           fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -470,7 +475,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                         <UserAvatar
                           username={thirdUser?.user.username}
                           avatar={thirdUser?.user.avatar}
-                          alt={`${thirdUser?.user.username ?? 'User'}'s Avatar`}
+                          alt={tCommon('avatarAlt', {
+                            username: thirdUser?.user.username ?? '',
+                          })}
                           containerClassName="w-10 h-10 sm:w-16 sm:h-16 rounded-full ring ring-accent/50"
                           imageClassName="w-full h-full rounded-full object-cover"
                           fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -564,7 +571,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               <UserAvatar
                                 username={member.user.username}
                                 avatar={member.user.avatar}
-                                alt={`${member.user.username}'s Avatar`}
+                                alt={tCommon('avatarAlt', {
+                                  username: member.user.username,
+                                })}
                                 containerClassName="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10"
                                 imageClassName="w-full h-full rounded-full object-cover"
                                 fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -575,7 +584,9 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
                               <Link
                                 to={`/user/${member.user.username}`}
                                 className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-nowrap max-w-full"
-                                title={`View ${member.user.username}'s profile`}
+                                title={tCommon('viewProfile', {
+                                  username: member.user.username,
+                                })}
                               >
                                 <span className="hidden md:inline">
                                   {member.user.username}

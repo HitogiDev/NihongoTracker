@@ -128,6 +128,7 @@ function getRecentMediaRailLimit(width: number) {
 
 function Dashboard() {
   const { t } = useTranslation('home');
+  const { t: tCommon } = useTranslation('common');
   // feedTypeOptions mixes the `home` and `common` namespaces, which the typed
   // `t` signature cannot express in one call.
   const tAny = t as unknown as (key: string, options?: object) => string;
@@ -888,7 +889,9 @@ function Dashboard() {
                               <Link
                                 to={`/user/${log.user.username}`}
                                 className="shrink-0"
-                                aria-label={`View ${log.user.username}'s profile`}
+                                aria-label={tCommon('viewProfile', {
+                                  username: log.user.username,
+                                })}
                               >
                                 <div className="avatar">
                                   <UserAvatar

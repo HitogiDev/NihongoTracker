@@ -1,6 +1,7 @@
 {
   "allMediaTypes": "All Media Types",
   "allTypes": "All types",
+  "avatarAlt": "{{username}}'s Avatar",
   "cancel": "Cancel",
   "close": "Close",
   "errors": {
@@ -60,5 +61,6 @@
   "time": {
     "justNow": "Just now"
   },
-  "unknown": "Unknown"
+  "unknown": "Unknown",
+  "viewProfile": "View {{username}}'s profile"
 }

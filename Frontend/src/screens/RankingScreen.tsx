@@ -1654,7 +1654,9 @@ function RankingScreen() {
                                   <UserAvatar
                                     username={user.username}
                                     avatar={user.avatar}
-                                    alt={`${user.username}'s Avatar`}
+                                    alt={t('avatarAlt', {
+                                      username: user.username,
+                                    })}
                                     containerClassName="w-8 h-8 sm:w-12 sm:h-12 rounded-full ring ring-base-content/10"
                                     imageClassName="w-full h-full rounded-full object-cover"
                                     fallbackClassName="w-full h-full rounded-full bg-neutral-content flex items-center justify-center"
@@ -1665,7 +1667,9 @@ function RankingScreen() {
                                   <Link
                                     to={`/user/${user.username}`}
                                     className="font-bold hover:text-primary transition-colors flex items-center gap-2 flex-nowrap max-w-full"
-                                    title={`View ${user.username}'s profile`}
+                                    title={tCommon('viewProfile', {
+                                      username: user.username,
+                                    })}
                                   >
                                     {/* Username: full on md+, truncated on small screens */}
                                     <span className="hidden md:inline">

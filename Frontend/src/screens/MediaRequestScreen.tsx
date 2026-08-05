@@ -295,12 +295,12 @@ export default function MediaRequestScreen() {
                 ))}
               </div>
 
-              <label className="form-control">
-                <div className="label">
-                  <span className="label-text">{t('mediaRequest.note')}</span>
-                </div>
+              <fieldset className="fieldset w-full p-0">
+                <legend className="fieldset-legend">
+                  {t('mediaRequest.note')}
+                </legend>
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   rows={2}
                   value={form.note ?? ''}
                   onChange={(e) =>
@@ -308,9 +308,9 @@ export default function MediaRequestScreen() {
                   }
                   placeholder={t('mediaRequest.notePlaceholder')}
                 />
-              </label>
+              </fieldset>
 
-              <label className="label cursor-pointer justify-start gap-3">
+              <label className="flex cursor-pointer items-center gap-3">
                 <input
                   type="checkbox"
                   className="checkbox checkbox-error"
@@ -319,7 +319,7 @@ export default function MediaRequestScreen() {
                     setForm((f) => ({ ...f, isAdult: e.target.checked }))
                   }
                 />
-                <span className="label-text">{t('mediaRequest.isAdult')}</span>
+                <span>{t('mediaRequest.isAdult')}</span>
               </label>
 
               <div className="flex justify-end">

@@ -2557,47 +2557,41 @@ function SettingsScreen() {
                     <div className="space-y-6">
                       <LanguagePicker />
 
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('preferences.theme')}
-                          </span>
-                        </label>
+                      <fieldset className="fieldset w-full p-0">
+                        <legend className="fieldset-legend font-medium">
+                          {t('preferences.theme')}
+                        </legend>
                         <ThemeSwitcher />
-                      </div>
+                      </fieldset>
 
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('preferences.timezone')}
-                          </span>
+                      <fieldset className="fieldset w-full p-0">
+                        <legend className="fieldset-legend font-medium gap-2">
+                          {t('preferences.timezone')}
                           {isPreferencesPending && (
                             <span className="loading loading-spinner loading-sm"></span>
                           )}
-                        </label>
+                        </legend>
                         <TimezonePicker
                           value={timezone}
                           onChange={setTimezone}
                           disabled={isPending || isPreferencesPending}
                         />
-                        <label className="label">
-                          <span className="label-text-alt text-base-content/60 text-wrap">
-                            {t('preferences.timezoneHint')}
-                          </span>
-                        </label>
-                      </div>
+                        <p className="label text-base-content/60 text-wrap">
+                          {t('preferences.timezoneHint')}
+                        </p>
+                      </fieldset>
 
-                      <div className="form-control">
-                        <label className="label cursor-pointer">
-                          <div>
-                            <span className="label-text font-medium">
+                      <div>
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-4">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-medium">
                               {t('preferences.blurAdult')}
                             </span>
-                            <p className="text-sm text-base-content/60">
+                            <span className="text-sm text-base-content/60">
                               {t('preferences.blurAdultHint')}
-                            </p>
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
                               <span className="loading loading-spinner loading-sm"></span>
                             )}
@@ -2612,17 +2606,17 @@ function SettingsScreen() {
                         </label>
                       </div>
 
-                      <div className="form-control">
-                        <label className="label cursor-pointer">
-                          <div>
-                            <span className="label-text font-medium">
+                      <div>
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-4">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-medium">
                               {t('preferences.hideUnmatched')}
                             </span>
-                            <p className="text-sm text-base-content/60">
+                            <span className="text-sm text-base-content/60">
                               {t('preferences.hideUnmatchedHint')}
-                            </p>
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-2">
                             {isPreferencesPending && (
                               <span className="loading loading-spinner loading-sm"></span>
                             )}

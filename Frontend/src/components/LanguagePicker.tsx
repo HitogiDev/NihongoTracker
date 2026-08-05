@@ -14,15 +14,14 @@ export default function LanguagePicker() {
   const setLanguage = useSetLanguage();
 
   return (
-    <div className="form-control w-full">
-      <label className="label" htmlFor="language-picker">
-        <span className="label-text font-medium">
-          {t('preferences.language.label')}
-        </span>
-      </label>
+    <fieldset className="fieldset w-full p-0">
+      <legend className="fieldset-legend font-medium">
+        {t('preferences.language.label')}
+      </legend>
       <select
         id="language-picker"
-        className="select select-bordered w-full max-w-xs"
+        aria-label={t('preferences.language.label')}
+        className="select w-full max-w-xs"
         value={i18n.language}
         onChange={(event) =>
           setLanguage(event.target.value as SupportedLanguage)
@@ -34,11 +33,9 @@ export default function LanguagePicker() {
           </option>
         ))}
       </select>
-      <label className="label" htmlFor="language-picker">
-        <span className="label-text-alt text-base-content/60">
-          {t('preferences.language.help')}
-        </span>
-      </label>
-    </div>
+      <p className="label text-base-content/60 text-wrap">
+        {t('preferences.language.help')}
+      </p>
+    </fieldset>
   );
 }

@@ -8,8 +8,8 @@ synonyms per screen. English is the source of truth for all keys.
 | English | Spanish | Notes |
 | --- | --- | --- |
 | immersion | inmersión | |
-| log (noun) | registro | |
-| log (verb) | registrar | |
+| log (noun) | log | |
+| log (verb) | loguear | |
 | streak | racha | |
 | XP | XP | not translated |
 | level | nivel | |
