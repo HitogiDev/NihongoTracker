@@ -20,6 +20,7 @@ import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { IMediaDocument } from '../types.js';
 import { backfillRankHistory } from '../services/rankSnapshot.service.js';
+import { backfillRankAchievements } from '../services/achievements/cronAchievements.service.js';
 import {
   startJitenDifficultyBackfill,
   getJitenBackfillState,
@@ -396,6 +397,7 @@ export async function markLogsWithoutStatusToInProgress(
       'video',
       'movie',
       'tv show',
+      'book',
     ];
 
     const combos = await Log.aggregate<any>([
@@ -974,13 +976,32 @@ export async function backfillRankingHistory(
   }
 }
 
-export async function triggerJitenDifficultyBackfill(
+export async function backfillWeeklyRankAchievements(
   _req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const state = startJitenDifficultyBackfill();
+    const result = await backfillRankAchievements();
+    return res.status(200).json({
+      message: `Replayed ${result.weeks} weeks and granted ${result.granted} rank achievements.`,
+      ...result,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerJitenDifficultyBackfill(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    // `?force=true` re-tags media that already have a difficulty, for when the
+    // stored value's scale or source changes.
+    const force = req.query.force === 'true';
+    const state = startJitenDifficultyBackfill(force);
     const alreadyRunning = state.processed > 0 || state.total > 0;
     return res.status(alreadyRunning ? 200 : 202).json({
       message: alreadyRunning
@@ -1067,6 +1088,7 @@ export async function adminUpdateMedia(
       'characters',
       'seasons',
       'runtime',
+      'pageCount',
     ];
     const mediaRecord = media as unknown as Record<string, unknown>;
     for (const field of numericFields) {

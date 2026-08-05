@@ -17,6 +17,7 @@ const MediaReviewSchema = new Schema<IMediaReview>(
         'movie',
         'tv show',
         'game',
+        'book',
       ],
     },
     summary: { type: String, required: true, minlength: 20, maxlength: 150 },

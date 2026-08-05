@@ -16,15 +16,53 @@ import { evaluateSingleDayHours } from './conditions/singleDayHours.condition.js
 import { evaluateWeeklyHours } from './conditions/weeklyHours.condition.js';
 import { evaluateSessionsInDay } from './conditions/sessionsInDay.condition.js';
 import { evaluatePlatformAge } from './conditions/platformAge.condition.js';
-import { createNotification } from '../notifications.service.js';
+import { evaluateClubsCreated } from './conditions/clubsCreated.condition.js';
+import { evaluateClubMvp } from './conditions/clubMvp.condition.js';
+import { evaluateMediaTypesInWeek } from './conditions/mediaTypesInWeek.condition.js';
+import { evaluateMediaReleasedBefore } from './conditions/mediaReleasedBefore.condition.js';
+import { evaluateLogDuringAiring } from './conditions/logDuringAiring.condition.js';
+import { evaluateClubsJoined } from './conditions/clubsJoined.condition.js';
+import { evaluateDistinctMediaCount } from './conditions/distinctMediaCount.condition.js';
+import { evaluateConsecutiveDaysWithHours } from './conditions/consecutiveDaysWithHours.condition.js';
+import { evaluateSingleSessionHours } from './conditions/singleSessionHours.condition.js';
+import { evaluateRapidSuccession } from './conditions/rapidSuccession.condition.js';
+import { evaluateStreakComeback } from './conditions/streakComeback.condition.js';
+import { evaluateStreakAfterBreak } from './conditions/streakAfterBreak.condition.js';
+import { evaluateRankDethroned } from './conditions/rankDethroned.condition.js';
+import { evaluateSecretAchievementCount } from './conditions/secretAchievementCount.condition.js';
+import { evaluateEarlyAdopter } from './conditions/earlyAdopter.condition.js';
+import {
+  createNotification,
+  removeNotifications,
+} from '../notifications.service.js';
+import User from '../../models/user.model.js';
+import { isValidTimezone } from '../../constants/timezone.js';
+
+// Condition types whose result depends on where calendar days / clock hours fall
+const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
+  'logTimeRange',
+  'logOnDate',
+  'singleDayHours',
+  'weeklyHours',
+  'sessionsInDay',
+  'mediaTypesInWeek',
+  'consecutiveDaysWithHours',
+  'streakComeback',
+  'streakAfterBreak',
+]);
 
 /**
  * Evaluate a single achievement condition for a given user.
  * Returns { met, progress } — progress is the raw current value for progress bars.
+ *
+ * `timezone` decides where calendar days and clock hours fall for the date-based
+ * conditions, so "10 hours in one day" or "logged between 0-6h" mean what the
+ * user experienced rather than what UTC saw.
  */
 export async function evaluateCondition(
   userId: Types.ObjectId,
-  achievement: IAchievement
+  achievement: IAchievement,
+  timezone: string
 ): Promise<{ met: boolean; progress: number }> {
   const { condition } = achievement;
 
@@ -70,23 +108,91 @@ export async function evaluateCondition(
         userId,
         condition.startHour ?? 0,
         condition.endHour ?? 24,
-        condition.threshold ?? 1
+        condition.threshold ?? 1,
+        timezone
       );
 
     case 'logOnDate':
-      return evaluateLogOnDate(userId, condition.datePattern ?? '01-01');
+      return evaluateLogOnDate(
+        userId,
+        condition.datePattern ?? '01-01',
+        timezone
+      );
 
     case 'singleDayHours':
-      return evaluateSingleDayHours(userId, condition.threshold ?? 1);
+      return evaluateSingleDayHours(userId, condition.threshold ?? 1, timezone);
 
     case 'weeklyHours':
-      return evaluateWeeklyHours(userId, condition.threshold ?? 1);
+      return evaluateWeeklyHours(userId, condition.threshold ?? 1, timezone);
 
     case 'sessionsInDay':
-      return evaluateSessionsInDay(userId, condition.threshold ?? 1);
+      return evaluateSessionsInDay(userId, condition.threshold ?? 1, timezone);
 
     case 'platformAge':
       return evaluatePlatformAge(userId, condition.threshold ?? 365);
+
+    case 'clubsCreated':
+      return evaluateClubsCreated(userId, condition.threshold ?? 1);
+
+    case 'clubMvp':
+      return evaluateClubMvp(userId, condition.threshold ?? 1);
+
+    case 'mediaTypesInWeek':
+      return evaluateMediaTypesInWeek(
+        userId,
+        condition.threshold ?? 6,
+        timezone,
+        condition.days ?? 7
+      );
+
+    case 'clubsJoined':
+      return evaluateClubsJoined(userId, condition.threshold ?? 1);
+
+    case 'distinctMediaCount':
+      return evaluateDistinctMediaCount(userId, condition.threshold ?? 1);
+
+    case 'consecutiveDaysWithHours':
+      return evaluateConsecutiveDaysWithHours(
+        userId,
+        condition.threshold ?? 7,
+        condition.hours ?? 4,
+        timezone
+      );
+
+    case 'singleSessionHours':
+      return evaluateSingleSessionHours(userId, condition.threshold ?? 6);
+
+    case 'rapidSuccession':
+      return evaluateRapidSuccession(userId, condition.seconds ?? 60);
+
+    case 'streakComeback':
+      return evaluateStreakComeback(userId, condition.threshold ?? 1, timezone);
+
+    case 'streakAfterBreak':
+      return evaluateStreakAfterBreak(
+        userId,
+        condition.threshold ?? 7,
+        timezone
+      );
+
+    case 'rankDethroned':
+      return evaluateRankDethroned(userId);
+
+    case 'secretAchievementCount':
+      return evaluateSecretAchievementCount(userId, condition.threshold ?? 5);
+
+    case 'earlyAdopter':
+      return evaluateEarlyAdopter(userId, condition.threshold ?? 100);
+
+    case 'mediaReleasedBefore':
+      return evaluateMediaReleasedBefore(
+        userId,
+        condition.mediaType ?? 'vn',
+        condition.year ?? 2005
+      );
+
+    case 'logDuringAiring':
+      return evaluateLogDuringAiring(userId);
 
     case 'manualGrant':
       // Manual grants are handled by the admin endpoint; never auto-evaluate
@@ -95,6 +201,19 @@ export async function evaluateCondition(
     default:
       return { met: false, progress: 0 };
   }
+}
+
+/**
+ * Resolve the timezone the date-based conditions should be evaluated in.
+ * Falls back to UTC when unset or invalid — an unknown zone would make
+ * Mongo reject the whole aggregation.
+ */
+export async function getAchievementTimezone(
+  userId: Types.ObjectId
+): Promise<string> {
+  const user = await User.findById(userId).select('settings.timezone').lean();
+  const timezone = user?.settings?.timezone;
+  return timezone && isValidTimezone(timezone) ? timezone : 'UTC';
 }
 
 /**
@@ -138,13 +257,22 @@ export async function checkAchievements(
 
     if (unearnedAchievements.length === 0) return [];
 
+    // One lookup per check, and only when a date-based condition is in play
+    const needsTimezone = unearnedAchievements.some((a) =>
+      TIMEZONE_SENSITIVE_CONDITIONS.has(a.condition?.type)
+    );
+    const timezone = needsTimezone
+      ? await getAchievementTimezone(userId)
+      : 'UTC';
+
     const newlyGranted: IAchievement[] = [];
 
     for (const achievement of unearnedAchievements) {
       try {
         const { met, progress } = await evaluateCondition(
           userId,
-          achievement as unknown as IAchievement
+          achievement as unknown as IAchievement,
+          timezone
         );
 
         if (met) {
@@ -207,6 +335,76 @@ export async function checkAchievements(
 }
 
 /**
+ * Re-evaluate everything a user already owns and take back what they no longer
+ * (or never legitimately) qualify for — e.g. unlocks earned under the old
+ * UTC-based day boundaries, or off the back of logs with an unknown date.
+ *
+ * Deliberately conservative. Only unlocks whose condition the engine can
+ * actually evaluate are considered:
+ *  - 'manualGrant' conditions are skipped (cron- and admin-awarded achievements
+ *    have no evaluable condition, so "not met" would be meaningless).
+ *  - Rows flagged manuallyGranted are skipped for the same reason.
+ *
+ * Returns the achievements that were revoked.
+ */
+export async function revokeUnearnedAchievements(
+  userId: Types.ObjectId
+): Promise<IAchievement[]> {
+  const owned = await UserAchievement.find({ user: userId })
+    .populate<{ achievement: IAchievement }>('achievement')
+    .lean();
+
+  const evaluable = owned.filter(
+    (ua) =>
+      !ua.manuallyGranted &&
+      ua.achievement &&
+      ua.achievement.condition?.type &&
+      ua.achievement.condition.type !== 'manualGrant'
+  );
+
+  if (evaluable.length === 0) return [];
+
+  const needsTimezone = evaluable.some((ua) =>
+    TIMEZONE_SENSITIVE_CONDITIONS.has(ua.achievement.condition.type)
+  );
+  const timezone = needsTimezone
+    ? await getAchievementTimezone(userId)
+    : 'UTC';
+
+  const revoked: IAchievement[] = [];
+
+  for (const ua of evaluable) {
+    try {
+      const { met } = await evaluateCondition(
+        userId,
+        ua.achievement,
+        timezone
+      );
+      if (met) continue;
+
+      await UserAchievement.deleteOne({ _id: ua._id });
+
+      // Drop the "unlocked" notification too — it now points at nothing
+      await removeNotifications({
+        recipient: userId,
+        type: 'achievement_unlocked',
+        entityId: ua.achievement._id.toString(),
+      });
+
+      revoked.push(ua.achievement);
+    } catch (err) {
+      // A failing evaluation must never cost a user an achievement
+      console.error(
+        `Achievement re-check failed for key="${ua.achievement.key}":`,
+        err
+      );
+    }
+  }
+
+  return revoked;
+}
+
+/**
  * Manually grant an achievement to a user (admin use).
  * Returns true if granted, false if already owned.
  */
@@ -226,6 +424,7 @@ export async function grantAchievement(
     unlockedAt: new Date(),
     progress: 0,
     notified: false,
+    manuallyGranted: true,
   });
 
   const achievement = await Achievement.findById(achievementId)
@@ -271,9 +470,24 @@ function getRelevantConditions(
         'weeklyHours',
         'sessionsInDay',
         'platformAge',
+        'clubsCreated',
+        'clubMvp',
+        'mediaTypesInWeek',
+        'mediaReleasedBefore',
+        'logDuringAiring',
+        'clubsJoined',
+        'distinctMediaCount',
+        'consecutiveDaysWithHours',
+        'singleSessionHours',
+        'rapidSuccession',
+        'streakComeback',
+        'streakAfterBreak',
+        'rankDethroned',
+        'secretAchievementCount',
+        'earlyAdopter',
       ];
     case 'streak':
-      return ['streak'];
+      return ['streak', 'streakComeback', 'streakAfterBreak'];
     case 'levelup':
       return ['level', 'totalXp'];
     case 'manual':

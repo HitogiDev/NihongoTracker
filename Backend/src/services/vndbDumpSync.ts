@@ -11,7 +11,11 @@ import {
   extractVndbDump,
   cleanupDumpDir,
 } from './vndbDumpExtractor.js';
-import { readHeaderFile, streamTsvRows } from './vndbDumpParser.js';
+import {
+  readHeaderFile,
+  streamTsvRows,
+  parseVndbReleaseYear,
+} from './vndbDumpParser.js';
 import {
   mapLanguageCode,
   buildVndbImageUrl,
@@ -62,6 +66,8 @@ interface INormalizedVnMedia {
   isAdult: boolean;
   /** true when VNDB image sexual avg >= 100 (suggestive or explicit) */
   isAdultImage: boolean;
+  /** Year of the VN's earliest known release, null when unknown/TBA */
+  releaseYear: number | null;
 }
 
 /** Titles collected per VN id while streaming vn_titles */
@@ -303,11 +309,18 @@ async function buildImageRatingMap(
 async function buildReleaseVnSets(
   dbDir: string,
   counters: IVndbDumpSyncCounters
-): Promise<{ adultVnIds: Set<string>; japaneseVnIds: Set<string> }> {
+): Promise<{
+  adultVnIds: Set<string>;
+  japaneseVnIds: Set<string>;
+  vnReleaseYears: Map<string, number>;
+}> {
   const adultReleaseIds = new Set<string>();
   const jaReleaseIds = new Set<string>();
   const adultVnIds = new Set<string>();
   const japaneseVnIds = new Set<string>();
+  // release id -> release year, for the earliest-release-year rollup below
+  const releaseYears = new Map<string, number>();
+  const vnReleaseYears = new Map<string, number>();
 
   // --- Pass 1: single scan of `releases` — collect adult and Japanese release ids ---
   const relHeaders = await readHeaderFile(path.join(dbDir, 'releases.header'));
@@ -335,6 +348,11 @@ async function buildReleaseVnSets(
     if (isAdult) {
       adultReleaseIds.add(id);
     }
+
+    const year = parseVndbReleaseYear(row['released']);
+    if (year !== null) {
+      releaseYears.set(id, year);
+    }
   }
 
   console.log(
@@ -360,14 +378,25 @@ async function buildReleaseVnSets(
     if (adultReleaseIds.has(releaseId)) {
       adultVnIds.add(vnId);
     }
+
+    // A VN's release year is its earliest release across all platforms/languages
+    const year = releaseYears.get(releaseId);
+    if (year !== undefined) {
+      const known = vnReleaseYears.get(vnId);
+      if (known === undefined || year < known) {
+        vnReleaseYears.set(vnId, year);
+      }
+    }
   }
 
   console.log(
-    `✅ VNDB: ${japaneseVnIds.size} VN(s) with a Japanese release, ${adultVnIds.size} adult`
+    `✅ VNDB: ${japaneseVnIds.size} VN(s) with a Japanese release, ${adultVnIds.size} adult, ` +
+      `${vnReleaseYears.size} with a known release year`
   );
 
-  return { adultVnIds, japaneseVnIds };
+  return { adultVnIds, japaneseVnIds, vnReleaseYears };
 }
+
 
 /**
  * Stream vn_titles to build a per-VN title map.
@@ -451,7 +480,8 @@ function normalizeVnRow(
   adultVnIds: Set<string>,
   japaneseVnIds: Set<string>,
   imageRatingMap: Map<string, boolean>,
-  titleMap: Map<string, Map<string, { title: string | null; latin: string | null }>>
+  titleMap: Map<string, Map<string, { title: string | null; latin: string | null }>>,
+  vnReleaseYears: Map<string, number>
 ): INormalizedVnMedia | null {
   const id = row['id'];
   if (!id) return null;
@@ -504,6 +534,7 @@ function normalizeVnRow(
     genres: [],
     isAdult,
     isAdultImage,
+    releaseYear: vnReleaseYears.get(id) ?? null,
   };
 }
 
@@ -689,7 +720,8 @@ async function runSyncProcess(
       counters
     );
 
-    const { adultVnIds, japaneseVnIds } = await buildReleaseVnSets(dbDir, counters);
+    const { adultVnIds, japaneseVnIds, vnReleaseYears } =
+      await buildReleaseVnSets(dbDir, counters);
 
     await touchLockAndProgress(
       'releases',
@@ -736,7 +768,14 @@ async function runSyncProcess(
     for await (const row of streamTsvRows(path.join(dbDir, 'vn'), vnHeaders)) {
       counters.scanned += 1;
 
-      const normalized = normalizeVnRow(row, adultVnIds, japaneseVnIds, imageRatingMap, titleMap);
+      const normalized = normalizeVnRow(
+        row,
+        adultVnIds,
+        japaneseVnIds,
+        imageRatingMap,
+        titleMap,
+        vnReleaseYears
+      );
 
       if (!normalized) {
         counters.skipped += 1;

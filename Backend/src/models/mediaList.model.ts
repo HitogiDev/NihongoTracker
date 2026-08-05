@@ -10,6 +10,7 @@ const MEDIA_TYPES = [
   'movie',
   'tv show',
   'game',
+  'book',
 ];
 
 const MediaListEntrySchema = new Schema<IMediaListEntry>(

@@ -103,6 +103,8 @@ function ProfileScreen() {
     | 'game'
     | 'video'
     | 'movie'
+    | 'tv show'
+    | 'book'
     | 'audio'
     | 'other'
   >('all');
@@ -859,6 +861,14 @@ function ProfileScreen() {
                             {
                               value: 'movie',
                               label: tCommon('mediaTypes.movie'),
+                            },
+                            {
+                              value: 'tv show',
+                              label: tCommon('mediaTypes.tvShow'),
+                            },
+                            {
+                              value: 'book',
+                              label: tCommon('mediaTypes.book'),
                             },
                             {
                               value: 'audio',

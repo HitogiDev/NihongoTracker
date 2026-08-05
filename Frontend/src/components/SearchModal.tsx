@@ -72,6 +72,11 @@ const MEDIA_TYPE_CONFIG: Record<
     color: 'text-success',
     labelKey: 'mediaTypes.tvShow',
   },
+  book: {
+    icon: Book,
+    color: 'text-accent',
+    labelKey: 'mediaTypes.book',
+  },
 };
 
 // Media type filter options for the search bar dropdown (keys map to
@@ -89,6 +94,7 @@ const MEDIA_TYPE_FILTERS: {
   { value: 'video', labelKey: 'mediaTypes.video' },
   { value: 'movie', labelKey: 'mediaTypes.movie' },
   { value: 'tv show', labelKey: 'mediaTypes.tvShow' },
+  { value: 'book', labelKey: 'mediaTypes.book' },
 ];
 
 type SearchResultEntry = {
@@ -652,7 +658,7 @@ function SearchModal({
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu menu-sm z-[1] mt-2 w-44 rounded-box border border-base-content/10 bg-base-100 p-1 shadow-lg"
+              className="dropdown-content menu menu-sm z-50 mt-2 w-44 rounded-box border border-base-content/10 bg-base-100 p-1 shadow-lg"
             >
               {MEDIA_TYPE_FILTERS.map((opt) => (
                 <li key={opt.value}>

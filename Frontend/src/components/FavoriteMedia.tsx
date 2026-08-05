@@ -46,6 +46,7 @@ const TYPE_ORDER: MediaListMediaType[] = [
   'video',
   'movie',
   'tv show',
+  'book',
 ];
 
 /** Module scope: key names, never text. */

@@ -1,5 +1,9 @@
 import { Types } from 'mongoose';
 import Log from '../../../models/log.model.js';
+import {
+  EFFECTIVE_MINUTES_EXPR,
+  HAS_EFFECTIVE_TIME_MATCH,
+} from './effectiveMinutes.js';
 
 /**
  * Checks whether the user has logged threshold hours within any rolling 7-day window.
@@ -11,33 +15,46 @@ import Log from '../../../models/log.model.js';
  */
 export async function evaluateWeeklyHours(
   userId: Types.ObjectId,
-  threshold: number
+  threshold: number,
+  timezone = 'UTC'
 ): Promise<{ met: boolean; progress: number }> {
   const dailyTotals = await Log.aggregate<{
-    _id: { y: number; m: number; d: number };
+    _id: string;
     totalMinutes: number;
   }>([
-    { $match: { user: userId, time: { $gt: 0 } } },
+    // unknownDate logs have a placeholder date — they don't belong to any real week
     {
-      $group: {
-        _id: {
-          y: { $year: '$date' },
-          m: { $month: '$date' },
-          d: { $dayOfMonth: '$date' },
-        },
-        totalMinutes: { $sum: '$time' },
+      $match: {
+        user: userId,
+        unknownDate: { $ne: true },
+        ...HAS_EFFECTIVE_TIME_MATCH,
       },
     },
-    { $sort: { '_id.y': 1, '_id.m': 1, '_id.d': 1 } },
+    {
+      $group: {
+        // Day buckets follow the user's timezone, not UTC
+        _id: {
+          $dateToString: { format: '%Y-%m-%d', date: '$date', timezone },
+        },
+        totalMinutes: { $sum: EFFECTIVE_MINUTES_EXPR },
+      },
+    },
+    // 'YYYY-MM-DD' strings sort chronologically
+    { $sort: { _id: 1 } },
   ]);
 
   if (dailyTotals.length === 0) return { met: false, progress: 0 };
 
-  // Convert each bucket to a Date + minutes pair for the sliding window
-  const days = dailyTotals.map((d) => ({
-    date: new Date(d._id.y, d._id.m - 1, d._id.d).getTime(),
-    minutes: d.totalMinutes,
-  }));
+  // Convert each bucket to a Date + minutes pair for the sliding window. Day keys
+  // are anchored at UTC midnight so every day is exactly 24h apart — using local
+  // Date construction would make DST days 23h/25h and shift the window edge.
+  const days = dailyTotals.map((d) => {
+    const [y, m, day] = d._id.split('-').map(Number);
+    return {
+      date: Date.UTC(y, m - 1, day),
+      minutes: d.totalMinutes,
+    };
+  });
 
   let maxHours = 0;
   const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;

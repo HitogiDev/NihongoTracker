@@ -189,6 +189,7 @@
     "filters": {
       "all": "All types",
       "anime": "Anime",
+      "book": "Books",
       "game": "Games",
       "manga": "Manga",
       "movie": "Movies",

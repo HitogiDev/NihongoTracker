@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   getNotificationBody,
@@ -370,75 +371,84 @@ function NotificationBell() {
         )}
       </div>
 
-      <dialog className={`modal ${deleteConfirmOpen ? 'modal-open' : ''}`}>
-        <div className="modal-box max-w-sm border border-base-300 bg-base-100 text-base-content shadow-2xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-11 h-11 rounded-full bg-error/10 flex items-center justify-center">
-              <Trash2 className="w-5 h-5 text-error" />
+      {/*
+        Portaled to <body>: the bell lives inside the header, which is
+        `absolute z-40` and therefore its own stacking context — that traps the
+        modal's z-999 at level 40, letting page content with the same z-index
+        (e.g. the achievements filters) paint over it.
+      */}
+      {createPortal(
+        <dialog className={`modal ${deleteConfirmOpen ? 'modal-open' : ''}`}>
+          <div className="modal-box max-w-sm border border-base-300 bg-base-100 text-base-content shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-full bg-error/10 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-error" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-base-content">
+                  {t('deleteConfirm.title')}
+                </h3>
+                <p className="text-sm text-base-content/70">
+                  {t('deleteConfirm.description')}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-lg text-base-content">
-                {t('deleteConfirm.title')}
-              </h3>
-              <p className="text-sm text-base-content/70">
-                {t('deleteConfirm.description')}
-              </p>
+
+            <p className="text-sm text-base-content/80 mb-4">
+              {deleteConfirmItem ? getNotificationLabel(deleteConfirmItem) : ''}
+            </p>
+
+            <label className="label cursor-pointer justify-start gap-3 py-2 text-base-content">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary checkbox-sm"
+                checked={deleteConfirmDontShowAgain}
+                onChange={(event) =>
+                  setDeleteConfirmDontShowAgain(event.target.checked)
+                }
+              />
+              <span className="label-text flex items-center gap-2 text-base-content/90">
+                {t('deleteConfirm.dontShowAgain')}
+              </span>
+            </label>
+
+            <div className="modal-action mt-5 gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteConfirmItem(null);
+                  setDeleteConfirmDontShowAgain(false);
+                }}
+              >
+                {t('deleteConfirm.cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-error gap-2"
+                onClick={handleConfirmDelete}
+              >
+                <Check className="w-4 h-4" />
+                {t('deleteConfirm.confirm')}
+              </button>
             </div>
           </div>
-
-          <p className="text-sm text-base-content/80 mb-4">
-            {deleteConfirmItem ? getNotificationLabel(deleteConfirmItem) : ''}
-          </p>
-
-          <label className="label cursor-pointer justify-start gap-3 py-2 text-base-content">
-            <input
-              type="checkbox"
-              className="checkbox checkbox-primary checkbox-sm"
-              checked={deleteConfirmDontShowAgain}
-              onChange={(event) =>
-                setDeleteConfirmDontShowAgain(event.target.checked)
-              }
-            />
-            <span className="label-text flex items-center gap-2 text-base-content/90">
-              {t('deleteConfirm.dontShowAgain')}
-            </span>
-          </label>
-
-          <div className="modal-action mt-5 gap-2">
+          <form method="dialog" className="modal-backdrop">
             <button
-              type="button"
-              className="btn btn-ghost"
+              aria-label={t('deleteConfirm.close')}
               onClick={() => {
                 setDeleteConfirmOpen(false);
                 setDeleteConfirmItem(null);
                 setDeleteConfirmDontShowAgain(false);
               }}
             >
-              {t('deleteConfirm.cancel')}
+              close
             </button>
-            <button
-              type="button"
-              className="btn btn-error gap-2"
-              onClick={handleConfirmDelete}
-            >
-              <Check className="w-4 h-4" />
-              {t('deleteConfirm.confirm')}
-            </button>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button
-            aria-label={t('deleteConfirm.close')}
-            onClick={() => {
-              setDeleteConfirmOpen(false);
-              setDeleteConfirmItem(null);
-              setDeleteConfirmDontShowAgain(false);
-            }}
-          >
-            close
-          </button>
-        </form>
-      </dialog>
+          </form>
+        </dialog>,
+        document.body
+      )}
     </div>
   );
 }

@@ -402,6 +402,11 @@ export interface IMediaDocument {
     | 'book';
   episodes?: number;
   episodeDuration?: number;
+  /** Anime only — AniList airing window (end is null while still airing) */
+  airingStartDate?: Date | null;
+  airingEndDate?: Date | null;
+  /** VN only — year of the earliest known release, from the VNDB dump */
+  releaseYear?: number | null;
   genres?: string[];
   chapters?: number;
   characters?: number;
@@ -544,6 +549,13 @@ export interface IEditedFields {
   xp?: number;
 }
 
+/** AniList dates can be partially unknown — any component may be null. */
+export interface AnilistFuzzyDate {
+  year: number | null;
+  month: number | null;
+  day: number | null;
+}
+
 export interface AnilistSearchResult {
   Page: {
     pageInfo: {
@@ -577,6 +589,8 @@ export interface AnilistSearchResult {
       bannerImage: string;
       siteUrl: string;
       description: string;
+      startDate?: AnilistFuzzyDate | null;
+      endDate?: AnilistFuzzyDate | null;
     }[];
   };
 }
@@ -1299,6 +1313,21 @@ export type AchievementConditionType =
   | 'weeklyHours'
   | 'sessionsInDay'
   | 'platformAge'
+  | 'clubsCreated'
+  | 'clubMvp'
+  | 'mediaTypesInWeek'
+  | 'mediaReleasedBefore'
+  | 'logDuringAiring'
+  | 'clubsJoined'
+  | 'distinctMediaCount'
+  | 'consecutiveDaysWithHours'
+  | 'singleSessionHours'
+  | 'rapidSuccession'
+  | 'streakComeback'
+  | 'streakAfterBreak'
+  | 'rankDethroned'
+  | 'secretAchievementCount'
+  | 'earlyAdopter'
   | 'manualGrant';
 
 export interface IAchievementCondition {
@@ -1308,11 +1337,19 @@ export interface IAchievementCondition {
   mediaType?: string;
   /** For level conditions — which stat (userLevel, readingLevel, listeningLevel) */
   stat?: string;
-  /** For logTimeRange — UTC hour range [startHour, endHour) */
+  /** For logTimeRange — hour range [startHour, endHour) in the user's timezone */
   startHour?: number;
   endHour?: number;
   /** For logOnDate — MM-DD pattern (e.g. '07-07' for Tanabata) */
   datePattern?: string;
+  /** For mediaReleasedBefore — exclusive upper bound on the release year */
+  year?: number;
+  /** For mediaTypesInWeek — size of the rolling window in days (default 7) */
+  days?: number;
+  /** For consecutiveDaysWithHours — hours required on each day */
+  hours?: number;
+  /** For rapidSuccession — max gap between two logs, in seconds */
+  seconds?: number;
 }
 
 export interface IAchievement extends Document {
@@ -1341,6 +1378,8 @@ export interface IUserAchievement extends Document {
   unlockedAt: Date;
   progress: number;
   notified: boolean;
+  /** Granted by an admin — exempt from automatic revocation */
+  manuallyGranted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

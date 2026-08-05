@@ -20,7 +20,10 @@ import {
   searchGoogleBooks,
   getGoogleBook,
 } from '../services/searchGoogleBooks.js';
-import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
+import {
+  addMediaToIndex,
+  MEDIA_INDEXES,
+} from '../services/meilisearch/mediaIndex.js';
 import { fetchJitenDetail } from '../services/jiten.js';
 import {
   addDocuments,
@@ -179,7 +182,10 @@ export async function getMedia(
     ) {
       const needsAnimeFields =
         normalizedMediaType === 'anime' &&
-        (media.episodes == null || media.episodeDuration == null);
+        (media.episodes == null ||
+          media.episodeDuration == null ||
+          // Airing window was added later — fill it in for existing records
+          media.airingStartDate == null);
       const needsMangaLikeFields =
         (normalizedMediaType === 'manga' ||
           normalizedMediaType === 'reading') &&
@@ -201,7 +207,7 @@ export async function getMedia(
 
           const refreshedMedia = refreshedFromAnilist[0];
           if (refreshedMedia) {
-            const metadataUpdates: Record<string, number> = {};
+            const metadataUpdates: Record<string, number | Date> = {};
 
             if (media.episodes == null && refreshedMedia.episodes != null) {
               metadataUpdates.episodes = refreshedMedia.episodes;
@@ -211,6 +217,18 @@ export async function getMedia(
               refreshedMedia.episodeDuration != null
             ) {
               metadataUpdates.episodeDuration = refreshedMedia.episodeDuration;
+            }
+            if (
+              media.airingStartDate == null &&
+              refreshedMedia.airingStartDate != null
+            ) {
+              metadataUpdates.airingStartDate = refreshedMedia.airingStartDate;
+            }
+            if (
+              media.airingEndDate == null &&
+              refreshedMedia.airingEndDate != null
+            ) {
+              metadataUpdates.airingEndDate = refreshedMedia.airingEndDate;
             }
             if (media.chapters == null && refreshedMedia.chapters != null) {
               metadataUpdates.chapters = refreshedMedia.chapters;
@@ -497,16 +515,7 @@ export async function searchMedia(
   }
 }
 
-const MULTI_SEARCH_INDEXES = [
-  'anime',
-  'manga',
-  'reading',
-  'vn',
-  'movie',
-  'tv_show',
-  'game',
-  'book',
-] as const;
+const MULTI_SEARCH_INDEXES = MEDIA_INDEXES;
 
 export async function multiSearchMedia(
   req: Request,

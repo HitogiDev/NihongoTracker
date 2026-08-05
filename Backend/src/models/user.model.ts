@@ -23,6 +23,7 @@ const FAVORITE_MEDIA_TYPES = [
   'movie',
   'tv show',
   'game',
+  'book',
 ];
 
 const FavoriteEntrySchema = new Schema<IFavoriteEntry>(

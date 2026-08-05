@@ -1,140 +1,96 @@
-import { Types } from 'mongoose';
-import Achievement from '../../models/achievement.model.js';
-import UserAchievement from '../../models/userAchievement.model.js';
-import User from '../../models/user.model.js';
-import { IAchievement, IAchievementCheckContext } from '../../types.js';
-import { checkAchievements, evaluateCondition } from './achievementEngine.js';
-
 /**
- * Shared backfill used by both the admin endpoint and
- * `scripts/backfillAchievements.ts`.
+ * Shared achievement backfill.
  *
- * Granting is idempotent: `checkAchievements` upserts, so re-running only ever
- * adds what is genuinely missing.
- *
- * Revoking is **destructive** — it deletes `UserAchievement` rows whose
- * condition no longer evaluates to true (e.g. the user deleted the logs that
- * earned it). It is therefore opt-in at every call site.
+ * Used by both `npm run backfill:achievements` and the admin
+ * "Backfill All Achievements" button so the two can never drift apart.
  */
 
-/** Triggers that between them cover every condition type the engine checks. */
-const ALL_TRIGGERS: IAchievementCheckContext['trigger'][] = [
+import { Types } from 'mongoose';
+import User from '../../models/user.model.js';
+import UserAchievement from '../../models/userAchievement.model.js';
+import { IAchievementCheckContext } from '../../types.js';
+import {
+  checkAchievements,
+  revokeUnearnedAchievements,
+} from './achievementEngine.js';
+
+const TRIGGERS: IAchievementCheckContext['trigger'][] = [
   'log',
   'streak',
   'levelup',
 ];
 
-export interface BackfillProgress {
-  username: string;
-  granted: number;
-  revoked: number;
-  /** 1-based position in the run. */
-  index: number;
-  total: number;
+export interface BackfillResult {
+  usersProcessed: number;
+  usersWithNewAchievements: number;
+  totalGranted: number;
+  totalRevoked: number;
 }
 
 export interface BackfillOptions {
-  /** Delete achievements whose condition no longer holds. Off by default. */
+  /** Take back achievements the user no longer qualifies for. Default true. */
   revoke?: boolean;
-  /** Called once per user, after that user is processed. */
-  onUser?: (progress: BackfillProgress) => void;
-}
-
-export interface BackfillResult {
-  usersProcessed: number;
-  totalGranted: number;
-  totalRevoked: number;
-  usersWithNewAchievements: number;
-}
-
-/**
- * Re-check the achievements a user already holds and drop the ones that no
- * longer qualify. Returns how many were removed.
- */
-async function revokeStaleAchievements(
-  userId: Types.ObjectId
-): Promise<number> {
-  const held = await UserAchievement.find({ user: userId })
-    .select('achievement')
-    .lean();
-
-  if (held.length === 0) return 0;
-
-  const achievements = await Achievement.find({
-    _id: { $in: held.map((entry) => entry.achievement) },
-    isActive: true,
-  }).lean();
-
-  let revoked = 0;
-
-  for (const achievement of achievements) {
-    try {
-      const { met } = await evaluateCondition(
-        userId,
-        achievement as unknown as IAchievement
-      );
-
-      if (!met) {
-        const deleted = await UserAchievement.findOneAndDelete({
-          user: userId,
-          achievement: achievement._id,
-        });
-        if (deleted) revoked += 1;
-      }
-    } catch (error) {
-      // One unevaluable achievement must not abort the whole run, and must
-      // never cause a revoke: on error we keep what the user already has.
-      console.error(
-        `Failed to re-evaluate achievement ${String(achievement._id)}:`,
-        error
-      );
-    }
-  }
-
-  return revoked;
+  /** Called after each user, for CLI progress output. */
+  onUser?: (info: {
+    username: string;
+    granted: number;
+    revoked: number;
+    index: number;
+    total: number;
+  }) => void;
 }
 
 export async function backfillAchievementsForAllUsers(
   options: BackfillOptions = {}
 ): Promise<BackfillResult> {
-  const { revoke = false, onUser } = options;
+  const { revoke = true, onUser } = options;
 
   const users = await User.find({}).select('_id username').lean();
 
-  let totalGranted = 0;
-  let totalRevoked = 0;
-  let usersProcessed = 0;
-  let usersWithNewAchievements = 0;
+  const result: BackfillResult = {
+    usersProcessed: 0,
+    usersWithNewAchievements: 0,
+    totalGranted: 0,
+    totalRevoked: 0,
+  };
 
   for (const user of users) {
     const userId = user._id as Types.ObjectId;
-    let granted = 0;
 
-    for (const trigger of ALL_TRIGGERS) {
-      const newlyGranted = await checkAchievements(userId, { trigger });
-      granted += newlyGranted.length;
+    try {
+      // Revoke first: a stale unlock shouldn't survive just because the
+      // grant pass ran before it.
+      const revoked = revoke ? await revokeUnearnedAchievements(userId) : [];
+
+      let granted = 0;
+      for (const trigger of TRIGGERS) {
+        const newlyGranted = await checkAchievements(userId, { trigger });
+        granted += newlyGranted.length;
+      }
+
+      result.totalGranted += granted;
+      result.totalRevoked += revoked.length;
+      if (granted > 0) result.usersWithNewAchievements++;
+
+      onUser?.({
+        username: user.username,
+        granted,
+        revoked: revoked.length,
+        index: result.usersProcessed + 1,
+        total: users.length,
+      });
+    } catch (err) {
+      console.error(`Backfill failed for ${user.username}:`, err);
     }
 
-    const revoked = revoke ? await revokeStaleAchievements(userId) : 0;
-
-    totalGranted += granted;
-    totalRevoked += revoked;
-    usersProcessed += 1;
-    if (granted > 0) usersWithNewAchievements += 1;
-
-    onUser?.({
-      username: user.username ?? String(userId),
-      granted,
-      revoked,
-      index: usersProcessed,
-      total: users.length,
-    });
+    result.usersProcessed++;
   }
 
-  return {
-    usersProcessed,
-    totalGranted,
-    totalRevoked,
-    usersWithNewAchievements,
-  };
+  // Historical unlocks shouldn't pop the reveal modal on next login
+  await UserAchievement.updateMany(
+    { notified: false },
+    { $set: { notified: true } }
+  );
+
+  return result;
 }

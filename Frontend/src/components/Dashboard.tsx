@@ -61,6 +61,7 @@ const logTypeIcons: { [key: string]: React.ElementType } = {
   audio: Volume2,
   movie: Clapperboard,
   'tv show': MonitorPlay,
+  book: Book,
 };
 
 type FeedType = ILog['type'] | 'all';
@@ -100,6 +101,7 @@ const feedTypeOptions: Array<{
   { labelKey: 'mediaTypes.video', ns: 'common', value: 'video' },
   { labelKey: 'mediaTypes.movie', ns: 'common', value: 'movie' },
   { labelKey: 'mediaTypes.audio', ns: 'common', value: 'audio' },
+  { labelKey: 'mediaTypes.book', ns: 'common', value: 'book' },
 ];
 
 const feedTimeOptions: Array<{

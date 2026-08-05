@@ -32,6 +32,7 @@ export default function MediaSocial() {
     'video',
     'movie',
     'tv show',
+    'book',
     'audio',
     'other',
   ];

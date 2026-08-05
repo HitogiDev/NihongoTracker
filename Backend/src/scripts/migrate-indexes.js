@@ -35,6 +35,69 @@ Environment: ${NODE_ENV}
 Time: ${new Date().toISOString()}
 `);
 
+// Indexes to ensure, grouped by collection.
+const MIGRATIONS = [
+  {
+    collection: 'logs',
+    indexes: [
+      {
+        key: { user: 1, date: -1 },
+        name: 'user_1_date_-1',
+        description: 'User logs sorted by date (most recent first)',
+      },
+      {
+        key: { user: 1, mediaId: 1, type: 1 },
+        name: 'user_1_mediaId_1_type_1',
+        description:
+          'User-specific media and type queries (critical for MediaDetails)',
+      },
+      {
+        key: { user: 1, type: 1, date: -1 },
+        name: 'user_1_type_1_date_-1',
+        description: 'User type filtering with date sorting',
+      },
+      {
+        key: { user: 1, mediaId: 1, date: -1 },
+        name: 'user_1_mediaId_1_date_-1',
+        description: 'User media timeline queries',
+      },
+      {
+        key: { mediaId: 1, type: 1 },
+        name: 'mediaId_1_type_1',
+        description: 'Media type lookup queries',
+      },
+      {
+        key: { type: 1, date: -1 },
+        name: 'type_1_date_-1',
+        description: 'Type-based queries sorted by date',
+      },
+      {
+        key: { user: 1, mediaId: 1, type: 1, date: -1 },
+        name: 'user_1_mediaId_1_type_1_date_-1',
+        description:
+          'CRITICAL: Complete MediaDetails query optimization (user + media + type + date sort)',
+      },
+      {
+        key: { manabeId: 1 },
+        name: 'manabeId_1',
+        description: 'Manabe log ID for duplicate detection during sync',
+        sparse: true,
+      },
+    ],
+  },
+  {
+    collection: 'media',
+    indexes: [
+      {
+        key: { type: 1, jitenDifficulty: 1 },
+        name: 'type_1_jitenDifficulty_1',
+        description:
+          'Jiten difficulty backfill scan (linkable types missing a difficulty) — avoids a full collection scan over the IGDB/VNDB dumps',
+      },
+    ],
+  },
+];
+
 async function createProductionIndexes() {
   let retries = 0;
 
@@ -71,128 +134,92 @@ async function createProductionIndexes() {
       console.log('✅ Connected to MongoDB');
 
       const db = mongoose.connection.db;
-      const collection = db.collection('logs');
-
-      // Get collection stats
-      const stats = await collection.stats();
-      console.log(
-        `📊 Collection stats: ${stats.count} documents, ${(stats.size / 1024 / 1024).toFixed(2)} MB`
-      );
-
-      // Check existing indexes
-      console.log('🔍 Checking existing indexes...');
-      const existingIndexes = await collection.listIndexes().toArray();
-      const existingIndexNames = new Set(
-        existingIndexes.map((idx) => idx.name)
-      );
-
-      console.log(`📋 Found ${existingIndexes.length} existing indexes`);
-
-      // Define indexes to create
-      const indexesToCreate = [
-        {
-          key: { user: 1, date: -1 },
-          name: 'user_1_date_-1',
-          description: 'User logs sorted by date (most recent first)',
-        },
-        {
-          key: { user: 1, mediaId: 1, type: 1 },
-          name: 'user_1_mediaId_1_type_1',
-          description:
-            'User-specific media and type queries (critical for MediaDetails)',
-        },
-        {
-          key: { user: 1, type: 1, date: -1 },
-          name: 'user_1_type_1_date_-1',
-          description: 'User type filtering with date sorting',
-        },
-        {
-          key: { user: 1, mediaId: 1, date: -1 },
-          name: 'user_1_mediaId_1_date_-1',
-          description: 'User media timeline queries',
-        },
-        {
-          key: { mediaId: 1, type: 1 },
-          name: 'mediaId_1_type_1',
-          description: 'Media type lookup queries',
-        },
-        {
-          key: { type: 1, date: -1 },
-          name: 'type_1_date_-1',
-          description: 'Type-based queries sorted by date',
-        },
-        {
-          key: { user: 1, mediaId: 1, type: 1, date: -1 },
-          name: 'user_1_mediaId_1_type_1_date_-1',
-          description:
-            'CRITICAL: Complete MediaDetails query optimization (user + media + type + date sort)',
-        },
-        {
-          key: { manabeId: 1 },
-          name: 'manabeId_1',
-          description: 'Manabe log ID for duplicate detection during sync',
-          sparse: true,
-        },
-      ];
-
-      console.log(
-        `🔄 Processing ${indexesToCreate.length} potential indexes...`
-      );
 
       let created = 0;
       let skipped = 0;
+      let total = 0;
 
-      for (const indexSpec of indexesToCreate) {
-        if (existingIndexNames.has(indexSpec.name)) {
-          console.log(`⏭️  Index "${indexSpec.name}" already exists, skipping`);
-          skipped++;
-        } else {
-          console.log(`🔧 Creating index: ${indexSpec.name}`);
-          console.log(`   Description: ${indexSpec.description}`);
-          console.log(`   Keys: ${JSON.stringify(indexSpec.key)}`);
+      for (const migration of MIGRATIONS) {
+        const collection = db.collection(migration.collection);
+        console.log(`\n📦 Collection: ${migration.collection}`);
 
-          const startTime = Date.now();
-
-          const indexOptions = {
-            name: indexSpec.name,
-            background: true, // Critical for production: don't block operations
-          };
-
-          // Add sparse option if specified
-          if (indexSpec.sparse) {
-            indexOptions.sparse = true;
-          }
-
-          await collection.createIndex(indexSpec.key, indexOptions);
-
-          const duration = Date.now() - startTime;
-          console.log(`✅ Created "${indexSpec.name}" in ${duration}ms`);
-          created++;
+        // Get collection stats
+        try {
+          const stats = await collection.stats();
+          console.log(
+            `📊 Collection stats: ${stats.count} documents, ${(stats.size / 1024 / 1024).toFixed(2)} MB`
+          );
+        } catch (statsError) {
+          console.log(`📊 Collection stats unavailable: ${statsError.message}`);
         }
+
+        // Check existing indexes
+        console.log('🔍 Checking existing indexes...');
+        const existingIndexes = await collection.listIndexes().toArray();
+        const existingIndexNames = new Set(
+          existingIndexes.map((idx) => idx.name)
+        );
+
+        console.log(`📋 Found ${existingIndexes.length} existing indexes`);
+        console.log(
+          `🔄 Processing ${migration.indexes.length} potential indexes...`
+        );
+
+        for (const indexSpec of migration.indexes) {
+          if (existingIndexNames.has(indexSpec.name)) {
+            console.log(
+              `⏭️  Index "${indexSpec.name}" already exists, skipping`
+            );
+            skipped++;
+          } else {
+            console.log(`🔧 Creating index: ${indexSpec.name}`);
+            console.log(`   Description: ${indexSpec.description}`);
+            console.log(`   Keys: ${JSON.stringify(indexSpec.key)}`);
+
+            const startTime = Date.now();
+
+            const indexOptions = {
+              name: indexSpec.name,
+              background: true, // Critical for production: don't block operations
+            };
+
+            // Add sparse option if specified
+            if (indexSpec.sparse) {
+              indexOptions.sparse = true;
+            }
+
+            await collection.createIndex(indexSpec.key, indexOptions);
+
+            const duration = Date.now() - startTime;
+            console.log(`✅ Created "${indexSpec.name}" in ${duration}ms`);
+            created++;
+          }
+        }
+
+        // Per-collection verification
+        console.log(`\n🔍 Index verification for ${migration.collection}:`);
+        const finalIndexes = await collection.listIndexes().toArray();
+        finalIndexes.forEach((index, i) => {
+          const isNew = !existingIndexNames.has(index.name);
+          const marker = isNew ? '🆕' : '📝';
+          console.log(
+            `${marker} ${i + 1}. ${index.name}: ${JSON.stringify(index.key)}`
+          );
+        });
+        total += finalIndexes.length;
       }
 
       console.log(`\n🎉 Migration completed successfully!`);
       console.log(`📊 Summary:`);
       console.log(`   - Created: ${created} new indexes`);
       console.log(`   - Skipped: ${skipped} existing indexes`);
-      console.log(`   - Total: ${existingIndexes.length + created} indexes`);
-
-      // Final verification
-      console.log('\n🔍 Final index verification:');
-      const finalIndexes = await collection.listIndexes().toArray();
-      finalIndexes.forEach((index, i) => {
-        const isNew = !existingIndexNames.has(index.name);
-        const marker = isNew ? '🆕' : '📝';
-        console.log(
-          `${marker} ${i + 1}. ${index.name}: ${JSON.stringify(index.key)}`
-        );
-      });
+      console.log(`   - Total: ${total} indexes`);
 
       return {
         success: true,
         created,
         skipped,
-        total: finalIndexes.length,
+        total,
         duration: Date.now(),
       };
     } catch (error) {

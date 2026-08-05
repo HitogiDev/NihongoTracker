@@ -30,6 +30,7 @@ import {
   triggerVndbDumpSyncFn,
   adminBackfillAchievementsFn,
   adminBackfillRankingHistoryFn,
+  adminBackfillRankAchievementsFn,
   adminTriggerJitenDifficultyBackfillFn,
   getJitenDifficultyBackfillStatusFn,
   type IIgdbDumpSyncStatus,
@@ -507,8 +508,17 @@ function AdminScreen() {
     onError: () => toast.error('Failed to backfill ranking history'),
   });
 
+  const backfillRankAchievementsMutation = useMutation({
+    mutationFn: adminBackfillRankAchievementsFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+    },
+    onError: () => toast.error('Failed to backfill rank achievements'),
+  });
+
   const backfillJitenDifficultyMutation = useMutation({
-    mutationFn: adminTriggerJitenDifficultyBackfillFn,
+    mutationFn: (force: boolean) =>
+      adminTriggerJitenDifficultyBackfillFn(force),
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ['adminJitenBackfillStatus'] });
@@ -2452,7 +2462,7 @@ function AdminScreen() {
                       onClick={() => {
                         if (
                           confirm(
-                            'This will check all achievement conditions for every user and grant any that were previously missed. This may take a while. Continue?'
+                            'This will re-check all achievement conditions for every user: granting any that were previously missed, and REVOKING any the user no longer qualifies for. Admin-granted achievements are kept. This may take a while. Continue?'
                           )
                         ) {
                           backfillAchievementsMutation.mutate();
@@ -2512,10 +2522,40 @@ function AdminScreen() {
                       onClick={() => {
                         if (
                           confirm(
-                            "Fetches and caches Jiten difficulty for every media that doesn't have one yet, so the difficulty XP bonus and the consumed-difficulty (comfort) signal work across all history. Runs in the background and is paced to respect Jiten's rate limit — it may take a while. Continue?"
+                            'This replays every completed Sunday-to-Saturday week and awards Top 10 / Podium / King / Consistent to the users who earned them. Run this once to repair the weeks the cron scored with the wrong window. Nothing already granted is duplicated or revoked. This may take a while. Continue?'
                           )
                         ) {
-                          backfillJitenDifficultyMutation.mutate();
+                          backfillRankAchievementsMutation.mutate();
+                        }
+                      }}
+                      disabled={backfillRankAchievementsMutation.isPending}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                        />
+                      </svg>
+                      {backfillRankAchievementsMutation.isPending
+                        ? 'Backfilling Rank Achievements...'
+                        : 'Backfill Rank Achievements'}
+                    </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Downloads Jiten's full deck catalogue and re-tags the cached difficulty on every linkable media, so the difficulty XP bonus and the consumed-difficulty (comfort) signal work across all history. Runs in the background and takes well under a minute. Continue?"
+                          )
+                        ) {
+                          backfillJitenDifficultyMutation.mutate(true);
                         }
                       }}
                       disabled={

@@ -4,6 +4,7 @@ import {
   createIndex,
   updateIndexSettings,
   getIndexStats,
+  getExistingIndexUids,
 } from './meiliSearch.js';
 
 const USERS_INDEX = 'users';
@@ -48,7 +49,10 @@ export async function indexUser(user: {
 
 export async function initUsersIndex() {
   try {
-    await createIndex(USERS_INDEX, 'id');
+    const existing = await getExistingIndexUids(true);
+    if (!existing.has(USERS_INDEX)) {
+      await createIndex(USERS_INDEX, 'id');
+    }
     await updateIndexSettings(USERS_INDEX, {
       searchableAttributes: ['username'],
       displayedAttributes: ['id', 'username', 'avatar', 'banner', 'xp'],

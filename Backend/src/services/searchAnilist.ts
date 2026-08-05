@@ -41,6 +41,16 @@ const query = gql`
         isAdult
         bannerImage
         description
+        startDate {
+          year
+          month
+          day
+        }
+        endDate {
+          year
+          month
+          day
+        }
       }
     }
   }
@@ -81,6 +91,10 @@ export async function searchAnilist(variables: {
     ...(media.type === 'ANIME' && {
       episodes: media.episodes,
       episodeDuration: media.duration,
+      // Airing window, used by the "Currently Airing" achievement to tell
+      // whether a log happened while the show was still on air
+      airingStartDate: toFuzzyDate(media.startDate),
+      airingEndDate: toFuzzyDate(media.endDate),
     }),
     ...(media.type === 'MANGA' && {
       chapters: media.chapters,
@@ -88,6 +102,18 @@ export async function searchAnilist(variables: {
     }),
     isAdult: media.isAdult,
   })) as IMediaDocument[];
+}
+
+/**
+ * AniList fuzzy dates can have null parts (e.g. a year with no known day).
+ * Anything without at least a year is unusable; missing month/day default to
+ * the start of the period, which is close enough for an airing-window check.
+ */
+function toFuzzyDate(
+  date?: { year: number | null; month: number | null; day: number | null } | null
+): Date | null {
+  if (!date?.year) return null;
+  return new Date(Date.UTC(date.year, (date.month ?? 1) - 1, date.day ?? 1));
 }
 
 function cleanVariables<T extends object>(variables: T): Partial<T> {

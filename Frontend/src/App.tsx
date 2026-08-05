@@ -19,6 +19,7 @@ const MEDIA_TYPES = new Set([
   'movie',
   'tv show',
   'audio',
+  'book',
 ]);
 
 type MediaTabSection = 'overview' | 'reviews' | 'social';
@@ -96,6 +97,7 @@ const MEDIA_TYPE_TITLE_KEYS: Record<string, TitleKey> = {
   movie: 'common:mediaTypes.movie',
   'tv show': 'common:mediaTypes.tvShow',
   audio: 'common:mediaTypes.audio',
+  book: 'common:mediaTypes.book',
 };
 
 const CLUB_SECTION_TITLE_KEYS: Record<string, TitleKey> = {

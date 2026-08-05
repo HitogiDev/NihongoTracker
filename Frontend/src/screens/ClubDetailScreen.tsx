@@ -746,6 +746,7 @@ function ClubDetailScreen() {
         return <Play className="text-lg" />;
       case 'manga':
       case 'reading':
+      case 'book':
         return <Book className="text-lg" />;
       case 'movie':
       case 'video':

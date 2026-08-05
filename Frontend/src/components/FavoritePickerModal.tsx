@@ -57,6 +57,11 @@ const MEDIA_TYPE_CONFIG: Record<
     color: 'text-success',
     labelKey: 'mediaTypes.tvShow',
   },
+  book: {
+    icon: Book,
+    color: 'text-accent',
+    labelKey: 'mediaTypes.book',
+  },
 };
 
 function FavoritePickerModal({

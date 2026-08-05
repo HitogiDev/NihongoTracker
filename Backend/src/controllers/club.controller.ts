@@ -29,6 +29,7 @@ import {
 } from '../services/notifications.service.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import { recalculateClubGoalsProgress } from '../services/clubGoals.js';
+import { checkAchievements } from '../services/achievements/achievementEngine.js';
 
 type PatreonTier = 'donator' | 'enthusiast' | 'consumer' | null | undefined;
 
@@ -448,6 +449,9 @@ export async function createClub(
     await User.findByIdAndUpdate(userId, {
       $push: { clubs: newClub._id },
     });
+
+    // Club Founder unlocks here rather than waiting for the user's next log
+    await checkAchievements(userId, { trigger: 'log' });
 
     return res.status(201).json(newClub);
   } catch (error) {

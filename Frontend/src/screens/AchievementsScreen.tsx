@@ -190,7 +190,14 @@ export default function AchievementsScreen() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    // Mounted both standalone at /achievements and nested under ProfileHeader,
+    // which already offsets the fixed navbar with its banner. Only the
+    // standalone route needs to clear the header itself.
+    <div
+      className={`max-w-4xl mx-auto px-4 pb-8 space-y-8 ${
+        routeUsername ? 'pt-8' : 'pt-24'
+      }`}
+    >
       {/* Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight">

@@ -454,6 +454,7 @@ function transformOtherCSVLogsList(
     'movie',
     'other',
     'tv show',
+    'book',
   ];
 
   return list

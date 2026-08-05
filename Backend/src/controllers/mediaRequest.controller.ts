@@ -33,6 +33,7 @@ const MEDIA_REQUEST_TYPES: MediaRequestType[] = [
   'movie',
   'tv show',
   'game',
+  'book',
 ];
 
 // Maps a request type to the matching Mongoose discriminator model.

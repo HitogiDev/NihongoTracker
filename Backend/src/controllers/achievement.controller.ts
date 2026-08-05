@@ -8,6 +8,26 @@ import { customError } from '../middlewares/errorMiddleware.js';
 import { grantAchievement } from '../services/achievements/achievementEngine.js';
 import { Types } from 'mongoose';
 
+/**
+ * Strip the machine-readable unlock condition from a secret achievement.
+ *
+ * Earned secrets are visible on public profiles, so shipping `condition` would
+ * hand every visitor the exact recipe (type + threshold) for a secret they
+ * haven't found — the descriptions are deliberately vague for the same reason.
+ * Non-secret achievements keep it; the UI needs `condition.threshold` to draw
+ * progress bars.
+ */
+function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T): T {
+  if (!achievement.isSecret) return achievement;
+  // progress goes too: a bare "6" next to a secret still hints at its target
+  const {
+    condition: _condition,
+    progress: _progress,
+    ...rest
+  } = achievement as T & { condition?: unknown; progress?: unknown };
+  return rest as T;
+}
+
 // ─── Public / User endpoints ──────────────────────────────────────────────────
 
 /**
@@ -74,10 +94,10 @@ export async function getAchievements(
         };
       }
 
-      return {
+      return stripSecretCondition({
         ...a,
         rarityPercent,
-      };
+      });
     });
 
     return res.status(200).json(mapped);
@@ -203,13 +223,13 @@ async function getUserAchievementsById(
         };
       }
 
-      return {
+      return stripSecretCondition({
         ...a,
         isEarned,
         unlockedAt: earned?.unlockedAt ?? null,
         progress: earned?.progress ?? 0,
         rarityPercent,
-      };
+      });
     });
 
     // Filter out nulls (hidden secret unearned for non-owners)
@@ -607,24 +627,36 @@ export async function adminRevokeAchievement(
 
 /**
  * POST /api/achievements/admin/backfill-all  (admin)
- * Checks all achievement conditions for every user and grants any that are
- * now satisfied but weren't previously awarded.
+ * Checks all achievement conditions for every user, grants any that are now
+ * satisfied but weren't previously awarded, and revokes any the user no longer
+ * qualifies for. Identical to `npm run backfill:achievements` — both call
+ * backfillAchievementsForAllUsers.
+ *
+ * Pass { revoke: false } in the body to only grant.
  * This is a potentially long-running operation — it processes users sequentially.
  */
 export async function adminBackfillAchievementsForAllUsers(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    // Grant-only: the endpoint never revokes, so an admin cannot delete
-    // earned achievements with a single click. The CLI script opts in.
-    const { totalGranted, usersProcessed, usersWithNewAchievements } =
-      await backfillAchievementsForAllUsers({ revoke: false });
+    const revoke = req.body?.revoke !== false;
+
+    const {
+      totalGranted,
+      totalRevoked,
+      usersProcessed,
+      usersWithNewAchievements,
+    } = await backfillAchievementsForAllUsers({ revoke });
 
     return res.status(200).json({
-      message: `Backfill complete: ${totalGranted} achievement(s) granted across ${usersWithNewAchievements} user(s) out of ${usersProcessed} processed.`,
+      message:
+        `Backfill complete: ${totalGranted} achievement(s) granted across ` +
+        `${usersWithNewAchievements} user(s) out of ${usersProcessed} processed` +
+        (revoke ? `, ${totalRevoked} revoked.` : '.'),
       totalGranted,
+      totalRevoked,
       usersProcessed,
       usersWithNewAchievements,
     });
@@ -655,6 +687,8 @@ export async function getAchievementFeed(
           isActive: true,
           isHidden: false,
         },
+        // Never leak a secret's unlock condition into a public feed
+        select: '-condition',
       })
       .populate('user', 'username avatar')
       .sort({ unlockedAt: -1 })
@@ -696,6 +730,8 @@ export async function getUserAchievementActivity(
       .populate({
         path: 'achievement',
         match: { isActive: true, isHidden: false },
+        // Never leak a secret's unlock condition on a public profile
+        select: '-condition',
       })
       .sort({ unlockedAt: -1 })
       .limit(limit * 2)

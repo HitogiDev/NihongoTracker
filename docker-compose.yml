@@ -36,11 +36,12 @@ services:
       start_period: 60s
 
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.51.0
     restart: always
     ports:
       - '7700:7700'
     environment:
+      MEILI_UPGRADE_DB: 'true'
       MEILI_ENV: production
       MEILI_NO_ANALYTICS: 'true'
       MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}

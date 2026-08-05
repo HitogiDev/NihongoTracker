@@ -21,6 +21,21 @@ const ConditionSchema = new Schema(
         'weeklyHours',
         'sessionsInDay',
         'platformAge',
+        'clubsCreated',
+        'clubMvp',
+        'mediaTypesInWeek',
+        'mediaReleasedBefore',
+        'logDuringAiring',
+        'clubsJoined',
+        'distinctMediaCount',
+        'consecutiveDaysWithHours',
+        'singleSessionHours',
+        'rapidSuccession',
+        'streakComeback',
+        'streakAfterBreak',
+        'rankDethroned',
+        'secretAchievementCount',
+        'earlyAdopter',
         'manualGrant',
       ],
     },
@@ -30,6 +45,10 @@ const ConditionSchema = new Schema(
     startHour:   { type: Number },   // for logTimeRange
     endHour:     { type: Number },   // for logTimeRange
     datePattern: { type: String },   // for logOnDate — 'MM-DD' e.g. '07-07'
+    year:        { type: Number },   // for mediaReleasedBefore
+    days:        { type: Number },   // for mediaTypesInWeek — window size
+    hours:       { type: Number },   // for consecutiveDaysWithHours
+    seconds:     { type: Number },   // for rapidSuccession
   },
   { _id: false }
 );

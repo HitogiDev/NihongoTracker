@@ -267,12 +267,16 @@ function QuickLog({
       logType !== 'vn' &&
       logType !== 'game' &&
       logType !== 'manga' &&
-      logType !== 'reading'
+      logType !== 'reading' &&
+      logType !== 'book'
     ) {
       setChars(0);
     }
-    if (logType !== 'manga' && logType !== 'reading') {
+    if (logType !== 'manga' && logType !== 'reading' && logType !== 'book') {
       setPages(0);
+    }
+    // Volumes are a series concept — books are standalone
+    if (logType !== 'manga' && logType !== 'reading') {
       setLoggedVolume(undefined);
       setSeriesVolumes(undefined);
     }
@@ -283,6 +287,7 @@ function QuickLog({
       logType !== 'audio' &&
       logType !== 'manga' &&
       logType !== 'reading' &&
+      logType !== 'book' &&
       logType !== 'movie' &&
       logType !== 'vn' &&
       logType !== 'game'
@@ -859,11 +864,12 @@ function QuickLog({
                           </div>
                         )}
 
-                        {/* Characters field for VN, Manga, Reading */}
+                        {/* Characters field for VN, Manga, Reading, Book */}
                         {(logType === 'vn' ||
                           logType === 'game' ||
                           logType === 'manga' ||
-                          logType === 'reading') && (
+                          logType === 'reading' ||
+                          logType === 'book') && (
                           <div>
                             <label className="label">
                               <span className="label-text">
@@ -882,7 +888,9 @@ function QuickLog({
                           </div>
                         )}
 
-                        {(logType === 'manga' || logType === 'reading') && (
+                        {(logType === 'manga' ||
+                          logType === 'reading' ||
+                          logType === 'book') && (
                           <div>
                             <label className="label">
                               <span className="label-text">
@@ -901,11 +909,12 @@ function QuickLog({
                           </div>
                         )}
 
-                        {/* Time fields for Video, Audio, Manga, Reading, VN, and when not auto-calculated */}
+                        {/* Time fields for Video, Audio, Manga, Reading, Book, VN, and when not auto-calculated */}
                         {(logType === 'video' ||
                           logType === 'audio' ||
                           logType === 'manga' ||
                           logType === 'reading' ||
+                          logType === 'book' ||
                           logType === 'vn' ||
                           logType === 'game' ||
                           (logType === 'movie' && !episodes)) && (

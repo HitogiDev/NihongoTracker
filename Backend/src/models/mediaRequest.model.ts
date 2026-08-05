@@ -19,6 +19,7 @@ const MEDIA_REQUEST_TYPES = [
   'movie',
   'tv show',
   'game',
+  'book',
 ] as const;
 
 const MediaRequestSchema = new Schema<IMediaRequest>(

@@ -150,6 +150,7 @@ export async function getMediumRankingFn(params: {
     | 'video'
     | 'movie'
     | 'tv show'
+    | 'book'
     | 'audio';
   metric: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
   timeFilter?: string;
@@ -960,15 +961,18 @@ export interface IJitenBackfillStatus {
   total: number;
   processed: number;
   matched: number;
+  decksIndexed: number;
   startedAt: string | null;
   finishedAt: string | null;
   error: string | null;
 }
 
-export async function adminTriggerJitenDifficultyBackfillFn(): Promise<
-  IJitenBackfillStatus & { message: string }
-> {
-  const { data } = await api.post('admin/jiten-difficulty/backfill');
+export async function adminTriggerJitenDifficultyBackfillFn(
+  force = false
+): Promise<IJitenBackfillStatus & { message: string }> {
+  const { data } = await api.post('admin/jiten-difficulty/backfill', null, {
+    params: force ? { force: 'true' } : undefined,
+  });
   return data;
 }
 
@@ -1612,6 +1616,7 @@ export async function adminRevokeAchievementFn(
 export async function adminBackfillAchievementsFn(): Promise<{
   message: string;
   totalGranted: number;
+  totalRevoked: number;
   usersProcessed: number;
   usersWithNewAchievements: number;
 }> {
@@ -1625,6 +1630,15 @@ export async function adminBackfillRankingHistoryFn(): Promise<{
   snapshots: number;
 }> {
   const { data } = await api.post('admin/ranking-history/backfill');
+  return data;
+}
+
+export async function adminBackfillRankAchievementsFn(): Promise<{
+  message: string;
+  weeks: number;
+  granted: number;
+}> {
+  const { data } = await api.post('admin/rank-achievements/backfill');
   return data;
 }
 
