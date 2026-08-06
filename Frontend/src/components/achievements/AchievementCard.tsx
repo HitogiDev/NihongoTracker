@@ -10,6 +10,7 @@ import {
 } from '../../utils/achievementText';
 import { useTranslation } from 'react-i18next';
 import { useDateFormatting } from '../../hooks/useDateFormatting';
+import { describeAchievementCondition } from '../../utils/achievementCondition';
 
 /**
  * `formatDateInTimezone` merges in hour, minute and time-zone name unless they
@@ -146,6 +147,9 @@ export function AchievementDetailModal({
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
   const isSecret = achievement.isSecret && !isEarned;
+  const unlockCondition = describeAchievementCondition(
+    achievement.unlockCondition
+  );
 
   // Close on Escape
   useEffect(() => {
@@ -217,6 +221,19 @@ export function AchievementDetailModal({
               : getAchievementDescription(achievement)}
           </p>
 
+          {/* What unlocked it — the API sends this only to the earner */}
+          {unlockCondition && (
+            <div className="w-full rounded-lg border border-base-300 bg-base-200/60 px-3 py-2 text-left">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-base-content/60">
+                <Icon icon="mdi:key-variant" width={14} height={14} />
+                {t('condition.title')}
+              </div>
+              <p className="text-sm text-base-content/80 mt-1">
+                {unlockCondition}
+              </p>
+            </div>
+          )}
+
           <div className="divider my-0" />
 
           {/* Meta stats */}
@@ -286,6 +303,10 @@ export default function AchievementCard({
   const [showDetail, setShowDetail] = useState(false);
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
+  // Recomputed each render on purpose — it has to follow the active language
+  const unlockCondition = describeAchievementCondition(
+    achievement.unlockCondition
+  );
 
   const handleClick = () => {
     if (onClick) {
@@ -391,6 +412,19 @@ export default function AchievementCard({
                 {isSecret
                   ? getAchievementHint(achievement) || t('secretHint')
                   : getAchievementDescription(achievement)}
+              </p>
+            )}
+
+            {/* What unlocked it — the API sends this only to the earner */}
+            {!compact && unlockCondition && (
+              <p className="flex items-start gap-1.5 text-xs mt-1.5 text-base-content/60 italic">
+                <Icon
+                  icon="mdi:key-variant"
+                  className="shrink-0 mt-0.5"
+                  width={12}
+                  height={12}
+                />
+                <span className="line-clamp-2">{unlockCondition}</span>
               </p>
             )}
 

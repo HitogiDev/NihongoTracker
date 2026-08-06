@@ -28,6 +28,23 @@ function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T):
   return rest as T;
 }
 
+/**
+ * Hand the unlock condition back to the one person it can't spoil: the user who
+ * already earned the secret.
+ *
+ * Shipped as structured data rather than a sentence — the client renders it
+ * through i18n, the same way it translates achievement names by `key`.
+ * Gated on `isOwner` here rather than in the UI so a stranger's view of the
+ * profile never carries the recipe in its payload at all.
+ */
+function ownerUnlockCondition<
+  T extends { isSecret?: boolean; condition?: unknown }
+>(achievement: T, isEarned: boolean, isOwner: boolean) {
+  if (!achievement.isSecret || !isEarned || !isOwner) return {};
+  if (!achievement.condition) return {};
+  return { unlockCondition: achievement.condition };
+}
+
 // ─── Public / User endpoints ──────────────────────────────────────────────────
 
 /**
@@ -223,13 +240,16 @@ async function getUserAchievementsById(
         };
       }
 
-      return stripSecretCondition({
-        ...a,
-        isEarned,
-        unlockedAt: earned?.unlockedAt ?? null,
-        progress: earned?.progress ?? 0,
-        rarityPercent,
-      });
+      return {
+        ...stripSecretCondition({
+          ...a,
+          isEarned,
+          unlockedAt: earned?.unlockedAt ?? null,
+          progress: earned?.progress ?? 0,
+          rarityPercent,
+        }),
+        ...ownerUnlockCondition(a, isEarned, isOwner),
+      };
     });
 
     // Filter out nulls (hidden secret unearned for non-owners)
@@ -279,7 +299,11 @@ export async function getPendingAchievements(
         return {
           userAchievementId: ua._id,
           unlockedAt: ua.unlockedAt,
-          achievement: a,
+          // Owner-only endpoint, so a just-earned secret may explain itself
+          achievement: {
+            ...stripSecretCondition(a),
+            ...ownerUnlockCondition(a, true, true),
+          },
           rarityPercent,
         };
       });
@@ -329,7 +353,20 @@ export async function getShowcase(
           ua,
         ])
     );
-    const ordered = showcaseIds.map((id) => earnedMap.get(id)).filter(Boolean);
+    const ordered = showcaseIds
+      .map((id) => earnedMap.get(id))
+      .filter(Boolean)
+      .map((ua) => {
+        const a = (ua as any).achievement;
+        if (!a || typeof a !== 'object') return ua;
+        return {
+          ...ua,
+          achievement: {
+            ...stripSecretCondition(a),
+            ...ownerUnlockCondition(a, true, true),
+          },
+        };
+      });
 
     return res.status(200).json(ordered);
   } catch (error) {

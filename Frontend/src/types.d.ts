@@ -1296,18 +1296,40 @@ export interface IAchievement {
   iconSlug?: string;
   isSecret: boolean;
   isHidden: boolean;
-  condition?: {
-    type: string;
-    threshold?: number;
-    mediaType?: string;
-    stat?: string;
-  };
+  condition?: IAchievementCondition;
   points: number;
   order?: number;
   rarityPercent?: number;
   isEarned?: boolean;
   unlockedAt?: string | null;
   progress?: number;
+  /**
+   * The unlock condition of a secret the user has already earned. Sent only to
+   * that user — never on someone else's view of their profile — and rendered
+   * through i18n by `describeAchievementCondition`.
+   */
+  unlockCondition?: IAchievementCondition;
+}
+
+/** Mirror of Backend/src/types.ts IAchievementCondition. */
+export interface IAchievementCondition {
+  type: string;
+  threshold?: number;
+  mediaType?: string;
+  stat?: string;
+  /** logTimeRange — hour range [startHour, endHour) in the user's timezone */
+  startHour?: number;
+  endHour?: number;
+  /** logOnDate — MM-DD pattern */
+  datePattern?: string;
+  /** mediaReleasedBefore — exclusive upper bound on the release year */
+  year?: number;
+  /** mediaTypesInWeek — rolling window size in days */
+  days?: number;
+  /** consecutiveDaysWithHours — hours required on each day */
+  hours?: number;
+  /** rapidSuccession — max gap between two logs, in seconds */
+  seconds?: number;
 }
 
 export interface IUserAchievement {
