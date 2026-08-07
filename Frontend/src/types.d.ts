@@ -1304,11 +1304,11 @@ export interface IAchievement {
   unlockedAt?: string | null;
   progress?: number;
   /**
-   * The unlock condition of a secret the user has already earned. Sent only to
-   * that user — never on someone else's view of their profile — and rendered
-   * through i18n by `describeAchievementCondition`.
+   * True on a secret the viewer unlocked themselves. Sent only to that user —
+   * never on someone else's view of their profile — and the signal for showing
+   * `fullDescription` instead of the vague public line.
    */
-  unlockCondition?: IAchievementCondition;
+  isOwnUnlock?: boolean;
 }
 
 /** Mirror of Backend/src/types.ts IAchievementCondition. */

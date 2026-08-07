@@ -5,7 +5,10 @@ import Achievement from '../models/achievement.model.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import User from '../models/user.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
-import { grantAchievement } from '../services/achievements/achievementEngine.js';
+import {
+  dismissAchievementNotifications,
+  grantAchievement,
+} from '../services/achievements/achievementEngine.js';
 import { Types } from 'mongoose';
 
 /**
@@ -29,20 +32,20 @@ function stripSecretCondition<T extends { isSecret?: boolean }>(achievement: T):
 }
 
 /**
- * Hand the unlock condition back to the one person it can't spoil: the user who
- * already earned the secret.
+ * Mark a secret the viewer earned themselves.
  *
- * Shipped as structured data rather than a sentence — the client renders it
- * through i18n, the same way it translates achievement names by `key`.
- * Gated on `isOwner` here rather than in the UI so a stranger's view of the
- * profile never carries the recipe in its payload at all.
+ * Secrets carry two descriptions in the client's i18n catalogue: a vague one
+ * everyone sees, and a `fullDescription` that spells the requirement out. This
+ * flag is what tells the UI it may show the second one — a visitor's view of
+ * someone else's profile never gets it, so the spoiler stays with the earner.
  */
-function ownerUnlockCondition<
-  T extends { isSecret?: boolean; condition?: unknown }
->(achievement: T, isEarned: boolean, isOwner: boolean) {
+function ownSecretUnlock<T extends { isSecret?: boolean }>(
+  achievement: T,
+  isEarned: boolean,
+  isOwner: boolean
+) {
   if (!achievement.isSecret || !isEarned || !isOwner) return {};
-  if (!achievement.condition) return {};
-  return { unlockCondition: achievement.condition };
+  return { isOwnUnlock: true };
 }
 
 // ─── Public / User endpoints ──────────────────────────────────────────────────
@@ -248,7 +251,7 @@ async function getUserAchievementsById(
           progress: earned?.progress ?? 0,
           rarityPercent,
         }),
-        ...ownerUnlockCondition(a, isEarned, isOwner),
+        ...ownSecretUnlock(a, isEarned, isOwner),
       };
     });
 
@@ -291,6 +294,17 @@ export async function getPendingAchievements(
       { $set: { notified: true } }
     );
 
+    // The reveal animation these rows are about to feed *is* the notification,
+    // so drop the bell entry the unlock wrote rather than telling the user
+    // twice about the same achievement.
+    await dismissAchievementNotifications(
+      userId,
+      pending
+        .map((ua) => ua.achievement as { _id?: Types.ObjectId } | null)
+        .filter((a): a is { _id: Types.ObjectId } => Boolean(a?._id))
+        .map((a) => a._id)
+    );
+
     const result = pending
       .filter((ua) => ua.achievement)
       .map((ua) => {
@@ -302,7 +316,7 @@ export async function getPendingAchievements(
           // Owner-only endpoint, so a just-earned secret may explain itself
           achievement: {
             ...stripSecretCondition(a),
-            ...ownerUnlockCondition(a, true, true),
+            ...ownSecretUnlock(a, true, true),
           },
           rarityPercent,
         };
@@ -363,7 +377,7 @@ export async function getShowcase(
           ...ua,
           achievement: {
             ...stripSecretCondition(a),
-            ...ownerUnlockCondition(a, true, true),
+            ...ownSecretUnlock(a, true, true),
           },
         };
       });

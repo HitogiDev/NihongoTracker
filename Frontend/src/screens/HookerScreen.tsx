@@ -793,6 +793,38 @@ function TextHooker() {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const isTimerActiveRef = useRef(isTimerActive);
   const autostartTimerByLineRef = useRef(autostartTimerByLine);
+  const secondsRef = useRef(seconds);
+
+  /**
+   * Wall-clock anchor for the running timer: seconds already banked, and the
+   * instant they were banked at.
+   *
+   * The tick reads the clock instead of counting itself. Counting ticks loses
+   * real time whenever one fails to fire, and it fails often: a hidden tab has
+   * its timers clamped to once a second and, after ~5 minutes hidden, to once a
+   * *minute*, while a busy main thread (slow machine, screen sharing) delays
+   * and coalesces the rest. Every missed tick used to be a second the reader
+   * never got back.
+   */
+  const timerAnchorRef = useRef({ at: Date.now(), seconds });
+
+  const anchorTimer = useCallback((value: number) => {
+    timerAnchorRef.current = { at: Date.now(), seconds: value };
+  }, []);
+
+  /** Set the timer to an exact value (reset, manual edit, restore from server). */
+  const setTimerSeconds = useCallback(
+    (value: number) => {
+      anchorTimer(value);
+      secondsRef.current = value;
+      setSeconds(value);
+    },
+    [anchorTimer]
+  );
+
+  useEffect(() => {
+    secondsRef.current = seconds;
+  }, [seconds]);
 
   useEffect(() => {
     isTimerActiveRef.current = isTimerActive;
@@ -862,7 +894,7 @@ function TextHooker() {
 
       persistLoggedBaseline({ lines: 0, chars: 0 });
       setLines([]);
-      setSeconds(0);
+      setTimerSeconds(0);
       lastSavedTimerRef.current = 0;
       timerInitializedFromServerRef.current = true;
 
@@ -889,7 +921,7 @@ function TextHooker() {
       lastActivityRef.current = Date.now();
       setIsTimerActive(true);
     }
-  }, [contentId, queryClient, persistLoggedBaseline, t]);
+  }, [contentId, queryClient, persistLoggedBaseline, setTimerSeconds, t]);
 
   // Use whichever is higher to avoid losing timer progress
   useEffect(() => {
@@ -903,11 +935,11 @@ function TextHooker() {
         localStorage.getItem(`texthooker_timer_${timerKey}`) || 0
       );
       const bestTimer = Math.max(serverTimer, localTimer);
-      setSeconds(bestTimer);
+      setTimerSeconds(bestTimer);
       lastSavedTimerRef.current = bestTimer;
       timerInitializedFromServerRef.current = true;
     }
-  }, [sessionData, timerKey]);
+  }, [sessionData, timerKey, setTimerSeconds]);
 
   useEffect(() => {
     if (!contentId) return;
@@ -1085,24 +1117,46 @@ function TextHooker() {
   }, [lines]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isTimerActive) {
-      interval = setInterval(() => {
-        const now = Date.now();
-        if (
-          autoPauseTimeout > 0 &&
-          now - lastActivityRef.current >= autoPauseTimeout * 1000
-        ) {
-          setIsTimerActive(false);
-        } else {
-          setSeconds((s) => s + 1);
-        }
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    if (!isTimerActive) return;
+
+    // Re-anchor on resume so the time spent paused is never banked.
+    anchorTimer(secondsRef.current);
+
+    const tick = () => {
+      const now = Date.now();
+      // Auto-pause also caps how much of a gap counts. Reading the clock means
+      // a tab that was throttled for ten minutes hands back all ten — right if
+      // lines kept arriving, wrong if the reader walked away. The cap keeps the
+      // second case honest: nothing past the auto-pause deadline is counted.
+      const pauseAt =
+        autoPauseTimeout > 0
+          ? lastActivityRef.current + autoPauseTimeout * 1000
+          : Infinity;
+      const countedUntil = Math.min(now, pauseAt);
+      const { at, seconds: banked } = timerAnchorRef.current;
+      const next = banked + Math.max(0, Math.floor((countedUntil - at) / 1000));
+
+      if (next !== secondsRef.current) {
+        secondsRef.current = next;
+        setSeconds(next);
+      }
+
+      if (now >= pauseAt) {
+        anchorTimer(next);
+        setIsTimerActive(false);
+      }
     };
-  }, [isTimerActive, autoPauseTimeout]);
+
+    const interval = setInterval(tick, 1000);
+    // A hidden tab may not tick for a full minute, so catch up the moment it is
+    // looked at again rather than waiting for the next scheduled tick.
+    document.addEventListener('visibilitychange', tick);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [isTimerActive, autoPauseTimeout, anchorTimer]);
 
   useEffect(() => {
     if (mode === 'local' || !isRoomConnected) {
@@ -1486,14 +1540,14 @@ function TextHooker() {
   }, []);
 
   const handleResetTimer = useCallback(() => {
-    setSeconds(0);
+    setTimerSeconds(0);
     lastActivityRef.current = Date.now();
     setIsResetTimerConfirmOpen(false);
     if (contentId) {
       lastSavedTimerRef.current = 0;
       updateSessionTimerFn(contentId, 0).catch(console.error);
     }
-  }, [contentId]);
+  }, [contentId, setTimerSeconds]);
 
   const handleRequestResetTimer = useCallback(() => {
     if (seconds === 0) return;
@@ -1513,14 +1567,20 @@ function TextHooker() {
   const handleSaveTimerEdit = useCallback(() => {
     const totalSeconds =
       timerEditHours * 3600 + timerEditMinutes * 60 + timerEditSeconds;
-    setSeconds(totalSeconds);
+    setTimerSeconds(totalSeconds);
     lastActivityRef.current = Date.now();
     setIsTimerEditOpen(false);
     if (contentId) {
       lastSavedTimerRef.current = totalSeconds;
       updateSessionTimerFn(contentId, totalSeconds).catch(console.error);
     }
-  }, [timerEditHours, timerEditMinutes, timerEditSeconds, contentId]);
+  }, [
+    timerEditHours,
+    timerEditMinutes,
+    timerEditSeconds,
+    contentId,
+    setTimerSeconds,
+  ]);
 
   const handleOpenPopup = useCallback(() => {
     const url = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -1654,7 +1714,7 @@ function TextHooker() {
     }
 
     setIsTimerActive(false);
-    setSeconds(0);
+    setTimerSeconds(0);
     lastSavedTimerRef.current = 0;
 
     if (contentId) {
@@ -1667,6 +1727,7 @@ function TextHooker() {
     roomId,
     persistLoggedBaseline,
     persistPendingSessionLines,
+    setTimerSeconds,
     syncPendingSessionSyncState,
   ]);
 

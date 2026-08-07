@@ -5,8 +5,10 @@ import { IPendingAchievement } from '../../types';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
 import { playAchievement } from '../../utils/sfx';
-import { getAchievementName } from '../../utils/achievementText';
-import { describeAchievementCondition } from '../../utils/achievementCondition';
+import {
+  getAchievementFullDescription,
+  getAchievementName,
+} from '../../utils/achievementText';
 import { useTranslation } from 'react-i18next';
 
 /** Per-rarity particle intensity for the flip-reveal burst. */
@@ -38,14 +40,10 @@ export default function AchievementRevealModal({
   const descRef = useRef<HTMLParagraphElement>(null);
   const rarityRef = useRef<HTMLSpanElement>(null);
   const unlockTextRef = useRef<HTMLDivElement>(null);
-  const conditionRef = useRef<HTMLDivElement>(null);
   const isFirstCardRef = useRef(true);
 
   const current = achievements[currentIndex];
   const a = current?.achievement;
-  // Recomputed each render on purpose — it has to follow the active language
-  const unlockCondition = describeAchievementCondition(a?.unlockCondition);
-
   const isLast = currentIndex === achievements.length - 1;
 
   // Overlay fades in once — not again on every card.
@@ -117,7 +115,6 @@ export default function AchievementRevealModal({
       titleRef.current,
       rarityRef.current,
       descRef.current,
-      conditionRef.current,
       unlockTextRef.current,
     ].filter(Boolean);
 
@@ -267,23 +264,10 @@ export default function AchievementRevealModal({
               className="text-sm text-white/70 mt-1 max-w-xs"
               style={{ opacity: 0 }}
             >
-              {a.description ?? ''}
+              {/* The reveal only ever shows the viewer their own unlock, so a
+                  secret can describe itself in full here. */}
+              {getAchievementFullDescription(a)}
             </p>
-
-            {/* What unlocked it — present only on the earner's own payload */}
-            {unlockCondition && (
-              <div
-                ref={conditionRef}
-                className="mx-auto mt-1 max-w-xs rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-left"
-                style={{ opacity: 0 }}
-              >
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/45">
-                  <Icon icon="mdi:key-variant" width={12} height={12} />
-                  {t('condition.title')}
-                </div>
-                <p className="mt-1 text-xs text-white/75">{unlockCondition}</p>
-              </div>
-            )}
 
             <div
               ref={unlockTextRef}

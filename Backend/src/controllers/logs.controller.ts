@@ -33,7 +33,10 @@ import axios from 'axios';
 import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
 import { recalculateAllUsersXpV2 } from '../services/xpMigration.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
-import { checkAchievements } from '../services/achievements/achievementEngine.js';
+import {
+  checkAchievements,
+  dismissAchievementNotifications,
+} from '../services/achievements/achievementEngine.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { computeMonthlyOvertakes } from '../services/overtake.service.js';
 
@@ -1754,12 +1757,20 @@ export async function createLog(
     // These are returned inline and revealed by the client right away, so mark
     // them notified — otherwise the /me/pending drain would replay them later.
     if (newAchievements.length > 0) {
+      const achievementIds = newAchievements.map(
+        (a) => a._id as Types.ObjectId
+      );
       await UserAchievement.updateMany(
         {
           user: res.locals.user._id,
-          achievement: { $in: newAchievements.map((a) => a._id) },
+          achievement: { $in: achievementIds },
         },
         { $set: { notified: true } }
+      );
+      // The reveal the client is about to play replaces the bell entry.
+      await dismissAchievementNotifications(
+        res.locals.user._id,
+        achievementIds
       );
     }
 

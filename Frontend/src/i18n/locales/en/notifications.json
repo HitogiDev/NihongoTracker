@@ -22,6 +22,7 @@
   },
   "items": {
     "achievement.unlocked": "Achievement unlocked: {{name}}",
+    "achievement.unlockedBody": "{{description}}",
     "changelog.available": "Version {{version}} is now available",
     "club.joinApproved": "You were accepted into {{clubName}}",
     "club.joinRejected": "Your request to join {{clubName}} was declined",

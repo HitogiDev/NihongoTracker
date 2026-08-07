@@ -7,6 +7,8 @@ interface AchievementLike {
   hint?: string;
 }
 
+type AchievementField = 'name' | 'description' | 'hint' | 'fullDescription';
+
 /**
  * Achievement names and descriptions live in the database in English, seeded by
  * `Backend/src/scripts/seedAchievements.ts`. Rather than translating them
@@ -18,12 +20,24 @@ interface AchievementLike {
  */
 function lookup(
   achievement: AchievementLike | null | undefined,
-  field: 'name' | 'description' | 'hint'
+  field: AchievementField
 ): string {
   if (!achievement) return '';
 
-  const fallback = achievement[field] ?? '';
+  // `fullDescription` has no database counterpart — it only exists as a
+  // translation, so an untranslated achievement falls back to nothing here and
+  // the caller drops to the public description instead.
+  const fallback =
+    field === 'fullDescription' ? '' : (achievement[field] ?? '');
   if (!achievement.key) return fallback;
+
+  // An empty `defaultValue` makes i18next hand back the key itself, which would
+  // render as `items.<key>.fullDescription` on screen.
+  if (
+    !fallback &&
+    !i18n.exists(`achievements:items.${achievement.key}.${field}`)
+  )
+    return '';
 
   // The key comes from the database at runtime, so the typed `t` signature
   // cannot apply; `errorCodes`-style catalogue drift is guarded by the seed
@@ -54,4 +68,19 @@ export function getAchievementHint(
   achievement: AchievementLike | null | undefined
 ): string {
   return lookup(achievement, 'hint');
+}
+
+/**
+ * The spelled-out description of a secret, for the user who unlocked it.
+ *
+ * Secrets describe themselves vaguely in public so they stay a surprise; only
+ * `isOwnUnlock` payloads should reach this. Falls back to the public line for
+ * achievements that have nothing extra to say.
+ */
+export function getAchievementFullDescription(
+  achievement: AchievementLike | null | undefined
+): string {
+  return (
+    lookup(achievement, 'fullDescription') || lookup(achievement, 'description')
+  );
 }

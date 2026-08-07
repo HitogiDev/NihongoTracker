@@ -15,74 +15,6 @@
     "social": "Social",
     "secret": "Secret"
   },
-  "condition": {
-    "title": "How you unlocked it",
-    "units": {
-      "days_one": "{{count, number}} day",
-      "days_other": "{{count, number}} days",
-      "hours_one": "{{count, number}} hour",
-      "hours_other": "{{count, number}} hours"
-    },
-    "levelStat": {
-      "userLevel": "overall level",
-      "readingLevel": "reading level",
-      "listeningLevel": "listening level"
-    },
-    "streak_one": "Reach a {{count, number}}-day immersion streak.",
-    "streak_other": "Reach a {{count, number}}-day immersion streak.",
-    "totalXp_one": "Earn {{count, number}} XP in total.",
-    "totalXp_other": "Earn {{count, number}} XP in total.",
-    "logCount_one": "Create {{count, number}} log.",
-    "logCount_other": "Create {{count, number}} logs.",
-    "mediaType_one": "Create {{count, number}} {{media}} log.",
-    "mediaType_other": "Create {{count, number}} {{media}} logs.",
-    "level": "Reach {{stat}} {{level, number}}.",
-    "totalHours_one": "Log {{count, number}} hour of immersion in total.",
-    "totalHours_other": "Log {{count, number}} hours of immersion in total.",
-    "mediaTypeHours_one": "Log {{count, number}} hour of {{media}}.",
-    "mediaTypeHours_other": "Log {{count, number}} hours of {{media}}.",
-    "achievementCount_one": "Unlock {{count, number}} other achievement.",
-    "achievementCount_other": "Unlock {{count, number}} other achievements.",
-    "logTimeRange_one": "Create {{count, number}} log between {{start}} and {{end}}, in your timezone.",
-    "logTimeRange_other": "Create {{count, number}} logs between {{start}} and {{end}}, in your timezone.",
-    "logOnDate": "Log immersion on {{date}}.",
-    "singleDayHours_one": "Log {{count, number}} hour of immersion within a single day.",
-    "singleDayHours_other": "Log {{count, number}} hours of immersion within a single day.",
-    "weeklyHours_one": "Log {{count, number}} hour of immersion within a single week.",
-    "weeklyHours_other": "Log {{count, number}} hours of immersion within a single week.",
-    "sessionsInDay_one": "Create {{count, number}} log in a single day.",
-    "sessionsInDay_other": "Create {{count, number}} logs in a single day.",
-    "platformAge_one": "Have an account that is {{count, number}} day old.",
-    "platformAge_other": "Have an account that is {{count, number}} days old.",
-    "clubsCreated_one": "Create {{count, number}} club.",
-    "clubsCreated_other": "Create {{count, number}} clubs.",
-    "clubsJoined_one": "Join {{count, number}} club.",
-    "clubsJoined_other": "Join {{count, number}} clubs.",
-    "clubMvp_one": "Finish as the top contributor in {{count, number}} club challenge.",
-    "clubMvp_other": "Finish as the top contributor in {{count, number}} club challenges.",
-    "mediaTypesInWeek_one": "Log {{count, number}} media type within {{window}}.",
-    "mediaTypesInWeek_other": "Log {{count, number}} different media types within {{window}}.",
-    "mediaReleasedBefore": "Log a {{media}} released before {{year}}.",
-    "logDuringAiring": "Log an anime while it was still airing.",
-    "distinctMediaCount_one": "Log {{count, number}} title.",
-    "distinctMediaCount_other": "Log {{count, number}} different titles.",
-    "consecutiveDaysWithHours_one": "Log at least {{hours}} for {{count, number}} day.",
-    "consecutiveDaysWithHours_other": "Log at least {{hours}} a day for {{count, number}} days in a row.",
-    "singleSessionHours_one": "Log a single session of {{count, number}} hour or more.",
-    "singleSessionHours_other": "Log a single session of {{count, number}} hours or more.",
-    "rapidSuccession_one": "Submit two logs within {{count, number}} second of each other.",
-    "rapidSuccession_other": "Submit two logs within {{count, number}} seconds of each other.",
-    "streakComeback_one": "Break a streak, then build a longer one of at least {{count, number}} day.",
-    "streakComeback_other": "Break a streak, then build a longer one of at least {{count, number}} days.",
-    "streakAfterBreak_one": "Come back after breaking a streak and log {{count, number}} day in a row.",
-    "streakAfterBreak_other": "Come back after breaking a streak and log {{count, number}} days in a row.",
-    "rankDethroned": "Hold #1 on the weekly leaderboard and then lose the top spot.",
-    "secretAchievementCount_one": "Unlock {{count, number}} other secret achievement.",
-    "secretAchievementCount_other": "Unlock {{count, number}} other secret achievements.",
-    "earlyAdopter_one": "Be among the first {{count, number}} account created on NihongoTracker.",
-    "earlyAdopter_other": "Be among the first {{count, number}} accounts created on NihongoTracker.",
-    "manualGrant": "Awarded manually."
-  },
   "feed": {
     "earned": "earned",
     "unlocked": "Achievement unlocked:"
@@ -257,62 +189,74 @@
       "name": "Renaissance Learner"
     },
     "secret_absorbed": {
-      "description": "Log 6 or more hours of a single title in one session.",
+      "description": "Hours went by. You never noticed.",
+      "fullDescription": "Log 6 or more hours of a single title in one session.",
       "hint": "Completely absorbed...",
       "name": "夢中"
     },
     "secret_club_hopper": {
-      "name": "Club Hopper",
       "description": "One crowd was never going to be enough.",
-      "hint": "Why settle for one crowd?"
+      "fullDescription": "Join 3 clubs.",
+      "hint": "Why settle for one crowd?",
+      "name": "Club Hopper"
     },
     "secret_dethroned": {
-      "description": "You held the #1 spot — and someone took it from you.",
+      "description": "You held the summit once. The view was worth it.",
+      "fullDescription": "You held the #1 spot — and someone took it from you.",
       "hint": "The higher you climb...",
       "name": "Dethroned"
     },
     "secret_early_adopter": {
-      "description": "One of the first 100 users to join NihongoTracker.",
+      "description": "You were here before it was worth being here.",
+      "fullDescription": "One of the first 100 users to join NihongoTracker.",
       "hint": "Were you here at the beginning?",
       "name": "創始者"
     },
     "secret_floor_lava": {
-      "description": "Switch between 4 different media types in a single day.",
+      "description": "You could not stay in one place if you tried.",
+      "fullDescription": "Switch between 4 different media types in a single day.",
       "hint": "You cannot stay in one place...",
       "name": "The Floor Is Lava"
     },
     "secret_iron_will": {
-      "name": "鉄の意志",
       "description": "Rest is for people with lesser plans.",
-      "hint": "No day off, no excuses..."
+      "fullDescription": "Log at least 4 hours a day for 7 days in a row.",
+      "hint": "No day off, no excuses...",
+      "name": "鉄の意志"
     },
     "secret_keeper": {
-      "description": "Discover 5 hidden achievements.",
+      "description": "You keep finding things that were never advertised.",
+      "fullDescription": "Discover 5 hidden achievements.",
       "hint": "There is more here than meets the eye...",
       "name": "Secret Keeper"
     },
     "secret_long_streak": {
-      "description": "Maintain a 500-day streak. Some say it cannot be done.",
+      "description": "Some say it cannot be done. You did it anyway.",
+      "fullDescription": "Maintain a 500-day streak. Some say it cannot be done.",
       "hint": "A legendary feat of consistency...",
       "name": "不屈の精神"
     },
     "secret_loyal": {
-      "description": "Log every day for a week immediately after breaking a streak.",
+      "description": "You did not stay gone. Loyalty is not given up easily.",
+      "fullDescription": "Log every day for a week immediately after breaking a streak.",
       "hint": "Loyalty is not given up easily...",
       "name": "Loyal"
     },
     "secret_phoenix": {
-      "description": "Break a streak, then come back and surpass your personal best.",
+      "description": "Ashes behind you, a longer road ahead.",
+      "fullDescription": "Break a streak, then come back and surpass your personal best.",
       "hint": "Rise from the ashes...",
       "name": "Phoenix"
     },
     "secret_speedrunner": {
-      "description": "Log a session within 60 seconds of your previous log.",
+      "description": "Not a moment wasted between one thing and the next.",
+      "fullDescription": "Log a session within 60 seconds of your previous log.",
       "hint": "You are moving very fast...",
       "name": "Speedrunner"
     },
     "secret_xp_10m": {
-      "description": "Earn 10,000,000 total XP. You have transcended.",
+      "description": "You have transcended. There is little left to prove.",
+      "fullDescription": "Earn 10,000,000 total XP. You have transcended.",
       "hint": "Beyond legendary...",
       "name": "一千万の証"
     },

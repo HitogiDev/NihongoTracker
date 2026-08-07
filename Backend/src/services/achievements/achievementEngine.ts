@@ -300,6 +300,7 @@ export async function checkAchievements(
             // it only needs the key here, not the English name.
             titleKey: 'achievement.unlocked',
             body: achievement.description,
+            bodyKey: 'achievement.unlockedBody',
             link: '/achievements',
             entityType: 'achievement',
             entityId: achievement._id.toString(),
@@ -405,6 +406,29 @@ export async function revokeUnearnedAchievements(
 }
 
 /**
+ * Drop the bell entries for achievements the user is about to be shown.
+ *
+ * Every unlock writes a notification when it happens, because most of them are
+ * discovered outside a request the client is watching (cron, imports). When the
+ * reveal animation does play — inline after a log, or from the `/me/pending`
+ * drain — that animation is the notification, so the row would only repeat it.
+ */
+export async function dismissAchievementNotifications(
+  userId: Types.ObjectId,
+  achievementIds: Types.ObjectId[]
+): Promise<void> {
+  await Promise.all(
+    achievementIds.map((id) =>
+      removeNotifications({
+        recipient: userId,
+        entityType: 'achievement',
+        entityId: id.toString(),
+      })
+    )
+  );
+}
+
+/**
  * Manually grant an achievement to a user (admin use).
  * Returns true if granted, false if already owned.
  */
@@ -428,7 +452,9 @@ export async function grantAchievement(
   });
 
   const achievement = await Achievement.findById(achievementId)
-    .select('name description iconSlug')
+    // `key` is what the client translates the name from — without it the
+    // notification renders its raw `{{name}}` placeholder.
+    .select('key name description iconSlug')
     .lean();
 
   if (achievement) {
@@ -438,6 +464,7 @@ export async function grantAchievement(
       title: `Achievement unlocked: ${achievement.name}`,
       titleKey: 'achievement.unlocked',
       body: achievement.description,
+      bodyKey: 'achievement.unlockedBody',
       link: '/achievements',
       entityType: 'achievement',
       entityId: achievementId.toString(),
