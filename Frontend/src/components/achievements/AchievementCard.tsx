@@ -152,7 +152,7 @@ export function AchievementDetailModal({
   achievement,
   onClose,
 }: DetailModalProps) {
-  const { t } = useTranslation('achievements');
+  const { t } = useTranslation(['achievements', 'common']);
   const { formatDate } = useDateFormatting();
   const isEarned = achievement.isEarned ?? false;
   const rarity = achievement.rarity;
@@ -177,7 +177,7 @@ export function AchievementDetailModal({
         <button
           onClick={onClose}
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-          aria-label="Close"
+          aria-label={t('common:close')}
         >
           <Icon icon="mdi:close" width={18} height={18} />
         </button>
@@ -324,10 +324,10 @@ export default function AchievementCard({
           </div>
           <div>
             <p className="font-semibold text-sm text-base-content/60">
-              Hidden Achievement
+              {t('card.hiddenName')}
             </p>
             <p className="text-xs text-base-content/40 mt-0.5">
-              Unlock to reveal
+              {t('card.hiddenHint')}
             </p>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   getAchievementName,
 } from '../../utils/achievementText';
 import { useTranslation } from 'react-i18next';
+import { useDateFormatting } from '../../hooks/useDateFormatting';
 
 /** Per-rarity particle intensity for the flip-reveal burst. */
 const RARITY_BURST: Record<string, number> = {
@@ -30,6 +31,7 @@ export default function AchievementRevealModal({
   onClose,
 }: AchievementRevealModalProps) {
   const { t } = useTranslation('achievements');
+  const { formatNumber } = useDateFormatting();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -190,7 +192,7 @@ export default function AchievementRevealModal({
       <div className="flex flex-col items-center gap-6 px-4 max-w-sm w-full">
         {/* Achievement unlocked label */}
         <div className="text-xs font-bold uppercase tracking-widest text-white/70">
-          Achievement Unlocked!
+          {t('reveal.unlocked')}
         </div>
 
         {/* 3D flip card */}
@@ -256,7 +258,7 @@ export default function AchievementRevealModal({
                 opacity: 0,
               }}
             >
-              {rarity}
+              {t(`rarity.${rarity}`)}
             </span>
 
             <p
@@ -275,8 +277,10 @@ export default function AchievementRevealModal({
               style={{ opacity: 0 }}
             >
               {a.rarityPercent !== undefined &&
-                `${a.rarityPercent}% of users • `}
-              {a.points > 0 && `${a.points} pts`}
+                `${t('card.rarityPercent', {
+                  percent: formatNumber(a.rarityPercent),
+                })} • `}
+              {a.points > 0 && t('card.pts', { count: a.points })}
             </div>
           </div>
         )}
@@ -285,15 +289,18 @@ export default function AchievementRevealModal({
         <div className="flex gap-3 mt-2">
           <button onClick={handleNext} className="btn btn-sm btn-primary px-6">
             {isLast
-              ? 'Awesome!'
-              : `Next (${currentIndex + 1}/${achievements.length})`}
+              ? t('reveal.done')
+              : t('reveal.next', {
+                  current: currentIndex + 1,
+                  total: achievements.length,
+                })}
           </button>
           {!isLast && (
             <button
               onClick={handleDismiss}
               className="btn btn-sm btn-ghost text-white/60 hover:text-white"
             >
-              Skip all
+              {t('reveal.skipAll')}
             </button>
           )}
         </div>

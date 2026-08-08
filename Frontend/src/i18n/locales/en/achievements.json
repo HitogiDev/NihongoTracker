@@ -5,7 +5,9 @@
     "unlocked": "unlocked",
     "rarityPercent": "{{percent}}% of users",
     "pts_one": "{{count}} pt",
-    "pts_other": "{{count}} pts"
+    "pts_other": "{{count}} pts",
+    "hiddenName": "Hidden Achievement",
+    "hiddenHint": "Unlock to reveal"
   },
   "category": {
     "all": "All",
@@ -328,6 +330,12 @@
     "legendary": "Legendary",
     "secret": "Secret"
   },
+  "reveal": {
+    "unlocked": "Achievement Unlocked!",
+    "next": "Next ({{current}}/{{total}})",
+    "done": "Awesome!",
+    "skipAll": "Skip all"
+  },
   "screen": {
     "titleOwn": "Achievements",
     "titleOther": "{{username}}'s Achievements",
@@ -368,5 +376,12 @@
     "attribution": "Achievement icons by <icons>game-icons.net</icons> under <license>CC BY 3.0</license>."
   },
   "secretHint": "Complete a secret condition to reveal this achievement.",
-  "secretName": "Secret Achievement"
+  "secretName": "Secret Achievement",
+  "showcase": {
+    "title": "Showcase",
+    "edit": "Edit",
+    "empty": "No achievements pinned yet.",
+    "pin": "+ Pin achievements",
+    "select": "Select up to 5 to showcase ({{selected}}/5)"
+  }
 }

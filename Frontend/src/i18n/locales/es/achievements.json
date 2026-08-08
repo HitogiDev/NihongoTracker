@@ -6,7 +6,9 @@
     "rarityPercent": "{{percent}} % de usuarios",
     "pts_one": "{{count}} pt",
     "pts_many": "{{count}} pts",
-    "pts_other": "{{count}} pts"
+    "pts_other": "{{count}} pts",
+    "hiddenName": "Logro oculto",
+    "hiddenHint": "Desbloquéalo para revelarlo"
   },
   "category": {
     "all": "Todos",
@@ -329,6 +331,12 @@
     "legendary": "Legendaria",
     "secret": "Secreta"
   },
+  "reveal": {
+    "unlocked": "¡Logro desbloqueado!",
+    "next": "Siguiente ({{current}}/{{total}})",
+    "done": "¡Genial!",
+    "skipAll": "Saltar todo"
+  },
   "screen": {
     "titleOwn": "Logros",
     "titleOther": "Logros de {{username}}",
@@ -369,5 +377,12 @@
     "attribution": "Iconos de logros por <icons>game-icons.net</icons> con licencia <license>CC BY 3.0</license>."
   },
   "secretHint": "Cumple una condición secreta para revelar este logro.",
-  "secretName": "Logro secreto"
+  "secretName": "Logro secreto",
+  "showcase": {
+    "title": "Destacados",
+    "edit": "Editar",
+    "empty": "Aún no has fijado ningún logro.",
+    "pin": "+ Fijar logros",
+    "select": "Elige hasta 5 para destacar ({{selected}}/5)"
+  }
 }

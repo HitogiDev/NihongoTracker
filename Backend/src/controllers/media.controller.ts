@@ -152,13 +152,17 @@ export async function getMedia(
     );
 
     // Lazily cache the Jiten difficulty on the media doc so the XP engine can
-    // apply the difficulty multiplier without live Jiten calls.
+    // apply the difficulty multiplier without live Jiten calls. Must stay on
+    // the same field the backfill writes (`difficultyRaw`, see
+    // services/jiten.ts) — caching the rounded `difficulty` bucket here would
+    // overwrite the precise value with a coarser one on every page view.
     if (media && jitenResponse?.data?.mainDeck) {
-      const fetchedDifficulty = jitenResponse.data.mainDeck.difficulty;
+      const fetchedDifficulty = jitenResponse.data.mainDeck.difficultyRaw;
       if (
         typeof fetchedDifficulty === 'number' &&
         fetchedDifficulty >= 0 &&
-        media.jitenDifficulty !== fetchedDifficulty
+        (media.jitenDifficulty == null ||
+          Math.abs(media.jitenDifficulty - fetchedDifficulty) > 1e-6)
       ) {
         MediaBase.updateOne(
           { _id: media._id },

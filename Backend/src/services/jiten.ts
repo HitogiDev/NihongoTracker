@@ -205,15 +205,19 @@ export async function fetchJitenDetail(
 }
 
 /**
- * Native Jiten difficulty (0-5) for a media item, or null when unmatched.
+ * Native Jiten difficulty for a media item, or null when unmatched. Nominally
+ * a 0-5 scale, but user adjustments can push it slightly past 5 — the XP
+ * engine clamps, so callers don't need to.
  *
- * We store `difficultyAlgorithmic` rather than the rounded `difficulty`
- * bucket: it's the field the bulk deck endpoint exposes, so the on-demand
- * path here and the backfill below agree on a single scale, and it's a float
- * on the same 0-5 range — strictly more precise, and the XP engine's
- * normalization (`normalizeJitenDifficulty`) is continuous anyway. Note that
- * `difficultyRaw` is the one that folds in user adjustments; switch both this
- * and the bulk index to it once Jiten exposes it in bulk.
+ * We store `difficultyRaw` rather than the rounded `difficulty` bucket: it's a
+ * float on the same scale (strictly more precise — the XP engine's
+ * `normalizeJitenDifficulty` is continuous anyway), it folds in Jiten's user
+ * difficulty votes, and the bulk deck endpoint exposes it too, so the
+ * on-demand path here and the backfill below agree on a single scale. Decks
+ * with no votes have `difficultyRaw === difficultyAlgorithmic`, so this is
+ * never worse than the base algorithmic value. Note the naming is
+ * counterintuitive: `difficultyAlgorithmic` is the unadjusted base and
+ * `difficultyRaw` the adjusted result, offset by `userAdjustment`.
  */
 export async function fetchJitenDifficulty(
   type: string,
@@ -221,7 +225,7 @@ export async function fetchJitenDifficulty(
   title?: string | null
 ): Promise<number | null> {
   const detail = await fetchJitenDetail(type, contentId, title);
-  const difficulty = detail?.data?.mainDeck?.difficultyAlgorithmic;
+  const difficulty = detail?.data?.mainDeck?.difficultyRaw;
   return typeof difficulty === 'number' && difficulty >= 0 ? difficulty : null;
 }
 
@@ -238,7 +242,7 @@ interface IJitenBulkDeck {
   deckId: number;
   mediaType: number;
   originalTitle: string | null;
-  difficultyAlgorithmic: number;
+  difficultyRaw: number;
   links: IJitenDeckLink[] | null;
 }
 
@@ -290,7 +294,7 @@ export async function fetchJitenDeckIndex(): Promise<IJitenDeckIndex | null> {
     if (res.status !== 200 || !Array.isArray(res.data)) continue;
 
     for (const deck of res.data) {
-      const difficulty = deck.difficultyAlgorithmic;
+      const difficulty = deck.difficultyRaw;
       if (typeof difficulty !== 'number' || difficulty < 0) continue;
       deckCount += 1;
 

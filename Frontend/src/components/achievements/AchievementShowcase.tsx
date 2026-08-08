@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { IPendingAchievement } from '../../types';
 import { updateShowcaseFn, getMyAchievementsFn } from '../../api/trackerApi';
 import AchievementCard from './AchievementCard';
@@ -15,6 +16,7 @@ export default function AchievementShowcase({
   isOwner,
   showcaseItems,
 }: AchievementShowcaseProps) {
+  const { t } = useTranslation(['achievements', 'common']);
   const [editMode, setEditMode] = useState(false);
   const queryClient = useQueryClient();
 
@@ -49,12 +51,12 @@ export default function AchievementShowcase({
     if (!isOwner) return null;
     return (
       <div className="border border-dashed rounded-xl p-6 text-center opacity-50">
-        <p className="text-sm">No achievements pinned yet.</p>
+        <p className="text-sm">{t('achievements:showcase.empty')}</p>
         <button
           className="btn btn-xs btn-ghost mt-2"
           onClick={() => setEditMode(true)}
         >
-          + Pin achievements
+          {t('achievements:showcase.pin')}
         </button>
       </div>
     );
@@ -65,7 +67,9 @@ export default function AchievementShowcase({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm opacity-70">
-            Select up to 5 to showcase ({selectedIds.length}/5)
+            {t('achievements:showcase.select', {
+              selected: selectedIds.length,
+            })}
           </h3>
           <div className="flex gap-2">
             <button
@@ -75,14 +79,14 @@ export default function AchievementShowcase({
                 setSelectedIds(currentIds);
               }}
             >
-              Cancel
+              {t('common:cancel')}
             </button>
             <button
               className="btn btn-xs btn-primary"
               disabled={isPending}
               onClick={() => updateShowcase(selectedIds)}
             >
-              Save
+              {t('common:save')}
             </button>
           </div>
         </div>
@@ -109,7 +113,7 @@ export default function AchievementShowcase({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-sm opacity-60 uppercase tracking-wider">
-          Showcase
+          {t('achievements:showcase.title')}
         </h3>
         {isOwner && (
           <button
@@ -119,7 +123,7 @@ export default function AchievementShowcase({
               setEditMode(true);
             }}
           >
-            Edit
+            {t('achievements:showcase.edit')}
           </button>
         )}
       </div>
