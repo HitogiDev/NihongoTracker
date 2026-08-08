@@ -245,6 +245,13 @@ export const ERROR_CODES = [
   'upload.gifDimensionsUnknown',
   'upload.cropOutOfBounds',
   'search.failed',
+
+  // AniList integration
+  'anilist.notConfigured',
+  'anilist.notLinked',
+  'anilist.alreadyLinked',
+  'anilist.syncCooldown',
+  'anilist.syncFailed',
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

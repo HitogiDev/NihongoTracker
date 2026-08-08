@@ -19,6 +19,13 @@
     "nativeTitleRequired": "El título original no puede estar vacío",
     "passwordTooShort": "La contraseña debe tener al menos 6 caracteres"
   },
+  "anilist": {
+    "alreadyLinked": "Esa cuenta de AniList ya está vinculada a otro usuario",
+    "notConfigured": "La integración con AniList no está configurada en este servidor",
+    "notLinked": "No hay ninguna cuenta de AniList vinculada",
+    "syncCooldown": "Espera un momento antes de volver a sincronizar",
+    "syncFailed": "No se pudo conectar con AniList. Inténtalo de nuevo más tarde"
+  },
   "apiKey": {
     "expired": "Esa clave de API ha caducado",
     "invalid": "Esa clave de API no es válida",

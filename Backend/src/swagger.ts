@@ -32,6 +32,10 @@ const swaggerDocument = {
     { name: 'Notifications', description: 'User notifications' },
     { name: 'Text Sessions', description: 'TextHooker session management' },
     { name: 'Patreon', description: 'Patreon integration & badges' },
+    {
+      name: 'AniList',
+      description: 'AniList account link & automatic anime logging',
+    },
     { name: 'API Keys', description: 'API key generation & management' },
     { name: 'Upload', description: 'File uploads (avatars, banners)' },
     { name: 'Admin', description: 'Admin dashboard & moderation' },
@@ -3293,6 +3297,107 @@ const swaggerDocument = {
         ],
         responses: {
           200: { description: 'History entry added' },
+        },
+      },
+    },
+
+    // ──────────────── AniList ────────────────
+    '/anilist/status': {
+      get: {
+        tags: ['AniList'],
+        summary: 'Get the AniList link status for the current user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Link state, auto-sync flag and last sync info' },
+        },
+      },
+    },
+    '/anilist/logs': {
+      get: {
+        tags: ['AniList'],
+        summary: 'List logs created by the AniList integration',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            in: 'query',
+            name: 'limit',
+            schema: { type: 'integer', default: 20, maximum: 100 },
+          },
+        ],
+        responses: {
+          200: { description: 'Synced logs, newest first' },
+        },
+      },
+    },
+    '/anilist/settings': {
+      patch: {
+        tags: ['AniList'],
+        summary: 'Update AniList integration settings',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: { autoSync: { type: 'boolean' } },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Updated status' },
+          400: { description: 'No AniList account linked' },
+        },
+      },
+    },
+    '/anilist/sync': {
+      post: {
+        tags: ['AniList'],
+        summary: 'Sync new AniList activity into logs',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Counts of scanned, created and skipped items' },
+          429: { description: 'Sync cooldown still active' },
+        },
+      },
+    },
+    '/anilist/backfill': {
+      post: {
+        tags: ['AniList'],
+        summary: 'Import the full AniList activity history',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Counts of scanned, created and skipped items' },
+        },
+      },
+    },
+    '/anilist/unlink': {
+      post: {
+        tags: ['AniList'],
+        summary: 'Unlink the AniList account (existing logs are kept)',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Account unlinked' },
+        },
+      },
+    },
+    '/anilist/oauth/init': {
+      get: {
+        tags: ['AniList'],
+        summary: 'Start the AniList OAuth flow',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: { description: 'Authorization URL to redirect the user to' },
+          500: { description: 'AniList OAuth is not configured' },
+        },
+      },
+    },
+    '/anilist/oauth/callback': {
+      get: {
+        tags: ['AniList'],
+        summary: 'AniList OAuth redirect target (redirects back to /settings)',
+        responses: {
+          302: { description: 'Redirect to the settings page' },
         },
       },
     },

@@ -3,6 +3,7 @@ import {
   IUser,
   userRoles,
   IUserSettings,
+  IAnilistData,
   IPatreonData,
   IUserModeration,
   IUserModerationHistoryItem,
@@ -83,6 +84,31 @@ const PatreonSchema = new Schema<IPatreonData>(
     lastChecked: { type: Date },
     isActive: { type: Boolean, default: false },
     manualTierExpiry: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
+const AnilistSchema = new Schema<IAnilistData>(
+  {
+    anilistId: { type: Number, sparse: true, unique: true },
+    anilistUsername: { type: String },
+    anilistAvatar: { type: String },
+    // AniList tokens live a year and have no refresh grant — kept out of every
+    // query by default and only ever read by the sync service.
+    accessToken: { type: String, select: false },
+    tokenExpiry: { type: Date },
+    linkedAt: { type: Date },
+    autoSync: { type: Boolean, default: true },
+    lastActivityId: { type: Number, default: 0 },
+    syncFrom: { type: Date, default: null },
+    lastSyncedAt: { type: Date, default: null },
+    lastSyncStatus: {
+      type: String,
+      enum: ['ok', 'error', null],
+      default: null,
+    },
+    lastSyncError: { type: String, default: null },
+    syncedLogCount: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -220,6 +246,7 @@ const UserSchema = new Schema<IUser>(
       type: PatreonSchema,
       default: { tier: null, isActive: false },
     },
+    anilist: { type: AnilistSchema, default: null },
     moderation: {
       type: ModerationSchema,
       default: { rankingBanned: false, banned: false, banReason: '' },

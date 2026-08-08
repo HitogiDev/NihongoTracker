@@ -56,6 +56,9 @@ const LogSchema = new Schema<ILog>(
     },
     matchDismissed: { type: Boolean, default: false },
     manabeId: { type: String },
+    // Dedupe key for the AniList integration: one log per list activity, so a
+    // re-sync (or an overlapping backfill) can never double-count an episode.
+    anilistActivityId: { type: Number },
     xp: { type: Number, required: true },
     private: { type: Boolean, default: false },
     isAdult: { type: Boolean, default: false },
@@ -150,6 +153,16 @@ if (process.env.NODE_ENV === 'development') {
   LogSchema.index({ date: -1 }); // For recent logs across all users
   LogSchema.index({ user: 1, mediaId: 1, type: 1, date: -1 }); // Critical compound index
   LogSchema.index({ manabeId: 1 }, { sparse: true }); // For checking duplicate Manabe logs
+  // One log per synced AniList activity. Partial (not sparse): a compound
+  // sparse index still covers docs that only have `user`, so every unsynced
+  // log would collide on a null activity id.
+  LogSchema.index(
+    { user: 1, anilistActivityId: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { anilistActivityId: { $type: 'number' } },
+    }
+  );
 }
 
 export default model<ILog>('Log', LogSchema);

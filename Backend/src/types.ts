@@ -114,6 +114,35 @@ export interface IPatreonData {
   manualTierExpiry?: Date;
 }
 
+/**
+ * A linked AniList account used for automatic logging.
+ *
+ * AniList access tokens are valid for a year and there is no refresh grant, so
+ * `tokenExpiry` exists to tell the user to re-link rather than to refresh.
+ */
+export interface IAnilistData {
+  anilistId?: number;
+  anilistUsername?: string;
+  anilistAvatar?: string;
+  accessToken?: string;
+  tokenExpiry?: Date;
+  linkedAt?: Date;
+  /** Whether the scheduler may poll this account. Manual sync ignores it. */
+  autoSync?: boolean;
+  /** Highest AniList activity id already turned into a log. */
+  lastActivityId?: number;
+  /**
+   * Activities older than this are ignored. Set to the link time so linking
+   * doesn't retroactively log years of history; cleared by a full backfill.
+   */
+  syncFrom?: Date | null;
+  lastSyncedAt?: Date;
+  lastSyncStatus?: 'ok' | 'error' | null;
+  lastSyncError?: string | null;
+  /** Logs this integration has created, for the settings summary. */
+  syncedLogCount?: number;
+}
+
 export interface IUserModeration {
   rankingBanned: boolean;
   banned: boolean;
@@ -367,6 +396,7 @@ export interface IUser extends Document {
   updatedAt?: Date;
   settings?: IUserSettings;
   patreon?: IPatreonData;
+  anilist?: IAnilistData;
   moderation?: IUserModeration;
   favorites?: IFavoriteEntry[];
   matchPassword: (enteredPassword: string) => Promise<boolean>;
@@ -632,6 +662,8 @@ export interface ILog extends Document {
   mediaId?: string;
   matchDismissed?: boolean;
   manabeId?: string;
+  /** AniList ListActivity this log was synced from — the dedupe key. */
+  anilistActivityId?: number;
   mediaTitle?: string;
   xp: number;
   private: boolean;

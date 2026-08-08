@@ -19,6 +19,13 @@
     "nativeTitleRequired": "Native title cannot be empty",
     "passwordTooShort": "Password must be at least 6 characters"
   },
+  "anilist": {
+    "alreadyLinked": "That AniList account is already linked to another user",
+    "notConfigured": "AniList integration is not configured on this server",
+    "notLinked": "No AniList account is linked",
+    "syncCooldown": "Please wait a moment before syncing again",
+    "syncFailed": "Could not reach AniList. Please try again later"
+  },
   "apiKey": {
     "expired": "That API key has expired",
     "invalid": "That API key is not valid",

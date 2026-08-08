@@ -83,6 +83,14 @@ const MIGRATIONS = [
         description: 'Manabe log ID for duplicate detection during sync',
         sparse: true,
       },
+      {
+        key: { user: 1, anilistActivityId: 1 },
+        name: 'user_1_anilistActivityId_1',
+        description:
+          'One log per AniList list activity — makes AniList sync idempotent',
+        unique: true,
+        partialFilterExpression: { anilistActivityId: { $type: 'number' } },
+      },
     ],
   },
   {
@@ -186,6 +194,18 @@ async function createProductionIndexes() {
             // Add sparse option if specified
             if (indexSpec.sparse) {
               indexOptions.sparse = true;
+            }
+
+            if (indexSpec.unique) {
+              indexOptions.unique = true;
+            }
+
+            // Partial indexes are how a compound index stays selective: a
+            // compound *sparse* index still covers documents that only have the
+            // leading field, which would make a unique constraint collide.
+            if (indexSpec.partialFilterExpression) {
+              indexOptions.partialFilterExpression =
+                indexSpec.partialFilterExpression;
             }
 
             await collection.createIndex(indexSpec.key, indexOptions);

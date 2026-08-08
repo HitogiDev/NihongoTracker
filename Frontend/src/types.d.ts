@@ -53,6 +53,35 @@ export interface ProfileWidgetLayout {
   visible: boolean;
 }
 
+/**
+ * State of the AniList link. `linked: false` is the whole payload when no
+ * account is connected, so every other field can be read safely once linked.
+ */
+export interface IAnilistStatus {
+  linked: boolean;
+  anilistId?: number;
+  anilistUsername?: string;
+  anilistAvatar?: string;
+  autoSync?: boolean;
+  linkedAt?: string | Date;
+  lastSyncedAt?: string | Date | null;
+  lastSyncStatus?: 'ok' | 'error' | null;
+  lastSyncError?: string | null;
+  syncedLogCount?: number;
+  tokenExpiry?: string | Date;
+  /** AniList tokens last a year and can't be refreshed — re-link when true. */
+  tokenExpired?: boolean;
+}
+
+export interface IAnilistSyncResult {
+  scanned: number;
+  created: number;
+  skipped: number;
+  mediaCreated: number;
+  lastActivityId: number;
+  status?: IAnilistStatus;
+}
+
 export interface IUser {
   _id: string;
   avatar?: string;
@@ -75,6 +104,7 @@ export interface IUser {
     memberSince?: Date | string | null;
     lastChecked?: Date;
   };
+  anilist?: IAnilistStatus;
   moderation?: {
     rankingBanned: boolean;
     banned: boolean;

@@ -33,6 +33,8 @@ import {
   ProfileWidgetLayout,
   IGanttMediaItem,
   IAchievement,
+  IAnilistStatus,
+  IAnilistSyncResult,
   ILogCelebration,
   IPendingAchievement,
   IMediaRequest,
@@ -1171,6 +1173,40 @@ export async function updateBadgeColorsFn(
     badgeColor,
     badgeTextColor,
   });
+  return data;
+}
+
+// AniList integration (automatic anime logging)
+export async function getAnilistStatusFn(): Promise<IAnilistStatus> {
+  const { data } = await api.get<IAnilistStatus>('anilist/status');
+  return data;
+}
+
+export async function initiateAnilistOAuthFn(): Promise<{ authUrl: string }> {
+  const { data } = await api.get('anilist/oauth/init');
+  return data;
+}
+
+export async function unlinkAnilistAccountFn() {
+  const { data } = await api.post('anilist/unlink');
+  return data;
+}
+
+export async function updateAnilistSettingsFn(settings: {
+  autoSync: boolean;
+}): Promise<IAnilistStatus> {
+  const { data } = await api.patch<IAnilistStatus>('anilist/settings', settings);
+  return data;
+}
+
+export async function syncAnilistNowFn(): Promise<IAnilistSyncResult> {
+  const { data } = await api.post<IAnilistSyncResult>('anilist/sync');
+  return data;
+}
+
+/** Walks the whole AniList activity feed instead of only what's new. */
+export async function backfillAnilistFn(): Promise<IAnilistSyncResult> {
+  const { data } = await api.post<IAnilistSyncResult>('anilist/backfill');
   return data;
 }
 

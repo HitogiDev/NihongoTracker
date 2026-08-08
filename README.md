@@ -240,6 +240,8 @@ Create a `Backend/.env` file with the following variables:
 | `PATREON_WEBHOOK_SECRET`        | No       | Patreon webhook verification secret                                   |
 | `PATREON_CREATOR_ACCESS_TOKEN`  | No       | Patreon creator access token                                          |
 | `PATREON_CAMPAIGN_ID`           | No       | Patreon campaign ID                                                   |
+| `ANILIST_CLIENT_ID`             | No       | AniList OAuth client ID (automatic anime logging)                     |
+| `ANILIST_CLIENT_SECRET`         | No       | AniList OAuth client secret                                           |
 | `MAILTRAP_TOKEN`                | No       | Mailtrap API token for transactional email                            |
 | `MAILTRAP_INBOX_DOMAIN`         | No       | Mailtrap inbox domain                                                 |
 | `MEILISEARCH_HOST`              | No       | Meilisearch host URL                                                  |

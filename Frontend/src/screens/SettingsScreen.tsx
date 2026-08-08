@@ -24,13 +24,19 @@ import {
   generateApiKeyFn,
   deleteApiKeyFn,
   updateProfileLayoutFn,
+  getAnilistStatusFn,
+  initiateAnilistOAuthFn,
+  unlinkAnilistAccountFn,
+  updateAnilistSettingsFn,
+  syncAnilistNowFn,
+  backfillAnilistFn,
   type IApiKey,
   type ICreatedApiKey,
 } from '../api/trackerApi';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { ILoginResponse, ProfileWidgetLayout } from '../types';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useUserDataStore } from '../store/userData';
 import {
   DndContext,
@@ -66,6 +72,8 @@ import ImageCropDialog, {
 } from '../components/ImageCropDialog';
 import Wheel from '@uiw/react-color-wheel';
 import { getUserTimezone } from '../utils/timezone';
+import { getApiErrorMessage } from '../utils/apiError';
+import type { ParseKeys } from 'i18next';
 import { renderMarkdownWithSpoilers } from '../utils/markdown';
 import {
   Bold,
@@ -88,6 +96,7 @@ import {
   List,
   ListOrdered,
   Mail,
+  MonitorPlay,
   Quote,
   RefreshCw,
   Settings2,
@@ -981,6 +990,91 @@ function SettingsScreen() {
     },
   });
 
+  // ── AniList integration ──
+  const { data: anilistStatus, refetch: refetchAnilistStatus } = useQuery({
+    queryKey: ['anilist', 'status'],
+    queryFn: getAnilistStatusFn,
+    enabled: Boolean(user),
+  });
+
+  // Prefer the server's error `code` translated into the active language, and
+  // only fall back to a local string when the failure carries no code.
+  function reportAnilistError(
+    error: unknown,
+    fallbackKey: ParseKeys<'errors'>
+  ) {
+    toast.error(getApiErrorMessage(error, fallbackKey));
+  }
+
+  /** A sync writes logs, so every view of the user's data is now stale. */
+  function invalidateAfterAnilistSync() {
+    void refetchAnilistStatus();
+    void queryClient.invalidateQueries({ queryKey: ['logs'] });
+    void queryClient.invalidateQueries({ queryKey: ['user'] });
+  }
+
+  const { mutate: syncAnilist, isPending: isSyncingAnilist } = useMutation({
+    mutationFn: syncAnilistNowFn,
+    onSuccess: (result) => {
+      if (result.created > 0) {
+        toast.success(t('anilist.syncCreated', { count: result.created }));
+      } else {
+        toast.info(t('anilist.syncNothingNew'));
+      }
+      invalidateAfterAnilistSync();
+    },
+    onError: (error) => reportAnilistError(error, 'anilist.syncFailed'),
+  });
+
+  const { mutate: backfillAnilist, isPending: isBackfillingAnilist } =
+    useMutation({
+      mutationFn: backfillAnilistFn,
+      onSuccess: (result) => {
+        toast.success(
+          t('anilist.backfillDone', {
+            count: result.created,
+            scanned: result.scanned,
+          })
+        );
+        invalidateAfterAnilistSync();
+      },
+      onError: (error) =>
+        reportAnilistError(error, 'anilist.syncFailed'),
+    });
+
+  const { mutate: toggleAnilistAutoSync, isPending: isUpdatingAnilistSettings } =
+    useMutation({
+      mutationFn: updateAnilistSettingsFn,
+      onSuccess: () => {
+        void refetchAnilistStatus();
+      },
+      onError: (error) =>
+        reportAnilistError(error, 'common.unexpected'),
+    });
+
+  const { mutate: unlinkAnilist, isPending: isUnlinkingAnilist } = useMutation({
+    mutationFn: unlinkAnilistAccountFn,
+    onSuccess: () => {
+      toast.success(t('anilist.unlinked'));
+      void refetchAnilistStatus();
+    },
+    onError: (error) => reportAnilistError(error, 'common.unexpected'),
+  });
+
+  const [isInitiatingAnilistOAuth, setIsInitiatingAnilistOAuth] =
+    useState(false);
+
+  async function handleAnilistOAuth() {
+    setIsInitiatingAnilistOAuth(true);
+    try {
+      const { authUrl } = await initiateAnilistOAuthFn();
+      window.location.href = authUrl;
+    } catch (error) {
+      setIsInitiatingAnilistOAuth(false);
+      reportAnilistError(error, 'anilist.notConfigured');
+    }
+  }
+
   const { mutate: updateBadgeText, isPending: isUpdatingBadge } = useMutation({
     mutationFn: updateCustomBadgeTextFn,
     onSuccess: (data) => {
@@ -1053,6 +1147,33 @@ function SettingsScreen() {
       );
       toast.error(`❌ ${errorMessage}`);
       // Limpiar URL
+      window.history.replaceState({}, '', '/settings');
+    }
+
+    // AniList uses the same ?<provider>=success|error contract as Patreon.
+    const anilistResult = params.get('anilist');
+    if (anilistResult === 'success') {
+      // No refetch needed: the OAuth redirect is a full page load, so the
+      // status query is already fetching fresh data.
+      toast.success(`✅ ${t('anilist.linked')}`);
+      setActiveTab('advanced');
+      window.history.replaceState({}, '', '/settings');
+    } else if (anilistResult === 'error') {
+      const anilistErrorKeys = {
+        missing_params: 'anilist.errors.missingParams',
+        invalid_state: 'anilist.errors.invalidState',
+        oauth_not_configured: 'anilist.errors.notConfigured',
+        account_already_linked: 'anilist.errors.accountAlreadyLinked',
+        user_not_found: 'anilist.errors.userNotFound',
+        oauth_failed: 'anilist.errors.oauthFailed',
+      } as const;
+      toast.error(
+        `❌ ${t(
+          (message && anilistErrorKeys[message as keyof typeof anilistErrorKeys]) ||
+            'anilist.errors.oauthFailed'
+        )}`
+      );
+      setActiveTab('advanced');
       window.history.replaceState({}, '', '/settings');
     }
   }, [fetchApiKeys, t]);
@@ -2997,6 +3118,219 @@ function SettingsScreen() {
             {/* ── ADVANCED TAB ── */}
             {activeTab === 'advanced' && (
               <div className="space-y-6">
+                {/* AniList lives here rather than in its own tab: it is how logs
+                    get in automatically, alongside the manual import/export. */}
+              <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card-body">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                      <MonitorPlay className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold">
+                        {t('anilist.title')}
+                      </h2>
+                      <p className="text-base-content/70">
+                        {t('anilist.subtitle')}
+                      </p>
+                    </div>
+                  </div>
+
+                  {anilistStatus?.linked ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-3 p-4 bg-success/10 border border-success/20 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {anilistStatus.anilistAvatar ? (
+                            <img
+                              src={anilistStatus.anilistAvatar}
+                              alt={anilistStatus.anilistUsername ?? 'AniList'}
+                              className="w-10 h-10 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <Link2 className="w-5 h-5 text-success" />
+                          )}
+                          <div>
+                            <div className="font-semibold text-success">
+                              {anilistStatus.anilistUsername}
+                            </div>
+                            <div className="text-xs text-base-content/60">
+                              {t('anilist.syncedLogs', {
+                                count: anilistStatus.syncedLogCount ?? 0,
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        <a
+                          href={`https://anilist.co/user/${anilistStatus.anilistUsername}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-ghost btn-xs gap-1"
+                        >
+                          <LinkIcon className="h-3 w-3" />
+                          {t('anilist.viewProfile')}
+                        </a>
+                      </div>
+
+                      {anilistStatus.tokenExpired && (
+                        <div className="alert alert-warning">
+                          <TriangleAlert className="h-5 w-5" />
+                          <span>{t('anilist.tokenExpired')}</span>
+                        </div>
+                      )}
+
+                      {anilistStatus.lastSyncStatus === 'error' && (
+                        <div className="alert alert-error">
+                          <XCircle className="h-5 w-5" />
+                          <div>
+                            <div>{t('anilist.lastSyncFailed')}</div>
+                            {anilistStatus.lastSyncError && (
+                              <div className="text-xs opacity-80">
+                                {anilistStatus.lastSyncError}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-base-300/50">
+                        <div>
+                          <div className="font-medium">
+                            {t('anilist.autoSync')}
+                          </div>
+                          <p className="text-sm text-base-content/70">
+                            {t('anilist.autoSyncHint')}
+                          </p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-primary"
+                          checked={anilistStatus.autoSync ?? true}
+                          disabled={isUpdatingAnilistSettings}
+                          onChange={(e) =>
+                            toggleAnilistAutoSync({
+                              autoSync: e.target.checked,
+                            })
+                          }
+                        />
+                      </div>
+
+                      <div className="text-sm text-base-content/70 flex items-center gap-2">
+                        <Clock3 className="h-4 w-4" />
+                        {anilistStatus.lastSyncedAt
+                          ? t('anilist.lastSyncedAt', {
+                              date: new Date(
+                                anilistStatus.lastSyncedAt
+                              ).toLocaleString(),
+                            })
+                          : t('anilist.neverSynced')}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm gap-2"
+                          onClick={() => syncAnilist()}
+                          disabled={isSyncingAnilist || isBackfillingAnilist}
+                        >
+                          {isSyncingAnilist ? (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                          {t('anilist.syncNow')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm gap-2"
+                          onClick={() =>
+                            (
+                              document.getElementById(
+                                'anilist_backfill_modal'
+                              ) as HTMLDialogElement | null
+                            )?.showModal()
+                          }
+                          disabled={isSyncingAnilist || isBackfillingAnilist}
+                        >
+                          {isBackfillingAnilist ? (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          ) : (
+                            <CloudDownload className="h-4 w-4" />
+                          )}
+                          {t('anilist.backfill')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-error btn-sm gap-2 ml-auto"
+                          onClick={() => unlinkAnilist()}
+                          disabled={isUnlinkingAnilist}
+                        >
+                          {isUnlinkingAnilist ? (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          ) : (
+                            <Unlink2 className="h-4 w-4" />
+                          )}
+                          {t('anilist.unlink')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        className="btn btn-primary w-full gap-2"
+                        onClick={handleAnilistOAuth}
+                        disabled={isInitiatingAnilistOAuth}
+                      >
+                        {isInitiatingAnilistOAuth ? (
+                          <span className="loading loading-spinner loading-sm"></span>
+                        ) : (
+                          <>
+                            <Link2 className="size-5" />
+                            {t('anilist.connect')}
+                          </>
+                        )}
+                      </button>
+                      <div className="text-xs text-center text-base-content/60 flex items-center justify-center gap-1">
+                        <Lock className="h-4 w-4" />
+                        {t('anilist.oauthNote')}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="alert alert-info mt-4">
+                    <Info className="h-5 w-5" />
+                    <span>{t('anilist.animeOnlyNote')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <dialog id="anilist_backfill_modal" className="modal">
+                <div className="modal-box">
+                  <h3 className="font-bold text-lg">
+                    {t('anilist.backfillConfirmTitle')}
+                  </h3>
+                  <p className="py-4 text-sm text-base-content/80">
+                    {t('anilist.backfillConfirmBody')}
+                  </p>
+                  <div className="modal-action">
+                    <form method="dialog" className="flex gap-2">
+                      <button className="btn btn-ghost btn-sm">
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => backfillAnilist()}
+                      >
+                        {t('anilist.backfill')}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+                <form method="dialog" className="modal-backdrop">
+                  <button>close</button>
+                </form>
+              </dialog>
+
                 {/* Data Management */}
                 <div className="card bg-base-100 shadow-sm border border-base-300/50">
                   <div className="card-body">
