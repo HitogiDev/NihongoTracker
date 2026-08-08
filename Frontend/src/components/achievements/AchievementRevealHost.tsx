@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AchievementRevealModal from './AchievementRevealModal';
-import { useAchievementRevealStore } from '../../store/achievementReveal';
+import {
+  refreshNotificationsAfterReveal,
+  useAchievementRevealStore,
+} from '../../store/achievementReveal';
 import { useUserDataStore } from '../../store/userData';
 import { getPendingAchievementsFn } from '../../api/trackerApi';
 import { AchievementRarity, IPendingAchievement } from '../../types';
@@ -88,7 +91,10 @@ export default function AchievementRevealHost() {
 
     getPendingAchievementsFn()
       .then((pending) => {
-        if (!cancelled) enqueue(pending);
+        if (cancelled || pending.length === 0) return;
+        enqueue(pending);
+        // Draining also dropped these from the bell server-side.
+        refreshNotificationsAfterReveal();
       })
       .catch(() => {
         // Achievement display is non-critical — stay silent.

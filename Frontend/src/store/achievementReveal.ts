@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import queryClient from '../queryClient';
 import { IAchievement, IPendingAchievement } from '../types';
 
 interface AchievementRevealState {
@@ -60,8 +61,18 @@ export function resumeAchievementReveal() {
   useAchievementRevealStore.getState().resume();
 }
 
+/**
+ * The server deletes the bell entry for any unlock it hands over to be
+ * revealed, so the cached summary/list still hold rows that no longer exist.
+ * Refresh them instead of letting the badge lag behind the animation.
+ */
+export function refreshNotificationsAfterReveal() {
+  queryClient.refetchQueries({ queryKey: ['notifications'] });
+}
+
 /** Push newly unlocked achievements from anywhere (API layer, mutations, …). */
 export function revealAchievements(achievements?: IAchievement[]) {
   if (!achievements || achievements.length === 0) return;
   useAchievementRevealStore.getState().enqueueAchievements(achievements);
+  refreshNotificationsAfterReveal();
 }
