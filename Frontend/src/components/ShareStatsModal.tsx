@@ -228,7 +228,7 @@ export default function ShareStatsModal({
         {mode === 'custom' && (
           <div className="flex flex-col sm:flex-row gap-2 mb-3">
             <label className="flex-1 text-xs text-base-content/60">
-              From
+              {t('share.from')}
               <input
                 type="date"
                 className="input input-bordered input-sm w-full mt-1"
@@ -238,7 +238,7 @@ export default function ShareStatsModal({
               />
             </label>
             <label className="flex-1 text-xs text-base-content/60">
-              To
+              {t('share.to')}
               <input
                 type="date"
                 className="input input-bordered input-sm w-full mt-1"
@@ -255,12 +255,12 @@ export default function ShareStatsModal({
         <div className="relative flex items-center justify-center rounded-xl bg-base-200 p-3 min-h-[320px]">
           {mode === 'custom' && !customReady ? (
             <p className="text-sm text-base-content/60">
-              Pick a start and end date.
+              {t('share.pickDates')}
             </p>
           ) : imageUrl ? (
             <img
               src={imageUrl}
-              alt="Stats card preview"
+              alt={t('share.previewAlt')}
               className={`max-h-[60vh] w-auto rounded-lg shadow-md transition-opacity ${
                 isRendering ? 'opacity-50' : 'opacity-100'
               }`}
@@ -282,7 +282,7 @@ export default function ShareStatsModal({
             disabled={!imageUrl || isRendering}
           >
             <Download className="h-4 w-4" />
-            Download PNG
+            {t('share.download')}
           </button>
           <button
             type="button"
@@ -291,7 +291,7 @@ export default function ShareStatsModal({
             disabled={!imageUrl || isRendering}
           >
             <Share2 className="h-4 w-4" />
-            Share
+            {t('share.share')}
           </button>
         </div>
       </div>

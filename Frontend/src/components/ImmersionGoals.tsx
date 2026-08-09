@@ -365,7 +365,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 onClick={() => setIsModalOpen(true)}
                 className="btn btn-ghost btn-xs sm:btn-sm"
               >
-                Manage goals
+                {t('widget.manage')}
               </button>
             )}
           </div>
@@ -528,7 +528,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                 className="flex items-center gap-2 text-sm"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
-                                Edit
+                                {t('widget.edit')}
                               </button>
                             </li>
                             <li>
@@ -537,7 +537,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                                 className="flex items-center gap-2 text-sm text-error"
                               >
                                 <Trash className="w-3.5 h-3.5" />
-                                Delete
+                                {t('widget.delete')}
                               </button>
                             </li>
                           </ul>
@@ -619,7 +619,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                             {timeframeProgressPercentage >= 100 ? (
                               <span className="badge badge-success badge-sm gap-1">
                                 <CircleCheck className="w-3 h-3" />
-                                Done
+                                {t('widget.done')}
                               </span>
                             ) : (
                               <span className="text-xs text-base-content/50">
@@ -679,7 +679,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-base-content/50">
                           <span className="tabular-nums">
                             <span className="font-medium text-base-content/70">
-                              Remaining:
+                              {t('widget.remaining')}
                             </span>{' '}
                             {formatLongTermProgress(
                               progress.remainingTarget,
@@ -837,7 +837,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
                 <fieldset className="fieldset">
                   <legend className="fieldset-legend">
-                    Display Progress As
+                    {t('modal.displayProgressAs')}
                   </legend>
                   <select
                     name="displayTimeframe"

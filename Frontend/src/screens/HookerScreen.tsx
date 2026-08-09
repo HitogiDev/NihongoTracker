@@ -2560,7 +2560,7 @@ function TextHooker() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
-              Set Timer
+              {t('texthooker:hooker.setTimer')}
             </h3>
             <button
               onClick={() => setIsTimerEditOpen(false)}
@@ -2776,7 +2776,7 @@ function TextHooker() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <BarChart2 className="w-5 h-5 text-primary" />
-              Session Statistics
+              {t('texthooker:hooker.sessionStatistics')}
             </h3>
             <button
               onClick={() => setIsStatsOpen(false)}
@@ -2816,7 +2816,7 @@ function TextHooker() {
                   {/* Progress */}
                   <div className="space-y-2 mt-4">
                     <div className="text-sm font-semibold opacity-70 mb-2">
-                      Reading Progress
+                      {t('texthooker:hooker.readingProgress')}
                     </div>
                     {fullMediaData?.jiten?.mainDeck?.characterCount ? (
                       (() => {
@@ -2871,7 +2871,7 @@ function TextHooker() {
             <div className="flex-1 space-y-6">
               <div>
                 <h4 className="text-sm font-semibold uppercase tracking-wider opacity-70 mb-3">
-                  Current Session
+                  {t('texthooker:hooker.currentSession')}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-base-200 p-3 rounded-lg">
@@ -2889,7 +2889,7 @@ function TextHooker() {
                     <div className="text-xl font-bold">
                       {formatSpeed(currentSessionChars, seconds)}
                       <span className="text-xs font-normal opacity-60 ml-1">
-                        chars/h
+                        {t('texthooker:hooker.charsPerHour')}
                       </span>
                     </div>
                   </div>
@@ -3037,12 +3037,12 @@ function TextHooker() {
                   ) : isLogAnimating ? (
                     <>
                       <span className="text-xl">✓</span>
-                      Logged!
+                      {t('texthooker:hooker.logged')}
                     </>
                   ) : (
                     <>
                       <Save size={18} />
-                      Log Session
+                      {t('texthooker:hooker.logSession')}
                     </>
                   )}
                 </button>

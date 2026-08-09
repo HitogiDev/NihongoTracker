@@ -1398,7 +1398,7 @@ function MediaCard({
               tabIndex={0}
               className={`btn btn-circle btn-xs ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
               disabled={isToggling}
-              aria-label="Set status"
+              aria-label={t('list.setStatus')}
             >
               {isToggling ? (
                 <span className="loading loading-spinner loading-xs" />

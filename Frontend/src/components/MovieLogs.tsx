@@ -215,7 +215,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
   if (logError) {
     return (
       <div className="alert alert-error">
-        <span>Error loading video logs</span>
+        <span>{t('logs:video.loadError')}</span>
       </div>
     );
   }

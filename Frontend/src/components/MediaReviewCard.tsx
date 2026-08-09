@@ -120,7 +120,7 @@ function MediaReviewCard({
                     className="text-success hover:bg-success/10 gap-2"
                   >
                     <Share2 className="w-4 h-4" />
-                    Share
+                    {t('reviewCard.share')}
                   </button>
                 </li>
                 {isOwner && (
@@ -131,7 +131,7 @@ function MediaReviewCard({
                         className="text-warning hover:bg-warning/10 gap-2"
                       >
                         <Pencil className="w-4 h-4" />
-                        Edit
+                        {t('reviewCard.edit')}
                       </button>
                     </li>
                     <li>
@@ -140,7 +140,7 @@ function MediaReviewCard({
                         className="text-error hover:bg-error/10 gap-2"
                       >
                         <Trash className="w-4 h-4" />
-                        Delete
+                        {t('reviewCard.delete')}
                       </button>
                     </li>
                   </>
@@ -181,7 +181,7 @@ function MediaReviewCard({
           to={`/review/${review._id}`}
           className="link link-hover link-primary text-sm mt-2 inline-flex"
         >
-          Read full review
+          {t('reviewCard.readFull')}
         </Link>
 
         <div className="flex items-center mt-4">

@@ -38,22 +38,36 @@
     "cancel": "Cancelar",
     "clear": "Limpiar"
   },
+  "episodeLabel": {
+    "episodes": "Episodios",
+    "movies": "Películas",
+    "videos": "Vídeos"
+  },
   "filters": {
     "apply": "Aplicar",
     "clearSearch": "Limpiar la búsqueda",
     "customRange": "Rango personalizado",
+    "endDate": "Fecha de fin",
     "immersedDaysOnly": "Solo días con inmersión",
     "maxLogs": "Máx. logs",
+    "maxLogsValue": "Máx. {{value}}",
     "minLogs": "Mín. logs",
+    "minLogsValue": "Mín. {{value}}",
+    "rangeTo": "a",
     "searchTitles": "Buscar títulos",
     "selectAll": "Seleccionar todo",
-    "selectNone": "No seleccionar nada"
+    "selectNone": "No seleccionar nada",
+    "startDate": "Fecha de inicio"
   },
   "gantt": {
     "completed": "Completado",
+    "daysLabel": "días",
     "done": "Hecho",
     "empty": "No hay datos de inmersión para este filtro.",
     "hint": "Ctrl+rueda para acercar · arrastra con el botón central para desplazar",
+    "logCount_many": "{{count}} logs",
+    "logCount_one": "{{count}} log",
+    "logCount_other": "{{count}} logs",
     "resetZoom": "Restablecer el zoom",
     "started": "Empezado:",
     "viewMedia": "Ver la página del contenido",
@@ -61,25 +75,60 @@
     "zoomOut": "Alejar"
   },
   "groups": {
-    "totals": "Totales",
-    "streaks": "Rachas",
-    "timeBreakdown": "Desglose del tiempo",
-    "readingMetrics": "Métricas de lectura",
     "chartDistribution": "Distribuciones",
     "chartProgress": "Progreso",
-    "chartReading": "Lectura"
+    "chartReading": "Lectura",
+    "readingMetrics": "Métricas de lectura",
+    "streaks": "Rachas",
+    "timeBreakdown": "Desglose del tiempo",
+    "totals": "Totales"
   },
   "heatmap": {
     "less": "Menos",
     "more": "Más"
   },
+  "hints": {
+    "chars": "Caracteres en logs de {{types}}",
+    "charsAll": "Caracteres de todos los tipos de lectura",
+    "dailyAverage": "Media diaria de inmersión de {{types}} {{period}}",
+    "dailyAverageAll": "Media diaria de inmersión {{period}}",
+    "dailyChars": "Media diaria de lectura de {{types}} {{period}}",
+    "dailyCharsAll": "Media diaria de lectura {{period}}",
+    "logCount": "Entradas de {{types}}",
+    "logCountAll": "Total de logs",
+    "pages": "Total de páginas leídas en logs de {{types}}",
+    "pagesAll": "Total de páginas registradas en logs de lectura",
+    "time": "Tiempo de inmersión de {{types}} {{period}}",
+    "timeAll": "Tiempo de inmersión {{period}}",
+    "untracked_many": "{{count}} sin seguimiento",
+    "untracked_one": "{{count}} sin seguimiento",
+    "untracked_other": "{{count}} sin seguimiento",
+    "watchedEpisodes": "Total de episodios vistos",
+    "watchedMovies": "Total de películas vistas",
+    "watchedVideos": "Total de vídeos vistos",
+    "xp": "Experiencia de {{types}} {{period}}",
+    "xpAll": "Experiencia ganada {{period}}"
+  },
   "layout": {
     "edit": "Editar diseño",
-    "hint": "Arrastra grupos o tarjetas · pulsa 👁 para mostrar u ocultar"
+    "hideCard": "Ocultar tarjeta",
+    "hideGroup": "Ocultar grupo",
+    "hint": "Arrastra grupos o tarjetas · pulsa 👁 para mostrar u ocultar",
+    "save": "Guardar",
+    "showCard": "Mostrar tarjeta",
+    "showGroup": "Mostrar grupo"
   },
   "loadFailed": "No hemos podido recuperar tus estadísticas ahora mismo.",
   "loadFailedHint": "Prueba a cambiar los filtros o a recargar la página.",
   "loading": "Cargando tus estadísticas...",
+  "period": {
+    "custom": "en el rango elegido",
+    "month": "este mes",
+    "today": "hoy",
+    "total": "en total",
+    "week": "esta semana",
+    "year": "este año"
+  },
   "progress": {
     "activity": "Actividad",
     "month": "Mes",
@@ -95,14 +144,20 @@
     "today": "Hoy"
   },
   "share": {
-    "title": "Comparte tus estadísticas",
     "allTime": "Histórico",
-    "thisYear": "Este año",
-    "thisMonth": "Este mes",
     "custom": "Personalizado",
+    "download": "Descargar PNG",
+    "downloadedInstead": "Aquí no se puede compartir; se ha descargado la imagen",
+    "from": "Desde",
     "generateFailed": "No se pudo generar la imagen de estadísticas",
+    "pickDates": "Elige una fecha de inicio y otra de fin.",
+    "previewAlt": "Vista previa de la tarjeta de estadísticas",
+    "share": "Compartir",
     "shareFailed": "No se pudo compartir la imagen",
-    "downloadedInstead": "Aquí no se puede compartir; se ha descargado la imagen"
+    "thisMonth": "Este mes",
+    "thisYear": "Este año",
+    "title": "Comparte tus estadísticas",
+    "to": "Hasta"
   },
   "sort": {
     "azAsc": "Alfabético (A-Z)",
@@ -120,5 +175,28 @@
     "activity": "Actividad",
     "noData": "No hay datos para el periodo seleccionado."
   },
-  "subtitle": "Sigue tu progreso de inmersión con desgloses detallados"
+  "subtitle": "Sigue tu progreso de inmersión con desgloses detallados",
+  "tabs": {
+    "charts": "Gráficas",
+    "overview": "Resumen",
+    "timeline": "Cronología"
+  },
+  "typeDescriptor": {
+    "all": "todos los tipos",
+    "multiple": "tipos seleccionados",
+    "none": "ningún tipo"
+  },
+  "types": {
+    "all": "Todos los tipos",
+    "count_many": "{{count}} tipos",
+    "count_one": "{{count}} tipo",
+    "count_other": "{{count}} tipos",
+    "none": "Ningún tipo"
+  },
+  "units": {
+    "chars": "caracteres",
+    "charsPerHour": "caracteres/h",
+    "days": "días",
+    "hours": "horas"
+  }
 }

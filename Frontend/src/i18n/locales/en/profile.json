@@ -53,12 +53,19 @@
     },
     "noteTitle": "Note",
     "cancel": "Cancel",
-    "saveNote": "Save note"
+    "saveNote": "Save note",
+    "save": "Save",
+    "edit": "Edit",
+    "add": "Add"
   },
   "feed": {
     "all": "All activity",
     "logs": "Logs",
-    "achievements": "Achievements"
+    "achievements": "Achievements",
+    "noLogs": "No logs available",
+    "noLogsMatch": "No logs match your search criteria",
+    "noActivity": "No activity yet",
+    "noActivityMatch": "No activity matches your search criteria"
   },
   "filters": {
     "active": "Active filters:",
@@ -106,7 +113,9 @@
     "newestFirst": "Newest First",
     "oldestFirst": "Oldest First",
     "highestToLowest": "Highest to Lowest",
-    "lowestToHighest": "Lowest to Highest"
+    "lowestToHighest": "Lowest to Highest",
+    "field": "Sort Field",
+    "direction": "Sort Direction"
   },
   "stats": {
     "title": "Profile Stats",
@@ -120,7 +129,8 @@
     "achievements": "Achievements",
     "totalXp": "Total XP",
     "totalTime": "Total Immersion Time",
-    "hoverPosition": "{{date}}: #{{position}}"
+    "hoverPosition": "{{date}}: #{{position}}",
+    "noRankingHistory": "Not enough ranking history yet."
   },
   "tabs": {
     "overview": "Overview",

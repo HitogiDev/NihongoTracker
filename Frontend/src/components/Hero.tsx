@@ -182,7 +182,7 @@ function Hero() {
           </button>
           <img
             src={lightboxSrc}
-            alt="Screenshot"
+            alt={t('hero.alt.screenshot')}
             className="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />
@@ -372,7 +372,7 @@ function Hero() {
               <ScreenshotWindow
                 src="/screenshots/log-tracking-v2.png"
                 url="nihongotracker.app/log"
-                alt="Log Tracking"
+                alt={t('hero.alt.logTracking')}
                 isDark={isDark}
                 onOpen={setLightboxSrc}
               />
@@ -387,7 +387,7 @@ function Hero() {
               <ScreenshotWindow
                 src="/screenshots/user-stats-v2.png"
                 url="nihongotracker.app/hitogi/stats"
-                alt="Statistics"
+                alt={t('hero.alt.statistics')}
                 isDark={isDark}
                 onOpen={setLightboxSrc}
               />
@@ -460,7 +460,7 @@ function Hero() {
               <ScreenshotWindow
                 src="/screenshots/leaderboards-v2.png"
                 url="nihongotracker.app/ranking"
-                alt="Leaderboards"
+                alt={t('hero.alt.leaderboards')}
                 isDark={isDark}
                 onOpen={setLightboxSrc}
               />
@@ -548,7 +548,7 @@ function Hero() {
               <ScreenshotWindow
                 src="/screenshots/clubs-v2.png"
                 url="nihongotracker.app/clubs"
-                alt="Clubs"
+                alt={t('hero.alt.clubs')}
                 isDark={isDark}
                 onOpen={setLightboxSrc}
               />

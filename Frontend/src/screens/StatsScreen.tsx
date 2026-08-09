@@ -129,22 +129,29 @@ const CATEGORY_LABEL_KEYS: Record<TimeRange, ParseKeys<'stats'>> = {
   custom: 'filters.customRange',
 };
 
-const PERIOD_LABELS: Record<TimeRange, string> = {
-  total: 'All time',
-  today: "Today's",
-  week: "This week's",
-  month: "This month's",
-  year: "This year's",
-  custom: 'Custom',
+const PERIOD_LABEL_KEYS: Record<TimeRange, ParseKeys<'stats'>> = {
+  total: 'period.total',
+  today: 'period.today',
+  week: 'period.week',
+  month: 'period.month',
+  year: 'period.year',
+  custom: 'period.custom',
 };
 
-function capitalizeType(value: string) {
-  if (value === 'vn') return 'Visual Novel';
-  if (value === 'game') return 'Video Game';
-  if (value === 'tv show') return 'TV Show';
-  if (value === 'all') return 'All Types';
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
+// Log types are stored raw (`tv show`); `common:mediaTypes` keys are camelCase.
+const MEDIA_TYPE_KEYS: Record<string, string> = {
+  reading: 'common:mediaTypes.reading',
+  anime: 'common:mediaTypes.anime',
+  vn: 'common:mediaTypes.vn',
+  game: 'common:mediaTypes.game',
+  video: 'common:mediaTypes.video',
+  manga: 'common:mediaTypes.manga',
+  audio: 'common:mediaTypes.audio',
+  movie: 'common:mediaTypes.movie',
+  'tv show': 'common:mediaTypes.tvShow',
+  book: 'common:mediaTypes.book',
+  other: 'common:mediaTypes.other',
+};
 
 function formatDateForQuery(date?: Date) {
   if (!date) return '';
@@ -315,6 +322,7 @@ function SortableStatCard({
   wrapperClassName,
   children,
 }: SortableStatCardProps) {
+  const { t } = useTranslation('stats');
   const {
     attributes,
     listeners,
@@ -357,7 +365,7 @@ function SortableStatCard({
         type="button"
         className="absolute top-2 right-2 z-10 p-1 rounded-lg bg-base-200/80 hover:bg-base-300 transition-colors"
         onClick={onToggleVisibility}
-        title={visible ? 'Hide card' : 'Show card'}
+        title={visible ? t('layout.hideCard') : t('layout.showCard')}
       >
         {visible ? (
           <Eye className="w-4 h-4 text-base-content/60" />
@@ -387,6 +395,7 @@ function SortableGroup({
   onToggleGroupVisibility,
   children,
 }: SortableGroupProps) {
+  const { t } = useTranslation('stats');
   const {
     attributes,
     listeners,
@@ -430,7 +439,7 @@ function SortableGroup({
             type="button"
             className="p-1 rounded-lg hover:bg-base-200 transition-colors"
             onClick={onToggleGroupVisibility}
-            title={visible ? 'Hide group' : 'Show group'}
+            title={visible ? t('layout.hideGroup') : t('layout.showGroup')}
           >
             {visible ? (
               <Eye className="w-4 h-4 text-base-content/50" />
@@ -452,6 +461,14 @@ function StatsScreen() {
   const tTab = t as (
     key: (typeof CATEGORY_OPTIONS)[number]['labelKey']
   ) => string;
+  // Keys are looked up at runtime from raw log types, so they cannot be
+  // narrowed to `ParseKeys` statically.
+  const tKey = t as (key: string) => string;
+  const capitalizeType = (value: string) => {
+    if (value === 'all') return t('types.all');
+    const key = MEDIA_TYPE_KEYS[value];
+    return key ? tKey(key) : value.charAt(0).toUpperCase() + value.slice(1);
+  };
   const { username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedInUser } = useUserDataStore();
   const isOwner = username === loggedInUser?.username;
@@ -638,7 +655,7 @@ function StatsScreen() {
                     {layoutMutation.isPending ? (
                       <span className="loading loading-spinner loading-xs" />
                     ) : (
-                      'Save'
+                      t('layout.save')
                     )}
                   </button>
                 </div>
@@ -776,20 +793,21 @@ function StatsScreen() {
       (isAllTypesSelected || selectedTypes.includes(stat.type))
   );
 
+  const periodLabel = t(PERIOD_LABEL_KEYS[timeRange]);
   const selectedTypesDisplay = isNoTypesSelected
-    ? 'No Types'
+    ? t('types.none')
     : isAllTypesSelected
-      ? 'All Types'
+      ? t('types.all')
       : selectedTypes.length === 1
         ? capitalizeType(selectedTypes[0])
-        : `${selectedTypes.length} Types`;
+        : t('types.count', { count: selectedTypes.length });
   const selectedTypesDescriptor = isNoTypesSelected
-    ? 'no types'
+    ? t('typeDescriptor.none')
     : isAllTypesSelected
-      ? 'all types'
+      ? t('typeDescriptor.all')
       : selectedTypes.length === 1
         ? selectedTypesDisplay.toLowerCase()
-        : 'selected types';
+        : t('typeDescriptor.multiple');
   const progressSelectedType =
     selectedTypes.length === 1 ? selectedTypes[0] : 'all';
 
@@ -825,15 +843,7 @@ function StatsScreen() {
     (sum, stat) => sum + (stat.totalEpisodes || 0),
     0
   );
-  const episodeLabel =
-    selectedEpisodeStats.length === 1
-      ? selectedEpisodeStats[0].type === 'movie'
-        ? 'Movies'
-        : selectedEpisodeStats[0].type === 'video'
-          ? 'Videos'
-          : 'Episodes'
-      : 'Episodes';
-  const episodeDescriptor =
+  const episodeUnit =
     selectedEpisodeStats.length === 1
       ? selectedEpisodeStats[0].type === 'movie'
         ? 'movies'
@@ -841,6 +851,14 @@ function StatsScreen() {
           ? 'videos'
           : 'episodes'
       : 'episodes';
+  const episodeLabel = t(`episodeLabel.${episodeUnit}` as const);
+  const episodeHint = t(
+    episodeUnit === 'movies'
+      ? 'hints.watchedMovies'
+      : episodeUnit === 'videos'
+        ? 'hints.watchedVideos'
+        : 'hints.watchedEpisodes'
+  );
 
   const immersedDaysCount = (() => {
     if (!userStats) return 0;
@@ -1025,15 +1043,19 @@ function StatsScreen() {
     timeRange === 'custom' ? startDate : timeRange === 'today' ? todayKey : '';
   const ganttCustomEnd =
     timeRange === 'custom' ? endDate : timeRange === 'today' ? todayKey : '';
-  const ganttSortLabel = {
-    'title-asc': 'Alphabetical (A-Z)',
-    'title-desc': 'Alphabetical (Z-A)',
-    'first-asc': 'First log (oldest)',
-    'last-desc': 'Last log (newest)',
-    'logs-desc': 'Most logs',
-    'time-desc': 'Most time',
-    'xp-desc': 'Most XP',
-  }[ganttSort];
+  const ganttSortLabel = t(
+    (
+      {
+        'title-asc': 'sort.azAsc',
+        'title-desc': 'sort.azDesc',
+        'first-asc': 'sort.firstLog',
+        'last-desc': 'sort.lastLog',
+        'logs-desc': 'sort.mostLogs',
+        'time-desc': 'sort.mostTime',
+        'xp-desc': 'sort.mostXp',
+      } as const
+    )[ganttSort]
+  );
 
   if (isLoading && !userStats) {
     return (
@@ -1148,7 +1170,7 @@ function StatsScreen() {
                             >
                               {customStartDate
                                 ? formatDisplayDate(customStartDate)
-                                : 'Start Date'}
+                                : t('filters.startDate')}
                               <Calendar className="w-4 h-4 ml-1" />
                             </div>
                             <div
@@ -1175,7 +1197,7 @@ function StatsScreen() {
                             </div>
                           </div>
                           <span className="text-center text-base-content/50">
-                            to
+                            {t('filters.rangeTo')}
                           </span>
                           <div className="dropdown dropdown-bottom">
                             <div
@@ -1186,7 +1208,7 @@ function StatsScreen() {
                             >
                               {customEndDate
                                 ? formatDisplayDate(customEndDate)
-                                : 'End Date'}
+                                : t('filters.endDate')}
                               <Calendar className="w-4 h-4 ml-1" />
                             </div>
                             {customStartDate && (
@@ -1414,7 +1436,9 @@ function StatsScreen() {
                         className="btn btn-outline w-full sm:w-auto"
                       >
                         <Hash className="w-4 h-4" />
-                        {ganttMinLogs ? `Min ${ganttMinLogs}` : 'Min logs'}
+                        {ganttMinLogs
+                          ? t('filters.minLogsValue', { value: ganttMinLogs })
+                          : t('filters.minLogs')}
                         <ChevronDown className="w-4 h-4" />
                       </div>
                       <div
@@ -1440,7 +1464,9 @@ function StatsScreen() {
                         className="btn btn-outline w-full sm:w-auto"
                       >
                         <Hash className="w-4 h-4" />
-                        {ganttMaxLogs ? `Max ${ganttMaxLogs}` : 'Max logs'}
+                        {ganttMaxLogs
+                          ? t('filters.maxLogsValue', { value: ganttMaxLogs })
+                          : t('filters.maxLogs')}
                         <ChevronDown className="w-4 h-4" />
                       </div>
                       <div
@@ -1526,8 +1552,11 @@ function StatsScreen() {
                     </div>
                     <p className="text-xs text-base-content/60 mt-2">
                       {isAllTypesSelected
-                        ? `${PERIOD_LABELS[timeRange]} experience gained`
-                        : `${PERIOD_LABELS[timeRange]} ${selectedTypesDescriptor} experience`}
+                        ? t('hints.xpAll', { period: periodLabel })
+                        : t('hints.xp', {
+                            period: periodLabel,
+                            types: selectedTypesDescriptor,
+                          })}
                     </p>
                   </div>
                 </div>
@@ -1545,7 +1574,7 @@ function StatsScreen() {
                             parseFloat(totalTimeHours.toFixed(1))
                           )}{' '}
                           <span className="text-lg text-base-content/70">
-                            hours
+                            {t('units.hours')}
                           </span>
                         </p>
                       </div>
@@ -1555,8 +1584,11 @@ function StatsScreen() {
                     </div>
                     <p className="text-xs text-base-content/60 mt-2">
                       {isAllTypesSelected
-                        ? `${PERIOD_LABELS[timeRange]} immersion time`
-                        : `${PERIOD_LABELS[timeRange]} ${selectedTypesDescriptor} immersion time`}
+                        ? t('hints.timeAll', { period: periodLabel })
+                        : t('hints.time', {
+                            period: periodLabel,
+                            types: selectedTypesDescriptor,
+                          })}
                     </p>
                   </div>
                 </div>
@@ -1580,13 +1612,17 @@ function StatsScreen() {
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-xs text-base-content/60">
                         {isAllTypesSelected
-                          ? 'Total log entries'
-                          : `${selectedTypesDisplay} entries`}
+                          ? t('hints.logCountAll')
+                          : t('hints.logCount', {
+                              types: selectedTypesDisplay,
+                            })}
                       </p>
                       {isAllTypesSelected &&
                         (userStats!.totals.untrackedCount ?? 0) > 0 && (
                           <span className="badge badge-warning badge-xs">
-                            {userStats!.totals.untrackedCount} untracked
+                            {t('hints.untracked', {
+                              count: userStats!.totals.untrackedCount ?? 0,
+                            })}
                           </span>
                         )}
                     </div>
@@ -1608,7 +1644,7 @@ function StatsScreen() {
                             )
                           )}{' '}
                           <span className="text-lg text-base-content/70">
-                            hours
+                            {t('units.hours')}
                           </span>
                         </p>
                       </div>
@@ -1616,7 +1652,14 @@ function StatsScreen() {
                         <Timer className="w-6 h-6 text-secondary" />
                       </div>
                     </div>
-                    <p className="text-xs text-base-content/60 mt-2">{`${PERIOD_LABELS[timeRange]} daily ${isAllTypesSelected ? 'immersion' : selectedTypesDescriptor + ' immersion'} average`}</p>
+                    <p className="text-xs text-base-content/60 mt-2">
+                      {isAllTypesSelected
+                        ? t('hints.dailyAverageAll', { period: periodLabel })
+                        : t('hints.dailyAverage', {
+                            period: periodLabel,
+                            types: selectedTypesDescriptor,
+                          })}
+                    </p>
                   </div>
                 </div>
               ),
@@ -1631,7 +1674,7 @@ function StatsScreen() {
                         <p className="text-3xl font-bold text-warning mt-1">
                           {numberWithCommas(currentStreakValue)}{' '}
                           <span className="text-lg text-base-content/70">
-                            days
+                            {t('units.days')}
                           </span>
                         </p>
                       </div>
@@ -1656,7 +1699,7 @@ function StatsScreen() {
                         <p className="text-3xl font-bold text-info mt-1">
                           {numberWithCommas(longestStreakValue)}{' '}
                           <span className="text-lg text-base-content/70">
-                            days
+                            {t('units.days')}
                           </span>
                         </p>
                       </div>
@@ -1686,7 +1729,7 @@ function StatsScreen() {
                         parseFloat(userStats!.totals.readingHours.toFixed(1))
                       )}{' '}
                       <span className="text-sm font-normal text-base-content/70">
-                        hours
+                        {t('units.hours')}
                       </span>
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
@@ -1711,7 +1754,7 @@ function StatsScreen() {
                         parseFloat(userStats!.totals.listeningHours.toFixed(1))
                       )}{' '}
                       <span className="text-sm font-normal text-base-content/70">
-                        hours
+                        {t('units.hours')}
                       </span>
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
@@ -1766,7 +1809,7 @@ function StatsScreen() {
                       {numberWithCommas(episodeTotals)}
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
-                      Total {episodeDescriptor} watched
+                      {episodeHint}
                     </p>
                   </div>
                 </div>
@@ -1785,7 +1828,7 @@ function StatsScreen() {
                     <p className="text-2xl font-bold">
                       {numberWithCommas(Math.round(avgReadingSpeed || 0))}{' '}
                       <span className="text-sm font-normal text-base-content/70">
-                        chars/hr
+                        {t('units.charsPerHour')}
                       </span>
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
@@ -1829,10 +1872,17 @@ function StatsScreen() {
                         Math.round(dailyAverageCharsDisplay || 0)
                       )}{' '}
                       <span className="text-sm font-normal text-base-content/70">
-                        chars
+                        {t('units.chars')}
                       </span>
                     </p>
-                    <p className="text-xs text-base-content/60 mt-1">{`${PERIOD_LABELS[timeRange]} daily ${isAllTypesSelected ? 'reading' : selectedTypesDescriptor + ' reading'} average`}</p>
+                    <p className="text-xs text-base-content/60 mt-1">
+                      {isAllTypesSelected
+                        ? t('hints.dailyCharsAll', { period: periodLabel })
+                        : t('hints.dailyChars', {
+                            period: periodLabel,
+                            types: selectedTypesDescriptor,
+                          })}
+                    </p>
                   </div>
                 </div>
               ) : null,
@@ -1871,8 +1921,8 @@ function StatsScreen() {
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
                       {isAllTypesSelected
-                        ? 'Characters across all reading types'
-                        : `Characters in ${selectedTypesDescriptor} logs`}
+                        ? t('hints.charsAll')
+                        : t('hints.chars', { types: selectedTypesDescriptor })}
                     </p>
                   </div>
                 </div>
@@ -1893,8 +1943,8 @@ function StatsScreen() {
                     </p>
                     <p className="text-xs text-base-content/60 mt-1">
                       {isAllTypesSelected
-                        ? 'Total pages recorded across reading logs'
-                        : `Total pages read in ${selectedTypesDescriptor} logs`}
+                        ? t('hints.pagesAll')
+                        : t('hints.pages', { types: selectedTypesDescriptor })}
                     </p>
                   </div>
                 </div>

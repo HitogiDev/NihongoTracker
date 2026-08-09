@@ -106,7 +106,8 @@
     "tagsHint": "Añade etiquetas para que otros encuentren tu club. Puedes poner hasta 10.",
     "title": "Crear un club",
     "upload": "Subir",
-    "yourTags": "Tus etiquetas:"
+    "yourTags": "Tus etiquetas:",
+    "membersMax": "miembros como máximo"
   },
   "detail": {
     "about": "Acerca de",

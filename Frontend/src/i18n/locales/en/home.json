@@ -52,7 +52,8 @@
       "globalFeed": "Global Feed",
       "allTypes": "All types",
       "subtitle": "See what the community is immersing in right now",
-      "empty": "No activity for the selected filters."
+      "empty": "No activity for the selected filters.",
+      "tracked": "tracked"
     },
     "time": {
       "day": "Last 24h",
@@ -391,6 +392,13 @@
       "books": "Books & Reading",
       "video": "Video",
       "games": "Video Games"
+    },
+    "alt": {
+      "screenshot": "Screenshot",
+      "logTracking": "Log Tracking",
+      "statistics": "Statistics",
+      "leaderboards": "Leaderboards",
+      "clubs": "Clubs"
     }
   }
 }

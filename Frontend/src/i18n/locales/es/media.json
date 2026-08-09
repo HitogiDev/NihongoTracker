@@ -21,6 +21,8 @@
   "addToList": {
     "createFailed": "No se pudo crear la lista",
     "created": "Lista creada con este contenido",
+    "done": "Hecho",
+    "empty": "Aún no tienes listas. Crea una abajo.",
     "newTitlePlaceholder": "Título de la lista nueva",
     "title": "Añadir a una lista",
     "updateFailed": "No se pudo actualizar la lista"
@@ -37,7 +39,9 @@
     "delete": "Eliminar el comentario",
     "deleteFailed": "No se pudo eliminar el comentario",
     "empty": "Todavía no hay comentarios.",
+    "loginPrompt": "<login>Inicia sesión</login> para comentar.",
     "placeholder": "Deja un comentario",
+    "post": "Publicar comentario",
     "postFailed": "No se pudo publicar el comentario"
   },
   "common": {
@@ -57,12 +61,15 @@
     "spoilers": "Spoilers"
   },
   "details": {
+    "authors": "Autores:",
     "chapters": "Capítulos:",
     "characters": "Caracteres:",
     "difficulty": "Dificultad:",
     "duration": "Duración:",
     "episodes": "Episodios:",
     "externalLinks": "Enlaces externos",
+    "pages": "Páginas:",
+    "published": "Publicado:",
     "title": "Detalles del contenido",
     "type": "Tipo:",
     "volumes": "Volúmenes:"
@@ -104,7 +111,7 @@
     "searchPlaceholder": "Buscar por título, romaji o inglés...",
     "selectAll": "Seleccionar todo",
     "selectNone": "No seleccionar nada",
-    "setStatus": "Cambiar estado",
+    "setStatus": "Cambiar el estado",
     "settings": "Ajustes",
     "showing": "Mostrando {{shown}} de {{total}} elementos",
     "showingFor": " para «{{query}}»",
@@ -253,6 +260,11 @@
     "quote": "Cita",
     "spoiler": "Spoiler"
   },
+  "navbar": {
+    "overview": "Resumen",
+    "reviews": "Reseñas",
+    "social": "Social"
+  },
   "progress": {
     "loading": "Cargando tu progreso...",
     "thisMonth": "Este mes",
@@ -260,8 +272,12 @@
     "title": "Tu progreso"
   },
   "reviewCard": {
+    "delete": "Eliminar",
+    "edit": "Editar",
     "linkCopied": "Enlace de la reseña copiado al portapapeles",
     "options": "Opciones de la reseña",
+    "readFull": "Leer la reseña completa",
+    "share": "Compartir",
     "shareText": "¡Echa un vistazo a esta reseña!",
     "shareTitle": "Reseña de NihongoTracker"
   },
@@ -272,6 +288,7 @@
     },
     "all": "Todas",
     "alreadyPosted": "Ya has publicado una reseña de este título.",
+    "communityRating": "Valoración de la comunidad",
     "deleteConfirm": "¿Seguro que quieres eliminar tu reseña? No se puede deshacer.",
     "deleteTitle": "Eliminar reseña",
     "emptyBody": "Sé la primera persona en compartir tu opinión sobre este contenido.",
@@ -283,6 +300,9 @@
     "noMatchesTitle": "Ninguna reseña coincide con estos filtros",
     "noRatingData": "Todavía no hay puntuaciones.",
     "rated": "Con puntuación",
+    "ratingCount_many": "{{count}} valoraciones",
+    "ratingCount_one": "{{count}} valoración",
+    "ratingCount_other": "{{count}} valoraciones",
     "resetFilters": "Restablecer filtros",
     "scoreRange": "Rango de puntuación",
     "scoreRangeDisabled": "El rango de puntuación se desactiva al ver reseñas sin puntuar.",
@@ -312,6 +332,7 @@
     "allTime": "Histórico",
     "avatarAlt": "avatar",
     "compare": "Comparar con alguien",
+    "compareSelf": "¡Ese eres tú! Escribe otro nombre de usuario",
     "mediaWideStats": "Estadísticas del contenido",
     "noRecentActivity": "Todavía no hay actividad pública reciente para este contenido.",
     "noStats": "Aún no hay estadísticas de este contenido.",
@@ -324,6 +345,7 @@
   "stats": {
     "allCaughtUp": "Al día",
     "charactersLabel": "Caracteres",
+    "charsPerHour": "caracteres/hora",
     "charsRead": "Caracteres leídos",
     "completed": "Completado",
     "completion": "Progreso",
@@ -355,6 +377,7 @@
     "login": "Iniciar sesión",
     "loginRequired": "Tienes que iniciar sesión para escribir una reseña.",
     "preview": "Vista previa",
+    "previewEmpty": "Aquí aparece la vista previa mientras editas.",
     "previewHint": "Aquí aparece la vista previa mientras escribes.",
     "quoteText": "Texto de la cita",
     "rating": "Puntuación (opcional)",

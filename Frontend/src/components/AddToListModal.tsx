@@ -90,7 +90,7 @@ function AddToListModal({
           <div className="flex flex-col gap-1 max-h-72 overflow-y-auto">
             {lists.length === 0 && (
               <p className="text-sm text-base-content/60 py-4">
-                You have no lists yet. Create one below.
+                {t('addToList.empty')}
               </p>
             )}
             {lists.map((list) => (
@@ -160,7 +160,7 @@ function AddToListModal({
 
         <div className="modal-action">
           <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Done
+            {t('addToList.done')}
           </button>
         </div>
       </div>

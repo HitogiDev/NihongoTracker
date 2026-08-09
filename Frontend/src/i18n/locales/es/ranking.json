@@ -42,7 +42,10 @@
   "defaults": {
     "save": "Guardar como predeterminado",
     "remove": "Quitar predeterminado",
-    "menu": "Preferencias de clasificación"
+    "menu": "Preferencias de clasificación",
+    "needDates": "Elige una fecha de inicio y otra de fin para el rango personalizado.",
+    "saved": "Filtros por defecto de la clasificación guardados.",
+    "removed": "Filtros por defecto de la clasificación eliminados."
   },
   "table": {
     "rank": "Puesto",
@@ -53,5 +56,7 @@
   "unknownUser": "Usuario",
   "loading": "Cargando la clasificación...",
   "loadingMore": "Cargando más...",
-  "loadMore": "Cargar más puestos"
+  "loadMore": "Cargar más puestos",
+  "scopeLabel": "Ámbito",
+  "metricLabel": "Métrica"
 }

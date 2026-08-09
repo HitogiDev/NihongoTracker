@@ -1189,7 +1189,7 @@ function MediaDetails() {
             />
 
             <ComparisonStat
-              label="Total Time"
+              label={t('stats.totalTime')}
               myValue={myStats.totalTime}
               theirValue={theirStats.totalTime}
               unit="m"
@@ -1210,13 +1210,13 @@ function MediaDetails() {
               theirStats.readingPercentage !== null && (
                 <>
                   <ComparisonStat
-                    label="Characters Read"
+                    label={t('stats.charsRead')}
                     myValue={myStats.totalChars}
                     theirValue={theirStats.totalChars}
                   />
 
                   <ComparisonStat
-                    label="Completion"
+                    label={t('stats.completion')}
                     myValue={myStats.readingPercentage}
                     theirValue={theirStats.readingPercentage}
                     unit="%"
@@ -1225,7 +1225,7 @@ function MediaDetails() {
 
                   {myStats.readingSpeed > 0 && theirStats.readingSpeed > 0 && (
                     <ComparisonStat
-                      label="Reading Speed"
+                      label={t('stats.readingSpeed')}
                       myValue={myStats.readingSpeed}
                       theirValue={theirStats.readingSpeed}
                       unit=" chars/hr"
@@ -1238,7 +1238,7 @@ function MediaDetails() {
             {(mediaDocument?.type === 'anime' ||
               mediaDocument?.type === 'tv show') && (
               <ComparisonStat
-                label="Episodes Watched"
+                label={t('stats.episodesWatched')}
                 myValue={myStats.totalEpisodes}
                 theirValue={theirStats.totalEpisodes}
               />
@@ -1246,7 +1246,7 @@ function MediaDetails() {
 
             {mediaDocument?.type === 'manga' && (
               <ComparisonStat
-                label="Pages Read"
+                label={t('stats.pagesRead')}
                 myValue={myStats.totalPages}
                 theirValue={theirStats.totalPages}
               />
@@ -1392,7 +1392,7 @@ function MediaDetails() {
                     <>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-base-content/70 min-w-20">
-                          Pages:
+                          {t('details.pages')}
                         </span>
                         <span>{mediaDocument?.pageCount ?? 'Unknown'}</span>
                       </div>
@@ -1400,7 +1400,7 @@ function MediaDetails() {
                         mediaDocument.authors.length > 0 && (
                           <div className="flex items-center gap-3">
                             <span className="font-medium text-base-content/70 min-w-20">
-                              Authors:
+                              {t('details.authors')}
                             </span>
                             <span>{mediaDocument.authors.join(', ')}</span>
                           </div>
@@ -1408,7 +1408,7 @@ function MediaDetails() {
                       {mediaDocument?.publishedDate && (
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-base-content/70 min-w-20">
-                            Published:
+                            {t('details.published')}
                           </span>
                           <span>{mediaDocument.publishedDate}</span>
                         </div>
@@ -1961,7 +1961,7 @@ function MediaDetails() {
                                 {numberWithCommas(Math.round(readingSpeed))}
                               </p>
                               <p className="text-xs text-base-content/60">
-                                chars/hour
+                                {t('stats.charsPerHour')}
                               </p>
                             </div>
                             <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">

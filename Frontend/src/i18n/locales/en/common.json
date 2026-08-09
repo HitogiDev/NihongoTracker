@@ -62,5 +62,21 @@
     "justNow": "Just now"
   },
   "unknown": "Unknown",
-  "viewProfile": "View {{username}}'s profile"
+  "viewProfile": "View {{username}}'s profile",
+  "imageCrop": {
+    "apply": "Apply Crop"
+  },
+  "levelUp": {
+    "title": "Congratulations! Level Up!"
+  },
+  "charts": {
+    "noData": "No data available for the selected timeframe."
+  },
+  "routeError": {
+    "updatingTitle": "Updating app...",
+    "updatingBody": "A new version was deployed. Reloading to sync assets.",
+    "reload": "Reload now",
+    "title": "Unexpected Application Error",
+    "generic": "Something went wrong while loading this page."
+  }
 }

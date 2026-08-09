@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -86,16 +86,17 @@ function MediaListComments({
               className="btn btn-primary btn-sm"
               disabled={!content.trim() || addComment.isPending}
             >
-              Post comment
+              {t('comments.post')}
             </button>
           </div>
         </form>
       ) : (
         <p className="text-sm text-base-content/60 mb-6">
-          <Link to="/login" className="link">
-            Log in
-          </Link>{' '}
-          to comment.
+          <Trans
+            i18nKey="comments.loginPrompt"
+            ns="media"
+            components={{ login: <Link to="/login" className="link" /> }}
+          />
         </p>
       )}
 

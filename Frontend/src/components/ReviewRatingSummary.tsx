@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IMediaReview } from '../types';
 import { BarChart3 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ReviewRatingSummaryProps {
   reviews: IMediaReview[];
@@ -22,6 +23,7 @@ function ReviewRatingSummary({
   reviewsTabPath,
   variant = 'card',
 }: ReviewRatingSummaryProps) {
+  const { t } = useTranslation('media');
   const [hoveredBucket, setHoveredBucket] = useState<number | null>(null);
   const [pinnedBucket, setPinnedBucket] = useState<number | null>(null);
 
@@ -65,7 +67,7 @@ function ReviewRatingSummary({
             {!isInline && (
               <h2 className="card-title text-xl mb-3 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                Community Rating
+                {t('reviews.communityRating')}
               </h2>
             )}
 
@@ -153,7 +155,7 @@ function ReviewRatingSummary({
               to={reviewsTabPath}
               className="link link-hover mt-1 inline-block text-[11px] text-base-content/60 tabular-nums"
             >
-              {totalRatings} rating{totalRatings === 1 ? '' : 's'}
+              {t('reviews.ratingCount', { count: totalRatings })}
             </Link>
           </div>
         </div>

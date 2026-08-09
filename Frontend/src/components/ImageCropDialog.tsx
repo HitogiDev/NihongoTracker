@@ -5,6 +5,7 @@ import ReactCrop, {
   convertToPixelCrop,
 } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { useTranslation } from 'react-i18next';
 
 type ImageCropResult = {
   crop: PixelCrop;
@@ -45,6 +46,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
     keepSelection,
     ruleOfThirds,
   }) => {
+    const { t } = useTranslation('common');
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [crop, setCrop] = useState<PercentCrop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -148,10 +150,10 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
               onClick={handleApply}
               disabled={!completedCrop?.width || !completedCrop?.height}
             >
-              Apply Crop
+              {t('imageCrop.apply')}
             </button>
             <button className="btn btn-outline" onClick={handleCancel}>
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </div>

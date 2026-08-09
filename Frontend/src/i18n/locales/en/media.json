@@ -23,7 +23,9 @@
     "created": "List created with this media",
     "newTitlePlaceholder": "New list title",
     "title": "Add to list",
-    "updateFailed": "Could not update the list"
+    "updateFailed": "Could not update the list",
+    "empty": "You have no lists yet. Create one below.",
+    "done": "Done"
   },
   "chart": {
     "bar": "Bar",
@@ -38,7 +40,9 @@
     "deleteFailed": "Could not delete the comment",
     "empty": "No comments yet.",
     "placeholder": "Leave a comment",
-    "postFailed": "Could not post the comment"
+    "postFailed": "Could not post the comment",
+    "post": "Post comment",
+    "loginPrompt": "<login>Log in</login> to comment."
   },
   "common": {
     "cancel": "Cancel",
@@ -65,7 +69,10 @@
     "externalLinks": "External Links",
     "title": "Media Details",
     "type": "Type:",
-    "volumes": "Volumes:"
+    "volumes": "Volumes:",
+    "pages": "Pages:",
+    "authors": "Authors:",
+    "published": "Published:"
   },
   "header": {
     "addToList": "Add to list",
@@ -253,7 +260,11 @@
     "linkCopied": "Review link copied to clipboard!",
     "options": "Review options",
     "shareText": "Check out this review!",
-    "shareTitle": "NihongoTracker Review"
+    "shareTitle": "NihongoTracker Review",
+    "share": "Share",
+    "edit": "Edit",
+    "delete": "Delete",
+    "readFull": "Read full review"
   },
   "reviews": {
     "a11y": {
@@ -281,7 +292,10 @@
     "title": "Reviews",
     "unrated": "Unrated",
     "visibility": "Visibility",
-    "write": "Write a review"
+    "write": "Write a review",
+    "communityRating": "Community Rating",
+    "ratingCount_one": "{{count}} rating",
+    "ratingCount_other": "{{count}} ratings"
   },
   "search": {
     "filterByType": "Filter by media type",
@@ -309,7 +323,8 @@
     "retry": "Retry",
     "subtitle": "See community stats for this title and share your page.",
     "totalLogs": "Total Logs",
-    "usernamePlaceholder": "Enter a username"
+    "usernamePlaceholder": "Enter a username",
+    "compareSelf": "That's you! Enter a different username"
   },
   "stats": {
     "allCaughtUp": "All caught up",
@@ -327,7 +342,8 @@
     "timeLabel": "Time",
     "timeToFinish": "Time to Finish",
     "totalTime": "Total Time",
-    "totalXp": "Total XP"
+    "totalXp": "Total XP",
+    "charsPerHour": "chars/hour"
   },
   "toast": {
     "reviewAdded": "Review added successfully",
@@ -354,6 +370,12 @@
     "summaryPlaceholder": "One-sentence summary of your review",
     "title": "Edit Review",
     "update": "Update Review",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "previewEmpty": "Your live preview appears here as you edit."
+  },
+  "navbar": {
+    "overview": "Overview",
+    "reviews": "Reviews",
+    "social": "Social"
   }
 }

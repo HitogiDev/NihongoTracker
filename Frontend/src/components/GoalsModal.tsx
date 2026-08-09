@@ -592,7 +592,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       ) ? (
                         <>
                           <span className="loading loading-spinner loading-sm"></span>
-                          Creating...
+                          {t('goals:modal.creating')}
                         </>
                       ) : (
                         <>
@@ -803,7 +803,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                 {isDeletingGoal ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Deleting...
+                    {t('goals:modal.deleting')}
                   </>
                 ) : (
                   t('modal.deleteGoal')

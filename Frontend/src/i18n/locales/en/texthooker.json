@@ -24,7 +24,19 @@
     "subtitle": "Track your reading progress with the texthooker",
     "title": "Texthooker Dashboard",
     "unknownTitle": "Unknown Title",
-    "untitledSession": "Untitled Session"
+    "untitledSession": "Untitled Session",
+    "blankSession": "Blank Session",
+    "mediaSessionOption": "Media Session",
+    "launchBlankSession": "Launch Blank Session",
+    "roomId": "Room ID",
+    "cancel": "Cancel",
+    "visualNovel": "Visual Novel",
+    "selected": "Selected",
+    "nameYourSession": "Name Your Session",
+    "sessionName": "Session Name",
+    "deleteSessionTitle": "Delete Session",
+    "deleteSessionConfirm": "Are you sure you want to delete this session?",
+    "delete": "Delete"
   },
   "duration": {
     "hours": "{{hours}}h",
@@ -177,7 +189,14 @@
       "copyLinesFailed": "Failed to copy lines",
       "logFailed": "Failed to log session",
       "startFailed": "Failed to start a new session"
-    }
+    },
+    "setTimer": "Set Timer",
+    "sessionStatistics": "Session Statistics",
+    "readingProgress": "Reading Progress",
+    "currentSession": "Current Session",
+    "charsPerHour": "chars/h",
+    "logged": "Logged!",
+    "logSession": "Log Session"
   },
   "mediaSession": {
     "enter": "Enter",

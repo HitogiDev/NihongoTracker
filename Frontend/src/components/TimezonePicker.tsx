@@ -158,7 +158,7 @@ function TimezonePicker({
                 </svg>
                 <div>
                   <div className="font-medium text-info">
-                    Use detected timezone
+                    {t('timezone.useDetected')}
                   </div>
                   <div className="text-xs text-base-content/60">
                     {commonTimezones.find((tz) => tz.value === detectedTimezone)
@@ -173,7 +173,7 @@ function TimezonePicker({
           <div className="max-h-48 overflow-y-auto">
             {filteredTimezones.length === 0 ? (
               <div className="p-3 text-center text-base-content/60">
-                No timezones found
+                {t('timezone.noResults')}
               </div>
             ) : (
               filteredTimezones.map((timezone) => (

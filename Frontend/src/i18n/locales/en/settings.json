@@ -129,7 +129,9 @@
     "time": "Time spent in minutes",
     "title": "Custom CSV Format",
     "unrecognized": "Any unrecognized Media Type or Activity Type.",
-    "yes": "Yes"
+    "yes": "Yes",
+    "no": "No",
+    "tags": "Tag names separated by semicolons (e.g. <code>tag1;tag2</code>)"
   },
   "danger": {
     "cannotBeUndone": "cannot be undone",
@@ -301,7 +303,9 @@
     "saveAbout": "Save About",
     "saving": "Saving...",
     "subtitle": "Update your avatar, banner and about me",
-    "tab": "Profile"
+    "tab": "Profile",
+    "avatarTooLarge": "Avatar must be smaller than {{size}}MB",
+    "bannerTooLarge": "Banner must be smaller than {{size}}MB"
   },
   "profileWidgets": {
     "about": {
@@ -343,6 +347,12 @@
     "profile": "Profile"
   },
   "tagFilter": {
+    "button": "Tags",
+    "clear": "Clear",
+    "exclude": "Exclude (Hide these)",
+    "include": "Include (Show only these)",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
     "title": "Filter by Tags"
   },
   "tags": {
@@ -366,7 +376,12 @@
       "tagName": "Tag Name",
       "title": "Manage Tags",
       "updateFailed": "Failed to update tag",
-      "updated": "Tag updated successfully"
+      "updated": "Tag updated successfully",
+      "createTag": "Create Tag",
+      "maxReached": "You've reached the maximum of {{max}} tags",
+      "upgradeSuffix": "- <link>Upgrade to Patreon</link> for more tags",
+      "cancel": "Cancel",
+      "deleting": "Deleting..."
     },
     "selector": {
       "cancel": "Cancel",
@@ -412,5 +427,9 @@
     "usernameMismatch": "Username does not match. Data was not deleted.",
     "verificationFailed": "Failed to send verification email",
     "verificationSent": "Verification email sent!"
+  },
+  "timezone": {
+    "useDetected": "Use detected timezone",
+    "noResults": "No timezones found"
   }
 }

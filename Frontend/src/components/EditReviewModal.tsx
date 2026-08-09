@@ -432,7 +432,7 @@ export default function EditReviewModal({
                   />
                 ) : (
                   <div className="text-base-content/60">
-                    Your live preview appears here as you edit.
+                    {t('write.previewEmpty')}
                   </div>
                 )}
               </div>
@@ -447,7 +447,7 @@ export default function EditReviewModal({
               onClick={onClose}
               disabled={isLoading}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"

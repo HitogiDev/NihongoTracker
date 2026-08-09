@@ -62,5 +62,21 @@
     "justNow": "Justo ahora"
   },
   "unknown": "Desconocido",
-  "viewProfile": "Ver el perfil de {{username}}"
+  "viewProfile": "Ver el perfil de {{username}}",
+  "imageCrop": {
+    "apply": "Aplicar recorte"
+  },
+  "levelUp": {
+    "title": "¡Enhorabuena! ¡Has subido de nivel!"
+  },
+  "charts": {
+    "noData": "No hay datos para el periodo seleccionado."
+  },
+  "routeError": {
+    "updatingTitle": "Actualizando la aplicación...",
+    "updatingBody": "Se ha desplegado una versión nueva. Recargando para sincronizar los recursos.",
+    "reload": "Recargar ahora",
+    "title": "Error inesperado de la aplicación",
+    "generic": "Algo ha fallado al cargar esta página."
+  }
 }

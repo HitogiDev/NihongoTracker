@@ -121,11 +121,13 @@
     "kechimochiTitle": "Ayuda para importar de Kechimochi",
     "kechimochiWatching": "Los logs de visionado se importan como vídeo salvo que Kechimochi indique un subtipo concreto como anime, película o serie.",
     "mediaId": "ID de AniList, VNDB o del contenido",
+    "no": "No",
     "noneOrUnknown": "Entradas marcadas como Ninguno o Desconocido.",
     "notes": "Notas",
     "pages": "Número de páginas leídas",
     "readingListening": "Los logs de lectura y escucha conservan sus tipos correspondientes.",
     "required": "Obligatorio",
+    "tags": "Nombres de etiquetas separados por punto y coma (p. ej. <code>tag1;tag2</code>)",
     "time": "Tiempo dedicado en minutos",
     "title": "Formato CSV personalizado",
     "unrecognized": "Cualquier tipo de contenido o actividad no reconocido.",
@@ -288,8 +290,10 @@
     "allowedFormats": "Formatos permitidos: JPEG, PNG, WebP{{gif}}. Tamaño máximo: {{maxSize}} MB. Dimensiones óptimas: {{dimensions}}",
     "avatar": "Avatar",
     "avatarCropped": "Avatar recortado listo para subir",
+    "avatarTooLarge": "El avatar debe ocupar menos de {{size}} MB",
     "banner": "Cabecera",
     "bannerCropped": "Cabecera recortada lista para subir",
+    "bannerTooLarge": "La cabecera debe ocupar menos de {{size}} MB",
     "currentAvatarAlt": "Avatar actual",
     "currentBannerAlt": "Cabecera actual",
     "gifCropOnSave": "El recorte del GIF se aplicará al guardar",
@@ -343,22 +347,33 @@
     "profile": "Perfil"
   },
   "tagFilter": {
+    "button": "Etiquetas",
+    "clear": "Limpiar",
+    "exclude": "Excluir (ocultar estas)",
+    "include": "Incluir (mostrar solo estas)",
+    "selected_many": "{{count}} seleccionadas",
+    "selected_one": "{{count}} seleccionada",
+    "selected_other": "{{count}} seleccionadas",
     "title": "Filtrar por etiquetas"
   },
   "tags": {
     "manager": {
+      "cancel": "Cancelar",
       "colorPlaceholder": "#3b82f6",
       "create": "Crear",
       "createFailed": "No se pudo crear la etiqueta",
       "createNew": "Crear una etiqueta",
+      "createTag": "Crear etiqueta",
       "created": "Etiqueta creada",
       "deleteFailed": "No se pudo eliminar la etiqueta",
       "deleteTag": "Eliminar la etiqueta",
       "deleteTitle": "¿Eliminar la etiqueta?",
       "deleted": "Etiqueta eliminada",
+      "deleting": "Eliminando...",
       "editAction": "Editar la etiqueta",
       "editTag": "Editar la etiqueta",
       "empty": "Todavía no hay etiquetas. Crea la primera para organizar tus logs.",
+      "maxReached": "Has alcanzado el máximo de {{max}} etiquetas",
       "namePlaceholder": "p. ej. Estudio, Ocio, Práctica",
       "nameRequired": "El nombre de la etiqueta es obligatorio",
       "preview": "Vista previa",
@@ -366,7 +381,8 @@
       "tagName": "Nombre de la etiqueta",
       "title": "Gestionar etiquetas",
       "updateFailed": "No se pudo actualizar la etiqueta",
-      "updated": "Etiqueta actualizada"
+      "updated": "Etiqueta actualizada",
+      "upgradeSuffix": "- <link>Hazte Patreon</link> para tener más etiquetas"
     },
     "selector": {
       "cancel": "Cancelar",
@@ -382,6 +398,10 @@
     },
     "subtitle": "Crea y gestiona etiquetas para organizar tus logs",
     "title": "Etiquetas"
+  },
+  "timezone": {
+    "noResults": "No se ha encontrado ninguna zona horaria",
+    "useDetected": "Usar la zona horaria detectada"
   },
   "timezonePicker": {
     "placeholder": "Buscar zonas horarias...",

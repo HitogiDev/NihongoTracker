@@ -215,7 +215,7 @@ function TVShowLogs({ username, isActive = true }: TVShowLogsProps) {
   if (logError) {
     return (
       <div className="alert alert-error">
-        <span>Error loading video logs</span>
+        <span>{t('logs:video.loadError')}</span>
       </div>
     );
   }

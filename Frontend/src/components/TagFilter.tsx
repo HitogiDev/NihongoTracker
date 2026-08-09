@@ -80,7 +80,7 @@ export default function TagFilter({
             d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
           />
         </svg>
-        Tags
+        {t('tagFilter.button')}
         {hasActiveFilters && (
           <span className="badge badge-sm badge-primary">{activeCount}</span>
         )}
@@ -106,7 +106,7 @@ export default function TagFilter({
           <h3 className="font-semibold text-sm">{t('tagFilter.title')}</h3>
           {hasActiveFilters && (
             <button className="btn btn-ghost btn-xs" onClick={clearFilters}>
-              Clear
+              {t('tagFilter.clear')}
             </button>
           )}
         </div>
@@ -116,11 +116,11 @@ export default function TagFilter({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-base-content/70">
-                Include (Show only these)
+                {t('tagFilter.include')}
               </span>
               {includedTags.length > 0 && (
                 <span className="text-xs text-base-content/50">
-                  {includedTags.length} selected
+                  {t('tagFilter.selected', { count: includedTags.length })}
                 </span>
               )}
             </div>
@@ -178,11 +178,11 @@ export default function TagFilter({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-base-content/70">
-                Exclude (Hide these)
+                {t('tagFilter.exclude')}
               </span>
               {excludedTags.length > 0 && (
                 <span className="text-xs text-base-content/50">
-                  {excludedTags.length} selected
+                  {t('tagFilter.selected', { count: excludedTags.length })}
                 </span>
               )}
             </div>

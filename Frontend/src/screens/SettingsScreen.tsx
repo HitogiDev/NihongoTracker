@@ -60,7 +60,7 @@ import {
   PROFILE_WIDGET_META,
   resolveProfileLayout,
 } from '../utils/profileWidgets';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import LanguagePicker from '../components/LanguagePicker';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
@@ -1721,7 +1721,7 @@ function SettingsScreen() {
     if (!file) return;
 
     if (file.size > avatarMaxSizeBytes) {
-      toast.error(`Avatar must be smaller than ${avatarMaxSizeMb}MB`);
+      toast.error(t('profile.avatarTooLarge', { size: avatarMaxSizeMb }));
       e.target.value = '';
       return;
     }
@@ -1742,7 +1742,7 @@ function SettingsScreen() {
     if (!file) return;
 
     if (file.size > bannerMaxSizeBytes) {
-      toast.error(`Banner must be smaller than ${bannerMaxSizeMb}MB`);
+      toast.error(t('profile.bannerTooLarge', { size: bannerMaxSizeMb }));
       e.target.value = '';
       return;
     }
@@ -4207,14 +4207,14 @@ function SettingsScreen() {
                       mediaId
                     </code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>{t('csvHelp.mediaId')}</td>
                 </tr>
                 <tr>
                   <td>
                     <code className="badge badge-neutral badge-sm">time</code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>{t('csvHelp.time')}</td>
                 </tr>
                 <tr>
@@ -4223,7 +4223,7 @@ function SettingsScreen() {
                       characters
                     </code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>{t('csvHelp.chars')}</td>
                 </tr>
                 <tr>
@@ -4232,14 +4232,14 @@ function SettingsScreen() {
                       episodes
                     </code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>{t('csvHelp.episodes')}</td>
                 </tr>
                 <tr>
                   <td>
                     <code className="badge badge-neutral badge-sm">pages</code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>{t('csvHelp.pages')}</td>
                 </tr>
                 <tr>
@@ -4248,17 +4248,20 @@ function SettingsScreen() {
                       description
                     </code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>{t('csvHelp.descriptionField')}</td>
                 </tr>
                 <tr>
                   <td>
                     <code className="badge badge-neutral badge-sm">tags</code>
                   </td>
-                  <td>No</td>
+                  <td>{t('csvHelp.no')}</td>
                   <td>
-                    Tag names separated by semicolons (e.g.{' '}
-                    <code className="text-xs">tag1;tag2</code>)
+                    <Trans
+                      i18nKey="csvHelp.tags"
+                      ns="settings"
+                      components={{ code: <code className="text-xs" /> }}
+                    />
                   </td>
                 </tr>
               </tbody>

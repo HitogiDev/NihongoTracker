@@ -995,7 +995,7 @@ function LogCard({
                       <div className="stat-value text-xl text-success">
                         {readingSpeed}
                       </div>
-                      <div className="stat-desc">chars/hour</div>
+                      <div className="stat-desc">{t('logs:card.charsPerHour')}</div>
                     </div>
                   )}
                 </div>
@@ -1659,7 +1659,7 @@ function LogCard({
                       tags,
                     }))
                   }
-                  label="Tags (optional)"
+                  label={t('logs:card.tagsLabel')}
                 />
               </div>
             </div>

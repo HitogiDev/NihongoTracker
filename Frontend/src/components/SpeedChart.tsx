@@ -417,7 +417,7 @@ function SpeedChart({
             }`}
             onClick={() => setTimeframe('today')}
           >
-            Today
+            {t('range.today')}
           </button>
           <button
             className={`btn join-item ${
@@ -425,7 +425,7 @@ function SpeedChart({
             }`}
             onClick={() => setTimeframe('week')}
           >
-            This Week
+            {t('range.thisWeek')}
           </button>
           <button
             className={`btn join-item ${
@@ -433,7 +433,7 @@ function SpeedChart({
             }`}
             onClick={() => setTimeframe('month')}
           >
-            This Month
+            {t('range.thisMonth')}
           </button>
           <button
             className={`btn join-item ${
@@ -441,7 +441,7 @@ function SpeedChart({
             }`}
             onClick={() => setTimeframe('year')}
           >
-            This Year
+            {t('range.thisYear')}
           </button>
           <button
             className={`btn join-item ${

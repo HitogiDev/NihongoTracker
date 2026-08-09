@@ -531,14 +531,14 @@ function FavoriteMedia({
                     setIsEditing(false);
                   }}
                 >
-                  <X className="w-4 h-4" /> Cancel
+                  <X className="w-4 h-4" /> {t('favoritesWidget.cancel')}
                 </button>
                 <button
                   className="btn btn-primary btn-xs"
                   onClick={handleSave}
                   disabled={save.isPending}
                 >
-                  <Save className="w-4 h-4" /> Save
+                  <Save className="w-4 h-4" /> {t('favoritesWidget.save')}
                 </button>
               </div>
             ) : (
@@ -546,7 +546,7 @@ function FavoriteMedia({
                 className="btn btn-ghost btn-xs text-primary"
                 onClick={() => setIsEditing(true)}
               >
-                <Pencil className="w-4 h-4" /> Edit
+                <Pencil className="w-4 h-4" /> {t('favoritesWidget.edit')}
               </button>
             ))}
         </div>
@@ -586,7 +586,7 @@ function FavoriteMedia({
                       onClick={() => setPickerOpen(true)}
                     >
                       <Plus className="w-6 h-6" />
-                      <span className="text-xs">Add</span>
+                      <span className="text-xs">{t('favoritesWidget.add')}</span>
                     </button>
                   )}
                 </div>

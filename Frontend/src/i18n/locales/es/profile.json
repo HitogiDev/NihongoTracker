@@ -53,12 +53,19 @@
     },
     "noteTitle": "Nota",
     "cancel": "Cancelar",
-    "saveNote": "Guardar nota"
+    "saveNote": "Guardar nota",
+    "save": "Guardar",
+    "edit": "Editar",
+    "add": "Añadir"
   },
   "feed": {
     "all": "Toda la actividad",
     "logs": "Logs",
-    "achievements": "Logros"
+    "achievements": "Logros",
+    "noLogs": "No hay logs disponibles",
+    "noLogsMatch": "Ningún log coincide con tu búsqueda",
+    "noActivity": "Todavía no hay actividad",
+    "noActivityMatch": "Ninguna actividad coincide con tu búsqueda"
   },
   "filters": {
     "active": "Filtros activos:",
@@ -106,7 +113,9 @@
     "newestFirst": "Más recientes primero",
     "oldestFirst": "Más antiguos primero",
     "highestToLowest": "De mayor a menor",
-    "lowestToHighest": "De menor a mayor"
+    "lowestToHighest": "De menor a mayor",
+    "field": "Campo de orden",
+    "direction": "Dirección del orden"
   },
   "stats": {
     "title": "Estadísticas del perfil",
@@ -120,7 +129,8 @@
     "achievements": "Logros",
     "totalXp": "XP total",
     "totalTime": "Tiempo total de inmersión",
-    "hoverPosition": "{{date}}: n.º {{position}}"
+    "hoverPosition": "{{date}}: n.º {{position}}",
+    "noRankingHistory": "Todavía no hay suficiente historial de posiciones."
   },
   "tabs": {
     "overview": "Resumen",

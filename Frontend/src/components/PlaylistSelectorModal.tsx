@@ -121,7 +121,7 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
       <div className="form-control">
         <label className="label py-0">
           <span className="label-text text-xs font-medium">
-            Duration (minutes)
+            {t('playlist.durationMinutes')}
           </span>
         </label>
         <input
@@ -194,10 +194,10 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
           className="btn btn-xs btn-ghost"
           onClick={onClose}
         >
-          Cancel
+          {t('playlist.cancel')}
         </button>
         <button type="button" className="btn btn-xs btn-primary" onClick={save}>
-          <Check className="w-3 h-3" /> Save
+          <Check className="w-3 h-3" /> {t('playlist.save')}
         </button>
       </div>
     </div>
@@ -402,7 +402,7 @@ export default function PlaylistSelectorModal({
               {/* Global date */}
               <div className="flex items-center gap-2 relative">
                 <span className="text-sm text-base-content/60">
-                  Date for all:
+                  {t('playlist.dateForAll')}
                 </span>
                 <button
                   ref={globalCalendarButtonRef}
@@ -468,7 +468,7 @@ export default function PlaylistSelectorModal({
                       ) : (
                         <div className="w-28 h-16 rounded flex-shrink-0 bg-base-300 flex items-center justify-center">
                           <span className="text-base-content/30 text-xs">
-                            No img
+                            {t('playlist.noImage')}
                           </span>
                         </div>
                       )}
@@ -533,7 +533,7 @@ export default function PlaylistSelectorModal({
                 onClick={onClose}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('playlist.cancel')}
               </button>
               <button
                 type="button"
@@ -544,10 +544,10 @@ export default function PlaylistSelectorModal({
                 {isSubmitting ? (
                   <>
                     <span className="loading loading-spinner loading-xs" />
-                    Logging…
+                    {t('playlist.logging')}
                   </>
                 ) : (
-                  `Log ${selectedCount} video${selectedCount !== 1 ? 's' : ''}`
+                  t('playlist.logVideos', { count: selectedCount })
                 )}
               </button>
             </div>
@@ -559,7 +559,7 @@ export default function PlaylistSelectorModal({
           <div className="flex flex-col items-center justify-center flex-1 py-16 gap-3 text-base-content/50">
             <p className="text-sm">{t('playlist.noData')}</p>
             <button className="btn btn-ghost btn-sm" onClick={onClose}>
-              Close
+              {t('playlist.close')}
             </button>
           </div>
         )}

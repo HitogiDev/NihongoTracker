@@ -933,7 +933,7 @@ function Dashboard() {
                                   </span>
                                 )}
                                 <span className="text-base-content/60">
-                                  tracked
+                                  {t('dashboard.feed.tracked')}
                                 </span>
                                 <Icon className="text-primary w-4 h-4" />
                                 {entry.isPlaylistGroup ? (

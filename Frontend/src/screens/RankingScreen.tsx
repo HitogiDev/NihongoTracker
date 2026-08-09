@@ -360,19 +360,19 @@ function RankingScreen() {
 
   const handleSaveDefaults = () => {
     if (timeFilter === 'custom' && (!startDate || !endDate)) {
-      toast.error('Select a start and end date for the custom range.');
+      toast.error(t('defaults.needDates'));
       return;
     }
 
     saveRankingDefaults(user?._id, currentDefaults);
     setSavedDefaults(currentDefaults);
-    toast.success('Default ranking filters saved.');
+    toast.success(t('defaults.saved'));
   };
 
   const handleRemoveDefaults = () => {
     removeRankingDefaults(user?._id);
     setSavedDefaults({});
-    toast.success('Default ranking filters removed.');
+    toast.success(t('defaults.removed'));
   };
 
   useEffect(() => {
@@ -965,7 +965,7 @@ function RankingScreen() {
                 tabIndex={0}
                 className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
               >
-                <li className="menu-title px-2">Scope</li>
+                <li className="menu-title px-2">{t('scopeLabel')}</li>
                 {scopeOptions.map((option) => (
                   <li key={option.value}>
                     <button
@@ -985,7 +985,7 @@ function RankingScreen() {
                     </button>
                   </li>
                 ))}
-                <li className="menu-title px-2 mt-2">Metric</li>
+                <li className="menu-title px-2 mt-2">{t('metricLabel')}</li>
                 {allowedMetricOptions().map((m) => (
                   <li key={m.value}>
                     <button

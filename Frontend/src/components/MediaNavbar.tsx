@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { IMediaDocument } from '../types';
 
 function MediaNavbar({
@@ -10,6 +11,7 @@ function MediaNavbar({
   mediaId: string | undefined;
   username: string | undefined;
 }) {
+  const { t } = useTranslation('media');
   const searchParams = new URLSearchParams(window.location.search);
   const clubId = searchParams.get('clubId');
   const clubMediaId = searchParams.get('clubMediaId');
@@ -43,7 +45,7 @@ function MediaNavbar({
               end
               className={({ isActive }) => (isActive ? activeTabClass : '')}
             >
-              Overview
+              {t('navbar.overview')}
             </NavLink>
           </li>
           <li>
@@ -51,7 +53,7 @@ function MediaNavbar({
               to={buildPath('reviews')}
               className={({ isActive }) => (isActive ? activeTabClass : '')}
             >
-              Reviews
+              {t('navbar.reviews')}
             </NavLink>
           </li>
           <li>
@@ -59,7 +61,7 @@ function MediaNavbar({
               to={buildPath('social')}
               className={({ isActive }) => (isActive ? activeTabClass : '')}
             >
-              Social
+              {t('navbar.social')}
             </NavLink>
           </li>
         </ul>

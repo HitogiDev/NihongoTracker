@@ -633,7 +633,7 @@ function QuickLog({
                         <div>
                           <label className="label">
                             <span className="label-text">
-                              Title or description
+                              {t('quick.titleOrDescription')}
                             </span>
                           </label>
                           <input
@@ -680,7 +680,7 @@ function QuickLog({
                           <div>
                             <label className="label">
                               <span className="label-text">
-                                Episodes Watched
+                                {t('quick.episodesWatched')}
                               </span>
                             </label>
                             <input
@@ -731,7 +731,7 @@ function QuickLog({
                                 <div className="form-control">
                                   <label className="label cursor-pointer">
                                     <span className="label-text">
-                                      Custom episode duration
+                                      {t('quick.customEpisodeDuration')}
                                     </span>
                                     <input
                                       type="checkbox"
@@ -746,7 +746,7 @@ function QuickLog({
                                   <div className="form-control mt-2">
                                     <label className="label">
                                       <span className="label-text-alt text-sm">
-                                        Episode Duration (minutes)
+                                        {t('quick.episodeDurationMinutes')}
                                       </span>
                                       {defaultDuration > 0 && (
                                         <span className="label-text-alt text-info text-xs">
@@ -873,7 +873,7 @@ function QuickLog({
                           <div>
                             <label className="label">
                               <span className="label-text">
-                                Characters Read
+                                {t('quick.charactersRead')}
                               </span>
                             </label>
                             <input
@@ -959,7 +959,7 @@ function QuickLog({
                                 />
                                 <label className="label">
                                   <span className="label-text-alt">
-                                    Minutes
+                                    {t('quick.minutes')}
                                   </span>
                                 </label>
                               </div>
@@ -982,7 +982,7 @@ function QuickLog({
                       >
                         <img
                           src={coverImage}
-                          alt="Cover"
+                          alt={t('quick.coverAlt')}
                           className={`w-full h-full object-cover ${
                             (
                               logType === 'vn'
@@ -1031,7 +1031,7 @@ function QuickLog({
                       type="button"
                       onClick={onClose}
                     >
-                      Cancel
+                      {t('quick.cancel')}
                     </button>
                     <button
                       className="btn btn-primary"

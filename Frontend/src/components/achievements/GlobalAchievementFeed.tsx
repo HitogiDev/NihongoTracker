@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getAchievementFeedFn } from '../../api/trackerApi';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
 
 export default function GlobalAchievementFeed() {
+  const { t } = useTranslation('achievements');
   const { data: feed, isLoading } = useQuery({
     queryKey: ['achievementFeed'],
     queryFn: () => getAchievementFeedFn(20),
@@ -61,9 +63,9 @@ export default function GlobalAchievementFeed() {
                     {user.username}
                   </Link>
                 )}
-                <span className="text-base-content/60">earned</span>
+                <span className="text-base-content/60">{t('feed.earned')}</span>
                 <span className="font-semibold">
-                  {a.name ?? 'Secret Achievement'}
+                  {a.name ?? t('secretName')}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-0.5">
@@ -75,7 +77,7 @@ export default function GlobalAchievementFeed() {
                     color: rarityColor,
                   }}
                 >
-                  {rarity}
+                  {t(`rarity.${rarity}`)}
                 </span>
                 <span className="text-xs text-base-content/50">
                   {item.unlockedAt

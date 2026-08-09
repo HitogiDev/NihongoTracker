@@ -1045,11 +1045,11 @@ function GanttTooltip({
           <div className="flex items-center gap-1 text-base-content/70">
             <Hash className="w-3 h-3 flex-shrink-0" />
             <span>
-              {item.logCount} log{item.logCount !== 1 ? 's' : ''}
+              {t('gantt.logCount', { count: item.logCount })}
             </span>
           </div>
           <div className="flex items-center gap-1 text-base-content/70">
-            <span className="text-[9px] opacity-70">days</span>
+            <span className="text-[9px] opacity-70">{t('gantt.daysLabel')}</span>
             <span>{item.activeDates.length}</span>
           </div>
         </div>

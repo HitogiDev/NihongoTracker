@@ -395,7 +395,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                   </div>
                 ) : (
                   <div className="h-14 flex items-center text-xs text-base-content/50">
-                    Not enough ranking history yet.
+                    {t('stats.noRankingHistory')}
                   </div>
                 )}
               </div>

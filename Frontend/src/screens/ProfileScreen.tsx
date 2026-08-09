@@ -1007,7 +1007,7 @@ function ProfileScreen() {
                                 setShowUnknownDates(e.target.checked)
                               }
                             />
-                            <span>Include unknown dates</span>
+                            <span>{t('filters.includeUnknownDates')}</span>
                           </label>
                         </li>
                       </ul>
@@ -1036,7 +1036,7 @@ function ProfileScreen() {
                         className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
                       >
                         <li className="menu-title">
-                          <span>Sort Field</span>
+                          <span>{t('sort.field')}</span>
                         </li>
                         {sortFieldOptions.map((option) => (
                           <li key={option.value}>
@@ -1054,7 +1054,7 @@ function ProfileScreen() {
                         ))}
                         <div className="divider my-1"></div>
                         <li className="menu-title">
-                          <span>Sort Direction</span>
+                          <span>{t('sort.direction')}</span>
                         </li>
                         <li>
                           <a
@@ -1376,13 +1376,13 @@ function ProfileScreen() {
                   )
                 ) : (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
-                    <p className="text-center">No logs available</p>
+                    <p className="text-center">{t('feed.noLogs')}</p>
                   </div>
                 )}
                 {logs?.pages && displayedLogs.length === 0 ? (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
                     <div className="alert alert-info">
-                      <span>No logs match your search criteria</span>
+                      <span>{t('feed.noLogsMatch')}</span>
                     </div>
                   </div>
                 ) : null}
@@ -1406,7 +1406,7 @@ function ProfileScreen() {
                 {unifiedFeed.length === 0 ? (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
                     <p className="text-center text-base-content/60">
-                      No activity yet
+                      {t('feed.noActivity')}
                     </p>
                   </div>
                 ) : (
@@ -1449,7 +1449,7 @@ function ProfileScreen() {
                 filteredAchievements.length === 0 ? (
                   <div className="card w-full bg-base-100 shadow-sm p-4">
                     <div className="alert alert-info">
-                      <span>No activity matches your search criteria</span>
+                      <span>{t('feed.noActivityMatch')}</span>
                     </div>
                   </div>
                 ) : null}

@@ -38,16 +38,26 @@
     "cancel": "Cancel",
     "clear": "Clear"
   },
+  "episodeLabel": {
+    "episodes": "Episodes",
+    "movies": "Movies",
+    "videos": "Videos"
+  },
   "filters": {
     "apply": "Apply",
     "clearSearch": "Clear search",
     "customRange": "Custom range",
+    "endDate": "End Date",
     "immersedDaysOnly": "Immersed days only",
     "maxLogs": "Max logs",
+    "maxLogsValue": "Max {{value}}",
     "minLogs": "Min logs",
+    "minLogsValue": "Min {{value}}",
+    "rangeTo": "to",
     "searchTitles": "Search titles",
     "selectAll": "Select All",
-    "selectNone": "Select None"
+    "selectNone": "Select None",
+    "startDate": "Start Date"
   },
   "gantt": {
     "completed": "Completed",
@@ -58,7 +68,10 @@
     "started": "Started:",
     "viewMedia": "View media page",
     "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out"
+    "zoomOut": "Zoom out",
+    "logCount_one": "{{count}} log",
+    "logCount_other": "{{count}} logs",
+    "daysLabel": "days"
   },
   "groups": {
     "totals": "Totals",
@@ -73,13 +86,47 @@
     "less": "Less",
     "more": "More"
   },
+  "hints": {
+    "chars": "Characters in {{types}} logs",
+    "charsAll": "Characters across all reading types",
+    "dailyAverage": "{{period}} daily {{types}} immersion average",
+    "dailyAverageAll": "{{period}} daily immersion average",
+    "dailyChars": "{{period}} daily {{types}} reading average",
+    "dailyCharsAll": "{{period}} daily reading average",
+    "logCount": "{{types}} entries",
+    "logCountAll": "Total log entries",
+    "pages": "Total pages read in {{types}} logs",
+    "pagesAll": "Total pages recorded across reading logs",
+    "time": "{{period}} {{types}} immersion time",
+    "timeAll": "{{period}} immersion time",
+    "untracked_one": "{{count}} untracked",
+    "untracked_other": "{{count}} untracked",
+    "watchedEpisodes": "Total episodes watched",
+    "watchedMovies": "Total movies watched",
+    "watchedVideos": "Total videos watched",
+    "xp": "{{period}} {{types}} experience",
+    "xpAll": "{{period}} experience gained"
+  },
   "layout": {
     "edit": "Edit Layout",
-    "hint": "Drag groups or cards · click 👁 to hide/show"
+    "hideCard": "Hide card",
+    "hideGroup": "Hide group",
+    "hint": "Drag groups or cards · click 👁 to hide/show",
+    "save": "Save",
+    "showCard": "Show card",
+    "showGroup": "Show group"
   },
   "loadFailed": "We could not retrieve your statistics right now.",
   "loadFailedHint": "Try adjusting your filters or refreshing the page.",
   "loading": "Loading your stats...",
+  "period": {
+    "custom": "Custom",
+    "month": "This month's",
+    "today": "Today's",
+    "total": "All time",
+    "week": "This week's",
+    "year": "This year's"
+  },
   "progress": {
     "activity": "Activity",
     "month": "Month",
@@ -102,7 +149,13 @@
     "custom": "Custom",
     "generateFailed": "Failed to generate stats image",
     "shareFailed": "Could not share the image",
-    "downloadedInstead": "Sharing not supported here — image downloaded instead"
+    "downloadedInstead": "Sharing not supported here — image downloaded instead",
+    "from": "From",
+    "to": "To",
+    "pickDates": "Pick a start and end date.",
+    "previewAlt": "Stats card preview",
+    "download": "Download PNG",
+    "share": "Share"
   },
   "sort": {
     "azAsc": "Alphabetical (A-Z)",
@@ -120,5 +173,27 @@
     "activity": "Activity",
     "noData": "No data available for the selected timeframe."
   },
-  "subtitle": "Track your immersion progress with detailed breakdowns and"
+  "subtitle": "Track your immersion progress with detailed breakdowns and",
+  "tabs": {
+    "charts": "Charts",
+    "overview": "Overview",
+    "timeline": "Timeline"
+  },
+  "typeDescriptor": {
+    "all": "all types",
+    "multiple": "selected types",
+    "none": "no types"
+  },
+  "types": {
+    "all": "All Types",
+    "count_one": "{{count}} Type",
+    "count_other": "{{count}} Types",
+    "none": "No Types"
+  },
+  "units": {
+    "chars": "chars",
+    "charsPerHour": "chars/hr",
+    "days": "days",
+    "hours": "hours"
+  }
 }

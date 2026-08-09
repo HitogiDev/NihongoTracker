@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useRouteError } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   getErrorMessage,
   isChunkLoadError,
@@ -7,6 +8,7 @@ import {
 } from '../utils/chunkRecovery';
 
 export function RouteErrorBoundary() {
+  const { t } = useTranslation('common');
   const routeError = useRouteError();
   const message = getErrorMessage(routeError);
   const isChunkError = isChunkLoadError(message);
@@ -22,16 +24,16 @@ export function RouteErrorBoundary() {
       <div className="min-h-screen bg-base-200 flex items-center justify-center p-6">
         <div className="max-w-md text-center space-y-4">
           <h1 className="text-xl font-semibold text-base-content">
-            Updating app...
+            {t('routeError.updatingTitle')}
           </h1>
           <p className="text-base-content/70">
-            A new version was deployed. Reloading to sync assets.
+            {t('routeError.updatingBody')}
           </p>
           <button
             className="btn btn-primary"
             onClick={() => window.location.reload()}
           >
-            Reload now
+            {t('routeError.reload')}
           </button>
         </div>
       </div>
@@ -42,10 +44,10 @@ export function RouteErrorBoundary() {
     <div className="min-h-screen bg-base-200 flex items-center justify-center p-6">
       <div className="max-w-2xl space-y-3">
         <h1 className="text-2xl font-semibold text-base-content">
-          Unexpected Application Error
+          {t('routeError.title')}
         </h1>
         <p className="text-base-content/70 break-words">
-          {message || 'Something went wrong while loading this page.'}
+          {message || t('routeError.generic')}
         </p>
       </div>
     </div>

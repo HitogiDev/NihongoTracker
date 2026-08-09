@@ -52,7 +52,8 @@
       "globalFeed": "Actividad global",
       "allTypes": "Todos los tipos",
       "subtitle": "Mira qué está inmersando la comunidad ahora mismo",
-      "empty": "No hay actividad para los filtros seleccionados."
+      "empty": "No hay actividad para los filtros seleccionados.",
+      "tracked": "ha registrado"
     },
     "time": {
       "day": "Últimas 24 h",
@@ -393,6 +394,13 @@
       "books": "Libros y lectura",
       "video": "Vídeo",
       "games": "Videojuegos"
+    },
+    "alt": {
+      "screenshot": "Captura de pantalla",
+      "logTracking": "Registro de logs",
+      "statistics": "Estadísticas",
+      "leaderboards": "Clasificaciones",
+      "clubs": "Clubes"
     }
   }
 }

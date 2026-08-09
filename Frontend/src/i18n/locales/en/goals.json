@@ -37,7 +37,9 @@
     "targetPlaceholder": "Enter target value",
     "totalTarget": "Total Target",
     "weeklyProgress": "Weekly Progress",
-    "yourGoals": "Your Goals"
+    "yourGoals": "Your Goals",
+    "creating": "Creating...",
+    "displayProgressAs": "Display Progress As"
   },
   "statsHint": "Track your goal completion rates and consistency over time.",
   "statsSoon": "Coming soon: Goal completion history and analytics!",
@@ -93,6 +95,10 @@
     "remainingDays_one": "{{count}} day left",
     "remainingDays_other": "{{count}} days left",
     "title": "Immersion Goals",
-    "todayProgress": "Today's Progress"
+    "todayProgress": "Today's Progress",
+    "edit": "Edit",
+    "delete": "Delete",
+    "done": "Done",
+    "remaining": "Remaining:"
   }
 }

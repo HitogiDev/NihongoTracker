@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getUserTagsByUsernameFn,
@@ -171,7 +171,7 @@ export default function TagManager() {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Create Tag
+            {t('tags.manager.createTag')}
           </button>
         </div>
 
@@ -192,14 +192,16 @@ export default function TagManager() {
               />
             </svg>
             <span>
-              You've reached the maximum of {maxTags} tags
+              {t('tags.manager.maxReached', { max: maxTags })}
               {!user?.patreon?.tier && (
                 <span className="ml-1">
-                  -{' '}
-                  <a href="/support" className="link">
-                    Upgrade to Patreon
-                  </a>{' '}
-                  for more tags
+                  <Trans
+                    i18nKey="tags.manager.upgradeSuffix"
+                    ns="settings"
+                    components={{
+                      link: <a href="/support" className="link" />,
+                    }}
+                  />
                 </span>
               )}
             </span>
@@ -347,7 +349,7 @@ export default function TagManager() {
                   )?.close()
                 }
               >
-                Cancel
+                {t('tags.manager.cancel')}
               </button>
               <button
                 type="button"
@@ -436,7 +438,7 @@ export default function TagManager() {
                   )?.close()
                 }
               >
-                Cancel
+                {t('tags.manager.cancel')}
               </button>
               <button
                 type="button"
@@ -474,7 +476,7 @@ export default function TagManager() {
                 onClick={() => setTagToDelete(null)}
                 disabled={deleteMutation.isPending}
               >
-                Cancel
+                {t('tags.manager.cancel')}
               </button>
               <button
                 type="button"
@@ -485,7 +487,7 @@ export default function TagManager() {
                 {deleteMutation.isPending ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Deleting...
+                    {t('tags.manager.deleting')}
                   </>
                 ) : (
                   t('tags.manager.deleteTag')

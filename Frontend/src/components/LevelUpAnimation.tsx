@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { confetti } from '@tsparticles/confetti';
+import { useTranslation } from 'react-i18next';
 
 interface LevelUpAnimationProps {
   initialLevel: number;
@@ -18,6 +19,7 @@ function LevelUpAnimation({
   xpNextLevel,
   finalXp,
 }: LevelUpAnimationProps) {
+  const { t } = useTranslation('common');
   const containerRef = useRef<HTMLDivElement>(null);
   const oldLevelRef = useRef<HTMLSpanElement>(null);
   const newLevelRef = useRef<HTMLSpanElement>(null);
@@ -129,7 +131,7 @@ function LevelUpAnimation({
           className="text-3xl sm:text-4xl font-extrabold text-yellow-400"
           style={{ opacity: 0 }}
         >
-          Congratulations! Level Up!
+          {t('levelUp.title')}
         </h2>
 
         <div

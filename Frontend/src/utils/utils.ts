@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export function numberWithCommas(x: number | undefined) {
   if (x === undefined || x === null) return '';
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -28,7 +30,7 @@ export function convertBBCodeToHtml(text: string): string {
       // Spoilers - using details/summary for expandable content
       .replace(
         /\[spoiler\]([\s\S]*?)\[\/spoiler\]/gi,
-        '<details class="collapse collapse-arrow border border-base-300 pt-1"><summary class="collapse-title text-sm font-medium">Spoiler</summary><div class="collapse-content">$1</div></details>'
+        `<details class="collapse collapse-arrow border border-base-300 pt-1"><summary class="collapse-title text-sm font-medium">${i18n.t('media:markdown.spoiler')}</summary><div class="collapse-content">$1</div></details>`
       )
 
       .replace(

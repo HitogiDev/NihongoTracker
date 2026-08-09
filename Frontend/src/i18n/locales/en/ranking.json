@@ -42,7 +42,10 @@
   "defaults": {
     "save": "Save as default",
     "remove": "Remove default",
-    "menu": "Ranking defaults"
+    "menu": "Ranking defaults",
+    "needDates": "Select a start and end date for the custom range.",
+    "saved": "Default ranking filters saved.",
+    "removed": "Default ranking filters removed."
   },
   "table": {
     "rank": "Rank",
@@ -53,5 +56,7 @@
   "unknownUser": "User",
   "loading": "Loading rankings...",
   "loadingMore": "Loading more...",
-  "loadMore": "Load More Rankings"
+  "loadMore": "Load More Rankings",
+  "scopeLabel": "Scope",
+  "metricLabel": "Metric"
 }

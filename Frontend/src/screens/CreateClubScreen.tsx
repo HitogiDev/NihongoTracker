@@ -549,7 +549,7 @@ function CreateClubScreen() {
                       }
                     />
                     <span className="text-sm text-base-content/60">
-                      members max
+                      {t('clubs:create.membersMax')}
                     </span>
                   </div>
                   {errors.memberLimit && (

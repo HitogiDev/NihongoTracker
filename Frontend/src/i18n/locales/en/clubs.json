@@ -104,7 +104,8 @@
     "tagsHint": "Add tags to help others find your club. You can add up to 10 tags.",
     "title": "Create New Club",
     "upload": "Upload",
-    "yourTags": "Your tags:"
+    "yourTags": "Your tags:",
+    "membersMax": "members max"
   },
   "detail": {
     "about": "About",

@@ -289,13 +289,13 @@ function TextHookerDashboard() {
                 <li>
                   <button onClick={() => setIsBlankModalOpen(true)}>
                     <Type size={16} />
-                    Blank Session
+                    {t('dashboard.blankSession')}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setIsMediaModalOpen(true)}>
                     <BookOpen size={16} />
-                    Media Session
+                    {t('dashboard.mediaSessionOption')}
                   </button>
                 </li>
               </ul>
@@ -426,7 +426,7 @@ function TextHookerDashboard() {
               className="btn btn-primary"
               onClick={() => setIsBlankModalOpen(true)}
             >
-              Launch Blank Session
+              {t('dashboard.launchBlankSession')}
             </button>
           </div>
         )}
@@ -503,7 +503,7 @@ function TextHookerDashboard() {
 
             <div className="form-control gap-2">
               <span className="text-sm font-semibold leading-none">
-                Room ID
+                {t('dashboard.roomId')}
               </span>
               <input
                 type="text"
@@ -541,7 +541,7 @@ function TextHookerDashboard() {
                   setRoomError(null);
                 }}
               >
-                Cancel
+                {t('dashboard.cancel')}
               </button>
               <button
                 type="button"
@@ -631,7 +631,7 @@ function TextHookerDashboard() {
                     <div className="flex items-center gap-2">
                       <BookOpen size={16} className="text-primary" />
                       <span className="label-text font-medium">
-                        Visual Novel
+                        {t('dashboard.visualNovel')}
                       </span>
                     </div>
                   </div>
@@ -741,7 +741,7 @@ function TextHookerDashboard() {
                       </div>
                       {selectedMedia?._id === media._id && (
                         <div className="badge badge-primary badge-sm">
-                          Selected
+                          {t('dashboard.selected')}
                         </div>
                       )}
                     </button>
@@ -775,7 +775,7 @@ function TextHookerDashboard() {
                 className="btn btn-ghost"
                 onClick={resetMediaModal}
               >
-                Cancel
+                {t('dashboard.cancel')}
               </button>
               <button
                 type="button"
@@ -799,7 +799,7 @@ function TextHookerDashboard() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <Type className="w-5 h-5 text-primary" />
-              Name Your Session
+              {t('dashboard.nameYourSession')}
             </h3>
             <button
               onClick={() => {
@@ -815,7 +815,7 @@ function TextHookerDashboard() {
           <div className="space-y-4">
             <div className="form-control gap-2">
               <span className="text-sm font-semibold leading-none">
-                Session Name
+                {t('dashboard.sessionName')}
               </span>
               <input
                 type="text"
@@ -841,7 +841,7 @@ function TextHookerDashboard() {
                   setBlankSessionName('');
                 }}
               >
-                Cancel
+                {t('dashboard.cancel')}
               </button>
               <button
                 type="button"
@@ -879,7 +879,7 @@ function TextHookerDashboard() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2 text-error">
               <Trash2 className="w-5 h-5" />
-              Delete Session
+              {t('dashboard.deleteSessionTitle')}
             </h3>
             <button
               onClick={() => {
@@ -894,7 +894,7 @@ function TextHookerDashboard() {
 
           <div className="space-y-4">
             <p className="text-base-content/80">
-              Are you sure you want to delete this session?
+              {t('dashboard.deleteSessionConfirm')}
             </p>
             {sessionToDelete && (
               <div className="bg-base-200 p-3 rounded-lg">
@@ -917,7 +917,7 @@ function TextHookerDashboard() {
                   setSessionToDelete(null);
                 }}
               >
-                Cancel
+                {t('dashboard.cancel')}
               </button>
               <button
                 type="button"
@@ -930,7 +930,7 @@ function TextHookerDashboard() {
                 ) : (
                   <>
                     <Trash2 size={16} />
-                    Delete
+                    {t('dashboard.delete')}
                   </>
                 )}
               </button>

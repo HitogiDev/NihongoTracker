@@ -26,7 +26,19 @@
     "subtitle": "Sigue tu progreso de lectura con el texthooker",
     "title": "Panel del texthooker",
     "unknownTitle": "Título desconocido",
-    "untitledSession": "Sesión sin título"
+    "untitledSession": "Sesión sin título",
+    "blankSession": "Sesión en blanco",
+    "mediaSessionOption": "Sesión con contenido",
+    "launchBlankSession": "Iniciar sesión en blanco",
+    "roomId": "ID de sala",
+    "cancel": "Cancelar",
+    "visualNovel": "Novela visual",
+    "selected": "Seleccionado",
+    "nameYourSession": "Ponle nombre a la sesión",
+    "sessionName": "Nombre de la sesión",
+    "deleteSessionTitle": "Eliminar sesión",
+    "deleteSessionConfirm": "¿Seguro que quieres eliminar esta sesión?",
+    "delete": "Eliminar"
   },
   "duration": {
     "hours": "{{hours}} h",
@@ -181,7 +193,14 @@
       "copyLinesFailed": "No se pudieron copiar las líneas",
       "logFailed": "No se pudo loguear la sesión",
       "startFailed": "No se pudo iniciar una sesión nueva"
-    }
+    },
+    "setTimer": "Configurar temporizador",
+    "sessionStatistics": "Estadísticas de la sesión",
+    "readingProgress": "Progreso de lectura",
+    "currentSession": "Sesión actual",
+    "charsPerHour": "caracteres/h",
+    "logged": "¡Registrado!",
+    "logSession": "Registrar sesión"
   },
   "mediaSession": {
     "enter": "Entrar",

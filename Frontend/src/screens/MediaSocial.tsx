@@ -105,7 +105,7 @@ export default function MediaSocial() {
       if (!currentUser?.username || !friendTrim || !mediaId || !type)
         throw new Error('Missing comparison params');
       if (friendTrim === currentUser.username) {
-        toast.info("That's you! Enter a different username");
+        toast.info(t('social.compareSelf'));
         return null;
       }
       const res = await compareUserStatsFn(

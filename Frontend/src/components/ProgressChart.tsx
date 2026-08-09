@@ -565,7 +565,7 @@ export default function ProgressChart({
                 <option value="year">{t('progress.year')}</option>
                 <option value="month">{t('progress.month')}</option>
                 <option value="week">{t('progress.week')}</option>
-                <option value="today">Today</option>
+                <option value="today">{t('range.today')}</option>
               </select>
             </div>
           )}

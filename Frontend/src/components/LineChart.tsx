@@ -1,4 +1,5 @@
 import { Line } from 'react-chartjs-2';
+import { useTranslation } from 'react-i18next';
 
 import {
   CategoryScale,
@@ -36,6 +37,7 @@ function LineChart({
 }: {
   data: ChartData<'line', (number | Point | null)[]>;
 }) {
+  const { t } = useTranslation('common');
   const themeColors = useThemeColors(1); // Get full opacity colors
   const [colorsReady, setColorsReady] = useState(false);
 
@@ -156,7 +158,7 @@ function LineChart({
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               ></path>
             </svg>
-            <span>No data available for the selected timeframe.</span>
+            <span>{t('charts.noData')}</span>
           </div>
         )}
       </div>

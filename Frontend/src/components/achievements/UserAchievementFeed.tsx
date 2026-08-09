@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getUserAchievementActivityFn } from '../../api/trackerApi';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
@@ -10,6 +11,7 @@ interface UserAchievementFeedProps {
 export default function UserAchievementFeed({
   username,
 }: UserAchievementFeedProps) {
+  const { t } = useTranslation('achievements');
   const { data: activity, isLoading } = useQuery({
     queryKey: ['userAchievementActivity', username],
     queryFn: () => getUserAchievementActivityFn(username, 10),
@@ -57,7 +59,7 @@ export default function UserAchievementFeed({
             {/* Text */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold truncate">
-                {a.name ?? 'Achievement'}
+                {a.name ?? t('secretName')}
               </p>
               {item.unlockedAt && (
                 <p className="text-xs text-base-content/50 mt-0.5">
@@ -79,7 +81,7 @@ export default function UserAchievementFeed({
                 color,
               }}
             >
-              {rarity}
+              {t(`rarity.${rarity}`)}
             </span>
           </div>
         );

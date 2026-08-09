@@ -37,7 +37,9 @@
     "targetPlaceholder": "Introduce el valor objetivo",
     "totalTarget": "Meta total",
     "weeklyProgress": "Progreso semanal",
-    "yourGoals": "Tus objetivos"
+    "yourGoals": "Tus objetivos",
+    "creating": "Creando...",
+    "displayProgressAs": "Mostrar el progreso como"
   },
   "statsHint": "Sigue tu tasa de cumplimiento y tu constancia a lo largo del tiempo.",
   "statsSoon": "Próximamente: historial de cumplimiento y analíticas.",
@@ -95,6 +97,10 @@
     "remainingDays_one": "Queda {{count}} día",
     "remainingDays_other": "Quedan {{count}} días",
     "title": "Objetivos de inmersión",
-    "todayProgress": "Progreso de hoy"
+    "todayProgress": "Progreso de hoy",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "done": "Hecho",
+    "remaining": "Restante:"
   }
 }

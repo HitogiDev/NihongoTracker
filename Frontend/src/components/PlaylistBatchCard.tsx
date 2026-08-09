@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import { ILog } from '../types';
 import {
@@ -284,7 +284,8 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
             >
               <Video className="w-3 h-3" />
               <span className="text-xs">
-                Videos: <span className="font-semibold">{videoCount}</span>
+                {t('playlist.videosCount')}{' '}
+                <span className="font-semibold">{videoCount}</span>
               </span>
             </div>
             {timeLabel && (
@@ -293,7 +294,8 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
               >
                 <Clock className="w-3 h-3" />
                 <span className="text-xs">
-                  Time: <span className="font-semibold">{timeLabel}</span>
+                  {t('playlist.timeLabel')}{' '}
+                  <span className="font-semibold">{timeLabel}</span>
                 </span>
               </div>
             )}
@@ -565,11 +567,12 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 id="bulk-delete-modal-title"
                 className="font-bold text-lg text-error"
               >
-                Delete {selectedLogIds.size}{' '}
-                {selectedLogIds.size === 1 ? 'Log' : 'Logs'}?
+                {t('playlist.bulkDeleteTitle', {
+                  count: selectedLogIds.size,
+                })}
               </h3>
               <p className="text-sm text-base-content/60 mt-0.5">
-                This action cannot be undone
+                {t('playlist.bulkDeleteIrreversible')}
               </p>
             </div>
           </div>
@@ -578,10 +581,13 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
 
           <div id="bulk-delete-modal-desc" className="space-y-3">
             <p className="text-base-content text-sm">
-              You are about to permanently delete{' '}
-              <strong>{selectedLogIds.size}</strong>{' '}
-              {selectedLogIds.size === 1 ? 'log entry' : 'log entries'} from{' '}
-              <em>{playlistTitle}</em>.
+              <Trans
+                i18nKey="playlist.bulkDeleteBody"
+                ns="logs"
+                count={selectedLogIds.size}
+                values={{ title: playlistTitle }}
+                components={{ b: <strong />, i: <em /> }}
+              />
             </p>
 
             {selectedXpLoss > 0 && (
@@ -589,14 +595,17 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 <AlertTriangle className="w-5 h-5 shrink-0" />
                 <div>
                   <div className="font-semibold">
-                    You will lose {selectedXpLoss} XP
+                    {t('playlist.bulkDeleteXpLoss', { xp: selectedXpLoss })}
                   </div>
                   <div className="opacity-75 text-xs mt-0.5">
-                    {selectedLogIds.size} log
-                    {selectedLogIds.size !== 1 ? 's' : ''} •{' '}
                     {selectedLogIds.size === logs.length
-                      ? 'entire playlist'
-                      : `${selectedLogIds.size} of ${logs.length} videos`}
+                      ? t('playlist.bulkDeleteScopeAll', {
+                          count: selectedLogIds.size,
+                        })
+                      : t('playlist.bulkDeleteScopePartial', {
+                          count: selectedLogIds.size,
+                          total: logs.length,
+                        })}
                   </div>
                 </div>
               </div>
@@ -612,13 +621,14 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
               {loadingBulkDelete ? (
                 <>
                   <span className="loading loading-spinner loading-sm" />
-                  Deleting...
+                  {t('playlist.deleting')}
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4" />
-                  Delete {selectedLogIds.size}{' '}
-                  {selectedLogIds.size === 1 ? 'Log' : 'Logs'}
+                  {t('playlist.bulkDeleteConfirm', {
+                    count: selectedLogIds.size,
+                  })}
                 </>
               )}
             </button>
@@ -631,7 +641,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 type="submit"
                 disabled={loadingBulkDelete}
               >
-                Cancel
+                {t('playlist.cancel')}
               </button>
             </form>
           </div>

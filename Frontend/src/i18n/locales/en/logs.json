@@ -33,7 +33,9 @@
     },
     "unknown": "Unknown",
     "unknownDate": "Unknown date",
-    "untitled": "Untitled Log"
+    "untitled": "Untitled Log",
+    "charsPerHour": "chars/hour",
+    "tagsLabel": "Tags (optional)"
   },
   "celebration": {
     "monthlyRanking": "Monthly ranking",
@@ -228,7 +230,31 @@
     "noVideos": "No videos in this playlist",
     "selectAll": "Select all",
     "title": "YouTube Playlist",
-    "unknownDate": "Unknown date"
+    "unknownDate": "Unknown date",
+    "videosCount": "Videos:",
+    "timeLabel": "Time:",
+    "bulkDeleteTitle_one": "Delete {{count}} log?",
+    "bulkDeleteTitle_other": "Delete {{count}} logs?",
+    "bulkDeleteIrreversible": "This action cannot be undone",
+    "bulkDeleteBody_one": "You are about to permanently delete <b>{{count}}</b> log entry from <i>{{title}}</i>.",
+    "bulkDeleteBody_other": "You are about to permanently delete <b>{{count}}</b> log entries from <i>{{title}}</i>.",
+    "bulkDeleteXpLoss": "You will lose {{xp}} XP",
+    "bulkDeleteScopeAll_one": "{{count}} log • entire playlist",
+    "bulkDeleteScopeAll_other": "{{count}} logs • entire playlist",
+    "bulkDeleteScopePartial_one": "{{count}} log • {{count}} of {{total}} videos",
+    "bulkDeleteScopePartial_other": "{{count}} logs • {{count}} of {{total}} videos",
+    "deleting": "Deleting...",
+    "bulkDeleteConfirm_one": "Delete {{count}} log",
+    "bulkDeleteConfirm_other": "Delete {{count}} logs",
+    "cancel": "Cancel",
+    "durationMinutes": "Duration (minutes)",
+    "save": "Save",
+    "dateForAll": "Date for all:",
+    "noImage": "No img",
+    "logging": "Logging…",
+    "logVideos_one": "Log {{count}} video",
+    "logVideos_other": "Log {{count}} videos",
+    "close": "Close"
   },
   "quick": {
     "created": "Log created successfully!",
@@ -244,7 +270,15 @@
     "title": "Quick Log",
     "validationErrors": "Please fix validation errors",
     "volume": "Volume",
-    "volumePlaceholder": "1"
+    "volumePlaceholder": "1",
+    "coverAlt": "Cover",
+    "titleOrDescription": "Title or description",
+    "episodesWatched": "Episodes Watched",
+    "customEpisodeDuration": "Custom episode duration",
+    "episodeDurationMinutes": "Episode Duration (minutes)",
+    "charactersRead": "Characters Read",
+    "minutes": "Minutes",
+    "cancel": "Cancel"
   },
   "shared": {
     "addHeading": "Add This to Your Progress",
@@ -332,6 +366,7 @@
     "selectToMatch": "Select one or more logs or open a group to match",
     "tvShowHint": "View your TV show logs here. Select video logs to convert them to TV show type when needed.",
     "tvShowLogs": "TV Show Logs",
-    "unmatchedTitle": "Video Logs (Unmatched)"
+    "unmatchedTitle": "Video Logs (Unmatched)",
+    "loadError": "Error loading video logs"
   }
 }
