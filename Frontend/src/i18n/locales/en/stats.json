@@ -55,8 +55,8 @@
     "minLogsValue": "Min {{value}}",
     "rangeTo": "to",
     "searchTitles": "Search titles",
-    "selectAll": "Select All",
-    "selectNone": "Select None",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
     "startDate": "Start Date"
   },
   "gantt": {

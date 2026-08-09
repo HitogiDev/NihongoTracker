@@ -1283,14 +1283,14 @@ function StatsScreen() {
                     <div className="flex gap-2 pb-3">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                        className="btn btn-sm btn-outline flex-1 h-auto min-h-9 py-1 whitespace-normal leading-tight"
                         onClick={handleSelectAllTypes}
                       >
                         {t('filters.selectAll')}
                       </button>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline flex-1 h-9 min-h-9"
+                        className="btn btn-sm btn-outline flex-1 h-auto min-h-9 py-1 whitespace-normal leading-tight"
                         onClick={handleSelectNoneTypes}
                       >
                         {t('filters.selectNone')}
