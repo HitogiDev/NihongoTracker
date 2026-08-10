@@ -71,6 +71,14 @@
     "unexpected": "Algo ha fallado. Inténtalo de nuevo.",
     "validationError": "Algunos de los datos enviados no son válidos"
   },
+  "customization": {
+    "accentColorRequired": "Elige un color para tu acento personalizado",
+    "invalidColor": "Los colores deben tener el formato #rrggbb",
+    "invalidPayload": "Los datos de personalización no son válidos",
+    "invalidValue": "Esa opción de personalización no existe",
+    "locked": "Todavía no has desbloqueado esa opción de personalización",
+    "titleNotUnlocked": "Todavía no has desbloqueado ese título"
+  },
   "favorites": {
     "invalidAction": "La acción debe ser añadir o quitar",
     "invalidMediaType": "Ese tipo de contenido no es válido: {{mediaType}}",

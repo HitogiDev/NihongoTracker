@@ -8,7 +8,13 @@ import {
   IUserModeration,
   IUserModerationHistoryItem,
   IFavoriteEntry,
+  IUserCustomization,
   SUPPORTED_LANGUAGES,
+  NAME_EFFECTS,
+  AVATAR_FRAMES,
+  PROFILE_ACCENTS,
+  SIGNATURE_STATS,
+  BANNER_EFFECTS,
 } from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
@@ -150,6 +156,27 @@ const ModerationSchema = new Schema<IUserModeration>(
   { _id: false }
 );
 
+// Cosmetics only. Enums keep unknown values out of the DB, but what a given
+// user is *allowed* to equip is decided by services/customization.ts.
+const CustomizationSchema = new Schema<IUserCustomization>(
+  {
+    nameEffect: { type: String, enum: NAME_EFFECTS, default: 'none' },
+    nameColor1: { type: String, default: '' },
+    nameColor2: { type: String, default: '' },
+    avatarFrame: { type: String, enum: AVATAR_FRAMES, default: 'none' },
+    profileAccent: {
+      type: String,
+      enum: PROFILE_ACCENTS,
+      default: 'default',
+    },
+    accentColor: { type: String, default: '' },
+    signatureStat: { type: String, enum: SIGNATURE_STATS, default: 'none' },
+    equippedTitle: { type: String, default: '' },
+    bannerEffect: { type: String, enum: BANNER_EFFECTS, default: 'none' },
+  },
+  { _id: false }
+);
+
 const UserSchema = new Schema<IUser>(
   {
     username: {
@@ -252,6 +279,7 @@ const UserSchema = new Schema<IUser>(
       default: { rankingBanned: false, banned: false, banReason: '' },
     },
     favorites: { type: [FavoriteEntrySchema], default: [] },
+    customization: { type: CustomizationSchema, default: () => ({}) },
   },
   { timestamps: true }
 );

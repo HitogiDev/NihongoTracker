@@ -65,6 +65,7 @@ import LanguagePicker from '../components/LanguagePicker';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
+import CustomizationSettings from '../components/settings/CustomizationSettings';
 import { PercentCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
 import ImageCropDialog, {
@@ -97,6 +98,7 @@ import {
   ListOrdered,
   Mail,
   MonitorPlay,
+  Palette,
   Quote,
   RefreshCw,
   Settings2,
@@ -416,6 +418,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
 
 type SettingsTab =
   | 'profile'
+  | 'customization'
   | 'account'
   | 'preferences'
   | 'patreon'
@@ -423,6 +426,7 @@ type SettingsTab =
 
 const TAB_CONFIG = [
   { id: 'profile', labelKey: 'tabs.profile', icon: UserRound },
+  { id: 'customization', labelKey: 'tabs.customization', icon: Palette },
   { id: 'account', labelKey: 'tabs.account', icon: ShieldCheck },
   { id: 'preferences', labelKey: 'tabs.preferences', icon: Settings2 },
   { id: 'patreon', labelKey: 'tabs.patreon', icon: Heart },
@@ -2483,6 +2487,9 @@ function SettingsScreen() {
                 <ProfileLayoutEditor />
               </div>
             )}
+
+            {/* ── CUSTOMIZATION TAB ── */}
+            {activeTab === 'customization' && <CustomizationSettings />}
 
             {/* ── ACCOUNT & SECURITY TAB ── */}
             {activeTab === 'account' && (

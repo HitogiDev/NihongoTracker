@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./animations.css";
+@import "./customization.css";
 
 @font-face {
   font-family: "Noto Sans JP Local";

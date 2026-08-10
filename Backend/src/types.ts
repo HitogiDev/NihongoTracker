@@ -83,6 +83,85 @@ export interface ProfileWidgetLayout {
 export const SUPPORTED_LANGUAGES = ['en', 'es'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
+/**
+ * Cosmetic profile customization.
+ *
+ * Every option is gated by either merit (level, streak, unlocked achievements)
+ * or an active Patreon tier — see `services/customization.ts`, which owns the
+ * rules and is the only place allowed to decide what a user may equip. The
+ * stored value is always re-validated on write, never trusted from the client.
+ */
+export const NAME_EFFECTS = [
+  'none',
+  'gradient',
+  'glow',
+  'shimmer',
+] as const;
+export type NameEffect = (typeof NAME_EFFECTS)[number];
+
+export const AVATAR_FRAMES = [
+  'none',
+  'bronze',
+  'silver',
+  'gold',
+  'streak',
+  'sakura',
+  'neon',
+  'rainbow',
+] as const;
+export type AvatarFrame = (typeof AVATAR_FRAMES)[number];
+
+/**
+ * Accent applied to the owner's whole profile page — the immersion heatmap,
+ * progress bars, highlights. `custom` reads `accentColor` instead of a preset.
+ */
+export const PROFILE_ACCENTS = [
+  'default',
+  'sakura',
+  'ocean',
+  'forest',
+  'retro',
+  'mono',
+  'custom',
+] as const;
+export type ProfileAccent = (typeof PROFILE_ACCENTS)[number];
+
+export const SIGNATURE_STATS = [
+  'none',
+  'hours',
+  'chars',
+  'streak',
+  'level',
+  'xp',
+  'logs',
+] as const;
+export type SignatureStat = (typeof SIGNATURE_STATS)[number];
+
+export const BANNER_EFFECTS = [
+  'none',
+  'sakura',
+  'snow',
+  'stars',
+  'fireflies',
+] as const;
+export type BannerEffect = (typeof BANNER_EFFECTS)[number];
+
+export interface IUserCustomization {
+  nameEffect?: NameEffect;
+  /** Hex color, start of the gradient / glow tint. Empty means "theme color". */
+  nameColor1?: string;
+  /** Hex color, end of the gradient. Ignored by non-gradient effects. */
+  nameColor2?: string;
+  avatarFrame?: AvatarFrame;
+  profileAccent?: ProfileAccent;
+  /** Hex color backing `profileAccent: 'custom'`. Ignored by the presets. */
+  accentColor?: string;
+  signatureStat?: SignatureStat;
+  /** `key` of an unlocked achievement, shown as a title next to the username. */
+  equippedTitle?: string;
+  bannerEffect?: BannerEffect;
+}
+
 export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
@@ -399,6 +478,7 @@ export interface IUser extends Document {
   anilist?: IAnilistData;
   moderation?: IUserModeration;
   favorites?: IFavoriteEntry[];
+  customization?: IUserCustomization;
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 

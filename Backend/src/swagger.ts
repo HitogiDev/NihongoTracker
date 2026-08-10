@@ -1277,6 +1277,105 @@ const swaggerDocument = {
         },
       },
     },
+    '/users/me/customization': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get profile customization and the options unlocked for you',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description:
+              'Current cosmetics plus every option with its unlocked flag and lock reason',
+          },
+        },
+      },
+      patch: {
+        tags: ['Users'],
+        summary: 'Update profile customization (cosmetics)',
+        description:
+          'Partial update — only the provided keys change. Values the user has not unlocked are rejected with 403.',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  nameEffect: {
+                    type: 'string',
+                    enum: ['none', 'gradient', 'glow', 'shimmer'],
+                  },
+                  nameColor1: {
+                    type: 'string',
+                    description: '#rrggbb hex, or empty for the theme color',
+                  },
+                  nameColor2: { type: 'string' },
+                  avatarFrame: {
+                    type: 'string',
+                    enum: [
+                      'none',
+                      'bronze',
+                      'silver',
+                      'gold',
+                      'streak',
+                      'sakura',
+                      'neon',
+                      'rainbow',
+                    ],
+                  },
+                  profileAccent: {
+                    type: 'string',
+                    enum: [
+                      'default',
+                      'sakura',
+                      'ocean',
+                      'forest',
+                      'retro',
+                      'mono',
+                      'custom',
+                    ],
+                    description:
+                      'Accent color for the whole profile page, including the heatmap. "custom" requires accentColor.',
+                  },
+                  accentColor: {
+                    type: 'string',
+                    description:
+                      '#rrggbb hex backing profileAccent: "custom"; ignored by the presets',
+                  },
+                  signatureStat: {
+                    type: 'string',
+                    enum: [
+                      'none',
+                      'hours',
+                      'chars',
+                      'streak',
+                      'level',
+                      'xp',
+                      'logs',
+                    ],
+                  },
+                  equippedTitle: {
+                    type: 'string',
+                    description:
+                      'Key of an unlocked achievement, or empty for no title',
+                  },
+                  bannerEffect: {
+                    type: 'string',
+                    enum: ['none', 'sakura', 'snow', 'stars', 'fireflies'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Customization updated' },
+          400: { description: 'Invalid value' },
+          403: { description: 'Option not unlocked for this user' },
+        },
+      },
+    },
     '/users/cleardata': {
       post: {
         tags: ['Users'],

@@ -117,6 +117,14 @@
     "field": "Sort Field",
     "direction": "Sort Direction"
   },
+  "signature": {
+    "chars": "{{value}} characters read",
+    "hours": "{{value}} hours immersed",
+    "level": "Level {{value}}",
+    "logs": "{{value}} logs",
+    "streak": "{{value}}-day streak",
+    "xp": "{{value}} XP"
+  },
   "stats": {
     "title": "Profile Stats",
     "share": "Share",

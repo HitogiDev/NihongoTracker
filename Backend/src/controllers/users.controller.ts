@@ -10,6 +10,7 @@ import {
   IUpdateRequest,
   IUser,
   IFavoriteEntry,
+  IUserCustomization,
   MediaListMediaType,
   StatsCardId,
   StatsGroupId,
@@ -39,6 +40,14 @@ import {
   recalculateStreaksForUser,
 } from '../services/streaks.js';
 import { recalculateUserXpFromLogs } from '../services/updateStats.js';
+import {
+  computeSignatureValue,
+  computeSignatureValues,
+  getDisplayCapabilities,
+  listCustomizationOptions,
+  resolveCustomizationUpdate,
+  sanitizeCustomizationForDisplay,
+} from '../services/customization.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -84,6 +93,34 @@ function isOwner(user: Partial<IUser> | null | undefined, ownerId: unknown) {
   }
 
   return user._id.toString() === ownerId.toString();
+}
+
+/**
+ * Cosmetics carried by ranking rows — only what a row renders (name effect and
+ * avatar frame), not the whole customization document.
+ */
+const RANKING_COSMETICS_PROJECTION = {
+  nameEffect: '$customization.nameEffect',
+  nameColor1: '$customization.nameColor1',
+  nameColor2: '$customization.nameColor2',
+  avatarFrame: '$customization.avatarFrame',
+};
+
+/**
+ * Aggregations bypass the model, so paid cosmetics have to be re-checked here
+ * the same way `getUser` does it — otherwise an expired supporter would keep a
+ * glowing name in the rankings.
+ */
+function sanitizeRankingCosmetics<
+  T extends { patreon?: IUser['patreon']; customization?: IUserCustomization },
+>(rows: T[]): T[] {
+  return rows.map((row) => ({
+    ...row,
+    customization: sanitizeCustomizationForDisplay(
+      row.customization,
+      getDisplayCapabilities(row.patreon)
+    ),
+  }));
 }
 
 function getPublicPatreonProfile(patreon: IUser['patreon']) {
@@ -509,6 +546,7 @@ export async function updateUser(
       roles: updatedUser.roles,
       settings: updatedUser.settings,
       about: updatedUser.about,
+      customization: updatedUser.customization ?? {},
     });
   } catch (error) {
     return next(error as customError);
@@ -939,6 +977,60 @@ export async function updateFavorites(
   }
 }
 
+export async function getCustomizationOptions(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const [options, signatureValues] = await Promise.all([
+      listCustomizationOptions(user),
+      computeSignatureValues(user),
+    ]);
+
+    return res.status(200).json({
+      customization: user.customization ?? {},
+      options,
+      // Real numbers so the settings preview matches the live profile.
+      signatureValues,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function updateCustomization(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    const patch = req.body as Partial<IUserCustomization> | undefined;
+    if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
+      throw apiError(
+        'customization.invalidPayload',
+        400,
+        'Customization payload must be an object'
+      );
+    }
+
+    user.customization = await resolveCustomizationUpdate(user, patch);
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      customization: updatedUser.customization ?? {},
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   const userFound = await User.findOne({
     username: req.params.username,
@@ -955,6 +1047,11 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
   const viewer = res.locals.user as IUser | undefined;
   const canViewPrivateProfile =
     hasAdminRole(viewer) || isOwner(viewer, userFound._id);
+
+  const visibleCustomization = sanitizeCustomizationForDisplay(
+    userFound.customization,
+    getDisplayCapabilities(userFound.patreon)
+  );
 
   const sharedProfile = {
     _id: userFound._id,
@@ -975,6 +1072,17 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     profileLayout: userFound.settings?.profileLayout ?? [],
     // Favorites are meant to be showcased — public, no privacy gate
     favorites: await hydrateFavorites(userFound.favorites ?? []),
+    // Cosmetics are public by definition: they exist to be seen by visitors.
+    // Sanitized on read so an expired supporter stops rendering paid effects
+    // without needing a migration or a background job.
+    customization: visibleCustomization,
+    // Resolved server-side because hours/chars/log counts are not on the user
+    // document. Costs an aggregation only when the owner equipped one of those.
+    signature: await computeSignatureValue(
+      userFound,
+      visibleCustomization.signatureStat,
+      liveCurrentStreak
+    ),
   };
 
   if (!canViewPrivateProfile) {
@@ -1217,6 +1325,7 @@ export async function getRanking(
               badgeColor: '$patreon.badgeColor',
               badgeTextColor: '$patreon.badgeTextColor',
             },
+            customization: RANKING_COSMETICS_PROJECTION,
             stats: {
               userXp: '$timeStats.userXp',
               userChars: '$timeStats.totalChars',
@@ -1240,7 +1349,7 @@ export async function getRanking(
         { $skip: skip },
         { $limit: limit },
       ]);
-      return res.status(200).json(rankingUsers);
+      return res.status(200).json(sanitizeRankingCosmetics(rankingUsers));
     } else {
       // Default behavior - get all-time stats with hours calculated from logs
       const rankingUsers = await User.aggregate([
@@ -1473,11 +1582,12 @@ export async function getRanking(
               badgeColor: '$patreon.badgeColor',
               badgeTextColor: '$patreon.badgeTextColor',
             },
+            customization: RANKING_COSMETICS_PROJECTION,
           },
         },
       ]);
 
-      return res.status(200).json(rankingUsers);
+      return res.status(200).json(sanitizeRankingCosmetics(rankingUsers));
     }
   } catch (error) {
     return next(error as customError);
@@ -1969,6 +2079,7 @@ export async function getMediumRanking(
             badgeColor: '$patreon.badgeColor',
             badgeTextColor: '$patreon.badgeTextColor',
           },
+          customization: RANKING_COSMETICS_PROJECTION,
           stats: {
             userLevel: '$stats.userLevel',
           },
@@ -1995,7 +2106,7 @@ export async function getMediumRanking(
     ];
 
     const ranking = await User.aggregate(pipeline);
-    return res.status(200).json(ranking);
+    return res.status(200).json(sanitizeRankingCosmetics(ranking));
   } catch (error) {
     return next(error as customError);
   }

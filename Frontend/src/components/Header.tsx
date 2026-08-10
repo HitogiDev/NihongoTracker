@@ -36,6 +36,10 @@ import SearchModal from './SearchModal';
 import NotificationBell from './NotificationBell';
 import { useNotificationCount } from '../hooks/useNotificationCount';
 import { getAvatarInitials } from '../utils/avatar';
+import {
+  getAvatarFrameClass,
+  hasAvatarFrame,
+} from '../utils/customization';
 import { useTranslation } from 'react-i18next';
 
 type ThemeMode = 'dark' | 'light' | 'system';
@@ -81,6 +85,9 @@ function Header() {
   useEffect(() => {
     setAvatarLoadFailed(false);
   }, [user?.avatar]);
+
+  const equippedFrame = user?.customization?.avatarFrame;
+  const hasEquippedFrame = hasAvatarFrame(equippedFrame);
 
   const MAX_BADGE_COUNT = 99;
   const totalCount = useNotificationCount();
@@ -513,24 +520,34 @@ function Header() {
                   // avatar, so the ring would spill outside it. p-1 leaves room.
                   className="btn btn-ghost avatar m-1 h-auto min-h-0 w-auto rounded-full p-1"
                 >
+                  {/* An equipped frame replaces the supporter ring rather than
+                      stacking a second circle around the avatar. */}
                   <div
-                    className={`w-8 sm:w-10 rounded-full ${
-                      user?.patreon?.isActive
-                        ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'
-                        : ''
-                    }`}
+                    className={
+                      hasEquippedFrame
+                        ? getAvatarFrameClass(equippedFrame)
+                        : undefined
+                    }
                   >
-                    {user.avatar && !avatarLoadFailed ? (
-                      <img
-                        src={user.avatar}
-                        alt={`${user.username} avatar`}
-                        onError={() => setAvatarLoadFailed(true)}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-base-300 flex items-center justify-center text-sm font-semibold">
-                        {getAvatarInitials(user.username)}
-                      </div>
-                    )}
+                    <div
+                      className={`w-8 sm:w-10 rounded-full ${
+                        user?.patreon?.isActive && !hasEquippedFrame
+                          ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'
+                          : ''
+                      }`}
+                    >
+                      {user.avatar && !avatarLoadFailed ? (
+                        <img
+                          src={user.avatar}
+                          alt={`${user.username} avatar`}
+                          onError={() => setAvatarLoadFailed(true)}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-base-300 flex items-center justify-center text-sm font-semibold">
+                          {getAvatarInitials(user.username)}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <ul

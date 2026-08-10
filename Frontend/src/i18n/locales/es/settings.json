@@ -133,6 +133,84 @@
     "unrecognized": "Cualquier tipo de contenido o actividad no reconocido.",
     "yes": "Sí"
   },
+  "customization": {
+    "accentColor": "Color del acento",
+    "accentPreviewBadge": "Etiqueta",
+    "accentPreviewButton": "Botón",
+    "accentPreviewLabel": "Vista previa del acento",
+    "accentPreviewText": "Texto resaltado",
+    "avatarFrame": "Marco del avatar",
+    "avatarFrameHint": "Un anillo alrededor de tu avatar. Los marcos metálicos se ganan subiendo de nivel; los animados vienen con un nivel de Patreon.",
+    "avatarFrames": {
+      "bronze": "Bronce",
+      "gold": "Oro",
+      "neon": "Neón",
+      "none": "Ninguno",
+      "rainbow": "Arcoíris",
+      "sakura": "Sakura",
+      "silver": "Plata",
+      "streak": "Llama de racha"
+    },
+    "bannerEffect": "Efecto de la cabecera",
+    "bannerEffectHint": "Partículas que flotan sobre la cabecera de tu perfil.",
+    "bannerEffects": {
+      "fireflies": "Luciérnagas",
+      "none": "Ninguno",
+      "sakura": "Pétalos de sakura",
+      "snow": "Nieve",
+      "stars": "Estrellas"
+    },
+    "color1": "Color 1",
+    "color2": "Color 2",
+    "profileAccent": "Acento del perfil",
+    "profileAccentHint": "Recolorea todo tu perfil para las visitas: mapa de calor, barras de progreso, botones y resaltados.",
+    "profileAccents": {
+      "custom": "Personalizado",
+      "default": "Tema",
+      "forest": "Bosque",
+      "mono": "Monocromo",
+      "ocean": "Océano",
+      "retro": "Retro",
+      "sakura": "Sakura"
+    },
+    "locks": {
+      "level": "Alcanza el nivel {{level}}",
+      "patreon": "Cualquier nivel de Patreon activo",
+      "patreonPlus": "Nivel Enthusiast o Consumer",
+      "streak": "Alcanza una racha de {{days}} días"
+    },
+    "nameEffect": "Efecto del nombre",
+    "nameEffectHint": "Cómo se pinta tu nombre de usuario en tu perfil.",
+    "nameEffects": {
+      "glow": "Resplandor",
+      "gradient": "Degradado",
+      "none": "Ninguno",
+      "shimmer": "Brillo animado"
+    },
+    "noTitleOption": "Sin título",
+    "noTitles": "Desbloquea logros para conseguir títulos que llevar junto a tu nombre.",
+    "previewSubtitle": "Esto es lo que verán las visitas en tu perfil.",
+    "previewTitle": "Vista previa",
+    "reducedMotionBody": "Tu sistema tiene activado «reducir movimiento», así que los cosméticos animados (brillo, marcos animados, partículas de la cabecera) se muestran quietos en vez de moverse. El resto de la gente sí los ve animados.",
+    "reducedMotionTitle": "Las animaciones están detenidas en tu dispositivo",
+    "resetColors": "Usar colores del tema",
+    "save": "Guardar personalización",
+    "saved": "Personalización actualizada",
+    "saving": "Guardando...",
+    "signatureStat": "Estadística destacada",
+    "signatureStatHint": "Un número bajo tu nombre. Gratis para todos.",
+    "signatureStats": {
+      "chars": "Caracteres leídos",
+      "hours": "Horas totales",
+      "level": "Nivel",
+      "logs": "Logs",
+      "none": "Ninguna",
+      "streak": "Racha actual",
+      "xp": "XP total"
+    },
+    "title": "Título equipado",
+    "titleHint": "Lleva uno de tus logros desbloqueados como título."
+  },
   "danger": {
     "cannotBeUndone": "no se puede deshacer",
     "clearAll": "Borrar todos los datos",
@@ -347,6 +425,7 @@
   "tabs": {
     "account": "Cuenta y seguridad",
     "advanced": "Gestión de datos",
+    "customization": "Personalización",
     "patreon": "Patreon",
     "preferences": "Preferencias",
     "profile": "Perfil"

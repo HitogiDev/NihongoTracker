@@ -4,6 +4,8 @@ import { getUserLogsFn } from '../api/trackerApi';
 import { useTimezone } from '../hooks/useTimezone';
 import { getLocale } from '../utils/timezone';
 import { useTranslation } from 'react-i18next';
+import { getHeatmapCellColor } from '../utils/customization';
+import type { IUserCustomization } from '../types';
 
 interface HeatmapCell {
   date: string; // YYYY-MM-DD in user timezone
@@ -13,6 +15,8 @@ interface HeatmapCell {
 
 interface ImmersionHeatmapProps {
   username: string;
+  /** Profile owner's accent; falls back to the visitor's theme color. */
+  accent?: Pick<IUserCustomization, 'profileAccent' | 'accentColor'>;
 }
 
 interface LogData {
@@ -66,7 +70,10 @@ function dayOfWeek(dateKey: string): number {
 const WEEKS = 24;
 const DAYS = WEEKS * 7; // 168
 
-const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
+const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({
+  username,
+  accent,
+}) => {
   const { t } = useTranslation('stats');
   const { timezone } = useTimezone();
 
@@ -143,20 +150,11 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
     return { weeks: columns, todayKey };
   }, [logs, timezone]);
 
-  const cellClass = (level: number) => {
-    switch (level) {
-      case 1:
-        return 'bg-primary/30';
-      case 2:
-        return 'bg-primary/50';
-      case 3:
-        return 'bg-primary/70';
-      case 4:
-        return 'bg-primary';
-      default:
-        return 'bg-base-300';
-    }
-  };
+  // Colors are inline rather than utility classes: the accent is chosen at
+  // runtime by the profile owner, so Tailwind cannot know the class names.
+  const cellStyle = (level: number) => ({
+    backgroundColor: getHeatmapCellColor(accent, level),
+  });
 
   const tooltip = (cell: HeatmapCell) => {
     // Format date for display — parse as UTC noon so timezone doesn't shift the day
@@ -194,7 +192,8 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
               return (
                 <div
                   key={ri}
-                  className={`w-3 h-3 rounded-sm tooltip tooltip-left md:tooltip-top ${cellClass(cell.level)} ${isToday ? 'ring-1 ring-primary ring-offset-1 ring-offset-base-100' : ''}`}
+                  className={`w-3 h-3 rounded-sm tooltip tooltip-left md:tooltip-top ${isToday ? 'ring-1 ring-primary ring-offset-1 ring-offset-base-100' : ''}`}
+                  style={cellStyle(cell.level)}
                   data-tip={tooltip(cell)}
                 />
               );
@@ -209,7 +208,8 @@ const ImmersionHeatmap: React.FC<ImmersionHeatmapProps> = ({ username }) => {
           {[0, 1, 2, 3, 4].map((level) => (
             <div
               key={level}
-              className={`w-3 h-3 rounded-sm ${cellClass(level)}`}
+              className="w-3 h-3 rounded-sm"
+              style={cellStyle(level)}
             />
           ))}
         </div>

@@ -710,7 +710,12 @@ function ProfileScreen() {
       <div className="card w-full bg-base-100 shadow-sm overflow-visible">
         <div className="card-body w-full p-4 sm:p-6 overflow-visible">
           <h2 className="card-title mb-4">{t('activity.title')}</h2>
-          {username && <ImmersionHeatmap username={username} />}
+          {username && (
+            <ImmersionHeatmap
+              username={username}
+              accent={user?.customization}
+            />
+          )}
         </div>
       </div>
     ),
