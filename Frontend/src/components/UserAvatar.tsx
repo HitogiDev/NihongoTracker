@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAvatarInitials } from '../utils/avatar';
+import { getAvatarFrameClass, hasAvatarFrame } from '../utils/customization';
+import type { AvatarFrame } from '../types';
 
 interface UserAvatarProps {
   username?: string;
@@ -10,6 +12,8 @@ interface UserAvatarProps {
   fallbackClassName?: string;
   textClassName?: string;
   loading?: 'lazy' | 'eager';
+  /** Equipped cosmetic ring drawn around the avatar. */
+  frame?: AvatarFrame | null;
 }
 
 export default function UserAvatar({
@@ -21,6 +25,7 @@ export default function UserAvatar({
   fallbackClassName = 'w-full h-full rounded-full bg-base-300 flex items-center justify-center',
   textClassName = 'text-sm font-semibold',
   loading = 'lazy',
+  frame,
 }: UserAvatarProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -30,7 +35,7 @@ export default function UserAvatar({
 
   const shouldShowImage = Boolean(avatar) && !imageFailed;
 
-  return (
+  const inner = (
     <div className={containerClassName}>
       {shouldShowImage ? (
         <img
@@ -47,4 +52,10 @@ export default function UserAvatar({
       )}
     </div>
   );
+
+  if (!hasAvatarFrame(frame)) {
+    return inner;
+  }
+
+  return <span className={getAvatarFrameClass(frame)}>{inner}</span>;
 }

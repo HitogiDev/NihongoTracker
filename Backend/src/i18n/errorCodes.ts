@@ -83,6 +83,14 @@ export const ERROR_CODES = [
   'upload.avatarRemoveWithUpload',
   'upload.bannerRemoveWithUpload',
 
+  // Profile customization (cosmetics)
+  'customization.invalidValue',
+  'customization.locked',
+  'customization.invalidColor',
+  'customization.titleNotUnlocked',
+  'customization.invalidPayload',
+  'customization.accentColorRequired',
+
   // Media and immersion list
   'media.notFound',
   'immersionList.mediaNotFound',

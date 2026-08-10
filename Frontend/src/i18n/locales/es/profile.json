@@ -117,6 +117,14 @@
     "field": "Campo de orden",
     "direction": "Dirección del orden"
   },
+  "signature": {
+    "chars": "{{value}} caracteres leídos",
+    "hours": "{{value}} horas de inmersión",
+    "level": "Nivel {{value}}",
+    "logs": "{{value}} logs",
+    "streak": "Racha de {{value}} días",
+    "xp": "{{value}} XP"
+  },
   "stats": {
     "title": "Estadísticas del perfil",
     "share": "Compartir",

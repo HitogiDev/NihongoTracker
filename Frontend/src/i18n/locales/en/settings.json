@@ -133,6 +133,84 @@
     "no": "No",
     "tags": "Tag names separated by semicolons (e.g. <code>tag1;tag2</code>)"
   },
+  "customization": {
+    "accentColor": "Accent color",
+    "accentPreviewBadge": "Badge",
+    "accentPreviewButton": "Button",
+    "accentPreviewLabel": "Accent preview",
+    "accentPreviewText": "Highlighted text",
+    "avatarFrame": "Avatar frame",
+    "avatarFrameHint": "A ring around your avatar. Metal frames are earned by leveling up; animated ones come with a Patreon tier.",
+    "avatarFrames": {
+      "bronze": "Bronze",
+      "gold": "Gold",
+      "neon": "Neon",
+      "none": "None",
+      "rainbow": "Rainbow",
+      "sakura": "Sakura",
+      "silver": "Silver",
+      "streak": "Streak flame"
+    },
+    "bannerEffect": "Banner effect",
+    "bannerEffectHint": "Ambient particles drifting over your profile banner.",
+    "bannerEffects": {
+      "fireflies": "Fireflies",
+      "none": "None",
+      "sakura": "Sakura petals",
+      "snow": "Snow",
+      "stars": "Stars"
+    },
+    "color1": "Color 1",
+    "color2": "Color 2",
+    "profileAccent": "Profile accent",
+    "profileAccentHint": "Recolors your whole profile page for visitors — heatmap, progress bars, buttons and highlights.",
+    "profileAccents": {
+      "custom": "Custom",
+      "default": "Theme",
+      "forest": "Forest",
+      "mono": "Monochrome",
+      "ocean": "Ocean",
+      "retro": "Retro",
+      "sakura": "Sakura"
+    },
+    "locks": {
+      "level": "Reach level {{level}}",
+      "patreon": "Any active Patreon tier",
+      "patreonPlus": "Enthusiast or Consumer tier",
+      "streak": "Reach a {{days}}-day streak"
+    },
+    "nameEffect": "Name effect",
+    "nameEffectHint": "How your username is painted on your profile.",
+    "nameEffects": {
+      "glow": "Glow",
+      "gradient": "Gradient",
+      "none": "None",
+      "shimmer": "Shimmer"
+    },
+    "noTitleOption": "No title",
+    "noTitles": "Unlock achievements to earn titles you can wear next to your name.",
+    "previewSubtitle": "This is what visitors will see on your profile.",
+    "previewTitle": "Preview",
+    "reducedMotionBody": "Your system has \"reduce motion\" turned on, so animated cosmetics (shimmer, animated frames, banner particles) are shown still instead of moving. Everyone else sees them animate.",
+    "reducedMotionTitle": "Animations are paused on your device",
+    "resetColors": "Use theme colors",
+    "save": "Save customization",
+    "saved": "Customization updated",
+    "saving": "Saving...",
+    "signatureStat": "Signature stat",
+    "signatureStatHint": "One number shown under your name. Free for everyone.",
+    "signatureStats": {
+      "chars": "Characters read",
+      "hours": "Total hours",
+      "level": "Level",
+      "logs": "Logs",
+      "none": "None",
+      "streak": "Current streak",
+      "xp": "Total XP"
+    },
+    "title": "Equipped title",
+    "titleHint": "Wear one of your unlocked achievements as a title."
+  },
   "danger": {
     "cannotBeUndone": "cannot be undone",
     "clearAll": "Clear All Data",
@@ -347,6 +425,7 @@
   "tabs": {
     "account": "Account & Security",
     "advanced": "Data Management",
+    "customization": "Customization",
     "patreon": "Patreon",
     "preferences": "Preferences",
     "profile": "Profile"

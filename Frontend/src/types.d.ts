@@ -141,7 +141,85 @@ export interface IUser {
   statsLayout?: StatsGroupLayout[];
   profileLayout?: ProfileWidgetLayout[];
   favorites?: IFavoriteEntry[];
+  customization?: IUserCustomization;
+  /** Resolved server-side from `customization.signatureStat` (profile reads). */
+  signature?: { stat: SignatureStat; value: number } | null;
   matchPassword: (enteredPassword: string) => Promise<boolean>;
+}
+
+/** Mirrors Backend/src/types.ts — keep both lists in sync. */
+export type NameEffect = 'none' | 'gradient' | 'glow' | 'shimmer';
+export type AvatarFrame =
+  | 'none'
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'streak'
+  | 'sakura'
+  | 'neon'
+  | 'rainbow';
+export type ProfileAccent =
+  | 'default'
+  | 'sakura'
+  | 'ocean'
+  | 'forest'
+  | 'retro'
+  | 'mono'
+  | 'custom';
+export type SignatureStat =
+  | 'none'
+  | 'hours'
+  | 'chars'
+  | 'streak'
+  | 'level'
+  | 'xp'
+  | 'logs';
+export type BannerEffect = 'none' | 'sakura' | 'snow' | 'stars' | 'fireflies';
+
+export interface IUserCustomization {
+  nameEffect?: NameEffect;
+  nameColor1?: string;
+  nameColor2?: string;
+  avatarFrame?: AvatarFrame;
+  profileAccent?: ProfileAccent;
+  /** Hex color backing `profileAccent: 'custom'`. */
+  accentColor?: string;
+  signatureStat?: SignatureStat;
+  equippedTitle?: string;
+  bannerEffect?: BannerEffect;
+}
+
+export type CustomizationLockReason =
+  | 'none'
+  | 'patreon'
+  | 'patreonPlus'
+  | 'level'
+  | 'streak'
+  | 'achievement';
+
+export interface ICustomizationOption<T extends string> {
+  value: T;
+  unlocked: boolean;
+  lockReason: CustomizationLockReason;
+  requirement?: number;
+}
+
+export interface ICustomizationOptionsResponse {
+  customization: IUserCustomization;
+  /** Real values per stat, so the settings preview matches the live profile. */
+  signatureValues: Record<Exclude<SignatureStat, 'none'>, number>;
+  options: {
+    nameEffects: ICustomizationOption<NameEffect>[];
+    avatarFrames: ICustomizationOption<AvatarFrame>[];
+    profileAccents: ICustomizationOption<ProfileAccent>[];
+    signatureStats: ICustomizationOption<SignatureStat>[];
+    bannerEffects: ICustomizationOption<BannerEffect>[];
+    customNameColors: {
+      unlocked: boolean;
+      lockReason: CustomizationLockReason;
+    };
+    titles: { key: string; rarity: string; unlockedAt: string }[];
+  };
 }
 
 enum userRoles {
@@ -208,6 +286,7 @@ export type ILoginResponse = Pick<
   | 'discordId'
   | 'patreon'
   | 'settings'
+  | 'customization'
 >;
 
 export interface IRegisterInput {
@@ -543,6 +622,11 @@ export interface IRankingResponse {
     badgeColor?: string;
     badgeTextColor?: string;
   };
+  /** Only the cosmetics a ranking row renders. */
+  customization?: Pick<
+    IUserCustomization,
+    'nameEffect' | 'nameColor1' | 'nameColor2' | 'avatarFrame'
+  >;
 }
 
 export interface IRankingSummaryDetails {

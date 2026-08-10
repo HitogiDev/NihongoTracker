@@ -1,0 +1,307 @@
+/* ─── Profile cosmetics ──────────────────────────────────────────────────────
+   Visuals for the customization options users equip in Settings › Customization.
+
+   These are hand-written classes rather than Tailwind utilities on purpose: the
+   class names are assembled at runtime from stored values (`avatar-frame--gold`,
+   `name-effect--shimmer`), which Tailwind's scanner cannot see, so utilities
+   would be purged out of the bundle.
+
+   Colors come in through custom properties (--name-color-1/2) so a single class
+   covers every color the user can pick. */
+
+/* ─── Name effects ────────────────────────────────────────────────────────── */
+
+.name-effect--gradient,
+.name-effect--shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--name-color-1),
+    var(--name-color-2),
+    var(--name-color-1)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* The gradient replaces the fill, so the header's drop-shadow would show
+     through the transparent glyphs. */
+  text-shadow: none;
+}
+
+.name-effect--gradient {
+  background-size: 100% 100%;
+}
+
+.name-effect--shimmer {
+  background-size: 200% 100%;
+  animation: name-shimmer 4s linear infinite;
+}
+
+.name-effect--glow {
+  color: var(--name-color-1);
+  text-shadow:
+    0 0 6px color-mix(in oklab, var(--name-color-1) 70%, transparent),
+    0 0 18px color-mix(in oklab, var(--name-color-1) 45%, transparent);
+}
+
+@keyframes name-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* ─── Avatar frames ──────────────────────────────────────────────────────────
+   The frame is a padded ring drawn behind the avatar. Wrap the avatar in an
+   element carrying `.avatar-frame .avatar-frame--<name>`; its child keeps its
+   own rounding. */
+
+.avatar-frame {
+  display: inline-flex;
+  /* Inside a flex parent (the header's avatar button) the ring would shrink
+     while its fixed-width child does not, clipping the ring left and right. */
+  flex: none;
+  /* DaisyUI's `.avatar > div { aspect-ratio: 1; overflow: hidden }` lands on the
+     frame whenever it is the direct child of an `.avatar` element (the header
+     button). Squaring the padded box eats the side padding and clips the ring,
+     so undo both — this file is unlayered and outranks DaisyUI's layer. */
+  aspect-ratio: auto;
+  overflow: visible;
+  padding: 3px;
+  border-radius: 9999px;
+  /* Keeps the ring from inheriting a stray background from its container. */
+  background-clip: padding-box;
+  line-height: 0;
+}
+
+/* The square+clip DaisyUI used to give the avatar box moves down here, since the
+   frame now sits between `.avatar` and it. Without this the inner box has no
+   height of its own and collapses. */
+.avatar-frame > * {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+
+.avatar-frame--bronze {
+  background: linear-gradient(135deg, #e0a878, #cd7f32 45%, #7d4a1a);
+}
+
+.avatar-frame--silver {
+  background: linear-gradient(135deg, #f2f2f2, #c0c0c0 45%, #7a7a7a);
+}
+
+.avatar-frame--gold {
+  background: linear-gradient(135deg, #fff0a6, #ffd700 45%, #b8860b);
+}
+
+.avatar-frame--streak {
+  background: linear-gradient(135deg, #ffd166, #f7681f 55%, #c02a10);
+  animation: frame-flicker 2.4s ease-in-out infinite;
+}
+
+.avatar-frame--sakura {
+  background: linear-gradient(135deg, #ffe3ef, #f79ac0 50%, #d94f8a);
+  animation: frame-breathe 3.2s ease-in-out infinite;
+}
+
+.avatar-frame--neon {
+  background: linear-gradient(135deg, #6ef2ff, #2f7bff 55%, #a855f7);
+  animation: frame-neon 2s ease-in-out infinite;
+}
+
+.avatar-frame--rainbow {
+  background: conic-gradient(
+    from 0deg,
+    #ff4d4d,
+    #ffa24d,
+    #ffe14d,
+    #6bff4d,
+    #4de1ff,
+    #6b4dff,
+    #ff4de1,
+    #ff4d4d
+  );
+  animation: frame-spin 5s linear infinite;
+}
+
+@keyframes frame-spin {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Counter-rotate the avatar so only the ring spins. */
+.avatar-frame--rainbow > * {
+  animation: frame-spin-reverse 5s linear infinite;
+}
+
+@keyframes frame-spin-reverse {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: -360deg;
+  }
+}
+
+@keyframes frame-flicker {
+  0%,
+  100% {
+    box-shadow: 0 0 10px 1px rgba(247, 104, 31, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 18px 4px rgba(247, 104, 31, 0.8);
+  }
+}
+
+@keyframes frame-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 1px rgba(217, 79, 138, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(247, 154, 192, 0.7);
+  }
+}
+
+@keyframes frame-neon {
+  0%,
+  100% {
+    box-shadow: 0 0 10px 1px rgba(110, 242, 255, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(168, 85, 247, 0.7);
+  }
+}
+
+/* ─── Ambient banner effects ─────────────────────────────────────────────────
+   A full-bleed overlay of small particles above the profile banner. Each
+   particle gets its position/delay/duration inline from the component; the
+   class only describes the shape and the motion. */
+
+.banner-effect {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Sits above the banner image and its darkening gradient, which is a later
+     sibling and would otherwise paint over the particles. */
+  z-index: 1;
+}
+
+.banner-particle {
+  position: absolute;
+  will-change: transform, opacity;
+}
+
+.banner-particle--sakura {
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle at 30% 30%, #ffd6e7, #f28ab8);
+  border-radius: 60% 10% 60% 10%;
+  /* Banners are busy and the header's darkening gradient sits on top of the
+     lower 40%, so anything translucent reads as dirt on the screen. */
+  opacity: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  animation: particle-fall linear infinite;
+}
+
+.banner-particle--snow {
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 9999px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+  animation: particle-fall linear infinite;
+}
+
+.banner-particle--stars {
+  top: auto;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  border-radius: 9999px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+  animation: particle-twinkle ease-in-out infinite;
+}
+
+.banner-particle--fireflies {
+  top: auto;
+  width: 5px;
+  height: 5px;
+  background: #ffe9a3;
+  border-radius: 9999px;
+  box-shadow: 0 0 10px 2px rgba(255, 214, 102, 0.8);
+  animation: particle-drift ease-in-out infinite alternate;
+}
+
+/* `top` rather than a translate in px: the overlay's height is set by the
+   banner, which differs between the profile header and the settings preview.
+   `--drift`/`--spin` come in per particle so they don't all trace the same
+   path; the sway at 50% is what breaks up the straight-line look. */
+@keyframes particle-fall {
+  0% {
+    top: -12%;
+    transform: translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(calc(var(--drift, 28px) * -0.35))
+      rotate(calc(var(--spin, 320deg) * 0.5));
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 108%;
+    transform: translateX(var(--drift, 28px)) rotate(var(--spin, 320deg));
+    opacity: 0.6;
+  }
+}
+
+@keyframes particle-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes particle-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 28px), -26px, 0);
+    opacity: 0.7;
+  }
+}
+
+/* Motion-sensitive visitors get the cosmetics without the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .name-effect--shimmer,
+  .avatar-frame--streak,
+  .avatar-frame--sakura,
+  .avatar-frame--neon,
+  .avatar-frame--rainbow,
+  .avatar-frame--rainbow > *,
+  .banner-particle {
+    animation: none !important;
+  }
+}

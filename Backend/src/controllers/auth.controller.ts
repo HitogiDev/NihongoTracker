@@ -48,6 +48,7 @@ function sanitizeAuthUser(user: IUser) {
     discordId: user.discordId ?? '',
     patreon: user.patreon,
     moderation: user.moderation,
+    customization: user.customization ?? {},
   };
 }
 
@@ -153,6 +154,7 @@ export async function register(
       roles: user.roles,
       patreon: user.patreon,
       settings: user.settings,
+      customization: user.customization ?? {},
     });
   } catch (error) {
     return next(error as customError);
@@ -211,6 +213,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         settings: user.settings,
         patreon: user.patreon,
         moderation: user.moderation,
+        customization: user.customization ?? {},
       });
     } else {
       throw apiError(
@@ -289,6 +292,7 @@ export async function verifyEmail(
         settings: user.settings,
         discordId: user.discordId ?? '',
         patreon: user.patreon,
+        customization: user.customization ?? {},
       },
     });
   } catch (error) {

@@ -16,7 +16,7 @@ import { toast } from 'react-toastify';
 
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { filterTypes, IStats } from '../types';
+import { filterTypes, IStats, IUserCustomization } from '../types';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTimezone } from '../hooks/useTimezone';
 import { numberWithCommas } from '../utils/utils';
@@ -25,6 +25,7 @@ import { getPatreonBadgeProps } from '../utils/patreonBadge';
 import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
 import UserAvatar from '../components/UserAvatar';
 import { useUserDataStore } from '../store/userData';
+import { getNameEffectRender } from '../utils/customization';
 
 type RankedUser = {
   username: string;
@@ -42,6 +43,10 @@ type RankedUser = {
     badgeColor?: string;
     badgeTextColor?: string;
   };
+  customization?: Pick<
+    IUserCustomization,
+    'nameEffect' | 'nameColor1' | 'nameColor2' | 'avatarFrame'
+  >;
 };
 
 type RankingMode = 'global' | 'medium';
@@ -1166,6 +1171,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondGlobalUser?.username}
                               avatar={secondGlobalUser?.avatar}
+                              frame={secondGlobalUser?.customization?.avatarFrame}
                               alt={t('avatarAlt', {
                                 username:
                                   secondGlobalUser?.username ??
@@ -1229,6 +1235,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstGlobalUser?.username}
                               avatar={firstGlobalUser?.avatar}
+                              frame={firstGlobalUser?.customization?.avatarFrame}
                               alt={t('avatarAlt', {
                                 username:
                                   firstGlobalUser?.username ?? t('unknownUser'),
@@ -1302,6 +1309,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdGlobalUser?.username}
                               avatar={thirdGlobalUser?.avatar}
+                              frame={thirdGlobalUser?.customization?.avatarFrame}
                               alt={t('avatarAlt', {
                                 username:
                                   thirdGlobalUser?.username ?? t('unknownUser'),
@@ -1372,6 +1380,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondMediumUser?.username}
                               avatar={secondMediumUser?.avatar}
+                              frame={secondMediumUser?.customization?.avatarFrame}
                               alt={t('avatarAlt', {
                                 username:
                                   secondMediumUser?.username ??
@@ -1435,6 +1444,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstMediumUser?.username}
                               avatar={firstMediumUser?.avatar}
+                              frame={firstMediumUser?.customization?.avatarFrame}
                               alt={t('avatarAlt', {
                                 username:
                                   firstMediumUser?.username ?? t('unknownUser'),
@@ -1508,6 +1518,7 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdMediumUser?.username}
                               avatar={thirdMediumUser?.avatar}
+                              frame={thirdMediumUser?.customization?.avatarFrame}
                               alt={t('avatarAlt', {
                                 username:
                                   thirdMediumUser?.username ?? t('unknownUser'),
@@ -1600,25 +1611,7 @@ function RankingScreen() {
                       ? rankedUsers?.pages
                       : mediumUsers?.pages
                     )?.map((group, groupIndex) =>
-                      (
-                        group as unknown as Array<{
-                          username: string;
-                          avatar?: string;
-                          stats?: Partial<import('../types').IStats>;
-                          xp?: number;
-                          hours?: number;
-                          episodes?: number;
-                          pages?: number;
-                          chars?: number;
-                          patreon?: {
-                            isActive: boolean;
-                            tier: 'donator' | 'enthusiast' | 'consumer' | null;
-                            customBadgeText?: string;
-                            badgeColor?: string;
-                            badgeTextColor?: string;
-                          };
-                        }>
-                      ).map((user, index) => {
+                      (group as unknown as RankedUser[]).map((user, index) => {
                         const rank = groupIndex * limit + index + 1;
                         const displayValue =
                           mode === 'global'
@@ -1635,6 +1628,9 @@ function RankingScreen() {
                                     ? user.chars || 0
                                     : user.xp || 0;
                         const patreonBadge = getPatreonBadgeProps(user.patreon);
+                        const nameEffect = getNameEffectRender(
+                          user.customization
+                        );
 
                         // Skip top 3 in the table if they're already shown in podium
                         if (
@@ -1664,6 +1660,7 @@ function RankingScreen() {
                                   <UserAvatar
                                     username={user.username}
                                     avatar={user.avatar}
+                                    frame={user?.customization?.avatarFrame}
                                     alt={t('avatarAlt', {
                                       username: user.username,
                                     })}
@@ -1682,10 +1679,16 @@ function RankingScreen() {
                                     })}
                                   >
                                     {/* Username: full on md+, truncated on small screens */}
-                                    <span className="hidden md:inline">
+                                    <span
+                                      className={`hidden md:inline ${nameEffect.className}`}
+                                      style={nameEffect.style}
+                                    >
                                       {user.username}
                                     </span>
-                                    <span className="inline md:hidden truncate max-w-[6rem] sm:max-w-[8rem]">
+                                    <span
+                                      className={`inline md:hidden truncate max-w-[6rem] sm:max-w-[8rem] ${nameEffect.className}`}
+                                      style={nameEffect.style}
+                                    >
                                       {user.username}
                                     </span>
                                     {/* Patreon Badge */}

@@ -31,6 +31,8 @@ import {
   ITextSessionHistoryEntry,
   StatsGroupLayout,
   ProfileWidgetLayout,
+  ICustomizationOptionsResponse,
+  IUserCustomization,
   IGanttMediaItem,
   IAchievement,
   IAnilistStatus,
@@ -1525,6 +1527,23 @@ export async function updateFavoritesFn(
   const { data } = await api.patch<{ favorites: IFavoriteEntry[] }>(
     'users/favorites',
     { favorites }
+  );
+  return data;
+}
+
+export async function getCustomizationFn(): Promise<ICustomizationOptionsResponse> {
+  const { data } = await api.get<ICustomizationOptionsResponse>(
+    'users/me/customization'
+  );
+  return data;
+}
+
+export async function updateCustomizationFn(
+  patch: IUserCustomization
+): Promise<{ customization: IUserCustomization }> {
+  const { data } = await api.patch<{ customization: IUserCustomization }>(
+    'users/me/customization',
+    patch
   );
   return data;
 }

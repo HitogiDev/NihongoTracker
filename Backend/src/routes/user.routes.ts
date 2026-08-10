@@ -17,6 +17,8 @@ import {
   updateProfileLayout,
   updateFavorites,
   getGanttData,
+  getCustomizationOptions,
+  updateCustomization,
 } from '../controllers/users.controller.js';
 import { exportLogsCSV } from '../controllers/export.controller.js';
 import {
@@ -38,6 +40,10 @@ const upload = multer({
 });
 
 router.get('/search', searchUsers);
+
+// Registered before `/:username` so "me" is never treated as a username.
+router.get('/me/customization', protect, getCustomizationOptions);
+router.patch('/me/customization', protect, updateCustomization);
 
 router.get('/compare', compareUserStats);
 
