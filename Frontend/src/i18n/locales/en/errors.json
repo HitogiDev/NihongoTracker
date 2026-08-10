@@ -200,8 +200,10 @@
   "upload": {
     "avatarCropGifOnly": "Avatar cropping is only supported for GIF uploads",
     "avatarCropWithoutFile": "Crop data was sent without an avatar file",
+    "avatarRemoveWithUpload": "You cannot remove and upload an avatar at the same time",
     "bannerCropGifOnly": "Banner cropping is only supported for GIF uploads",
     "bannerCropWithoutFile": "Crop data was sent without a banner file",
+    "bannerRemoveWithUpload": "You cannot remove and upload a banner at the same time",
     "cropOutOfBounds": "Crop area exceeds GIF bounds. Please reselect the crop area and try again.",
     "cropWithoutFile": "Crop data was sent without an avatar or banner file",
     "failed": "File upload failed",

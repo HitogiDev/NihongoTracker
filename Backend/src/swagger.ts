@@ -721,6 +721,18 @@ const swaggerDocument = {
                     description:
                       'Optional JSON crop metadata for GIF banner uploads ({x,y,width,height,sourceWidth,sourceHeight})',
                   },
+                  removeAvatar: {
+                    type: 'string',
+                    enum: ['true'],
+                    description:
+                      'Set to "true" to delete the current avatar. Cannot be combined with an avatar upload.',
+                  },
+                  removeBanner: {
+                    type: 'string',
+                    enum: ['true'],
+                    description:
+                      'Set to "true" to delete the current banner. Cannot be combined with a banner upload.',
+                  },
                 },
               },
             },

@@ -115,6 +115,8 @@ export async function updateUser(
     about,
     avatarCrop,
     bannerCrop,
+    removeAvatar,
+    removeBanner,
   } = req.body as IUpdateRequest;
 
   try {
@@ -129,6 +131,8 @@ export async function updateUser(
         user.patreon?.tier === 'consumer');
     const parsedAvatarCrop = parseGifCropMetadata(avatarCrop, 'avatarCrop');
     const parsedBannerCrop = parseGifCropMetadata(bannerCrop, 'bannerCrop');
+    const shouldRemoveAvatar = removeAvatar === 'true';
+    const shouldRemoveBanner = removeBanner === 'true';
 
     if (newPassword || newPasswordConfirm) {
       if (!password) {
@@ -271,6 +275,22 @@ export async function updateUser(
         );
       }
 
+      if (shouldRemoveAvatar && files.avatar?.[0]) {
+        throw apiError(
+          'upload.avatarRemoveWithUpload',
+          400,
+          'Cannot remove and upload an avatar in the same request'
+        );
+      }
+
+      if (shouldRemoveBanner && files.banner?.[0]) {
+        throw apiError(
+          'upload.bannerRemoveWithUpload',
+          400,
+          'Cannot remove and upload a banner in the same request'
+        );
+      }
+
       if (files.avatar?.[0]) {
         let avatarFile = files.avatar[0];
         const isAvatarGif = isGifFile(avatarFile);
@@ -356,6 +376,20 @@ export async function updateUser(
           'Invalid field name. Only avatar and banner uploads are allowed.'
         );
       }
+    }
+
+    if (shouldRemoveAvatar) {
+      if (user.avatar) {
+        await deleteFile(user.avatar);
+      }
+      user.avatar = '';
+    }
+
+    if (shouldRemoveBanner) {
+      if (user.banner) {
+        await deleteFile(user.banner);
+      }
+      user.banner = '';
     }
 
     if (discordId !== undefined) {

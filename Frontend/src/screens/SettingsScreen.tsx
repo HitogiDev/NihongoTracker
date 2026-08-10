@@ -497,6 +497,8 @@ function SettingsScreen() {
   const [bannerOriginalFileName, setBannerOriginalFileName] = useState<
     string | null
   >(null);
+  const [avatarMarkedForRemoval, setAvatarMarkedForRemoval] = useState(false);
+  const [bannerMarkedForRemoval, setBannerMarkedForRemoval] = useState(false);
   const [importType, setImportType] = useState<
     'tmw' | 'manabe' | 'vncr' | 'kechimochi' | 'other' | null
   >(null);
@@ -577,6 +579,7 @@ function SettingsScreen() {
       setAvatarFileName(null);
       setAvatarOriginalFileName(null);
       setAvatarMimeType(null);
+      setAvatarMarkedForRemoval(false);
       if (avatarPreviewCanvasRef.current) {
         const canvas = avatarPreviewCanvasRef.current;
         const context = canvas.getContext('2d');
@@ -593,6 +596,7 @@ function SettingsScreen() {
       setBannerFileName(null);
       setBannerOriginalFileName(null);
       setBannerMimeType(null);
+      setBannerMarkedForRemoval(false);
       if (bannerPreviewCanvasRef.current) {
         const canvas = bannerPreviewCanvasRef.current;
         const context = canvas.getContext('2d');
@@ -1457,6 +1461,19 @@ function SettingsScreen() {
     const selectedAvatarFile = avatarInputRef.current?.files?.[0];
     const selectedBannerFile = bannerInputRef.current?.files?.[0];
 
+    const removingAvatar =
+      avatarMarkedForRemoval && !croppedAvatarFile && !selectedAvatarFile;
+    const removingBanner =
+      bannerMarkedForRemoval && !croppedBannerFile && !selectedBannerFile;
+
+    if (removingAvatar) {
+      formData.append('removeAvatar', 'true');
+    }
+
+    if (removingBanner) {
+      formData.append('removeBanner', 'true');
+    }
+
     if (croppedAvatarFile) {
       formData.append('avatar', croppedAvatarFile);
     } else if (selectedAvatarFile) {
@@ -1716,6 +1733,50 @@ function SettingsScreen() {
     }
   }, []);
 
+  const handleRemoveAvatarClick = useCallback(() => {
+    setAvatarMarkedForRemoval(true);
+    setShowAvatarCrop(false);
+    setAvatarSrc('');
+    setAvatarFileName(null);
+    setAvatarOriginalFileName(null);
+    setCroppedAvatarFile(null);
+    setAvatarCropMetadata(null);
+    setAvatarMimeType(null);
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = '';
+    }
+    if (avatarPreviewCanvasRef.current) {
+      const canvas = avatarPreviewCanvasRef.current;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      canvas.classList.add('hidden');
+    }
+  }, []);
+
+  const handleRemoveBannerClick = useCallback(() => {
+    setBannerMarkedForRemoval(true);
+    setShowBannerCrop(false);
+    setBannerSrc('');
+    setBannerFileName(null);
+    setBannerOriginalFileName(null);
+    setCroppedBannerFile(null);
+    setBannerCropMetadata(null);
+    setBannerMimeType(null);
+    if (bannerInputRef.current) {
+      bannerInputRef.current.value = '';
+    }
+    if (bannerPreviewCanvasRef.current) {
+      const canvas = bannerPreviewCanvasRef.current;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      canvas.classList.add('hidden');
+    }
+  }, []);
+
   function onSelectAvatarFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1726,6 +1787,7 @@ function SettingsScreen() {
       return;
     }
 
+    setAvatarMarkedForRemoval(false);
     setAvatarFileName(file.name);
     setAvatarOriginalFileName(file.name);
     setAvatarMimeType(file.type);
@@ -1747,6 +1809,7 @@ function SettingsScreen() {
       return;
     }
 
+    setBannerMarkedForRemoval(false);
     setBannerFileName(file.name);
     setBannerOriginalFileName(file.name);
     setBannerMimeType(file.type);
@@ -2232,22 +2295,51 @@ function SettingsScreen() {
                                 </span>
                               )}
                             </label>
+                            {user?.avatar &&
+                              !croppedAvatarFile &&
+                              !avatarCropMetadata &&
+                              (avatarMarkedForRemoval ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs text-warning">
+                                    {t('profile.removeAvatarPending')}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="btn btn-ghost btn-xs"
+                                    onClick={() =>
+                                      setAvatarMarkedForRemoval(false)
+                                    }
+                                  >
+                                    {t('profile.undoRemove')}
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-error btn-xs"
+                                  onClick={handleRemoveAvatarClick}
+                                >
+                                  {t('profile.removeAvatar')}
+                                </button>
+                              ))}
                           </div>
                           {user?.avatar ||
                           croppedAvatarFile ||
                           avatarCropMetadata ? (
                             <div className="flex flex-col items-center gap-2">
-                              {user?.avatar && !croppedAvatarFile && (
-                                <img
-                                  src={user.avatar}
-                                  alt={t('profile.currentAvatarAlt')}
-                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
-                                  style={{
-                                    width: 120,
-                                    height: 120,
-                                  }}
-                                />
-                              )}
+                              {user?.avatar &&
+                                !croppedAvatarFile &&
+                                !avatarMarkedForRemoval && (
+                                  <img
+                                    src={user.avatar}
+                                    alt={t('profile.currentAvatarAlt')}
+                                    className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
+                                    style={{
+                                      width: 120,
+                                      height: 120,
+                                    }}
+                                  />
+                                )}
                               <canvas
                                 ref={avatarPreviewCanvasRef}
                                 className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
@@ -2302,21 +2394,50 @@ function SettingsScreen() {
                                 </span>
                               )}
                             </label>
+                            {user?.banner &&
+                              !croppedBannerFile &&
+                              !bannerCropMetadata &&
+                              (bannerMarkedForRemoval ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs text-warning">
+                                    {t('profile.removeBannerPending')}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="btn btn-ghost btn-xs"
+                                    onClick={() =>
+                                      setBannerMarkedForRemoval(false)
+                                    }
+                                  >
+                                    {t('profile.undoRemove')}
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-error btn-xs self-start"
+                                  onClick={handleRemoveBannerClick}
+                                >
+                                  {t('profile.removeBanner')}
+                                </button>
+                              ))}
                           </div>
                           {user?.banner ||
                           croppedBannerFile ||
                           bannerCropMetadata ? (
                             <>
-                              {user?.banner && !croppedBannerFile && (
-                                <img
-                                  src={user.banner}
-                                  alt={t('profile.currentBannerAlt')}
-                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
-                                  style={{
-                                    maxHeight: 150,
-                                  }}
-                                />
-                              )}
+                              {user?.banner &&
+                                !croppedBannerFile &&
+                                !bannerMarkedForRemoval && (
+                                  <img
+                                    src={user.banner}
+                                    alt={t('profile.currentBannerAlt')}
+                                    className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
+                                    style={{
+                                      maxHeight: 150,
+                                    }}
+                                  />
+                                )}
                               <canvas
                                 ref={bannerPreviewCanvasRef}
                                 className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"

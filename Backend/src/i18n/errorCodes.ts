@@ -80,6 +80,8 @@ export const ERROR_CODES = [
   'upload.gifBannerTierRequired',
   'upload.bannerCropGifOnly',
   'upload.invalidFieldName',
+  'upload.avatarRemoveWithUpload',
+  'upload.bannerRemoveWithUpload',
 
   // Media and immersion list
   'media.notFound',

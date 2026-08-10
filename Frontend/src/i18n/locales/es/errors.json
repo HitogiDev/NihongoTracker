@@ -200,8 +200,10 @@
   "upload": {
     "avatarCropGifOnly": "El recorte de avatar solo funciona con archivos GIF",
     "avatarCropWithoutFile": "Se enviaron datos de recorte sin ningún archivo de avatar",
+    "avatarRemoveWithUpload": "No puedes eliminar y subir un avatar al mismo tiempo",
     "bannerCropGifOnly": "El recorte de cabecera solo funciona con archivos GIF",
     "bannerCropWithoutFile": "Se enviaron datos de recorte sin ningún archivo de cabecera",
+    "bannerRemoveWithUpload": "No puedes eliminar y subir una cabecera al mismo tiempo",
     "cropOutOfBounds": "El área de recorte excede los límites del GIF. Vuelve a seleccionarla e inténtalo de nuevo.",
     "cropWithoutFile": "Se enviaron datos de recorte sin ningún archivo de avatar o cabecera",
     "failed": "Fallo al subir el archivo",

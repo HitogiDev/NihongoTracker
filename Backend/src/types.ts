@@ -745,6 +745,8 @@ export interface IUpdateRequest {
   about?: string;
   avatarCrop?: string;
   bannerCrop?: string;
+  removeAvatar?: string;
+  removeBanner?: string;
 }
 
 export interface IRegister {
