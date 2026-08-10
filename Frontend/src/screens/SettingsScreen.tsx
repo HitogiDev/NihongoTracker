@@ -169,6 +169,12 @@ const MAX_MEDIA_SIZE_MB_PATREON = 8;
 const AVATAR_DIMENSIONS = '230x230';
 const BANNER_DIMENSIONS = '1700x330';
 
+// The profile header paints the banner with `bg-cover` at a fixed height, so a
+// crop that is taller than the header gets cut again on display. Crop at the
+// header's own ratio instead: only the sides are trimmed on narrow screens.
+const BANNER_ASPECT_RATIO = 1700 / 330;
+const BANNER_ASPECT_CSS = '1700 / 330';
+
 const toBytesFromMb = (mb: number): number => mb * 1024 * 1024;
 
 const isGifMimeType = (mimeType?: string | null): boolean =>
@@ -1525,7 +1531,7 @@ function SettingsScreen() {
   const getInitialBannerCrop = useCallback(
     (image: HTMLImageElement): PercentCrop => {
       const { naturalWidth, naturalHeight } = image;
-      const targetAspectRatio = 21 / 9;
+      const targetAspectRatio = BANNER_ASPECT_RATIO;
       const imageAspectRatio = naturalWidth / naturalHeight;
 
       let cropWidthPercent: number;
@@ -2124,9 +2130,9 @@ function SettingsScreen() {
         title={t('crop.bannerTitle')}
         imageSrc={bannerSrc}
         isOpen={showBannerCrop}
-        aspect={21 / 9}
-        minWidth={105}
-        minHeight={45}
+        aspect={BANNER_ASPECT_RATIO}
+        minWidth={170}
+        minHeight={33}
         keepSelection
         ruleOfThirds
         onClose={handleBannerCropClose}
@@ -2323,39 +2329,39 @@ function SettingsScreen() {
                                 </button>
                               ))}
                           </div>
-                          {user?.avatar ||
-                          croppedAvatarFile ||
-                          avatarCropMetadata ? (
-                            <div className="flex flex-col items-center gap-2">
-                              {user?.avatar &&
-                                !croppedAvatarFile &&
-                                !avatarMarkedForRemoval && (
-                                  <img
-                                    src={user.avatar}
-                                    alt={t('profile.currentAvatarAlt')}
-                                    className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
-                                    style={{
-                                      width: 120,
-                                      height: 120,
-                                    }}
-                                  />
-                                )}
-                              <canvas
-                                ref={avatarPreviewCanvasRef}
-                                className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
-                                style={{
-                                  objectFit: 'contain',
-                                  width: 120,
-                                  height: 120,
-                                }}
-                              />
-                              {avatarCropMetadata && !croppedAvatarFile && (
-                                <span className="text-xs text-success text-center max-w-[120px]">
-                                  {t('profile.gifCropOnSave')}
-                                </span>
+                          {/* Always mounted: handleAvatarCropApply draws into
+                              this canvas, so gating it on an existing avatar
+                              would silently drop the crop for users without
+                              one. */}
+                          <div className="flex flex-col items-center gap-2">
+                            {user?.avatar &&
+                              !croppedAvatarFile &&
+                              !avatarMarkedForRemoval && (
+                                <img
+                                  src={user.avatar}
+                                  alt={t('profile.currentAvatarAlt')}
+                                  className="rounded-lg border-2 border-base-300 shadow-sm object-cover"
+                                  style={{
+                                    width: 120,
+                                    height: 120,
+                                  }}
+                                />
                               )}
-                            </div>
-                          ) : null}
+                            <canvas
+                              ref={avatarPreviewCanvasRef}
+                              className="rounded-lg border-2 border-base-300 hidden shadow-sm flex-shrink-0"
+                              style={{
+                                objectFit: 'contain',
+                                width: 120,
+                                height: 120,
+                              }}
+                            />
+                            {avatarCropMetadata && !croppedAvatarFile && (
+                              <span className="text-xs text-success text-center max-w-[120px]">
+                                {t('profile.gifCropOnSave')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -2422,37 +2428,32 @@ function SettingsScreen() {
                                 </button>
                               ))}
                           </div>
-                          {user?.banner ||
-                          croppedBannerFile ||
-                          bannerCropMetadata ? (
-                            <>
-                              {user?.banner &&
-                                !croppedBannerFile &&
-                                !bannerMarkedForRemoval && (
-                                  <img
-                                    src={user.banner}
-                                    alt={t('profile.currentBannerAlt')}
-                                    className="rounded-lg border-2 border-base-300 shadow-sm object-cover w-full"
-                                    style={{
-                                      maxHeight: 150,
-                                    }}
-                                  />
-                                )}
-                              <canvas
-                                ref={bannerPreviewCanvasRef}
-                                className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
+                          {/* Always mounted — see the avatar canvas above. */}
+                          {user?.banner &&
+                            !croppedBannerFile &&
+                            !bannerMarkedForRemoval && (
+                              <img
+                                src={user.banner}
+                                alt={t('profile.currentBannerAlt')}
+                                className="rounded-lg border-2 border-base-300 shadow-sm object-cover object-center w-full"
                                 style={{
-                                  objectFit: 'contain',
-                                  maxHeight: 150,
+                                  aspectRatio: BANNER_ASPECT_CSS,
                                 }}
                               />
-                              {bannerCropMetadata && !croppedBannerFile && (
-                                <span className="text-xs text-success">
-                                  {t('profile.gifCropOnSave')}
-                                </span>
-                              )}
-                            </>
-                          ) : null}
+                            )}
+                          <canvas
+                            ref={bannerPreviewCanvasRef}
+                            className="rounded-lg border-2 border-base-300 hidden shadow-sm w-full"
+                            style={{
+                              objectFit: 'cover',
+                              aspectRatio: BANNER_ASPECT_CSS,
+                            }}
+                          />
+                          {bannerCropMetadata && !croppedBannerFile && (
+                            <span className="text-xs text-success">
+                              {t('profile.gifCropOnSave')}
+                            </span>
+                          )}
                         </div>
                       </div>
 

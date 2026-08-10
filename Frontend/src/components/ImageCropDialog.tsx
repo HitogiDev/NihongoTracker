@@ -51,39 +51,52 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
     const [crop, setCrop] = useState<PercentCrop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
 
+    const applyInitialCrop = useCallback(
+      (image: HTMLImageElement) => {
+        imgRef.current = image;
+        if (!getInitialCrop) {
+          return;
+        }
+
+        const initialCrop = getInitialCrop(image);
+        setCrop(initialCrop);
+        if (initialCrop.width && initialCrop.height) {
+          setCompletedCrop(
+            convertToPixelCrop(
+              initialCrop,
+              image.naturalWidth,
+              image.naturalHeight
+            )
+          );
+        }
+      },
+      [getInitialCrop]
+    );
+
     useEffect(() => {
       if (!isOpen) {
         setCrop(undefined);
         setCompletedCrop(undefined);
+        return;
       }
-    }, [isOpen]);
 
-    useEffect(() => {
-      if (isOpen) {
+      // `data:` URLs can finish decoding before this effect runs, so onLoad may
+      // already have set the initial crop — clearing it here would leave the
+      // dialog with no selection at all. Re-apply it instead of wiping it.
+      const image = imgRef.current;
+      if (image?.complete && image.naturalWidth && image.src === imageSrc) {
+        applyInitialCrop(image);
+      } else {
         setCrop(undefined);
         setCompletedCrop(undefined);
       }
-    }, [imageSrc, isOpen]);
+    }, [imageSrc, isOpen, applyInitialCrop]);
 
     const handleImageLoad = useCallback(
       (event: React.SyntheticEvent<HTMLImageElement>) => {
-        const image = event.currentTarget;
-        imgRef.current = image;
-        if (getInitialCrop) {
-          const initialCrop = getInitialCrop(image);
-          setCrop(initialCrop);
-          if (initialCrop.width && initialCrop.height) {
-            setCompletedCrop(
-              convertToPixelCrop(
-                initialCrop,
-                image.naturalWidth,
-                image.naturalHeight
-              )
-            );
-          }
-        }
+        applyInitialCrop(event.currentTarget);
       },
-      [getInitialCrop]
+      [applyInitialCrop]
     );
 
     useEffect(() => {
@@ -127,6 +140,10 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
           <h3 className="font-bold text-lg mb-4">{title}</h3>
           <div className="flex justify-center">
             <ReactCrop
+              // react-image-crop's stylesheet sets `max-height: inherit` on the
+              // image with higher specificity than any utility class, so the
+              // size cap has to live on the wrapper and be inherited down.
+              className="max-h-[60vh] max-w-full"
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               aspect={aspect}
@@ -140,7 +157,6 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
                 src={imageSrc}
                 alt={title}
                 onLoad={handleImageLoad}
-                className="max-h-96"
               />
             </ReactCrop>
           </div>
