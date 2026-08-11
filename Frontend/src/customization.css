@@ -96,11 +96,6 @@
   background: linear-gradient(135deg, #fff0a6, #ffd700 45%, #b8860b);
 }
 
-.avatar-frame--streak {
-  background: linear-gradient(135deg, #ffd166, #f7681f 55%, #c02a10);
-  animation: frame-flicker 2.4s ease-in-out infinite;
-}
-
 .avatar-frame--sakura {
   background: linear-gradient(135deg, #ffe3ef, #f79ac0 50%, #d94f8a);
   animation: frame-breathe 3.2s ease-in-out infinite;
@@ -146,16 +141,6 @@
   }
   to {
     rotate: -360deg;
-  }
-}
-
-@keyframes frame-flicker {
-  0%,
-  100% {
-    box-shadow: 0 0 10px 1px rgba(247, 104, 31, 0.55);
-  }
-  50% {
-    box-shadow: 0 0 18px 4px rgba(247, 104, 31, 0.8);
   }
 }
 
@@ -296,7 +281,6 @@
 /* Motion-sensitive visitors get the cosmetics without the movement. */
 @media (prefers-reduced-motion: reduce) {
   .name-effect--shimmer,
-  .avatar-frame--streak,
   .avatar-frame--sakura,
   .avatar-frame--neon,
   .avatar-frame--rainbow,

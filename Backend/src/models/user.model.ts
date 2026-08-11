@@ -19,6 +19,7 @@ import {
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
+import { getCustomizationDowngrade } from '../services/customization.js';
 import Tag from './tag.model.js';
 
 const FAVORITE_MEDIA_TYPES = [
@@ -289,6 +290,36 @@ UserSchema.pre('save', async function (next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
+  next();
+});
+
+/**
+ * Losing a Patreon tier takes the paid cosmetics with it.
+ *
+ * Exported so it can be tested against a real document without a database —
+ * the hook below is the only caller.
+ */
+export function applyPatreonCustomizationDowngrade(user: IUser): boolean {
+  // No `isModified('patreon')` guard: it does not report nested writes like
+  // `user.patreon.isActive = false`, which is how half the call sites clear a
+  // tier. Recomputing is two small objects and a field comparison, and running
+  // it on every save means a document can never drift out of entitlement.
+  const downgrade = getCustomizationDowngrade(user.customization, user.patreon);
+  if (!downgrade) return false;
+
+  user.set('customization', downgrade);
+  return true;
+}
+
+/**
+ * This lives on the model rather than at the call sites because the tier is
+ * cleared from half a dozen places — the webhook, the OAuth sync, unlinking,
+ * the admin panel, and the manual-expiry check in `authMiddleware` — and every
+ * one of them ends in `user.save()`. One hook cannot be forgotten by the next
+ * one added.
+ */
+UserSchema.pre('save', function (next) {
+  applyPatreonCustomizationDowngrade(this);
   next();
 });
 
