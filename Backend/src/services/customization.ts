@@ -21,8 +21,8 @@ import { Types } from 'mongoose';
 /**
  * Cosmetic unlock rules.
  *
- * Two currencies buy customization here: merit (level, streak, achievements)
- * and money (an active Patreon tier). Everything is decided in this module so
+ * Two currencies buy customization here: merit (level, achievements) and money
+ * (an active Patreon tier). Everything is decided in this module so
  * the controller never has to reason about tiers, and so the "what can I equip"
  * endpoint and the write validation can never drift apart — both read the same
  * `CustomizationCapabilities`.
@@ -34,9 +34,6 @@ const FRAME_LEVEL_REQUIREMENTS: Partial<Record<AvatarFrame, number>> = {
   silver: 15,
   gold: 30,
 };
-
-/** Longest streak (in days) needed for the flame frame. */
-const STREAK_FRAME_REQUIREMENT = 30;
 
 /** Frames that animate — the paid-only ones. */
 const PREMIUM_PLUS_FRAMES: AvatarFrame[] = ['sakura', 'neon', 'rainbow'];
@@ -51,7 +48,6 @@ export type CustomizationLockReason =
   | 'patreon'
   | 'patreonPlus'
   | 'level'
-  | 'streak'
   | 'achievement';
 
 export interface CustomizationOption<T extends string> {
@@ -59,13 +55,12 @@ export interface CustomizationOption<T extends string> {
   unlocked: boolean;
   /** Why it is locked, so the UI can explain it without duplicating the rules. */
   lockReason: CustomizationLockReason;
-  /** Level/streak threshold behind `lockReason`, when there is one. */
+  /** Level threshold behind `lockReason`, when there is one. */
   requirement?: number;
 }
 
 export interface CustomizationCapabilities {
   level: number;
-  longestStreak: number;
   /** Any active Patreon tier. */
   isPremium: boolean;
   /** Enthusiast or Consumer — the tiers that unlock animated cosmetics. */
@@ -99,7 +94,6 @@ export async function getCustomizationCapabilities(
 
   return {
     level: user.stats?.userLevel ?? 1,
-    longestStreak: user.stats?.longestStreak ?? 0,
     isPremium: isActive,
     isPremiumPlus: isActive && (tier === 'enthusiast' || tier === 'consumer'),
     unlockedTitleKeys,
@@ -147,15 +141,6 @@ function frameOption(
       unlocked: caps.level >= levelRequirement,
       lockReason: 'level',
       requirement: levelRequirement,
-    };
-  }
-
-  if (frame === 'streak') {
-    return {
-      value: frame,
-      unlocked: caps.longestStreak >= STREAK_FRAME_REQUIREMENT,
-      lockReason: 'streak',
-      requirement: STREAK_FRAME_REQUIREMENT,
     };
   }
 
@@ -469,6 +454,43 @@ export function sanitizeCustomizationForDisplay(
   }
 
   return value;
+}
+
+/** Capabilities of someone who owns everything money can buy. */
+const FULL_PAID_ACCESS = { isPremium: true, isPremiumPlus: true } as const;
+
+/**
+ * What the stored customization has to become now that the user's paid access
+ * changed, or `null` when it can stay as it is.
+ *
+ * `sanitizeCustomizationForDisplay` already hides cosmetics a lapsed supporter
+ * no longer owns, but it never writes them back, and hiding is not enough: the
+ * owner's own settings page would still show a locked option selected, and
+ * every read path added later would have to remember to sanitize. When a tier
+ * actually goes away the downgrade gets persisted — see the `pre('save')` hook
+ * in `models/user.model.ts`, which is where this is called from.
+ *
+ * Both sides of the comparison go through the same sanitizer, once with full
+ * access and once with the real one, so "what changed" can never drift from
+ * "what is allowed".
+ */
+export function getCustomizationDowngrade(
+  customization: IUserCustomization | undefined,
+  patreon: IUser['patreon']
+): IUserCustomization | null {
+  const stored = sanitizeCustomizationForDisplay(
+    customization,
+    FULL_PAID_ACCESS
+  );
+  const allowed = sanitizeCustomizationForDisplay(
+    customization,
+    getDisplayCapabilities(patreon)
+  );
+
+  const keys = Object.keys(allowed) as (keyof IUserCustomization)[];
+  const changed = keys.some((key) => allowed[key] !== stored[key]);
+
+  return changed ? allowed : null;
 }
 
 /**

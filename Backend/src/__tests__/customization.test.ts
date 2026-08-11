@@ -48,6 +48,7 @@ import {
   sanitizeCustomizationForDisplay,
   computeSignatureValues,
   getDisplayCapabilities,
+  getCustomizationDowngrade,
 } from '../services/customization.js';
 
 type TestUser = Parameters<typeof listCustomizationOptions>[0] & {
@@ -56,7 +57,6 @@ type TestUser = Parameters<typeof listCustomizationOptions>[0] & {
 
 function makeUser(overrides?: {
   level?: number;
-  longestStreak?: number;
   tier?: 'donator' | 'enthusiast' | 'consumer' | null;
   isActive?: boolean;
   customization?: Record<string, unknown>;
@@ -65,7 +65,7 @@ function makeUser(overrides?: {
     _id: new Types.ObjectId(),
     stats: {
       userLevel: overrides?.level ?? 1,
-      longestStreak: overrides?.longestStreak ?? 0,
+      longestStreak: 0,
       currentStreak: 0,
       userXp: 5000,
     },
@@ -93,17 +93,6 @@ describe('listCustomizationOptions', () => {
     expect(byValue.gold.unlocked).toBe(false);
     expect(byValue.gold.lockReason).toBe('level');
     expect(byValue.gold.requirement).toBe(30);
-  });
-
-  it('unlocks the streak frame from the longest streak, not the current one', async () => {
-    const options = await listCustomizationOptions(
-      makeUser({ longestStreak: 30 })
-    );
-    const streak = options.avatarFrames.find(
-      (frame) => frame.value === 'streak'
-    );
-
-    expect(streak?.unlocked).toBe(true);
   });
 
   it('keeps animated frames and banner effects behind the higher tiers', async () => {
@@ -346,6 +335,80 @@ describe('sanitizeCustomizationForDisplay', () => {
       equippedTitle: '',
       bannerEffect: 'none',
     });
+  });
+});
+
+describe('getCustomizationDowngrade', () => {
+  const paid = {
+    nameEffect: 'shimmer' as const,
+    nameColor1: '#ff0000',
+    nameColor2: '#00ff00',
+    avatarFrame: 'rainbow' as const,
+    profileAccent: 'custom' as const,
+    accentColor: '#123456',
+    signatureStat: 'hours' as const,
+    equippedTitle: 'century_club',
+    bannerEffect: 'snow' as const,
+  };
+
+  it('returns the stripped value when the tier is gone', () => {
+    const next = getCustomizationDowngrade(paid, {
+      tier: null,
+      isActive: false,
+    });
+
+    expect(next).not.toBeNull();
+    expect(next?.nameEffect).toBe('none');
+    expect(next?.nameColor1).toBe('');
+    expect(next?.avatarFrame).toBe('none');
+    expect(next?.profileAccent).toBe('default');
+    expect(next?.accentColor).toBe('');
+    expect(next?.bannerEffect).toBe('none');
+  });
+
+  it('keeps what merit paid for', () => {
+    const next = getCustomizationDowngrade(
+      { ...paid, avatarFrame: 'gold' },
+      { tier: null, isActive: false }
+    );
+
+    expect(next?.avatarFrame).toBe('gold');
+    expect(next?.signatureStat).toBe('hours');
+    expect(next?.equippedTitle).toBe('century_club');
+  });
+
+  it('only strips the higher-tier perks when a tier remains', () => {
+    const next = getCustomizationDowngrade(
+      { ...paid, profileAccent: 'ocean', accentColor: '' },
+      { tier: 'donator', isActive: true }
+    );
+
+    expect(next?.avatarFrame).toBe('none');
+    expect(next?.bannerEffect).toBe('none');
+    // Still an active supporter, so the non-animated perks stay.
+    expect(next?.profileAccent).toBe('ocean');
+    expect(next?.nameColor1).toBe('#ff0000');
+  });
+
+  it('returns null when the user still owns everything equipped', () => {
+    expect(
+      getCustomizationDowngrade(paid, { tier: 'consumer', isActive: true })
+    ).toBeNull();
+  });
+
+  it('returns null for a user who never customized anything', () => {
+    expect(
+      getCustomizationDowngrade(undefined, { tier: null, isActive: false })
+    ).toBeNull();
+  });
+
+  it('ignores a tier flagged inactive, however high it is', () => {
+    const next = getCustomizationDowngrade(paid, {
+      tier: 'consumer',
+      isActive: false,
+    });
+
+    expect(next?.nameEffect).toBe('none');
   });
 });
 

@@ -104,7 +104,6 @@ export const AVATAR_FRAMES = [
   'bronze',
   'silver',
   'gold',
-  'streak',
   'sakura',
   'neon',
   'rainbow',

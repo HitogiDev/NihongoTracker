@@ -133,10 +133,6 @@ export default function CustomizationSettings() {
         return t('customization.locks.level', {
           level: option.requirement ?? 0,
         });
-      case 'streak':
-        return t('customization.locks.streak', {
-          days: option.requirement ?? 0,
-        });
       default:
         return '';
     }

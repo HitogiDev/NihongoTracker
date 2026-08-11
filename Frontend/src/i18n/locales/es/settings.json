@@ -148,8 +148,7 @@
       "none": "Ninguno",
       "rainbow": "Arcoíris",
       "sakura": "Sakura",
-      "silver": "Plata",
-      "streak": "Llama de racha"
+      "silver": "Plata"
     },
     "bannerEffect": "Efecto de la cabecera",
     "bannerEffectHint": "Partículas que flotan sobre la cabecera de tu perfil.",
@@ -176,8 +175,7 @@
     "locks": {
       "level": "Alcanza el nivel {{level}}",
       "patreon": "Cualquier nivel de Patreon activo",
-      "patreonPlus": "Nivel Enthusiast o Consumer",
-      "streak": "Alcanza una racha de {{days}} días"
+      "patreonPlus": "Nivel Enthusiast o Consumer"
     },
     "nameEffect": "Efecto del nombre",
     "nameEffectHint": "Cómo se pinta tu nombre de usuario en tu perfil.",

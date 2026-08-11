@@ -154,7 +154,6 @@ export type AvatarFrame =
   | 'bronze'
   | 'silver'
   | 'gold'
-  | 'streak'
   | 'sakura'
   | 'neon'
   | 'rainbow';
@@ -194,7 +193,6 @@ export type CustomizationLockReason =
   | 'patreon'
   | 'patreonPlus'
   | 'level'
-  | 'streak'
   | 'achievement';
 
 export interface ICustomizationOption<T extends string> {
