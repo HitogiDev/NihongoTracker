@@ -3,13 +3,25 @@ npm-debug.log
 .git
 .gitignore
 README.md
-.env
 .nyc_output
 coverage
+
+# Secrets. These patterns are relative to the build context root, so a bare
+# `.env` only ever matched `/.env` — `Backend/.env` was copied into the image by
+# `COPY Backend ./Backend` and shipped with every push. At runtime the server's
+# own file arrives through compose (`env_file` plus the read-only bind mount),
+# so the image must not carry one.
+.env
+Backend/.env
 .env.local
+Frontend/.env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Frontend/.env.production is deliberately NOT ignored: the image builds the SPA
+# (`npm run build` in the Dockerfile) and Vite reads it then. Its values ship
+# inside the bundle to every visitor anyway — nothing secret belongs in it.
 **/.DS_Store
 **/Thumbs.db
 Backend/dist
