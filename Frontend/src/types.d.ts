@@ -156,7 +156,9 @@ export type AvatarFrame =
   | 'gold'
   | 'sakura'
   | 'neon'
-  | 'rainbow';
+  | 'rainbow'
+  /** Consumer-tier only. Rendered with daisyUI's `aura` component. */
+  | 'aura';
 export type ProfileAccent =
   | 'default'
   | 'sakura'
@@ -192,6 +194,8 @@ export type CustomizationLockReason =
   | 'none'
   | 'patreon'
   | 'patreonPlus'
+  /** Consumer tier specifically, not just "one of the higher tiers". */
+  | 'patreonConsumer'
   | 'level'
   | 'achievement';
 

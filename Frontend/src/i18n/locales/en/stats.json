@@ -149,7 +149,7 @@
     "custom": "Custom",
     "generateFailed": "Failed to generate stats image",
     "shareFailed": "Could not share the image",
-    "downloadedInstead": "Sharing not supported here — image downloaded instead",
+    "downloadedInstead": "Sharing not supported here, image downloaded instead",
     "from": "From",
     "to": "To",
     "pickDates": "Pick a start and end date.",

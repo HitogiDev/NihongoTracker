@@ -38,6 +38,13 @@ const FRAME_LEVEL_REQUIREMENTS: Partial<Record<AvatarFrame, number>> = {
 /** Frames that animate — the paid-only ones. */
 const PREMIUM_PLUS_FRAMES: AvatarFrame[] = ['sakura', 'neon', 'rainbow'];
 
+/**
+ * Frames reserved for the top tier alone. Unlike `PREMIUM_PLUS_FRAMES`, an
+ * Enthusiast does not get these — they are the one cosmetic that separates
+ * Consumer from the tier below it.
+ */
+const CONSUMER_ONLY_FRAMES: AvatarFrame[] = ['aura'];
+
 /** Gradient/glow need any active tier; shimmer animates, so it costs more. */
 const PREMIUM_PLUS_NAME_EFFECTS: NameEffect[] = ['shimmer'];
 
@@ -47,6 +54,8 @@ export type CustomizationLockReason =
   | 'none'
   | 'patreon'
   | 'patreonPlus'
+  /** Consumer tier specifically, not just "one of the higher tiers". */
+  | 'patreonConsumer'
   | 'level'
   | 'achievement';
 
@@ -65,6 +74,8 @@ export interface CustomizationCapabilities {
   isPremium: boolean;
   /** Enthusiast or Consumer — the tiers that unlock animated cosmetics. */
   isPremiumPlus: boolean;
+  /** Consumer alone — the top tier's exclusive cosmetics. */
+  isConsumer: boolean;
   /** Achievement `key`s the user has unlocked, usable as equippable titles. */
   unlockedTitleKeys: Set<string>;
 }
@@ -96,6 +107,7 @@ export async function getCustomizationCapabilities(
     level: user.stats?.userLevel ?? 1,
     isPremium: isActive,
     isPremiumPlus: isActive && (tier === 'enthusiast' || tier === 'consumer'),
+    isConsumer: isActive && tier === 'consumer',
     unlockedTitleKeys,
   };
 }
@@ -141,6 +153,14 @@ function frameOption(
       unlocked: caps.level >= levelRequirement,
       lockReason: 'level',
       requirement: levelRequirement,
+    };
+  }
+
+  if (CONSUMER_ONLY_FRAMES.includes(frame)) {
+    return {
+      value: frame,
+      unlocked: caps.isConsumer,
+      lockReason: 'patreonConsumer',
     };
   }
 
@@ -394,7 +414,10 @@ export async function resolveCustomizationUpdate(
  */
 export function sanitizeCustomizationForDisplay(
   customization: IUserCustomization | undefined,
-  caps: Pick<CustomizationCapabilities, 'isPremium' | 'isPremiumPlus'>
+  caps: Pick<
+    CustomizationCapabilities,
+    'isPremium' | 'isPremiumPlus' | 'isConsumer'
+  >
 ): IUserCustomization {
   // Field by field rather than a spread: `customization` is a Mongoose
   // subdocument whose values live behind prototype getters, so spreading it
@@ -449,6 +472,16 @@ export function sanitizeCustomizationForDisplay(
     value.avatarFrame = 'none';
   }
 
+  // Dropping from Consumer to Enthusiast keeps the animated frames but not the
+  // top-tier-only one.
+  if (
+    !caps.isConsumer &&
+    value.avatarFrame &&
+    CONSUMER_ONLY_FRAMES.includes(value.avatarFrame)
+  ) {
+    value.avatarFrame = 'none';
+  }
+
   if (!caps.isPremiumPlus && value.bannerEffect && value.bannerEffect !== 'none') {
     value.bannerEffect = 'none';
   }
@@ -457,7 +490,11 @@ export function sanitizeCustomizationForDisplay(
 }
 
 /** Capabilities of someone who owns everything money can buy. */
-const FULL_PAID_ACCESS = { isPremium: true, isPremiumPlus: true } as const;
+const FULL_PAID_ACCESS = {
+  isPremium: true,
+  isPremiumPlus: true,
+  isConsumer: true,
+} as const;
 
 /**
  * What the stored customization has to become now that the user's paid access
@@ -555,12 +592,16 @@ export async function computeSignatureValue(
 /** Cheap capability check for display paths that must not hit the DB. */
 export function getDisplayCapabilities(
   patreon: IUser['patreon']
-): Pick<CustomizationCapabilities, 'isPremium' | 'isPremiumPlus'> {
+): Pick<
+  CustomizationCapabilities,
+  'isPremium' | 'isPremiumPlus' | 'isConsumer'
+> {
   const tier = patreon?.tier ?? null;
   const isActive = Boolean(patreon?.isActive) && tier !== null;
 
   return {
     isPremium: isActive,
     isPremiumPlus: isActive && (tier === 'enthusiast' || tier === 'consumer'),
+    isConsumer: isActive && tier === 'consumer',
   };
 }

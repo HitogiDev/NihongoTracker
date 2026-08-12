@@ -56,8 +56,23 @@ export function getNameEffectRender(
   }
 }
 
+/**
+ * `aura` is daisyUI's component rather than one of our hand-drawn rings, so it
+ * gets a complete literal class string: Tailwind scans source text and would
+ * never generate `aura-rainbow` from an interpolated name. `avatar-frame--aura`
+ * only adapts it to a circular avatar (see customization.css).
+ *
+ * The 2s rotation period is set as `--tw-duration` inside `avatar-frame--aura`
+ * rather than with a Tailwind duration utility: those also emit
+ * `transition-duration`, and since `transition-property` defaults to `all`, it
+ * turned every layout change on the avatar (the image finishing loading) into a
+ * two-second glide that pushed the username beside it around.
+ */
+const AURA_FRAME_CLASS = 'aura aura-rainbow avatar-frame--aura';
+
 export function getAvatarFrameClass(frame?: AvatarFrame | null): string {
   if (!frame || frame === 'none') return '';
+  if (frame === 'aura') return AURA_FRAME_CLASS;
   return `avatar-frame avatar-frame--${frame}`;
 }
 

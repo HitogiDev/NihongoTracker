@@ -3717,8 +3717,8 @@ function SettingsScreen() {
                           <div className="alert alert-success mb-4 max-w-full overflow-hidden">
                             <div className="w-full min-w-0 space-y-2">
                               <p className="font-semibold text-sm leading-snug">
-                                Key created — copy it now, it won&apos;t be
-                                shown again!
+                                Key created, copy it now, it won&apos;t be shown
+                                again!
                               </p>
 
                               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 min-w-0">

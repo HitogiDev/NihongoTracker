@@ -142,6 +142,7 @@
     "avatarFrame": "Avatar frame",
     "avatarFrameHint": "A ring around your avatar. Metal frames are earned by leveling up; animated ones come with a Patreon tier.",
     "avatarFrames": {
+      "aura": "Aura",
       "bronze": "Bronze",
       "gold": "Gold",
       "neon": "Neon",
@@ -162,7 +163,7 @@
     "color1": "Color 1",
     "color2": "Color 2",
     "profileAccent": "Profile accent",
-    "profileAccentHint": "Recolors your whole profile page for visitors — heatmap, progress bars, buttons and highlights.",
+    "profileAccentHint": "Recolors your whole profile page for visitors: heatmap, progress bars, buttons and highlights.",
     "profileAccents": {
       "custom": "Custom",
       "default": "Theme",
@@ -175,6 +176,7 @@
     "locks": {
       "level": "Reach level {{level}}",
       "patreon": "Any active Patreon tier",
+      "patreonConsumer": "Consumer tier only",
       "patreonPlus": "Enthusiast or Consumer tier"
     },
     "nameEffect": "Name effect",

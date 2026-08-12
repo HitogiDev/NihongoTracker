@@ -107,6 +107,8 @@ export const AVATAR_FRAMES = [
   'sakura',
   'neon',
   'rainbow',
+  /** Consumer-tier only. Rendered with daisyUI's `aura` component. */
+  'aura',
 ] as const;
 export type AvatarFrame = (typeof AVATAR_FRAMES)[number];
 
