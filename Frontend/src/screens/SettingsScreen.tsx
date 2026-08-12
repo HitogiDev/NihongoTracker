@@ -7,6 +7,7 @@ import React, {
   useImperativeHandle,
   useMemo,
 } from 'react';
+import Field from '../components/ui/Field';
 import { useNavigate } from 'react-router-dom';
 import {
   clearUserDataFn,
@@ -355,7 +356,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
     return (
       <>
         <textarea
-          className="textarea textarea-bordered focus:textarea-primary transition-colors w-full min-h-48 font-mono text-sm"
+          className="textarea focus:textarea-primary transition-colors w-full min-h-48 font-mono text-sm"
           placeholder={t('profile.aboutPlaceholder')}
           value={value}
           maxLength={maxLength}
@@ -391,7 +392,7 @@ const AboutEditor = forwardRef<AboutEditorHandle, AboutEditorProps>(
         ></textarea>
         <div className="flex justify-between items-center">
           <label className="label py-1"></label>
-          <span className="label-text-alt text-base-content/60">
+          <span className="text-base-content/60">
             {length}/{maxLength}
           </span>
         </div>
@@ -1052,19 +1053,19 @@ function SettingsScreen() {
         );
         invalidateAfterAnilistSync();
       },
-      onError: (error) =>
-        reportAnilistError(error, 'anilist.syncFailed'),
+      onError: (error) => reportAnilistError(error, 'anilist.syncFailed'),
     });
 
-  const { mutate: toggleAnilistAutoSync, isPending: isUpdatingAnilistSettings } =
-    useMutation({
-      mutationFn: updateAnilistSettingsFn,
-      onSuccess: () => {
-        void refetchAnilistStatus();
-      },
-      onError: (error) =>
-        reportAnilistError(error, 'common.unexpected'),
-    });
+  const {
+    mutate: toggleAnilistAutoSync,
+    isPending: isUpdatingAnilistSettings,
+  } = useMutation({
+    mutationFn: updateAnilistSettingsFn,
+    onSuccess: () => {
+      void refetchAnilistStatus();
+    },
+    onError: (error) => reportAnilistError(error, 'common.unexpected'),
+  });
 
   const { mutate: unlinkAnilist, isPending: isUnlinkingAnilist } = useMutation({
     mutationFn: unlinkAnilistAccountFn,
@@ -1183,7 +1184,8 @@ function SettingsScreen() {
       } as const;
       toast.error(
         `❌ ${t(
-          (message && anilistErrorKeys[message as keyof typeof anilistErrorKeys]) ||
+          (message &&
+            anilistErrorKeys[message as keyof typeof anilistErrorKeys]) ||
             'anilist.errors.oauthFailed'
         )}`
       );
@@ -2045,10 +2047,30 @@ function SettingsScreen() {
     </div>
   );
 
+  /* A pending crop replaces the stored image, so neither a remove button nor
+     the "current image" thumbnail applies while one is staged. */
+  const avatarHasPendingCrop = Boolean(croppedAvatarFile || avatarCropMetadata);
+  const bannerHasPendingCrop = Boolean(croppedBannerFile || bannerCropMetadata);
+  /* Whether the join shows a remove/undo pair at all. Which of the two it is
+     comes from `*MarkedForRemoval`. */
+  const canToggleAvatarRemoval = Boolean(user?.avatar && !avatarHasPendingCrop);
+  const canToggleBannerRemoval = Boolean(user?.banner && !bannerHasPendingCrop);
+  /* The preview column stays mounted (the crop handler draws into its canvas
+     before any state updates) but must leave the flex row when it has nothing
+     to show — otherwise its `gap` shortens the avatar input next to it, which
+     is why it did not line up with the full-width banner input. The banner
+     preview needs no such wrapper — it is a block in a column, so its hidden
+     canvas already takes no space. */
+  const showAvatarPreview =
+    avatarHasPendingCrop || (Boolean(user?.avatar) && !avatarMarkedForRemoval);
+
   return (
-    <div className="min-h-screen bg-base-200/40 pt-16">
+    <div className="min-h-screen bg-base-200 pt-20">
       {/* Clear Data Modal */}
-      <dialog id="clear_data_modal" className="modal">
+      <dialog
+        id="clear_data_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
         <div className="modal-box">
           <h3 className="font-bold text-lg text-error mb-2">
             {t('danger.clearAll')}
@@ -2066,7 +2088,7 @@ function SettingsScreen() {
           </p>
           <input
             type="text"
-            className="input input-bordered w-full mb-4"
+            className="input w-full mb-4"
             placeholder={t('account.usernamePlaceholder')}
             ref={confirmUsernameRef}
             onChange={(e) => {
@@ -2145,21 +2167,20 @@ function SettingsScreen() {
         getInitialCrop={getInitialBannerCrop}
       />
 
-      {/* Page Header */}
-      <div className="bg-base-100 border-b border-base-300">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-base-content">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Page Header — same block every other screen uses; a full-bleed
+            bg-base-100 band here was the only one in the app. */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-base-content mb-2">
             {t('header.title')}
           </h1>
-          <p className="text-base-content/60 mt-1">{t('header.subtitle')}</p>
+          <p className="text-base-content/70">{t('header.subtitle')}</p>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Navigation */}
           <aside className="lg:w-64 flex-shrink-0">
-            <div className="card bg-base-100 shadow-sm border border-base-300/50 sticky top-6">
+            <div className="card surface sticky top-6">
               <div className="card-body p-2">
                 <nav className="flex flex-row lg:flex-col gap-1">
                   {TAB_CONFIG.map(({ id, labelKey, icon: Icon }) => (
@@ -2168,11 +2189,11 @@ function SettingsScreen() {
                       type="button"
                       id={`settings-tab-${id}`}
                       className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 text-left w-full cursor-pointer
-                        ${
-                          activeTab === id
-                            ? 'bg-primary text-primary-content shadow-sm'
-                            : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
-                        }`}
+ ${
+   activeTab === id
+     ? 'bg-primary text-primary-content shadow-sm'
+     : 'text-base-content/70 hover:bg-base-200 hover:text-base-content'
+ }`}
                       onClick={() => setActiveTab(id)}
                     >
                       <Icon className="h-4 w-4 flex-shrink-0" />
@@ -2189,7 +2210,7 @@ function SettingsScreen() {
             {/* ── PROFILE TAB ── */}
             {activeTab === 'profile' && (
               <div className="space-y-6">
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-primary/10 rounded-lg">
@@ -2207,16 +2228,10 @@ function SettingsScreen() {
 
                     <form onSubmit={handleUpdateProfile} className="space-y-8">
                       {/* About Me with real-time preview */}
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium text-base">
-                            {t('profile.about')}
-                          </span>
-                          <span className="label-text-alt text-base-content/50 text-xs">
-                            {t('profile.markdownSupported')}
-                          </span>
-                        </label>
-
+                      <Field
+                        label={t('profile.about')}
+                        aside={t('profile.markdownSupported')}
+                      >
                         {MarkdownToolbar}
 
                         {/* Editor + Preview area */}
@@ -2268,76 +2283,79 @@ function SettingsScreen() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </Field>
 
                       {/* Avatar */}
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('profile.avatar')}
-                          </span>
-                        </label>
+                      <Field label={t('profile.avatar')}>
                         <div className="flex flex-col sm:flex-row gap-4 items-start">
                           <div className="flex-1 w-full">
-                            <input
-                              type="file"
-                              id="avatar"
-                              ref={avatarInputRef}
-                              className="file-input file-input-bordered file-input-primary w-full"
-                              accept={
-                                hasPatreonMediaAccess
-                                  ? 'image/*'
-                                  : 'image/jpeg,image/jpg,image/png,image/webp'
-                              }
-                              onChange={onSelectAvatarFile}
-                            />
+                            <div className="join w-full">
+                              <input
+                                type="file"
+                                id="avatar"
+                                ref={avatarInputRef}
+                                className="file-input file-input-primary join-item flex-1"
+                                accept={
+                                  hasPatreonMediaAccess
+                                    ? 'image/*'
+                                    : 'image/jpeg,image/jpg,image/png,image/webp'
+                                }
+                                onChange={onSelectAvatarFile}
+                              />
+                              {canToggleAvatarRemoval &&
+                                (avatarMarkedForRemoval ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline join-item"
+                                    onClick={() =>
+                                      setAvatarMarkedForRemoval(false)
+                                    }
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                    {t('profile.undoRemove')}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="btn btn-error btn-outline join-item"
+                                    onClick={handleRemoveAvatarClick}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('profile.removeAvatar')}
+                                  </button>
+                                ))}
+                            </div>
                             <label className="label pt-1 flex flex-col items-start gap-1">
-                              <span className="label-text-alt text-base-content/60 leading-relaxed">
+                              <span className="text-base-content/60 leading-relaxed">
                                 {t('profile.allowedFormats', {
                                   gif: hasPatreonMediaAccess ? ', GIF' : '',
                                   maxSize: avatarMaxSizeMb,
                                   dimensions: AVATAR_DIMENSIONS,
                                 })}
                               </span>
-                              {(croppedAvatarFile || avatarCropMetadata) && (
-                                <span className="label-text-alt text-success">
+                              {avatarHasPendingCrop && (
+                                <span className="text-success">
                                   {t('profile.avatarCropped')}
                                 </span>
                               )}
-                            </label>
-                            {user?.avatar &&
-                              !croppedAvatarFile &&
-                              !avatarCropMetadata &&
-                              (avatarMarkedForRemoval ? (
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs text-warning">
+                              {canToggleAvatarRemoval &&
+                                avatarMarkedForRemoval && (
+                                  <span className="text-warning">
                                     {t('profile.removeAvatarPending')}
                                   </span>
-                                  <button
-                                    type="button"
-                                    className="btn btn-ghost btn-xs"
-                                    onClick={() =>
-                                      setAvatarMarkedForRemoval(false)
-                                    }
-                                  >
-                                    {t('profile.undoRemove')}
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="btn btn-outline btn-error btn-xs"
-                                  onClick={handleRemoveAvatarClick}
-                                >
-                                  {t('profile.removeAvatar')}
-                                </button>
-                              ))}
+                                )}
+                            </label>
                           </div>
                           {/* Always mounted: handleAvatarCropApply draws into
                               this canvas, so gating it on an existing avatar
                               would silently drop the crop for users without
-                              one. */}
-                          <div className="flex flex-col items-center gap-2">
+                              one. Hidden rather than unmounted when empty so it
+                              stops adding a gap beside the input. */}
+                          <div
+                            className={`flex-col items-center gap-2 ${
+                              showAvatarPreview ? 'flex' : 'hidden'
+                            }`}
+                          >
                             {user?.avatar &&
                               !croppedAvatarFile &&
                               !avatarMarkedForRemoval && (
@@ -2367,70 +2385,68 @@ function SettingsScreen() {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </Field>
 
                       {/* Banner */}
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('profile.banner')}
-                          </span>
-                        </label>
+                      <Field label={t('profile.banner')}>
                         <div className="flex flex-col gap-4">
                           <div className="w-full">
-                            <input
-                              type="file"
-                              id="banner"
-                              ref={bannerInputRef}
-                              className="file-input file-input-bordered file-input-primary w-full"
-                              accept={
-                                hasPatreonMediaAccess
-                                  ? 'image/*'
-                                  : 'image/jpeg,image/jpg,image/png,image/webp'
-                              }
-                              onChange={onSelectBannerFile}
-                            />
+                            <div className="join w-full">
+                              <input
+                                type="file"
+                                id="banner"
+                                ref={bannerInputRef}
+                                className="file-input file-input-primary join-item flex-1"
+                                accept={
+                                  hasPatreonMediaAccess
+                                    ? 'image/*'
+                                    : 'image/jpeg,image/jpg,image/png,image/webp'
+                                }
+                                onChange={onSelectBannerFile}
+                              />
+                              {canToggleBannerRemoval &&
+                                (bannerMarkedForRemoval ? (
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline join-item"
+                                    onClick={() =>
+                                      setBannerMarkedForRemoval(false)
+                                    }
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                    {t('profile.undoRemove')}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="btn btn-error btn-outline join-item"
+                                    onClick={handleRemoveBannerClick}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('profile.removeBanner')}
+                                  </button>
+                                ))}
+                            </div>
                             <label className="label pt-1 flex flex-col items-start gap-1">
-                              <span className="label-text-alt text-base-content/60 leading-relaxed">
+                              <span className="text-base-content/60 leading-relaxed">
                                 {t('profile.allowedFormats', {
                                   gif: hasPatreonMediaAccess ? ', GIF' : '',
                                   maxSize: bannerMaxSizeMb,
                                   dimensions: BANNER_DIMENSIONS,
                                 })}
                               </span>
-                              {(croppedBannerFile || bannerCropMetadata) && (
-                                <span className="label-text-alt text-success">
+                              {bannerHasPendingCrop && (
+                                <span className="text-success">
                                   {t('profile.bannerCropped')}
                                 </span>
                               )}
-                            </label>
-                            {user?.banner &&
-                              !croppedBannerFile &&
-                              !bannerCropMetadata &&
-                              (bannerMarkedForRemoval ? (
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs text-warning">
+                              {canToggleBannerRemoval &&
+                                bannerMarkedForRemoval && (
+                                  <span className="text-warning">
                                     {t('profile.removeBannerPending')}
                                   </span>
-                                  <button
-                                    type="button"
-                                    className="btn btn-ghost btn-xs"
-                                    onClick={() =>
-                                      setBannerMarkedForRemoval(false)
-                                    }
-                                  >
-                                    {t('profile.undoRemove')}
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="btn btn-outline btn-error btn-xs self-start"
-                                  onClick={handleRemoveBannerClick}
-                                >
-                                  {t('profile.removeBanner')}
-                                </button>
-                              ))}
+                                )}
+                            </label>
                           </div>
                           {/* Always mounted — see the avatar canvas above. */}
                           {user?.banner &&
@@ -2459,7 +2475,7 @@ function SettingsScreen() {
                             </span>
                           )}
                         </div>
-                      </div>
+                      </Field>
 
                       <div className="card-actions justify-end pt-2">
                         <button
@@ -2494,7 +2510,7 @@ function SettingsScreen() {
             {/* ── ACCOUNT & SECURITY TAB ── */}
             {activeTab === 'account' && (
               <div className="space-y-6">
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-secondary/10 rounded-lg">
@@ -2523,43 +2539,38 @@ function SettingsScreen() {
 
                     <form onSubmit={handleUpdateUser} className="space-y-6">
                       {/* Current Password — shown prominently at top */}
-                      <div className="form-control w-full p-4 bg-base-200/60 rounded-xl border border-base-300">
-                        <label className="label pt-0">
-                          <span className="label-text font-semibold flex items-center gap-2">
+                      <Field
+                        label={
+                          <>
                             <Lock className="h-4 w-4 text-secondary" />
                             {t('account.currentPassword')}
-                          </span>
-                          <span className="label-text-alt text-base-content/50">
-                            {t('account.requiredForChanges')}
-                          </span>
-                        </label>
+                          </>
+                        }
+                        aside={t('account.requiredForChanges')}
+                        className="w-full surface-muted p-4"
+                      >
                         <input
                           ref={passwordRef}
                           name="settings_current_password"
                           type="password"
                           autoComplete="new-password"
-                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          className="input focus:input-secondary transition-colors w-full"
                           placeholder={t('account.currentPasswordPlaceholder')}
                           onChange={(e) =>
                             setHasPassword(e.target.value.trim().length > 0)
                           }
                         />
-                      </div>
+                      </Field>
 
                       <div className="divider text-xs text-base-content/40">
                         {t('account.detailsHeading')}
                       </div>
 
                       {/* Username */}
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('account.username')}
-                          </span>
-                        </label>
+                      <Field label={t('account.username')} className="w-full">
                         <input
                           type="text"
-                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          className="input focus:input-secondary transition-colors w-full"
                           placeholder={
                             user?.username || t('account.usernamePlaceholder')
                           }
@@ -2567,21 +2578,19 @@ function SettingsScreen() {
                           onChange={(e) => setUsername(e.target.value)}
                         />
                         <label className="label">
-                          <span className="label-text-alt text-base-content/60">
+                          <span className="text-base-content/60">
                             {t('account.currentUsername', {
                               username: user?.username || t('account.notSet'),
                             })}
                           </span>
                         </label>
-                      </div>
+                      </Field>
 
                       {/* Email */}
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('account.email')}
-                          </span>
-                          {user?.email && (
+                      <Field
+                        label={t('account.email')}
+                        aside={
+                          user?.email && (
                             <span
                               className={`badge badge-sm ${
                                 user.verified
@@ -2593,14 +2602,16 @@ function SettingsScreen() {
                                 ? t('account.verified')
                                 : t('account.notVerified')}
                             </span>
-                          )}
-                        </label>
+                          )
+                        }
+                        className="w-full"
+                      >
                         <input
                           ref={emailRef}
                           name="settings_email"
                           type="email"
                           autoComplete="off"
-                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          className="input focus:input-secondary transition-colors w-full"
                           placeholder={t('account.emailPlaceholder')}
                           defaultValue={user?.email || ''}
                           onChange={(e) => {
@@ -2619,7 +2630,7 @@ function SettingsScreen() {
                             </p>
                             <button
                               type="button"
-                              className="btn btn-sm btn-warning"
+                              className="btn btn-warning btn-sm"
                               onClick={() => resendVerificationEmail()}
                               disabled={resendCooldown > 0 || isResendingEmail}
                             >
@@ -2645,28 +2656,26 @@ function SettingsScreen() {
 
                         {!user?.email && (
                           <label className="label">
-                            <span className="label-text-alt text-base-content/60">
+                            <span className="text-base-content/60">
                               {t('account.recoveryHint')}
                             </span>
                           </label>
                         )}
-                      </div>
+                      </Field>
 
                       <div className="divider text-xs text-base-content/40">
                         {t('account.changePasswordHeading')}
                       </div>
 
                       {/* New Password */}
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('account.newPassword')}
-                          </span>
-                        </label>
+                      <Field
+                        label={t('account.newPassword')}
+                        className="w-full"
+                      >
                         <input
                           ref={newPasswordRef}
                           type="password"
-                          className="input input-bordered focus:input-secondary transition-colors w-full"
+                          className="input focus:input-secondary transition-colors w-full"
                           placeholder={t('account.newPasswordPlaceholder')}
                           onChange={(e) => {
                             const newPwd = e.target.value;
@@ -2677,23 +2686,21 @@ function SettingsScreen() {
                           }}
                         />
                         <label className="label">
-                          <span className="label-text-alt text-base-content/60">
+                          <span className="text-base-content/60">
                             {t('account.keepPasswordHint')}
                           </span>
                         </label>
-                      </div>
+                      </Field>
 
                       {/* Confirm New Password */}
-                      <div className="form-control w-full">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('account.confirmPassword')}
-                          </span>
-                        </label>
+                      <Field
+                        label={t('account.confirmPassword')}
+                        className="w-full"
+                      >
                         <input
                           ref={newPasswordConfirmRef}
                           type="password"
-                          className={`input input-bordered focus:input-secondary transition-colors w-full ${!passwordsMatch ? 'input-error' : ''}`}
+                          className={`input focus:input-secondary transition-colors w-full ${!passwordsMatch ? 'input-error' : ''}`}
                           placeholder={t('account.confirmPasswordPlaceholder')}
                           onChange={(e) => {
                             const confirmPwd = e.target.value;
@@ -2703,12 +2710,12 @@ function SettingsScreen() {
                         />
                         {!passwordsMatch && (
                           <label className="label">
-                            <span className="label-text-alt text-error">
+                            <span className="text-error">
                               {t('account.passwordMismatch')}
                             </span>
                           </label>
                         )}
-                      </div>
+                      </Field>
 
                       <div className="card-actions justify-end pt-4">
                         <button
@@ -2788,7 +2795,7 @@ function SettingsScreen() {
             {/* ── PREFERENCES TAB ── */}
             {activeTab === 'preferences' && (
               <div className="space-y-6">
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-accent/10 rounded-lg">
@@ -2887,7 +2894,7 @@ function SettingsScreen() {
                 </div>
 
                 {/* Tags */}
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-accent/10 rounded-lg">
@@ -2912,7 +2919,7 @@ function SettingsScreen() {
             {activeTab === 'patreon' && (
               <div className="space-y-6">
                 {/* Patreon connection */}
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-primary/10 rounded-lg">
@@ -2969,7 +2976,7 @@ function SettingsScreen() {
 
                           <button
                             type="button"
-                            className="btn btn-outline btn-error btn-sm w-full"
+                            className="btn btn-error btn-outline btn-sm w-full"
                             onClick={handleUnlinkPatreon}
                             disabled={isUnlinkingPatreon}
                           >
@@ -3025,7 +3032,7 @@ function SettingsScreen() {
                 {patreonStatus.patreonId &&
                   (patreonStatus.tier === 'enthusiast' ||
                     patreonStatus.tier === 'consumer') && (
-                    <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                    <div className="card surface">
                       <div className="card-body">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="p-3 bg-primary/10 rounded-lg">
@@ -3043,7 +3050,7 @@ function SettingsScreen() {
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            className="input input-bordered focus:input-primary transition-colors flex-1"
+                            className="input focus:input-primary transition-colors flex-1"
                             placeholder={t('patreon.customTextPlaceholder')}
                             value={customBadgeText}
                             onChange={(e) =>
@@ -3068,7 +3075,7 @@ function SettingsScreen() {
                           </button>
                         </div>
                         <label className="label">
-                          <span className="label-text-alt text-base-content/60">
+                          <span className="text-base-content/60">
                             {customBadgeText.length}/20 · Leave empty to use
                             default tier name
                           </span>
@@ -3078,7 +3085,7 @@ function SettingsScreen() {
                   )}
 
                 {/* Badge Color Customization - Consumer Only */}
-                <div className="card bg-base-100 shadow-sm border border-base-300/50 relative overflow-hidden">
+                <div className="card surface relative overflow-hidden">
                   {/* Lock Overlay for non-Consumer tiers */}
                   {!(
                     patreonStatus.isActive && patreonStatus.tier === 'consumer'
@@ -3142,7 +3149,7 @@ function SettingsScreen() {
 
                     <div className="space-y-6">
                       {/* Badge Preview */}
-                      <div className="flex items-center justify-center p-6 bg-base-200 rounded-lg">
+                      <div className="flex items-center justify-center p-6 surface-muted">
                         <div
                           className={`badge badge-lg gap-2 px-4 py-3 font-bold ${badgeColor === 'rainbow' ? 'badge-rainbow' : badgeColor === 'primary' ? 'badge-primary' : badgeColor === 'secondary' ? 'badge-secondary' : ''}`}
                           style={
@@ -3249,219 +3256,222 @@ function SettingsScreen() {
               <div className="space-y-6">
                 {/* AniList lives here rather than in its own tab: it is how logs
                     get in automatically, alongside the manual import/export. */}
-              <div className="card bg-base-100 shadow-sm border border-base-300/50">
-                <div className="card-body">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                      <MonitorPlay className="h-6 w-6 text-primary" />
+                <div className="card surface">
+                  <div className="card-body">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <MonitorPlay className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">
+                          {t('anilist.title')}
+                        </h2>
+                        <p className="text-base-content/70">
+                          {t('anilist.subtitle')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold">
-                        {t('anilist.title')}
-                      </h2>
-                      <p className="text-base-content/70">
-                        {t('anilist.subtitle')}
-                      </p>
+
+                    {anilistStatus?.linked ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-3 p-4 bg-success/10 border border-success/20 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {anilistStatus.anilistAvatar ? (
+                              <img
+                                src={anilistStatus.anilistAvatar}
+                                alt={anilistStatus.anilistUsername ?? 'AniList'}
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <Link2 className="w-5 h-5 text-success" />
+                            )}
+                            <div>
+                              <div className="font-semibold text-success">
+                                {anilistStatus.anilistUsername}
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                {t('anilist.syncedLogs', {
+                                  count: anilistStatus.syncedLogCount ?? 0,
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          <a
+                            href={`https://anilist.co/user/${anilistStatus.anilistUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-ghost btn-xs gap-1"
+                          >
+                            <LinkIcon className="h-3 w-3" />
+                            {t('anilist.viewProfile')}
+                          </a>
+                        </div>
+
+                        {anilistStatus.tokenExpired && (
+                          <div className="alert alert-warning">
+                            <TriangleAlert className="h-5 w-5" />
+                            <span>{t('anilist.tokenExpired')}</span>
+                          </div>
+                        )}
+
+                        {anilistStatus.lastSyncStatus === 'error' && (
+                          <div className="alert alert-error">
+                            <XCircle className="h-5 w-5" />
+                            <div>
+                              <div>{t('anilist.lastSyncFailed')}</div>
+                              {anilistStatus.lastSyncError && (
+                                <div className="text-xs opacity-80">
+                                  {anilistStatus.lastSyncError}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-base-300/50">
+                          <div>
+                            <div className="font-medium">
+                              {t('anilist.autoSync')}
+                            </div>
+                            <p className="text-sm text-base-content/70">
+                              {t('anilist.autoSyncHint')}
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="toggle toggle-primary"
+                            checked={anilistStatus.autoSync ?? true}
+                            disabled={isUpdatingAnilistSettings}
+                            onChange={(e) =>
+                              toggleAnilistAutoSync({
+                                autoSync: e.target.checked,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="text-sm text-base-content/70 flex items-center gap-2">
+                          <Clock3 className="h-4 w-4" />
+                          {anilistStatus.lastSyncedAt
+                            ? t('anilist.lastSyncedAt', {
+                                date: new Date(
+                                  anilistStatus.lastSyncedAt
+                                ).toLocaleString(),
+                              })
+                            : t('anilist.neverSynced')}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm gap-2"
+                            onClick={() => syncAnilist()}
+                            disabled={isSyncingAnilist || isBackfillingAnilist}
+                          >
+                            {isSyncingAnilist ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <RefreshCw className="h-4 w-4" />
+                            )}
+                            {t('anilist.syncNow')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm gap-2"
+                            onClick={() =>
+                              (
+                                document.getElementById(
+                                  'anilist_backfill_modal'
+                                ) as HTMLDialogElement | null
+                              )?.showModal()
+                            }
+                            disabled={isSyncingAnilist || isBackfillingAnilist}
+                          >
+                            {isBackfillingAnilist ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <CloudDownload className="h-4 w-4" />
+                            )}
+                            {t('anilist.backfill')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-error btn-outline btn-sm gap-2 ml-auto"
+                            onClick={() => unlinkAnilist()}
+                            disabled={isUnlinkingAnilist}
+                          >
+                            {isUnlinkingAnilist ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <Unlink2 className="h-4 w-4" />
+                            )}
+                            {t('anilist.unlink')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <button
+                          type="button"
+                          className="btn btn-primary w-full gap-2"
+                          onClick={handleAnilistOAuth}
+                          disabled={isInitiatingAnilistOAuth}
+                        >
+                          {isInitiatingAnilistOAuth ? (
+                            <span className="loading loading-spinner loading-sm"></span>
+                          ) : (
+                            <>
+                              <Link2 className="size-5" />
+                              {t('anilist.connect')}
+                            </>
+                          )}
+                        </button>
+                        <div className="text-xs text-center text-base-content/60 flex items-center justify-center gap-1">
+                          <Lock className="h-4 w-4" />
+                          {t('anilist.oauthNote')}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="alert alert-info mt-4">
+                      <Info className="h-5 w-5" />
+                      <span>{t('anilist.animeOnlyNote')}</span>
                     </div>
                   </div>
+                </div>
 
-                  {anilistStatus?.linked ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between gap-3 p-4 bg-success/10 border border-success/20 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {anilistStatus.anilistAvatar ? (
-                            <img
-                              src={anilistStatus.anilistAvatar}
-                              alt={anilistStatus.anilistUsername ?? 'AniList'}
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <Link2 className="w-5 h-5 text-success" />
-                          )}
-                          <div>
-                            <div className="font-semibold text-success">
-                              {anilistStatus.anilistUsername}
-                            </div>
-                            <div className="text-xs text-base-content/60">
-                              {t('anilist.syncedLogs', {
-                                count: anilistStatus.syncedLogCount ?? 0,
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                        <a
-                          href={`https://anilist.co/user/${anilistStatus.anilistUsername}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-ghost btn-xs gap-1"
-                        >
-                          <LinkIcon className="h-3 w-3" />
-                          {t('anilist.viewProfile')}
-                        </a>
-                      </div>
-
-                      {anilistStatus.tokenExpired && (
-                        <div className="alert alert-warning">
-                          <TriangleAlert className="h-5 w-5" />
-                          <span>{t('anilist.tokenExpired')}</span>
-                        </div>
-                      )}
-
-                      {anilistStatus.lastSyncStatus === 'error' && (
-                        <div className="alert alert-error">
-                          <XCircle className="h-5 w-5" />
-                          <div>
-                            <div>{t('anilist.lastSyncFailed')}</div>
-                            {anilistStatus.lastSyncError && (
-                              <div className="text-xs opacity-80">
-                                {anilistStatus.lastSyncError}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-base-300/50">
-                        <div>
-                          <div className="font-medium">
-                            {t('anilist.autoSync')}
-                          </div>
-                          <p className="text-sm text-base-content/70">
-                            {t('anilist.autoSyncHint')}
-                          </p>
-                        </div>
-                        <input
-                          type="checkbox"
-                          className="toggle toggle-primary"
-                          checked={anilistStatus.autoSync ?? true}
-                          disabled={isUpdatingAnilistSettings}
-                          onChange={(e) =>
-                            toggleAnilistAutoSync({
-                              autoSync: e.target.checked,
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div className="text-sm text-base-content/70 flex items-center gap-2">
-                        <Clock3 className="h-4 w-4" />
-                        {anilistStatus.lastSyncedAt
-                          ? t('anilist.lastSyncedAt', {
-                              date: new Date(
-                                anilistStatus.lastSyncedAt
-                              ).toLocaleString(),
-                            })
-                          : t('anilist.neverSynced')}
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm gap-2"
-                          onClick={() => syncAnilist()}
-                          disabled={isSyncingAnilist || isBackfillingAnilist}
-                        >
-                          {isSyncingAnilist ? (
-                            <span className="loading loading-spinner loading-sm"></span>
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
-                          )}
-                          {t('anilist.syncNow')}
+                <dialog
+                  id="anilist_backfill_modal"
+                  className="modal modal-bottom sm:modal-middle"
+                >
+                  <div className="modal-box">
+                    <h3 className="font-bold text-lg">
+                      {t('anilist.backfillConfirmTitle')}
+                    </h3>
+                    <p className="py-4 text-sm text-base-content/80">
+                      {t('anilist.backfillConfirmBody')}
+                    </p>
+                    <div className="modal-action">
+                      <form method="dialog" className="flex gap-2">
+                        <button className="btn btn-ghost btn-sm">
+                          {t('common.cancel')}
                         </button>
                         <button
-                          type="button"
-                          className="btn btn-outline btn-sm gap-2"
-                          onClick={() =>
-                            (
-                              document.getElementById(
-                                'anilist_backfill_modal'
-                              ) as HTMLDialogElement | null
-                            )?.showModal()
-                          }
-                          disabled={isSyncingAnilist || isBackfillingAnilist}
+                          className="btn btn-primary btn-sm"
+                          onClick={() => backfillAnilist()}
                         >
-                          {isBackfillingAnilist ? (
-                            <span className="loading loading-spinner loading-sm"></span>
-                          ) : (
-                            <CloudDownload className="h-4 w-4" />
-                          )}
                           {t('anilist.backfill')}
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-error btn-sm gap-2 ml-auto"
-                          onClick={() => unlinkAnilist()}
-                          disabled={isUnlinkingAnilist}
-                        >
-                          {isUnlinkingAnilist ? (
-                            <span className="loading loading-spinner loading-sm"></span>
-                          ) : (
-                            <Unlink2 className="h-4 w-4" />
-                          )}
-                          {t('anilist.unlink')}
-                        </button>
-                      </div>
+                      </form>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <button
-                        type="button"
-                        className="btn btn-primary w-full gap-2"
-                        onClick={handleAnilistOAuth}
-                        disabled={isInitiatingAnilistOAuth}
-                      >
-                        {isInitiatingAnilistOAuth ? (
-                          <span className="loading loading-spinner loading-sm"></span>
-                        ) : (
-                          <>
-                            <Link2 className="size-5" />
-                            {t('anilist.connect')}
-                          </>
-                        )}
-                      </button>
-                      <div className="text-xs text-center text-base-content/60 flex items-center justify-center gap-1">
-                        <Lock className="h-4 w-4" />
-                        {t('anilist.oauthNote')}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="alert alert-info mt-4">
-                    <Info className="h-5 w-5" />
-                    <span>{t('anilist.animeOnlyNote')}</span>
                   </div>
-                </div>
-              </div>
-
-              <dialog id="anilist_backfill_modal" className="modal">
-                <div className="modal-box">
-                  <h3 className="font-bold text-lg">
-                    {t('anilist.backfillConfirmTitle')}
-                  </h3>
-                  <p className="py-4 text-sm text-base-content/80">
-                    {t('anilist.backfillConfirmBody')}
-                  </p>
-                  <div className="modal-action">
-                    <form method="dialog" className="flex gap-2">
-                      <button className="btn btn-ghost btn-sm">
-                        {t('common.cancel')}
-                      </button>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => backfillAnilist()}
-                      >
-                        {t('anilist.backfill')}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-                <form method="dialog" className="modal-backdrop">
-                  <button>close</button>
-                </form>
-              </dialog>
+                  <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
 
                 {/* Data Management */}
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-info/10 rounded-lg">
@@ -3488,7 +3498,7 @@ function SettingsScreen() {
                           <input
                             type="file"
                             id="logFileImport"
-                            className="file-input file-input-bordered file-input-info w-full"
+                            className="file-input file-input-info w-full"
                             accept=".csv,.tsv,.jsonl"
                           />
                           <div className="dropdown dropdown-center w-full">
@@ -3503,7 +3513,7 @@ function SettingsScreen() {
                             </div>
                             <ul
                               tabIndex={0}
-                              className="dropdown-content menu bg-base-300 rounded-box z-1 w-full p-2 shadow-sm"
+                              className="dropdown-content menu surface-raised z-1 w-full p-2"
                             >
                               <li>
                                 <button
@@ -3631,7 +3641,7 @@ function SettingsScreen() {
                         </p>
                         <button
                           type="button"
-                          className="btn btn-outline btn-success w-full"
+                          className="btn btn-success btn-outline w-full"
                           disabled={isExportPending}
                           onClick={() => exportLogs()}
                         >
@@ -3674,7 +3684,7 @@ function SettingsScreen() {
                         <div className="flex gap-2 mb-4">
                           <input
                             type="text"
-                            className="input input-bordered focus:input-primary transition-colors flex-1"
+                            className="input focus:input-primary transition-colors flex-1"
                             placeholder={t('apiKeys.namePlaceholder')}
                             value={apiKeyName}
                             maxLength={100}
@@ -3719,7 +3729,7 @@ function SettingsScreen() {
                                 </div>
                                 <button
                                   type="button"
-                                  className="btn btn-sm btn-ghost shrink-0"
+                                  className="btn btn-ghost btn-sm shrink-0"
                                   onClick={() => {
                                     void navigator.clipboard.writeText(
                                       newlyCreatedKey.key
@@ -3766,7 +3776,7 @@ function SettingsScreen() {
                             {apiKeys.map((key) => (
                               <div
                                 key={key._id}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-base-200 border border-base-300"
+                                className="flex items-center gap-3 p-3 surface-muted"
                               >
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm truncate">
@@ -3802,7 +3812,7 @@ function SettingsScreen() {
                                 </div>
                                 <button
                                   type="button"
-                                  className="btn btn-sm btn-ghost text-error hover:bg-error/10"
+                                  className="btn btn-ghost btn-sm text-error hover:bg-error/10"
                                   disabled={isDeletingKey}
                                   onClick={() => deleteApiKey(key._id)}
                                   title={t('apiKeys.revoke')}
@@ -3832,19 +3842,16 @@ function SettingsScreen() {
                             onSubmit={handleUpdateDiscord}
                             className="space-y-4"
                           >
-                            <h3 className="font-semibold text-base-content flex items-center gap-2">
-                              {t('advanced.discordId')}
-                            </h3>
-                            <div className="form-control w-full">
-                              <label className="label pt-0">
-                                <span className="label-text">
-                                  {t('advanced.discordId')}
-                                </span>
-                              </label>
+                            {/* The field's own legend is the heading here —
+                                a separate <h3> repeated the same string. */}
+                            <Field
+                              label={t('advanced.discordId')}
+                              className="w-full"
+                            >
                               <div className="relative w-full">
                                 <input
                                   type="text"
-                                  className="input input-bordered focus:input-primary transition-colors w-full pr-10"
+                                  className="input focus:input-primary transition-colors w-full pr-10"
                                   placeholder={t(
                                     'advanced.discordIdPlaceholder'
                                   )}
@@ -3863,34 +3870,34 @@ function SettingsScreen() {
                                 )}
                               </div>
                               <label className="label flex-col items-start gap-1">
-                                <span className="label-text-alt text-base-content/60 break-all">
+                                <span className="text-base-content/60 break-all">
                                   {user?.discordId
                                     ? `Current: ${user.discordId}`
                                     : null}
                                 </span>
-                                <span className="label-text-alt text-base-content/60">
+                                <span className="text-base-content/60">
                                   {t('advanced.unlinkHint')}
                                 </span>
                               </label>
-                            </div>
-                            <div className="form-control w-full">
-                              <label className="label">
-                                <span className="label-text flex items-center gap-2">
+                            </Field>
+                            <Field
+                              label={
+                                <>
                                   <Lock className="h-4 w-4 text-base-content/60" />
                                   {t('account.currentPassword')}
-                                </span>
-                                <span className="label-text-alt text-base-content/50">
-                                  {t('advanced.requiredToSave')}
-                                </span>
-                              </label>
+                                </>
+                              }
+                              aside={t('advanced.requiredToSave')}
+                              className="w-full"
+                            >
                               <input
                                 ref={discordPasswordRef}
                                 type="password"
                                 autoComplete="new-password"
-                                className="input input-bordered focus:input-primary transition-colors w-full"
+                                className="input focus:input-primary transition-colors w-full"
                                 placeholder={t('danger.passwordPlaceholder')}
                               />
-                            </div>
+                            </Field>
                             <div className="flex justify-end">
                               <button
                                 type="submit"
@@ -3946,7 +3953,7 @@ function SettingsScreen() {
                 </div>
 
                 {/* Log Management */}
-                <div className="card bg-base-100 shadow-sm border border-base-300/50">
+                <div className="card surface">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-3 bg-warning/10 rounded-lg">
@@ -3988,7 +3995,7 @@ function SettingsScreen() {
       {/* Insert Image Modal */}
       <dialog
         id="insert-image-modal"
-        className={`modal ${isImageModalOpen ? 'modal-open' : ''}`}
+        className={`modal modal-bottom sm:modal-middle ${isImageModalOpen ? 'modal-open' : ''}`}
         onClose={() => setIsImageModalOpen(false)}
       >
         <div className="modal-box space-y-4">
@@ -4001,7 +4008,7 @@ function SettingsScreen() {
             </legend>
             <input
               type="url"
-              className="input input-bordered"
+              className="input"
               placeholder={t('markdown.imageUrlPlaceholder')}
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
@@ -4012,7 +4019,7 @@ function SettingsScreen() {
             <legend className="fieldset-legend">{t('markdown.altText')}</legend>
             <input
               type="text"
-              className="input input-bordered"
+              className="input"
               placeholder={t('markdown.imageAltPlaceholder')}
               value={imageAlt}
               onChange={(e) => setImageAlt(e.target.value)}
@@ -4052,7 +4059,7 @@ function SettingsScreen() {
       {/* Background Color Picker Modal */}
       <dialog
         id="bg_color_modal"
-        className="modal"
+        className="modal modal-bottom sm:modal-middle"
         onClose={handleBadgeColorModalClose}
       >
         <div className="modal-box max-w-md">
@@ -4103,7 +4110,7 @@ function SettingsScreen() {
             </div>
             <input
               type="text"
-              className="input input-bordered input-sm w-full text-center"
+              className="input input-sm w-full text-center"
               value={badgeHexInputValue}
               onChange={(e) => setPendingBadgeColor(e.target.value)}
               placeholder="#ff69b4"
@@ -4134,7 +4141,7 @@ function SettingsScreen() {
       {/* Text Color Picker Modal */}
       <dialog
         id="text_color_modal"
-        className="modal"
+        className="modal modal-bottom sm:modal-middle"
         onClose={handleBadgeTextModalClose}
       >
         <div className="modal-box max-w-md">
@@ -4176,7 +4183,7 @@ function SettingsScreen() {
             </div>
             <input
               type="text"
-              className="input input-bordered input-sm w-full text-center"
+              className="input input-sm w-full text-center"
               value={badgeTextHexInputValue}
               onChange={(e) => setPendingBadgeTextColor(e.target.value)}
               placeholder="#ffffff"
@@ -4206,7 +4213,7 @@ function SettingsScreen() {
 
       {/* Email Sent Modal */}
       <dialog
-        className="modal"
+        className="modal modal-bottom sm:modal-middle"
         open={showEmailSentModal}
         onClose={() => setShowEmailSentModal(false)}
       >
@@ -4239,8 +4246,11 @@ function SettingsScreen() {
       </dialog>
 
       {/* Advanced Options Info Modal */}
-      <dialog id="advanced_options_info_modal" className="modal">
-        <div className="modal-box max-w-lg">
+      <dialog
+        id="advanced_options_info_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
+        <div className="modal-box">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Info className="h-5 w-5 text-info" />
@@ -4285,8 +4295,11 @@ function SettingsScreen() {
       </dialog>
 
       {/* Other CSV Help Modal */}
-      <dialog id="other_csv_help_modal" className="modal">
-        <div className="modal-box max-w-lg">
+      <dialog
+        id="other_csv_help_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
+        <div className="modal-box">
           <h3 className="text-lg font-bold mb-4">{t('csvHelp.title')}</h3>
           <p className="text-base-content/70 mb-4">{t('csvHelp.headerNote')}</p>
           <div className="overflow-x-auto">
@@ -4396,7 +4409,7 @@ function SettingsScreen() {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 p-3 bg-base-200 rounded-lg">
+          <div className="mt-4 p-3 surface-muted">
             <p className="text-sm font-semibold mb-1">{t('csvHelp.example')}</p>
             <code className="text-xs block whitespace-pre-wrap text-base-content/80">
               {`date,type,mediaId,time,characters,episodes,pages,description,tags\n2025-01-15,reading,,60,5000,,,My Novel,novels;fiction\n2025-01-16,anime,21,24,,2,,Anime Title,`}
@@ -4414,8 +4427,11 @@ function SettingsScreen() {
       </dialog>
 
       {/* Kechimochi CSV Help Modal */}
-      <dialog id="kechimochi_csv_help_modal" className="modal">
-        <div className="modal-box max-w-lg">
+      <dialog
+        id="kechimochi_csv_help_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
+        <div className="modal-box">
           <h3 className="text-lg font-bold mb-4">
             {t('csvHelp.kechimochiTitle')}
           </h3>
@@ -4425,7 +4441,7 @@ function SettingsScreen() {
           <div role="alert" className="alert alert-warning alert-soft mb-4">
             <span>{t('csvHelp.kechimochiOnlyActivity')}</span>
           </div>
-          <div className="mt-3 p-3 bg-base-200 rounded-lg">
+          <div className="mt-3 p-3 surface-muted">
             <p className="text-sm font-semibold mb-2">
               {t('csvHelp.importedAsOther')}
             </p>
@@ -4434,7 +4450,7 @@ function SettingsScreen() {
               <li>{t('csvHelp.unrecognized')}</li>
             </ul>
           </div>
-          <div className="mt-3 p-3 bg-base-200 rounded-lg">
+          <div className="mt-3 p-3 surface-muted">
             <p className="text-sm font-semibold mb-2">{t('csvHelp.notes')}</p>
             <ul className="list-disc pl-5 text-sm text-base-content/80 space-y-1">
               <li>{t('csvHelp.kechimochiWatching')}</li>
@@ -4608,7 +4624,7 @@ function ProfileLayoutEditor() {
   };
 
   return (
-    <div className="card bg-base-100 shadow-sm border border-base-300/50">
+    <div className="card surface">
       <div className="card-body">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">

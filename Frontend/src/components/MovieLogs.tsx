@@ -169,7 +169,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
   if (isLoadingLogs) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
-        <div className="card bg-base-100 shadow-sm w-full max-w-md">
+        <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -243,7 +243,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
         <span>{t('video.movieHint')}</span>
       </div>
 
-      <div className="stats shadow mb-4 w-full">
+      <div className="stats shadow-sm mb-4 w-full">
         <div className="stat">
           <div className="stat-title">{t('matcher.selectedLogs')}</div>
           <div className="stat-value">{selectedLogs.length}</div>
@@ -258,7 +258,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left panel - Log groups */}
-        <div className="card bg-base-200 shadow-lg">
+        <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">{t('video.unmatchedTitle')}</h2>
             <div className="divider my-1"></div>
@@ -343,7 +343,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
         </div>
 
         {/* Right panel - Movie search */}
-        <div className="card bg-base-200 shadow-lg">
+        <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">
               {t('matcher.findMatching', {
@@ -352,7 +352,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
             </h2>
             <div className="divider my-1"></div>
 
-            <label className="input input-bordered input-primary flex items-center gap-2 mb-4">
+            <label className="input input-primary flex items-center gap-2 mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 16 16"
@@ -502,7 +502,7 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
-        <div className="stats shadow">
+        <div className="stats shadow-sm">
           <div className="stat">
             <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value text-primary">{selectedLogs.length}</div>
@@ -512,11 +512,11 @@ function MovieLogs({ username, isActive = true }: MovieLogsProps) {
         <button
           onClick={handleAssignMedia}
           disabled={isAssigning || !selectedMovie || selectedLogs.length === 0}
-          className={`btn btn-primary btn-lg ${isAssigning ? 'loading' : ''}`}
+          className="btn btn-primary btn-lg"
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner"></span>
+              <span className="loading loading-spinner loading-md"></span>
               {t('video.converting')}
             </>
           ) : selectedLogs.some((log) => log.type === 'video') ? (

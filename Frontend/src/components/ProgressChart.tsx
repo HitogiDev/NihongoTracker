@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useTimezone } from '../hooks/useTimezone';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { convertToUserTimezone, getLocale } from '../utils/timezone';
+import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { useTranslation } from 'react-i18next';
 
 interface LocalDateInfo {
@@ -45,20 +46,6 @@ interface ProgressChartProps {
   chartType?: 'line' | 'bar';
   showTitle?: boolean;
 }
-
-const MEDIA_TYPE_COLORS: Record<string, string> = {
-  vn: '#3a70e4',
-  game: '#59c94e',
-  anime: '#26b2f2',
-  video: '#2cc9a4',
-  'tv show': '#f8b420',
-  book: '#7c6cf0',
-  manga: '#ee4466',
-  reading: '#b34ce6',
-  movie: '#f77118',
-  audio: '#f2a15a',
-  other: '#10b785',
-};
 
 function withAlpha(hexColor: string, alpha: number) {
   const normalized = hexColor.replace('#', '');
@@ -559,7 +546,7 @@ export default function ProgressChart({
                       | 'total'
                   )
                 }
-                className="select select-bordered"
+                className="select"
               >
                 <option value="total">{t('progress.total')}</option>
                 <option value="year">{t('progress.year')}</option>

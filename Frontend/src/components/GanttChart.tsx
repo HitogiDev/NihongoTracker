@@ -984,7 +984,7 @@ function GanttTooltip({
       onMouseLeave={() => onHoverChange(false)}
     >
       <div
-        className="rounded-xl shadow-2xl p-3 min-w-[220px] max-w-[280px] bg-base-100/95 backdrop-blur"
+        className="rounded-xl shadow-lg p-3 min-w-[220px] max-w-[280px] bg-base-100/95 backdrop-blur"
         style={{
           border: `1.5px solid ${hexToRgba(color, 0.5)}`,
           boxShadow: `0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px ${hexToRgba(color, 0.15)}`,
@@ -1044,12 +1044,12 @@ function GanttTooltip({
           </div>
           <div className="flex items-center gap-1 text-base-content/70">
             <Hash className="w-3 h-3 flex-shrink-0" />
-            <span>
-              {t('gantt.logCount', { count: item.logCount })}
-            </span>
+            <span>{t('gantt.logCount', { count: item.logCount })}</span>
           </div>
           <div className="flex items-center gap-1 text-base-content/70">
-            <span className="text-[9px] opacity-70">{t('gantt.daysLabel')}</span>
+            <span className="text-[9px] opacity-70">
+              {t('gantt.daysLabel')}
+            </span>
             <span>{item.activeDates.length}</span>
           </div>
         </div>

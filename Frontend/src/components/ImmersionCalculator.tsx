@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Field from './ui/Field';
 import { Calculator } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -153,7 +154,7 @@ const ImmersionCalculator: React.FC = () => {
   const availableInputTypes = getAvailableInputTypes();
 
   return (
-    <div className="card bg-base-100 shadow-sm border border-base-300">
+    <div className="card surface">
       <div className="card-body">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -168,41 +169,31 @@ const ImmersionCalculator: React.FC = () => {
         </div>
 
         {/* Mode Selection */}
-        <div className="form-control mb-6">
-          <label className="label">
-            <span className="label-text font-medium">
-              {t('calculator.mode')}
-            </span>
-          </label>
+        <Field label={t('calculator.mode')} className="mb-6">
           <div className="join w-full">
             <button
-              className={`btn join-item flex-1 ${mode === 'xp-to-immersion' ? 'btn-primary' : 'btn-outline'}`}
+              className={`join-item btn btn-sm flex-1 ${mode === 'xp-to-immersion' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('xp-to-immersion')}
             >
               {t('calculator.xpToImmersion')}
             </button>
             <button
-              className={`btn join-item flex-1 ${mode === 'immersion-to-xp' ? 'btn-primary' : 'btn-outline'}`}
+              className={`join-item btn btn-sm flex-1 ${mode === 'immersion-to-xp' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('immersion-to-xp')}
             >
               {t('calculator.immersionToXp')}
             </button>
           </div>
-        </div>
+        </Field>
 
         {mode === 'xp-to-immersion' ? (
           <>
             {/* XP to Immersion Mode */}
-            <div className="form-control mb-6">
-              <label className="label">
-                <span className="label-text font-medium">
-                  {t('calculator.targetXp')}
-                </span>
-              </label>
+            <Field label={t('calculator.targetXp')} className="mb-6">
               <div className="relative">
                 <input
                   type="number"
-                  className="input input-bordered input-primary w-full pr-12 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="input input-primary w-full pr-12 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   value={targetXp}
                   onChange={(e) => setTargetXp(e.target.value)}
                   placeholder="0"
@@ -212,7 +203,7 @@ const ImmersionCalculator: React.FC = () => {
                   <span className="text-sm text-base-content/60">XP</span>
                 </div>
               </div>
-            </div>
+            </Field>
 
             {/* XP to Immersion Results */}
             {xpToImmersionResult && (
@@ -282,14 +273,9 @@ const ImmersionCalculator: React.FC = () => {
           <>
             {/* Immersion to XP Mode */}
             <div className="grid md:grid-cols-2 gap-4 mb-6">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-medium">
-                    {t('calculator.immersionType')}
-                  </span>
-                </label>
+              <Field label={t('calculator.immersionType')}>
                 <select
-                  className="select select-bordered select-secondary"
+                  className="select select-secondary"
                   value={immersionType}
                   onChange={(e) => setImmersionType(e.target.value)}
                 >
@@ -299,18 +285,13 @@ const ImmersionCalculator: React.FC = () => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-medium">
-                    {t('calculator.quantity')}
-                  </span>
-                </label>
+              <Field label={t('calculator.quantity')}>
                 <div className="relative">
                   <input
                     type="number"
-                    className="input input-bordered input-accent w-full pr-20 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="input input-accent w-full pr-20 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     value={immersionValue}
                     onChange={(e) => setImmersionValue(e.target.value)}
                     placeholder="0"
@@ -327,7 +308,7 @@ const ImmersionCalculator: React.FC = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </Field>
             </div>
 
             {/* Immersion to XP Results */}

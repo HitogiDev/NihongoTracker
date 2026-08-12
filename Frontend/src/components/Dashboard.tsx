@@ -497,7 +497,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8 space-y-8">
       <QuickLog
         open={quickLogOpen}
         onClose={closeQuickLog}
@@ -586,7 +586,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-8">
-          <div className="card bg-base-100 shadow-sm border border-base-200/60">
+          <div className="card surface">
             <div className="card-body">
               <h2 className={DASHBOARD_CARD_TITLE_CLASS}>
                 {t('dashboard.immersion.title')}
@@ -652,7 +652,7 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="card bg-base-100 shadow-sm border border-base-200/60">
+          <div className="card surface">
             <div className="card-body space-y-4">
               {/* Header */}
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -670,7 +670,7 @@ function Dashboard() {
                     <div
                       tabIndex={0}
                       role="button"
-                      className="btn btn-sm btn-outline gap-2 justify-start whitespace-nowrap"
+                      className="btn btn-outline btn-sm gap-2 justify-start whitespace-nowrap"
                     >
                       {(() => {
                         const Icon = feedKindOptions.find(
@@ -686,7 +686,7 @@ function Dashboard() {
                     </div>
                     <ul
                       tabIndex={0}
-                      className="dropdown-content menu bg-base-100 rounded-box z-[1] w-48 p-2 shadow-lg"
+                      className="dropdown-content menu surface-raised z-[1] w-48 p-2"
                     >
                       {feedKindOptions.map((option) => {
                         const Icon = option.icon;
@@ -713,7 +713,7 @@ function Dashboard() {
                       <div
                         tabIndex={0}
                         role="button"
-                        className="btn btn-sm btn-outline gap-2 whitespace-nowrap"
+                        className="btn btn-outline btn-sm gap-2 whitespace-nowrap"
                       >
                         <Funnel className="w-3.5 h-3.5" />
                         {tAny(
@@ -731,7 +731,7 @@ function Dashboard() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-44 p-2 shadow-lg"
+                        className="dropdown-content menu surface-raised z-[1] w-44 p-2"
                       >
                         {feedTypeOptions.map((option) => (
                           <li key={option.value}>
@@ -761,7 +761,7 @@ function Dashboard() {
                     <div
                       tabIndex={0}
                       role="button"
-                      className="btn btn-sm btn-outline gap-2 whitespace-nowrap"
+                      className="btn btn-outline btn-sm gap-2 whitespace-nowrap"
                     >
                       <Clock className="w-3.5 h-3.5" />
                       {t(
@@ -773,7 +773,7 @@ function Dashboard() {
                     </div>
                     <ul
                       tabIndex={0}
-                      className="dropdown-content menu bg-base-100 rounded-box z-[1] w-44 p-2 shadow-lg"
+                      className="dropdown-content menu surface-raised z-[1] w-44 p-2"
                     >
                       {feedTimeOptions.map((option) => (
                         <li key={option.value}>
@@ -1086,7 +1086,7 @@ function RecentMediaPanel({
   const { t } = useTranslation('home');
 
   return (
-    <div className="card bg-base-100 shadow-sm border border-base-200/60">
+    <div className="card surface">
       <div className="card-body space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -1159,7 +1159,7 @@ function RecentMediaRail({
   const logs = allLogs.slice(0, limit);
 
   return (
-    <div className="card bg-base-100 shadow-sm border border-base-200/60">
+    <div className="card surface">
       <div className="card-body space-y-3">
         <div className="flex items-center justify-between">
           <div>

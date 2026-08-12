@@ -46,7 +46,7 @@ export default function LanguageSwitcher({
       </div>
       <ul
         tabIndex={0}
-        className="dropdown-content z-[50] menu p-2 shadow-sm bg-base-100 text-base-content rounded-xl w-40 border border-base-300"
+        className="dropdown-content z-[50] menu p-2 surface-raised text-base-content w-40"
       >
         {SUPPORTED_LANGUAGES.map((language) => (
           <li key={language}>

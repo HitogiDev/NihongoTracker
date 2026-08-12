@@ -153,7 +153,7 @@ export default function LegalDocument({ doc }: { doc: LegalDocumentId }) {
   const data = read(doc, { returnObjects: true }) as LegalDocumentData;
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-32 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 pt-28 max-w-4xl">
       <h1 className="text-4xl font-bold mb-4">{data.title}</h1>
       <p className="text-base-content/70 mb-8">
         {t('common.lastUpdated', { date: data.lastUpdated })}

@@ -202,7 +202,7 @@ export default function ThemeSwitcher() {
       </div>
       <ul
         tabIndex={0}
-        className="dropdown-content bg-base-300 rounded-box z-50 w-52 p-2 shadow-2xl overflow-y-auto max-h-72"
+        className="dropdown-content surface-raised z-50 w-52 p-2 overflow-y-auto max-h-72"
       >
         {themes.map((t) => {
           const isLocked = !hasPatreonAccess && patreonThemes.includes(t);

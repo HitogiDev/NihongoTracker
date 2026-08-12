@@ -115,7 +115,7 @@ function EntryRow({
         transition,
         opacity: isDragging ? 0.6 : 1,
       }}
-      className="bg-base-100 rounded-lg p-3 flex flex-col gap-2"
+      className="surface p-3 flex flex-col gap-2"
     >
       <div className="flex items-center gap-3">
         {isEditing && (
@@ -157,7 +157,7 @@ function EntryRow({
 
       {isEditing && (
         <input
-          className="input input-bordered input-sm w-full"
+          className="input input-sm w-full"
           placeholder={t('lists.detail.notePlaceholder')}
           maxLength={500}
           value={noteDraft}
@@ -282,7 +282,7 @@ function MediaListDetailScreen() {
 
   if (error || !list) {
     return (
-      <div className="min-h-screen bg-base-200 pt-24 px-4">
+      <div className="min-h-screen bg-base-200 pt-28 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-2xl font-bold mb-2">
             {t('lists.detail.unavailableTitle')}
@@ -301,7 +301,7 @@ function MediaListDetailScreen() {
   const entries = isEditing ? draftEntries : (list.entries ?? []);
 
   return (
-    <div className="min-h-screen bg-base-200 pt-24 pb-16 px-4">
+    <div className="min-h-screen bg-base-200 pt-28 pb-16 px-4">
       <div className="max-w-3xl mx-auto">
         <header className="mb-6">
           <div className="flex items-start gap-3 flex-wrap">
@@ -359,7 +359,7 @@ function MediaListDetailScreen() {
             {currentUser && (
               <button
                 type="button"
-                className="btn btn-sm btn-outline"
+                className="btn btn-outline btn-sm"
                 disabled={cloneList.isPending}
                 onClick={() => cloneList.mutate()}
               >
@@ -371,14 +371,14 @@ function MediaListDetailScreen() {
               <>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline"
+                  className="btn btn-outline btn-sm"
                   onClick={() => setShowMetaModal(true)}
                 >
                   <Pencil className="w-4 h-4" /> {t('lists.detail.editDetails')}
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline"
+                  className="btn btn-outline btn-sm"
                   onClick={() => setIsEditing(true)}
                 >
                   <GripVertical className="w-4 h-4" />{' '}
@@ -386,7 +386,7 @@ function MediaListDetailScreen() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline btn-error"
+                  className="btn btn-error btn-outline btn-sm"
                   onClick={() => removeList.mutate()}
                   disabled={removeList.isPending}
                 >
@@ -399,7 +399,7 @@ function MediaListDetailScreen() {
               <>
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
+                  className="btn btn-primary btn-sm"
                   onClick={() => saveEntries.mutate()}
                   disabled={saveEntries.isPending}
                 >
@@ -407,7 +407,7 @@ function MediaListDetailScreen() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-sm btn-ghost"
+                  className="btn btn-ghost btn-sm"
                   onClick={() => {
                     setDraftEntries(list.entries ?? []);
                     setIsEditing(false);

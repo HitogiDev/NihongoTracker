@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Field from '../components/ui/Field';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUserFn, getPublicStatsFn } from '../api/trackerApi';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -326,7 +327,7 @@ function LoginScreen() {
           <div className="flex justify-center lg:justify-end">
             <div
               ref={cardRef}
-              className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300/50 backdrop-blur-sm"
+              className="card w-full max-w-md surface backdrop-blur-sm"
             >
               <form className="card-body p-8" onSubmit={handleSubmit}>
                 <h2
@@ -340,113 +341,121 @@ function LoginScreen() {
                 </p>
 
                 {/* Username/Email Field */}
-                <div ref={addToRefs} className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      {t('login.form.login.label')}
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={t('login.form.login.placeholder')}
-                    className={`input input-bordered w-full ${
-                      errors.usernameOrEmail
-                        ? 'input-error'
-                        : touched.login &&
-                            !errors.usernameOrEmail &&
-                            usernameOrEmail
-                          ? 'input-success'
-                          : ''
-                    }`}
-                    value={usernameOrEmail}
-                    onChange={(e) => handleFieldChange('login', e.target.value)}
-                    required
-                  />
-                  {errors.usernameOrEmail && (
-                    <label className="label">
-                      <span className="label-text-alt text-error text-wrap break-words">
-                        {vt(errors.usernameOrEmail)}
-                      </span>
-                    </label>
-                  )}
+                <div ref={addToRefs}>
+                  <Field
+                    label={
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        {t('login.form.login.label')}
+                      </>
+                    }
+                  >
+                    <input
+                      type="text"
+                      placeholder={t('login.form.login.placeholder')}
+                      className={`input w-full ${
+                        errors.usernameOrEmail
+                          ? 'input-error'
+                          : touched.login &&
+                              !errors.usernameOrEmail &&
+                              usernameOrEmail
+                            ? 'input-success'
+                            : ''
+                      }`}
+                      value={usernameOrEmail}
+                      onChange={(e) =>
+                        handleFieldChange('login', e.target.value)
+                      }
+                      required
+                    />
+                    {errors.usernameOrEmail && (
+                      <label className="label">
+                        <span className="text-error text-wrap break-words">
+                          {vt(errors.usernameOrEmail)}
+                        </span>
+                      </label>
+                    )}
+                  </Field>
                 </div>
 
                 {/* Password Field */}
-                <div ref={addToRefs} className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      {t('login.form.password.label')}
-                    </span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder={t('login.form.password.placeholder')}
-                    className={`input input-bordered w-full ${
-                      errors.password
-                        ? 'input-error'
-                        : touched.password && !errors.password && password
-                          ? 'input-success'
-                          : ''
-                    }`}
-                    value={password}
-                    onChange={(e) =>
-                      handleFieldChange('password', e.target.value)
+                <div ref={addToRefs}>
+                  <Field
+                    label={
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                        {t('login.form.password.label')}
+                      </>
                     }
-                    required
-                  />
-                  {errors.password && (
-                    <label className="label">
-                      <span className="label-text-alt text-error text-wrap break-words">
-                        {vt(errors.password)}
-                      </span>
-                    </label>
-                  )}
+                  >
+                    <input
+                      type="password"
+                      placeholder={t('login.form.password.placeholder')}
+                      className={`input w-full ${
+                        errors.password
+                          ? 'input-error'
+                          : touched.password && !errors.password && password
+                            ? 'input-success'
+                            : ''
+                      }`}
+                      value={password}
+                      onChange={(e) =>
+                        handleFieldChange('password', e.target.value)
+                      }
+                      required
+                    />
+                    {errors.password && (
+                      <label className="label">
+                        <span className="text-error text-wrap break-words">
+                          {vt(errors.password)}
+                        </span>
+                      </label>
+                    )}
 
-                  <label className="label justify-end">
-                    <Link
-                      to="/forgot-password"
-                      className="label-text-alt link link-hover link-primary"
-                    >
-                      {t('login.form.forgotPassword')}
-                    </Link>
-                  </label>
+                    <label className="label justify-end">
+                      <Link
+                        to="/forgot-password"
+                        className="link link-hover link-primary"
+                      >
+                        {t('login.form.forgotPassword')}
+                      </Link>
+                    </label>
+                  </Field>
                 </div>
 
                 {/* Submit Button */}
-                <div ref={addToRefs} className="form-control mt-4 items-center">
+                <div ref={addToRefs} className="mt-4 items-center">
                   <button
                     className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
                       !isFormValid || isPending
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-md hover:scale-[1.02]'
+                        : 'hover:shadow-lg hover:scale-[1.02]'
                     }`}
                     type="submit"
                     disabled={!isFormValid || isPending}

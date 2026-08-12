@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Field from '../components/ui/Field';
 import {
   Link,
   useBeforeUnload,
@@ -266,7 +267,7 @@ function MediaWriteReview() {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <div className="alert alert-info">
           <span>{t('write.loginRequired')}</span>
-          <Link to="/login" className="btn btn-sm btn-primary">
+          <Link to="/login" className="btn btn-primary btn-sm">
             {t('write.login')}
           </Link>
         </div>
@@ -277,7 +278,7 @@ function MediaWriteReview() {
   if (userReview) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="card bg-base-100 shadow-lg">
+        <div className="card surface">
           <div className="card-body">
             <h2 className="card-title">{t('write.alreadyPostedTitle')}</h2>
             <p className="text-base-content/70">
@@ -307,7 +308,7 @@ function MediaWriteReview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card bg-base-100 shadow-lg">
+        <div className="card surface">
           <div className="card-body">
             <form
               className="space-y-4"
@@ -338,13 +339,10 @@ function MediaWriteReview() {
                 addReviewMutation.mutate(reviewForm);
               }}
             >
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('write.summary')}</span>
-                </label>
+              <Field label={t('write.summary')}>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={reviewForm.summary}
                   placeholder={t('write.summaryPlaceholder')}
                   maxLength={REVIEW_SUMMARY_MAX_LENGTH}
@@ -361,18 +359,15 @@ function MediaWriteReview() {
                   reviewForm.summary.trim().length <
                     REVIEW_SUMMARY_MIN_LENGTH && (
                     <label className="label">
-                      <span className="label-text-alt text-warning">
+                      <span className="text-warning">
                         Summary must be at least {REVIEW_SUMMARY_MIN_LENGTH}{' '}
                         characters.
                       </span>
                     </label>
                   )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('write.rating')}</span>
-                </label>
+              <Field label={t('write.rating')}>
                 <div className="flex items-center gap-3">
                   <div className="rating rating-lg rating-half">
                     <input
@@ -409,12 +404,9 @@ function MediaWriteReview() {
                     </span>
                   )}
                 </div>
-              </div>
+              </Field>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('write.review')}</span>
-                </label>
+              <Field label={t('write.review')}>
                 <div className="flex flex-wrap gap-2 mb-2">
                   <button
                     type="button"
@@ -536,7 +528,7 @@ function MediaWriteReview() {
 
                 <textarea
                   ref={reviewTextareaRef}
-                  className="textarea textarea-bordered w-full min-h-72 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
+                  className="textarea w-full min-h-72 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
                   value={reviewForm.content}
                   placeholder={t('write.bodyPlaceholder')}
                   onChange={(e) =>
@@ -549,13 +541,13 @@ function MediaWriteReview() {
                 />
                 {reviewForm.content.length > REVIEW_MAX_LENGTH && (
                   <label className="label">
-                    <span className="label-text-alt text-error">
+                    <span className="text-error">
                       {reviewForm.content.length - REVIEW_MAX_LENGTH} characters
                       over the {REVIEW_MAX_LENGTH} limit.
                     </span>
                   </label>
                 )}
-              </div>
+              </Field>
 
               <div className="flex justify-end">
                 <button
@@ -576,7 +568,7 @@ function MediaWriteReview() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-lg">
+        <div className="card surface">
           <div className="card-body justify-start">
             <h2 className="card-title text-lg">{t('write.preview')}</h2>
             <div className="grow-0 w-full">

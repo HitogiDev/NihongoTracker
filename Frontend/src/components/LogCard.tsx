@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import Field from './ui/Field';
 import { Link } from 'react-router-dom';
 import { ILog, IUpdateLogRequest } from '../types';
 
@@ -40,99 +41,69 @@ import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
 import { useTranslation } from 'react-i18next';
 import { getApiErrorMessage } from '../utils/apiError';
+import { MEDIA_TYPE_CLASSES } from '../constants/mediaColors';
 
 /**
  * Module scope, so the label is a key into `common:mediaTypes` rather than
- * text — a literal here would never update on a language change.
+ * text — a literal here would never update on a language change. Colours come
+ * from `constants/mediaColors`, which is also what the charts read, so a log
+ * card and a chart segment can never disagree about what "anime" looks like.
  */
 const logTypeConfig = {
   reading: {
     labelKey: 'mediaTypes.reading',
     icon: Book,
-    color: 'text-[#b34ce6]',
-    bgColor: 'bg-[#b34ce6]/10',
-    borderColor: 'border-[#b34ce6]/30',
-    accentColor: 'bg-[#b34ce6]',
+    ...MEDIA_TYPE_CLASSES.reading,
   },
   anime: {
     labelKey: 'mediaTypes.anime',
     icon: Play,
-    color: 'text-[#26b2f2]',
-    bgColor: 'bg-[#26b2f2]/10',
-    borderColor: 'border-[#26b2f2]/30',
-    accentColor: 'bg-[#26b2f2]',
+    ...MEDIA_TYPE_CLASSES.anime,
   },
   vn: {
     labelKey: 'mediaTypes.vn',
     icon: GamepadDirectional,
-    color: 'text-[#3a70e4]',
-    bgColor: 'bg-[#3a70e4]/10',
-    borderColor: 'border-[#3a70e4]/30',
-    accentColor: 'bg-[#3a70e4]',
+    ...MEDIA_TYPE_CLASSES.vn,
   },
   game: {
     labelKey: 'mediaTypes.game',
     icon: GamepadDirectional,
-    color: 'text-[#59c94e]',
-    bgColor: 'bg-[#59c94e]/10',
-    borderColor: 'border-[#59c94e]/30',
-    accentColor: 'bg-[#59c94e]',
+    ...MEDIA_TYPE_CLASSES.game,
   },
   video: {
     labelKey: 'mediaTypes.video',
     icon: Video,
-    color: 'text-[#2cc9a4]',
-    bgColor: 'bg-[#2cc9a4]/10',
-    borderColor: 'border-[#2cc9a4]/30',
-    accentColor: 'bg-[#2cc9a4]',
+    ...MEDIA_TYPE_CLASSES.video,
   },
   manga: {
     labelKey: 'mediaTypes.manga',
     icon: Book,
-    color: 'text-[#ee4466]',
-    bgColor: 'bg-[#ee4466]/10',
-    borderColor: 'border-[#ee4466]/30',
-    accentColor: 'bg-[#ee4466]',
+    ...MEDIA_TYPE_CLASSES.manga,
   },
   audio: {
     labelKey: 'mediaTypes.audio',
     icon: Volume2,
-    color: 'text-[#f2a15a]',
-    bgColor: 'bg-[#f2a15a]/10',
-    borderColor: 'border-[#f2a15a]/30',
-    accentColor: 'bg-[#f2a15a]',
+    ...MEDIA_TYPE_CLASSES.audio,
   },
   movie: {
     labelKey: 'mediaTypes.movie',
     icon: Clapperboard,
-    color: 'text-[#f77118]',
-    bgColor: 'bg-[#f77118]/10',
-    borderColor: 'border-[#f77118]/30',
-    accentColor: 'bg-[#f77118]',
+    ...MEDIA_TYPE_CLASSES.movie,
   },
   'tv show': {
     labelKey: 'mediaTypes.tvShow',
     icon: MonitorPlay,
-    color: 'text-[#f8b420]',
-    bgColor: 'bg-[#f8b420]/10',
-    borderColor: 'border-[#f8b420]/30',
-    accentColor: 'bg-[#f8b420]',
+    ...MEDIA_TYPE_CLASSES['tv show'],
   },
   book: {
     labelKey: 'mediaTypes.book',
     icon: BookOpen,
-    color: 'text-[#7c6cf0]',
-    bgColor: 'bg-[#7c6cf0]/10',
-    borderColor: 'border-[#7c6cf0]/30',
-    accentColor: 'bg-[#7c6cf0]',
+    ...MEDIA_TYPE_CLASSES.book,
   },
   other: {
     labelKey: 'mediaTypes.other',
     icon: Ellipsis,
-    color: 'text-[#6b7280]',
-    bgColor: 'bg-[#6b7280]/10',
-    borderColor: 'border-[#6b7280]/30',
-    accentColor: 'bg-[#6b7280]',
+    ...MEDIA_TYPE_CLASSES.other,
   },
 } as const;
 
@@ -603,7 +574,7 @@ function LogCard({
   return (
     <>
       <article
-        className={`card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 border ${typeConfig.borderColor} group rounded-t-none`}
+        className={`card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 border ${typeConfig.borderColor} group rounded-t-none`}
         role="article"
         aria-label={`Log entry: ${logTitle}`}
       >
@@ -676,12 +647,12 @@ function LogCard({
               <div className="dropdown dropdown-end">
                 <button
                   tabIndex={0}
-                  className="btn btn-ghost btn-sm btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
+                  className="btn btn-ghost btn-sm btn-square opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
                   aria-label={t('card.a11y.options')}
                 >
                   <Ellipsis className="w-4 h-4" />
                 </button>
-                <ul className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-32 border border-base-300 z-50">
+                <ul className="dropdown-content menu p-2 surface-raised w-32 z-50">
                   <li>
                     <button
                       onClick={handleShare}
@@ -833,13 +804,13 @@ function LogCard({
               </div>
             </div>
             <form method="dialog">
-              <button className="btn btn-sm btn-circle btn-ghost">✕</button>
+              <button className="btn btn-ghost btn-sm btn-circle">✕</button>
             </form>
           </div>
 
           <div className="space-y-6">
             {/* Media Information */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Book className="w-5 h-5" />
@@ -848,7 +819,7 @@ function LogCard({
 
                 <div className="space-y-3">
                   <div>
-                    <span className="label-text font-medium">
+                    <span className="font-medium">
                       {t('details.titleLabel')}
                     </span>
                     <p className="text-base-content mt-1">{logTitle}</p>
@@ -858,7 +829,7 @@ function LogCard({
                     typeof media === 'object' &&
                     media.title?.contentTitleEnglish && (
                       <div>
-                        <span className="label-text font-medium">
+                        <span className="font-medium">
                           {t('details.englishTitle')}
                         </span>
                         <p className="text-base-content mt-1">
@@ -871,7 +842,7 @@ function LogCard({
                     typeof media === 'object' &&
                     media.title?.contentTitleRomaji && (
                       <div>
-                        <span className="label-text font-medium">
+                        <span className="font-medium">
                           {t('details.romajiTitle')}
                         </span>
                         <p className="text-base-content mt-1">
@@ -882,7 +853,7 @@ function LogCard({
 
                   {description && description !== logTitle && (
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.descriptionLabel')}
                       </span>
                       <p className="text-base-content mt-1">{description}</p>
@@ -891,7 +862,7 @@ function LogCard({
 
                   {media && typeof media === 'object' && media.type && (
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.mediaType')}
                       </span>
                       <span className="badge badge-outline ml-2 capitalize">
@@ -908,7 +879,7 @@ function LogCard({
 
                   {media && typeof media === 'object' && media.contentId && (
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.contentId')}
                       </span>
                       <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
@@ -921,7 +892,7 @@ function LogCard({
             </div>
 
             {/* Activity Statistics */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
@@ -929,7 +900,7 @@ function LogCard({
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="stat bg-base-100 rounded-lg p-3">
+                  <div className="stat surface p-3">
                     <div className="stat-title text-xs">
                       {t('details.xpGained')}
                     </div>
@@ -940,7 +911,7 @@ function LogCard({
                   </div>
 
                   {time && time > 0 ? (
-                    <div className="stat bg-base-100 rounded-lg p-3">
+                    <div className="stat surface p-3">
                       <div className="stat-title text-xs">
                         {t('details.timeSpent')}
                       </div>
@@ -952,7 +923,7 @@ function LogCard({
                   ) : null}
 
                   {episodes ? (
-                    <div className="stat bg-base-100 rounded-lg p-3">
+                    <div className="stat surface p-3">
                       <div className="stat-title text-xs">
                         {t('details.episodes')}
                       </div>
@@ -964,7 +935,7 @@ function LogCard({
                   ) : null}
 
                   {pages && pages > 0 ? (
-                    <div className="stat bg-base-100 rounded-lg p-3">
+                    <div className="stat surface p-3">
                       <div className="stat-title text-xs">
                         {t('details.pages')}
                       </div>
@@ -976,7 +947,7 @@ function LogCard({
                   ) : null}
 
                   {chars ? (
-                    <div className="stat bg-base-100 rounded-lg p-3">
+                    <div className="stat surface p-3">
                       <div className="stat-title text-xs">
                         {t('details.characters')}
                       </div>
@@ -988,14 +959,16 @@ function LogCard({
                   ) : null}
 
                   {readingSpeed && (
-                    <div className="stat bg-base-100 rounded-lg p-3">
+                    <div className="stat surface p-3">
                       <div className="stat-title text-xs">
                         {t('details.readingSpeed')}
                       </div>
                       <div className="stat-value text-xl text-success">
                         {readingSpeed}
                       </div>
-                      <div className="stat-desc">{t('logs:card.charsPerHour')}</div>
+                      <div className="stat-desc">
+                        {t('logs:card.charsPerHour')}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1004,7 +977,7 @@ function LogCard({
 
             {/* Tags */}
             {log.tags && log.tags.length > 0 && (
-              <div className="card bg-base-200 shadow-sm">
+              <div className="card surface-muted">
                 <div className="card-body p-4">
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                     <svg
@@ -1048,7 +1021,7 @@ function LogCard({
             )}
 
             {/* Date and Time Information */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
@@ -1057,9 +1030,7 @@ function LogCard({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <span className="label-text font-medium">
-                      {t('details.created')}
-                    </span>
+                    <span className="font-medium">{t('details.created')}</span>
                     <p className="text-base-content mt-1">{fullDate}</p>
                     {!unknownDate ? (
                       <p className="text-sm text-base-content/60">
@@ -1070,7 +1041,7 @@ function LogCard({
 
                   {time ? (
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.duration')}
                       </span>
                       <p className="text-base-content mt-1">
@@ -1086,7 +1057,7 @@ function LogCard({
 
             {/* Media Details (if available) */}
             {media && typeof media === 'object' && (
-              <div className="card bg-base-200 shadow-sm">
+              <div className="card surface-muted">
                 <div className="card-body p-4">
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                     <Video className="w-5 h-5" />
@@ -1095,7 +1066,7 @@ function LogCard({
 
                   <div className="space-y-3">
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.contentId')}
                       </span>
                       <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded ml-2">
@@ -1104,7 +1075,7 @@ function LogCard({
                     </div>
 
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.mediaType')}
                       </span>
                       <span className="badge badge-outline ml-2 capitalize">
@@ -1119,7 +1090,7 @@ function LogCard({
                     </div>
 
                     <div>
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.availableTitles')}
                       </span>
                       <div className="mt-1 space-y-1">
@@ -1155,7 +1126,7 @@ function LogCard({
             )}
 
             {/* Technical Details */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
                   <Gauge className="w-5 h-5" />
@@ -1164,9 +1135,7 @@ function LogCard({
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="label-text font-medium">
-                      {t('details.logId')}
-                    </span>
+                    <span className="font-medium">{t('details.logId')}</span>
                     <span className="font-mono text-xs bg-base-300 px-2 py-1 rounded">
                       {log._id}
                     </span>
@@ -1174,16 +1143,14 @@ function LogCard({
 
                   {logUser ? (
                     <div className="flex justify-between">
-                      <span className="label-text font-medium">
-                        {t('details.user')}
-                      </span>
+                      <span className="font-medium">{t('details.user')}</span>
                       <span>{logUser}</span>
                     </div>
                   ) : null}
 
                   {manabeId ? (
                     <div className="flex justify-between">
-                      <span className="label-text font-medium">
+                      <span className="font-medium">
                         {t('details.manabeId')}
                       </span>
                       <span>{manabeId}</span>
@@ -1191,7 +1158,7 @@ function LogCard({
                   ) : null}
 
                   <div className="flex justify-between">
-                    <span className="label-text font-medium">
+                    <span className="font-medium">
                       {t('details.contentType')}
                     </span>
                     <span className="capitalize">
@@ -1326,7 +1293,7 @@ function LogCard({
               </div>
             </div>
             <form method="dialog">
-              <button className="btn btn-sm btn-circle btn-ghost">✕</button>
+              <button className="btn btn-ghost btn-sm btn-circle">✕</button>
             </form>
           </div>
 
@@ -1359,23 +1326,21 @@ function LogCard({
             )}
 
             {/* Basic Information Section */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4">
                   {t('edit.basicInfo')}
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        {t('edit.description')}
-                      </span>
-                      <span className="label-text-alt text-error">*</span>
-                    </label>
+                  <Field
+                    label={t('edit.description')}
+                    required
+                    className="md:col-span-2"
+                  >
                     <input
                       type="text"
-                      className="input input-bordered w-full"
+                      className="input w-full"
                       value={editData.description}
                       onChange={(e) =>
                         setEditData({
@@ -1386,16 +1351,11 @@ function LogCard({
                       placeholder={t('edit.descriptionPlaceholder')}
                       required
                     />
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        {t('edit.type')}
-                      </span>
-                    </label>
+                  <Field label={t('edit.type')}>
                     <select
-                      className="select select-bordered w-full"
+                      className="select w-full"
                       value={editData.type}
                       onChange={(e) => {
                         const nextType = e.target.value as ILog['type'];
@@ -1453,29 +1413,24 @@ function LogCard({
                         {t('common:mediaTypes.other')}
                       </option>
                     </select>
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        {t('edit.date')}
-                      </span>
-                    </label>
+                  <Field label={t('edit.date')}>
                     <input
                       type="date"
-                      className="input input-bordered w-full"
+                      className="input w-full"
                       value={editData.date}
                       onChange={(e) =>
                         setEditData({ ...editData, date: e.target.value })
                       }
                     />
-                  </div>
+                  </Field>
                 </div>
               </div>
             </div>
 
             {/* Activity Details Section */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4">
                   {t('edit.activityDetails')}
@@ -1483,18 +1438,13 @@ function LogCard({
 
                 <div className="space-y-4">
                   {/* Time Section */}
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        {t('details.timeSpent')}
-                      </span>
-                    </label>
+                  <Field label={t('details.timeSpent')}>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <input
                           type="number"
                           min="0"
-                          className="input input-bordered w-full"
+                          className="input w-full"
                           value={editData.hours || ''}
                           onChange={(e) =>
                             setEditData({
@@ -1506,9 +1456,7 @@ function LogCard({
                           placeholder={t('card.hoursPlaceholder')}
                         />
                         <div className="label">
-                          <span className="label-text-alt">
-                            {t('edit.hours')}
-                          </span>
+                          <span>{t('edit.hours')}</span>
                         </div>
                       </div>
                       <div>
@@ -1516,7 +1464,7 @@ function LogCard({
                           type="number"
                           min="0"
                           max="59"
-                          className="input input-bordered w-full"
+                          className="input w-full"
                           value={editData.minutes || ''}
                           onChange={(e) =>
                             setEditData({
@@ -1528,27 +1476,20 @@ function LogCard({
                           placeholder={t('card.minutesPlaceholder')}
                         />
                         <div className="label">
-                          <span className="label-text-alt">
-                            {t('edit.minutes')}
-                          </span>
+                          <span>{t('edit.minutes')}</span>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Field>
 
                   {/* Type-specific fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {editData.type === 'anime' && (
-                      <div>
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('details.episodes')}
-                          </span>
-                        </label>
+                      <Field label={t('details.episodes')}>
                         <input
                           type="number"
                           min="0"
-                          className="input input-bordered w-full"
+                          className="input w-full"
                           value={editData.episodes || ''}
                           onChange={(e) =>
                             setEditData({
@@ -1559,7 +1500,7 @@ function LogCard({
                           onInput={preventNegativeValues}
                           placeholder={t('edit.episodesPlaceholder')}
                         />
-                      </div>
+                      </Field>
                     )}
 
                     {(editData.type === 'reading' ||
@@ -1567,16 +1508,11 @@ function LogCard({
                       editData.type === 'game' ||
                       editData.type === 'manga' ||
                       editData.type === 'book') && (
-                      <div>
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('details.characters')}
-                          </span>
-                        </label>
+                      <Field label={t('details.characters')}>
                         <input
                           type="number"
                           min="0"
-                          className="input input-bordered w-full"
+                          className="input w-full"
                           value={editData.chars || ''}
                           onChange={(e) =>
                             setEditData({
@@ -1587,21 +1523,16 @@ function LogCard({
                           onInput={preventNegativeValues}
                           placeholder={t('edit.charsPlaceholder')}
                         />
-                      </div>
+                      </Field>
                     )}
 
                     {(editData.type === 'manga' ||
                       editData.type === 'reading') && (
-                      <div>
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('edit.volume')}
-                          </span>
-                        </label>
+                      <Field label={t('edit.volume')}>
                         <input
                           type="number"
                           min="0"
-                          className="input input-bordered w-full"
+                          className="input w-full"
                           value={editData.volume || ''}
                           onChange={(e) =>
                             setEditData({
@@ -1612,21 +1543,16 @@ function LogCard({
                           onInput={preventNegativeValues}
                           placeholder={t('edit.volumePlaceholder')}
                         />
-                      </div>
+                      </Field>
                     )}
 
                     {(editData.type === 'manga' ||
                       editData.type === 'book') && (
-                      <div>
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {t('details.pages')}
-                          </span>
-                        </label>
+                      <Field label={t('details.pages')}>
                         <input
                           type="number"
                           min="0"
-                          className="input input-bordered w-full"
+                          className="input w-full"
                           value={editData.pages || ''}
                           onChange={(e) =>
                             setEditData({
@@ -1637,7 +1563,7 @@ function LogCard({
                           onInput={preventNegativeValues}
                           placeholder={t('edit.pagesPlaceholder')}
                         />
-                      </div>
+                      </Field>
                     )}
                   </div>
                 </div>
@@ -1645,7 +1571,7 @@ function LogCard({
             </div>
 
             {/* Tags Section */}
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
                 <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
                   <Tag className="w-5 h-5" />

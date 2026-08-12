@@ -53,7 +53,7 @@ export default function AchievementShowcase({
       <div className="border border-dashed rounded-xl p-6 text-center opacity-50">
         <p className="text-sm">{t('achievements:showcase.empty')}</p>
         <button
-          className="btn btn-xs btn-ghost mt-2"
+          className="btn btn-ghost btn-xs mt-2"
           onClick={() => setEditMode(true)}
         >
           {t('achievements:showcase.pin')}
@@ -73,7 +73,7 @@ export default function AchievementShowcase({
           </h3>
           <div className="flex gap-2">
             <button
-              className="btn btn-xs btn-ghost"
+              className="btn btn-ghost btn-xs"
               onClick={() => {
                 setEditMode(false);
                 setSelectedIds(currentIds);
@@ -82,7 +82,7 @@ export default function AchievementShowcase({
               {t('common:cancel')}
             </button>
             <button
-              className="btn btn-xs btn-primary"
+              className="btn btn-primary btn-xs"
               disabled={isPending}
               onClick={() => updateShowcase(selectedIds)}
             >
@@ -117,7 +117,7 @@ export default function AchievementShowcase({
         </h3>
         {isOwner && (
           <button
-            className="btn btn-xs btn-ghost opacity-50 hover:opacity-100"
+            className="btn btn-ghost btn-xs opacity-50 hover:opacity-100"
             onClick={() => {
               setSelectedIds(currentIds);
               setEditMode(true);

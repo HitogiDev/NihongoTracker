@@ -117,7 +117,7 @@ function ClubsScreen() {
   }
 
   return (
-    <div className="min-h-screen pt-16 bg-base-200">
+    <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -137,7 +137,7 @@ function ClubsScreen() {
             <input
               type="text"
               placeholder={t('browse.searchPlaceholder')}
-              className="input input-bordered w-full pl-12 pr-4"
+              className="input w-full pl-12 pr-4"
               value={searchInput}
               onChange={(e) => {
                 setSearchInput(e.target.value);
@@ -160,7 +160,7 @@ function ClubsScreen() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Filters */}
           <div className="lg:w-64 flex-shrink-0">
-            <div className="bg-base-100 rounded-lg shadow-sm p-6 space-y-6">
+            <div className="surface p-6 space-y-6">
               {/* Sort Options */}
               <div>
                 <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
@@ -181,7 +181,7 @@ function ClubsScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-full border border-base-300"
+                    className="dropdown-content menu p-2 surface-raised w-full"
                   >
                     {sortOptions.map((option) => (
                       <li key={option.value}>
@@ -204,7 +204,7 @@ function ClubsScreen() {
                 </div>
                 <div className="mt-2">
                   <label className="label cursor-pointer">
-                    <span className="label-text">{t('browse.descending')}</span>
+                    <span>{t('browse.descending')}</span>
                     <input
                       type="checkbox"
                       className="toggle toggle-sm"
@@ -224,7 +224,7 @@ function ClubsScreen() {
                   {t('common.visibility')}
                 </h3>
                 <label className="label cursor-pointer">
-                  <span className="label-text">{t('browse.publicOnly')}</span>
+                  <span>{t('browse.publicOnly')}</span>
                   <input
                     type="checkbox"
                     className="toggle toggle-sm"
@@ -285,17 +285,17 @@ function ClubsScreen() {
                   <div className="flex justify-center mt-8">
                     <div className="join">
                       <button
-                        className="join-item btn"
+                        className="join-item btn btn-sm"
                         disabled={page === 1}
                         onClick={() => setPage(page - 1)}
                       >
                         {t('browse.previous')}
                       </button>
-                      <button className="join-item btn btn-active">
+                      <button className="join-item btn btn-active btn-sm">
                         Page {page}
                       </button>
                       <button
-                        className="join-item btn"
+                        className="join-item btn btn-sm"
                         disabled={page * 12 >= clubsData.total}
                         onClick={() => setPage(page + 1)}
                       >
@@ -341,7 +341,7 @@ function ClubCard({ club }: { club: IClubResponse }) {
 
   return (
     <div
-      className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-base-300 hover:border-primary/30"
+      className="card surface hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-primary/30"
       onClick={() => navigate(`/clubs/${club._id}`)}
     >
       {/* Banner */}

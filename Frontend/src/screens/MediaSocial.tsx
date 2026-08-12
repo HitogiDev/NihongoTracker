@@ -146,7 +146,7 @@ export default function MediaSocial() {
         </div>
 
         {/* Stats */}
-        <div className="card bg-base-100 shadow-sm mb-6">
+        <div className="card surface mb-6">
           <div className="card-body">
             <h3 className="card-title text-lg mb-2">
               {t('social.mediaWideStats')}
@@ -166,7 +166,7 @@ export default function MediaSocial() {
               <div className="w-full" aria-busy>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="card bg-base-200">
+                    <div key={i} className="card surface-muted">
                       <div className="card-body">
                         <div className="skeleton h-4 w-24 mb-2" />
                         <div className="skeleton h-8 w-32 mb-2" />
@@ -177,7 +177,7 @@ export default function MediaSocial() {
                 </div>
               </div>
             ) : mediaStats ? (
-              <div className="stats stats-vertical sm:stats-horizontal shadow w-full">
+              <div className="stats stats-vertical sm:stats-horizontal shadow-sm w-full">
                 <div className="stat">
                   <div className="stat-title">{t('social.totalLogs')}</div>
                   <div className="stat-value text-primary">
@@ -245,7 +245,7 @@ export default function MediaSocial() {
         </div>
 
         {/* Compare with a friend */}
-        <div className="card bg-base-100 shadow-sm mb-6">
+        <div className="card surface mb-6">
           <div className="card-body">
             <div className="flex items-center justify-between gap-4 mb-3">
               <h3 className="card-title text-lg">{t('social.compare')}</h3>
@@ -253,7 +253,7 @@ export default function MediaSocial() {
             <div className="join w-full max-w-xl">
               <input
                 type="text"
-                className="input input-bordered join-item w-full"
+                className="input join-item w-full"
                 placeholder={t('social.usernamePlaceholder')}
                 value={friend}
                 onChange={(e) => setFriend(e.target.value)}
@@ -264,7 +264,7 @@ export default function MediaSocial() {
                 }}
               />
               <button
-                className="btn btn-primary join-item"
+                className="join-item btn btn-primary btn-sm"
                 onClick={() => runCompare()}
                 disabled={comparing || !friend.trim()}
               >
@@ -276,7 +276,7 @@ export default function MediaSocial() {
               </button>
               {comparison && (
                 <button
-                  className="btn btn-ghost join-item"
+                  className="join-item btn btn-ghost btn-sm"
                   onClick={() => setComparison(null)}
                 >
                   {t('common.clear')}
@@ -286,7 +286,7 @@ export default function MediaSocial() {
 
             {comparison && (
               <div className="mt-4 overflow-x-auto" aria-live="polite">
-                <div className="stats stats-vertical lg:stats-horizontal shadow">
+                <div className="stats stats-vertical lg:stats-horizontal shadow-sm">
                   <div className="stat">
                     <div className="stat-title">{t('stats.totalXp')}</div>
                     <div className="stat-value text-primary">
@@ -367,7 +367,7 @@ export default function MediaSocial() {
         </div>
 
         {/* Global recent activity for this media */}
-        <div className="card bg-base-100 shadow-sm mb-6">
+        <div className="card surface mb-6">
           <div className="card-body">
             <div className="flex items-center justify-between mb-4">
               <h3 className="card-title text-lg">
@@ -396,7 +396,7 @@ export default function MediaSocial() {
             {globalLogsLoading ? (
               <div className="space-y-3" aria-busy>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="card bg-base-200">
+                  <div key={i} className="card surface-muted">
                     <div className="card-body">
                       <div className="flex items-center gap-4">
                         <div className="skeleton h-12 w-12 rounded-full" />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { X, ArrowLeft, ArrowRight, Check, Calendar } from 'lucide-react';
@@ -320,13 +321,13 @@ export default function CreateVotingWizard({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl">
             Create Voting - Step {currentStep} of 3
           </h3>
-          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -348,12 +349,10 @@ export default function CreateVotingWizard({
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="label">
-                  <span className="label-text">
-                    {t('editVoting.votingTitle')}
-                  </span>
-                </label>
+              <Field
+                label={t('editVoting.votingTitle')}
+                className="md:col-span-2"
+              >
                 <input
                   type="text"
                   placeholder={t('editVoting.titlePlaceholder')}
@@ -364,10 +363,10 @@ export default function CreateVotingWizard({
                       title: e.target.value,
                     }))
                   }
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   required
                 />
-              </div>
+              </Field>
 
               <div className="md:col-span-2">
                 <label className="label cursor-pointer justify-start gap-2">
@@ -382,19 +381,14 @@ export default function CreateVotingWizard({
                     }
                     className="checkbox checkbox-primary"
                   />
-                  <span className="label-text">
-                    {t('editVoting.testingMode')}
-                  </span>
+                  <span>{t('editVoting.testingMode')}</span>
                 </label>
                 <div className="text-xs text-base-content/60 ml-6">
                   {t('editVoting.testingModeHint')}
                 </div>
               </div>
 
-              <div className="md:col-span-2">
-                <label className="label">
-                  <span className="label-text">{t('common.description')}</span>
-                </label>
+              <Field label={t('common.description')} className="md:col-span-2">
                 <textarea
                   placeholder={t('editVoting.descriptionPlaceholder')}
                   value={votingData.description}
@@ -404,17 +398,12 @@ export default function CreateVotingWizard({
                       description: e.target.value,
                     }))
                   }
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   rows={3}
                 />
-              </div>
+              </Field>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    {t('editVoting.mediaTypeRequired')}
-                  </span>
-                </label>
+              <Field label={t('editVoting.mediaTypeRequired')}>
                 <select
                   value={votingData.mediaType}
                   onChange={(e) =>
@@ -423,7 +412,7 @@ export default function CreateVotingWizard({
                       mediaType: e.target.value as VotingData['mediaType'],
                     }))
                   }
-                  className="select select-bordered w-full"
+                  className="select w-full"
                 >
                   {MEDIA_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -431,15 +420,10 @@ export default function CreateVotingWizard({
                     </option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               {votingData.mediaType === 'custom' && (
-                <div>
-                  <label className="label">
-                    <span className="label-text">
-                      {t('editVoting.customMediaType')}
-                    </span>
-                  </label>
+                <Field label={t('editVoting.customMediaType')}>
                   <input
                     type="text"
                     placeholder={t('editVoting.customTypePlaceholder')}
@@ -450,17 +434,15 @@ export default function CreateVotingWizard({
                         customMediaType: e.target.value,
                       }))
                     }
-                    className="input input-bordered w-full"
+                    className="input w-full"
                   />
-                </div>
+                </Field>
               )}
 
-              <div className="md:col-span-2">
-                <label className="label">
-                  <span className="label-text">
-                    {t('editVoting.howCandidates')}
-                  </span>
-                </label>
+              <Field
+                label={t('editVoting.howCandidates')}
+                className="md:col-span-2"
+              >
                 <div className="space-y-2">
                   <label className="cursor-pointer label justify-start gap-3">
                     <input
@@ -498,21 +480,16 @@ export default function CreateVotingWizard({
                     <span>{t('editVoting.memberSuggestions')}</span>
                   </label>
                 </div>
-              </div>
+              </Field>
 
               {votingData.candidateSubmissionType === 'member_suggestions' && (
                 <>
-                  <div>
-                    <label className="label">
-                      <span className="label-text">
-                        {t('editVoting.suggestionStart')}
-                      </span>
-                    </label>
+                  <Field label={t('editVoting.suggestionStart')}>
                     <div className="dropdown dropdown-top dropdown-end w-full">
                       <div
                         tabIndex={0}
                         role="button"
-                        className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                        className="input w-full flex items-center justify-between cursor-pointer"
                       >
                         <span
                           className={
@@ -527,7 +504,7 @@ export default function CreateVotingWizard({
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                       >
                         <DayPicker
                           className="react-day-picker mx-auto"
@@ -560,19 +537,14 @@ export default function CreateVotingWizard({
                         />
                       </div>
                     </div>
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label className="label">
-                      <span className="label-text">
-                        {t('editVoting.suggestionEnd')}
-                      </span>
-                    </label>
+                  <Field label={t('editVoting.suggestionEnd')}>
                     <div className="dropdown dropdown-top dropdown-end w-full">
                       <div
                         tabIndex={0}
                         role="button"
-                        className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                        className="input w-full flex items-center justify-between cursor-pointer"
                       >
                         <span
                           className={
@@ -587,7 +559,7 @@ export default function CreateVotingWizard({
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                       >
                         <DayPicker
                           className="react-day-picker mx-auto"
@@ -618,19 +590,16 @@ export default function CreateVotingWizard({
                         />
                       </div>
                     </div>
-                  </div>
+                  </Field>
                 </>
               )}
 
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('wizard.votingStart')}</span>
-                </label>
+              <Field label={t('wizard.votingStart')}>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
                     tabIndex={0}
                     role="button"
-                    className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                    className="input w-full flex items-center justify-between cursor-pointer"
                   >
                     <span
                       className={
@@ -645,7 +614,7 @@ export default function CreateVotingWizard({
                   </div>
                   <div
                     tabIndex={0}
-                    className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                    className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                   >
                     <DayPicker
                       className="react-day-picker mx-auto"
@@ -696,17 +665,14 @@ export default function CreateVotingWizard({
                     />
                   </div>
                 </div>
-              </div>
+              </Field>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('wizard.votingEnd')}</span>
-                </label>
+              <Field label={t('wizard.votingEnd')}>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
                     tabIndex={0}
                     role="button"
-                    className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                    className="input w-full flex items-center justify-between cursor-pointer"
                   >
                     <span
                       className={
@@ -721,7 +687,7 @@ export default function CreateVotingWizard({
                   </div>
                   <div
                     tabIndex={0}
-                    className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                    className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                   >
                     <DayPicker
                       className="react-day-picker mx-auto"
@@ -757,19 +723,14 @@ export default function CreateVotingWizard({
                     />
                   </div>
                 </div>
-              </div>
+              </Field>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    {t('editVoting.consumptionStart')}
-                  </span>
-                </label>
+              <Field label={t('editVoting.consumptionStart')}>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
                     tabIndex={0}
                     role="button"
-                    className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                    className="input w-full flex items-center justify-between cursor-pointer"
                   >
                     <span
                       className={
@@ -784,7 +745,7 @@ export default function CreateVotingWizard({
                   </div>
                   <div
                     tabIndex={0}
-                    className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                    className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                   >
                     <DayPicker
                       className="react-day-picker mx-auto"
@@ -825,19 +786,14 @@ export default function CreateVotingWizard({
                     />
                   </div>
                 </div>
-              </div>
+              </Field>
 
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    {t('editVoting.consumptionEnd')}
-                  </span>
-                </label>
+              <Field label={t('editVoting.consumptionEnd')}>
                 <div className="dropdown dropdown-top dropdown-end w-full">
                   <div
                     tabIndex={0}
                     role="button"
-                    className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                    className="input w-full flex items-center justify-between cursor-pointer"
                   >
                     <span
                       className={
@@ -852,7 +808,7 @@ export default function CreateVotingWizard({
                   </div>
                   <div
                     tabIndex={0}
-                    className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                    className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                   >
                     <DayPicker
                       className="react-day-picker mx-auto"
@@ -886,7 +842,7 @@ export default function CreateVotingWizard({
                     />
                   </div>
                 </div>
-              </div>
+              </Field>
             </div>
           </div>
         )}
@@ -903,19 +859,14 @@ export default function CreateVotingWizard({
               </div>
 
               {/* Add Candidate Form */}
-              <div className="card bg-base-200 shadow-sm">
+              <div className="card surface-muted">
                 <div className="card-body">
                   <h4 className="card-title text-lg">
                     {t('wizard.addCandidate')}
                   </h4>
 
                   <div className="space-y-4">
-                    <div>
-                      <label className="label">
-                        <span className="label-text">
-                          {t('suggest.searchLabel')}
-                        </span>
-                      </label>
+                    <Field label={t('suggest.searchLabel')}>
                       <div className="relative">
                         <input
                           type="text"
@@ -925,7 +876,7 @@ export default function CreateVotingWizard({
                             setSearchQuery(e.target.value);
                             handleSearch(e.target.value);
                           }}
-                          className="input input-bordered w-full"
+                          className="input w-full"
                         />
                         {isSearching && (
                           <span className="loading loading-spinner loading-sm absolute right-3 top-1/2 transform -translate-y-1/2"></span>
@@ -936,7 +887,7 @@ export default function CreateVotingWizard({
                       {showResults &&
                         searchResults &&
                         searchResults.length > 0 && (
-                          <div className="card bg-base-100 shadow-lg border border-base-300 max-h-60 overflow-y-auto mt-2">
+                          <div className="card surface max-h-60 overflow-y-auto mt-2">
                             <div className="card-body p-2">
                               {searchResults.map((result) => (
                                 <div
@@ -967,17 +918,12 @@ export default function CreateVotingWizard({
                             </div>
                           </div>
                         )}
-                    </div>
+                    </Field>
 
                     <div className="divider">OR</div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="label">
-                          <span className="label-text">
-                            {t('common.titleRequired')}
-                          </span>
-                        </label>
+                      <Field label={t('common.titleRequired')}>
                         <input
                           type="text"
                           placeholder={t('addMedia.titlePlaceholder')}
@@ -989,16 +935,11 @@ export default function CreateVotingWizard({
                               mediaId: e.target.value,
                             }))
                           }
-                          className="input input-bordered w-full"
+                          className="input w-full"
                         />
-                      </div>
+                      </Field>
 
-                      <div>
-                        <label className="label">
-                          <span className="label-text">
-                            {t('suggest.imageUrl')}
-                          </span>
-                        </label>
+                      <Field label={t('suggest.imageUrl')}>
                         <input
                           type="url"
                           placeholder={t('suggest.imageUrlPlaceholder')}
@@ -1009,16 +950,14 @@ export default function CreateVotingWizard({
                               image: e.target.value,
                             }))
                           }
-                          className="input input-bordered w-full"
+                          className="input w-full"
                         />
-                      </div>
+                      </Field>
 
-                      <div className="md:col-span-2">
-                        <label className="label">
-                          <span className="label-text">
-                            {t('common.description')}
-                          </span>
-                        </label>
+                      <Field
+                        label={t('common.description')}
+                        className="md:col-span-2"
+                      >
                         <textarea
                           placeholder={t('wizard.briefDescriptionPlaceholder')}
                           value={tempCandidate.description}
@@ -1028,10 +967,10 @@ export default function CreateVotingWizard({
                               description: e.target.value,
                             }))
                           }
-                          className="textarea textarea-bordered w-full"
+                          className="textarea w-full"
                           rows={3}
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     <button
@@ -1053,10 +992,7 @@ export default function CreateVotingWizard({
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {candidates.map((candidate, index) => (
-                      <div
-                        key={index}
-                        className="card bg-base-100 shadow-sm border border-base-300"
-                      >
+                      <div key={index} className="card surface">
                         <div className="card-body p-4">
                           <div className="flex items-center gap-3">
                             {candidate.image && (
@@ -1104,7 +1040,7 @@ export default function CreateVotingWizard({
                 </div>
               </div>
 
-              <div className="stats shadow w-full">
+              <div className="stats shadow-sm w-full">
                 <div className="stat">
                   <div className="stat-title">
                     {t('wizard.suggestionPeriod')}
@@ -1139,7 +1075,7 @@ export default function CreateVotingWizard({
               </div>
             </div>
 
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body">
                 <h4 className="card-title">{t('wizard.summary')}</h4>
                 <div className="space-y-3">
@@ -1271,7 +1207,7 @@ export default function CreateVotingWizard({
           )}
         </div>
       </div>
-      <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
+      <div className="modal-backdrop" onClick={onClose}></div>
     </div>
   );
 }

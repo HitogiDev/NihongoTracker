@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Field from '../components/ui/Field';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
@@ -588,9 +589,9 @@ function AdminScreen() {
         </div>
 
         {/* Tabs */}
-        <div className="tabs tabs-boxed mb-8 bg-base-100 p-1">
+        <div role="tablist" className="tabs tabs-border mb-8">
           <button
-            className={`tab tab-lg ${selectedTab === 'overview' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'overview' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('overview')}
           >
             <svg
@@ -609,14 +610,14 @@ function AdminScreen() {
             Overview
           </button>
           <button
-            className={`tab tab-lg ${selectedTab === 'users' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'users' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('users')}
           >
             <Users className="w-5 h-5 mr-2" />
             Users
           </button>
           <button
-            className={`tab tab-lg ${selectedTab === 'logs' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'logs' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('logs')}
           >
             <svg
@@ -635,7 +636,7 @@ function AdminScreen() {
             Logs
           </button>
           <button
-            className={`tab tab-lg ${selectedTab === 'requests' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'requests' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('requests')}
           >
             <svg
@@ -654,7 +655,7 @@ function AdminScreen() {
             Requests
           </button>
           <button
-            className={`tab tab-lg ${selectedTab === 'media' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'media' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('media')}
           >
             <svg
@@ -673,7 +674,7 @@ function AdminScreen() {
             Media
           </button>
           <button
-            className={`tab tab-lg ${selectedTab === 'changelogs' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'changelogs' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('changelogs')}
           >
             <svg
@@ -692,7 +693,7 @@ function AdminScreen() {
             Changelogs
           </button>
           <button
-            className={`tab tab-lg ${selectedTab === 'system' ? 'tab-active' : ''}`}
+            className={`tab ${selectedTab === 'system' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('system')}
           >
             <svg
@@ -728,7 +729,7 @@ function AdminScreen() {
         {selectedTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -749,7 +750,7 @@ function AdminScreen() {
                     <div>
                       <h3 className="text-sm font-medium text-base-content/70">
                         {selectedPatronTier ? (
-                          <dialog className="modal modal-open">
+                          <dialog className="modal modal-bottom sm:modal-middle modal-open">
                             <div className="modal-box max-w-6xl">
                               <div className="flex items-start justify-between gap-4 mb-4">
                                 <div>
@@ -862,7 +863,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
@@ -891,7 +892,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center">
@@ -920,7 +921,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
@@ -951,7 +952,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -983,7 +984,7 @@ function AdminScreen() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <h3 className="card-title mb-4">Top Users</h3>
                   <div className="space-y-3">
@@ -998,10 +999,14 @@ function AdminScreen() {
                       ) => (
                         <div
                           key={u.username}
-                          className="flex items-center justify-between p-3 bg-base-200 rounded-lg"
+                          className="flex items-center justify-between p-3 surface-muted"
                         >
                           <div className="flex items-center gap-3">
                             <div
+                              // Gold/silver/bronze are the medal colours, not
+                              // brand colours — they must stay the same on
+                              // every theme, so raw palette values are correct
+                              // here.
                               className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-orange-500'}`}
                             >
                               {index + 1}
@@ -1022,13 +1027,13 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <h3 className="card-title mb-4">Paid Users Breakdown</h3>
                   <div className="space-y-3">
                     <div className="flex justify-end">
                       <button
-                        className="btn btn-sm btn-outline"
+                        className="btn btn-outline btn-sm"
                         onClick={() => syncPatreonMutation.mutate()}
                         disabled={syncPatreonMutation.isPending}
                       >
@@ -1040,11 +1045,11 @@ function AdminScreen() {
                     </div>
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between p-3 bg-base-200 rounded-lg text-left transition hover:bg-base-300 cursor-pointer"
+                      className="flex w-full items-center justify-between p-3 surface-muted text-left transition hover:bg-base-300 cursor-pointer"
                       onClick={() => setSelectedPatronTier('consumer')}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-purple-500 text-white font-bold">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary text-secondary-content font-bold">
                           C
                         </div>
                         <span className="font-medium">Consumer</span>
@@ -1057,11 +1062,11 @@ function AdminScreen() {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between p-3 bg-base-200 rounded-lg text-left transition hover:bg-base-300 cursor-pointer"
+                      className="flex w-full items-center justify-between p-3 surface-muted text-left transition hover:bg-base-300 cursor-pointer"
                       onClick={() => setSelectedPatronTier('enthusiast')}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 text-white font-bold">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-info text-info-content font-bold">
                           E
                         </div>
                         <span className="font-medium">Enthusiast</span>
@@ -1074,11 +1079,11 @@ function AdminScreen() {
                     </button>
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between p-3 bg-base-200 rounded-lg text-left transition hover:bg-base-300 cursor-pointer"
+                      className="flex w-full items-center justify-between p-3 surface-muted text-left transition hover:bg-base-300 cursor-pointer"
                       onClick={() => setSelectedPatronTier('donator')}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500 text-white font-bold">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-success text-success-content font-bold">
                           D
                         </div>
                         <span className="font-medium">Donator</span>
@@ -1092,7 +1097,7 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <h3 className="card-title mb-4">System Health</h3>
                   <div className="space-y-4">
@@ -1122,7 +1127,7 @@ function AdminScreen() {
                               max={100}
                             ></progress>
                           </div>
-                          <div className="bg-base-200 p-3 rounded-lg space-y-2">
+                          <div className="surface-muted p-3 space-y-2">
                             <div className="flex justify-between">
                               <span>Database Size</span>
                               <span className="font-mono">
@@ -1148,7 +1153,7 @@ function AdminScreen() {
                               </span>
                             </div>
                           </div>
-                          <div className="bg-base-200 p-3 rounded-lg">
+                          <div className="surface-muted p-3">
                             <div className="flex justify-between">
                               <span>Uptime</span>
                               <span className="font-mono">
@@ -1170,14 +1175,14 @@ function AdminScreen() {
         {selectedTab === 'users' && (
           <>
             <div className="space-y-6">
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                    <div className="form-control w-full max-w-md">
+                    <div className="w-full max-w-md">
                       <input
                         type="text"
                         placeholder="Search users..."
-                        className="input input-bordered w-full"
+                        className="input w-full"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -1221,7 +1226,7 @@ function AdminScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="overflow-x-auto">
                     <table className="table">
@@ -1330,15 +1335,17 @@ function AdminScreen() {
                   <div className="flex justify-center mt-6">
                     <div className="join">
                       <button
-                        className="join-item btn"
+                        className="join-item btn btn-sm"
                         disabled={userPage === 1}
                         onClick={() => setUserPage((p) => Math.max(1, p - 1))}
                       >
                         «
                       </button>
-                      <button className="join-item btn">Page {userPage}</button>
+                      <button className="join-item btn btn-sm">
+                        Page {userPage}
+                      </button>
                       <button
-                        className="join-item btn"
+                        className="join-item btn btn-sm"
                         onClick={() => setUserPage((p) => p + 1)}
                       >
                         »
@@ -1350,7 +1357,7 @@ function AdminScreen() {
             </div>
 
             {editUserOpen && selectedUser && (
-              <dialog className="modal" open>
+              <dialog className="modal modal-bottom sm:modal-middle" open>
                 <div className="modal-box max-w-xl">
                   <h3 className="font-bold text-xl">Edit User</h3>
                   <div className="mt-1 mb-4 text-sm">
@@ -1363,7 +1370,7 @@ function AdminScreen() {
                     <fieldset className="fieldset">
                       <legend className="fieldset-legend">Roles</legend>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <label className="label cursor-pointer justify-between gap-3 bg-base-200 rounded-lg p-3">
+                        <label className="label cursor-pointer justify-between gap-3 surface-muted p-3">
                           <span>Moderator</span>
                           <input
                             type="checkbox"
@@ -1377,7 +1384,7 @@ function AdminScreen() {
                             }
                           />
                         </label>
-                        <label className="label cursor-pointer justify-between gap-3 bg-base-200 rounded-lg p-3">
+                        <label className="label cursor-pointer justify-between gap-3 surface-muted p-3">
                           <span>Admin</span>
                           <input
                             type="checkbox"
@@ -1448,7 +1455,7 @@ function AdminScreen() {
                           <span>New password</span>
                         </label>
                         <button
-                          className="btn btn-warning join-item"
+                          className="join-item btn btn-warning btn-sm"
                           onClick={() => {
                             if (newPassword.length < 6) {
                               toast.error(
@@ -1498,12 +1505,9 @@ function AdminScreen() {
                         Patreon Status
                       </legend>
                       <div className="space-y-3">
-                        <div>
-                          <label className="label">
-                            <span className="label-text">Tier</span>
-                          </label>
+                        <Field label={'Tier'}>
                           <select
-                            className="select select-bordered w-full"
+                            className="select w-full"
                             value={grantTier}
                             onChange={(e) =>
                               setGrantTier(
@@ -1520,26 +1524,21 @@ function AdminScreen() {
                             <option value="enthusiast">Enthusiast</option>
                             <option value="consumer">Consumer</option>
                           </select>
-                        </div>
+                        </Field>
                         {grantTier && (
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                Duration (days)
-                              </span>
-                              <span className="label-text-alt text-base-content/60">
-                                Leave empty for indefinite
-                              </span>
-                            </label>
+                          <Field
+                            label={'Duration (days)'}
+                            aside={'Leave empty for indefinite'}
+                          >
                             <input
                               type="number"
                               min="1"
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               placeholder="e.g. 30"
                               value={grantDays}
                               onChange={(e) => setGrantDays(e.target.value)}
                             />
-                          </div>
+                          </Field>
                         )}
                         <div className="flex justify-end">
                           <button
@@ -1596,26 +1595,26 @@ function AdminScreen() {
         {/* Logs Tab */}
         {selectedTab === 'logs' && (
           <div className="space-y-6">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h3 className="card-title mb-4">Log Management</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                   <input
                     type="text"
-                    className="input input-bordered"
+                    className="input"
                     placeholder="Search text..."
                     value={logSearch}
                     onChange={(e) => setLogSearch(e.target.value)}
                   />
                   <input
                     type="text"
-                    className="input input-bordered"
+                    className="input"
                     placeholder="Username"
                     value={logUsername}
                     onChange={(e) => setLogUsername(e.target.value)}
                   />
                   <select
-                    className="select select-bordered"
+                    className="select"
                     value={logType}
                     onChange={(e) => setLogType(e.target.value)}
                   >
@@ -1631,13 +1630,13 @@ function AdminScreen() {
                   </select>
                   <input
                     type="date"
-                    className="input input-bordered"
+                    className="input"
                     value={logStart}
                     onChange={(e) => setLogStart(e.target.value)}
                   />
                   <input
                     type="date"
-                    className="input input-bordered"
+                    className="input"
                     value={logEnd}
                     onChange={(e) => setLogEnd(e.target.value)}
                   />
@@ -1662,7 +1661,7 @@ function AdminScreen() {
                       Reset
                     </button>
                     <button
-                      className="btn btn-sm btn-warning whitespace-nowrap"
+                      className="btn btn-warning btn-sm whitespace-nowrap"
                       onClick={() => {
                         if (
                           confirm(
@@ -1681,7 +1680,7 @@ function AdminScreen() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <div className="overflow-x-auto">
                   <table className="table">
@@ -1761,18 +1760,18 @@ function AdminScreen() {
                 <div className="flex justify-center mt-6">
                   <div className="join">
                     <button
-                      className="join-item btn"
+                      className="join-item btn btn-sm"
                       disabled={logPage === 1}
                       onClick={() => setLogPage((p) => Math.max(1, p - 1))}
                     >
                       «
                     </button>
-                    <button className="join-item btn">
+                    <button className="join-item btn btn-sm">
                       Page {adminLogs?.page ?? logPage} /{' '}
                       {adminLogs?.totalPages ?? 1}
                     </button>
                     <button
-                      className="join-item btn"
+                      className="join-item btn btn-sm"
                       disabled={
                         adminLogs && adminLogs.page >= adminLogs.totalPages
                       }
@@ -1786,7 +1785,7 @@ function AdminScreen() {
             </div>
 
             {editLogOpen && selectedLog && (
-              <dialog className="modal" open>
+              <dialog className="modal modal-bottom sm:modal-middle" open>
                 <div className="modal-box">
                   <h3 className="font-bold text-lg mb-2">Edit Log</h3>
                   <p className="text-sm text-base-content/70 mb-4">
@@ -1794,13 +1793,10 @@ function AdminScreen() {
                     {selectedLog.type}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <label className="form-control">
-                      <div className="label">
-                        <span className="label-text">Description</span>
-                      </div>
+                    <Field label={'Description'}>
                       <input
                         type="text"
-                        className="input input-bordered"
+                        className="input"
                         defaultValue={selectedLog.description}
                         onChange={(e) =>
                           setSelectedLog((l) =>
@@ -1808,14 +1804,11 @@ function AdminScreen() {
                           )
                         }
                       />
-                    </label>
-                    <label className="form-control">
-                      <div className="label">
-                        <span className="label-text">Date</span>
-                      </div>
+                    </Field>
+                    <Field label={'Date'}>
                       <input
                         type="date"
-                        className="input input-bordered"
+                        className="input"
                         value={
                           selectedLog.date
                             ? toLocalDateInputValue(new Date(selectedLog.date))
@@ -1837,14 +1830,11 @@ function AdminScreen() {
                           })
                         }
                       />
-                    </label>
-                    <label className="form-control">
-                      <div className="label">
-                        <span className="label-text">Minutes</span>
-                      </div>
+                    </Field>
+                    <Field label={'Minutes'}>
                       <input
                         type="number"
-                        className="input input-bordered"
+                        className="input"
                         value={selectedLog.time || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
@@ -1852,14 +1842,11 @@ function AdminScreen() {
                           )
                         }
                       />
-                    </label>
-                    <label className="form-control">
-                      <div className="label">
-                        <span className="label-text">Episodes</span>
-                      </div>
+                    </Field>
+                    <Field label={'Episodes'}>
                       <input
                         type="number"
-                        className="input input-bordered"
+                        className="input"
                         value={selectedLog.episodes || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
@@ -1867,16 +1854,13 @@ function AdminScreen() {
                           )
                         }
                       />
-                    </label>
+                    </Field>
                     {(selectedLog.type === 'manga' ||
                       selectedLog.type === 'reading') && (
-                      <label className="form-control">
-                        <div className="label">
-                          <span className="label-text">Volume</span>
-                        </div>
+                      <Field label={'Volume'}>
                         <input
                           type="number"
-                          className="input input-bordered"
+                          className="input"
                           value={selectedLog.volume || ''}
                           onChange={(e) =>
                             setSelectedLog((l) =>
@@ -1884,15 +1868,12 @@ function AdminScreen() {
                             )
                           }
                         />
-                      </label>
+                      </Field>
                     )}
-                    <label className="form-control">
-                      <div className="label">
-                        <span className="label-text">Pages</span>
-                      </div>
+                    <Field label={'Pages'}>
                       <input
                         type="number"
-                        className="input input-bordered"
+                        className="input"
                         value={selectedLog.pages || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
@@ -1900,14 +1881,11 @@ function AdminScreen() {
                           )
                         }
                       />
-                    </label>
-                    <label className="form-control">
-                      <div className="label">
-                        <span className="label-text">Characters</span>
-                      </div>
+                    </Field>
+                    <Field label={'Characters'}>
                       <input
                         type="number"
-                        className="input input-bordered"
+                        className="input"
                         value={selectedLog.chars || ''}
                         onChange={(e) =>
                           setSelectedLog((l) =>
@@ -1915,7 +1893,7 @@ function AdminScreen() {
                           )
                         }
                       />
-                    </label>
+                    </Field>
                   </div>
                   <div className="modal-action">
                     <button
@@ -2004,7 +1982,7 @@ function AdminScreen() {
               </button>
             </div>
 
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 {changelogsLoading ? (
                   <div className="text-center py-8">
@@ -2148,20 +2126,17 @@ function AdminScreen() {
 
             {/* Changelog Modal */}
             {changelogModalOpen && selectedChangelog && (
-              <dialog className="modal" open>
+              <dialog className="modal modal-bottom sm:modal-middle" open>
                 <div className="modal-box max-w-3xl">
                   <h3 className="font-bold text-lg mb-4">
                     {selectedChangelog._id ? 'Edit Changelog' : 'New Changelog'}
                   </h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <label className="form-control">
-                        <div className="label">
-                          <span className="label-text">Version *</span>
-                        </div>
+                      <Field label={'Version *'}>
                         <input
                           type="text"
-                          className="input input-bordered"
+                          className="input"
                           placeholder="v1.0.0"
                           value={selectedChangelog.version}
                           onChange={(e) =>
@@ -2171,14 +2146,11 @@ function AdminScreen() {
                             })
                           }
                         />
-                      </label>
-                      <label className="form-control">
-                        <div className="label">
-                          <span className="label-text">Date *</span>
-                        </div>
+                      </Field>
+                      <Field label={'Date *'}>
                         <input
                           type="date"
-                          className="input input-bordered"
+                          className="input"
                           value={
                             selectedChangelog.date &&
                             selectedChangelog.date.length === 10
@@ -2194,16 +2166,13 @@ function AdminScreen() {
                             })
                           }
                         />
-                      </label>
+                      </Field>
                     </div>
 
-                    <label className="form-control w-full">
-                      <div className="label">
-                        <span className="label-text">Title *</span>
-                      </div>
+                    <Field label={'Title *'} className="w-full">
                       <input
                         type="text"
-                        className="input input-bordered w-full"
+                        className="input w-full"
                         placeholder="New Features and Improvements"
                         value={selectedChangelog.title}
                         onChange={(e) =>
@@ -2213,16 +2182,11 @@ function AdminScreen() {
                           })
                         }
                       />
-                    </label>
+                    </Field>
 
-                    <label className="form-control w-full">
-                      <div className="label">
-                        <span className="label-text">
-                          Description (optional)
-                        </span>
-                      </div>
+                    <Field label={'Description (optional)'} className="w-full">
                       <textarea
-                        className="textarea textarea-bordered h-20 w-full"
+                        className="textarea h-20 w-full"
                         placeholder="Brief summary of this release..."
                         value={selectedChangelog.description}
                         onChange={(e) =>
@@ -2232,15 +2196,13 @@ function AdminScreen() {
                           })
                         }
                       />
-                    </label>
+                    </Field>
 
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="label-text font-medium">
-                          Changes *
-                        </span>
+                        <span className="font-medium">Changes *</span>
                         <button
-                          className="btn btn-sm btn-ghost"
+                          className="btn btn-ghost btn-sm"
                           onClick={() =>
                             setSelectedChangelog({
                               ...selectedChangelog,
@@ -2258,7 +2220,7 @@ function AdminScreen() {
                         {selectedChangelog.changes.map((change, index) => (
                           <div key={index} className="flex gap-2 items-start">
                             <select
-                              className="select select-bordered select-sm"
+                              className="select select-sm"
                               value={change.type}
                               onChange={(e) => {
                                 const newChanges = [
@@ -2282,7 +2244,7 @@ function AdminScreen() {
                             </select>
                             <input
                               type="text"
-                              className="input input-bordered input-sm flex-1"
+                              className="input input-sm flex-1"
                               placeholder="Description of change..."
                               value={change.description}
                               onChange={(e) => {
@@ -2330,7 +2292,7 @@ function AdminScreen() {
                           })
                         }
                       />
-                      <span className="label-text">Publish immediately</span>
+                      <span>Publish immediately</span>
                     </label>
                   </div>
 
@@ -2413,7 +2375,7 @@ function AdminScreen() {
         {selectedTab === 'system' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <h3 className="card-title mb-4">System Actions</h3>
                   <div className="space-y-3">
@@ -2691,10 +2653,10 @@ function AdminScreen() {
                   </div>
                 </div>
               </div>
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <h3 className="card-title mb-4">Database Stats</h3>
-                  <div className="stats stats-vertical shadow w-full">
+                  <div className="stats stats-vertical shadow-sm w-full">
                     <div className="stat">
                       <div className="stat-title">Database Size</div>
                       <div className="stat-value text-lg">2.4 GB</div>
@@ -2711,7 +2673,7 @@ function AdminScreen() {
                 </div>
               </div>
 
-              <div className="card bg-base-100 shadow-sm lg:col-span-2">
+              <div className="card surface lg:col-span-2">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="card-title">IGDB Dump Sync Status</h3>
@@ -2761,7 +2723,7 @@ function AdminScreen() {
                       ) : null}
                     </div>
 
-                    <div className="stats stats-vertical shadow w-full">
+                    <div className="stats stats-vertical shadow-sm w-full">
                       <div className="stat">
                         <div className="stat-title">Rows Scanned</div>
                         <div className="stat-value text-lg">
@@ -2835,7 +2797,7 @@ function AdminScreen() {
               </div>
 
               {/* VNDB Dump Sync Status */}
-              <div className="card bg-base-100 shadow-sm lg:col-span-2">
+              <div className="card surface lg:col-span-2">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="card-title">VNDB Dump Sync Status</h3>
@@ -2950,7 +2912,7 @@ function AdminScreen() {
                       ) : null}
                     </div>
 
-                    <div className="stats stats-vertical shadow w-full">
+                    <div className="stats stats-vertical shadow-sm w-full">
                       <div className="stat">
                         <div className="stat-title">Rows Scanned</div>
                         <div className="stat-value text-lg">

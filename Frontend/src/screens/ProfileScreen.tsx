@@ -580,7 +580,7 @@ function ProfileScreen() {
   const widgetNodes: Partial<Record<ProfileWidgetId, React.ReactNode>> = {
     profileStats: username ? <ProfileStatsBand username={username} /> : null,
     about: (
-      <div className="card w-full bg-base-100 shadow-sm">
+      <div className="card w-full surface">
         <div className="card-body w-full p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3 mb-2">
             <h2 className="card-title">{t('about.title')}</h2>
@@ -644,7 +644,7 @@ function ProfileScreen() {
       />
     ) : null,
     progressStats: (
-      <div className="card w-full bg-base-100 shadow-sm">
+      <div className="card w-full surface">
         <div className="card-body w-full p-4 sm:p-6">
           <h2 className="card-title mb-4">{t('progress.title')}</h2>
           <div className="stats stats-vertical w-full shadow-none bg-transparent">
@@ -707,7 +707,7 @@ function ProfileScreen() {
       </div>
     ),
     immersionActivity: (
-      <div className="card w-full bg-base-100 shadow-sm overflow-visible">
+      <div className="card w-full surface overflow-visible">
         <div className="card-body w-full p-4 sm:p-6 overflow-visible">
           <h2 className="card-title mb-4">{t('activity.title')}</h2>
           {username && (
@@ -780,7 +780,7 @@ function ProfileScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu bg-base-100 rounded-box z-[1] w-48 p-2 shadow-lg"
+                    className="dropdown-content menu surface-raised z-[1] w-48 p-2"
                   >
                     {feedKindOptions.map((option) => {
                       const Icon = option.icon;
@@ -807,7 +807,7 @@ function ProfileScreen() {
                 <div className="flex flex-col lg:flex-row lg:flex-wrap gap-4">
                   {/* Search Bar */}
                   <div className="flex-1 min-w-[180px] lg:max-w-md">
-                    <label className="input input-bordered flex items-center gap-2">
+                    <label className="input flex items-center gap-2">
                       <Search className="w-5 h-5 opacity-70" />
                       <input
                         type="text"
@@ -838,7 +838,7 @@ function ProfileScreen() {
                         </div>
                         <ul
                           tabIndex={0}
-                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                          className="dropdown-content menu surface-raised z-[1] w-full sm:w-52 p-2"
                         >
                           {[
                             { value: 'all', label: t('filters.allTypes') },
@@ -925,7 +925,7 @@ function ProfileScreen() {
                         </div>
                         <ul
                           tabIndex={0}
-                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                          className="dropdown-content menu surface-raised z-[1] w-full sm:w-52 p-2"
                         >
                           {achievementCategoryOptions.map((option) => (
                             <li key={option.value}>
@@ -970,7 +970,7 @@ function ProfileScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-52 p-2 shadow-lg"
+                        className="dropdown-content menu surface-raised z-[1] w-full sm:w-52 p-2"
                       >
                         {[
                           { value: 'all', label: t('time.all') },
@@ -1038,7 +1038,7 @@ function ProfileScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow-lg"
+                        className="dropdown-content menu surface-raised z-[1] w-full sm:w-60 p-2"
                       >
                         <li className="menu-title">
                           <span>{t('sort.field')}</span>
@@ -1117,7 +1117,7 @@ function ProfileScreen() {
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-sm bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                       >
                         <DayPicker
                           className="react-day-picker mx-auto"
@@ -1142,8 +1142,13 @@ function ProfileScreen() {
 
                     <div className="dropdown dropdown-bottom flex-1 sm:flex-none">
                       <div
-                        tabIndex={0}
+                        // Not a <button>, so `btn-disabled` is the right class
+                        // here — but on its own it only blocks pointer events,
+                        // so the tab stop and the ARIA state go with it.
+                        tabIndex={customStartDate ? 0 : -1}
                         role="button"
+                        aria-disabled={!customStartDate}
+                        // eslint-disable-next-line no-restricted-syntax -- not a <button>: the tabIndex and aria-disabled above carry the semantics.
                         className={`btn btn-outline w-full sm:w-auto ${!customStartDate ? 'btn-disabled' : ''}`}
                       >
                         {customEndDate
@@ -1167,7 +1172,7 @@ function ProfileScreen() {
                       {customStartDate && (
                         <div
                           tabIndex={0}
-                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow-sm bg-base-100 border border-base-300"
+                          className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                         >
                           <DayPicker
                             className="react-day-picker mx-auto"
@@ -1343,7 +1348,7 @@ function ProfileScreen() {
             {feedKind === 'achievements' ? (
               // Show ONLY achievements
               filteredAchievements.length === 0 ? (
-                <div className="card w-full bg-base-100 shadow-sm p-4">
+                <div className="card w-full surface p-4">
                   <p className="text-center text-base-content/60">
                     {(achievementActivity ?? []).length === 0
                       ? t('achievements.none')
@@ -1380,12 +1385,12 @@ function ProfileScreen() {
                     )
                   )
                 ) : (
-                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                  <div className="card w-full surface p-4">
                     <p className="text-center">{t('feed.noLogs')}</p>
                   </div>
                 )}
                 {logs?.pages && displayedLogs.length === 0 ? (
-                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                  <div className="card w-full surface p-4">
                     <div className="alert alert-info">
                       <span>{t('feed.noLogsMatch')}</span>
                     </div>
@@ -1409,7 +1414,7 @@ function ProfileScreen() {
               // Show ALL — unified chronological mix
               <>
                 {unifiedFeed.length === 0 ? (
-                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                  <div className="card w-full surface p-4">
                     <p className="text-center text-base-content/60">
                       {t('feed.noActivity')}
                     </p>
@@ -1452,7 +1457,7 @@ function ProfileScreen() {
                 {logs?.pages &&
                 displayedLogs.length === 0 &&
                 filteredAchievements.length === 0 ? (
-                  <div className="card w-full bg-base-100 shadow-sm p-4">
+                  <div className="card w-full surface p-4">
                     <div className="alert alert-info">
                       <span>{t('feed.noActivityMatch')}</span>
                     </div>
@@ -1509,13 +1514,13 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
   if (!isLoading && earned.length === 0) return null;
 
   return (
-    <div className="card w-full bg-base-100 shadow-sm">
+    <div className="card w-full surface">
       <div className="card-body w-full p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="card-title text-base">{t('achievements.title')}</h2>
           <Link
             to={`/user/${username}/achievements`}
-            className="btn btn-xs btn-ghost opacity-60 hover:opacity-100"
+            className="btn btn-ghost btn-xs opacity-60 hover:opacity-100"
           >
             {t('achievements.viewAll')}
           </Link>
@@ -1540,7 +1545,7 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
                   type="button"
                   onClick={() => setSelected(a)}
                   title={a.name ?? '???'}
-                  className="group flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-base-300 bg-base-200/40 p-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-base-200 hover:shadow-md"
+                  className="group flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-base-300 bg-base-200/40 p-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-base-200 hover:shadow-lg"
                 >
                   <div
                     className="flex items-center justify-center rounded-xl border transition-transform duration-200 group-hover:scale-105"

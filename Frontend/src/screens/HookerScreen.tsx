@@ -1,4 +1,5 @@
 import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
+import Field from '../components/ui/Field';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useRef, useState, useEffect, Fragment } from 'react';
 import {
@@ -2135,7 +2136,7 @@ function TextHooker() {
       title: t('hooker.stats.timer'),
       content: (
         <>
-          <Clock size={16} className="opacity-70" />
+          <Clock className="w-4 h-4 opacity-70" />
           {formatTime(seconds)}
         </>
       ),
@@ -2148,7 +2149,7 @@ function TextHooker() {
       title: t('hooker.stats.readingSpeedUnit'),
       content: (
         <>
-          <Activity size={16} className="opacity-70" />
+          <Activity className="w-4 h-4 opacity-70" />
           {numberWithCommas(formatSpeed(charsNumber, seconds))}/h
         </>
       ),
@@ -2161,7 +2162,7 @@ function TextHooker() {
       title: t('hooker.stats.characters'),
       content: (
         <>
-          <Type size={16} className="opacity-70" />
+          <Type className="w-4 h-4 opacity-70" />
           {numberWithCommas(charsNumber)}
         </>
       ),
@@ -2174,7 +2175,7 @@ function TextHooker() {
       title: t('hooker.stats.lines'),
       content: (
         <>
-          <FileText size={16} className="opacity-70" />
+          <FileText className="w-4 h-4 opacity-70" />
           {numberWithCommas(linesNumber)}
         </>
       ),
@@ -2182,8 +2183,8 @@ function TextHooker() {
   }
 
   const listContainerClasses = vertical
-    ? 'pt-16 px-4 flex flex-row overflow-x-auto overflow-y-hidden h-screen items-start pb-6'
-    : 'pt-16 px-4 flex flex-col overflow-y-auto h-screen pb-6';
+    ? 'pt-20 px-4 flex flex-row overflow-x-auto overflow-y-hidden h-screen items-start pb-6'
+    : 'pt-20 px-4 flex flex-col overflow-y-auto h-screen pb-6';
 
   const inviteLink = (() => {
     if (typeof window === 'undefined' || !roomId) return '';
@@ -2291,7 +2292,7 @@ function TextHooker() {
       {isPopupOpened && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-base-300/90 backdrop-blur-sm text-base-content">
           <div className="max-w-sm text-center px-6">
-            <ExternalLink size={40} className="mx-auto mb-4 opacity-70" />
+            <ExternalLink className="w-10 h-10 mx-auto mb-4 opacity-70" />
             <h2 className="text-lg font-bold mb-2">
               {t('hooker.controls.openedInPopup')}
             </h2>
@@ -2314,15 +2315,15 @@ function TextHooker() {
         <button
           type="button"
           onClick={() => setIsTopbarHidden(false)}
-          className="fixed top-1/2 right-0 -translate-y-1/2 w-4 h-10 flex items-center justify-center bg-base-100 rounded-l-md shadow-md z-50 text-base-content"
+          className="fixed top-1/2 right-0 -translate-y-1/2 w-4 h-10 flex items-center justify-center bg-base-100 rounded-l-md shadow-sm z-50 text-base-content"
           title={t('hooker.controls.showControls')}
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft className="w-3.5 h-3.5" />
         </button>
       ) : (
         <div
           ref={topbarRef}
-          className={`fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-md z-50 text-base-content inline-flex items-center th-topbar ${
+          className={`fixed top-1 right-1 m-2 px-3 py-2 bg-base-100 rounded-md shadow-sm z-50 text-base-content inline-flex items-center th-topbar ${
             effectiveTopbarVertical
               ? 'flex-col items-stretch gap-2'
               : 'flex-row gap-3'
@@ -2332,10 +2333,10 @@ function TextHooker() {
             <button
               type="button"
               onClick={() => setIsTopbarHidden(true)}
-              className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 w-4 h-10 flex items-center justify-center bg-base-100 rounded-l-md shadow-md text-base-content"
+              className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 w-4 h-10 flex items-center justify-center bg-base-100 rounded-l-md shadow-sm text-base-content"
               title={t('hooker.controls.hideControls')}
             >
-              <ChevronRight size={14} />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -2380,9 +2381,9 @@ function TextHooker() {
             title={`WebSocket Status: ${connectionStatus}`}
           >
             {connectionStatus === 'connected' ? (
-              <Link size={16} />
+              <Link className="w-4 h-4" />
             ) : (
-              <Unlink size={16} />
+              <Unlink className="w-4 h-4" />
             )}
           </button>
 
@@ -2394,7 +2395,11 @@ function TextHooker() {
               isTimerActive ? t('hooker.timer.pause') : t('hooker.timer.resume')
             }
           >
-            {isTimerActive ? <Pause size={16} /> : <Play size={16} />}
+            {isTimerActive ? (
+              <Pause className="w-4 h-4" />
+            ) : (
+              <Play className="w-4 h-4" />
+            )}
           </button>
 
           <button
@@ -2403,7 +2408,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.timer.reset')}
           >
-            <RotateCcw size={16} />
+            <RotateCcw className="w-4 h-4" />
           </button>
 
           <button
@@ -2412,7 +2417,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.timer.set')}
           >
-            <Edit3 size={16} />
+            <Edit3 className="w-4 h-4" />
           </button>
 
           <button
@@ -2421,7 +2426,7 @@ function TextHooker() {
             className={`${topbarIconBtnClass} text-error`}
             title={t('hooker.controls.deleteLastLine')}
           >
-            <Trash2 size={16} />
+            <Trash2 className="w-4 h-4" />
           </button>
 
           <button
@@ -2431,7 +2436,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.controls.undoDelete')}
           >
-            <Undo2 size={16} />
+            <Undo2 className="w-4 h-4" />
           </button>
 
           <button
@@ -2440,7 +2445,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.controls.viewStats')}
           >
-            <BarChart2 size={16} />
+            <BarChart2 className="w-4 h-4" />
           </button>
 
           <button
@@ -2450,7 +2455,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.settings.title')}
           >
-            <Settings size={16} />
+            <Settings className="w-4 h-4" />
           </button>
 
           <button
@@ -2459,7 +2464,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.controls.openPopup')}
           >
-            <ExternalLink size={16} />
+            <ExternalLink className="w-4 h-4" />
           </button>
 
           <div
@@ -2473,7 +2478,7 @@ function TextHooker() {
             className={topbarIconBtnClass}
             title={t('hooker.controls.back')}
           >
-            <Home size={16} />
+            <Home className="w-4 h-4" />
           </RouterLink>
 
           {isRoomConnected && (
@@ -2484,14 +2489,14 @@ function TextHooker() {
                 className={topbarIconBtnClass}
                 title={t('hooker.collab.connectedMembers')}
               >
-                <Users size={16} />
+                <Users className="w-4 h-4" />
                 <span className="absolute -top-1 -right-1 badge badge-xs badge-primary scale-75">
                   {connectedMembers.length}
                 </span>
               </button>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu menu-sm bg-base-100 rounded-box shadow-lg mt-2 p-2 min-w-52 z-50"
+                className="dropdown-content menu menu-sm surface-raised mt-2 p-2 min-w-52 z-50"
               >
                 <li className="menu-title px-2 py-1 text-xs opacity-70">
                   {t('hooker.collab.membersCount', {
@@ -2514,7 +2519,7 @@ function TextHooker() {
                         >
                           <span className="flex items-center gap-2">
                             {member.role === 'host' && (
-                              <Crown size={12} className="text-warning" />
+                              <Crown className="w-3 h-3 text-warning" />
                             )}
                             <span className="font-medium">
                               {displayName}
@@ -2531,7 +2536,7 @@ function TextHooker() {
                         <span className="flex justify-between items-center text-xs cursor-default">
                           <span className="flex items-center gap-2">
                             {member.role === 'host' && (
-                              <Crown size={12} className="text-warning" />
+                              <Crown className="w-3 h-3 text-warning" />
                             )}
                             <span className="font-medium">
                               {t('hooker.collab.anonymous')}
@@ -2555,7 +2560,9 @@ function TextHooker() {
       )}
 
       {/* Timer Edit Modal */}
-      <dialog className={`modal ${isTimerEditOpen ? 'modal-open' : ''}`}>
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isTimerEditOpen ? 'modal-open' : ''}`}
+      >
         <div className="modal-box max-w-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
@@ -2564,19 +2571,14 @@ function TextHooker() {
             </h3>
             <button
               onClick={() => setIsTimerEditOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
-              <X size={20} />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-xs">
-                  {t('hooker.timer.hours')}
-                </span>
-              </label>
+            <Field label={t('hooker.timer.hours')}>
               <input
                 type="number"
                 min="0"
@@ -2585,16 +2587,11 @@ function TextHooker() {
                 onChange={(e) =>
                   setTimerEditHours(Math.max(0, parseInt(e.target.value) || 0))
                 }
-                className="input input-bordered w-20 text-center font-mono text-lg"
+                className="input w-20 text-center font-mono text-lg"
               />
-            </div>
+            </Field>
             <span className="text-2xl font-bold mt-6">:</span>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-xs">
-                  {t('hooker.timer.minutes')}
-                </span>
-              </label>
+            <Field label={t('hooker.timer.minutes')}>
               <input
                 type="number"
                 min="0"
@@ -2605,16 +2602,11 @@ function TextHooker() {
                     Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
                   )
                 }
-                className="input input-bordered w-20 text-center font-mono text-lg"
+                className="input w-20 text-center font-mono text-lg"
               />
-            </div>
+            </Field>
             <span className="text-2xl font-bold mt-6">:</span>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-xs">
-                  {t('hooker.timer.seconds')}
-                </span>
-              </label>
+            <Field label={t('hooker.timer.seconds')}>
               <input
                 type="number"
                 min="0"
@@ -2625,9 +2617,9 @@ function TextHooker() {
                     Math.min(59, Math.max(0, parseInt(e.target.value) || 0))
                   )
                 }
-                className="input input-bordered w-20 text-center font-mono text-lg"
+                className="input w-20 text-center font-mono text-lg"
               />
-            </div>
+            </Field>
           </div>
 
           <div className="modal-action">
@@ -2649,7 +2641,7 @@ function TextHooker() {
 
       {/* Reset Timer Confirmation Modal */}
       <dialog
-        className={`modal ${isResetTimerConfirmOpen ? 'modal-open' : ''}`}
+        className={`modal modal-bottom sm:modal-middle ${isResetTimerConfirmOpen ? 'modal-open' : ''}`}
       >
         <div className="modal-box max-w-sm">
           <h3 className="font-bold text-lg mb-2">
@@ -2683,7 +2675,7 @@ function TextHooker() {
       </dialog>
 
       <dialog
-        className={`modal ${isPreventDuplicateConfirmOpen ? 'modal-open' : ''}`}
+        className={`modal modal-bottom sm:modal-middle ${isPreventDuplicateConfirmOpen ? 'modal-open' : ''}`}
       >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-2">
@@ -2717,8 +2709,10 @@ function TextHooker() {
       </dialog>
 
       {/* Resume Session Modal */}
-      <dialog className={`modal ${isResumePromptOpen ? 'modal-open' : ''}`}>
-        <div className="modal-box max-w-lg">
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isResumePromptOpen ? 'modal-open' : ''}`}
+      >
+        <div className="modal-box">
           <h3 className="font-bold text-lg mb-2">
             {t('hooker.session.resumePrevious')}
           </h3>
@@ -2726,7 +2720,7 @@ function TextHooker() {
             {t('hooker.session.resumeBody')}
           </p>
 
-          <div className="bg-base-200 rounded-lg p-4 mb-5">
+          <div className="surface-muted p-4 mb-5">
             <div className="text-sm text-base-content/70 mb-1">
               {t('hooker.session.currentProgress')}
             </div>
@@ -2771,7 +2765,9 @@ function TextHooker() {
       </dialog>
 
       {/* Stats Modal */}
-      <dialog className={`modal ${isStatsOpen ? 'modal-open' : ''}`}>
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isStatsOpen ? 'modal-open' : ''}`}
+      >
         <div className="modal-box max-w-4xl">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
@@ -2780,16 +2776,16 @@ function TextHooker() {
             </h3>
             <button
               onClick={() => setIsStatsOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
-              <X size={20} />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="flex flex-col md:flex-row gap-6">
             {media && (
               <div className="md:w-1/3 flex-shrink-0">
-                <div className="bg-base-200 p-4 rounded-lg space-y-4">
+                <div className="surface-muted p-4 space-y-4">
                   <img
                     src={media.coverImage || media.contentImage || ''}
                     alt={media.title.contentTitleNative}
@@ -2874,7 +2870,7 @@ function TextHooker() {
                   {t('texthooker:hooker.currentSession')}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-base-200 p-3 rounded-lg">
+                  <div className="surface-muted p-3">
                     <div className="text-xs opacity-70 mb-1">
                       {t('hooker.stats.timeElapsed')}
                     </div>
@@ -2882,7 +2878,7 @@ function TextHooker() {
                       {formatTime(seconds)}
                     </div>
                   </div>
-                  <div className="bg-base-200 p-3 rounded-lg">
+                  <div className="surface-muted p-3">
                     <div className="text-xs opacity-70 mb-1">
                       {t('hooker.stats.readingSpeed')}
                     </div>
@@ -2893,7 +2889,7 @@ function TextHooker() {
                       </span>
                     </div>
                   </div>
-                  <div className="bg-base-200 p-3 rounded-lg">
+                  <div className="surface-muted p-3">
                     <div className="text-xs opacity-70 mb-1">
                       {t('hooker.stats.linesRead')}
                     </div>
@@ -2901,7 +2897,7 @@ function TextHooker() {
                       {numberWithCommas(currentSessionLines)}
                     </div>
                   </div>
-                  <div className="bg-base-200 p-3 rounded-lg">
+                  <div className="surface-muted p-3">
                     <div className="text-xs opacity-70 mb-1">
                       {t('hooker.stats.characters')}
                     </div>
@@ -2936,7 +2932,7 @@ function TextHooker() {
                   {t('hooker.stats.totalAllTime')}
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-base-200 p-3 rounded-lg">
+                  <div className="surface-muted p-3">
                     <div className="text-xs opacity-70 mb-1">
                       {t('hooker.stats.totalLines')}
                     </div>
@@ -2944,7 +2940,7 @@ function TextHooker() {
                       {numberWithCommas(linesNumber)}
                     </div>
                   </div>
-                  <div className="bg-base-200 p-3 rounded-lg">
+                  <div className="surface-muted p-3">
                     <div className="text-xs opacity-70 mb-1">
                       {t('hooker.stats.totalCharacters')}
                     </div>
@@ -2962,7 +2958,7 @@ function TextHooker() {
                   {t('hooker.stats.sessionHistory')}
                 </h4>
                 {sessionHistory.length === 0 ? (
-                  <div className="bg-base-200 p-3 rounded-lg text-sm opacity-70">
+                  <div className="surface-muted p-3 text-sm opacity-70">
                     {t('hooker.stats.noSessions')}
                   </div>
                 ) : (
@@ -2970,7 +2966,7 @@ function TextHooker() {
                     {sessionHistory.map((entry, index) => (
                       <div
                         key={`${entry.loggedAt}-${index}`}
-                        className="bg-base-200 p-3 rounded-lg"
+                        className="surface-muted p-3"
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <span className="text-xs opacity-70">
@@ -3033,7 +3029,7 @@ function TextHooker() {
                   className={`btn btn-primary w-full sm:w-auto transition-all ${isLogAnimating ? 'btn-success scale-105' : ''}`}
                 >
                   {isLogging ? (
-                    <span className="loading loading-spinner"></span>
+                    <span className="loading loading-spinner loading-md"></span>
                   ) : isLogAnimating ? (
                     <>
                       <span className="text-xl">✓</span>
@@ -3041,7 +3037,7 @@ function TextHooker() {
                     </>
                   ) : (
                     <>
-                      <Save size={18} />
+                      <Save className="w-5 h-5" />
                       {t('texthooker:hooker.logSession')}
                     </>
                   )}
@@ -3059,7 +3055,7 @@ function TextHooker() {
       {isSettingsOpen && (
         <div
           ref={settingsPanelRef}
-          className="fixed top-16 right-3 z-[60] w-[min(92vw,52rem)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-xl border border-base-content/15 bg-base-100/95 backdrop-blur-md shadow-2xl p-5 th-settings-panel"
+          className="fixed top-16 right-3 z-[60] w-[min(92vw,52rem)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-xl border border-base-content/15 bg-base-100/95 backdrop-blur-md shadow-lg p-5 th-settings-panel"
         >
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
@@ -3068,9 +3064,9 @@ function TextHooker() {
             </h3>
             <button
               onClick={() => setIsSettingsOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
-              <X size={20} />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -3095,14 +3091,13 @@ function TextHooker() {
             <div className="space-y-4">
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                  <Monitor size={16} /> {t('hooker.settings.displayHeading')}
+                  <Monitor className="w-4 h-4" />{' '}
+                  {t('hooker.settings.displayHeading')}
                 </h4>
 
-                <div className="form-control">
+                <div>
                   <label className="label cursor-pointer">
-                    <span className="label-text">
-                      {t('hooker.settings.verticalText')}
-                    </span>
+                    <span>{t('hooker.settings.verticalText')}</span>
                     <input
                       type="checkbox"
                       className="toggle toggle-primary toggle-sm"
@@ -3112,11 +3107,9 @@ function TextHooker() {
                   </label>
                 </div>
 
-                <div className="form-control">
+                <div>
                   <label className="label cursor-pointer">
-                    <span className="label-text">
-                      {t('hooker.settings.alwaysVerticalBar')}
-                    </span>
+                    <span>{t('hooker.settings.alwaysVerticalBar')}</span>
                     <input
                       type="checkbox"
                       className="toggle toggle-primary toggle-sm"
@@ -3131,7 +3124,7 @@ function TextHooker() {
                     {t('hooker.settings.topBarMetrics')}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">{t('hooker.stats.timer')}</span>
                       <input
                         type="checkbox"
@@ -3140,7 +3133,7 @@ function TextHooker() {
                         onChange={(e) => setShowTopbarTimer(e.target.checked)}
                       />
                     </label>
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">{t('hooker.stats.speed')}</span>
                       <input
                         type="checkbox"
@@ -3151,7 +3144,7 @@ function TextHooker() {
                         }
                       />
                     </label>
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">
                         {t('hooker.stats.characters')}
                       </span>
@@ -3164,7 +3157,7 @@ function TextHooker() {
                         }
                       />
                     </label>
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">{t('hooker.stats.lines')}</span>
                       <input
                         type="checkbox"
@@ -3176,32 +3169,22 @@ function TextHooker() {
                   </div>
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('hooker.settings.fontSize')}
-                    </span>
-                  </label>
+                <Field label={t('hooker.settings.fontSize')}>
                   <input
                     type="number"
                     min="12"
                     max="72"
                     value={fontSize}
                     onChange={handleFontSizeChange}
-                    className="input input-bordered input-sm w-full"
+                    className="input input-sm w-full"
                   />
-                </div>
+                </Field>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('hooker.settings.fontFamily')}
-                    </span>
-                  </label>
+                <Field label={t('hooker.settings.fontFamily')}>
                   <select
                     value={fontFamily}
                     onChange={handleFontFamilyChange}
-                    className="select select-bordered select-sm w-full"
+                    className="select select-sm w-full"
                   >
                     {FONT_FAMILY_OPTIONS.map((fontOption) => (
                       <option key={fontOption.value} value={fontOption.value}>
@@ -3209,18 +3192,13 @@ function TextHooker() {
                       </option>
                     ))}
                   </select>
-                </div>
+                </Field>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('hooker.settings.theme')}
-                    </span>
-                  </label>
+                <Field label={t('hooker.settings.theme')}>
                   <select
                     value={hookerTheme}
                     onChange={(event) => setHookerTheme(event.target.value)}
-                    className="select select-bordered select-sm w-full"
+                    className="select select-sm w-full"
                   >
                     {availableHookerThemes.map((themeOption) => (
                       <option key={themeOption.value} value={themeOption.value}>
@@ -3231,19 +3209,14 @@ function TextHooker() {
                     ))}
                   </select>
                   <label className="label">
-                    <span className="label-text-alt text-[10px] opacity-60">
+                    <span className="text-[10px] opacity-60">
                       {t('hooker.settings.themeScopeNote')}
                     </span>
                   </label>
-                </div>
+                </Field>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-xs">
-                        {t('hooker.settings.lineHeight')}
-                      </span>
-                    </label>
+                  <Field label={t('hooker.settings.lineHeight')}>
                     <input
                       type="number"
                       min={0.5}
@@ -3251,15 +3224,10 @@ function TextHooker() {
                       step={0.1}
                       value={lineSpacing}
                       onChange={handleLineSpacingChange}
-                      className="input input-bordered input-sm w-full"
+                      className="input input-sm w-full"
                     />
-                  </div>
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text text-xs">
-                        {t('hooker.settings.lineGap')}
-                      </span>
-                    </label>
+                  </Field>
+                  <Field label={t('hooker.settings.lineGap')}>
                     <input
                       type="number"
                       min={0}
@@ -3267,9 +3235,9 @@ function TextHooker() {
                       step={1}
                       value={lineGap}
                       onChange={handleLineGapChange}
-                      className="input input-bordered input-sm w-full"
+                      className="input input-sm w-full"
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 <div className="rounded-lg border border-base-300 bg-base-200/40 p-4 mt-2">
@@ -3283,14 +3251,14 @@ function TextHooker() {
                       title={t('hooker.settings.showClassNameHelp')}
                       onClick={() => setIsClassHelpOpen(true)}
                     >
-                      <HelpCircle size={16} />
+                      <HelpCircle className="w-4 h-4" />
                     </button>
                   </div>
                   <p className="text-sm text-base-content/70 mb-3">
                     {t('hooker.settings.customCssHint')}
                   </p>
                   <textarea
-                    className="textarea textarea-bordered w-full h-56 font-mono text-xs"
+                    className="textarea w-full h-56 font-mono text-xs"
                     value={customCss}
                     onChange={(e) => setCustomCss(e.target.value)}
                     placeholder={
@@ -3300,7 +3268,7 @@ function TextHooker() {
                   <div className="flex justify-end mt-3">
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline"
+                      className="btn btn-outline btn-sm"
                       onClick={() => setCustomCss('')}
                     >
                       {t('hooker.settings.clearCustomCss')}
@@ -3315,31 +3283,27 @@ function TextHooker() {
             <div className="space-y-4">
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                  <Activity size={16} /> {t('hooker.settings.behaviorHeading')}
+                  <Activity className="w-4 h-4" />{' '}
+                  {t('hooker.settings.behaviorHeading')}
                 </h4>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('hooker.timer.autoPause')}
-                    </span>
-                  </label>
+                <Field label={t('hooker.timer.autoPause')}>
                   <input
                     type="number"
                     min={10}
                     max={3600}
                     value={autoPauseTimeout}
                     onChange={handleAutoPauseTimeoutChange}
-                    className="input input-bordered input-sm w-full"
+                    className="input input-sm w-full"
                   />
-                </div>
+                </Field>
 
                 <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
                     {t('hooker.settings.runtimeBehavior')}
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">
                         {t('hooker.collab.allowPaste')}
                       </span>
@@ -3353,7 +3317,7 @@ function TextHooker() {
                       />
                     </label>
 
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">
                         {t('hooker.settings.allowNewLineDuringPause')}
                       </span>
@@ -3367,7 +3331,7 @@ function TextHooker() {
                       />
                     </label>
 
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">
                         {t('hooker.settings.autostartByPaste')}
                       </span>
@@ -3381,7 +3345,7 @@ function TextHooker() {
                       />
                     </label>
 
-                    <label className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer">
+                    <label className="flex items-center justify-between surface px-3 py-2 cursor-pointer">
                       <span className="text-sm">
                         {t('hooker.settings.autostartByLine')}
                       </span>
@@ -3396,7 +3360,7 @@ function TextHooker() {
                     </label>
 
                     <label
-                      className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer"
+                      className="flex items-center justify-between surface px-3 py-2 cursor-pointer"
                       title={t('hooker.collab.continuousReconnectHint')}
                     >
                       <span className="text-sm">
@@ -3413,7 +3377,7 @@ function TextHooker() {
                     </label>
 
                     <label
-                      className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer"
+                      className="flex items-center justify-between surface px-3 py-2 cursor-pointer"
                       title={t('hooker.timer.autoPauseHint')}
                     >
                       <span className="text-sm">
@@ -3428,7 +3392,7 @@ function TextHooker() {
                     </label>
 
                     <label
-                      className="flex items-center justify-between rounded-md border border-base-content/10 bg-base-100 px-3 py-2 cursor-pointer"
+                      className="flex items-center justify-between surface px-3 py-2 cursor-pointer"
                       title={t('hooker.collab.preventDuplicatesHint')}
                     >
                       <span className="text-sm">
@@ -3446,53 +3410,38 @@ function TextHooker() {
                   </div>
                 </div>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('hooker.collab.websocketUrl')}
-                    </span>
-                  </label>
+                <Field label={t('hooker.collab.websocketUrl')}>
                   <input
                     type="text"
                     value={websocketUrl}
                     onChange={(e) => setWebsocketUrl(e.target.value)}
-                    className="input input-bordered input-sm w-full"
+                    className="input input-sm w-full"
                     placeholder={t('hooker.collab.websocketPlaceholder')}
                   />
-                </div>
+                </Field>
 
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('hooker.collab.title')}
-                    </span>
-                  </label>
+                <Field label={t('hooker.collab.title')}>
                   <select
                     value={mode}
                     onChange={(e) =>
                       setMode(e.target.value as 'local' | 'host' | 'guest')
                     }
-                    className="select select-bordered select-sm w-full"
+                    className="select select-sm w-full"
                   >
                     <option value="local">{t('hooker.collab.local')}</option>
                     <option value="host">{t('hooker.collab.host')}</option>
                     <option value="guest">{t('hooker.collab.guest')}</option>
                   </select>
-                </div>
+                </Field>
 
                 {(mode === 'host' || mode === 'guest') && (
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">
-                        {t('hooker.collab.roomId')}
-                      </span>
-                    </label>
+                  <Field label={t('hooker.collab.roomId')}>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={roomId}
                         onChange={(e) => setRoomId(e.target.value)}
-                        className="input input-bordered input-sm w-full"
+                        className="input input-sm w-full"
                         placeholder={t('hooker.collab.roomPlaceholder')}
                         disabled={isRoomConnected}
                       />
@@ -3509,22 +3458,17 @@ function TextHooker() {
                             : t('hooker.collab.join')}
                       </button>
                     </div>
-                  </div>
+                  </Field>
                 )}
 
                 {mode === 'host' && roomId && inviteLink && (
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">
-                        {t('hooker.collab.inviteLink')}
-                      </span>
-                    </label>
+                  <Field label={t('hooker.collab.inviteLink')}>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={inviteLink}
                         readOnly
-                        className="input input-bordered input-sm w-full"
+                        className="input input-sm w-full"
                       />
                       <button
                         type="button"
@@ -3535,7 +3479,8 @@ function TextHooker() {
                           t('hooker.collab.copied')
                         ) : (
                           <span className="inline-flex items-center gap-1">
-                            <Share2 size={14} /> {t('hooker.collab.copy')}
+                            <Share2 className="w-3.5 h-3.5" />{' '}
+                            {t('hooker.collab.copy')}
                           </span>
                         )}
                       </button>
@@ -3543,7 +3488,7 @@ function TextHooker() {
                     <span className="text-xs opacity-60 mt-1">
                       {t('hooker.collab.inviteHint')}
                     </span>
-                  </div>
+                  </Field>
                 )}
 
                 <div className="divider"></div>
@@ -3552,16 +3497,18 @@ function TextHooker() {
                   <button
                     type="button"
                     onClick={handleCopyAll}
-                    className="btn btn-sm btn-outline"
+                    className="btn btn-outline btn-sm"
                   >
-                    <Copy size={16} /> {t('hooker.settings.copyAllLines')}
+                    <Copy className="w-4 h-4" />{' '}
+                    {t('hooker.settings.copyAllLines')}
                   </button>
                   <button
                     type="button"
                     onClick={handleClearAll}
-                    className="btn btn-sm btn-outline btn-error"
+                    className="btn btn-error btn-outline btn-sm"
                   >
-                    <Trash2 size={16} /> {t('hooker.settings.clearAllLines')}
+                    <Trash2 className="w-4 h-4" />{' '}
+                    {t('hooker.settings.clearAllLines')}
                   </button>
                 </div>
               </div>
@@ -3570,7 +3517,9 @@ function TextHooker() {
         </div>
       )}
 
-      <dialog className={`modal ${isClassHelpOpen ? 'modal-open' : ''}`}>
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isClassHelpOpen ? 'modal-open' : ''}`}
+      >
         <div className="modal-box max-w-2xl">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg">
@@ -3578,32 +3527,32 @@ function TextHooker() {
             </h3>
             <button
               onClick={() => setIsClassHelpOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
-              <X size={20} />
+              <X className="w-5 h-5" />
             </button>
           </div>
           <p className="text-sm text-base-content/70 mb-3">
             {t('hooker.classHelp.intro')}
           </p>
           <div className="space-y-2 text-sm">
-            <div className="rounded bg-base-200 px-3 py-2">
+            <div className="surface-muted px-3 py-2">
               <code>.th-root</code> - {t('hooker.classHelp.root')}
             </div>
-            <div className="rounded bg-base-200 px-3 py-2">
+            <div className="surface-muted px-3 py-2">
               <code>.th-topbar</code> - {t('hooker.classHelp.topbar')}
             </div>
-            <div className="rounded bg-base-200 px-3 py-2">
+            <div className="surface-muted px-3 py-2">
               <code>.th-settings-panel</code> -{' '}
               {t('hooker.classHelp.settingsPanel')}
             </div>
-            <div className="rounded bg-base-200 px-3 py-2">
+            <div className="surface-muted px-3 py-2">
               <code>.th-line-list</code> - {t('hooker.classHelp.lineList')}
             </div>
-            <div className="rounded bg-base-200 px-3 py-2">
+            <div className="surface-muted px-3 py-2">
               <code>.th-line-item</code> - {t('hooker.classHelp.lineItem')}
             </div>
-            <div className="rounded bg-base-200 px-3 py-2">
+            <div className="surface-muted px-3 py-2">
               <code>.th-line-text</code> - {t('hooker.classHelp.lineText')}
             </div>
           </div>
@@ -3661,7 +3610,7 @@ function TextHooker() {
                       direction: 'ltr',
                     }}
                   >
-                    <X size={14} />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               </div>
@@ -3685,7 +3634,7 @@ function TextHooker() {
                   aria-label={t('hooker.controls.deleteLine')}
                   onClick={() => handleDelete(line.id)}
                 >
-                  <X size={14} />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </p>
             </div>

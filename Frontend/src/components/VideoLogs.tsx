@@ -522,7 +522,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
   if (isLoadingLogs) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
-        <div className="card bg-base-100 shadow-sm w-full max-w-md">
+        <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -583,7 +583,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
         {t('video.assignChannels')}
       </h1>
 
-      <div className="stats shadow mb-4 w-full">
+      <div className="stats shadow-sm mb-4 w-full">
         <div className="stat">
           <div className="stat-title">{t('matcher.selectedLogs')}</div>
           <div className="stat-value">{selectedLogs.length}</div>
@@ -671,7 +671,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
       )}
 
       {/* Manual matching section */}
-      <div className="card bg-base-200 shadow-lg">
+      <div className="card surface-muted">
         <div className="card-body p-4">
           <h2 className="card-title">{t('video.manualGroups')}</h2>
           <div className="divider my-1"></div>
@@ -703,7 +703,7 @@ function VideoLogs({ username, isActive = true }: VideoLogsProps) {
                     disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
                   />
                   <button
-                    className="btn btn-sm btn-secondary"
+                    className="btn btn-secondary btn-sm"
                     onClick={handlePasteMatch}
                     disabled={!hasTargetLogs || isMatchingPaste || isAssigning}
                   >

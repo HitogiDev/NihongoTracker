@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Field from '../components/ui/Field';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -136,21 +137,22 @@ export default function MediaRequestScreen() {
           <p className="text-base-content/70">{t('mediaRequest.subtitle')}</p>
         </div>
 
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <h2 className="card-title mb-4">{t('mediaRequest.newRequest')}</h2>
             <form onSubmit={submit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="form-control">
-                  <div className="label">
-                    <span className="label-text">
+                <Field
+                  label={
+                    <>
                       {t('mediaRequest.nativeTitle')}{' '}
                       <span className="text-error">*</span>
-                    </span>
-                  </div>
+                    </>
+                  }
+                >
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     value={form.title.contentTitleNative}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -164,15 +166,10 @@ export default function MediaRequestScreen() {
                     placeholder={t('mediaRequest.nativeTitlePlaceholder')}
                     required
                   />
-                </label>
-                <label className="form-control">
-                  <div className="label">
-                    <span className="label-text">
-                      {t('mediaRequest.mediaType')}
-                    </span>
-                  </div>
+                </Field>
+                <Field label={t('mediaRequest.mediaType')}>
                   <select
-                    className="select select-bordered w-full"
+                    className="select w-full"
                     value={form.type}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -187,16 +184,11 @@ export default function MediaRequestScreen() {
                       </option>
                     ))}
                   </select>
-                </label>
-                <label className="form-control">
-                  <div className="label">
-                    <span className="label-text">
-                      {t('mediaRequest.romajiTitle')}
-                    </span>
-                  </div>
+                </Field>
+                <Field label={t('mediaRequest.romajiTitle')}>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     value={form.title.contentTitleRomaji ?? ''}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -208,16 +200,11 @@ export default function MediaRequestScreen() {
                       }))
                     }
                   />
-                </label>
-                <label className="form-control">
-                  <div className="label">
-                    <span className="label-text">
-                      {t('mediaRequest.englishTitle')}
-                    </span>
-                  </div>
+                </Field>
+                <Field label={t('mediaRequest.englishTitle')}>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     value={form.title.contentTitleEnglish ?? ''}
                     onChange={(e) =>
                       setForm((f) => ({
@@ -229,38 +216,28 @@ export default function MediaRequestScreen() {
                       }))
                     }
                   />
-                </label>
-                <label className="form-control">
-                  <div className="label">
-                    <span className="label-text">
-                      {t('mediaRequest.referenceUrl')}
-                    </span>
-                  </div>
+                </Field>
+                <Field label={t('mediaRequest.referenceUrl')}>
                   <input
                     type="url"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     value={form.referenceUrl ?? ''}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, referenceUrl: e.target.value }))
                     }
                     placeholder={t('mediaRequest.referenceUrlPlaceholder')}
                   />
-                </label>
-                <label className="form-control">
-                  <div className="label">
-                    <span className="label-text">
-                      {t('mediaRequest.coverImage')}
-                    </span>
-                  </div>
+                </Field>
+                <Field label={t('mediaRequest.coverImage')}>
                   <input
                     type="url"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     value={form.coverImage ?? ''}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, coverImage: e.target.value }))
                     }
                   />
-                </label>
+                </Field>
               </div>
 
               <div className="space-y-1">
@@ -271,26 +248,29 @@ export default function MediaRequestScreen() {
                   </span>
                 </p>
                 {DESCRIPTION_LANGUAGES.map(({ key, labelKey }) => (
-                  <label key={key} className="form-control">
-                    <div className="label">
-                      <span className="label-text">
-                        {t(labelKey)}{' '}
-                        <span className="label-text-alt text-base-content/50">
-                          {t('mediaRequest.optional')}
-                        </span>
-                      </span>
-                    </div>
-                    <textarea
-                      className="textarea textarea-bordered w-full"
-                      rows={3}
-                      value={descriptions[key]}
-                      onChange={(e) =>
-                        setDescriptions((d) => ({
-                          ...d,
-                          [key]: e.target.value,
-                        }))
+                  <label key={key}>
+                    <Field
+                      label={
+                        <>
+                          {t(labelKey)}{' '}
+                          <span className="text-base-content/50">
+                            {t('mediaRequest.optional')}
+                          </span>
+                        </>
                       }
-                    />
+                    >
+                      <textarea
+                        className="textarea w-full"
+                        rows={3}
+                        value={descriptions[key]}
+                        onChange={(e) =>
+                          setDescriptions((d) => ({
+                            ...d,
+                            [key]: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
                   </label>
                 ))}
               </div>
@@ -339,7 +319,7 @@ export default function MediaRequestScreen() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <h2 className="card-title mb-4">{t('mediaRequest.myRequests')}</h2>
             {mineLoading ? (
@@ -378,7 +358,7 @@ export default function MediaRequestScreen() {
                     request.createdMediaType ? (
                       <Link
                         to={`/${request.createdMediaType}/${request.createdMediaContentId}`}
-                        className="btn btn-sm btn-ghost"
+                        className="btn btn-ghost btn-sm"
                       >
                         {t('mediaRequest.viewMedia')}
                       </Link>

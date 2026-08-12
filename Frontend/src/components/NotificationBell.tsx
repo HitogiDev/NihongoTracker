@@ -297,7 +297,7 @@ function NotificationBell() {
 
       <div
         tabIndex={0}
-        className="dropdown-content z-[50] w-80 rounded-xl border border-base-300 bg-base-100 text-base-content shadow-lg mt-2"
+        className="dropdown-content z-[50] w-80 surface-raised text-base-content mt-2"
       >
         <div className="border-b border-base-300/70 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
@@ -378,8 +378,10 @@ function NotificationBell() {
         (e.g. the achievements filters) paint over it.
       */}
       {createPortal(
-        <dialog className={`modal ${deleteConfirmOpen ? 'modal-open' : ''}`}>
-          <div className="modal-box max-w-sm border border-base-300 bg-base-100 text-base-content shadow-2xl">
+        <dialog
+          className={`modal modal-bottom sm:modal-middle ${deleteConfirmOpen ? 'modal-open' : ''}`}
+        >
+          <div className="modal-box max-w-sm border border-base-300 bg-base-100 text-base-content shadow-lg">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-11 h-11 rounded-full bg-error/10 flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-error" />
@@ -407,7 +409,7 @@ function NotificationBell() {
                   setDeleteConfirmDontShowAgain(event.target.checked)
                 }
               />
-              <span className="label-text flex items-center gap-2 text-base-content/90">
+              <span className="flex items-center gap-2 text-base-content/90">
                 {t('deleteConfirm.dontShowAgain')}
               </span>
             </label>

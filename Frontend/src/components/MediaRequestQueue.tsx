@@ -94,7 +94,7 @@ export default function MediaRequestQueue() {
   });
 
   return (
-    <div className="card bg-base-100 shadow-sm">
+    <div className="card surface">
       <div className="card-body">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="card-title">
@@ -105,7 +105,7 @@ export default function MediaRequestQueue() {
               </span>
             ) : null}
           </h3>
-          <div className="tabs tabs-boxed">
+          <div role="tablist" className="tabs tabs-border">
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab.value}
@@ -216,7 +216,7 @@ export default function MediaRequestQueue() {
                       <div className="mt-3 space-y-2">
                         <input
                           type="text"
-                          className="input input-bordered input-sm w-full"
+                          className="input input-sm w-full"
                           placeholder={t('queue.reviewNotePlaceholder')}
                           value={note}
                           onChange={(e) =>

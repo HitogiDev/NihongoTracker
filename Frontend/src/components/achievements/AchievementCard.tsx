@@ -170,13 +170,13 @@ export function AchievementDetailModal({
   const content = (
     <dialog
       open
-      className="modal modal-open"
+      className="modal modal-bottom sm:modal-middle modal-open"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="modal-box max-w-md">
         <button
           onClick={onClose}
-          className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+          className="btn btn-ghost btn-sm btn-circle absolute right-2 top-2"
           aria-label={t('common:close')}
         >
           <Icon icon="mdi:close" width={18} height={18} />
@@ -197,10 +197,10 @@ export function AchievementDetailModal({
               }}
             >
               <AchievementIcon
+                size={56}
                 iconSlug={isSecret ? undefined : achievement.iconSlug}
                 rarity={rarity}
                 isEarned={isEarned}
-                size={56}
               />
             </div>
 
@@ -343,7 +343,7 @@ export default function AchievementCard({
         onClick={handleClick}
         className={`rounded-xl border cursor-pointer transition-all duration-200 ${
           isEarned
-            ? 'bg-base-100 border-base-300 shadow-sm hover:shadow-md'
+            ? 'bg-base-100 border-base-300 shadow-sm hover:shadow-lg'
             : 'bg-base-200/50 border-base-300 hover:bg-base-200'
         } ${compact ? 'p-3' : 'p-5'}`}
       >

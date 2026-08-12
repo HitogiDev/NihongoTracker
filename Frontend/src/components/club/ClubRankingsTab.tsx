@@ -210,7 +210,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
   if (error) {
     return (
       <div className="max-w-5xl mx-auto">
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <div className="text-center py-8 text-error">
               <Trophy className="mx-auto w-10 h-10 mb-2" />
@@ -258,7 +258,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
+            className="dropdown-content menu p-2 surface-raised w-52"
           >
             {periodOptions.map((option) => (
               <li key={option.value}>
@@ -295,7 +295,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300"
+            className="dropdown-content menu p-2 surface-raised w-52"
           >
             {sortOptions.map((option) => (
               <li key={option.value}>
@@ -321,7 +321,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           </div>
         </div>
       ) : members.length === 0 ? (
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <div className="text-center py-12 text-base-content/60">
               <Trophy className="mx-auto w-12 h-12 mb-4 opacity-30" />
@@ -331,7 +331,7 @@ function ClubRankingsTab({ clubId }: ClubRankingsTabProps) {
           </div>
         </div>
       ) : (
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body p-0">
             {/* Top 3 Podium */}
             {hasTop3 && (

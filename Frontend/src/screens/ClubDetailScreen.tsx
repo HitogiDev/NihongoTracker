@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Field from '../components/ui/Field';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
@@ -764,9 +765,9 @@ function ClubDetailScreen() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'leader':
-        return <Shield className="text-yellow-500 w-4 h-4" />;
+        return <Shield className="text-warning w-4 h-4" />;
       case 'moderator':
-        return <BadgeCheck className="text-blue-500 w-4 h-4" />;
+        return <BadgeCheck className="text-info w-4 h-4" />;
       default:
         return null;
     }
@@ -899,9 +900,12 @@ function ClubDetailScreen() {
                       </button>
                     )}
                     <button
+                      // The `disabled` attribute below already covers the
+                      // leader-with-members case; `btn-disabled` only sets
+                      // pointer-events:none and leaves the button focusable.
                       className={`btn btn-sm ${
                         club.userRole === 'leader' && club.memberCount > 1
-                          ? 'btn-disabled'
+                          ? ''
                           : club.userRole === 'leader' && club.memberCount === 1
                             ? 'btn-warning'
                             : 'btn-error'
@@ -977,7 +981,7 @@ function ClubDetailScreen() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         {/* Tab Navigation */}
-        <div className="tabs tabs-boxed mb-8 w-fit mx-auto">
+        <div role="tablist" className="tabs tabs-border mb-8 w-fit mx-auto">
           <button
             className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('overview')}
@@ -1021,7 +1025,7 @@ function ClubDetailScreen() {
             {/* Left Column - Club Info (now contains Activity Feed and Voting) */}
             <div className="lg:col-span-2 space-y-6">
               {/* Media Voting Section */}
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="card-title text-lg flex items-center gap-2">
@@ -1069,7 +1073,7 @@ function ClubDetailScreen() {
               </div>
               {/* Recent Activity (Activity Feed) */}
               {club.isUserMember && club.userStatus === 'active' && (
-                <div className="card bg-base-100 shadow-sm">
+                <div className="card surface">
                   <div className="card-body">
                     <h2 className="card-title text-lg mb-2">
                       {t('detail.activityFeed')}
@@ -1095,7 +1099,7 @@ function ClubDetailScreen() {
 
               {/* About */}
               {club.description && (
-                <div className="card bg-base-100 shadow-sm">
+                <div className="card surface">
                   <div className="card-body">
                     <h2 className="card-title text-lg mb-2">
                       {t('detail.about')}
@@ -1109,7 +1113,7 @@ function ClubDetailScreen() {
 
               {/* Rules */}
               {club.rules && (
-                <div className="card bg-base-100 shadow-sm">
+                <div className="card surface">
                   <div className="card-body">
                     <h2 className="card-title text-lg mb-2">
                       {t('detail.rules')}
@@ -1123,7 +1127,7 @@ function ClubDetailScreen() {
 
               {/* Tags */}
               {club.tags && club.tags.length > 0 && (
-                <div className="card bg-base-100 shadow-sm">
+                <div className="card surface">
                   <div className="card-body">
                     <h2 className="card-title text-lg mb-2">
                       {t('common.tags')}
@@ -1143,7 +1147,10 @@ function ClubDetailScreen() {
         )}
 
         {isHistoryOpen && (
-          <dialog open className="modal modal-open">
+          <dialog
+            open
+            className="modal modal-bottom sm:modal-middle modal-open"
+          >
             <div className="modal-box w-11/12 max-w-4xl">
               <h3 className="font-bold text-lg mb-4">
                 {t('detail.pastMedia')}
@@ -1166,7 +1173,7 @@ function ClubDetailScreen() {
                     return (
                       <div
                         key={m._id}
-                        className="flex items-center justify-between p-3 rounded border border-base-300 bg-base-100"
+                        className="flex items-center justify-between p-3 surface"
                       >
                         <div>
                           <div className="font-medium">{m.title}</div>
@@ -1218,7 +1225,7 @@ function ClubDetailScreen() {
         {/* Media Tab */}
         {activeTab === 'media' && (
           <div className="max-w-6xl mx-auto">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="card-title text-lg">
@@ -1259,7 +1266,7 @@ function ClubDetailScreen() {
                     {clubMedia.media.map((media) => (
                       <div
                         key={media._id}
-                        className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 border border-base-300"
+                        className="card surface hover:shadow-lg transition-all duration-200"
                       >
                         {/* Media Image/Banner */}
                         <figure className="relative h-48 bg-gradient-to-br from-primary/20 to-secondary/20">
@@ -1423,7 +1430,7 @@ function ClubDetailScreen() {
         {/* Members Tab */}
         {activeTab === 'members' && (
           <div className="max-w-4xl mx-auto">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4">
                   {t('detail.membersCount', { count: club.memberCount })}
@@ -1442,7 +1449,7 @@ function ClubDetailScreen() {
                         {pendingRequests.pending.map((member) => (
                           <div
                             key={member.user._id}
-                            className="flex items-center gap-3 p-3 rounded border border-base-300 bg-base-100"
+                            className="flex items-center gap-3 p-3 surface"
                           >
                             <Link
                               to={`/user/${encodeURIComponent(member.user.username)}`}
@@ -1473,7 +1480,7 @@ function ClubDetailScreen() {
                             </div>
                             <div className="flex gap-2">
                               <button
-                                className="btn btn-xs btn-success"
+                                className="btn btn-success btn-xs"
                                 onClick={() =>
                                   membershipActionMutation.mutate({
                                     memberId: member.user._id,
@@ -1487,7 +1494,7 @@ function ClubDetailScreen() {
                                   : t('detail.approve')}
                               </button>
                               <button
-                                className="btn btn-xs btn-error"
+                                className="btn btn-error btn-xs"
                                 onClick={() =>
                                   membershipActionMutation.mutate({
                                     memberId: member.user._id,
@@ -1522,7 +1529,7 @@ function ClubDetailScreen() {
                       return (
                         <div
                           key={member.user._id || index}
-                          className="card bg-base-100 border border-base-300 shadow-sm"
+                          className="card surface"
                         >
                           <div className="card-body p-4">
                             <div className="flex items-center gap-3">
@@ -1648,7 +1655,7 @@ function ClubDetailScreen() {
 
       {/* Add Media Modal */}
       {isAddMediaModalOpen && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">{t('addMedia.title')}</h3>
@@ -1674,12 +1681,9 @@ function ClubDetailScreen() {
               className="space-y-4"
             >
               {/* Media Type */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('addMedia.mediaType')}</span>
-                </label>
+              <Field label={t('addMedia.mediaType')}>
                 <select
-                  className="select select-bordered w-full"
+                  className="select w-full"
                   value={mediaForm.mediaType}
                   onChange={(e) => {
                     setMediaForm({
@@ -1701,17 +1705,14 @@ function ClubDetailScreen() {
                   <option value="video">{t('common:mediaTypes.video')}</option>
                   <option value="movie">{t('common:mediaTypes.movie')}</option>
                 </select>
-              </div>
+              </Field>
 
               {/* Title with Search */}
-              <div className="relative">
-                <label className="label">
-                  <span className="label-text">{t('suggest.searchLabel')}</span>
-                </label>
+              <Field label={t('suggest.searchLabel')} className="relative">
                 <div className="relative">
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     placeholder={t('detail.searchFor', {
                       type: mediaForm.mediaType,
                     })}
@@ -1728,7 +1729,7 @@ function ClubDetailScreen() {
                   {/* Search Results - Positioned as absolute popup */}
                   {showResults && searchResults && searchResults.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-50 mt-1">
-                      <div className="card bg-base-100 shadow-sm border border-base-300 max-h-60 overflow-y-auto">
+                      <div className="card surface max-h-60 overflow-y-auto">
                         <div className="card-body p-2">
                           {searchResults.map((result) => (
                             <div
@@ -1764,15 +1765,10 @@ function ClubDetailScreen() {
 
                 <div className="divider">OR</div>
 
-                <div>
-                  <label className="label">
-                    <span className="label-text">
-                      {t('common.titleRequired')}
-                    </span>
-                  </label>
+                <Field label={t('common.titleRequired')}>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     placeholder={t('addMedia.titlePlaceholder')}
                     value={mediaForm.title}
                     onChange={(e) =>
@@ -1780,32 +1776,26 @@ function ClubDetailScreen() {
                     }
                     required
                   />
-                </div>
-              </div>
+                </Field>
+              </Field>
 
               {/* Media ID (optional for external links) */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('addMedia.mediaId')}</span>
-                </label>
+              <Field label={t('addMedia.mediaId')}>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   placeholder={t('addMedia.mediaIdPlaceholder')}
                   value={mediaForm.mediaId}
                   onChange={(e) =>
                     setMediaForm({ ...mediaForm, mediaId: e.target.value })
                   }
                 />
-              </div>
+              </Field>
 
               {/* Description */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('common.description')}</span>
-                </label>
+              <Field label={t('common.description')}>
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   placeholder={t('addMedia.descriptionPlaceholder')}
                   value={mediaForm.description}
                   onChange={(e) =>
@@ -1813,43 +1803,33 @@ function ClubDetailScreen() {
                   }
                   rows={3}
                 />
-              </div>
+              </Field>
 
               {/* Start Date */}
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    {t('addMedia.startRequired')}
-                  </span>
-                </label>
+              <Field label={t('addMedia.startRequired')}>
                 <input
                   type="date"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={mediaForm.startDate}
                   onChange={(e) =>
                     setMediaForm({ ...mediaForm, startDate: e.target.value })
                   }
                   required
                 />
-              </div>
+              </Field>
 
               {/* End Date */}
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    {t('addMedia.endRequired')}
-                  </span>
-                </label>
+              <Field label={t('addMedia.endRequired')}>
                 <input
                   type="date"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={mediaForm.endDate}
                   onChange={(e) =>
                     setMediaForm({ ...mediaForm, endDate: e.target.value })
                   }
                   required
                 />
-              </div>
+              </Field>
 
               {/* Submit buttons */}
               <div className="modal-action">
@@ -1917,7 +1897,7 @@ function ClubDetailScreen() {
 
       {/* Edit Club Modal */}
       {isEditClubModalOpen && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">{t('edit.title')}</h3>
@@ -1973,13 +1953,10 @@ function ClubDetailScreen() {
               className="space-y-4"
             >
               {/* Club Name */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('edit.nameRequired')}</span>
-                </label>
+              <Field label={t('edit.nameRequired')}>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={editForm.name}
                   onChange={(e) =>
                     setEditForm({ ...editForm, name: e.target.value })
@@ -1987,14 +1964,10 @@ function ClubDetailScreen() {
                   required
                   maxLength={100}
                 />
-              </div>
+              </Field>
 
               {/* Avatar Upload */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('edit.avatar')}</span>
-                </label>
-
+              <Field label={t('edit.avatar')}>
                 {/* Current/Preview Avatar - Centered */}
                 <div className="flex justify-center mb-4">
                   <div className="avatar">
@@ -2046,18 +2019,14 @@ function ClubDetailScreen() {
                 </div>
 
                 <div className="label">
-                  <span className="label-text-alt text-center block">
+                  <span className="text-center block">
                     {t('edit.avatarHint')}
                   </span>
                 </div>
-              </div>
+              </Field>
 
               {/* Banner Upload */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('create.banner')}</span>
-                </label>
-
+              <Field label={t('create.banner')}>
                 {/* Current/Preview Banner */}
                 <div className="mb-4">
                   <div className="w-full h-32 rounded-lg overflow-hidden border-2 border-dashed border-base-300 bg-base-50 flex items-center justify-center">
@@ -2108,19 +2077,16 @@ function ClubDetailScreen() {
                 </div>
 
                 <div className="label">
-                  <span className="label-text-alt text-center block">
+                  <span className="text-center block">
                     {t('edit.bannerHint')}
                   </span>
                 </div>
-              </div>
+              </Field>
 
               {/* Description */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('common.description')}</span>
-                </label>
+              <Field label={t('common.description')}>
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm({ ...editForm, description: e.target.value })
@@ -2128,13 +2094,10 @@ function ClubDetailScreen() {
                   rows={3}
                   maxLength={500}
                 />
-              </div>
+              </Field>
 
               {/* Privacy */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('create.privacy')}</span>
-                </label>
+              <Field label={t('create.privacy')}>
                 <div className="flex gap-4">
                   <label className="label cursor-pointer">
                     <input
@@ -2146,9 +2109,7 @@ function ClubDetailScreen() {
                         setEditForm({ ...editForm, isPublic: true })
                       }
                     />
-                    <span className="label-text ml-2">
-                      {t('create.public')}
-                    </span>
+                    <span className="ml-2">{t('create.public')}</span>
                   </label>
                   <label className="label cursor-pointer">
                     <input
@@ -2160,21 +2121,16 @@ function ClubDetailScreen() {
                         setEditForm({ ...editForm, isPublic: false })
                       }
                     />
-                    <span className="label-text ml-2">
-                      {t('create.private')}
-                    </span>
+                    <span className="ml-2">{t('create.private')}</span>
                   </label>
                 </div>
-              </div>
+              </Field>
 
               {/* Member Limit */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('create.memberLimit')}</span>
-                </label>
+              <Field label={t('create.memberLimit')}>
                 <input
                   type="number"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={editForm.memberLimit}
                   onChange={(e) =>
                     setEditForm({
@@ -2202,15 +2158,12 @@ function ClubDetailScreen() {
                     {t('detail.tierUnlock')}
                   </p>
                 </div>
-              </div>
+              </Field>
 
               {/* Rules */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('detail.rules')}</span>
-                </label>
+              <Field label={t('detail.rules')}>
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   value={editForm.rules}
                   onChange={(e) =>
                     setEditForm({ ...editForm, rules: e.target.value })
@@ -2218,16 +2171,13 @@ function ClubDetailScreen() {
                   rows={4}
                   maxLength={1000}
                 />
-              </div>
+              </Field>
 
               {/* Tags */}
-              <div>
-                <label className="label">
-                  <span className="label-text">{t('common.tags')}</span>
-                </label>
+              <Field label={t('common.tags')}>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   placeholder={t('edit.tagsPlaceholder')}
                   value={editForm.tags.join(', ')}
                   onChange={(e) => {
@@ -2239,9 +2189,9 @@ function ClubDetailScreen() {
                   }}
                 />
                 <div className="label">
-                  <span className="label-text-alt">{t('edit.tagsHint')}</span>
+                  <span>{t('edit.tagsHint')}</span>
                 </div>
-              </div>
+              </Field>
 
               {/* Submit buttons */}
               <div className="modal-action">
@@ -2271,7 +2221,7 @@ function ClubDetailScreen() {
 
       {/* Club Goals Modal */}
       {isClubGoalsModalOpen && club && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-3xl">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
@@ -2345,12 +2295,9 @@ function ClubDetailScreen() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="label">
-                          <span className="label-text">{t('goals.type')}</span>
-                        </label>
+                      <Field label={t('goals.type')}>
                         <select
-                          className="select select-bordered w-full"
+                          className="select w-full"
                           value={goal.type}
                           onChange={(e) => {
                             const nextType = e.target
@@ -2395,20 +2342,15 @@ function ClubDetailScreen() {
                           </option>
                           <option value="pages">{t('goals.pages')}</option>
                         </select>
-                      </div>
+                      </Field>
 
                       {goal.type === 'time' ? (
                         <div className="grid grid-cols-2 gap-3 md:col-span-1">
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('goals.hours')}
-                              </span>
-                            </label>
+                          <Field label={t('goals.hours')}>
                             <input
                               type="number"
                               min={0}
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               value={goal.targetHours}
                               onChange={(e) =>
                                 updateClubGoalDraft(
@@ -2418,18 +2360,13 @@ function ClubDetailScreen() {
                                 )
                               }
                             />
-                          </div>
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('goals.minutes')}
-                              </span>
-                            </label>
+                          </Field>
+                          <Field label={t('goals.minutes')}>
                             <input
                               type="number"
                               min={0}
                               max={59}
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               value={goal.targetMinutes}
                               onChange={(e) =>
                                 updateClubGoalDraft(
@@ -2445,19 +2382,14 @@ function ClubDetailScreen() {
                                 )
                               }
                             />
-                          </div>
+                          </Field>
                         </div>
                       ) : (
-                        <div>
-                          <label className="label">
-                            <span className="label-text">
-                              {t('goals.target')}
-                            </span>
-                          </label>
+                        <Field label={t('goals.target')}>
                           <input
                             type="number"
                             min={1}
-                            className="input input-bordered w-full"
+                            className="input w-full"
                             value={goal.targetValue}
                             onChange={(e) =>
                               updateClubGoalDraft(
@@ -2467,17 +2399,12 @@ function ClubDetailScreen() {
                               )
                             }
                           />
-                        </div>
+                        </Field>
                       )}
 
-                      <div>
-                        <label className="label">
-                          <span className="label-text">
-                            {t('media.period')}
-                          </span>
-                        </label>
+                      <Field label={t('media.period')}>
                         <select
-                          className="select select-bordered w-full"
+                          className="select w-full"
                           value={goal.period}
                           onChange={(e) =>
                             setClubGoalsForm((prev) =>
@@ -2523,13 +2450,11 @@ function ClubDetailScreen() {
                             {t('goals.indefinite')}
                           </option>
                         </select>
-                      </div>
+                      </Field>
 
                       <div className="flex items-end">
                         <label className="label cursor-pointer gap-3 justify-start w-full">
-                          <span className="label-text">
-                            {t('goals.active')}
-                          </span>
+                          <span>{t('goals.active')}</span>
                           <input
                             type="checkbox"
                             className="toggle toggle-primary"
@@ -2547,15 +2472,10 @@ function ClubDetailScreen() {
 
                       {goal.period === 'custom' ? (
                         <>
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('goals.startDate')}
-                              </span>
-                            </label>
+                          <Field label={t('goals.startDate')}>
                             <input
                               type="date"
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               value={goal.startDate || ''}
                               onChange={(e) =>
                                 updateClubGoalDraft(
@@ -2565,17 +2485,12 @@ function ClubDetailScreen() {
                                 )
                               }
                             />
-                          </div>
+                          </Field>
 
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('goals.endDate')}
-                              </span>
-                            </label>
+                          <Field label={t('goals.endDate')}>
                             <input
                               type="date"
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               value={goal.endDate || ''}
                               onChange={(e) =>
                                 updateClubGoalDraft(
@@ -2585,7 +2500,7 @@ function ClubDetailScreen() {
                                 )
                               }
                             />
-                          </div>
+                          </Field>
                         </>
                       ) : (
                         <div className="md:col-span-2 text-xs text-base-content/60 rounded-lg bg-base-200/50 p-3">
@@ -2640,7 +2555,7 @@ function ClubDetailScreen() {
 
       {/* Disband Club Confirmation Modal */}
       {isDisbandConfirmModalOpen && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg text-warning">
               {t('detail.disband')}
@@ -2673,7 +2588,7 @@ function ClubDetailScreen() {
 
       {/* Leave Club Confirmation Modal */}
       {isLeaveConfirmModalOpen && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg">{t('detail.leave')}</h3>
             <p className="py-4">{t('detail.leaveConfirm')}</p>
@@ -2704,7 +2619,7 @@ function ClubDetailScreen() {
 
       {/* Transfer Leadership Confirmation Modal */}
       {isTransferLeadershipModalOpen && selectedNewLeader && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg text-warning">
               {t('detail.transferLeadership')}
@@ -2753,7 +2668,7 @@ function ClubDetailScreen() {
 
       {/* Kick Member Confirmation Modal */}
       {kickTarget && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg text-error">
               {t('detail.removeMember')}

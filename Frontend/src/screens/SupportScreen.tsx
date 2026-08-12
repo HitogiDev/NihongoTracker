@@ -72,7 +72,7 @@ function SupportScreen() {
   ) => string[];
 
   return (
-    <div className="pt-16 bg-base-100 min-h-screen">
+    <div className="pt-20 bg-base-100 min-h-screen">
       {/* ─── Hero ─── */}
       <section className="py-24 px-4 text-center">
         <div className="max-w-3xl mx-auto">
@@ -94,10 +94,10 @@ function SupportScreen() {
               href={PATREON_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary btn-lg gap-2 px-10"
+              className="btn btn-primary btn-lg gap-2 px-8"
             >
               {t('support.hero.cta')}
-              <ArrowRight size={18} />
+              <ArrowRight className="w-5 h-5" />
             </a>
           </div>
         </div>
@@ -149,7 +149,7 @@ function SupportScreen() {
             {WHY_SUPPORT.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
+                className="surface p-6 hover:shadow-lg transition-shadow duration-300"
               >
                 <div className="mb-4">{item.icon}</div>
                 <h3 className="text-lg font-bold text-base-content mb-2">
@@ -183,7 +183,7 @@ function SupportScreen() {
             {TIERS.map((tier) => (
               <div
                 key={tier.id}
-                className={`relative rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm transition-all duration-300 hover:shadow-md ${
+                className={`relative rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm transition-all duration-300 hover:shadow-lg ${
                   tier.popular ? 'ring-2 ring-secondary' : ''
                 }`}
               >
@@ -216,7 +216,7 @@ function SupportScreen() {
                     returnObjects: true,
                   }).map((benefit, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <Check size={14} className="text-success shrink-0 mt-1" />
+                      <Check className="w-3.5 h-3.5 text-success shrink-0 mt-1" />
                       <span className="text-sm text-base-content/75">
                         {benefit}
                       </span>
@@ -243,7 +243,7 @@ function SupportScreen() {
       {/* ─── One-time support ─── */}
       <section className="py-20 px-4 bg-base-200/30">
         <div className="max-w-4xl mx-auto">
-          <div className="rounded-2xl border border-base-300 bg-base-100 p-8 shadow-sm text-center">
+          <div className="surface p-8 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-base-content mb-4">
               {t('support.oneTime.title')}
             </h2>
@@ -255,7 +255,7 @@ function SupportScreen() {
                 href="https://ko-fi.com/nihongotracker"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-outline btn-info gap-2"
+                className="btn btn-info btn-outline gap-2"
               >
                 <svg
                   role="img"
@@ -289,7 +289,7 @@ function SupportScreen() {
             {FAQ_IDS.map((id, index) => (
               <div
                 key={id}
-                className="collapse collapse-arrow bg-base-100 shadow border border-base-300"
+                className="collapse collapse-arrow bg-base-100 shadow-sm border border-base-300"
               >
                 <input
                   type="radio"
@@ -337,13 +337,13 @@ function SupportScreen() {
               href={PATREON_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-primary btn-lg px-12"
+              className="btn btn-primary btn-lg px-8"
             >
               {t('support.cta.button')}
             </a>
           </div>
           <p className="mt-8 text-sm text-base-content/50 flex items-center justify-center gap-2">
-            {t('support.cta.thanks')} <Heart className="text-error" size={16} />
+            {t('support.cta.thanks')} <Heart className="w-4 h-4 text-error" />
           </p>
         </div>
       </section>

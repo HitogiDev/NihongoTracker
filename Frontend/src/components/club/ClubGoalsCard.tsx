@@ -89,7 +89,7 @@ export default function ClubGoalsCard({
   const activeGoals = (clubGoals || []).filter((goal) => goal.isActive);
 
   return (
-    <div className="card bg-base-100 shadow-sm">
+    <div className="card surface">
       <div className="card-body gap-4">
         <div className="flex items-start justify-between gap-3">
           <div>

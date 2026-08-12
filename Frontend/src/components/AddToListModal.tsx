@@ -78,13 +78,13 @@ function AddToListModal({
   const lists = data?.lists ?? [];
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box max-w-md">
         <h3 className="font-bold text-lg mb-4">{t('addToList.title')}</h3>
 
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <span className="loading loading-spinner" />
+            <span className="loading loading-spinner loading-md" />
           </div>
         ) : (
           <div className="flex flex-col gap-1 max-h-72 overflow-y-auto">
@@ -143,7 +143,7 @@ function AddToListModal({
           }}
         >
           <input
-            className="input input-bordered join-item flex-1"
+            className="input join-item flex-1"
             placeholder={t('addToList.newTitlePlaceholder')}
             maxLength={100}
             value={newListTitle}
@@ -151,7 +151,7 @@ function AddToListModal({
           />
           <button
             type="submit"
-            className="btn btn-primary join-item"
+            className="join-item btn btn-primary btn-sm"
             disabled={!newListTitle.trim() || createList.isPending}
           >
             <Plus className="w-4 h-4" />
@@ -164,7 +164,7 @@ function AddToListModal({
           </button>
         </div>
       </div>
-      <div className="modal-backdrop bg-black/40" onClick={onClose} />
+      <div className="modal-backdrop" onClick={onClose} />
     </div>
   );
 }

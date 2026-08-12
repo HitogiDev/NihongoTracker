@@ -628,7 +628,7 @@ function StatsScreen() {
             {!editMode ? (
               <button
                 type="button"
-                className="btn btn-sm btn-ghost gap-2 text-base-content/60 hover:text-base-content"
+                className="btn btn-ghost btn-sm gap-2 text-base-content/60 hover:text-base-content"
                 onClick={handleEnterEditMode}
               >
                 <Pencil className="w-4 h-4" /> {t('layout.edit')}
@@ -641,14 +641,14 @@ function StatsScreen() {
                 <div className="flex gap-2 ml-auto">
                   <button
                     type="button"
-                    className="btn btn-sm btn-ghost"
+                    className="btn btn-ghost btn-sm"
                     onClick={handleCancelEdit}
                   >
                     {t('common.cancel')}
                   </button>
                   <button
                     type="button"
-                    className="btn btn-sm btn-primary"
+                    className="btn btn-primary btn-sm"
                     onClick={handleSaveLayout}
                     disabled={layoutMutation.isPending}
                   >
@@ -1103,7 +1103,7 @@ function StatsScreen() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
@@ -1111,7 +1111,7 @@ function StatsScreen() {
                   {CATEGORY_OPTIONS.map(({ id, labelKey, Icon }) => (
                     <button
                       key={id}
-                      className={`join-item btn flex-1 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
+                      className={`join-item btn btn-sm flex-1 sm:flex-none ${activeCategory === id ? 'btn-primary' : 'btn-outline'}`}
                       onClick={() => setActiveCategory(id)}
                     >
                       <Icon className="w-4 h-4" />
@@ -1131,7 +1131,7 @@ function StatsScreen() {
                   </div>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-60 border border-base-300"
+                    className="dropdown-content menu p-2 surface-raised w-60"
                   >
                     {[
                       { label: t('range.allTime'), value: 'total' },
@@ -1175,7 +1175,7 @@ function StatsScreen() {
                             </div>
                             <div
                               tabIndex={0}
-                              className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                              className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                             >
                               <DayPicker
                                 className="react-day-picker mx-auto"
@@ -1201,8 +1201,14 @@ function StatsScreen() {
                           </span>
                           <div className="dropdown dropdown-bottom">
                             <div
-                              tabIndex={0}
+                              // Not a <button>, so `btn-disabled` is the right
+                              // class here — but on its own it only blocks
+                              // pointer events, so the tab stop and the ARIA
+                              // state go with it.
+                              tabIndex={customStartDate ? 0 : -1}
                               role="button"
+                              aria-disabled={!customStartDate}
+                              // eslint-disable-next-line no-restricted-syntax -- not a <button>: the tabIndex and aria-disabled above carry the semantics.
                               className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
                               ref={endBtnRef}
                             >
@@ -1214,7 +1220,7 @@ function StatsScreen() {
                             {customStartDate && (
                               <div
                                 tabIndex={0}
-                                className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                                className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                               >
                                 <DayPicker
                                   className="react-day-picker mx-auto"
@@ -1239,7 +1245,7 @@ function StatsScreen() {
                         </div>
                         <div className="flex gap-2 mt-2">
                           <button
-                            className="btn btn-sm btn-primary"
+                            className="btn btn-primary btn-sm"
                             onClick={() => {
                               setStartDate(formatDateForQuery(customStartDate));
                               setEndDate(formatDateForQuery(customEndDate));
@@ -1278,19 +1284,19 @@ function StatsScreen() {
                   </div>
                   <div
                     tabIndex={0}
-                    className="dropdown-content p-3 shadow-lg bg-base-100 rounded-box w-64 border border-base-300"
+                    className="dropdown-content p-3 surface-raised w-64"
                   >
                     <div className="flex gap-2 pb-3">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline flex-1 h-auto min-h-9 py-1 whitespace-normal leading-tight"
+                        className="btn btn-outline btn-sm flex-1 h-auto min-h-9 py-1 whitespace-normal leading-tight"
                         onClick={handleSelectAllTypes}
                       >
                         {t('filters.selectAll')}
                       </button>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline flex-1 h-auto min-h-9 py-1 whitespace-normal leading-tight"
+                        className="btn btn-outline btn-sm flex-1 h-auto min-h-9 py-1 whitespace-normal leading-tight"
                         onClick={handleSelectNoneTypes}
                       >
                         {t('filters.selectNone')}
@@ -1357,7 +1363,7 @@ function StatsScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-56 border border-base-300"
+                        className="dropdown-content menu p-2 surface-raised w-56"
                       >
                         <li>
                           <button
@@ -1443,7 +1449,7 @@ function StatsScreen() {
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-40 p-2 shadow bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-40 p-2 surface-raised"
                       >
                         <input
                           type="number"
@@ -1471,7 +1477,7 @@ function StatsScreen() {
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-40 p-2 shadow bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-40 p-2 surface-raised"
                       >
                         <input
                           type="number"
@@ -1485,7 +1491,7 @@ function StatsScreen() {
                         />
                       </div>
                     </div>
-                    <label className="input input-bordered flex items-center gap-2 w-full sm:w-56">
+                    <label className="input flex items-center gap-2 w-full sm:w-56">
                       <Search className="w-4 h-4 opacity-60" />
                       <input
                         type="text"
@@ -1517,7 +1523,7 @@ function StatsScreen() {
               />
             </div>
             <label className="label cursor-pointer gap-3 w-full lg:w-auto justify-between lg:justify-end">
-              <span className="label-text text-sm text-base-content whitespace-nowrap">
+              <span className="text-sm text-base-content whitespace-nowrap">
                 {t('filters.immersedDaysOnly')}
               </span>
               <input
@@ -1535,7 +1541,7 @@ function StatsScreen() {
             // Build the card content map (condition-gated cards return null when not applicable)
             const cardMap: Partial<Record<string, React.ReactNode>> = {
               totalXp: (
-                <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="card surface hover:shadow-lg transition-shadow h-full">
                   <div className="card-body">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1562,7 +1568,7 @@ function StatsScreen() {
                 </div>
               ),
               timeSpent: (
-                <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="card surface hover:shadow-lg transition-shadow h-full">
                   <div className="card-body">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1594,7 +1600,7 @@ function StatsScreen() {
                 </div>
               ),
               logCount: (
-                <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="card surface hover:shadow-lg transition-shadow h-full">
                   <div className="card-body">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1630,7 +1636,7 @@ function StatsScreen() {
                 </div>
               ),
               dailyAverage: (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1664,7 +1670,7 @@ function StatsScreen() {
                 </div>
               ),
               currentStreak: (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1689,7 +1695,7 @@ function StatsScreen() {
                 </div>
               ),
               longestStreak: (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1714,7 +1720,7 @@ function StatsScreen() {
                 </div>
               ),
               readingHours: isAllTypesSelected ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
@@ -1739,7 +1745,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               listeningHours: isAllTypesSelected ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
@@ -1764,7 +1770,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               readingListeningBalance: isAllTypesSelected ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
@@ -1795,7 +1801,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               episodeTotals: showEpisodeMetrics ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
@@ -1815,7 +1821,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               avgReadingSpeed: showReadingMetrics ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -1838,7 +1844,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               dailyAvgChars: showReadingMetrics ? (
-                <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="card surface hover:shadow-lg transition-shadow h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -1887,7 +1893,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               charsRead: showReadingMetrics ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -1928,7 +1934,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               pagesRead: showPageMetric ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-8 h-8 bg-info/10 rounded-lg flex items-center justify-center">
@@ -1958,7 +1964,7 @@ function StatsScreen() {
           (() => {
             const chartCardMap: Partial<Record<string, React.ReactNode>> = {
               logCountChart: showDistributionCharts ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <PieChartIcon className="w-5 h-5 text-primary" />
@@ -1971,7 +1977,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               timeDistributionChart: showDistributionCharts ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Clock3 className="w-5 h-5 text-primary" />
@@ -1984,7 +1990,7 @@ function StatsScreen() {
                 </div>
               ) : null,
               xpDistributionChart: showDistributionCharts ? (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <h3 className="card-title text-lg mb-4">
                       <Zap className="w-5 h-5 text-primary" />
@@ -2000,7 +2006,7 @@ function StatsScreen() {
                 showReadingMetrics &&
                 userStats.readingSpeedData &&
                 userStats.readingSpeedData.length > 0 ? (
-                  <div className="card bg-base-100 shadow-sm h-full">
+                  <div className="card surface h-full">
                     <div className="card-body">
                       <h3 className="card-title text-xl mb-4">
                         <TrendingUp className="w-6 h-6 text-primary" />
@@ -2018,7 +2024,7 @@ function StatsScreen() {
                   </div>
                 ) : null,
               progressTimelineChart: (
-                <div className="card bg-base-100 shadow-sm h-full">
+                <div className="card surface h-full">
                   <div className="card-body">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <h3 className="card-title text-xl flex items-center gap-2">
@@ -2119,7 +2125,7 @@ function StatsScreen() {
           })()}
         {activeCategory === 'timeline' && (
           <div className="space-y-4">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h3 className="card-title text-xl flex items-center gap-2 mb-1">
                   <BarChart3 className="w-6 h-6 text-primary" />

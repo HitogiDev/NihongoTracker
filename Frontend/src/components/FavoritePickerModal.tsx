@@ -174,7 +174,10 @@ function FavoritePickerModal({
   const hasQuery = debouncedQuery.trim().length >= 2;
 
   return (
-    <dialog className="modal modal-open" onClick={onClose}>
+    <dialog
+      className="modal modal-bottom sm:modal-middle modal-open"
+      onClick={onClose}
+    >
       <div
         className="modal-box max-w-2xl p-0 overflow-hidden border border-base-300"
         onClick={(e) => e.stopPropagation()}
@@ -192,7 +195,7 @@ function FavoritePickerModal({
           {isSearching && (
             <span className="loading loading-spinner loading-sm text-primary" />
           )}
-          <button className="btn btn-ghost btn-xs btn-circle" onClick={onClose}>
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
         </div>

@@ -109,7 +109,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
 
   if (isLoading && activities.length === 0) {
     return (
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
             <History className="text-xl" />
@@ -135,7 +135,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
 
   if (!isLoading && activities.length === 0) {
     return (
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body">
           <h2 className="card-title text-lg mb-4 flex items-center gap-2">
             <History className="text-xl" />
@@ -152,7 +152,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
   }
 
   return (
-    <div className="card bg-base-100 shadow-sm">
+    <div className="card surface">
       <div className="card-body">
         <h2 className="card-title text-lg mb-4 flex items-center gap-2">
           <History className="text-xl" />
@@ -238,7 +238,7 @@ export default function RecentActivity({ clubId }: RecentActivityProps) {
         {hasNextPage && (
           <div className="text-center mt-4">
             <button
-              className="btn btn-sm btn-primary"
+              className="btn btn-primary btn-sm"
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
             >

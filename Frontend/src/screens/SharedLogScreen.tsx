@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Field from '../components/ui/Field';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -77,23 +78,23 @@ const logTypeConfig = {
   movie: {
     labelKey: 'common:mediaTypes.movie',
     icon: Clapperboard,
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
-    borderColor: 'border-purple-500/30',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/30',
   },
   'tv show': {
     labelKey: 'common:mediaTypes.tvShow',
     icon: MonitorPlay,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/30',
+    color: 'text-success',
+    bgColor: 'bg-success/10',
+    borderColor: 'border-success/30',
   },
   book: {
     labelKey: 'common:mediaTypes.book',
     icon: BookOpen,
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
+    borderColor: 'border-warning/30',
   },
   other: {
     labelKey: 'common:mediaTypes.other',
@@ -218,7 +219,7 @@ function SharedLogScreen() {
   if (!user) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
-        <div className="card w-full max-w-lg bg-base-100 shadow-2xl">
+        <div className="card w-full max-w-lg surface">
           <div className="card-body text-center p-8">
             <div className="mb-6">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -273,7 +274,7 @@ function SharedLogScreen() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-sm">
+        <div className="card w-full max-w-md surface">
           <div className="card-body text-center p-8">
             <div className="flex justify-center mb-6">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -285,7 +286,7 @@ function SharedLogScreen() {
               {t('shared.loadingSubtitle')}
             </p>
             <div className="flex justify-center gap-1 mt-4">
-              <span className="loading loading-dots loading-sm"></span>
+              <span className="loading loading-spinner loading-sm"></span>
             </div>
           </div>
         </div>
@@ -296,7 +297,7 @@ function SharedLogScreen() {
   if (error || !sharedLog) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-sm">
+        <div className="card w-full max-w-md surface">
           <div className="card-body text-center p-8">
             <div className="w-20 h-20 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl">😔</span>
@@ -343,7 +344,7 @@ function SharedLogScreen() {
     sharedLog.media.contentImage;
 
   return (
-    <div className="min-h-screen bg-base-200 pt-20 pb-16 px-4">
+    <div className="min-h-screen bg-base-200 pt-28 pb-16 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 bg-base-100 rounded-full px-6 py-3 shadow-lg mb-4">
@@ -362,7 +363,7 @@ function SharedLogScreen() {
           <div className="lg:col-span-1">
             <div className="sticky top-24">
               {coverImage && (
-                <div className="card bg-base-100 shadow-sm mb-6">
+                <div className="card surface mb-6">
                   <figure className="aspect-[3/4] overflow-hidden rounded-xl">
                     <img
                       src={coverImage}
@@ -373,7 +374,7 @@ function SharedLogScreen() {
                 </div>
               )}
 
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`p-3 ${typeConfig.bgColor} rounded-xl`}>
@@ -415,7 +416,7 @@ function SharedLogScreen() {
 
                     <div className="space-y-2">
                       {sharedLog.type === 'anime' && sharedLog.episodes ? (
-                        <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
+                        <div className="flex justify-between items-center py-2 px-3 surface-muted">
                           <span className="text-sm font-medium">
                             {t('shared.episodes')}
                           </span>
@@ -425,7 +426,7 @@ function SharedLogScreen() {
                         </div>
                       ) : null}
                       {sharedLog.time ? (
-                        <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
+                        <div className="flex justify-between items-center py-2 px-3 surface-muted">
                           <span className="text-sm font-medium">
                             {t('shared.time')}
                           </span>
@@ -437,7 +438,7 @@ function SharedLogScreen() {
                         </div>
                       ) : null}
                       {sharedLog.chars ? (
-                        <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
+                        <div className="flex justify-between items-center py-2 px-3 surface-muted">
                           <span className="text-sm font-medium">
                             {t('shared.characters')}
                           </span>
@@ -447,7 +448,7 @@ function SharedLogScreen() {
                         </div>
                       ) : null}
                       {sharedLog.pages ? (
-                        <div className="flex justify-between items-center py-2 px-3 bg-base-200 rounded-lg">
+                        <div className="flex justify-between items-center py-2 px-3 surface-muted">
                           <span className="text-sm font-medium">
                             {t('shared.pages')}
                           </span>
@@ -470,7 +471,7 @@ function SharedLogScreen() {
           </div>
 
           <div className="lg:col-span-2">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-3 bg-success/10 rounded-xl">
@@ -523,15 +524,10 @@ function SharedLogScreen() {
                   </summary>
                   <div className="collapse-content">
                     <div className="space-y-4 pt-4">
-                      <div>
-                        <label className="label">
-                          <span className="label-text font-semibold">
-                            {t('shared.description')}
-                          </span>
-                        </label>
+                      <Field label={t('shared.description')}>
                         <input
                           type="text"
-                          className={`input input-bordered w-full ${
+                          className={`input w-full ${
                             errors.description
                               ? 'input-error'
                               : touched.description &&
@@ -548,25 +544,20 @@ function SharedLogScreen() {
                         />
                         {errors.description && (
                           <label className="label">
-                            <span className="label-text-alt text-error">
+                            <span className="text-error">
                               {vt(errors.description)}
                             </span>
                           </label>
                         )}
-                      </div>
+                      </Field>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {sharedLog.type === 'anime' && (
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('shared.episodes')}
-                              </span>
-                            </label>
+                          <Field label={t('shared.episodes')}>
                             <input
                               type="number"
                               min="0"
-                              className={`input input-bordered w-full ${
+                              className={`input w-full ${
                                 errors.episodes ? 'input-error' : ''
                               }`}
                               value={customValues.episodes}
@@ -580,24 +571,19 @@ function SharedLogScreen() {
                             />
                             {errors.episodes && (
                               <label className="label">
-                                <span className="label-text-alt text-error">
+                                <span className="text-error">
                                   {vt(errors.episodes)}
                                 </span>
                               </label>
                             )}
-                          </div>
+                          </Field>
                         )}
 
-                        <div>
-                          <label className="label">
-                            <span className="label-text">
-                              {t('shared.timeMinutes')}
-                            </span>
-                          </label>
+                        <Field label={t('shared.timeMinutes')}>
                           <input
                             type="number"
                             min="0"
-                            className="input input-bordered w-full"
+                            className="input w-full"
                             value={customValues.time}
                             onChange={(e) =>
                               setCustomValues({
@@ -607,21 +593,16 @@ function SharedLogScreen() {
                             }
                             placeholder={t('shared.timePlaceholder')}
                           />
-                        </div>
+                        </Field>
 
                         {(sharedLog.type === 'reading' ||
                           sharedLog.type === 'vn' ||
                           sharedLog.type === 'manga') && (
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('shared.characters')}
-                              </span>
-                            </label>
+                          <Field label={t('shared.characters')}>
                             <input
                               type="number"
                               min="0"
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               value={customValues.chars}
                               onChange={(e) =>
                                 setCustomValues({
@@ -631,20 +612,15 @@ function SharedLogScreen() {
                               }
                               placeholder={t('shared.charsPlaceholder')}
                             />
-                          </div>
+                          </Field>
                         )}
 
                         {sharedLog.type === 'manga' && (
-                          <div>
-                            <label className="label">
-                              <span className="label-text">
-                                {t('shared.pages')}
-                              </span>
-                            </label>
+                          <Field label={t('shared.pages')}>
                             <input
                               type="number"
                               min="0"
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               value={customValues.pages}
                               onChange={(e) =>
                                 setCustomValues({
@@ -654,7 +630,7 @@ function SharedLogScreen() {
                               }
                               placeholder={t('shared.pagesPlaceholder')}
                             />
-                          </div>
+                          </Field>
                         )}
                       </div>
                     </div>

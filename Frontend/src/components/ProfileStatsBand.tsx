@@ -231,7 +231,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     : '—';
 
   return (
-    <div className="card w-full bg-base-100 shadow-sm">
+    <div className="card w-full surface">
       <div className="card-body w-full p-4 sm:p-6 flex flex-col gap-3">
         {/* Header row — always visible, toggles the whole section */}
         <div className="flex items-center justify-between gap-3">
@@ -310,7 +310,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                     <button
                       type="button"
                       onClick={() => selectRankMode('monthly')}
-                      className={`btn btn-xs join-item ${
+                      className={`join-item btn btn-sm ${
                         rankMode === 'monthly' ? 'btn-primary' : 'btn-ghost'
                       }`}
                     >
@@ -319,7 +319,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                     <button
                       type="button"
                       onClick={() => selectRankMode('global')}
-                      className={`btn btn-xs join-item ${
+                      className={`join-item btn btn-sm ${
                         rankMode === 'global' ? 'btn-primary' : 'btn-ghost'
                       }`}
                     >
@@ -380,7 +380,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                     )}
                     {hoverIndex !== null && hoverPos !== null && (
                       <div
-                        className="absolute -top-1 -translate-y-full bg-base-300 text-base-content text-xs rounded px-2 py-1 shadow pointer-events-none whitespace-nowrap z-10"
+                        className="absolute -top-1 -translate-y-full bg-base-300 text-base-content text-xs rounded px-2 py-1 shadow-sm pointer-events-none whitespace-nowrap z-10"
                         style={{
                           left: `${(hoverIndex / (positions.length - 1)) * 100}%`,
                           transform: `translate(${hoverIndex > positions.length / 2 ? '-100%' : '0'}, -100%)`,

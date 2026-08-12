@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { Bar } from 'react-chartjs-2';
+import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useTimezone } from '../hooks/useTimezone';
 import { convertToUserTimezone } from '../utils/timezone';
@@ -61,19 +62,7 @@ interface StackedBarChartProps {
   timeframe: 'today' | 'week' | 'month' | 'year' | 'total';
 }
 
-const typeColors: { [key: string]: string } = {
-  vn: '#3a70e4',
-  game: '#59c94e',
-  anime: '#26b2f2',
-  video: '#2cc9a4',
-  'tv show': '#f8b420',
-  book: '#7c6cf0',
-  manga: '#ee4466',
-  reading: '#b34ce6',
-  movie: '#f77118',
-  audio: '#f2a15a',
-  other: '#10b785',
-};
+const typeColors = MEDIA_TYPE_COLORS;
 
 const StackedBarChart: React.FC<StackedBarChartProps> = ({
   statsData,
@@ -435,7 +424,7 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         className="bg-base-50 p-4 flex items-center justify-center mx-4"
         style={{ height: '350px' }}
       >
-        <span className="loading loading-spinner text-primary" />
+        <span className="loading loading-spinner loading-md text-primary" />
       </div>
     );
   }

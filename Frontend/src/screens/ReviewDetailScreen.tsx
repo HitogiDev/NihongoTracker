@@ -287,7 +287,7 @@ function ReviewDetailScreen() {
       </section>
 
       <main className="container mx-auto px-4 -mt-12 relative z-20">
-        <article className="card bg-base-100 border border-base-300/70 shadow-2xl group">
+        <article className="card surface border border-base-300/70 group">
           <div className="card-body p-5 md:p-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -322,12 +322,12 @@ function ReviewDetailScreen() {
                 <div className="dropdown dropdown-end">
                   <button
                     tabIndex={0}
-                    className="btn btn-ghost btn-sm btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
+                    className="btn btn-ghost btn-sm btn-square opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
                     aria-label={t('detail.a11y.options')}
                   >
                     <Ellipsis className="w-4 h-4" />
                   </button>
-                  <ul className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-36 border border-base-300 z-50">
+                  <ul className="dropdown-content menu p-2 surface-raised w-36 z-50">
                     <li>
                       <button
                         onClick={handleShare}
@@ -385,7 +385,7 @@ function ReviewDetailScreen() {
       )}
 
       {isDeleteDialogOpen && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-sm">
             <h3 className="font-bold text-lg">{t('reviews.deleteTitle')}</h3>
             <p className="py-4 text-base-content/70">

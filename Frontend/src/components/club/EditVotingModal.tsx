@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { X, Calendar, Save } from 'lucide-react';
@@ -212,12 +213,12 @@ export default function EditVotingModal({
 
   if (!canEdit) {
     return (
-      <div className="modal modal-open">
+      <div className="modal modal-bottom sm:modal-middle modal-open">
         <div className="modal-box">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-xl">{t('editVoting.cannotEdit')}</h3>
             <button
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
               onClick={onClose}
             >
               <X className="w-5 h-5" />
@@ -239,17 +240,17 @@ export default function EditVotingModal({
             </button>
           </div>
         </div>
-        <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
+        <div className="modal-backdrop" onClick={onClose}></div>
       </div>
     );
   }
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl">{t('editVoting.title')}</h3>
-          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -267,12 +268,10 @@ export default function EditVotingModal({
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="label">
-                <span className="label-text">
-                  {t('editVoting.votingTitle')}
-                </span>
-              </label>
+            <Field
+              label={t('editVoting.votingTitle')}
+              className="md:col-span-2"
+            >
               <input
                 type="text"
                 placeholder={t('editVoting.titlePlaceholder')}
@@ -283,11 +282,11 @@ export default function EditVotingModal({
                     title: e.target.value,
                   }))
                 }
-                className="input input-bordered w-full"
+                className="input w-full"
                 required
                 disabled={onlyConsumptionEditable}
               />
-            </div>
+            </Field>
 
             <div className="md:col-span-2">
               <label className="label cursor-pointer justify-start gap-2">
@@ -303,19 +302,14 @@ export default function EditVotingModal({
                   className="checkbox checkbox-primary"
                   disabled={onlyConsumptionEditable}
                 />
-                <span className="label-text">
-                  {t('editVoting.testingMode')}
-                </span>
+                <span>{t('editVoting.testingMode')}</span>
               </label>
               <div className="text-xs text-base-content/60 ml-6">
                 {t('editVoting.testingModeHint')}
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="label">
-                <span className="label-text">{t('common.description')}</span>
-              </label>
+            <Field label={t('common.description')} className="md:col-span-2">
               <textarea
                 placeholder={t('editVoting.descriptionPlaceholder')}
                 value={votingData.description}
@@ -325,18 +319,13 @@ export default function EditVotingModal({
                     description: e.target.value,
                   }))
                 }
-                className="textarea textarea-bordered w-full"
+                className="textarea w-full"
                 rows={3}
                 disabled={onlyConsumptionEditable}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label className="label">
-                <span className="label-text">
-                  {t('editVoting.mediaTypeRequired')}
-                </span>
-              </label>
+            <Field label={t('editVoting.mediaTypeRequired')}>
               <select
                 value={votingData.mediaType}
                 onChange={(e) =>
@@ -345,7 +334,7 @@ export default function EditVotingModal({
                     mediaType: e.target.value as EditVotingData['mediaType'],
                   }))
                 }
-                className="select select-bordered w-full"
+                className="select w-full"
                 disabled={onlyConsumptionEditable}
               >
                 {MEDIA_TYPES.map((type) => (
@@ -354,15 +343,10 @@ export default function EditVotingModal({
                   </option>
                 ))}
               </select>
-            </div>
+            </Field>
 
             {votingData.mediaType === 'custom' && (
-              <div>
-                <label className="label">
-                  <span className="label-text">
-                    {t('editVoting.customMediaType')}
-                  </span>
-                </label>
+              <Field label={t('editVoting.customMediaType')}>
                 <input
                   type="text"
                   placeholder={t('editVoting.customTypePlaceholder')}
@@ -373,18 +357,16 @@ export default function EditVotingModal({
                       customMediaType: e.target.value,
                     }))
                   }
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   disabled={onlyConsumptionEditable}
                 />
-              </div>
+              </Field>
             )}
 
-            <div className="md:col-span-2">
-              <label className="label">
-                <span className="label-text">
-                  {t('editVoting.howCandidates')}
-                </span>
-              </label>
+            <Field
+              label={t('editVoting.howCandidates')}
+              className="md:col-span-2"
+            >
               <div className="space-y-2">
                 <label className="cursor-pointer label justify-start gap-3">
                   <input
@@ -424,23 +406,18 @@ export default function EditVotingModal({
                   <span>{t('editVoting.memberSuggestions')}</span>
                 </label>
               </div>
-            </div>
+            </Field>
 
             {/* Suggestion Period (only if member_suggestions is selected) */}
             {votingData.candidateSubmissionType === 'member_suggestions' &&
               !onlyConsumptionEditable && (
                 <>
-                  <div>
-                    <label className="label">
-                      <span className="label-text">
-                        {t('editVoting.suggestionStart')}
-                      </span>
-                    </label>
+                  <Field label={t('editVoting.suggestionStart')}>
                     <div className="dropdown dropdown-top dropdown-end w-full">
                       <div
                         tabIndex={0}
                         role="button"
-                        className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                        className="input w-full flex items-center justify-between cursor-pointer"
                       >
                         <span
                           className={
@@ -455,7 +432,7 @@ export default function EditVotingModal({
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                       >
                         <DayPicker
                           className="react-day-picker mx-auto"
@@ -488,19 +465,14 @@ export default function EditVotingModal({
                         />
                       </div>
                     </div>
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label className="label">
-                      <span className="label-text">
-                        {t('editVoting.suggestionEnd')}
-                      </span>
-                    </label>
+                  <Field label={t('editVoting.suggestionEnd')}>
                     <div className="dropdown dropdown-top dropdown-end w-full">
                       <div
                         tabIndex={0}
                         role="button"
-                        className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                        className="input w-full flex items-center justify-between cursor-pointer"
                       >
                         <span
                           className={
@@ -515,7 +487,7 @@ export default function EditVotingModal({
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                        className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                       >
                         <DayPicker
                           className="react-day-picker mx-auto"
@@ -546,24 +518,19 @@ export default function EditVotingModal({
                         />
                       </div>
                     </div>
-                  </div>
+                  </Field>
                 </>
               )}
 
             {/* Voting Period */}
             {!onlyConsumptionEditable && (
               <>
-                <div>
-                  <label className="label">
-                    <span className="label-text">
-                      {t('editVoting.votingStart')}
-                    </span>
-                  </label>
+                <Field label={t('editVoting.votingStart')}>
                   <div className="dropdown dropdown-top dropdown-end w-full">
                     <div
                       tabIndex={0}
                       role="button"
-                      className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                      className="input w-full flex items-center justify-between cursor-pointer"
                     >
                       <span
                         className={
@@ -578,7 +545,7 @@ export default function EditVotingModal({
                     </div>
                     <div
                       tabIndex={0}
-                      className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                      className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                     >
                       <DayPicker
                         className="react-day-picker mx-auto"
@@ -632,19 +599,14 @@ export default function EditVotingModal({
                       />
                     </div>
                   </div>
-                </div>
+                </Field>
 
-                <div>
-                  <label className="label">
-                    <span className="label-text">
-                      {t('editVoting.votingEnd')}
-                    </span>
-                  </label>
+                <Field label={t('editVoting.votingEnd')}>
                   <div className="dropdown dropdown-top dropdown-end w-full">
                     <div
                       tabIndex={0}
                       role="button"
-                      className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                      className="input w-full flex items-center justify-between cursor-pointer"
                     >
                       <span
                         className={
@@ -659,7 +621,7 @@ export default function EditVotingModal({
                     </div>
                     <div
                       tabIndex={0}
-                      className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                      className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                     >
                       <DayPicker
                         className="react-day-picker mx-auto"
@@ -696,22 +658,17 @@ export default function EditVotingModal({
                       />
                     </div>
                   </div>
-                </div>
+                </Field>
               </>
             )}
 
             {/* Consumption Period */}
-            <div>
-              <label className="label">
-                <span className="label-text">
-                  {t('editVoting.consumptionStart')}
-                </span>
-              </label>
+            <Field label={t('editVoting.consumptionStart')}>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                  className="input w-full flex items-center justify-between cursor-pointer"
                 >
                   <span
                     className={
@@ -726,7 +683,7 @@ export default function EditVotingModal({
                 </div>
                 <div
                   tabIndex={0}
-                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                 >
                   <DayPicker
                     className="react-day-picker mx-auto"
@@ -767,19 +724,14 @@ export default function EditVotingModal({
                   />
                 </div>
               </div>
-            </div>
+            </Field>
 
-            <div>
-              <label className="label">
-                <span className="label-text">
-                  {t('editVoting.consumptionEnd')}
-                </span>
-              </label>
+            <Field label={t('editVoting.consumptionEnd')}>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                  className="input w-full flex items-center justify-between cursor-pointer"
                 >
                   <span
                     className={
@@ -794,7 +746,7 @@ export default function EditVotingModal({
                 </div>
                 <div
                   tabIndex={0}
-                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                 >
                   <DayPicker
                     className="react-day-picker mx-auto"
@@ -827,7 +779,7 @@ export default function EditVotingModal({
                   />
                 </div>
               </div>
-            </div>
+            </Field>
           </div>
         </div>
 
@@ -856,7 +808,7 @@ export default function EditVotingModal({
           </button>
         </div>
       </div>
-      <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
+      <div className="modal-backdrop" onClick={onClose}></div>
     </div>
   );
 }

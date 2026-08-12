@@ -26,9 +26,7 @@ export function RouteErrorBoundary() {
           <h1 className="text-xl font-semibold text-base-content">
             {t('routeError.updatingTitle')}
           </h1>
-          <p className="text-base-content/70">
-            {t('routeError.updatingBody')}
-          </p>
+          <p className="text-base-content/70">{t('routeError.updatingBody')}</p>
           <button
             className="btn btn-primary"
             onClick={() => window.location.reload()}

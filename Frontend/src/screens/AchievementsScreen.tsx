@@ -195,7 +195,7 @@ export default function AchievementsScreen() {
     // standalone route needs to clear the header itself.
     <div
       className={`max-w-4xl mx-auto px-4 pb-8 space-y-8 ${
-        routeUsername ? 'pt-8' : 'pt-24'
+        routeUsername ? 'pt-8' : 'pt-28'
       }`}
     >
       {/* Header */}
@@ -273,7 +273,7 @@ export default function AchievementsScreen() {
       {/* Filters */}
       <div className="flex flex-col gap-3">
         {/* Search */}
-        <label className="input input-bordered flex items-center gap-2 w-full">
+        <label className="input flex items-center gap-2 w-full">
           <Search className="w-4 h-4 opacity-60 shrink-0" />
           <input
             type="text"
@@ -313,7 +313,7 @@ export default function AchievementsScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300 mt-1"
+              className="dropdown-content z-50 menu p-2 surface-raised w-52 mt-1"
             >
               {CATEGORIES.map((c) => (
                 <li key={c.value}>
@@ -344,7 +344,7 @@ export default function AchievementsScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-48 border border-base-300 mt-1"
+              className="dropdown-content z-50 menu p-2 surface-raised w-48 mt-1"
             >
               {[
                 {
@@ -391,7 +391,7 @@ export default function AchievementsScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300 mt-1"
+              className="dropdown-content z-50 menu p-2 surface-raised w-52 mt-1"
             >
               {[
                 {

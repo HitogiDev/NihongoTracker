@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Field from './ui/Field';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
@@ -179,13 +180,10 @@ export default function MediaEditPanel() {
       | 'runtime'
       | 'pageCount'
   ) => (
-    <label className="form-control">
-      <div className="label">
-        <span className="label-text">{label}</span>
-      </div>
+    <Field label={label}>
       <input
         type="number"
-        className="input input-bordered w-full"
+        className="input w-full"
         value={edit?.[key] ?? ''}
         onChange={(e) =>
           setEdit((prev) =>
@@ -193,16 +191,16 @@ export default function MediaEditPanel() {
           )
         }
       />
-    </label>
+    </Field>
   );
 
   return (
-    <div className="card bg-base-100 shadow-sm">
+    <div className="card surface">
       <div className="card-body">
         <h3 className="card-title mb-4">Edit Media</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <select
-            className="select select-bordered"
+            className="select"
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
@@ -214,7 +212,7 @@ export default function MediaEditPanel() {
           </select>
           <input
             type="text"
-            className="input input-bordered flex-1"
+            className="input flex-1"
             placeholder="Search media (min 2 chars)..."
             value={term}
             onChange={(e) => setTerm(e.target.value)}
@@ -269,7 +267,7 @@ export default function MediaEditPanel() {
       </div>
 
       {edit && (
-        <dialog className="modal" open>
+        <dialog className="modal modal-bottom sm:modal-middle" open>
           <div className="modal-box max-w-2xl">
             <h3 className="font-bold text-lg mb-1">Edit Media</h3>
             <p className="text-sm text-base-content/60 mb-4 capitalize">
@@ -277,15 +275,17 @@ export default function MediaEditPanel() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="form-control md:col-span-2">
-                <div className="label">
-                  <span className="label-text">
+              <Field
+                label={
+                  <>
                     Native title <span className="text-error">*</span>
-                  </span>
-                </div>
+                  </>
+                }
+                className="md:col-span-2"
+              >
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit.title.contentTitleNative}
                   onChange={(e) =>
                     setEdit({
@@ -297,14 +297,11 @@ export default function MediaEditPanel() {
                     })
                   }
                 />
-              </label>
-              <label className="form-control">
-                <div className="label">
-                  <span className="label-text">Romaji title</span>
-                </div>
+              </Field>
+              <Field label={'Romaji title'}>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit.title.contentTitleRomaji ?? ''}
                   onChange={(e) =>
                     setEdit({
@@ -316,14 +313,11 @@ export default function MediaEditPanel() {
                     })
                   }
                 />
-              </label>
-              <label className="form-control">
-                <div className="label">
-                  <span className="label-text">English title</span>
-                </div>
+              </Field>
+              <Field label={'English title'}>
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit.title.contentTitleEnglish ?? ''}
                   onChange={(e) =>
                     setEdit({
@@ -335,34 +329,28 @@ export default function MediaEditPanel() {
                     })
                   }
                 />
-              </label>
+              </Field>
 
-              <label className="form-control">
-                <div className="label">
-                  <span className="label-text">Cover image URL</span>
-                </div>
+              <Field label={'Cover image URL'}>
                 <input
                   type="url"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit.coverImage ?? ''}
                   onChange={(e) =>
                     setEdit({ ...edit, coverImage: e.target.value })
                   }
                 />
-              </label>
-              <label className="form-control">
-                <div className="label">
-                  <span className="label-text">Content image URL</span>
-                </div>
+              </Field>
+              <Field label={'Content image URL'}>
                 <input
                   type="url"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit.contentImage ?? ''}
                   onChange={(e) =>
                     setEdit({ ...edit, contentImage: e.target.value })
                   }
                 />
-              </label>
+              </Field>
 
               {(edit.type === 'anime' || edit.type === 'tv show') &&
                 numberField('Episodes', 'episodes')}
@@ -381,99 +369,94 @@ export default function MediaEditPanel() {
               {edit.type === 'book' && numberField('Pages', 'pageCount')}
 
               {edit.type === 'game' && (
-                <label className="form-control md:col-span-2">
-                  <div className="label">
-                    <span className="label-text">
-                      Platforms (comma-separated)
-                    </span>
-                  </div>
+                <Field
+                  label={'Platforms (comma-separated)'}
+                  className="md:col-span-2"
+                >
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     value={edit._platformsText}
                     onChange={(e) =>
                       setEdit({ ...edit, _platformsText: e.target.value })
                     }
                   />
-                </label>
+                </Field>
               )}
 
-              <label className="form-control md:col-span-2">
-                <div className="label">
-                  <span className="label-text">Genres (comma-separated)</span>
-                </div>
+              <Field
+                label={'Genres (comma-separated)'}
+                className="md:col-span-2"
+              >
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit._genresText}
                   onChange={(e) =>
                     setEdit({ ...edit, _genresText: e.target.value })
                   }
                 />
-              </label>
-              <label className="form-control md:col-span-2">
-                <div className="label">
-                  <span className="label-text">Synonyms (comma-separated)</span>
-                </div>
+              </Field>
+              <Field
+                label={'Synonyms (comma-separated)'}
+                className="md:col-span-2"
+              >
                 <input
                   type="text"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={edit._synonymsText}
                   onChange={(e) =>
                     setEdit({ ...edit, _synonymsText: e.target.value })
                   }
                 />
-              </label>
+              </Field>
 
-              <label className="form-control md:col-span-2">
-                <div className="label">
-                  <span className="label-text">Description (English)</span>
-                </div>
+              <Field label={'Description (English)'} className="md:col-span-2">
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   rows={4}
                   value={edit._descEng}
                   onChange={(e) =>
                     setEdit({ ...edit, _descEng: e.target.value })
                   }
                 />
-              </label>
-              <label className="form-control md:col-span-2">
-                <div className="label">
-                  <span className="label-text">
+              </Field>
+              <Field
+                label={
+                  <>
                     Description (Japanese){' '}
-                    <span className="label-text-alt text-base-content/50">
-                      optional
-                    </span>
-                  </span>
-                </div>
+                    <span className="text-base-content/50">optional</span>
+                  </>
+                }
+                className="md:col-span-2"
+              >
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   rows={4}
                   value={edit._descJpn}
                   onChange={(e) =>
                     setEdit({ ...edit, _descJpn: e.target.value })
                   }
                 />
-              </label>
-              <label className="form-control md:col-span-2">
-                <div className="label">
-                  <span className="label-text">
+              </Field>
+              <Field
+                label={
+                  <>
                     Description (Spanish){' '}
-                    <span className="label-text-alt text-base-content/50">
-                      optional
-                    </span>
-                  </span>
-                </div>
+                    <span className="text-base-content/50">optional</span>
+                  </>
+                }
+                className="md:col-span-2"
+              >
                 <textarea
-                  className="textarea textarea-bordered w-full"
+                  className="textarea w-full"
                   rows={4}
                   value={edit._descSpa}
                   onChange={(e) =>
                     setEdit({ ...edit, _descSpa: e.target.value })
                   }
                 />
-              </label>
+              </Field>
 
               <label className="label cursor-pointer justify-start gap-3 md:col-span-2">
                 <input
@@ -484,7 +467,7 @@ export default function MediaEditPanel() {
                     setEdit({ ...edit, isAdult: e.target.checked })
                   }
                 />
-                <span className="label-text">Adult content (18+)</span>
+                <span>Adult content (18+)</span>
               </label>
             </div>
 

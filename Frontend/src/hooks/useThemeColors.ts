@@ -101,32 +101,55 @@ function toRGBA(color: string, alpha = 1): string {
   return normalizedColor;
 }
 
+/**
+ * Fallbacks are only used before the first paint or outside a browser; the
+ * real values come from the active daisyUI theme.
+ */
+const FALLBACKS = {
+  baseContent: '#000000',
+  base100: '#ffffff',
+  base200: '#f9f9f9',
+  base300: '#e0e0e0',
+  primary: '#3b82f6',
+  secondary: '#f59e0b',
+  accent: '#10b981',
+  info: '#0ea5e9',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
+} as const;
+
+const CSS_VARIABLES: Record<keyof typeof FALLBACKS, string> = {
+  baseContent: '--color-base-content',
+  base100: '--color-base-100',
+  base200: '--color-base-200',
+  base300: '--color-base-300',
+  primary: '--color-primary',
+  secondary: '--color-secondary',
+  accent: '--color-accent',
+  info: '--color-info',
+  success: '--color-success',
+  warning: '--color-warning',
+  error: '--color-error',
+};
+
+export type ThemeColors = Record<keyof typeof FALLBACKS, string>;
+
 export function useThemeColors(alpha = 1) {
-  const [colors, setColors] = useState({
-    baseContent: '#000000',
-    base100: '#ffffff',
-    base200: '#f9f9f9',
-    base300: '#e0e0e0',
-    primary: '#3b82f6',
-    secondary: '#f59e0b',
-  });
+  const [colors, setColors] = useState<ThemeColors>({ ...FALLBACKS });
 
   useEffect(() => {
     const updateColors = () => {
-      setColors({
-        baseContent: toRGBA(
-          getCssVariable('--color-base-content') || '#000000',
-          alpha
-        ),
-        base100: toRGBA(getCssVariable('--color-base-100') || '#ffffff', alpha),
-        base200: toRGBA(getCssVariable('--color-base-200') || '#f9f9f9', alpha),
-        base300: toRGBA(getCssVariable('--color-base-300') || '#e0e0e0', alpha),
-        primary: toRGBA(getCssVariable('--color-primary') || '#3b82f6', alpha),
-        secondary: toRGBA(
-          getCssVariable('--color-secondary') || '#f59e0b',
-          alpha
-        ),
-      });
+      const next = {} as ThemeColors;
+      (Object.keys(CSS_VARIABLES) as Array<keyof typeof FALLBACKS>).forEach(
+        (key) => {
+          next[key] = toRGBA(
+            getCssVariable(CSS_VARIABLES[key]) || FALLBACKS[key],
+            alpha
+          );
+        }
+      );
+      setColors(next);
     };
 
     updateColors();

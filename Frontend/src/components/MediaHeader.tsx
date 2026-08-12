@@ -490,7 +490,7 @@ export default function MediaHeader() {
                       onChange={(e) => setRemoveWithLogs(e.target.checked)}
                       disabled={isRemovingFromList}
                     />
-                    <span className="label-text text-sm">
+                    <span className="text-sm">
                       Also delete my {removalStats.total.logs} log
                       {removalStats.total.logs === 1 ? '' : 's'} for this media
                     </span>
@@ -689,7 +689,7 @@ export default function MediaHeader() {
                           </button>
                           <ul
                             tabIndex={0}
-                            className="dropdown-content z-20 menu p-1 shadow-lg bg-base-100 rounded-box w-full border border-base-300 text-sm"
+                            className="dropdown-content z-20 menu p-1 surface-raised w-full text-sm"
                           >
                             {(
                               Object.entries(STATUS_CONFIG) as [

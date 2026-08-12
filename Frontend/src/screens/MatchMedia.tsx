@@ -16,7 +16,7 @@ function AssignMedia() {
   const { user } = useUserDataStore();
 
   return (
-    <div className="pt-24 py-16 flex flex-col justify-center items-center bg-base-200 min-h-screen">
+    <div className="pt-28 py-16 flex flex-col justify-center items-center bg-base-200 min-h-screen">
       <div className="w-full">
         <Tabs
           tabs={[

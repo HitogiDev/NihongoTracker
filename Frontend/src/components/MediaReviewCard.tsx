@@ -108,12 +108,12 @@ function MediaReviewCard({
             <div className="dropdown dropdown-end">
               <button
                 tabIndex={0}
-                className="btn btn-ghost btn-xs btn-circle opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
+                className="btn btn-ghost btn-sm btn-square opacity-100 hover:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200"
                 aria-label={t('reviewCard.options')}
               >
                 <Ellipsis className="w-4 h-4" />
               </button>
-              <ul className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-36 border border-base-300 z-50">
+              <ul className="dropdown-content menu p-2 surface-raised w-36 z-50">
                 <li>
                   <button
                     onClick={() => handleShare(review._id)}

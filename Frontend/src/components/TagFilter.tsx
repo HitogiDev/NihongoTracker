@@ -100,7 +100,7 @@ export default function TagFilter({
       </div>
       <div
         tabIndex={0}
-        className="dropdown-content menu p-4 shadow-sm bg-base-100 rounded-box w-[calc(100vw-2rem)] max-w-sm sm:w-96 border border-base-300 max-h-[500px] overflow-y-auto"
+        className="dropdown-content menu p-4 surface-raised w-[calc(100vw-2rem)] max-w-sm sm:w-96 max-h-[500px] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-sm">{t('tagFilter.title')}</h3>

@@ -412,7 +412,7 @@ function SpeedChart({
       {!externalTimeframe && (
         <div className="join mb-4">
           <button
-            className={`btn join-item ${
+            className={`join-item btn btn-sm ${
               timeframe === 'today' ? 'btn-primary' : ''
             }`}
             onClick={() => setTimeframe('today')}
@@ -420,7 +420,7 @@ function SpeedChart({
             {t('range.today')}
           </button>
           <button
-            className={`btn join-item ${
+            className={`join-item btn btn-sm ${
               timeframe === 'week' ? 'btn-primary' : ''
             }`}
             onClick={() => setTimeframe('week')}
@@ -428,7 +428,7 @@ function SpeedChart({
             {t('range.thisWeek')}
           </button>
           <button
-            className={`btn join-item ${
+            className={`join-item btn btn-sm ${
               timeframe === 'month' ? 'btn-primary' : ''
             }`}
             onClick={() => setTimeframe('month')}
@@ -436,7 +436,7 @@ function SpeedChart({
             {t('range.thisMonth')}
           </button>
           <button
-            className={`btn join-item ${
+            className={`join-item btn btn-sm ${
               timeframe === 'year' ? 'btn-primary' : ''
             }`}
             onClick={() => setTimeframe('year')}
@@ -444,7 +444,7 @@ function SpeedChart({
             {t('range.thisYear')}
           </button>
           <button
-            className={`btn join-item ${
+            className={`join-item btn btn-sm ${
               timeframe === 'total' ? 'btn-primary' : ''
             }`}
             onClick={() => setTimeframe('total')}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Field from './ui/Field';
 import { Trans, useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -216,7 +217,7 @@ export default function TagManager() {
             </div>
           ) : (
             tags.map((tag) => (
-              <div key={tag._id} className="card bg-base-200">
+              <div key={tag._id} className="card surface-muted">
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -283,31 +284,28 @@ export default function TagManager() {
       </div>
 
       {/* Create Tag Modal */}
-      <dialog id="create_tag_modal" className="modal">
+      <dialog
+        id="create_tag_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-4">
             {t('tags.manager.createNew')}
           </h3>
           <div>
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">{t('tags.manager.tagName')}</span>
-              </label>
+            <Field label={t('tags.manager.tagName')} className="mb-4">
               <input
                 type="text"
-                className="input input-bordered"
+                className="input"
                 placeholder={t('tags.manager.namePlaceholder')}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 maxLength={30}
                 autoFocus
               />
-            </div>
+            </Field>
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">{t('tags.manager.tagColor')}</span>
-              </label>
+            <Field label={t('tags.manager.tagColor')} className="mb-4">
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="badge badge-lg"
@@ -329,13 +327,13 @@ export default function TagManager() {
                 </div>
                 <input
                   type="text"
-                  className="input input-bordered input-sm w-full text-center"
+                  className="input input-sm w-full text-center"
                   value={editColor}
                   onChange={(e) => setEditColor(e.target.value)}
                   placeholder={t('tags.manager.colorPlaceholder')}
                 />
               </div>
-            </div>
+            </Field>
 
             <div className="modal-action">
               <button
@@ -372,31 +370,28 @@ export default function TagManager() {
       </dialog>
 
       {/* Edit Tag Modal */}
-      <dialog id="edit_tag_modal" className="modal">
+      <dialog
+        id="edit_tag_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-4">
             {t('tags.manager.editTag')}
           </h3>
           <div>
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">{t('tags.manager.tagName')}</span>
-              </label>
+            <Field label={t('tags.manager.tagName')} className="mb-4">
               <input
                 type="text"
-                className="input input-bordered"
+                className="input"
                 placeholder={t('tags.manager.namePlaceholder')}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 maxLength={30}
                 autoFocus
               />
-            </div>
+            </Field>
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">{t('tags.manager.tagColor')}</span>
-              </label>
+            <Field label={t('tags.manager.tagColor')} className="mb-4">
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="badge badge-lg"
@@ -418,13 +413,13 @@ export default function TagManager() {
                 </div>
                 <input
                   type="text"
-                  className="input input-bordered input-sm w-full text-center"
+                  className="input input-sm w-full text-center"
                   value={editColor}
                   onChange={(e) => setEditColor(e.target.value)}
                   placeholder={t('tags.manager.colorPlaceholder')}
                 />
               </div>
-            </div>
+            </Field>
 
             <div className="modal-action">
               <button
@@ -461,7 +456,7 @@ export default function TagManager() {
       </dialog>
 
       {tagToDelete && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-md">
             <h3 className="font-bold text-lg mb-2">
               {t('tags.manager.deleteTitle')}

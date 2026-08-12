@@ -35,7 +35,7 @@ function Tabs({ tabs }: TabsProps) {
           <div
             key={i}
             role="tabpanel"
-            className={`tab-content bg-base-100 border-base-300 rounded-box p-6 ${
+            className={`tab-content surface p-6 ${
               isActive ? 'block' : 'hidden'
             }`}
           >

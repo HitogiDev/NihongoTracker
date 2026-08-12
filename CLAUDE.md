@@ -98,6 +98,45 @@ Entry points: `Backend/src/index.ts` (process bootstrap: connects DB, starts Soc
 
 **Styling**: Tailwind CSS v4 + DaisyUI v5, theme controlled via `data-theme` attribute on `<html>`, driven by `theme-change` + the localStorage-based logic described above (supports `light`/`dark`/`system`).
 
+## UI Conventions (Frontend)
+
+daisyUI is **v5**. These classes were removed in v5 and are no-ops — `npm run lint` fails on them: `input-bordered`, `select-bordered`, `textarea-bordered`, `file-input-bordered`, `form-control`, `label-text`, `label-text-alt`, `tabs-boxed` (now `tabs-box`), `card-compact` (now `card-sm`), `tab-lg` (size lives on the container: `tabs-lg`). `loading` is **not** a `btn` modifier in v5 — it masks the button down to 1.5rem; use `disabled` plus a child `<Spinner>`.
+
+**Shared primitives** live in `Frontend/src/components/ui/`: `Button` (+ `buttonClass()` for `<a>`/`Link`/`<label>`), `BTN` recipes in `buttons.ts`, `Modal`, `Field`, `PageContainer`, `Spinner`/`PageLoader`, `Skeleton`, `RowButton`. Prefer them over hand-written classes.
+
+One canonical value per role:
+
+| Role | Class |
+|---|---|
+| Page/form primary | `btn btn-primary` (full-page commit: `btn btn-primary btn-lg w-full`) |
+| Destructive confirm | `btn btn-error` · Cancel: `btn btn-ghost` (same size as its sibling) |
+| Toolbar action | `btn btn-sm` (+ `btn-primary` / `btn-outline` / `btn-error`) |
+| Icon-only | `btn btn-ghost btn-sm btn-square` · dense row `btn-xs` · page header `btn btn-ghost btn-square` |
+| Modal close X | `btn btn-ghost btn-sm btn-circle` · chip/input clear `btn btn-ghost btn-xs btn-circle` |
+| Hero CTA | `btn btn-primary btn-lg px-8` / `btn btn-ghost btn-lg px-8` |
+| Pagination | `join-item btn btn-sm`, selected adds `btn-active` |
+| Segmented control | `join-item btn btn-outline btn-sm`, selected `join-item btn btn-primary btn-sm` |
+
+Class order is always `btn` → colour → style → behavior → size → shape.
+
+**Surfaces** use the `@utility` classes in `index.css`, which own background, radius, border and elevation: `surface` (resting panel — also `card surface`), `surface-muted` (inset), `surface-raised` (dropdown/popover/floating). Only two elevations exist app-wide: `shadow-sm` and `shadow-lg`; `shadow`, `shadow-md`, `shadow-xl`, `shadow-2xl` are lint errors. Radius on a surface comes from `rounded-box`, never `rounded-lg`.
+
+**Geometry** (`--radius-*`, `--size-*`) is pinned for all 19 themes by one unlayered `:root, [data-theme]` rule in `index.css` — daisyUI ships a different radius scale per theme, so without it the same markup has different corners depending on the theme. Do not set radius tokens inside a `@plugin "daisyui/theme"` block.
+
+**Modals** are `<dialog className="modal modal-bottom sm:modal-middle">`. Never tint `modal-backdrop` — `.modal` already dims to 0.4 and a tint stacks a second layer. `modal-box` is already `max-width: 32rem`, so `max-w-lg` on it is a no-op.
+
+**Forms**: new fields use `<Field>` (`fieldset` / `fieldset-legend`). `focus:input-primary` is the only focus colour; textarea height comes from `rows`, not `h-*`. Captions still written as `<label className="label">` are covered by a compatibility rule in `index.css` — see the comment there before touching it.
+
+**Pages**: the navbar is `absolute` and 80px tall (measured, not the bare 4rem daisyUI `navbar` min-height), so every page reserves it at the top. Which constant depends on where the page's own padding lives: `pt-20` (`HEADER_OFFSET` / `<PageContainer>`) when a child container supplies the gap (`container mx-auto px-4 py-8`), `pt-28` (`HEADER_OFFSET_CONTENT`) when content sits directly under the offset — navbar height plus the same 2rem the page is otherwise spaced by. `pt-20` with content directly under it leaves the title flush against the header. `pt-16`/`pt-24`/`pt-32` on a `min-h-screen` root are lint errors.
+
+**Colour**: use daisyUI semantic tokens. Media-type colours live only in `constants/mediaColors.ts` (`MEDIA_TYPE_COLORS` for charts, `MEDIA_TYPE_CLASSES` for chrome); chart series read `useThemeColors()`. Raw Tailwind palette classes are a lint error outside the allowlist in `scripts/lint-ui.mjs` (medals, media-type identity colours, and text over user-uploaded images).
+
+**Icons** are `lucide-react`, sized with className — `w-4 h-4` inline, `w-5 h-5` standalone, `w-6 h-6` section header, `w-12 h-12` empty state. The numeric `size` prop is a lint error.
+
+**Never interpolate a class fragment** (`btn-${color}`, `loading-${size}`): Tailwind v4 scans source text and will not generate it. Use a map of complete literal class names.
+
+`npm run lint` runs ESLint plus `scripts/lint-ui.mjs`, which enforces the rules ESLint selectors cannot see.
+
 **Realtime/Texthooker**: `HookerScreen.tsx` is the socket.io-client counterpart to the backend's texthooker rooms — treat the wire protocol (event names like `join_room`, `send_line`, `delete_lines`, `restore_lines`, `room_users_update`) as shared contract between `Backend/src/index.ts` and this screen.
 
 ## Cross-Cutting Conventions

@@ -93,16 +93,32 @@
   --color-error: oklch(53% 0.22 25);
   --color-error-content: oklch(98% 0.005 25);
 
+  /* Geometry tokens are pinned app-wide below, not per theme. */
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* ── App geometry ────────────────────────────────────────────────────────────
+   daisyUI ships a different radius scale per theme: stock `dark` (our default)
+   is .5 / .25 / .5rem while our customised `light` was 1 / .5 / .75rem, so the
+   same markup had visibly different corners depending on the theme — and
+   cupcake's --radius-field: 2rem turns every button into a pill.
+
+   Radius is product geometry, not theme character, so pin it once for every
+   theme. Unlayered on purpose: daisyUI emits its theme variables into
+   @layer base, so an unlayered rule wins without a specificity hack, and
+   [data-theme] also covers the nested texthooker theme scope
+   (HookerScreen.tsx). --depth / --noise / --border stay per theme; they are
+   colour/texture character and cause no cross-theme layout drift. */
+:root,
+[data-theme] {
   --radius-selector: 1rem;
   --radius-field: 0.5rem;
   --radius-box: 0.75rem;
 
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
 }
 
 @theme {
@@ -116,6 +132,35 @@
   --font-sans: "Inter Variable", "Inter", "Noto Sans JP Local", "Noto Sans JP",
     -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* ── Surfaces ────────────────────────────────────────────────────────────────
+   One recipe for a resting panel, one for an inset panel, one for a floating
+   layer. Use `surface` on hand-rolled <div> panels and alongside `card` on
+   daisyUI cards (`card surface`).
+
+   Deliberately NOT `@utility card { ... }`: Tailwind v4 emits custom utilities
+   after core utilities in the same layer, so overriding `.card` would beat an
+   inline `bg-primary` and silently break every coloured card.
+
+   Only two elevations exist app-wide: shadow-sm (resting) and shadow-lg
+   (floating). If a panel needs a different background, don't use `surface`. */
+@utility surface {
+  background-color: var(--color-base-100);
+  border-radius: var(--radius-box);
+  @apply border border-base-300/50 shadow-sm;
+}
+
+@utility surface-muted {
+  background-color: var(--color-base-200);
+  border-radius: var(--radius-box);
+  @apply border border-base-300/50;
+}
+
+@utility surface-raised {
+  background-color: var(--color-base-100);
+  border-radius: var(--radius-box);
+  @apply border border-base-300 shadow-lg;
 }
 
 html, body {

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 function CalculatorScreen() {
   const { t } = useTranslation('home');
   return (
-    <div className="min-h-screen pt-16 bg-base-200">
+    <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
@@ -24,7 +24,7 @@ function CalculatorScreen() {
             </div>
 
             <div className="space-y-6">
-              <div className="card bg-base-100 shadow-lg border border-base-300">
+              <div className="card surface">
                 <div className="card-body">
                   <h3 className="card-title text-lg flex items-center gap-2">
                     <svg
