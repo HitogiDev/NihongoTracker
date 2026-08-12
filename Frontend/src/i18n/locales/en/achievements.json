@@ -204,7 +204,7 @@
     },
     "secret_dethroned": {
       "description": "You held the summit once. The view was worth it.",
-      "fullDescription": "You held the #1 spot — and someone took it from you.",
+      "fullDescription": "You held the #1 spot and someone took it from you.",
       "hint": "The higher you climb...",
       "name": "Dethroned"
     },

@@ -142,6 +142,7 @@
     "avatarFrame": "Marco del avatar",
     "avatarFrameHint": "Un anillo alrededor de tu avatar. Los marcos metálicos se ganan subiendo de nivel; los animados vienen con un nivel de Patreon.",
     "avatarFrames": {
+      "aura": "Aura",
       "bronze": "Bronce",
       "gold": "Oro",
       "neon": "Neón",
@@ -175,6 +176,7 @@
     "locks": {
       "level": "Alcanza el nivel {{level}}",
       "patreon": "Cualquier nivel de Patreon activo",
+      "patreonConsumer": "Solo el nivel Consumer",
       "patreonPlus": "Nivel Enthusiast o Consumer"
     },
     "nameEffect": "Efecto del nombre",

@@ -78,7 +78,7 @@
     "addToList": "Add to list",
     "checkingLogs": "Checking your logs for this media...",
     "log": "Log",
-    "noLogsNote": "This entry has no logs — only its status will be removed.",
+    "noLogsNote": "This entry has no logs, only its status will be removed.",
     "remove": "Remove",
     "removeFromList": "Remove from list",
     "removeTitle": "Remove from your list?"

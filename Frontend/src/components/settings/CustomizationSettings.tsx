@@ -132,6 +132,8 @@ export default function CustomizationSettings() {
         return t('customization.locks.patreon');
       case 'patreonPlus':
         return t('customization.locks.patreonPlus');
+      case 'patreonConsumer':
+        return t('customization.locks.patreonConsumer');
       case 'level':
         return t('customization.locks.level', {
           level: option.requirement ?? 0,

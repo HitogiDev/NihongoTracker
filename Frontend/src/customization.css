@@ -121,6 +121,31 @@
   animation: frame-spin 5s linear infinite;
 }
 
+/* The Consumer-tier frame is daisyUI's `aura`, not a ring we draw. It only
+   needs adapting to a circular avatar: `.aura` defaults its radius to
+   --radius-box, and it inherits the same `.avatar > div` squaring problem the
+   other frames undo above. Everything else — the conic gradient, the blurred
+   ::before/::after halos, the reduced-motion slowdown — comes from daisyUI. */
+.avatar-frame--aura {
+  --aura-radius: 9999px;
+  /* Rotation period. daisyUI reads `--tw-duration` for it, falling back to 6s,
+     which on a ring this small reads as a still gradient. Set here instead of
+     with a Tailwind duration utility, which also sets `transition-duration` and
+     — `transition-property` being `all` by default — made every layout change
+     on the avatar animate for two seconds. */
+  --tw-duration: 2s;
+  flex: none;
+  aspect-ratio: auto;
+  overflow: visible;
+  line-height: 0;
+}
+
+.avatar-frame--aura > * {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+
 @keyframes frame-spin {
   from {
     rotate: 0deg;
@@ -279,12 +304,18 @@
 }
 
 /* Motion-sensitive visitors get the cosmetics without the movement. */
+/* daisyUI only slows `aura` down under reduced motion; this app's contract (see
+   the notice in Settings › Customization) is that animated cosmetics stop, so
+   the aura frame and its two halo pseudo-elements are stopped with the rest. */
 @media (prefers-reduced-motion: reduce) {
   .name-effect--shimmer,
   .avatar-frame--sakura,
   .avatar-frame--neon,
   .avatar-frame--rainbow,
   .avatar-frame--rainbow > *,
+  .avatar-frame--aura,
+  .avatar-frame--aura::before,
+  .avatar-frame--aura::after,
   .banner-particle {
     animation: none !important;
   }

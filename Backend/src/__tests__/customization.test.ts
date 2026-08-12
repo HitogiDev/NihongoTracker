@@ -118,6 +118,22 @@ describe('listCustomizationOptions', () => {
     ).toBe(true);
   });
 
+  it('reserves the aura frame for Consumer, not merely the higher tiers', async () => {
+    const enthusiast = await listCustomizationOptions(
+      makeUser({ tier: 'enthusiast', isActive: true })
+    );
+    const consumer = await listCustomizationOptions(
+      makeUser({ tier: 'consumer', isActive: true })
+    );
+
+    const auraFor = (options: typeof enthusiast) =>
+      options.avatarFrames.find((frame) => frame.value === 'aura');
+
+    expect(auraFor(enthusiast)?.unlocked).toBe(false);
+    expect(auraFor(enthusiast)?.lockReason).toBe('patreonConsumer');
+    expect(auraFor(consumer)?.unlocked).toBe(true);
+  });
+
   it('gives every signature stat away for free', async () => {
     const options = await listCustomizationOptions(makeUser());
     expect(options.signatureStats.every((stat) => stat.unlocked)).toBe(true);
@@ -265,6 +281,7 @@ describe('sanitizeCustomizationForDisplay', () => {
     const visible = sanitizeCustomizationForDisplay(paid, {
       isPremium: false,
       isPremiumPlus: false,
+      isConsumer: false,
     });
 
     expect(visible.nameEffect).toBe('none');
@@ -277,7 +294,7 @@ describe('sanitizeCustomizationForDisplay', () => {
   it('keeps merit-earned cosmetics for a lapsed supporter', () => {
     const visible = sanitizeCustomizationForDisplay(
       { ...paid, avatarFrame: 'gold' },
-      { isPremium: false, isPremiumPlus: false }
+      { isPremium: false, isPremiumPlus: false, isConsumer: false }
     );
 
     expect(visible.avatarFrame).toBe('gold');
@@ -289,6 +306,7 @@ describe('sanitizeCustomizationForDisplay', () => {
     const visible = sanitizeCustomizationForDisplay(paid, {
       isPremium: true,
       isPremiumPlus: false,
+      isConsumer: false,
     });
 
     expect(visible.nameEffect).toBe('none');
@@ -299,10 +317,28 @@ describe('sanitizeCustomizationForDisplay', () => {
     expect(visible.nameColor1).toBe('#ff0000');
   });
 
+  it('takes the aura frame away when Consumer drops to Enthusiast', () => {
+    const visible = sanitizeCustomizationForDisplay(
+      { avatarFrame: 'aura' },
+      { isPremium: true, isPremiumPlus: true, isConsumer: false }
+    );
+
+    expect(visible.avatarFrame).toBe('none');
+  });
+
+  it('keeps the aura frame for an active Consumer', () => {
+    const visible = sanitizeCustomizationForDisplay(
+      { avatarFrame: 'aura' },
+      { isPremium: true, isPremiumPlus: true, isConsumer: true }
+    );
+
+    expect(visible.avatarFrame).toBe('aura');
+  });
+
   it('downgrades a custom accent when the higher tier lapses', () => {
     const visible = sanitizeCustomizationForDisplay(
       { profileAccent: 'custom', accentColor: '#123456' },
-      { isPremium: true, isPremiumPlus: false }
+      { isPremium: true, isPremiumPlus: false, isConsumer: false }
     );
 
     expect(visible.profileAccent).toBe('default');
@@ -312,7 +348,7 @@ describe('sanitizeCustomizationForDisplay', () => {
   it('drops a stale accent color left over on a preset accent', () => {
     const visible = sanitizeCustomizationForDisplay(
       { profileAccent: 'ocean', accentColor: '#123456' },
-      { isPremium: true, isPremiumPlus: true }
+      { isPremium: true, isPremiumPlus: true, isConsumer: true }
     );
 
     expect(visible.accentColor).toBe('');
@@ -322,6 +358,7 @@ describe('sanitizeCustomizationForDisplay', () => {
     const visible = sanitizeCustomizationForDisplay(undefined, {
       isPremium: true,
       isPremiumPlus: true,
+      isConsumer: true,
     });
 
     expect(visible).toEqual({
@@ -416,17 +453,24 @@ describe('getDisplayCapabilities', () => {
   it('treats an inactive membership as no membership', () => {
     expect(
       getDisplayCapabilities({ tier: 'consumer', isActive: false })
-    ).toEqual({ isPremium: false, isPremiumPlus: false });
+    ).toEqual({ isPremium: false, isPremiumPlus: false, isConsumer: false });
   });
 
   it('separates the plain tier from the animated-cosmetics tiers', () => {
     expect(getDisplayCapabilities({ tier: 'donator', isActive: true })).toEqual({
       isPremium: true,
       isPremiumPlus: false,
+      isConsumer: false,
     });
     expect(
       getDisplayCapabilities({ tier: 'enthusiast', isActive: true })
-    ).toEqual({ isPremium: true, isPremiumPlus: true });
+    ).toEqual({ isPremium: true, isPremiumPlus: true, isConsumer: false });
+  });
+
+  it('separates Consumer from the tier below it', () => {
+    expect(
+      getDisplayCapabilities({ tier: 'consumer', isActive: true })
+    ).toEqual({ isPremium: true, isPremiumPlus: true, isConsumer: true });
   });
 });
 

@@ -925,6 +925,8 @@
           "benefits": [
             "Muestra tu apoyo simbólico al proyecto",
             "Insignia de Donator en el perfil",
+            "Efectos de nombre degradado y resplandor, con tus propios colores",
+            "Acentos de perfil preestablecidos",
             "Amplía el máximo de etiquetas por log a 7",
             "Desbloquea más temas"
           ]
@@ -934,6 +936,8 @@
           "benefits": [
             "Avatares y banners GIF animados",
             "Texto personalizado en la insignia de mecenas del perfil",
+            "Marcos de avatar animados y efectos ambientales en la cabecera",
+            "Efecto de nombre con brillo animado y color de acento propio",
             "Amplía el máximo de etiquetas por log a 15",
             "Amplía el máximo de miembros por club a 250"
           ]
@@ -941,6 +945,7 @@
         "consumer": {
           "description": "Estás yendo mucho más allá para apoyar NihongoTracker. Este nivel ayuda a cubrir los costes de desarrollo y de servidor, y permite que el proyecto crezca de forma sostenible. Cada actualización, cada mejora y cada función nueva son posibles gracias a personas como tú.",
           "benefits": [
+            "Marco de avatar Aura exclusivo",
             "Color personalizado en la insignia de mecenas (arcoíris incluido)",
             "Insignia de mecenas en todo el sitio",
             "Amplía el máximo de etiquetas por log a 25",

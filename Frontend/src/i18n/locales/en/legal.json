@@ -925,6 +925,8 @@
           "benefits": [
             "Show your symbolic support for the project",
             "Donator Badge on the profile",
+            "Gradient and glow name effects, in your own colors",
+            "Preset profile accents",
             "Increase maximum log tags to 7",
             "Unlock more themes"
           ]
@@ -934,6 +936,8 @@
           "benefits": [
             "Animated GIF avatars and banners",
             "Custom text in the profile donator badge",
+            "Animated avatar frames and ambient banner effects",
+            "Shimmer name effect and a profile accent color of your own",
             "Increase maximum log tags to 15",
             "Increase maximum club members to 250"
           ]
@@ -941,6 +945,7 @@
         "consumer": {
           "description": "You're going above and beyond to support NihongoTracker. This tier helps cover development and server costs while allowing the project to grow sustainably. Every update, every improvement, and every new feature is made possible thanks to people like you.",
           "benefits": [
+            "Exclusive Aura avatar frame",
             "Custom donator badge color (rainbow included)",
             "Site-wide donator badge",
             "Increase the maximum log tags to 25",
