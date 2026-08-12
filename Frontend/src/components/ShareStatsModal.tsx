@@ -195,8 +195,11 @@ export default function ShareStatsModal({
   if (!open) return null;
 
   return (
-    <div className="modal modal-open" role="dialog">
-      <div className="modal-box max-w-lg">
+    <div
+      className="modal modal-bottom sm:modal-middle modal-open"
+      role="dialog"
+    >
+      <div className="modal-box">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h3 className="text-lg font-bold">{t('share.title')}</h3>
           <button
@@ -216,7 +219,7 @@ export default function ShareStatsModal({
               key={opt.value}
               type="button"
               onClick={() => setMode(opt.value)}
-              className={`btn btn-sm join-item flex-1 ${
+              className={`join-item btn btn-sm flex-1 ${
                 mode === opt.value ? 'btn-primary' : 'btn-ghost'
               }`}
             >
@@ -231,7 +234,7 @@ export default function ShareStatsModal({
               {t('share.from')}
               <input
                 type="date"
-                className="input input-bordered input-sm w-full mt-1"
+                className="input input-sm w-full mt-1"
                 value={customStart}
                 max={customEnd || toQueryDate(new Date())}
                 onChange={(e) => setCustomStart(e.target.value)}
@@ -241,7 +244,7 @@ export default function ShareStatsModal({
               {t('share.to')}
               <input
                 type="date"
-                className="input input-bordered input-sm w-full mt-1"
+                className="input input-sm w-full mt-1"
                 value={customEnd}
                 min={customStart || undefined}
                 max={toQueryDate(new Date())}
@@ -252,7 +255,7 @@ export default function ShareStatsModal({
         )}
 
         {/* Preview */}
-        <div className="relative flex items-center justify-center rounded-xl bg-base-200 p-3 min-h-[320px]">
+        <div className="relative flex items-center justify-center surface-muted p-3 min-h-[320px]">
           {mode === 'custom' && !customReady ? (
             <p className="text-sm text-base-content/60">
               {t('share.pickDates')}
@@ -261,7 +264,7 @@ export default function ShareStatsModal({
             <img
               src={imageUrl}
               alt={t('share.previewAlt')}
-              className={`max-h-[60vh] w-auto rounded-lg shadow-md transition-opacity ${
+              className={`max-h-[60vh] w-auto rounded-lg shadow-sm transition-opacity ${
                 isRendering ? 'opacity-50' : 'opacity-100'
               }`}
             />
@@ -295,7 +298,7 @@ export default function ShareStatsModal({
           </button>
         </div>
       </div>
-      <div className="modal-backdrop bg-black/50" onClick={onClose} />
+      <div className="modal-backdrop" onClick={onClose} />
     </div>
   );
 }

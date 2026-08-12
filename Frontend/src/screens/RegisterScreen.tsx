@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Field from '../components/ui/Field';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUserFn, getPublicStatsFn } from '../api/trackerApi';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -421,7 +422,7 @@ function RegisterScreen() {
           <div className="flex justify-center lg:justify-end">
             <div
               ref={cardRef}
-              className="card w-full max-w-md bg-base-100 shadow-2xl border border-base-300/50 backdrop-blur-sm"
+              className="card w-full max-w-md surface backdrop-blur-sm"
             >
               <form className="card-body p-8" onSubmit={handleSubmit}>
                 <h2
@@ -435,49 +436,10 @@ function RegisterScreen() {
                 </p>
 
                 {/* Username Field */}
-                <div ref={addToRefs} className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      {t('register.form.username.label')}
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={t('register.form.username.placeholder')}
-                    className={`input input-bordered w-full transition-all duration-300 ${
-                      errors.username
-                        ? 'input-error focus:input-error'
-                        : touched.username && !errors.username && username
-                          ? 'input-success focus:input-success'
-                          : 'focus:input-primary'
-                    }`}
-                    value={username}
-                    onChange={(e) =>
-                      handleFieldChange('username', e.target.value)
-                    }
-                    onFocus={() => setShowUsernameRequirements(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowUsernameRequirements(false), 150)
-                    }
-                    required
-                  />
-                  {errors.username && (
-                    <label className="label">
-                      <span className="label-text-alt text-error text-wrap break-words flex items-center gap-1">
+                <div ref={addToRefs}>
+                  <Field
+                    label={
+                      <>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4"
@@ -489,181 +451,191 @@ function RegisterScreen() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                           />
                         </svg>
-                        {vt(errors.username)}
-                      </span>
-                    </label>
-                  )}
+                        {t('register.form.username.label')}
+                      </>
+                    }
+                  >
+                    <input
+                      type="text"
+                      placeholder={t('register.form.username.placeholder')}
+                      className={`input w-full transition-all duration-300 ${
+                        errors.username
+                          ? 'input-error focus:input-error'
+                          : touched.username && !errors.username && username
+                            ? 'input-success focus:input-success'
+                            : 'focus:input-primary'
+                      }`}
+                      value={username}
+                      onChange={(e) =>
+                        handleFieldChange('username', e.target.value)
+                      }
+                      onFocus={() => setShowUsernameRequirements(true)}
+                      onBlur={() =>
+                        setTimeout(
+                          () => setShowUsernameRequirements(false),
+                          150
+                        )
+                      }
+                      required
+                    />
+                    {errors.username && (
+                      <label className="label">
+                        <span className="text-error text-wrap break-words flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {vt(errors.username)}
+                        </span>
+                      </label>
+                    )}
 
-                  {showUsernameRequirements && (
-                    <div className="mt-2 p-3 bg-base-200 rounded-box text-xs animate-fadeIn border border-base-300">
-                      <p className="font-semibold mb-2 text-base-content">
-                        {t('register.usernameRequirements.title')}
-                      </p>
-                      <ul className="space-y-1.5">
-                        <li
-                          className={`flex items-center gap-2 transition-colors ${usernameValidation.notEmpty ? 'text-success' : 'text-base-content/60'}`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.notEmpty ? 'bg-success/20' : 'bg-base-300'}`}
+                    {showUsernameRequirements && (
+                      <div className="mt-2 p-3 surface-muted text-xs animate-fadeIn">
+                        <p className="font-semibold mb-2 text-base-content">
+                          {t('register.usernameRequirements.title')}
+                        </p>
+                        <ul className="space-y-1.5">
+                          <li
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.notEmpty ? 'text-success' : 'text-base-content/60'}`}
                           >
-                            {usernameValidation.notEmpty ? (
-                              <svg
-                                className="w-3 h-3 text-success"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : (
-                              <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
-                            )}
-                          </div>
-                          {t('register.usernameRequirements.notEmpty')}
-                        </li>
-                        <li
-                          className={`flex items-center gap-2 transition-colors ${usernameValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.minLength ? 'bg-success/20' : 'bg-base-300'}`}
+                            <div
+                              className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.notEmpty ? 'bg-success/20' : 'bg-base-300'}`}
+                            >
+                              {usernameValidation.notEmpty ? (
+                                <svg
+                                  className="w-3 h-3 text-success"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              ) : (
+                                <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                              )}
+                            </div>
+                            {t('register.usernameRequirements.notEmpty')}
+                          </li>
+                          <li
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
                           >
-                            {usernameValidation.minLength ? (
-                              <svg
-                                className="w-3 h-3 text-success"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : (
-                              <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
-                            )}
-                          </div>
-                          {t('register.usernameRequirements.minLength')}
-                        </li>
-                        <li
-                          className={`flex items-center gap-2 transition-colors ${usernameValidation.maxLength ? 'text-success' : 'text-error'}`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.maxLength ? 'bg-success/20' : 'bg-error/20'}`}
+                            <div
+                              className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.minLength ? 'bg-success/20' : 'bg-base-300'}`}
+                            >
+                              {usernameValidation.minLength ? (
+                                <svg
+                                  className="w-3 h-3 text-success"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              ) : (
+                                <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                              )}
+                            </div>
+                            {t('register.usernameRequirements.minLength')}
+                          </li>
+                          <li
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.maxLength ? 'text-success' : 'text-error'}`}
                           >
-                            {usernameValidation.maxLength ? (
-                              <svg
-                                className="w-3 h-3 text-success"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : (
-                              <svg
-                                className="w-3 h-3 text-error"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          {t('register.usernameRequirements.maxLength')}
-                        </li>
-                        <li
-                          className={`flex items-center gap-2 transition-colors ${usernameValidation.validCharacters ? 'text-success' : 'text-base-content/60'}`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.validCharacters ? 'bg-success/20' : 'bg-base-300'}`}
+                            <div
+                              className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.maxLength ? 'bg-success/20' : 'bg-error/20'}`}
+                            >
+                              {usernameValidation.maxLength ? (
+                                <svg
+                                  className="w-3 h-3 text-success"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              ) : (
+                                <svg
+                                  className="w-3 h-3 text-error"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            {t('register.usernameRequirements.maxLength')}
+                          </li>
+                          <li
+                            className={`flex items-center gap-2 transition-colors ${usernameValidation.validCharacters ? 'text-success' : 'text-base-content/60'}`}
                           >
-                            {usernameValidation.validCharacters ? (
-                              <svg
-                                className="w-3 h-3 text-success"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : (
-                              <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
-                            )}
-                          </div>
-                          {t('register.usernameRequirements.validCharacters')}
-                        </li>
-                      </ul>
-                    </div>
-                  )}
+                            <div
+                              className={`w-5 h-5 rounded-full flex items-center justify-center ${usernameValidation.validCharacters ? 'bg-success/20' : 'bg-base-300'}`}
+                            >
+                              {usernameValidation.validCharacters ? (
+                                <svg
+                                  className="w-3 h-3 text-success"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              ) : (
+                                <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                              )}
+                            </div>
+                            {t('register.usernameRequirements.validCharacters')}
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </Field>
                 </div>
 
                 {/* Email Field */}
-                <div ref={addToRefs} className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                      {t('register.form.email.label')}
-                    </span>
-                    <span className="label-text-alt badge badge-ghost badge-sm">
-                      {t('register.form.email.optional')}
-                    </span>
-                  </label>
-                  <input
-                    type="email"
-                    placeholder={t('register.form.email.placeholder')}
-                    className={`input input-bordered w-full transition-all duration-300 ${
-                      errors.email
-                        ? 'input-error focus:input-error'
-                        : touched.email && !errors.email && email
-                          ? 'input-success focus:input-success'
-                          : 'focus:input-primary'
-                    }`}
-                    value={email}
-                    onChange={(e) => handleFieldChange('email', e.target.value)}
-                  />
-                  {errors.email && (
-                    <label className="label">
-                      <span className="label-text-alt text-error flex items-center gap-1">
+                <div ref={addToRefs}>
+                  <Field
+                    label={
+                      <>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4"
@@ -675,64 +647,63 @@ function RegisterScreen() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                           />
                         </svg>
-                        {vt(errors.email)}
+                        {t('register.form.email.label')}
+                      </>
+                    }
+                    aside={t('register.form.email.optional')}
+                  >
+                    <input
+                      type="email"
+                      placeholder={t('register.form.email.placeholder')}
+                      className={`input w-full transition-all duration-300 ${
+                        errors.email
+                          ? 'input-error focus:input-error'
+                          : touched.email && !errors.email && email
+                            ? 'input-success focus:input-success'
+                            : 'focus:input-primary'
+                      }`}
+                      value={email}
+                      onChange={(e) =>
+                        handleFieldChange('email', e.target.value)
+                      }
+                    />
+                    {errors.email && (
+                      <label className="label">
+                        <span className="text-error flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {vt(errors.email)}
+                        </span>
+                      </label>
+                    )}
+                    <label className="label">
+                      <span className="text-base-content/60 text-xs">
+                        {t('register.form.email.hint')}
                       </span>
                     </label>
-                  )}
-                  <label className="label">
-                    <span className="label-text-alt text-base-content/60 text-xs">
-                      {t('register.form.email.hint')}
-                    </span>
-                  </label>
+                  </Field>
                 </div>
 
                 {/* Password Field */}
-                <div ref={addToRefs} className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      {t('register.form.password.label')}
-                    </span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder={t('register.form.password.placeholder')}
-                    className={`input input-bordered w-full transition-all duration-300 ${
-                      errors.password
-                        ? 'input-error focus:input-error'
-                        : touched.password && !errors.password && password
-                          ? 'input-success focus:input-success'
-                          : 'focus:input-primary'
-                    }`}
-                    value={password}
-                    onChange={(e) =>
-                      handleFieldChange('password', e.target.value)
-                    }
-                    onFocus={() => setShowPasswordRequirements(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowPasswordRequirements(false), 150)
-                    }
-                    required
-                  />
-                  {errors.password && (
-                    <label className="label">
-                      <span className="label-text-alt text-error flex items-center gap-1">
+                <div ref={addToRefs}>
+                  <Field
+                    label={
+                      <>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4"
@@ -744,95 +715,101 @@ function RegisterScreen() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                           />
                         </svg>
-                        {vt(errors.password)}
-                      </span>
-                    </label>
-                  )}
-
-                  {showPasswordRequirements && (
-                    <div className="mt-2 p-3 bg-base-200 rounded-box text-xs animate-fadeIn border border-base-300">
-                      <p className="font-semibold mb-2 text-base-content">
-                        {t('register.passwordRequirements.title')}
-                      </p>
-                      <ul className="space-y-1.5">
-                        <li
-                          className={`flex items-center gap-2 transition-colors ${passwordValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center ${passwordValidation.minLength ? 'bg-success/20' : 'bg-base-300'}`}
+                        {t('register.form.password.label')}
+                      </>
+                    }
+                  >
+                    <input
+                      type="password"
+                      placeholder={t('register.form.password.placeholder')}
+                      className={`input w-full transition-all duration-300 ${
+                        errors.password
+                          ? 'input-error focus:input-error'
+                          : touched.password && !errors.password && password
+                            ? 'input-success focus:input-success'
+                            : 'focus:input-primary'
+                      }`}
+                      value={password}
+                      onChange={(e) =>
+                        handleFieldChange('password', e.target.value)
+                      }
+                      onFocus={() => setShowPasswordRequirements(true)}
+                      onBlur={() =>
+                        setTimeout(
+                          () => setShowPasswordRequirements(false),
+                          150
+                        )
+                      }
+                      required
+                    />
+                    {errors.password && (
+                      <label className="label">
+                        <span className="text-error flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            {passwordValidation.minLength ? (
-                              <svg
-                                className="w-3 h-3 text-success"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : (
-                              <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
-                            )}
-                          </div>
-                          {t('register.passwordRequirements.minLength')}
-                        </li>
-                      </ul>
-                    </div>
-                  )}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {vt(errors.password)}
+                        </span>
+                      </label>
+                    )}
+
+                    {showPasswordRequirements && (
+                      <div className="mt-2 p-3 surface-muted text-xs animate-fadeIn">
+                        <p className="font-semibold mb-2 text-base-content">
+                          {t('register.passwordRequirements.title')}
+                        </p>
+                        <ul className="space-y-1.5">
+                          <li
+                            className={`flex items-center gap-2 transition-colors ${passwordValidation.minLength ? 'text-success' : 'text-base-content/60'}`}
+                          >
+                            <div
+                              className={`w-5 h-5 rounded-full flex items-center justify-center ${passwordValidation.minLength ? 'bg-success/20' : 'bg-base-300'}`}
+                            >
+                              {passwordValidation.minLength ? (
+                                <svg
+                                  className="w-3 h-3 text-success"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              ) : (
+                                <div className="w-2 h-2 rounded-full bg-base-content/30"></div>
+                              )}
+                            </div>
+                            {t('register.passwordRequirements.minLength')}
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                  </Field>
                 </div>
 
                 {/* Password Confirmation Field */}
-                <div ref={addToRefs} className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      {t('register.form.passwordConfirmation.label')}
-                    </span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder={t(
-                      'register.form.passwordConfirmation.placeholder'
-                    )}
-                    className={`input input-bordered w-full transition-all duration-300 ${
-                      errors.passwordConfirmation
-                        ? 'input-error focus:input-error'
-                        : touched.passwordConfirmation &&
-                            !errors.passwordConfirmation &&
-                            passwordConfirmation
-                          ? 'input-success focus:input-success'
-                          : 'focus:input-primary'
-                    }`}
-                    value={passwordConfirmation}
-                    onChange={(e) =>
-                      handleFieldChange('passwordConfirmation', e.target.value)
-                    }
-                    required
-                  />
-                  {errors.passwordConfirmation && (
-                    <label className="label">
-                      <span className="label-text-alt text-error flex items-center gap-1">
+                <div ref={addToRefs}>
+                  <Field
+                    label={
+                      <>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-4 w-4"
@@ -844,17 +821,62 @@ function RegisterScreen() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        {vt(errors.passwordConfirmation)}
-                      </span>
-                    </label>
-                  )}
+                        {t('register.form.passwordConfirmation.label')}
+                      </>
+                    }
+                  >
+                    <input
+                      type="password"
+                      placeholder={t(
+                        'register.form.passwordConfirmation.placeholder'
+                      )}
+                      className={`input w-full transition-all duration-300 ${
+                        errors.passwordConfirmation
+                          ? 'input-error focus:input-error'
+                          : touched.passwordConfirmation &&
+                              !errors.passwordConfirmation &&
+                              passwordConfirmation
+                            ? 'input-success focus:input-success'
+                            : 'focus:input-primary'
+                      }`}
+                      value={passwordConfirmation}
+                      onChange={(e) =>
+                        handleFieldChange(
+                          'passwordConfirmation',
+                          e.target.value
+                        )
+                      }
+                      required
+                    />
+                    {errors.passwordConfirmation && (
+                      <label className="label">
+                        <span className="text-error flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {vt(errors.passwordConfirmation)}
+                        </span>
+                      </label>
+                    )}
+                  </Field>
                 </div>
 
                 {/* Terms and Conditions */}
-                <div ref={addToRefs} className="form-control">
+                <div ref={addToRefs}>
                   <label className="label cursor-pointer justify-start gap-3 items-start p-3 rounded-lg hover:bg-base-200/50 transition-colors">
                     <input
                       type="checkbox"
@@ -862,7 +884,7 @@ function RegisterScreen() {
                       checked={agreedToTerms}
                       onChange={(e) => setAgreedToTerms(e.target.checked)}
                     />
-                    <span className="label-text text-sm text-left leading-relaxed">
+                    <span className="text-sm text-left leading-relaxed">
                       <Trans
                         t={t}
                         i18nKey="register.form.terms"
@@ -890,12 +912,12 @@ function RegisterScreen() {
                 </div>
 
                 {/* Submit Button */}
-                <div ref={addToRefs} className="form-control mt-4 items-center">
+                <div ref={addToRefs} className="mt-4 items-center">
                   <button
                     className={`btn btn-primary btn-lg w-full transition-all duration-300 ${
                       !isFormValid() || isPending
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-md hover:scale-[1.02]'
+                        : 'hover:shadow-lg hover:scale-[1.02]'
                     }`}
                     type="submit"
                     disabled={!isFormValid() || isPending}

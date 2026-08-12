@@ -22,16 +22,11 @@ import { AxiosError } from 'axios';
 import { deleteLogsBulkFn, adminDeleteLogsBulkFn } from '../api/trackerApi';
 import { useUserDataStore } from '../store/userData';
 import LogCard from './LogCard';
+import { MEDIA_TYPE_CLASSES } from '../constants/mediaColors';
 
 const PAGE_SIZE = 10;
 
-// Reuse the video type config from LogCard's palette
-const videoTypeConfig = {
-  color: 'text-[#2cc9a4]',
-  bgColor: 'bg-[#2cc9a4]/10',
-  borderColor: 'border-[#2cc9a4]/30',
-  accentColor: 'bg-[#2cc9a4]',
-};
+const videoTypeConfig = MEDIA_TYPE_CLASSES.video;
 
 function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
   const { t } = useTranslation('logs');
@@ -240,7 +235,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
     <>
       {/* ── Summary card ────────────────────────────────────────────────────── */}
       <article
-        className={`card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 border ${videoTypeConfig.borderColor} group rounded-t-none`}
+        className={`card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 border ${videoTypeConfig.borderColor} group rounded-t-none`}
         role="article"
         aria-label={`Playlist: ${playlistTitle}`}
       >
@@ -317,7 +312,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
 
               <button
                 type="button"
-                className="btn btn-xs btn-ghost gap-1 text-base-content/60 hover:text-base-content"
+                className="btn btn-ghost btn-xs gap-1 text-base-content/60 hover:text-base-content"
                 onClick={openModal}
               >
                 <ListVideo className="w-3 h-3" />
@@ -379,7 +374,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
 
               <button
                 type="button"
-                className="btn btn-sm btn-circle btn-ghost flex-shrink-0"
+                className="btn btn-ghost btn-sm btn-circle flex-shrink-0"
                 onClick={closeModal}
                 aria-label={tCommon('close')}
               >
@@ -414,7 +409,7 @@ function PlaylistBatchCard({ logs, user }: { logs: ILog[]; user?: string }) {
                 {selectedLogIds.size > 0 && (
                   <button
                     type="button"
-                    className="btn btn-sm btn-error gap-1.5"
+                    className="btn btn-error btn-sm gap-1.5"
                     onClick={handleBulkDelete}
                     disabled={loadingBulkDelete}
                   >

@@ -152,7 +152,7 @@ function FeaturesScreen() {
   };
 
   return (
-    <div className="pt-16 bg-base-100 min-h-screen">
+    <div className="pt-20 bg-base-100 min-h-screen">
       {/* ─── Hero ─── */}
       <section className="py-24 px-4 text-center">
         <div className="max-w-3xl mx-auto">
@@ -171,9 +171,9 @@ function FeaturesScreen() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/register">
-              <button className="btn btn-primary btn-lg gap-2 px-10">
+              <button className="btn btn-primary btn-lg gap-2 px-8">
                 {t('features.hero.ctaPrimary')}
-                <ArrowRight size={18} />
+                <ArrowRight className="w-5 h-5" />
               </button>
             </Link>
             <Link to="/ranking">
@@ -221,7 +221,7 @@ function FeaturesScreen() {
           {FEATURE_CATEGORIES.map((category) => (
             <div
               key={category.id}
-              className="rounded-2xl border border-base-300 overflow-hidden bg-base-100 shadow-sm hover:shadow-md transition-shadow duration-300"
+              className="overflow-hidden surface hover:shadow-lg transition-shadow duration-300"
             >
               {/* Header */}
               <button
@@ -268,7 +268,7 @@ function FeaturesScreen() {
                             : 'border-base-300/60 bg-base-200/30'
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-lg bg-base-100 border border-base-300/60 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-8 h-8 surface flex items-center justify-center shrink-0 mt-0.5">
                           <feature.icon size={15} className={category.color} />
                         </div>
                         <div className="min-w-0">
@@ -345,12 +345,12 @@ function FeaturesScreen() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/register">
-              <button className="btn btn-primary btn-lg px-12">
+              <button className="btn btn-primary btn-lg px-8">
                 {t('features.cta.primary')}
               </button>
             </Link>
             <Link to="/ranking">
-              <button className="btn btn-ghost btn-lg">
+              <button className="btn btn-ghost btn-lg px-8">
                 {t('features.cta.secondary')}
               </button>
             </Link>

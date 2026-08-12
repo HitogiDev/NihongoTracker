@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Field from '../components/ui/Field';
 import {
   ICreateLog,
   ILog,
@@ -832,7 +833,7 @@ function LogScreen() {
 
   return (
     <>
-      <div className="pt-24 pb-16 px-4 flex justify-center items-start bg-base-200 min-h-screen">
+      <div className="pt-28 pb-16 px-4 flex justify-center items-start bg-base-200 min-h-screen">
         <div className="w-full max-w-6xl">
           <form onSubmit={logSubmit} className="space-y-8">
             <div className="text-center">
@@ -841,7 +842,7 @@ function LogScreen() {
             </div>
 
             {/* Log Type Selection */}
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title">{t('create.stepType')}</h2>
                 <div
@@ -885,18 +886,17 @@ function LogScreen() {
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 {/* Left Column: Form Inputs */}
                 <div className="lg:col-span-3 space-y-6">
-                  <div className="card bg-base-100 shadow-sm">
+                  <div className="card surface">
                     <div className="card-body">
                       <h2 className="card-title">{t('create.stepDetails')}</h2>
                       {/* Media Name Input */}
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text font-medium">
-                            {logData.type === 'video'
-                              ? t('create.videoUrlLabel')
-                              : t('create.mediaName')}
-                          </span>
-                        </label>
+                      <Field
+                        label={
+                          logData.type === 'video'
+                            ? t('create.videoUrlLabel')
+                            : t('create.mediaName')
+                        }
+                      >
                         <div className="relative">
                           <input
                             type="text"
@@ -905,7 +905,7 @@ function LogScreen() {
                                 ? t('create.videoPlaceholder')
                                 : t('create.mediaPlaceholder')
                             }
-                            className={`input input-bordered w-full pr-10 ${
+                            className={`input w-full pr-10 ${
                               errors.mediaName
                                 ? 'input-error'
                                 : touched.mediaName &&
@@ -945,7 +945,7 @@ function LogScreen() {
                         </div>
                         {errors.mediaName && (
                           <label className="label">
-                            <span className="label-text-alt text-error flex items-center gap-1">
+                            <span className="text-error flex items-center gap-1">
                               <CircleX /> {vt(errors.mediaName)}
                             </span>
                           </label>
@@ -955,7 +955,7 @@ function LogScreen() {
                           {isSuggestionsOpen &&
                             searchResult &&
                             searchResult.length > 0 && (
-                              <ul className="menu menu-vertical flex-nowrap bg-base-200 rounded-box w-full shadow-lg mt-1 absolute z-50 overflow-y-auto overflow-x-hidden max-h-64">
+                              <ul className="menu menu-vertical flex-nowrap surface-raised w-full mt-1 absolute z-50 overflow-y-auto overflow-x-hidden max-h-64">
                                 {searchResult.map((group, i) => {
                                   const isYouTubeResult = (
                                     group as IMediaDocument & {
@@ -1060,31 +1060,30 @@ function LogScreen() {
                               </div>
                             )}
                         </div>
-                      </div>
+                      </Field>
 
                       {/* Dynamic Inputs based on Log Type */}
                       <div className="space-y-4">
                         {isSeriesType && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                {t('create.episodesWatched')}
-                              </span>
-                              {logData.customDuration ? (
-                                <span className="label-text-alt text-sm text-warning">
+                          <Field
+                            label={t('create.episodesWatched')}
+                            aside={
+                              logData.customDuration ? (
+                                <span className="text-warning">
                                   {t('create.episodeDurationBadge', {
                                     minutes: logData.customDuration,
                                   })}
                                 </span>
-                              ) : null}
-                            </label>
+                              ) : null
+                            }
+                          >
                             <input
                               type="number"
                               min="1"
                               max="1000"
                               onInput={preventNegativeValues}
                               placeholder={t('create.episodesPlaceholder')}
-                              className={`input input-bordered w-full ${
+                              className={`input w-full ${
                                 errors.episodes
                                   ? 'input-error'
                                   : touched.episodes &&
@@ -1114,7 +1113,7 @@ function LogScreen() {
                             />
                             {errors.episodes && (
                               <label className="label">
-                                <span className="label-text-alt text-error flex items-center gap-1">
+                                <span className="text-error flex items-center gap-1">
                                   <CircleX /> {vt(errors.episodes)}
                                 </span>
                               </label>
@@ -1144,25 +1143,20 @@ function LogScreen() {
                                 </span>
                               </div>
                             )}
-                          </div>
+                          </Field>
                         )}
 
                         {logData.type === 'tv show' && !logData.duration && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                {t('create.episodeDuration')}
-                              </span>
-                              <span className="label-text-alt text-warning">
-                                {t('create.durationHint')}
-                              </span>
-                            </label>
+                          <Field
+                            label={t('create.episodeDuration')}
+                            aside={t('create.durationHint')}
+                          >
                             <input
                               type="number"
                               min="1"
                               max="300"
                               placeholder={t('create.durationPlaceholder')}
-                              className="input input-bordered w-full"
+                              className="input w-full"
                               onChange={(e) => {
                                 const customDuration = Number(e.target.value);
                                 handleFieldChange(
@@ -1180,31 +1174,30 @@ function LogScreen() {
                               }}
                               value={logData.customDuration || ''}
                             />
-                          </div>
+                          </Field>
                         )}
 
                         {showTimeInMain && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                {t('create.timeSpent')}
-                              </span>
-                              {['video', 'audio', 'movie'].includes(
+                          <Field
+                            label={t('create.timeSpent')}
+                            aside={
+                              ['video', 'audio', 'movie'].includes(
                                 logData.type || ''
                               ) && (
-                                <span className="label-text-alt text-warning">
+                                <span className="text-warning">
                                   {t('create.required')}
                                 </span>
-                              )}
-                            </label>
+                              )
+                            }
+                          >
                             <div className="flex gap-2">
-                              <div className="form-control w-1/2">
+                              <div className="w-1/2">
                                 <input
                                   type="number"
                                   min="0"
                                   max="24"
                                   placeholder={t('create.hoursPlaceholder')}
-                                  className={`input input-bordered w-full ${
+                                  className={`input w-full ${
                                     errors.hours || errors.time
                                       ? 'input-error'
                                       : ''
@@ -1219,13 +1212,13 @@ function LogScreen() {
                                   onInput={preventNegativeValues}
                                 />
                               </div>
-                              <div className="form-control w-1/2">
+                              <div className="w-1/2">
                                 <input
                                   type="number"
                                   min="0"
                                   max="1440"
                                   placeholder={t('create.minutesPlaceholder')}
-                                  className={`input input-bordered w-full ${
+                                  className={`input w-full ${
                                     errors.minutes || errors.time
                                       ? 'input-error'
                                       : ''
@@ -1245,7 +1238,7 @@ function LogScreen() {
                               errors.hours ||
                               errors.minutes) && (
                               <label className="label">
-                                <span className="label-text-alt text-error flex items-center gap-1">
+                                <span className="text-error flex items-center gap-1">
                                   <CircleX />
                                   {errors.time ||
                                     errors.hours ||
@@ -1253,23 +1246,18 @@ function LogScreen() {
                                 </span>
                               </label>
                             )}
-                          </div>
+                          </Field>
                         )}
 
                         {showCharsInMain && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                {t('create.charsRead')}
-                              </span>
-                            </label>
+                          <Field label={t('create.charsRead')}>
                             <input
                               type="number"
                               min="0"
                               max="1000000"
                               onInput={preventNegativeValues}
                               placeholder={t('create.charsPlaceholder')}
-                              className={`input input-bordered w-full ${
+                              className={`input w-full ${
                                 errors.chars
                                   ? 'input-error'
                                   : touched.chars && logData.readChars > 0
@@ -1286,29 +1274,24 @@ function LogScreen() {
                             />
                             {errors.chars && (
                               <label className="label">
-                                <span className="label-text-alt text-error flex items-center gap-1">
+                                <span className="text-error flex items-center gap-1">
                                   <CircleX /> {vt(errors.chars)}
                                 </span>
                               </label>
                             )}
-                          </div>
+                          </Field>
                         )}
 
                         {(logData.type === 'manga' ||
                           logData.type === 'reading') && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                {t('create.volume')}
-                              </span>
-                            </label>
+                          <Field label={t('create.volume')}>
                             <div className="flex items-center gap-2">
                               <input
                                 type="number"
                                 min="1"
                                 max={logData.volumes}
                                 placeholder="1"
-                                className="input input-bordered input-sm w-12 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="input input-sm w-12 px-1 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 onInput={preventNegativeValues}
                                 onChange={(e) => {
                                   if (e.target.value === '') {
@@ -1330,23 +1313,18 @@ function LogScreen() {
                                 /{logData.volumes ?? '?'}
                               </span>
                             </div>
-                          </div>
+                          </Field>
                         )}
 
                         {showPagesInMain && (
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">
-                                {t('create.pagesRead')}
-                              </span>
-                            </label>
+                          <Field label={t('create.pagesRead')}>
                             <input
                               type="number"
                               min="0"
                               max="10000"
                               onInput={preventNegativeValues}
                               placeholder={t('create.pagesPlaceholder')}
-                              className={`input input-bordered w-full ${
+                              className={`input w-full ${
                                 errors.pages
                                   ? 'input-error'
                                   : touched.pages && logData.readPages > 0
@@ -1363,17 +1341,17 @@ function LogScreen() {
                             />
                             {errors.pages && (
                               <label className="label">
-                                <span className="label-text-alt text-error flex items-center gap-1">
+                                <span className="text-error flex items-center gap-1">
                                   <CircleX /> {vt(errors.pages)}
                                 </span>
                               </label>
                             )}
-                          </div>
+                          </Field>
                         )}
                       </div>
 
                       {/* Advanced Options */}
-                      <div className="collapse collapse-arrow border border-base-300 bg-base-200 rounded-box overflow-visible">
+                      <div className="collapse collapse-arrow surface-muted overflow-visible">
                         <input
                           type="checkbox"
                           checked={isAdvancedOptions}
@@ -1386,12 +1364,7 @@ function LogScreen() {
                         </div>
                         <div className="collapse-content space-y-4">
                           {isAdvancedOptions && isSeriesType && (
-                            <div className="form-control">
-                              <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">
-                                  {t('create.episodeDuration')}
-                                </span>
-                              </label>
+                            <Field label={t('create.episodeDuration')}>
                               <input
                                 type="number"
                                 min="1"
@@ -1401,7 +1374,7 @@ function LogScreen() {
                                     ? `${logData.duration}`
                                     : t('create.episodeDurationPlaceholder')
                                 }
-                                className="input input-bordered input-sm"
+                                className="input input-sm"
                                 onChange={(e) => {
                                   const customDuration = Number(e.target.value);
                                   handleFieldChange(
@@ -1426,20 +1399,15 @@ function LogScreen() {
                                   })}
                                 </p>
                               ) : null}
-                            </div>
+                            </Field>
                           )}
                           {!showEpisodesInMain && (
-                            <div className="form-control">
-                              <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">
-                                  {t('create.episodesWatchedOptional')}
-                                </span>
-                              </label>
+                            <Field label={t('create.episodesWatchedOptional')}>
                               <input
                                 type="number"
                                 min="0"
                                 onInput={preventNegativeValues}
-                                className="input input-bordered"
+                                className="input"
                                 value={logData.watchedEpisodes || ''}
                                 onChange={(e) =>
                                   handleFieldChange(
@@ -1448,20 +1416,15 @@ function LogScreen() {
                                   )
                                 }
                               />
-                            </div>
+                            </Field>
                           )}
                           {!showTimeInMain && (
-                            <div className="form-control">
-                              <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">
-                                  {t('create.timeSpentOptional')}
-                                </span>
-                              </label>
+                            <Field label={t('create.timeSpentOptional')}>
                               <div className="flex gap-2">
                                 <input
                                   type="number"
                                   min="0"
-                                  className="input input-bordered w-1/2"
+                                  className="input w-1/2"
                                   placeholder={t('create.hoursPlaceholder')}
                                   value={logData.hours || ''}
                                   onInput={preventNegativeValues}
@@ -1476,7 +1439,7 @@ function LogScreen() {
                                   type="number"
                                   min="0"
                                   max="59"
-                                  className="input input-bordered w-1/2"
+                                  className="input w-1/2"
                                   placeholder={t('create.minutesPlaceholder')}
                                   value={logData.minutes || ''}
                                   onInput={preventNegativeValues}
@@ -1488,19 +1451,14 @@ function LogScreen() {
                                   }
                                 />
                               </div>
-                            </div>
+                            </Field>
                           )}
                           {!showCharsInMain && (
-                            <div className="form-control">
-                              <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">
-                                  {t('create.charsReadOptional')}
-                                </span>
-                              </label>
+                            <Field label={t('create.charsReadOptional')}>
                               <input
                                 type="number"
                                 min="0"
-                                className="input input-bordered"
+                                className="input"
                                 value={logData.readChars || ''}
                                 onInput={preventNegativeValues}
                                 onChange={(e) =>
@@ -1510,19 +1468,14 @@ function LogScreen() {
                                   )
                                 }
                               />
-                            </div>
+                            </Field>
                           )}
                           {!showPagesInMain && (
-                            <div className="form-control">
-                              <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">
-                                  {t('create.pagesReadOptional')}
-                                </span>
-                              </label>
+                            <Field label={t('create.pagesReadOptional')}>
                               <input
                                 type="number"
                                 min="0"
-                                className="input input-bordered"
+                                className="input"
                                 value={logData.readPages || ''}
                                 onInput={preventNegativeValues}
                                 onChange={(e) =>
@@ -1532,9 +1485,9 @@ function LogScreen() {
                                   )
                                 }
                               />
-                            </div>
+                            </Field>
                           )}
-                          <div className="form-control">
+                          <div>
                             <label className="label cursor-pointer justify-start gap-3">
                               <input
                                 type="checkbox"
@@ -1552,27 +1505,22 @@ function LogScreen() {
                                 }}
                               />
                               <div className="flex flex-col">
-                                <span className="label-text font-medium">
+                                <span className="font-medium">
                                   {t('create.unknownDate')}
                                 </span>
-                                <span className="label-text-alt text-base-content/70">
+                                <span className="text-base-content/70">
                                   {t('create.excludedFromRanking')}
                                 </span>
                               </div>
                             </label>
                           </div>
                           {!logData.unknownDate && (
-                            <div className="form-control">
-                              <label className="label flex flex-col items-start gap-1">
-                                <span className="label-text">
-                                  {t('create.date')}
-                                </span>
-                              </label>
+                            <Field label={t('create.date')}>
                               <div className="dropdown dropdown-top dropdown-end w-full">
                                 <div
                                   tabIndex={0}
                                   role="button"
-                                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                                  className="input w-full flex items-center justify-between cursor-pointer"
                                 >
                                   <span
                                     className={
@@ -1589,7 +1537,7 @@ function LogScreen() {
                                 </div>
                                 <div
                                   tabIndex={0}
-                                  className="dropdown-content z-[1000] card card-compact w-72 p-2 shadow bg-base-100 border border-base-300"
+                                  className="dropdown-content z-[1000] card card-sm w-72 p-2 surface-raised"
                                 >
                                   <DayPicker
                                     className="rdp-themed"
@@ -1628,23 +1576,18 @@ function LogScreen() {
                                   />
                                 </div>
                               </div>
-                            </div>
+                            </Field>
                           )}
-                          <div className="form-control">
-                            <label className="label flex flex-col items-start gap-1">
-                              <span className="label-text">
-                                {t('create.customDescription')}
-                              </span>
-                            </label>
+                          <Field label={t('create.customDescription')}>
                             <textarea
-                              className="textarea textarea-bordered w-full"
+                              className="textarea w-full"
                               placeholder={t('create.notesPlaceholder')}
                               onChange={(e) =>
                                 handleInputChange('description', e.target.value)
                               }
                               value={logData.description}
                             ></textarea>
-                          </div>
+                          </Field>
                         </div>
                       </div>
                     </div>
@@ -1653,10 +1596,10 @@ function LogScreen() {
 
                 {/* Right Column: Media Preview */}
                 <div className="lg:col-span-2">
-                  <div className="card bg-base-100 shadow-sm sticky top-24">
+                  <div className="card surface sticky top-24">
                     <div className="card-body">
                       <h2 className="card-title">{t('create.preview')}</h2>
-                      <div className="flex flex-col items-center justify-center min-h-[300px] bg-base-200 rounded-lg p-4">
+                      <div className="flex flex-col items-center justify-center min-h-[300px] surface-muted p-4">
                         {logData.img ? (
                           <div className="w-full text-center">
                             <img
@@ -1708,7 +1651,7 @@ function LogScreen() {
 
             {/* Tags Selection */}
             {logData.type && (
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <TagSelector
                     selectedTags={selectedTags}
@@ -1721,18 +1664,18 @@ function LogScreen() {
 
             {/* Submit Button */}
             {logData.type && (
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body items-center text-center">
                   <h2 className="card-title">{t('create.stepReady')}</h2>
                   <p>{t('create.reviewHint')}</p>
                   <div className="card-actions justify-center mt-4">
                     <button
-                      className={`btn btn-primary btn-lg w-64 ${!isFormValid ? 'btn-disabled' : ''}`}
+                      className="btn btn-primary btn-lg w-full"
                       type="submit"
                       disabled={isLogCreating || !isFormValid}
                     >
                       {isLogCreating ? (
-                        <span className="loading loading-spinner"></span>
+                        <span className="loading loading-spinner loading-md"></span>
                       ) : (
                         <CircleCheck className="w-6 h-6" />
                       )}
@@ -1764,7 +1707,7 @@ function LogScreen() {
 
         {/* ── Batch-logging progress banner ───────────────────────────── */}
         {isBatchLogging && batchProgress && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-base-100 border border-base-content/20 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-72">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] surface-raised border border-base-content/20 px-6 py-4 flex items-center gap-4 min-w-72">
             <span className="loading loading-spinner loading-sm text-primary" />
             <div className="flex-1">
               <p className="text-sm font-semibold">

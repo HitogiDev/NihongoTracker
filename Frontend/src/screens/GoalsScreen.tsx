@@ -31,7 +31,7 @@ function GoalsScreen() {
         </div>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card bg-base-100 shadow-sm">
+          <div className="card surface">
             <div className="card-body">
               <h2 className="card-title">
                 <svg
@@ -69,7 +69,7 @@ function GoalsScreen() {
             </div>
           </div>
 
-          <div className="card bg-base-100 shadow-sm">
+          <div className="card surface">
             <div className="card-body">
               <h2 className="card-title">
                 <svg

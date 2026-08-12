@@ -344,7 +344,7 @@ export default function VotingSystem({
       {/* Open Votings Section */}
       <div className="space-y-6">
         {openVotings.length === 0 ? (
-          <div className="card bg-base-100 shadow-sm border border-base-300">
+          <div className="card surface">
             <div className="card-body text-center py-12">
               <Vote className="w-16 h-16 text-base-content/20 mx-auto mb-4" />
               <h3 className="text-xl font-medium mb-2">
@@ -362,7 +362,7 @@ export default function VotingSystem({
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={prevVoting}
-                  className="btn btn-circle btn-outline"
+                  className="btn btn-outline btn-sm btn-circle"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -388,7 +388,7 @@ export default function VotingSystem({
 
                 <button
                   onClick={nextVoting}
-                  className="btn btn-circle btn-outline"
+                  className="btn btn-outline btn-sm btn-circle"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -446,8 +446,8 @@ export default function VotingSystem({
                   <Trophy className="w-5 h-5" />
                   {t('voting.recentResults')}
                 </h3>
-                <label className="form-control w-full md:w-auto">
-                  <span className="label-text text-xs uppercase tracking-wide text-base-content/60">
+                <label className="w-full md:w-auto">
+                  <span className="text-xs uppercase tracking-wide text-base-content/60">
                     {t('voting.timespan')}
                   </span>
                   <select
@@ -490,7 +490,7 @@ export default function VotingSystem({
 
         {/* Member Suggestion Section */}
         {suggestionVotings.length > 0 && (
-          <div className="card bg-base-100 shadow-sm border border-base-300">
+          <div className="card surface">
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
                 <Plus className="w-5 h-5" />
@@ -512,7 +512,7 @@ export default function VotingSystem({
 
         {/* Management Section */}
         {canManageVoting && showManagement && (
-          <div className="card bg-base-100 shadow-sm border border-base-300">
+          <div className="card surface">
             <div className="card-body">
               <h3 className="card-title flex items-center gap-2 mb-4">
                 <Settings className="w-5 h-5" />
@@ -570,7 +570,7 @@ export default function VotingSystem({
       )}
 
       {deletingVoting && (
-        <div className="modal modal-open">
+        <div className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg mb-4">
               {t('voting.deleteTitle')}
@@ -601,7 +601,7 @@ export default function VotingSystem({
             </div>
           </div>
           <div
-            className="modal-backdrop bg-black/50"
+            className="modal-backdrop"
             onClick={() => setDeletingVoting(null)}
           ></div>
         </div>
@@ -635,7 +635,7 @@ export default function VotingSystem({
             </div>
             <button
               onClick={() => handleShareVoting(voting)}
-              className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
+              className="btn btn-ghost btn-sm btn-circle"
               title={t('voting.shareThis')}
             >
               <Share2 className="w-5 h-5 block" />
@@ -715,7 +715,7 @@ export default function VotingSystem({
                       : isSelected
                         ? 'ring-2 ring-primary shadow-primary/20'
                         : canVote
-                          ? 'hover:shadow-md hover:ring-1 hover:ring-primary/50 cursor-pointer'
+                          ? 'hover:shadow-lg hover:ring-1 hover:ring-primary/50 cursor-pointer'
                           : ''
                   } ${!canVote && !userVoted ? 'opacity-60' : ''} ${!isUserMember && status.status === 'voting_open' ? 'cursor-not-allowed' : ''}`}
                   onClick={() => {
@@ -818,7 +818,7 @@ export default function VotingSystem({
       .slice(0, 3);
 
     return (
-      <div className="card bg-base-100 border border-base-300 shadow-sm">
+      <div className="card surface">
         <div className="card-body">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -840,7 +840,7 @@ export default function VotingSystem({
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => handleShareVoting(voting)}
-                className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
+                className="btn btn-ghost btn-sm btn-circle"
                 title={t('voting.shareThis')}
               >
                 <Share2 className="w-5 h-5 block" />
@@ -954,7 +954,7 @@ export default function VotingSystem({
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => handleShareVoting(voting)}
-                className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
+                className="btn btn-ghost btn-sm btn-circle"
                 title={t('voting.shareThis')}
               >
                 <Share2 className="w-5 h-5 block" />
@@ -969,7 +969,7 @@ export default function VotingSystem({
                 <img
                   src={winner.image}
                   alt={winner.title}
-                  className="w-28 h-36 object-cover rounded-lg shadow"
+                  className="w-28 h-36 object-cover rounded-lg shadow-sm"
                 />
               )}
               <div className="flex-1">
@@ -1064,7 +1064,7 @@ export default function VotingSystem({
     const status = getVotingStatus(voting);
 
     return (
-      <div className="card bg-base-100 shadow-sm border border-base-300">
+      <div className="card surface">
         <div className="card-body">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -1087,21 +1087,21 @@ export default function VotingSystem({
             <div className="flex gap-2">
               <button
                 onClick={() => handleShareVoting(voting)}
-                className="btn btn-sm btn-outline btn-ghost"
+                className="btn btn-ghost btn-outline btn-sm"
                 title={t('voting.share')}
               >
                 <Share2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onEdit(voting)}
-                className="btn btn-sm btn-outline btn-primary"
+                className="btn btn-primary btn-outline btn-sm"
                 title={t('voting.edit')}
               >
                 <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(voting)}
-                className="btn btn-sm btn-outline btn-error"
+                className="btn btn-error btn-outline btn-sm"
                 title={t('voting.delete')}
               >
                 <Trash className="w-4 h-4" />
@@ -1169,7 +1169,7 @@ export default function VotingSystem({
               <div className="flex gap-2">
                 <button
                   onClick={() => handleShareVoting(voting)}
-                  className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9 flex items-center justify-center"
+                  className="btn btn-ghost btn-sm btn-circle"
                   title={t('voting.shareThis')}
                 >
                   <Share2 className="w-5 h-5 block" />
@@ -1188,7 +1188,7 @@ export default function VotingSystem({
                   {t('suggest.title')}
                 </button>
               </div>
-              className="btn btn-ghost btn-sm btn-circle p-0 w-9 h-9"
+              className="btn btn-ghost btn-sm btn-circle"
               <span className="text-xs text-center text-base-content/60">
                 {voting.candidates.length} suggestion
                 <span className="flex items-center justify-center w-full h-full">

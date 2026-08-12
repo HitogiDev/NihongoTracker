@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { X, Search, Plus, Image } from 'lucide-react';
@@ -119,7 +120,7 @@ export default function SuggestMediaModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -139,7 +140,7 @@ export default function SuggestMediaModal({
         </div>
 
         {/* Voting Info */}
-        <div className="card bg-base-200 p-4 mb-6">
+        <div className="card surface-muted p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <span className="font-medium">{t('suggest.mediaType')}</span>{' '}
@@ -171,15 +172,10 @@ export default function SuggestMediaModal({
               </div>
 
               <form onSubmit={handleCustomSubmit} className="space-y-4">
-                <div>
-                  <label className="label">
-                    <span className="label-text">
-                      {t('common.titleRequired')}
-                    </span>
-                  </label>
+                <Field label={t('common.titleRequired')}>
                   <input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     placeholder={t('suggest.titlePlaceholder')}
                     value={customForm.title}
                     onChange={(e) =>
@@ -190,16 +186,11 @@ export default function SuggestMediaModal({
                     }
                     required
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label className="label">
-                    <span className="label-text">
-                      {t('common.description')}
-                    </span>
-                  </label>
+                <Field label={t('common.description')}>
                   <textarea
-                    className="textarea textarea-bordered w-full h-24"
+                    className="textarea w-full h-24"
                     placeholder={t('suggest.descriptionPlaceholder')}
                     value={customForm.description}
                     onChange={(e) =>
@@ -209,15 +200,12 @@ export default function SuggestMediaModal({
                       }))
                     }
                   />
-                </div>
+                </Field>
 
-                <div>
-                  <label className="label">
-                    <span className="label-text">{t('suggest.imageUrl')}</span>
-                  </label>
+                <Field label={t('suggest.imageUrl')}>
                   <input
                     type="url"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     placeholder={t('suggest.imageUrlPlaceholder')}
                     value={customForm.image}
                     onChange={(e) =>
@@ -239,7 +227,7 @@ export default function SuggestMediaModal({
                       />
                     </div>
                   )}
-                </div>
+                </Field>
 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
@@ -286,15 +274,12 @@ export default function SuggestMediaModal({
               </div>
 
               {/* Search Input */}
-              <div className="relative">
-                <label className="label">
-                  <span className="label-text">{t('suggest.searchLabel')}</span>
-                </label>
+              <Field label={t('suggest.searchLabel')} className="relative">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/40" />
                   <input
                     type="text"
-                    className="input input-bordered w-full pl-10"
+                    className="input w-full pl-10"
                     placeholder={`Search ${voting.mediaType}...`}
                     value={searchQuery}
                     onChange={(e) => {
@@ -304,7 +289,7 @@ export default function SuggestMediaModal({
                     onFocus={() => setShowResults(true)}
                   />
                 </div>
-              </div>
+              </Field>
 
               {/* Search Results */}
               {showResults && searchQuery.trim() && (
@@ -319,7 +304,7 @@ export default function SuggestMediaModal({
                       {searchResults.map((media, index) => (
                         <div
                           key={media.contentId || index}
-                          className="card bg-base-100 shadow-sm border border-base-300 cursor-pointer hover:shadow-md transition-shadow"
+                          className="card surface cursor-pointer hover:shadow-lg transition-shadow"
                           onClick={() => handleMediaSelect(media)}
                         >
                           <div className="card-body p-4">
@@ -379,7 +364,7 @@ export default function SuggestMediaModal({
           )}
         </div>
       </div>
-      <div className="modal-backdrop bg-black/50" onClick={handleClose}></div>
+      <div className="modal-backdrop" onClick={handleClose}></div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Field from './ui/Field';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -341,11 +342,11 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   };
 
   return (
-    <dialog className="modal modal-open">
+    <dialog className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box w-11/12 max-w-4xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">{t('modal.manageTitle')}</h2>
-          <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
+          <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -364,16 +365,11 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
           </div>
 
           {isCreating && (
-            <div className="card bg-base-200 shadow-sm">
+            <div className="card surface-muted">
               <div className="card-body p-4">
-                <div className="mb-4">
-                  <label className="label">
-                    <span className="label-text">
-                      {t('modal.goalDuration')}
-                    </span>
-                  </label>
+                <Field label={t('modal.goalDuration')} className="mb-4">
                   <select
-                    className="select select-bordered w-full"
+                    className="select w-full"
                     value={goalDuration}
                     onChange={(e) => {
                       setGoalDuration(e.target.value as 'daily' | 'long-term');
@@ -383,15 +379,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     <option value="daily">{t('modal.dailyGoal')}</option>
                     <option value="long-term">{t('modal.longTermGoal')}</option>
                   </select>
-                </div>
+                </Field>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="label">
-                      <span className="label-text">{t('modal.goalType')}</span>
-                    </label>
+                  <Field label={t('modal.goalType')}>
                     <select
-                      className="select select-bordered w-full"
+                      className="select w-full"
                       value={
                         goalDuration === 'daily'
                           ? newGoal.type
@@ -418,19 +411,18 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="label">
-                      <span className="label-text">
-                        {goalDuration === 'daily'
-                          ? t('modal.dailyTarget')
-                          : t('modal.totalTarget')}
-                      </span>
-                    </label>
+                  </Field>
+                  <Field
+                    label={
+                      goalDuration === 'daily'
+                        ? t('modal.dailyTarget')
+                        : t('modal.totalTarget')
+                    }
+                  >
                     <input
                       type="number"
                       min="1"
-                      className={`input input-bordered w-full ${
+                      className={`input w-full ${
                         (goalDuration === 'daily' && errors.target) ||
                         (goalDuration === 'long-term' && errors.totalTarget)
                           ? 'input-error'
@@ -460,7 +452,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     {((goalDuration === 'daily' && errors.target) ||
                       (goalDuration === 'long-term' && errors.totalTarget)) && (
                       <label className="label">
-                        <span className="label-text-alt text-error flex items-center gap-1">
+                        <span className="text-error flex items-center gap-1">
                           <Clock12 className="w-4 h-4" />
                           {goalDuration === 'daily'
                             ? errors.target
@@ -468,17 +460,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         </span>
                       </label>
                     )}
-                  </div>
+                  </Field>
 
                   {goalDuration === 'long-term' && (
-                    <div>
-                      <label className="label">
-                        <span className="label-text">
-                          {t('modal.displayProgress')}
-                        </span>
-                      </label>
+                    <Field label={t('modal.displayProgress')}>
                       <select
-                        className="select select-bordered w-full"
+                        className="select w-full"
                         value={newLongTermGoal.displayTimeframe}
                         onChange={(e) => {
                           setNewLongTermGoal({
@@ -499,21 +486,16 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                           {t('modal.monthlyProgress')}
                         </option>
                       </select>
-                    </div>
+                    </Field>
                   )}
                 </div>
 
                 {goalDuration === 'long-term' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <label className="label">
-                        <span className="label-text">
-                          {t('modal.startDate')}
-                        </span>
-                      </label>
+                    <Field label={t('modal.startDate')}>
                       <input
                         type="date"
-                        className={`input input-bordered w-full ${errors.startDate ? 'input-error' : ''}`}
+                        className={`input w-full ${errors.startDate ? 'input-error' : ''}`}
                         value={
                           typeof newLongTermGoal.startDate === 'string'
                             ? newLongTermGoal.startDate
@@ -531,22 +513,15 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       />
                       {errors.startDate && (
                         <div className="label">
-                          <span className="label-text-alt text-error">
-                            {errors.startDate}
-                          </span>
+                          <span className="text-error">{errors.startDate}</span>
                         </div>
                       )}
-                    </div>
+                    </Field>
 
-                    <div>
-                      <label className="label">
-                        <span className="label-text">
-                          {t('modal.targetDate')}
-                        </span>
-                      </label>
+                    <Field label={t('modal.targetDate')}>
                       <input
                         type="date"
-                        className={`input input-bordered w-full ${errors.targetDate ? 'input-error' : ''}`}
+                        className={`input w-full ${errors.targetDate ? 'input-error' : ''}`}
                         value={
                           typeof newLongTermGoal.targetDate === 'string'
                             ? newLongTermGoal.targetDate
@@ -564,12 +539,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       />
                       {errors.targetDate && (
                         <div className="label">
-                          <span className="label-text-alt text-error">
+                          <span className="text-error">
                             {errors.targetDate}
                           </span>
                         </div>
                       )}
-                    </div>
+                    </Field>
                   </div>
                 )}
 
@@ -640,7 +615,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                           <div>
                             <select
-                              className="select select-bordered select-sm w-full"
+                              className="select select-sm w-full"
                               value={editGoal.type || goal.type}
                               onChange={(e) => {
                                 setEditGoal({
@@ -663,7 +638,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                             <input
                               type="number"
                               min="1"
-                              className={`input input-bordered input-sm w-full ${
+                              className={`input input-sm w-full ${
                                 errors.target ? 'input-error' : ''
                               }`}
                               value={editGoal.target || goal.target}
@@ -682,7 +657,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                               </div>
                             )}
                           </div>
-                          <div className="form-control">
+                          <div>
                             <label className="label cursor-pointer justify-start gap-2">
                               <input
                                 type="checkbox"
@@ -695,9 +670,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                   })
                                 }
                               />
-                              <span className="label-text">
-                                {t('modal.active')}
-                              </span>
+                              <span>{t('modal.active')}</span>
                             </label>
                           </div>
                           <div className="flex gap-2">
@@ -772,7 +745,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       </form>
 
       {dailyGoalToDelete && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-md">
             <h3 className="font-bold text-lg mb-2">
               {t('modal.deleteDailyTitle')}

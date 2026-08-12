@@ -74,7 +74,7 @@ function MediaListComments({
           }}
         >
           <textarea
-            className="textarea textarea-bordered w-full"
+            className="textarea w-full"
             placeholder={t('comments.placeholder')}
             maxLength={COMMENT_MAX_LENGTH}
             value={content}
@@ -102,7 +102,7 @@ function MediaListComments({
 
       {isLoading ? (
         <div className="flex justify-center py-6">
-          <span className="loading loading-spinner" />
+          <span className="loading loading-spinner loading-md" />
         </div>
       ) : comments.length === 0 ? (
         <p className="text-sm text-base-content/60">{t('comments.empty')}</p>

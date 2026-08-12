@@ -44,7 +44,7 @@ function DismissLogsButton({
   return (
     <>
       {showConfirmModal && (
-        <dialog open className="modal modal-open">
+        <dialog open className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg">{t('dismiss.title')}</h3>
             <div className="py-4">
@@ -69,7 +69,7 @@ function DismissLogsButton({
               >
                 {isDismissing ? (
                   <>
-                    <span className="loading loading-spinner"></span>
+                    <span className="loading loading-spinner loading-md"></span>
                     {t('dismiss.dismissing')}
                   </>
                 ) : (
@@ -91,7 +91,7 @@ function DismissLogsButton({
       <button
         onClick={() => setShowConfirmModal(true)}
         disabled={isDismissing || selectedLogs.length === 0}
-        className={`btn btn-outline btn-warning ${className}`}
+        className={`btn btn-warning btn-outline ${className}`}
         title={t('dismiss.hint')}
       >
         <EyeOff className="h-5 w-5" />

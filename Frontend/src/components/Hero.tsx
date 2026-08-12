@@ -53,7 +53,7 @@ function ScreenshotWindow({
   const activeSrc = isDark ? src : src.replace('-v2.png', '-light-v2.png');
   return (
     <div
-      className="rounded-2xl overflow-hidden shadow-xl border border-base-300 hover:shadow-2xl transition-shadow duration-500 cursor-zoom-in"
+      className="rounded-2xl overflow-hidden shadow-lg border border-base-300 hover:shadow-lg transition-shadow duration-500 cursor-zoom-in"
       onClick={() => onOpen(activeSrc)}
     >
       <div className="bg-base-300 px-3 py-2.5 flex items-center gap-2">
@@ -174,7 +174,7 @@ function Hero() {
           onClick={closeLightbox}
         >
           <button
-            className="absolute top-4 right-4 btn btn-circle btn-sm btn-ghost text-white/80 hover:text-white"
+            className="absolute top-4 right-4 btn btn-ghost btn-sm btn-circle text-white/80 hover:text-white"
             onClick={closeLightbox}
             aria-label={t('common.close')}
           >
@@ -183,7 +183,7 @@ function Hero() {
           <img
             src={lightboxSrc}
             alt={t('hero.alt.screenshot')}
-            className="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            className="max-w-full max-h-[90vh] rounded-xl shadow-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -211,7 +211,7 @@ function Hero() {
         }
       `}</style>
 
-      <div ref={containerRef} className="pt-16 bg-base-100">
+      <div ref={containerRef} className="pt-20 bg-base-100">
         {/* ─── Hero ─── */}
         <section className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-20 overflow-hidden">
           {/* Subtle bg blobs */}
@@ -258,9 +258,9 @@ function Hero() {
               className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-5"
             >
               <Link to="/register">
-                <button className="btn btn-primary btn-lg gap-2 px-10">
+                <button className="btn btn-primary btn-lg gap-2 px-8">
                   {t('hero.startTracking')}
-                  <ArrowRight size={18} />
+                  <ArrowRight className="w-5 h-5" />
                 </button>
               </Link>
               <Link to="/features">
@@ -280,7 +280,7 @@ function Hero() {
             ref={heroImgRef}
             className="relative z-10 w-full max-w-5xl mx-auto px-4"
           >
-            <div className="rounded-2xl overflow-hidden shadow-2xl border border-base-300">
+            <div className="rounded-2xl overflow-hidden shadow-lg border border-base-300">
               <div className="bg-base-300 px-4 py-2.5 flex items-center gap-2">
                 <div className="flex gap-1.5 shrink-0">
                   <div className="w-3 h-3 rounded-full bg-error/60" />
@@ -332,7 +332,7 @@ function Hero() {
                   key={key}
                   className="flex items-center gap-2 bg-base-100 rounded-full px-4 py-2 border border-base-300 text-sm font-medium text-base-content/75"
                 >
-                  <Icon size={14} className="text-primary" />
+                  <Icon className="w-3.5 h-3.5 text-primary" />
                   {t(`hero.chips.${key}` as ParseKeys<'home'>)}
                 </span>
               ))}
@@ -355,15 +355,15 @@ function Hero() {
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.logBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.logBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.logBullet3')}
                 </li>
               </ul>
@@ -408,15 +408,15 @@ function Hero() {
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.statsBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.statsBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.statsBullet3')}
                 </li>
               </ul>
@@ -443,15 +443,15 @@ function Hero() {
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.rankBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.rankBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.rankBullet3')}
                 </li>
               </ul>
@@ -496,15 +496,15 @@ function Hero() {
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.hookerBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.hookerBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.hookerBullet3')}
                 </li>
               </ul>
@@ -531,15 +531,15 @@ function Hero() {
               </p>
               <ul className="space-y-3 text-base-content/70">
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.clubBullet1')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.clubBullet2')}
                 </li>
                 <li className="flex items-center gap-3">
-                  <Check size={16} className="text-success shrink-0" />
+                  <Check className="w-4 h-4 text-success shrink-0" />
                   {t('hero.clubBullet3')}
                 </li>
               </ul>
@@ -567,12 +567,12 @@ function Hero() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/register">
-                <button className="btn btn-primary btn-lg px-12">
+                <button className="btn btn-primary btn-lg px-8">
                   {t('cta.joinNow')}
                 </button>
               </Link>
               <Link to="/features">
-                <button className="btn btn-ghost btn-lg">
+                <button className="btn btn-ghost btn-lg px-8">
                   {t('cta.seeFeatures')}
                 </button>
               </Link>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IPlaylistVideo, IPlaylistResult } from '../api/trackerApi';
+import Field from './ui/Field';
 import {
   Pencil,
   Check,
@@ -101,47 +102,32 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
   return (
     <div className="bg-base-300 rounded-lg p-3 mt-2 space-y-3 border border-base-content/10">
       {/* Description */}
-      <div className="form-control">
-        <label className="label py-0">
-          <span className="label-text text-xs font-medium">
-            {t('playlist.description')}
-          </span>
-        </label>
+      <Field label={t('playlist.description')}>
         <input
           type="text"
-          className="input input-sm input-bordered w-full"
+          className="input input-sm w-full"
           value={local.description}
           onChange={(e) =>
             setLocal((p) => ({ ...p, description: e.target.value }))
           }
         />
-      </div>
+      </Field>
 
       {/* Duration */}
-      <div className="form-control">
-        <label className="label py-0">
-          <span className="label-text text-xs font-medium">
-            {t('playlist.durationMinutes')}
-          </span>
-        </label>
+      <Field label={t('playlist.durationMinutes')}>
         <input
           type="number"
           min="0"
-          className="input input-sm input-bordered w-28"
+          className="input input-sm w-28"
           value={local.durationMinutes || ''}
           onChange={(e) =>
             setLocal((p) => ({ ...p, durationMinutes: Number(e.target.value) }))
           }
         />
-      </div>
+      </Field>
 
       {/* Date */}
-      <div className="form-control">
-        <label className="label py-0">
-          <span className="label-text text-xs font-medium">
-            {t('playlist.date')}
-          </span>
-        </label>
+      <Field label={t('playlist.date')}>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-1 cursor-pointer">
             <input
@@ -158,7 +144,7 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
             <button
               ref={calendarButtonRef}
               type="button"
-              className="btn btn-xs btn-outline gap-1"
+              className="btn btn-outline btn-xs gap-1"
               onClick={() => setShowCal((v) => !v)}
             >
               <Calendar className="w-3 h-3" />
@@ -167,10 +153,7 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
           )}
         </div>
         {showCal && !local.unknownDate && (
-          <div
-            ref={calendarRef}
-            className="mt-1 rounded-xl border border-base-content/10 bg-base-100 p-2 shadow-xl z-50 inline-block"
-          >
+          <div ref={calendarRef} className="mt-1 surface p-2 z-50 inline-block">
             <DayPicker
               className="rdp-themed"
               components={{ Chevron: DayPickerChevron }}
@@ -185,18 +168,18 @@ function VideoEditor({ override, onChange, onClose }: VideoEditorProps) {
             />
           </div>
         )}
-      </div>
+      </Field>
 
       {/* Save / cancel */}
       <div className="flex gap-2 justify-end">
         <button
           type="button"
-          className="btn btn-xs btn-ghost"
+          className="btn btn-ghost btn-xs"
           onClick={onClose}
         >
           {t('playlist.cancel')}
         </button>
-        <button type="button" className="btn btn-xs btn-primary" onClick={save}>
+        <button type="button" className="btn btn-primary btn-xs" onClick={save}>
           <Check className="w-3 h-3" /> {t('playlist.save')}
         </button>
       </div>
@@ -326,7 +309,7 @@ export default function PlaylistSelectorModal({
 
   return (
     <dialog
-      className="modal modal-open"
+      className="modal modal-bottom sm:modal-middle modal-open"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="modal-box w-11/12 max-w-3xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
@@ -349,7 +332,7 @@ export default function PlaylistSelectorModal({
             )}
           </div>
           <button
-            className="btn btn-sm btn-circle btn-ghost flex-shrink-0"
+            className="btn btn-ghost btn-sm btn-circle flex-shrink-0"
             onClick={onClose}
           >
             <X className="w-4 h-4" />
@@ -407,7 +390,7 @@ export default function PlaylistSelectorModal({
                 <button
                   ref={globalCalendarButtonRef}
                   type="button"
-                  className="btn btn-sm btn-outline gap-1"
+                  className="btn btn-outline btn-sm gap-1"
                   onClick={() => setShowGlobalCal((v) => !v)}
                 >
                   <Calendar className="w-3.5 h-3.5" />
@@ -416,7 +399,7 @@ export default function PlaylistSelectorModal({
                 {showGlobalCal && (
                   <div
                     ref={globalCalendarRef}
-                    className="absolute top-full right-0 mt-1 rounded-xl border border-base-content/10 bg-base-100 p-2 shadow-xl z-50"
+                    className="absolute top-full right-0 mt-1 surface-raised p-2 z-50"
                   >
                     <DayPicker
                       className="rdp-themed"
@@ -496,7 +479,7 @@ export default function PlaylistSelectorModal({
                       {/* Edit button */}
                       <button
                         type="button"
-                        className={`btn btn-sm btn-ghost btn-circle flex-shrink-0 mt-0.5 ${
+                        className={`btn btn-ghost btn-sm btn-circle flex-shrink-0 mt-0.5 ${
                           isEditing ? 'btn-active' : ''
                         }`}
                         title={t('playlist.editEntry')}

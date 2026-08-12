@@ -208,7 +208,7 @@ function ProfileModerationScreen() {
   return (
     <div className="flex flex-col items-center py-8 px-4">
       <div className="w-full max-w-3xl space-y-5">
-        <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div className="card surface">
           <div className="card-body">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -227,7 +227,7 @@ function ProfileModerationScreen() {
               </div>
               <button
                 type="button"
-                className="btn btn-sm btn-ghost"
+                className="btn btn-ghost btn-sm"
                 onClick={() => void refetch()}
                 disabled={isFetching || isLoading}
               >
@@ -240,7 +240,7 @@ function ProfileModerationScreen() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div className="card surface">
           <div className="card-body gap-5">
             <div className="rounded-lg border border-base-300 px-4 py-3 bg-base-200/40">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -259,7 +259,7 @@ function ProfileModerationScreen() {
                 </div>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline"
+                  className="btn btn-outline btn-sm"
                   onClick={() => recalculateStreak()}
                   disabled={isRecalculatingStreak || isLoading}
                 >
@@ -323,7 +323,7 @@ function ProfileModerationScreen() {
                 </span>
               </div>
               <textarea
-                className="textarea textarea-bordered w-full min-h-28"
+                className="textarea w-full min-h-28"
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
                 placeholder={t('moderation.banReasonPlaceholder')}
@@ -349,7 +349,7 @@ function ProfileModerationScreen() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-sm border border-base-300">
+        <div className="card surface">
           <div className="card-body">
             <h3 className="font-semibold flex items-center gap-2">
               <Clock3 className="w-4 h-4 text-base-content/70" />

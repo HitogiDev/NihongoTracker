@@ -315,7 +315,7 @@ function MediaReviews() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-4 items-start">
-        <aside className="card bg-base-100 shadow-sm lg:sticky lg:top-24">
+        <aside className="card surface lg:sticky lg:top-24">
           <div className="card-body p-4 gap-4">
             <h3 className="font-semibold text-base flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4" />
@@ -343,7 +343,7 @@ function MediaReviews() {
                   </p>
                   <div className="join w-full">
                     <button
-                      className={`join-item btn btn-xs flex-1 ${
+                      className={`join-item btn btn-sm flex-1 ${
                         ratingPresenceFilter === 'all'
                           ? 'btn-primary'
                           : 'btn-outline'
@@ -353,7 +353,7 @@ function MediaReviews() {
                       {t('reviews.all')}
                     </button>
                     <button
-                      className={`join-item btn btn-xs flex-1 ${
+                      className={`join-item btn btn-sm flex-1 ${
                         ratingPresenceFilter === 'rated'
                           ? 'btn-primary'
                           : 'btn-outline'
@@ -363,7 +363,7 @@ function MediaReviews() {
                       {t('reviews.rated')}
                     </button>
                     <button
-                      className={`join-item btn btn-xs flex-1 ${
+                      className={`join-item btn btn-sm flex-1 ${
                         ratingPresenceFilter === 'unrated'
                           ? 'btn-primary'
                           : 'btn-outline'
@@ -390,7 +390,7 @@ function MediaReviews() {
                     </div>
                     <ul
                       tabIndex={0}
-                      className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full"
+                      className="dropdown-content z-50 menu p-2 surface-raised w-full"
                     >
                       {REVIEW_SORT_OPTIONS.map((option) => (
                         <li key={option.value}>
@@ -434,7 +434,7 @@ function MediaReviews() {
                       step="0.1"
                       placeholder={t('reviews.minPlaceholder')}
                       aria-label={t('reviews.a11y.minScore')}
-                      className="input input-sm input-bordered rounded-box w-24 text-center"
+                      className="input input-sm rounded-box w-24 text-center"
                       value={minScoreInput}
                       disabled={ratingPresenceFilter === 'unrated'}
                       onChange={(e) => setMinScoreInput(e.target.value)}
@@ -451,7 +451,7 @@ function MediaReviews() {
                       step="0.1"
                       placeholder={t('reviews.maxPlaceholder')}
                       aria-label={t('reviews.a11y.maxScore')}
-                      className="input input-sm input-bordered rounded-box w-24 text-center"
+                      className="input input-sm rounded-box w-24 text-center"
                       value={maxScoreInput}
                       disabled={ratingPresenceFilter === 'unrated'}
                       onChange={(e) => setMaxScoreInput(e.target.value)}
@@ -479,7 +479,7 @@ function MediaReviews() {
           </div>
         </aside>
 
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <div className="flex items-start justify-between gap-3 mb-2">
               <div>
@@ -572,7 +572,7 @@ function MediaReviews() {
       )}
 
       {deletingReviewId && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-sm">
             <h3 className="font-bold text-lg">{t('reviews.deleteTitle')}</h3>
             <p className="py-4 text-base-content/70">

@@ -188,7 +188,7 @@ function NotificationsScreen() {
 
         <Link
           to={link}
-          className={`card w-full bg-base-100 border shadow-sm hover:shadow-md group-hover:border-primary/30 transition-[padding] duration-300 ease-out border-l-4 pr-12 group-hover:pl-12 rounded-lg ${
+          className={`card w-full bg-base-100 border shadow-sm hover:shadow-lg group-hover:border-primary/30 transition-[padding] duration-300 ease-out border-l-4 pr-12 group-hover:pl-12 rounded-lg ${
             isUnread ? 'border-l-primary' : 'border-l-base-300 opacity-80'
           }`}
         >
@@ -278,7 +278,7 @@ function NotificationsScreen() {
   }
 
   return (
-    <div className="min-h-screen pt-16 bg-base-200">
+    <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -294,16 +294,16 @@ function NotificationsScreen() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-72 flex-shrink-0 space-y-4">
-            <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card surface">
               <div className="card-body p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-base-200 p-3">
+                  <div className="surface-muted p-3">
                     <div className="text-xs uppercase tracking-wider text-base-content/50">
                       {t('summary.total')}
                     </div>
                     <div className="text-2xl font-semibold">{totalCount}</div>
                   </div>
-                  <div className="rounded-lg bg-base-200 p-3">
+                  <div className="surface-muted p-3">
                     <div className="text-xs uppercase tracking-wider text-base-content/50">
                       {t('summary.unread')}
                     </div>
@@ -359,7 +359,7 @@ function NotificationsScreen() {
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={`notification-skeleton-${index}`}
-                    className="card bg-base-100 border border-base-300 shadow-sm"
+                    className="card surface"
                   >
                     <div className="card-body py-4 flex items-center gap-4">
                       <div className="skeleton w-11 h-11 rounded-lg shrink-0" />
@@ -373,7 +373,7 @@ function NotificationsScreen() {
                 ))}
               </div>
             ) : isError ? (
-              <div className="card bg-base-100 border border-base-300 shadow-sm">
+              <div className="card surface">
                 <div className="card-body items-center text-center py-12">
                   <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mb-3">
                     <Bell className="w-8 h-8 text-error" />
@@ -387,7 +387,7 @@ function NotificationsScreen() {
                 </div>
               </div>
             ) : notificationItems.length === 0 ? (
-              <div className="card bg-base-100 border border-base-300 shadow-sm">
+              <div className="card surface">
                 <div className="card-body items-center text-center py-16">
                   <div className="w-20 h-20 rounded-full bg-base-200 flex items-center justify-center mb-4">
                     <Inbox className="w-10 h-10 text-base-content/40" />
@@ -424,8 +424,10 @@ function NotificationsScreen() {
         </div>
       </div>
 
-      <dialog className={`modal ${deleteConfirmOpen ? 'modal-open' : ''}`}>
-        <div className="modal-box max-w-sm border border-base-300 bg-base-100 text-base-content shadow-2xl">
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${deleteConfirmOpen ? 'modal-open' : ''}`}
+      >
+        <div className="modal-box max-w-sm border border-base-300 bg-base-100 text-base-content shadow-lg">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-11 h-11 rounded-full bg-error/10 flex items-center justify-center">
               <Trash2 className="w-5 h-5 text-error" />
@@ -453,7 +455,7 @@ function NotificationsScreen() {
                 setDeleteConfirmDontShowAgain(event.target.checked)
               }
             />
-            <span className="label-text flex items-center gap-2 text-base-content/90">
+            <span className="flex items-center gap-2 text-base-content/90">
               {t('deleteConfirm.dontShowAgain')}
             </span>
           </label>

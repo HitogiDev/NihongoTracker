@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { Info, Lock } from 'lucide-react';
-import { getCustomizationFn, updateCustomizationFn } from '../../api/trackerApi';
+import {
+  getCustomizationFn,
+  updateCustomizationFn,
+} from '../../api/trackerApi';
 import { useUserDataStore } from '../../store/userData';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { getAchievementName } from '../../utils/achievementText';
@@ -155,7 +158,7 @@ export default function CustomizationSettings() {
         title={locked ? lockLabel(option) : undefined}
         className={`btn h-auto min-h-16 flex-col gap-1 py-2 normal-case ${
           selected ? 'btn-primary' : 'btn-outline'
-        } ${locked ? 'btn-disabled opacity-60' : ''}`}
+        }`}
       >
         {preview}
         <span className="flex items-center gap-1 text-xs font-medium">
@@ -194,7 +197,7 @@ export default function CustomizationSettings() {
       )}
 
       {/* Live preview */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.previewTitle')}
@@ -203,9 +206,12 @@ export default function CustomizationSettings() {
             {t('customization.previewSubtitle')}
           </p>
 
-          <div className="relative mt-3 h-40 w-full overflow-hidden rounded-lg bg-linear-to-br from-primary/40 to-secondary/40 bg-cover bg-center"
+          <div
+            className="relative mt-3 h-40 w-full overflow-hidden rounded-lg bg-linear-to-br from-primary/40 to-secondary/40 bg-cover bg-center"
             style={
-              user?.banner ? { backgroundImage: `url(${user.banner})` } : undefined
+              user?.banner
+                ? { backgroundImage: `url(${user.banner})` }
+                : undefined
             }
           >
             <BannerEffectOverlay
@@ -264,9 +270,11 @@ export default function CustomizationSettings() {
       </div>
 
       {/* Name effect */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
-          <h2 className="card-title text-lg">{t('customization.nameEffect')}</h2>
+          <h2 className="card-title text-lg">
+            {t('customization.nameEffect')}
+          </h2>
           <p className="text-sm text-base-content/60">
             {t('customization.nameEffectHint')}
           </p>
@@ -276,20 +284,21 @@ export default function CustomizationSettings() {
                 option,
                 t(`customization.nameEffects.${option.value}`),
                 (draft.nameEffect ?? 'none') === option.value,
-                () => setDraft((prev) => ({ ...prev, nameEffect: option.value }))
+                () =>
+                  setDraft((prev) => ({ ...prev, nameEffect: option.value }))
               )
             )}
           </div>
 
           {(draft.nameEffect ?? 'none') !== 'none' && (
             <div className="mt-4 flex flex-wrap items-end gap-4">
-              <label className="form-control">
-                <span className="label-text mb-1 block text-xs">
+              <label>
+                <span className="mb-1 block text-xs">
                   {t('customization.color1')}
                 </span>
                 <input
                   type="color"
-                  className="h-10 w-20 cursor-pointer rounded border border-base-300 bg-base-100 disabled:cursor-not-allowed"
+                  className="h-10 w-20 cursor-pointer surface disabled:cursor-not-allowed"
                   disabled={!options.customNameColors.unlocked}
                   value={draft.nameColor1 || DEFAULT_COLOR_1}
                   onChange={(event) =>
@@ -300,13 +309,13 @@ export default function CustomizationSettings() {
                   }
                 />
               </label>
-              <label className="form-control">
-                <span className="label-text mb-1 block text-xs">
+              <label>
+                <span className="mb-1 block text-xs">
                   {t('customization.color2')}
                 </span>
                 <input
                   type="color"
-                  className="h-10 w-20 cursor-pointer rounded border border-base-300 bg-base-100 disabled:cursor-not-allowed"
+                  className="h-10 w-20 cursor-pointer surface disabled:cursor-not-allowed"
                   disabled={!options.customNameColors.unlocked}
                   value={draft.nameColor2 || DEFAULT_COLOR_2}
                   onChange={(event) =>
@@ -342,7 +351,7 @@ export default function CustomizationSettings() {
       </div>
 
       {/* Avatar frame */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.avatarFrame')}
@@ -374,7 +383,7 @@ export default function CustomizationSettings() {
       </div>
 
       {/* Equipped title */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">{t('customization.title')}</h2>
           <p className="text-sm text-base-content/60">
@@ -386,7 +395,7 @@ export default function CustomizationSettings() {
             </p>
           ) : (
             <select
-              className="select select-bordered mt-3 w-full max-w-md"
+              className="select mt-3 w-full max-w-md"
               value={draft.equippedTitle ?? ''}
               onChange={(event) =>
                 setDraft((prev) => ({
@@ -407,7 +416,7 @@ export default function CustomizationSettings() {
       </div>
 
       {/* Signature stat */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.signatureStat')}
@@ -430,7 +439,7 @@ export default function CustomizationSettings() {
       </div>
 
       {/* Profile accent */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.profileAccent')}
@@ -481,13 +490,13 @@ export default function CustomizationSettings() {
 
           {draft.profileAccent === 'custom' && (
             <div className="mt-4 flex flex-wrap items-end gap-4">
-              <label className="form-control">
-                <span className="label-text mb-1 block text-xs">
+              <label>
+                <span className="mb-1 block text-xs">
                   {t('customization.accentColor')}
                 </span>
                 <input
                   type="color"
-                  className="h-10 w-20 cursor-pointer rounded border border-base-300 bg-base-100"
+                  className="h-10 w-20 cursor-pointer surface"
                   value={draft.accentColor || DEFAULT_ACCENT_COLOR}
                   onChange={(event) =>
                     setDraft((prev) => ({
@@ -549,7 +558,7 @@ export default function CustomizationSettings() {
       </div>
 
       {/* Banner effect */}
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body p-4 sm:p-6">
           <h2 className="card-title text-lg">
             {t('customization.bannerEffect')}

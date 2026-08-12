@@ -92,7 +92,7 @@ function ClubRanking({ username }: ClubRankingProps) {
 
   if (clubsError || rankingsError) {
     return (
-      <div className="card card-border bg-base-100 shadow-sm">
+      <div className="card card-border surface">
         <div className="card-body">
           <h3 className="card-title text-lg flex items-center gap-2">
             <BarChart className="text-primary w-4 h-4" />
@@ -107,7 +107,7 @@ function ClubRanking({ username }: ClubRankingProps) {
   }
 
   return (
-    <div className="card card-border bg-base-100 shadow-md">
+    <div className="card card-border surface">
       <div className="card-body gap-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -127,7 +127,7 @@ function ClubRanking({ username }: ClubRankingProps) {
               <div
                 tabIndex={0}
                 role="button"
-                className="btn btn-sm btn-outline max-w-[15rem]"
+                className="btn btn-outline btn-sm max-w-[15rem]"
               >
                 <span className="truncate">
                   {selectedClub?.name || 'Select Club'}
@@ -136,7 +136,7 @@ function ClubRanking({ username }: ClubRankingProps) {
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-56 p-2 shadow-xl border border-base-300"
+                className="dropdown-content menu surface-raised z-[1] w-56 p-2"
               >
                 {userClubs.map((club) => (
                   <li key={club._id}>
@@ -204,7 +204,7 @@ function ClubRanking({ username }: ClubRankingProps) {
             )}
 
             {userRanking ? (
-              <div className="rounded-box border border-base-300 p-4 sm:p-5 bg-base-100">
+              <div className="p-4 sm:p-5 surface">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div
@@ -246,7 +246,7 @@ function ClubRanking({ username }: ClubRankingProps) {
             <div className="flex justify-end">
               <Link
                 to={`/clubs/${selectedClub?._id}?tab=rankings`}
-                className="btn btn-sm btn-primary btn-outline"
+                className="btn btn-primary btn-outline btn-sm"
               >
                 {t('ranking.viewAll')}
               </Link>

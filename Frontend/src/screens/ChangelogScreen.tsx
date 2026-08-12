@@ -126,7 +126,7 @@ export default function ChangelogScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 py-12 pt-24">
+    <div className="min-h-screen bg-base-200 py-12 pt-28">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">{t('changelog.title')}</h1>
@@ -140,7 +140,7 @@ export default function ChangelogScreen() {
         ) : changelogs && changelogs.length > 0 ? (
           <div className="space-y-8">
             {changelogs.map((changelog) => (
-              <div key={changelog._id} className="card bg-base-100 shadow-lg">
+              <div key={changelog._id} className="card surface">
                 <div className="card-body">
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <span className="badge badge-neutral badge-lg">
@@ -186,7 +186,7 @@ export default function ChangelogScreen() {
             ))}
           </div>
         ) : (
-          <div className="card bg-base-100 shadow-lg">
+          <div className="card surface">
             <div className="card-body text-center py-12">
               <svg
                 className="w-16 h-16 mx-auto text-base-content/30 mb-4"

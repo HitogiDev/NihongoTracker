@@ -223,7 +223,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
   if (isLoading || isLoadingLongTerm) {
     return (
-      <div className="card bg-base-100 shadow-sm">
+      <div className="card surface">
         <div className="card-body">
           <div className="flex justify-center">
             <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -240,7 +240,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   if (!hasAnyActiveGoals && canManageGoals) {
     return (
       <>
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body text-center py-10">
             <h3 className="text-xl font-bold text-base-content">
               {t('widget.emptyTitle')}
@@ -273,7 +273,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   return (
     <>
       {activeGoals.length > 0 && (
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <div className="flex justify-between items-center mb-6">
               <h2 className="card-title text-2xl">{t('widget.title')}</h2>
@@ -443,7 +443,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               return (
                 <div
                   key={goal._id}
-                  className={`card bg-base-100 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md ${
+                  className={`card bg-base-100 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-lg ${
                     isCompleted ? 'border-2 border-success/30' : ''
                   }`}
                 >
@@ -520,7 +520,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                           </div>
                           <ul
                             tabIndex={0}
-                            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-36 p-1 shadow-lg"
+                            className="dropdown-content menu surface-raised z-[1] w-36 p-1"
                           >
                             <li>
                               <button
@@ -738,7 +738,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
 
       {/* Edit Long-term Goal Modal */}
       {isEditModalOpen && editingGoal && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-md">
             <div className="flex items-center gap-3 mb-6">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/15">
@@ -792,7 +792,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 </legend>
                 <select
                   name="type"
-                  className="select select-bordered w-full"
+                  className="select w-full"
                   defaultValue={editingGoal.type}
                   disabled
                 >
@@ -810,7 +810,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 <input
                   type="number"
                   name="totalTarget"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   defaultValue={editingGoal.totalTarget}
                   required
                   min="1"
@@ -825,7 +825,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   <input
                     type="date"
                     name="targetDate"
-                    className="input input-bordered w-full"
+                    className="input w-full"
                     defaultValue={
                       new Date(editingGoal.targetDate)
                         .toISOString()
@@ -841,7 +841,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   </legend>
                   <select
                     name="displayTimeframe"
-                    className="select select-bordered w-full"
+                    className="select w-full"
                     defaultValue={editingGoal.displayTimeframe}
                   >
                     <option value="daily">{t('timeframes.daily')}</option>
@@ -851,7 +851,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 </fieldset>
               </div>
 
-              <div className="form-control">
+              <div>
                 <label className="label cursor-pointer justify-start gap-3">
                   <input
                     type="checkbox"
@@ -859,7 +859,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     className="toggle toggle-primary toggle-sm"
                     defaultChecked={editingGoal.isActive}
                   />
-                  <span className="label-text">{t('widget.activeGoal')}</span>
+                  <span>{t('widget.activeGoal')}</span>
                 </label>
               </div>
 
@@ -905,7 +905,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
       )}
 
       {goalToDelete && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-md">
             <h3 className="font-bold text-lg mb-2">{t('modal.deleteTitle')}</h3>
             <p className="text-base-content/70 mb-4">

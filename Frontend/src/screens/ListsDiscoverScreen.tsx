@@ -78,7 +78,7 @@ function ListsDiscoverScreen() {
   const lists = data?.lists ?? [];
 
   return (
-    <div className="min-h-screen bg-base-200 pt-24 pb-16 px-4">
+    <div className="min-h-screen bg-base-200 pt-28 pb-16 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>
@@ -108,18 +108,18 @@ function ListsDiscoverScreen() {
             }}
           >
             <input
-              className="input input-bordered join-item flex-1"
+              className="input join-item flex-1"
               placeholder={t('lists.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <button type="submit" className="btn join-item">
+            <button type="submit" className="join-item btn btn-sm">
               <Search className="w-4 h-4" />
             </button>
           </form>
 
           <select
-            className="select select-bordered"
+            className="select"
             value={sort}
             onChange={(e) => {
               setPage(1);
@@ -132,7 +132,7 @@ function ListsDiscoverScreen() {
           </select>
 
           <select
-            className="select select-bordered"
+            className="select"
             value={mediaType}
             onChange={(e) => {
               setPage(1);
@@ -167,18 +167,18 @@ function ListsDiscoverScreen() {
           <div className="join flex justify-center mt-8">
             <button
               type="button"
-              className="btn join-item"
+              className="join-item btn btn-sm"
               disabled={page === 1}
               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             >
               {t('lists.pagination.previous')}
             </button>
-            <button type="button" className="btn join-item no-animation">
+            <button type="button" className="join-item btn btn-sm no-animation">
               {t('lists.pagination.page', { page })}
             </button>
             <button
               type="button"
-              className="btn join-item"
+              className="join-item btn btn-sm"
               disabled={!data?.hasMore}
               onClick={() => setPage((prev) => prev + 1)}
             >

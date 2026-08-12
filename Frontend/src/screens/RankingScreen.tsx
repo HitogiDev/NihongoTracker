@@ -730,7 +730,7 @@ function RankingScreen() {
   };
 
   return (
-    <div className="min-h-screen pt-16 bg-base-200">
+    <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -745,13 +745,13 @@ function RankingScreen() {
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
           <div className="join w-full sm:w-auto">
             <button
-              className={`btn join-item flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
+              className={`join-item btn btn-sm flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('global')}
             >
               {t('modes.global')}
             </button>
             <button
-              className={`btn join-item flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
+              className={`join-item btn btn-sm flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setMode('medium')}
             >
               {t('modes.medium')}
@@ -785,7 +785,7 @@ function RankingScreen() {
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-72 border border-base-300"
+                className="dropdown-content menu p-2 surface-raised w-72"
               >
                 {timeFilterOptions.map((option) => (
                   <li key={option.value}>
@@ -837,7 +837,7 @@ function RankingScreen() {
                         </div>
                         <div
                           tabIndex={0}
-                          className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                          className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                         >
                           <DayPicker
                             className="react-day-picker mx-auto"
@@ -865,8 +865,13 @@ function RankingScreen() {
 
                       <div className="dropdown dropdown-bottom">
                         <div
-                          tabIndex={0}
+                          // Not a <button>, so `btn-disabled` is the right class
+                          // here — but on its own it only blocks pointer events,
+                          // so the tab stop and the ARIA state go with it.
+                          tabIndex={customStartDate ? 0 : -1}
                           role="button"
+                          aria-disabled={!customStartDate}
+                          // eslint-disable-next-line no-restricted-syntax -- not a <button>: the tabIndex and aria-disabled above carry the semantics.
                           className={`btn btn-outline btn-sm w-full ${!customStartDate ? 'btn-disabled' : ''}`}
                           ref={endBtnRef}
                         >
@@ -891,7 +896,7 @@ function RankingScreen() {
                         {customStartDate && (
                           <div
                             tabIndex={0}
-                            className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                            className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                           >
                             <DayPicker
                               className="react-day-picker mx-auto"
@@ -913,7 +918,7 @@ function RankingScreen() {
                     </div>
                     <div className="flex gap-2 mt-2">
                       <button
-                        className="btn btn-sm btn-primary"
+                        className="btn btn-primary btn-sm"
                         onClick={() => {
                           setStartDate(formatDateOnly(customStartDate));
                           setEndDate(formatDateOnly(customEndDate));
@@ -968,7 +973,7 @@ function RankingScreen() {
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
+                className="dropdown-content menu p-2 surface-raised w-52"
               >
                 <li className="menu-title px-2">{t('scopeLabel')}</li>
                 {scopeOptions.map((option) => (
@@ -1022,14 +1027,14 @@ function RankingScreen() {
             <div
               tabIndex={0}
               role="button"
-              className="btn btn-circle"
+              className="btn btn-outline btn-circle"
               aria-label={t('defaults.menu')}
             >
               <MoreHorizontal className="w-4 h-4" />
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-56 border border-base-300"
+              className="dropdown-content menu p-2 surface-raised w-56"
             >
               <li>
                 <button
@@ -1077,7 +1082,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
+              className="dropdown-content menu p-2 surface-raised w-52"
             >
               {(
                 [
@@ -1137,7 +1142,7 @@ function RankingScreen() {
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow-sm bg-base-100 rounded-box w-52 border border-base-300"
+              className="dropdown-content menu p-2 surface-raised w-52"
             >
               {mediumMetricOptions[mediumType].map((opt) => (
                 <li key={opt.value}>
@@ -1158,7 +1163,7 @@ function RankingScreen() {
             </div>
           </div>
         ) : (
-          <div className="card bg-base-100 shadow-sm">
+          <div className="card surface">
             <div className="card-body p-0">
               {mode === 'global' &&
                 rankedUsers?.pages[0] &&
@@ -1171,7 +1176,9 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondGlobalUser?.username}
                               avatar={secondGlobalUser?.avatar}
-                              frame={secondGlobalUser?.customization?.avatarFrame}
+                              frame={
+                                secondGlobalUser?.customization?.avatarFrame
+                              }
                               alt={t('avatarAlt', {
                                 username:
                                   secondGlobalUser?.username ??
@@ -1235,7 +1242,9 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstGlobalUser?.username}
                               avatar={firstGlobalUser?.avatar}
-                              frame={firstGlobalUser?.customization?.avatarFrame}
+                              frame={
+                                firstGlobalUser?.customization?.avatarFrame
+                              }
                               alt={t('avatarAlt', {
                                 username:
                                   firstGlobalUser?.username ?? t('unknownUser'),
@@ -1309,7 +1318,9 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdGlobalUser?.username}
                               avatar={thirdGlobalUser?.avatar}
-                              frame={thirdGlobalUser?.customization?.avatarFrame}
+                              frame={
+                                thirdGlobalUser?.customization?.avatarFrame
+                              }
                               alt={t('avatarAlt', {
                                 username:
                                   thirdGlobalUser?.username ?? t('unknownUser'),
@@ -1380,7 +1391,9 @@ function RankingScreen() {
                             <UserAvatar
                               username={secondMediumUser?.username}
                               avatar={secondMediumUser?.avatar}
-                              frame={secondMediumUser?.customization?.avatarFrame}
+                              frame={
+                                secondMediumUser?.customization?.avatarFrame
+                              }
                               alt={t('avatarAlt', {
                                 username:
                                   secondMediumUser?.username ??
@@ -1444,7 +1457,9 @@ function RankingScreen() {
                             <UserAvatar
                               username={firstMediumUser?.username}
                               avatar={firstMediumUser?.avatar}
-                              frame={firstMediumUser?.customization?.avatarFrame}
+                              frame={
+                                firstMediumUser?.customization?.avatarFrame
+                              }
                               alt={t('avatarAlt', {
                                 username:
                                   firstMediumUser?.username ?? t('unknownUser'),
@@ -1518,7 +1533,9 @@ function RankingScreen() {
                             <UserAvatar
                               username={thirdMediumUser?.username}
                               avatar={thirdMediumUser?.avatar}
-                              frame={thirdMediumUser?.customization?.avatarFrame}
+                              frame={
+                                thirdMediumUser?.customization?.avatarFrame
+                              }
                               alt={t('avatarAlt', {
                                 username:
                                   thirdMediumUser?.username ?? t('unknownUser'),

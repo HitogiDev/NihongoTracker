@@ -135,7 +135,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
     }
 
     return (
-      <dialog className="modal modal-open">
+      <dialog className="modal modal-bottom sm:modal-middle modal-open">
         <div className={`modal-box ${modalBoxClassName}`}>
           <h3 className="font-bold text-lg mb-4">{title}</h3>
           <div className="flex justify-center">
@@ -153,11 +153,7 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = React.memo(
               ruleOfThirds={ruleOfThirds}
               circularCrop={circular}
             >
-              <img
-                src={imageSrc}
-                alt={title}
-                onLoad={handleImageLoad}
-              />
+              <img src={imageSrc} alt={title} onLoad={handleImageLoad} />
             </ReactCrop>
           </div>
           <div className="modal-action">

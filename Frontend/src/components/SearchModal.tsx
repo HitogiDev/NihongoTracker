@@ -619,7 +619,10 @@ function SearchModal({
   const hasQuery = debouncedQuery.trim().length >= 2;
 
   return (
-    <dialog className="modal modal-open" onClick={onClose}>
+    <dialog
+      className="modal modal-bottom sm:modal-middle modal-open"
+      onClick={onClose}
+    >
       <div
         className="modal-box max-w-2xl p-0 overflow-hidden border border-base-300"
         onClick={(e) => e.stopPropagation()}
@@ -643,7 +646,7 @@ function SearchModal({
             <div
               tabIndex={0}
               role="button"
-              className="btn btn-sm btn-ghost gap-1.5 font-normal"
+              className="btn btn-ghost btn-sm gap-1.5 font-normal"
               title={t('search.filterByType')}
               aria-label={t('search.filterByType')}
             >
@@ -658,7 +661,7 @@ function SearchModal({
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content menu menu-sm z-50 mt-2 w-44 rounded-box border border-base-content/10 bg-base-100 p-1 shadow-lg"
+              className="dropdown-content menu menu-sm z-50 mt-2 w-44 surface-raised p-1"
             >
               {MEDIA_TYPE_FILTERS.map((opt) => (
                 <li key={opt.value}>
@@ -682,7 +685,7 @@ function SearchModal({
               ))}
             </ul>
           </div>
-          <button className="btn btn-ghost btn-xs btn-circle" onClick={onClose}>
+          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
         </div>

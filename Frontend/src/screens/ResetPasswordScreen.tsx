@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Field from '../components/ui/Field';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { resetPasswordFn } from '../api/trackerApi';
 import { useMutation } from '@tanstack/react-query';
@@ -94,7 +95,7 @@ function ResetPasswordScreen() {
   if (!token) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-sm">
+        <div className="card w-full max-w-md surface">
           <div className="card-body text-center">
             <TriangleAlert className="w-16 h-16 mx-auto mb-4 text-warning" />
             <h2 className="card-title justify-center text-2xl mb-4">
@@ -117,7 +118,7 @@ function ResetPasswordScreen() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-sm">
+        <div className="card w-full max-w-md surface">
           <div className="card-body text-center">
             <CircleCheck className="w-16 h-16 mx-auto mb-4 text-success" />
             <h2 className="card-title justify-center text-2xl mb-4">
@@ -139,7 +140,7 @@ function ResetPasswordScreen() {
 
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-sm">
+      <div className="card w-full max-w-md surface">
         <div className="card-body">
           <h2 className="card-title justify-center text-2xl mb-6">
             {t('resetPassword.title')}
@@ -149,17 +150,15 @@ function ResetPasswordScreen() {
           </p>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-control w-full mb-4">
-              <label className="label">
-                <span className="label-text">
-                  {t('resetPassword.password.label')}
-                </span>
-              </label>
+            <Field
+              label={t('resetPassword.password.label')}
+              className="w-full mb-4"
+            >
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder={t('resetPassword.password.placeholder')}
-                  className={`input input-bordered w-full pr-12 ${
+                  className={`input w-full pr-12 ${
                     errors.password ? 'input-error' : ''
                   }`}
                   value={password}
@@ -183,26 +182,22 @@ function ResetPasswordScreen() {
               </div>
               {errors.password && (
                 <label className="label">
-                  <span className="label-text-alt text-error">
-                    {vt(errors.password)}
-                  </span>
+                  <span className="text-error">{vt(errors.password)}</span>
                 </label>
               )}
-            </div>
+            </Field>
 
-            <div className="form-control w-full mb-4">
-              <label className="label">
-                <span className="label-text">
-                  {t('resetPassword.passwordConfirmation.label')}
-                </span>
-              </label>
+            <Field
+              label={t('resetPassword.passwordConfirmation.label')}
+              className="w-full mb-4"
+            >
               <div className="relative">
                 <input
                   type={showPasswordConfirmation ? 'text' : 'password'}
                   placeholder={t(
                     'resetPassword.passwordConfirmation.placeholder'
                   )}
-                  className={`input input-bordered w-full pr-12 ${
+                  className={`input w-full pr-12 ${
                     errors.passwordConfirmation ? 'input-error' : ''
                   }`}
                   value={passwordConfirmation}
@@ -228,14 +223,14 @@ function ResetPasswordScreen() {
               </div>
               {errors.passwordConfirmation && (
                 <label className="label">
-                  <span className="label-text-alt text-error">
+                  <span className="text-error">
                     {vt(errors.passwordConfirmation)}
                   </span>
                 </label>
               )}
-            </div>
+            </Field>
 
-            <div className="form-control mt-6 items-center">
+            <div className="mt-6 items-center">
               <button
                 type="submit"
                 className="btn btn-primary w-full"

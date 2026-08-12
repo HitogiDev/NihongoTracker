@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Field from '../components/ui/Field';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -199,7 +200,7 @@ function TextHookerDashboard() {
   };
 
   return (
-    <div className="min-h-screen pt-16 bg-base-200">
+    <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
@@ -208,7 +209,7 @@ function TextHookerDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow-sm bg-base-100">
             <div className="stat">
               <div className="stat-figure text-primary">
                 <BookOpen className="w-8 h-8" />
@@ -223,7 +224,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow-sm bg-base-100">
             <div className="stat">
               <div className="stat-figure text-secondary">
                 <List className="w-8 h-8" />
@@ -236,7 +237,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow-sm bg-base-100">
             <div className="stat">
               <div className="stat-figure text-accent">
                 <Type className="w-8 h-8" />
@@ -253,7 +254,7 @@ function TextHookerDashboard() {
             </div>
           </div>
 
-          <div className="stats stats-vertical w-full overflow-hidden shadow bg-base-100">
+          <div className="stats stats-vertical w-full overflow-hidden shadow-sm bg-base-100">
             <div className="stat">
               <div className="stat-figure text-info">
                 <Clock className="w-8 h-8" />
@@ -275,26 +276,26 @@ function TextHookerDashboard() {
           <div className="flex gap-2">
             <button
               onClick={() => setIsJoinRoomOpen(true)}
-              className="btn btn-outline btn-primary btn-sm"
+              className="btn btn-primary btn-outline btn-sm"
             >
-              <Users size={16} />
+              <Users className="w-4 h-4" />
               {t('dashboard.joinRoom')}
             </button>
             <details className="dropdown dropdown-end">
               <summary className="btn btn-primary btn-sm">
                 {t('dashboard.startSession')}
-                <ChevronDown size={16} />
+                <ChevronDown className="w-4 h-4" />
               </summary>
-              <ul className="dropdown-content menu bg-base-200 rounded-box z-10 w-52 p-2 shadow-sm mt-1">
+              <ul className="dropdown-content menu surface-raised z-10 w-52 p-2 mt-1">
                 <li>
                   <button onClick={() => setIsBlankModalOpen(true)}>
-                    <Type size={16} />
+                    <Type className="w-4 h-4" />
                     {t('dashboard.blankSession')}
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setIsMediaModalOpen(true)}>
-                    <BookOpen size={16} />
+                    <BookOpen className="w-4 h-4" />
                     {t('dashboard.mediaSessionOption')}
                   </button>
                 </li>
@@ -336,7 +337,7 @@ function TextHookerDashboard() {
                 to={`/texthooker/${sessionKey}`}
                 className="group relative"
               >
-                <div className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 h-full group-hover:scale-105">
+                <div className="card surface hover:shadow-lg transition-all duration-200 h-full group-hover:scale-105">
                   <figure className="px-2 pt-2 relative">
                     {media ? (
                       <img
@@ -356,13 +357,13 @@ function TextHookerDashboard() {
                         }}
                       />
                     ) : (
-                      <div className="rounded-lg w-full aspect-[2/3] bg-base-200 flex items-center justify-center">
+                      <div className="w-full aspect-[2/3] surface-muted flex items-center justify-center">
                         <FileText className="w-10 h-10 text-base-content/30" />
                       </div>
                     )}
                     <button
                       onClick={(e) => handleDelete(e, sessionKey, title)}
-                      className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-error text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
                       title={t('dashboard.deleteSession')}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -433,7 +434,9 @@ function TextHookerDashboard() {
       </div>
 
       {/* Join Room Modal */}
-      <dialog className={`modal ${isJoinRoomOpen ? 'modal-open' : ''}`}>
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isJoinRoomOpen ? 'modal-open' : ''}`}
+      >
         <div className="modal-box max-w-md">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
@@ -442,27 +445,20 @@ function TextHookerDashboard() {
             </h3>
             <button
               onClick={() => setIsJoinRoomOpen(false)}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
               ✕
             </button>
           </div>
 
           <div className="space-y-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-semibold">
-                  {t('room.joinAs')}
-                </span>
-              </label>
+            <Field label={t('room.joinAs')}>
               <div className="flex gap-2">
                 <label className="label cursor-pointer border rounded-lg p-3 flex-1 border-base-300 hover:border-primary transition-colors">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <Crown size={16} className="text-warning" />
-                      <span className="label-text font-medium">
-                        {t('room.host')}
-                      </span>
+                      <Crown className="w-4 h-4 text-warning" />
+                      <span className="font-medium">{t('room.host')}</span>
                     </div>
                     <span className="text-xs opacity-70">
                       {t('room.createTab')}
@@ -480,10 +476,8 @@ function TextHookerDashboard() {
                 <label className="label cursor-pointer border rounded-lg p-3 flex-1 border-base-300 hover:border-primary transition-colors">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <Users size={16} />
-                      <span className="label-text font-medium">
-                        {t('room.guest')}
-                      </span>
+                      <Users className="w-4 h-4" />
+                      <span className="font-medium">{t('room.guest')}</span>
                     </div>
                     <span className="text-xs opacity-70">
                       {t('room.joinTab')}
@@ -499,9 +493,9 @@ function TextHookerDashboard() {
                   />
                 </label>
               </div>
-            </div>
+            </Field>
 
-            <div className="form-control gap-2">
+            <div className="gap-2">
               <span className="text-sm font-semibold leading-none">
                 {t('dashboard.roomId')}
               </span>
@@ -512,7 +506,7 @@ function TextHookerDashboard() {
                   setRoomId(e.target.value);
                   setRoomError(null);
                 }}
-                className={`input input-bordered w-full ${roomError ? 'input-error' : ''}`}
+                className={`input w-full ${roomError ? 'input-error' : ''}`}
                 placeholder={
                   roomMode === 'host'
                     ? t('room.createPlaceholder')
@@ -596,8 +590,10 @@ function TextHookerDashboard() {
       </dialog>
 
       {/* Media Session Modal */}
-      <dialog className={`modal ${isMediaModalOpen ? 'modal-open' : ''}`}>
-        <div className="modal-box max-w-lg">
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isMediaModalOpen ? 'modal-open' : ''}`}
+      >
+        <div className="modal-box">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
@@ -605,7 +601,7 @@ function TextHookerDashboard() {
             </h3>
             <button
               onClick={resetMediaModal}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
               ✕
             </button>
@@ -613,9 +609,9 @@ function TextHookerDashboard() {
 
           <div className="space-y-3">
             {/* Media Type Selector */}
-            <div className="form-control">
+            <div>
               <label className="label mb-2">
-                <span className="label-text font-semibold">
+                <span className="font-semibold">
                   {t('mediaSession.mediaType')}
                 </span>
               </label>
@@ -629,8 +625,8 @@ function TextHookerDashboard() {
                 >
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <BookOpen size={16} className="text-primary" />
-                      <span className="label-text font-medium">
+                      <BookOpen className="w-4 h-4 text-primary" />
+                      <span className="font-medium">
                         {t('dashboard.visualNovel')}
                       </span>
                     </div>
@@ -658,8 +654,8 @@ function TextHookerDashboard() {
                 >
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <Gamepad2 size={16} className="text-primary" />
-                      <span className="label-text font-medium">
+                      <Gamepad2 className="w-4 h-4 text-primary" />
+                      <span className="font-medium">
                         {t('mediaSession.videoGame')}
                       </span>
                     </div>
@@ -682,9 +678,9 @@ function TextHookerDashboard() {
             </div>
 
             {/* Search Input */}
-            <div className="form-control">
+            <div>
               <label className="input w-full flex items-center gap-2">
-                <Search size={16} className="opacity-50" />
+                <Search className="w-4 h-4 opacity-50" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -794,7 +790,9 @@ function TextHookerDashboard() {
       </dialog>
 
       {/* Blank Session Modal */}
-      <dialog className={`modal ${isBlankModalOpen ? 'modal-open' : ''}`}>
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isBlankModalOpen ? 'modal-open' : ''}`}
+      >
         <div className="modal-box max-w-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
@@ -806,14 +804,14 @@ function TextHookerDashboard() {
                 setIsBlankModalOpen(false);
                 setBlankSessionName('');
               }}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
               ✕
             </button>
           </div>
 
           <div className="space-y-4">
-            <div className="form-control gap-2">
+            <div className="gap-2">
               <span className="text-sm font-semibold leading-none">
                 {t('dashboard.sessionName')}
               </span>
@@ -826,7 +824,7 @@ function TextHookerDashboard() {
                   if (e.key === 'Enter') handleCreateBlankSession();
                 }}
                 maxLength={100}
-                className="input input-bordered w-full"
+                className="input w-full"
                 placeholder={t('mediaSession.namePlaceholder')}
                 aria-label={t('room.sessionName')}
               />
@@ -874,7 +872,9 @@ function TextHookerDashboard() {
       </dialog>
 
       {/* Delete Confirmation Modal */}
-      <dialog className={`modal ${isDeleteModalOpen ? 'modal-open' : ''}`}>
+      <dialog
+        className={`modal modal-bottom sm:modal-middle ${isDeleteModalOpen ? 'modal-open' : ''}`}
+      >
         <div className="modal-box max-w-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2 text-error">
@@ -886,7 +886,7 @@ function TextHookerDashboard() {
                 setIsDeleteModalOpen(false);
                 setSessionToDelete(null);
               }}
-              className="btn btn-sm btn-circle btn-ghost"
+              className="btn btn-ghost btn-sm btn-circle"
             >
               ✕
             </button>
@@ -897,7 +897,7 @@ function TextHookerDashboard() {
               {t('dashboard.deleteSessionConfirm')}
             </p>
             {sessionToDelete && (
-              <div className="bg-base-200 p-3 rounded-lg">
+              <div className="surface-muted p-3">
                 <p className="font-semibold text-sm line-clamp-2">
                   {sessionToDelete.title}
                 </p>
@@ -929,7 +929,7 @@ function TextHookerDashboard() {
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : (
                   <>
-                    <Trash2 size={16} />
+                    <Trash2 className="w-4 h-4" />
                     {t('dashboard.delete')}
                   </>
                 )}

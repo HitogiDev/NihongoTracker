@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import Field from '../components/ui/Field';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -383,11 +384,11 @@ function CreateClubScreen() {
   return (
     <div className="min-h-screen bg-base-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 pt-24 pb-8">
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 pt-28 pb-8">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-4 mb-6">
             <button
-              className="btn btn-ghost btn-circle"
+              className="btn btn-ghost btn-square"
               onClick={() => navigate('/clubs')}
             >
               <ArrowLeft className="text-xl" />
@@ -409,7 +410,7 @@ function CreateClubScreen() {
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information Card */}
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Info className="text-primary" />
@@ -417,7 +418,7 @@ function CreateClubScreen() {
                 </h2>
 
                 {/* Club Name */}
-                <div className="form-control">
+                <div>
                   <fieldset className="fieldset">
                     <legend className="fieldset-legend font-medium">
                       {t('create.name')}
@@ -425,7 +426,7 @@ function CreateClubScreen() {
                     </legend>
                     <input
                       type="text"
-                      className={`input input-bordered ${errors.name ? 'input-error' : ''}`}
+                      className={`input ${errors.name ? 'input-error' : ''}`}
                       placeholder={t('create.namePlaceholder')}
                       value={formData.name}
                       onChange={(e) =>
@@ -439,21 +440,19 @@ function CreateClubScreen() {
                   </fieldset>
                   {errors.name && (
                     <label className="label">
-                      <span className="label-text-alt text-error">
-                        {errors.name}
-                      </span>
+                      <span className="text-error">{errors.name}</span>
                     </label>
                   )}
                 </div>
 
                 {/* Description */}
-                <div className="form-control">
+                <div>
                   <fieldset className="fieldset w-full">
                     <legend className="fieldset-legend font-medium">
                       {t('common.description')}
                     </legend>
                     <textarea
-                      className={`textarea textarea-bordered w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
+                      className={`textarea w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
                       placeholder={t('create.descriptionPlaceholder')}
                       value={formData.description}
                       onChange={(e) =>
@@ -467,26 +466,19 @@ function CreateClubScreen() {
                   </fieldset>
                   {errors.description && (
                     <label className="label">
-                      <span className="label-text-alt text-error">
-                        {errors.description}
-                      </span>
+                      <span className="text-error">{errors.description}</span>
                     </label>
                   )}
                 </div>
 
                 {/* Privacy Settings */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      {t('create.privacy')}
-                    </span>
-                  </label>
+                <Field label={t('create.privacy')}>
                   <div className="flex gap-4">
-                    <label className="label cursor-pointer flex-1 bg-base-200 rounded-lg p-4">
+                    <label className="label cursor-pointer flex-1 surface-muted p-4">
                       <div className="flex items-center gap-3">
                         <Earth className="text-xl text-success" />
                         <div>
-                          <span className="label-text font-medium">
+                          <span className="font-medium">
                             {t('create.public')}
                           </span>
                           <div className="text-xs text-base-content/60">
@@ -503,11 +495,11 @@ function CreateClubScreen() {
                       />
                     </label>
 
-                    <label className="label cursor-pointer flex-1 bg-base-200 rounded-lg p-4">
+                    <label className="label cursor-pointer flex-1 surface-muted p-4">
                       <div className="flex items-center gap-3">
                         <Lock className="text-xl text-warning" />
                         <div>
-                          <span className="label-text font-medium">
+                          <span className="font-medium">
                             {t('create.private')}
                           </span>
                           <div className="text-xs text-base-content/60">
@@ -524,19 +516,14 @@ function CreateClubScreen() {
                       />
                     </label>
                   </div>
-                </div>
+                </Field>
 
                 {/* Member Limit */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      {t('create.memberLimit')}
-                    </span>
-                  </label>
+                <Field label={t('create.memberLimit')}>
                   <div className="flex items-center gap-4">
                     <input
                       type="number"
-                      className={`input input-bordered flex-1 ${errors.memberLimit ? 'input-error' : ''}`}
+                      className={`input flex-1 ${errors.memberLimit ? 'input-error' : ''}`}
                       placeholder="100"
                       min={2}
                       max={maxAllowedMemberLimit}
@@ -554,9 +541,7 @@ function CreateClubScreen() {
                   </div>
                   {errors.memberLimit && (
                     <label className="label">
-                      <span className="label-text-alt text-error">
-                        {errors.memberLimit}
-                      </span>
+                      <span className="text-error">{errors.memberLimit}</span>
                     </label>
                   )}
                   <div className="mt-1 space-y-1">
@@ -571,12 +556,12 @@ function CreateClubScreen() {
                       to unlock higher club limits and more perks.
                     </p>
                   </div>
-                </div>
+                </Field>
               </div>
             </div>
 
             {/* Tags Card */}
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Tag className="text-primary w-6 h-6" />
@@ -590,7 +575,7 @@ function CreateClubScreen() {
                 <div className="flex gap-2 mb-4">
                   <input
                     type="text"
-                    className="input input-bordered flex-1"
+                    className="input flex-1"
                     placeholder={t('create.tagPlaceholder')}
                     value={currentTag}
                     onChange={(e) => setCurrentTag(e.target.value)}
@@ -662,7 +647,7 @@ function CreateClubScreen() {
             </div>
 
             {/* Club Media Card */}
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Image className="text-primary w-6 h-6" />
@@ -676,7 +661,7 @@ function CreateClubScreen() {
                   {/* Club Profile Picture */}
                   <div className="flex-1">
                     <label className="label font-medium">
-                      <span className="label-text">{t('create.icon')}</span>
+                      <span>{t('create.icon')}</span>
                     </label>
                     <div className="flex flex-col items-center gap-3 p-4 border border-dashed rounded-lg bg-base-200">
                       <div className="avatar">
@@ -695,7 +680,7 @@ function CreateClubScreen() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <label className="btn btn-sm btn-primary">
+                        <label className="btn btn-primary btn-sm">
                           <Upload className="w-4 h-4" />
                           {t('create.upload')}
                           <input
@@ -708,7 +693,7 @@ function CreateClubScreen() {
                         {avatarPreview && (
                           <button
                             type="button"
-                            className="btn btn-sm btn-ghost"
+                            className="btn btn-ghost btn-sm"
                             onClick={() => clearFile('avatar')}
                           >
                             <Trash className="w-4 h-4" />
@@ -725,7 +710,7 @@ function CreateClubScreen() {
                   {/* Club Banner */}
                   <div className="flex-1">
                     <label className="label font-medium">
-                      <span className="label-text">{t('create.banner')}</span>
+                      <span>{t('create.banner')}</span>
                     </label>
                     <div className="flex flex-col items-center gap-3 p-4 border border-dashed rounded-lg bg-base-200">
                       <div className="w-full h-32 bg-base-300 rounded-lg flex items-center justify-center overflow-hidden">
@@ -740,7 +725,7 @@ function CreateClubScreen() {
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <label className="btn btn-sm btn-primary">
+                        <label className="btn btn-primary btn-sm">
                           <Upload className="w-4 h-4" />
                           {t('create.upload')}
                           <input
@@ -753,7 +738,7 @@ function CreateClubScreen() {
                         {bannerPreview && (
                           <button
                             type="button"
-                            className="btn btn-sm btn-ghost"
+                            className="btn btn-ghost btn-sm"
                             onClick={() => clearFile('banner')}
                           >
                             <Trash className="w-4 h-4" />
@@ -771,7 +756,7 @@ function CreateClubScreen() {
             </div>
 
             {/* Rules Card */}
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-lg mb-4 flex items-center gap-2">
                   <Info className="text-primary w-6 h-6" />
@@ -789,10 +774,10 @@ function CreateClubScreen() {
                   </span>
                 </div>
 
-                <div className="form-control">
+                <div>
                   <fieldset className="fieldset w-full">
                     <textarea
-                      className={`textarea textarea-bordered w-full h-32 ${errors.rules ? 'textarea-error' : ''}`}
+                      className={`textarea w-full h-32 ${errors.rules ? 'textarea-error' : ''}`}
                       placeholder={`1. Be respectful to all members
 2. Share your progress regularly
 3. Help others when possible
@@ -811,9 +796,7 @@ function CreateClubScreen() {
                   </fieldset>
                   {errors.rules && (
                     <label className="label">
-                      <span className="label-text-alt text-error">
-                        {errors.rules}
-                      </span>
+                      <span className="text-error">{errors.rules}</span>
                     </label>
                   )}
                 </div>

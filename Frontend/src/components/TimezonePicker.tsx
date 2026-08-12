@@ -97,7 +97,7 @@ function TimezonePicker({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`input input-bordered w-full text-left flex items-center justify-between min-h-12 ${
+        className={`input w-full text-left flex items-center justify-between min-h-12 ${
           disabled ? 'input-disabled' : 'cursor-pointer hover:border-primary'
         }`}
         title={currentTimezoneDisplay} // Add tooltip for full timezone name
@@ -124,7 +124,7 @@ function TimezonePicker({
 
       {/* Dropdown */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-80 overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 surface-raised max-h-80 overflow-hidden">
           {/* Search Input */}
           <div className="p-3 border-b border-base-300">
             <input
@@ -133,7 +133,7 @@ function TimezonePicker({
               placeholder={t('timezonePicker.placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input input-sm input-bordered w-full"
+              className="input input-sm w-full"
             />
           </div>
 

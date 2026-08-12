@@ -128,7 +128,7 @@ function LevelUpAnimation({
       <div className="flex flex-col items-center gap-4">
         <h2
           ref={congratsRef}
-          className="text-3xl sm:text-4xl font-extrabold text-yellow-400"
+          className="text-3xl sm:text-4xl font-extrabold text-warning"
           style={{ opacity: 0 }}
         >
           {t('levelUp.title')}

@@ -75,7 +75,7 @@ function LineChart({
         className="bg-base-50 p-4 flex items-center justify-center mx-4"
         style={{ height: '350px' }}
       >
-        <span className="loading loading-spinner text-primary" />
+        <span className="loading loading-spinner loading-md text-primary" />
       </div>
     );
   }

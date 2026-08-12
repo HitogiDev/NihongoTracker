@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Field from './ui/Field';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserTagsByUsernameFn, createTagFn } from '../api/trackerApi';
@@ -94,31 +95,26 @@ export default function TagSelector({
 
   if (isLoading) {
     return (
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text">{fieldLabel}</span>
-        </label>
+      <Field label={fieldLabel}>
         <div className="flex gap-2">
           <span className="loading loading-spinner loading-sm"></span>
           <span className="text-sm text-base-content/60">
             {t('tags.selector.loading')}
           </span>
         </div>
-      </div>
+      </Field>
     );
   }
 
   return (
     <>
-      <div className="form-control">
-        <label className="label">
-          <span className="label-text">{fieldLabel}</span>
-          {selectedTags.length > 0 && (
-            <span className="label-text-alt text-base-content/60">
-              {t('tags.selector.selected', { total: selectedTags.length })}
-            </span>
-          )}
-        </label>
+      <Field
+        label={fieldLabel}
+        aside={
+          selectedTags.length > 0 &&
+          t('tags.selector.selected', { total: selectedTags.length })
+        }
+      >
         <div className="flex flex-wrap gap-2">
           {tags.map((tag: ITag) => {
             const isSelected = selectedTags.includes(tag._id);
@@ -170,7 +166,7 @@ export default function TagSelector({
           >
             <button
               type="button"
-              className="btn btn-square btn-sm btn-outline btn-primary"
+              className="btn btn-primary btn-outline btn-sm btn-square"
               onClick={openQuickCreateModal}
               disabled={tags.length >= maxTags}
               title={
@@ -202,34 +198,31 @@ export default function TagSelector({
             {t('tags.selector.emptyHint')}
           </p>
         )}
-      </div>
+      </Field>
 
       {/* Quick Create Tag Modal */}
-      <dialog id="quick_create_tag_modal" className="modal">
+      <dialog
+        id="quick_create_tag_modal"
+        className="modal modal-bottom sm:modal-middle"
+      >
         <div className="modal-box max-w-md">
           <h3 className="font-bold text-lg mb-4">
             {t('tags.manager.createNew')}
           </h3>
           <div>
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">{t('tags.manager.tagName')}</span>
-              </label>
+            <Field label={t('tags.manager.tagName')} className="mb-4">
               <input
                 type="text"
-                className="input input-bordered"
+                className="input"
                 placeholder={t('tags.manager.namePlaceholder')}
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
                 maxLength={30}
                 autoFocus
               />
-            </div>
+            </Field>
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text">{t('tags.manager.tagColor')}</span>
-              </label>
+            <Field label={t('tags.manager.tagColor')} className="mb-4">
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="badge badge-lg"
@@ -251,13 +244,13 @@ export default function TagSelector({
                 </div>
                 <input
                   type="text"
-                  className="input input-bordered input-sm w-full text-center"
+                  className="input input-sm w-full text-center"
                   value={newTagColor}
                   onChange={(e) => setNewTagColor(e.target.value)}
                   placeholder={t('tags.manager.colorPlaceholder')}
                 />
               </div>
-            </div>
+            </Field>
 
             <div className="modal-action">
               <button

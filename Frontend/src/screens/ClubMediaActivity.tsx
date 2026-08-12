@@ -31,7 +31,7 @@ export default function ClubMediaActivity() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <h3 className="card-title">{t('media.activityTitle')}</h3>
             <p className="text-base-content/70 mb-4">
@@ -48,7 +48,7 @@ export default function ClubMediaActivity() {
             ) : clubLogsData?.logs && clubLogsData.logs.length > 0 ? (
               <div className="space-y-4">
                 {clubLogsData.logs.map((log) => (
-                  <div key={log._id} className="card bg-base-200 shadow-sm">
+                  <div key={log._id} className="card surface-muted">
                     <div className="card-body p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">

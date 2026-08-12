@@ -968,7 +968,7 @@ function MediaDetails() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
             {/* Left column skeleton - Media Details Card */}
             <div className="space-y-6 min-w-0">
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="skeleton h-6 w-32 mb-4"></div>
                   <div className="space-y-4">
@@ -1006,7 +1006,7 @@ function MediaDetails() {
             {/* Right column skeleton - Progress Chart and Activity Logs */}
             <div className="space-y-6 min-w-0">
               {/* Progress Chart skeleton */}
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="skeleton h-6 w-40 mb-4"></div>
                   <div className="skeleton h-64 w-full rounded-lg"></div>
@@ -1014,7 +1014,7 @@ function MediaDetails() {
               </div>
 
               {/* Activity Logs skeleton */}
-              <div className="card bg-base-100 shadow-sm">
+              <div className="card surface">
                 <div className="card-body">
                   <div className="flex justify-between items-center mb-6">
                     <div className="skeleton h-6 w-32"></div>
@@ -1022,7 +1022,7 @@ function MediaDetails() {
                   </div>
                   <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="card bg-base-200 shadow-sm">
+                      <div key={i} className="card surface-muted">
                         <div className="card-body p-4">
                           <div className="flex justify-between items-start mb-3">
                             <div className="skeleton h-5 w-48"></div>
@@ -1114,7 +1114,7 @@ function MediaDetails() {
       const isEqual = difference === 0;
 
       return (
-        <div className="stat bg-base-200 rounded-lg p-3">
+        <div className="stat surface-muted p-3">
           <div className="stat-title text-xs">{label}</div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
             <div className="stat-value text-sm sm:text-lg text-primary truncate">
@@ -1276,7 +1276,7 @@ function MediaDetails() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6">
           <div className="space-y-6 min-w-0">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <h2 className="card-title text-xl flex items-center gap-2 mb-0">
@@ -1594,7 +1594,7 @@ function MediaDetails() {
             />
 
             {isClubLinkedView && clubData && (
-              <div className="card bg-base-100 shadow-sm my-4">
+              <div className="card surface my-4">
                 <div className="card-body">
                   <h3 className="card-title text-lg">Club: {clubData.name}</h3>
                   {clubData.description && (
@@ -1619,7 +1619,7 @@ function MediaDetails() {
               </div>
             )}
 
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <h2 className="card-title text-xl mb-4 flex items-center gap-2">
                   <svg
@@ -1639,7 +1639,7 @@ function MediaDetails() {
                 </h2>
 
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="card surface hover:shadow-lg transition-shadow">
                     <div className="card-body">
                       <div className="flex items-center justify-between">
                         <div>
@@ -1670,7 +1670,7 @@ function MediaDetails() {
                   </div>
 
                   {totalTime > 0 && (
-                    <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="card surface hover:shadow-lg transition-shadow">
                       <div className="card-body">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1710,7 +1710,7 @@ function MediaDetails() {
                     logsArray.some(
                       (log) => log.episodes && log.episodes > 0
                     ) && (
-                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1770,7 +1770,7 @@ function MediaDetails() {
                   {mediaDocument?.type === 'manga' &&
                     logsArray.length > 0 &&
                     logsArray.some((log) => log.pages && log.pages > 0) && (
-                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1809,7 +1809,7 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'manga' ||
                     mediaDocument?.type === 'reading') &&
                     logsArray.length > 0 && (
-                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1866,7 +1866,7 @@ function MediaDetails() {
                     mediaDocument?.type === 'reading' ||
                     mediaDocument?.type === 'book') &&
                     totalCharsRead > 0 && (
-                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1904,7 +1904,7 @@ function MediaDetails() {
                     mediaDocument?.type === 'book') &&
                     progressTotalChars > 0 &&
                     !effectiveIsCompleted && (
-                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1950,7 +1950,7 @@ function MediaDetails() {
                     mediaDocument?.type === 'reading' ||
                     mediaDocument?.type === 'book') &&
                     readingSpeed > 0 && (
-                      <div className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
                           <div className="flex items-center justify-between">
                             <div>
@@ -2028,7 +2028,7 @@ function MediaDetails() {
                           {readingSpeed > 0 &&
                             recentReadingSpeed > 0 &&
                             recentLogs.length > 0 && (
-                              <div className="card bg-base-100 shadow-md">
+                              <div className="card surface">
                                 <div className="card-body">
                                   <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
                                     {t('stats.recentSpeed')}
@@ -2048,7 +2048,7 @@ function MediaDetails() {
                           {readingSpeed > 0 &&
                             progressEstimatedTimeToFinish > 0 &&
                             progressPercentage < 100 && (
-                              <div className="card bg-base-100 shadow-md">
+                              <div className="card surface">
                                 <div className="card-body">
                                   <h3 className="text-sm font-medium text-base-content/70 uppercase tracking-wide">
                                     {t('stats.timeToFinish')}
@@ -2080,7 +2080,7 @@ function MediaDetails() {
           </div>
 
           <div className="space-y-6 min-w-0">
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <h2 className="card-title text-xl flex items-center gap-2">
@@ -2167,7 +2167,7 @@ function MediaDetails() {
               </div>
             </div>
 
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h2 className="card-title text-xl flex items-center gap-2">
@@ -2227,7 +2227,7 @@ function MediaDetails() {
 
             <ComparisonCard />
 
-            <div className="card bg-base-100 shadow-sm">
+            <div className="card surface">
               <div className="card-body">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="card-title text-xl flex items-center gap-2">
@@ -2255,7 +2255,7 @@ function MediaDetails() {
 
                 <div className="space-y-4 mb-6">
                   <div className="flex flex-col xl:flex-row xl:items-center gap-3">
-                    <label className="input input-bordered flex items-center gap-2 w-full xl:max-w-md">
+                    <label className="input flex items-center gap-2 w-full xl:max-w-md">
                       <Search className="w-4 h-4 opacity-70" />
                       <input
                         type="text"
@@ -2291,7 +2291,7 @@ function MediaDetails() {
                         </div>
                         <ul
                           tabIndex={0}
-                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-60 p-2 shadow"
+                          className="dropdown-content menu surface-raised z-[1] w-full sm:w-60 p-2"
                         >
                           {dateFilterOptions.map((option) => (
                             <li key={option.value}>
@@ -2327,7 +2327,7 @@ function MediaDetails() {
                         </div>
                         <ul
                           tabIndex={0}
-                          className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full sm:w-64 p-2 shadow"
+                          className="dropdown-content menu surface-raised z-[1] w-full sm:w-64 p-2"
                         >
                           <li className="menu-title">
                             <span>{t('activity.sortField')}</span>
@@ -2390,7 +2390,7 @@ function MediaDetails() {
                         </div>
                         <div
                           tabIndex={0}
-                          className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-sm bg-base-100 border border-base-300"
+                          className="dropdown-content z-[1000] card card-sm w-72 p-3 surface-raised"
                         >
                           <DayPicker
                             className="react-day-picker mx-auto"
@@ -2416,8 +2416,13 @@ function MediaDetails() {
                       </span>
                       <div className="dropdown dropdown-bottom flex-1 sm:flex-initial">
                         <div
-                          tabIndex={0}
+                          // Not a <button>, so `btn-disabled` is the right class
+                          // here — but on its own it only blocks pointer events,
+                          // so the tab stop and the ARIA state go with it.
+                          tabIndex={customStartDate ? 0 : -1}
                           role="button"
+                          aria-disabled={!customStartDate}
+                          // eslint-disable-next-line no-restricted-syntax -- not a <button>: the tabIndex and aria-disabled above carry the semantics.
                           className={`btn btn-outline w-full sm:w-auto justify-between ${!customStartDate ? 'btn-disabled' : ''}`}
                         >
                           {customEndDate
@@ -2428,7 +2433,7 @@ function MediaDetails() {
                         {customStartDate && (
                           <div
                             tabIndex={0}
-                            className="dropdown-content z-[1000] card card-compact w-72 p-3 shadow-sm bg-base-100 border border-base-300"
+                            className="dropdown-content z-[1000] card card-sm w-72 p-3 surface-raised"
                           >
                             <DayPicker
                               className="react-day-picker mx-auto"
@@ -2622,7 +2627,7 @@ function MediaDetails() {
       )}
 
       {deletingReviewId && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box max-w-sm">
             <h3 className="font-bold text-lg">{t('reviews.deleteTitle')}</h3>
             <p className="py-4 text-base-content/70">

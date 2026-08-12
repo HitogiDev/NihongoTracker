@@ -36,10 +36,7 @@ import SearchModal from './SearchModal';
 import NotificationBell from './NotificationBell';
 import { useNotificationCount } from '../hooks/useNotificationCount';
 import { getAvatarInitials } from '../utils/avatar';
-import {
-  getAvatarFrameClass,
-  hasAvatarFrame,
-} from '../utils/customization';
+import { getAvatarFrameClass, hasAvatarFrame } from '../utils/customization';
 import { useTranslation } from 'react-i18next';
 
 type ThemeMode = 'dark' | 'light' | 'system';
@@ -200,7 +197,7 @@ function Header() {
             {user ? (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-sm bg-base-100 text-base-content rounded-xl w-72 border border-base-300 max-h-96 overflow-y-auto"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 surface-raised text-base-content w-72 max-h-96 overflow-y-auto"
               >
                 {isAdmin && (
                   <>
@@ -329,7 +326,7 @@ function Header() {
             ) : (
               <ul
                 tabIndex={0}
-                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 shadow-sm bg-base-100 text-base-content rounded-xl w-72 border border-base-300"
+                className="menu menu-sm dropdown-content mt-3 z-[50] p-3 surface-raised text-base-content w-72"
               >
                 <li>
                   <Link
@@ -552,7 +549,7 @@ function Header() {
                 </div>
                 <ul
                   tabIndex={0}
-                  className="dropdown-content z-[50] menu p-2 shadow-sm bg-base-100 text-base-content rounded-xl w-52 border border-base-300"
+                  className="dropdown-content z-[50] menu p-2 surface-raised text-base-content w-52"
                 >
                   {isAdmin && (
                     <li>

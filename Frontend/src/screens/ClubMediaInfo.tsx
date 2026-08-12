@@ -16,9 +16,13 @@ import {
 import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
 import { useTranslation } from 'react-i18next';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export default function ClubMediaInfo() {
   const { t } = useTranslation('clubs');
+  // Chart series follow the active daisyUI theme instead of hard-coded rgba.
+  const seriesLine = useThemeColors(1);
+  const seriesFill = useThemeColors(0.5);
   const { club, clubMedia } = useOutletContext<OutletClubMediaContextType>();
   const { clubId, mediaId } = useParams<{ clubId: string; mediaId: string }>();
   const [period, setPeriod] = useState<'consumption' | 'alltime'>(
@@ -212,7 +216,7 @@ export default function ClubMediaInfo() {
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
         {/* Period Toggle */}
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
               <div>
@@ -225,10 +229,8 @@ export default function ClubMediaInfo() {
               </div>
               <div className="join">
                 <button
-                  className={`btn btn-sm join-item ${
-                    period === 'consumption'
-                      ? 'btn-active btn-primary'
-                      : 'btn-outline'
+                  className={`join-item btn btn-sm ${
+                    period === 'consumption' ? 'btn-primary' : 'btn-outline'
                   }`}
                   onClick={() => setPeriod('consumption')}
                 >
@@ -239,10 +241,8 @@ export default function ClubMediaInfo() {
                   <span className="sm:hidden">{t('media.period')}</span>
                 </button>
                 <button
-                  className={`btn btn-sm join-item ${
-                    period === 'alltime'
-                      ? 'btn-active btn-primary'
-                      : 'btn-outline'
+                  className={`join-item btn btn-sm ${
+                    period === 'alltime' ? 'btn-primary' : 'btn-outline'
                   }`}
                   onClick={() => setPeriod('alltime')}
                 >
@@ -259,7 +259,7 @@ export default function ClubMediaInfo() {
         {mediaStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Logs */}
-            <div className="stat bg-base-100 shadow-sm rounded-lg">
+            <div className="stat surface">
               <div className="stat-figure text-primary">
                 <Files className="w-8 h-8" />
               </div>
@@ -273,7 +273,7 @@ export default function ClubMediaInfo() {
             </div>
 
             {/* Active Members */}
-            <div className="stat bg-base-100 shadow-sm rounded-lg">
+            <div className="stat surface">
               <div className="stat-figure text-secondary">
                 <Users className="w-8 h-8" />
               </div>
@@ -290,7 +290,7 @@ export default function ClubMediaInfo() {
 
             {/* Type-specific primary stat */}
             {typeSpecificStats && (
-              <div className="stat bg-base-100 shadow-sm rounded-lg">
+              <div className="stat surface">
                 <div className="stat-figure text-accent">
                   <typeSpecificStats.primary.icon className="w-8 h-8" />
                 </div>
@@ -305,7 +305,7 @@ export default function ClubMediaInfo() {
             )}
 
             {/* Total XP */}
-            <div className="stat bg-base-100 shadow-sm rounded-lg">
+            <div className="stat surface">
               <div className="stat-figure text-warning">
                 <Star className="w-8 h-8" />
               </div>
@@ -320,7 +320,7 @@ export default function ClubMediaInfo() {
 
         {/* Activity Overview */}
         {mediaStats && (
-          <div className="card bg-base-100 shadow-sm">
+          <div className="card surface">
             <div className="card-body">
               <h3 className="card-title mb-4">{t('mediaInfo.yourActivity')}</h3>
 
@@ -329,7 +329,7 @@ export default function ClubMediaInfo() {
                 <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
                   {t('mediaInfo.thisWeekTitle')}
                 </h4>
-                <div className="stats stats-horizontal shadow w-full">
+                <div className="stats stats-horizontal shadow-sm w-full">
                   <div className="stat">
                     <div className="stat-figure text-primary">
                       <Files className="w-6 h-6" />
@@ -405,7 +405,7 @@ export default function ClubMediaInfo() {
                   <h4 className="font-semibold text-sm uppercase tracking-wide text-base-content/70 mb-3">
                     {t('mediaInfo.thisMonthTitle')}
                   </h4>
-                  <div className="stats stats-horizontal shadow w-full">
+                  <div className="stats stats-horizontal shadow-sm w-full">
                     <div className="stat">
                       <div className="stat-figure text-primary">
                         <Files className="w-6 h-6" />
@@ -485,16 +485,14 @@ export default function ClubMediaInfo() {
 
         {/* Data Visualization */}
         {mediaStats && (
-          <div className="card bg-base-100 shadow-sm">
+          <div className="card surface">
             <div className="card-body">
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-4">
                 <h3 className="card-title">{t('mediaInfo.visualization')}</h3>
                 <div className="join">
                   <button
-                    className={`btn btn-sm join-item ${
-                      chartView === 'progress'
-                        ? 'btn-active btn-primary'
-                        : 'btn-outline'
+                    className={`join-item btn btn-sm ${
+                      chartView === 'progress' ? 'btn-primary' : 'btn-outline'
                     }`}
                     onClick={() => setChartView('progress')}
                   >
@@ -502,10 +500,8 @@ export default function ClubMediaInfo() {
                     {t('mediaInfo.progress')}
                   </button>
                   <button
-                    className={`btn btn-sm join-item ${
-                      chartView === 'bar'
-                        ? 'btn-active btn-primary'
-                        : 'btn-outline'
+                    className={`join-item btn btn-sm ${
+                      chartView === 'bar' ? 'btn-primary' : 'btn-outline'
                     }`}
                     onClick={() => setChartView('bar')}
                   >
@@ -550,8 +546,8 @@ export default function ClubMediaInfo() {
                                 mediaStats.total.logs,
                               ]
                             : [mediaStats.thisWeek.logs, mediaStats.total.logs],
-                          backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                          borderColor: 'rgba(59, 130, 246, 1)',
+                          backgroundColor: seriesFill.primary,
+                          borderColor: seriesLine.primary,
                           borderWidth: 1,
                         },
                         {
@@ -563,8 +559,8 @@ export default function ClubMediaInfo() {
                                 mediaStats.total.xp,
                               ]
                             : [mediaStats.thisWeek.xp, mediaStats.total.xp],
-                          backgroundColor: 'rgba(16, 185, 129, 0.5)',
-                          borderColor: 'rgba(16, 185, 129, 1)',
+                          backgroundColor: seriesFill.success,
+                          borderColor: seriesLine.success,
                           borderWidth: 1,
                         },
                         {
@@ -579,8 +575,8 @@ export default function ClubMediaInfo() {
                                 mediaStats.thisWeek.activeMembers,
                                 mediaStats.total.members,
                               ],
-                          backgroundColor: 'rgba(245, 158, 11, 0.5)',
-                          borderColor: 'rgba(245, 158, 11, 1)',
+                          backgroundColor: seriesFill.warning,
+                          borderColor: seriesLine.warning,
                           borderWidth: 1,
                         },
                       ];
@@ -599,8 +595,8 @@ export default function ClubMediaInfo() {
                                 mediaStats.thisWeek.episodes,
                                 mediaStats.total.episodes,
                               ],
-                          backgroundColor: 'rgba(168, 85, 247, 0.5)',
-                          borderColor: 'rgba(168, 85, 247, 1)',
+                          backgroundColor: seriesFill.secondary,
+                          borderColor: seriesLine.secondary,
                           borderWidth: 1,
                         });
                       } else if (
@@ -622,8 +618,8 @@ export default function ClubMediaInfo() {
                                 mediaStats.thisWeek.pages,
                                 mediaStats.total.pages,
                               ],
-                          backgroundColor: 'rgba(168, 85, 247, 0.5)',
-                          borderColor: 'rgba(168, 85, 247, 1)',
+                          backgroundColor: seriesFill.secondary,
+                          borderColor: seriesLine.secondary,
                           borderWidth: 1,
                         });
                       } else if (
@@ -643,8 +639,8 @@ export default function ClubMediaInfo() {
                                 mediaStats.thisWeek.characters,
                                 mediaStats.total.characters,
                               ],
-                          backgroundColor: 'rgba(168, 85, 247, 0.5)',
-                          borderColor: 'rgba(168, 85, 247, 1)',
+                          backgroundColor: seriesFill.secondary,
+                          borderColor: seriesLine.secondary,
                           borderWidth: 1,
                         });
                       }
@@ -685,7 +681,7 @@ export default function ClubMediaInfo() {
 
         {/* Activity Period Info */}
         {mediaStats && (
-          <div className="card bg-base-100 shadow-sm">
+          <div className="card surface">
             <div className="card-body">
               <h3 className="card-title">{t('mediaInfo.activityPeriod')}</h3>
               <div className="text-base-content/70">

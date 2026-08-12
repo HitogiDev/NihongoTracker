@@ -295,7 +295,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
   if (isLoadingLogs) {
     return (
       <div className="min-h-screen bg-base-200 flex flex-col items-center justify-center p-4">
-        <div className="card bg-base-100 shadow-sm w-full max-w-md">
+        <div className="card surface w-full max-w-md">
           <div className="card-body text-center">
             <div className="flex justify-center mb-4">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -334,13 +334,13 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             </div>
 
             <div className="flex justify-center gap-2 mt-4">
-              <span className="loading loading-dots loading-sm"></span>
+              <span className="loading loading-spinner loading-sm"></span>
               <span
-                className="loading loading-dots loading-sm"
+                className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.2s' }}
               ></span>
               <span
-                className="loading loading-dots loading-sm"
+                className="loading loading-spinner loading-sm"
                 style={{ animationDelay: '0.4s' }}
               ></span>
             </div>
@@ -370,7 +370,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
     <div className="w-full p-4">
       {/* Auto-match warning modal */}
       {showAutoMatchModal && (
-        <dialog open className="modal modal-open">
+        <dialog open className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg">
               {t('matcher.largeBatchTitle')}
@@ -407,7 +407,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       </h1>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-4 w-full">
-        <div className="stats shadow flex-1">
+        <div className="stats shadow-sm flex-1">
           <div className="stat">
             <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value">{selectedLogs.length}</div>
@@ -424,11 +424,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           disabled={
             isAutoMatching || Object.keys(filteredGroupedLogs).length === 0
           }
-          className={`btn btn-secondary btn-lg ${isAutoMatching ? 'loading' : ''}`}
+          className="btn btn-secondary btn-lg"
         >
           {isAutoMatching ? (
             <>
-              <span className="loading loading-spinner"></span>
+              <span className="loading loading-spinner loading-md"></span>
               {t('matcher.autoMatching')}
             </>
           ) : (
@@ -453,7 +453,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left panel - Log groups */}
-        <div className="card bg-base-200 shadow-sm">
+        <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">{t('matcher.unassignedLogs')}</h2>
             <div className="divider my-1"></div>
@@ -541,7 +541,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
           </div>
         </div>
 
-        <div className="card bg-base-200 shadow-sm">
+        <div className="card surface-muted">
           <div className="card-body p-4">
             <h2 className="card-title">
               {t('matcher.findMatching', {
@@ -550,7 +550,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
             </h2>
             <div className="divider my-1"></div>
 
-            <label className="input input-bordered input-primary flex items-center gap-2 mb-4">
+            <label className="input input-primary flex items-center gap-2 mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 16 16"
@@ -700,7 +700,7 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
-        <div className="stats shadow">
+        <div className="stats shadow-sm">
           <div className="stat">
             <div className="stat-title">{t('matcher.selectedLogs')}</div>
             <div className="stat-value text-primary">{selectedLogs.length}</div>
@@ -710,11 +710,11 @@ function AnimeLogs({ username, isActive = true }: AnimeLogsProps) {
         <button
           onClick={handleAssignMedia}
           disabled={isAssigning || !selectedAnime || selectedLogs.length === 0}
-          className={`btn btn-primary btn-lg ${isAssigning ? 'loading' : ''}`}
+          className="btn btn-primary btn-lg"
         >
           {isAssigning ? (
             <>
-              <span className="loading loading-spinner"></span>
+              <span className="loading loading-spinner loading-md"></span>
               {t('matcher.assigning')}
             </>
           ) : (

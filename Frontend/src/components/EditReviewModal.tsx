@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Field from './ui/Field';
 import { useTranslation } from 'react-i18next';
 import {
   X,
@@ -181,12 +182,12 @@ export default function EditReviewModal({
   if (!isOpen) return null;
 
   return (
-    <dialog open className="modal">
+    <dialog open className="modal modal-bottom sm:modal-middle">
       <div className="modal-box max-w-2xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg">{t('write.title')}</h3>
           <button
-            className="btn btn-sm btn-circle btn-ghost"
+            className="btn btn-ghost btn-sm btn-circle"
             onClick={onClose}
             disabled={isLoading}
           >
@@ -195,15 +196,10 @@ export default function EditReviewModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="label">
-              <span className="label-text font-medium">
-                {t('write.summary')}
-              </span>
-            </label>
+          <Field label={t('write.summary')}>
             <input
               type="text"
-              className="input input-bordered w-full"
+              className="input w-full"
               placeholder={t('write.summaryPlaceholder')}
               value={editForm.summary}
               onChange={(e) =>
@@ -216,21 +212,16 @@ export default function EditReviewModal({
             {editForm.summary.trim().length > 0 &&
               editForm.summary.trim().length < REVIEW_SUMMARY_MIN_LENGTH && (
                 <div className="label">
-                  <span className="label-text-alt text-warning">
+                  <span className="text-warning">
                     Summary must be at least {REVIEW_SUMMARY_MIN_LENGTH}{' '}
                     characters.
                   </span>
                 </div>
               )}
-          </div>
+          </Field>
 
           {/* Rating */}
-          <div>
-            <label className="label">
-              <span className="label-text font-medium">
-                {t('write.ratingOptional')}
-              </span>
-            </label>
+          <Field label={t('write.ratingOptional')}>
             <div className="flex items-center gap-3">
               <div className="rating rating-lg rating-half">
                 <input
@@ -264,15 +255,10 @@ export default function EditReviewModal({
                 </span>
               )}
             </div>
-          </div>
+          </Field>
 
           {/* Content */}
-          <div>
-            <label className="label">
-              <span className="label-text font-medium">
-                {t('write.review')}
-              </span>
-            </label>
+          <Field label={t('write.review')}>
             <div className="flex flex-wrap gap-2 mb-2">
               <button
                 type="button"
@@ -392,7 +378,7 @@ export default function EditReviewModal({
               </button>
             </div>
             <textarea
-              className="textarea textarea-bordered w-full min-h-56 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
+              className="textarea w-full min-h-56 resize-y overflow-y-auto [field-sizing:fixed] leading-relaxed"
               placeholder={t('write.bodyPlaceholder')}
               value={editForm.content}
               ref={reviewTextareaRef}
@@ -403,13 +389,13 @@ export default function EditReviewModal({
             />
             {editForm.content.length > REVIEW_MAX_LENGTH && (
               <div className="label">
-                <span className="label-text-alt text-error">
+                <span className="text-error">
                   {editForm.content.length - REVIEW_MAX_LENGTH} characters over
                   the {REVIEW_MAX_LENGTH} limit.
                 </span>
               </div>
             )}
-          </div>
+          </Field>
 
           <div className="card bg-base-200/50 border border-base-300">
             <div className="card-body p-4">

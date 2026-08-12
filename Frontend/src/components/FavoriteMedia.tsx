@@ -123,7 +123,7 @@ function FavoriteCover({
       {/* Info / note button — the tap target for touch devices */}
       <button
         type="button"
-        className={`absolute top-1 right-1 rounded-full p-1 shadow ${
+        className={`absolute top-1 right-1 rounded-full p-1 shadow-sm ${
           fav.note
             ? 'bg-primary text-primary-content'
             : 'bg-base-100/85 text-base-content/70'
@@ -226,7 +226,7 @@ function FavoritePopover({
 
   return (
     <div data-fav-popover className="fixed z-50" style={style}>
-      <div className="rounded-lg border border-base-300 bg-base-100 p-3 shadow-xl text-left">
+      <div className="surface p-3 text-left">
         <p className="font-semibold text-sm leading-tight">
           {mediaTitle(media)}
         </p>
@@ -322,7 +322,7 @@ function SortableFavorite({
         {/* Note */}
         <button
           type="button"
-          className={`absolute top-1 left-1 rounded-full p-1 shadow ${
+          className={`absolute top-1 left-1 rounded-full p-1 shadow-sm ${
             fav.note
               ? 'bg-primary text-primary-content'
               : 'bg-base-100/80 text-base-content/70'
@@ -337,7 +337,7 @@ function SortableFavorite({
         {/* Remove */}
         <button
           type="button"
-          className="absolute top-1 right-1 bg-error text-error-content rounded-full p-0.5 shadow"
+          className="absolute top-1 right-1 bg-error text-error-content rounded-full p-0.5 shadow-sm"
           aria-label={t('favoritesWidget.remove')}
           onPointerDown={stopDrag}
           onClick={onRemove}
@@ -368,7 +368,7 @@ function NoteModal({
   const [value, setValue] = useState(fav.note ?? '');
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box">
         <h3 className="font-bold text-lg flex items-center gap-2">
           <NotebookPen className="w-5 h-5" />
@@ -378,7 +378,7 @@ function NoteModal({
           {mediaTitle(fav.media)}
         </p>
         <textarea
-          className="textarea textarea-bordered w-full mt-3"
+          className="textarea w-full mt-3"
           rows={4}
           maxLength={500}
           placeholder={t('favoritesWidget.notePlaceholder')}
@@ -517,7 +517,7 @@ function FavoriteMedia({
   const noteEditFav = draft.find((f) => favoriteKey(f) === noteEditKey) ?? null;
 
   return (
-    <div className="card w-full bg-base-100 shadow-sm overflow-visible">
+    <div className="card w-full surface overflow-visible">
       <div className="card-body w-full p-4 sm:p-6 overflow-visible">
         <div className="flex items-center justify-between gap-3 mb-2">
           <h2 className="card-title">{t('favorites.title')}</h2>
@@ -586,7 +586,9 @@ function FavoriteMedia({
                       onClick={() => setPickerOpen(true)}
                     >
                       <Plus className="w-6 h-6" />
-                      <span className="text-xs">{t('favoritesWidget.add')}</span>
+                      <span className="text-xs">
+                        {t('favoritesWidget.add')}
+                      </span>
                     </button>
                   )}
                 </div>

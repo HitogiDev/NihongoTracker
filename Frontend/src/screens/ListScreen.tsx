@@ -46,7 +46,10 @@ import {
 
 import { convertBBCodeToHtml } from '../utils/utils';
 import QuickLog from '../components/QuickLog';
-import { getMediaTypeColor } from '../constants/mediaColors';
+import {
+  getMediaTypeColor,
+  MEDIA_TYPE_CLASSES,
+} from '../constants/mediaColors';
 import { getLogTypeLabelKey } from '../utils/logTypes';
 import type { ParseKeys } from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -524,10 +527,7 @@ function ListScreen() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mb-10">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="card bg-base-100 shadow-sm border border-base-300"
-              >
+              <div key={i} className="card surface">
                 <div className="skeleton aspect-[3/4] w-full rounded-t-2xl rounded-b-none" />
                 <div className="p-3 space-y-2">
                   <div className="skeleton h-4 w-full rounded" />
@@ -548,10 +548,7 @@ function ListScreen() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="card bg-base-100 shadow-sm border border-base-300"
-              >
+              <div key={i} className="card surface">
                 <div className="skeleton aspect-[3/4] w-full rounded-t-2xl rounded-b-none" />
                 <div className="p-3 space-y-2">
                   <div className="skeleton h-4 w-full rounded" />
@@ -592,7 +589,7 @@ function ListScreen() {
   return (
     <>
       {showHideAlertModal && (
-        <dialog className="modal modal-open">
+        <dialog className="modal modal-bottom sm:modal-middle modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg">{t('list.hideAlertTitle')}</h3>
             <div className="py-4">
@@ -653,7 +650,7 @@ function ListScreen() {
                       onChange={(e) => setRemoveWithLogs(e.target.checked)}
                       disabled={removeMediaMutation.isPending}
                     />
-                    <span className="label-text text-sm">
+                    <span className="text-sm">
                       Also delete my {mediaToRemove.logCount} log
                       {mediaToRemove.logCount === 1 ? '' : 's'} for this media
                     </span>
@@ -755,14 +752,14 @@ function ListScreen() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
-                    className="btn btn-sm btn-outline gap-2"
+                    className="btn btn-outline btn-sm gap-2"
                     onClick={() => navigate('/matchmedia')}
                   >
                     <Link2 className="h-4 w-4" />
                     <span>{t('list.matchLogs')}</span>
                   </button>
                   <button
-                    className="btn btn-sm btn-ghost gap-2"
+                    className="btn btn-ghost btn-sm gap-2"
                     onClick={() => setShowHideAlertModal(true)}
                     title={t('list.dontShowAgainTitle')}
                   >
@@ -775,12 +772,12 @@ function ListScreen() {
           )}
 
         <div className="container mx-auto px-4 mt-4 relative z-50">
-          <div className="card bg-base-100 shadow-sm relative z-50">
+          <div className="card surface relative z-50">
             <div className="card-body p-6">
               <div className="flex flex-col gap-4">
                 {/* Search Bar */}
                 <div className="w-full">
-                  <label className="input input-bordered flex items-center gap-2">
+                  <label className="input flex items-center gap-2">
                     <Search className="w-5 h-5 opacity-70" />
                     <input
                       type="text"
@@ -816,19 +813,19 @@ function ListScreen() {
                       </div>
                       <div
                         tabIndex={0}
-                        className="dropdown-content p-3 shadow-lg bg-base-100 rounded-box w-64 border border-base-300 z-50 mt-1"
+                        className="dropdown-content p-3 surface-raised w-64 z-50 mt-1"
                       >
                         <div className="flex gap-2 pb-3">
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
+                            className="btn btn-outline btn-sm flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
                             onClick={() => setSelectedTypes(MEDIA_TYPES)}
                           >
                             {t('list.selectAll')}
                           </button>
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
+                            className="btn btn-outline btn-sm flex-1 h-auto min-h-9 whitespace-normal leading-tight py-1"
                             onClick={() => setSelectedTypes([])}
                           >
                             {t('list.selectNone')}
@@ -904,7 +901,7 @@ function ListScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-60"
+                        className="dropdown-content z-50 menu p-2 surface-raised w-full sm:w-60"
                       >
                         {[
                           {
@@ -975,7 +972,7 @@ function ListScreen() {
                       </div>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content z-50 menu p-2 shadow-lg bg-base-100 rounded-box w-full sm:w-52"
+                        className="dropdown-content z-50 menu p-2 surface-raised w-full sm:w-52"
                       >
                         {[
                           { value: 'title', label: t('list.sort.byTitle') },
@@ -1006,14 +1003,14 @@ function ListScreen() {
                   <div className="flex gap-2 shrink-0">
                     <div className="join flex-1 sm:flex-none">
                       <button
-                        className={`btn join-item flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-active' : 'btn-outline'}`}
+                        className={`join-item btn btn-sm flex-1 sm:flex-none ${viewMode === 'grid' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setViewMode('grid')}
                       >
                         <LayoutGrid className="w-4 h-4" />
                         <span className="sm:hidden ml-2">{t('list.grid')}</span>
                       </button>
                       <button
-                        className={`btn join-item flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-active' : 'btn-outline'}`}
+                        className={`join-item btn btn-sm flex-1 sm:flex-none ${viewMode === 'list' ? 'btn-primary' : 'btn-outline'}`}
                         onClick={() => setViewMode('list')}
                       >
                         <LayoutList className="w-4 h-4" />
@@ -1184,50 +1181,52 @@ function MediaGroup({
   onRemoveMedia: (media: IMediaDocument) => void;
 }) {
   const { t: tCommon } = useTranslation('common');
+  // Colours come from constants/mediaColors so this heading matches the log
+  // cards and the charts for the same media type.
   const typeConfig = {
     anime: {
       icon: Play,
-      color: 'text-[#26b2f2]',
+      color: MEDIA_TYPE_CLASSES.anime.color,
       label: tCommon('mediaTypeGroups.anime'),
     },
     manga: {
       icon: Book,
-      color: 'text-[#ee4466]',
+      color: MEDIA_TYPE_CLASSES.manga.color,
       label: tCommon('mediaTypeGroups.manga'),
     },
     reading: {
       icon: Book,
-      color: 'text-[#b34ce6]',
+      color: MEDIA_TYPE_CLASSES.reading.color,
       label: tCommon('mediaTypeGroups.reading'),
     },
     vn: {
       icon: Gamepad,
-      color: 'text-[#3a70e4]',
+      color: MEDIA_TYPE_CLASSES.vn.color,
       label: tCommon('mediaTypeGroups.vn'),
     },
     game: {
       icon: Gamepad,
-      color: 'text-[#59c94e]',
+      color: MEDIA_TYPE_CLASSES.game.color,
       label: tCommon('mediaTypeGroups.game'),
     },
     video: {
       icon: Video,
-      color: 'text-[#2cc9a4]',
+      color: MEDIA_TYPE_CLASSES.video.color,
       label: tCommon('mediaTypeGroups.video'),
     },
     movie: {
       icon: Clapperboard,
-      color: 'text-[#f77118]',
+      color: MEDIA_TYPE_CLASSES.movie.color,
       label: tCommon('mediaTypeGroups.movie'),
     },
     'tv show': {
       icon: MonitorPlay,
-      color: 'text-[#f8b420]',
+      color: MEDIA_TYPE_CLASSES['tv show'].color,
       label: tCommon('mediaTypeGroups.tvShow'),
     },
     book: {
       icon: Book,
-      color: 'text-[#7c6cf0]',
+      color: MEDIA_TYPE_CLASSES.book.color,
       label: 'Books',
     },
   };
@@ -1383,7 +1382,7 @@ function MediaCard({
 
   return (
     <div
-      className={`card bg-base-100 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer border ${config.border}`}
+      className={`card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer border ${config.border}`}
       onClick={handleCardClick}
     >
       <figure className="relative aspect-[3/4] overflow-hidden">
@@ -1396,7 +1395,7 @@ function MediaCard({
             <button
               type="button"
               tabIndex={0}
-              className={`btn btn-circle btn-xs ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
+              className={`btn btn-xs btn-circle ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
               disabled={isToggling}
               aria-label={t('list.setStatus')}
             >
@@ -1410,7 +1409,7 @@ function MediaCard({
             </button>
             <ul
               tabIndex={0}
-              className="dropdown-content z-50 menu p-1 shadow-lg bg-base-100 rounded-box w-36 text-sm"
+              className="dropdown-content z-50 menu p-1 surface-raised w-36 text-sm"
             >
               {(
                 Object.entries(STATUS_CONFIG) as [
@@ -1484,7 +1483,7 @@ function MediaCard({
         {isOwnProfile && (
           <button
             type="button"
-            className="btn btn-circle btn-sm btn-primary absolute bottom-2 right-2 z-20 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            className="btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             onClick={(e) => {
               e.stopPropagation();
               onLogMedia(media);
@@ -1652,7 +1651,7 @@ function MediaListItem({
 
   return (
     <div
-      className="card bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+      className="card surface hover:shadow-lg transition-all duration-200 cursor-pointer"
       onClick={handleCardClick}
     >
       <div className="card-body p-4">
@@ -1734,7 +1733,7 @@ function MediaListItem({
                   >
                     <button
                       type="button"
-                      className="btn btn-xs btn-primary gap-1 w-36 justify-center"
+                      className="btn btn-primary btn-xs gap-1 w-36 justify-center"
                       onClick={(e) => {
                         e.stopPropagation();
                         onLogMedia(media);
@@ -1767,7 +1766,7 @@ function MediaListItem({
                       </button>
                       <ul
                         tabIndex={0}
-                        className="dropdown-content z-50 menu p-1 shadow-lg bg-base-100 rounded-box w-36 text-sm"
+                        className="dropdown-content z-50 menu p-1 surface-raised w-36 text-sm"
                       >
                         {(
                           Object.entries(STATUS_CONFIG) as [
@@ -1789,7 +1788,7 @@ function MediaListItem({
                     </div>
                     <button
                       type="button"
-                      className="btn btn-xs btn-ghost text-error gap-1 w-36 justify-center"
+                      className="btn btn-ghost btn-xs text-error gap-1 w-36 justify-center"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRemoveMedia(media);

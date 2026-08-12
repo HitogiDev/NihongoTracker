@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { X, Calendar, Save } from 'lucide-react';
@@ -111,12 +112,12 @@ export default function EditClubMediaModal({
   if (!isOpen || !media) return null;
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-bottom sm:modal-middle modal-open">
       <div className="modal-box max-w-2xl">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-bold text-xl">{t('editMedia.title')}</h3>
           <button
-            className="btn btn-sm btn-circle btn-ghost"
+            className="btn btn-ghost btn-sm btn-circle"
             onClick={onClose}
             disabled={editMediaMutation.isPending}
           >
@@ -126,10 +127,7 @@ export default function EditClubMediaModal({
 
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="label">
-                <span className="label-text">{t('common.titleRequired')}</span>
-              </label>
+            <Field label={t('common.titleRequired')} className="md:col-span-2">
               <input
                 type="text"
                 placeholder={t('editMedia.titlePlaceholder')}
@@ -140,15 +138,12 @@ export default function EditClubMediaModal({
                     title: e.target.value,
                   }))
                 }
-                className="input input-bordered w-full"
+                className="input w-full"
                 required
               />
-            </div>
+            </Field>
 
-            <div className="md:col-span-2">
-              <label className="label">
-                <span className="label-text">{t('common.description')}</span>
-              </label>
+            <Field label={t('common.description')} className="md:col-span-2">
               <textarea
                 placeholder={t('editMedia.descriptionPlaceholder')}
                 value={mediaData.description}
@@ -158,21 +153,18 @@ export default function EditClubMediaModal({
                     description: e.target.value,
                   }))
                 }
-                className="textarea textarea-bordered w-full"
+                className="textarea w-full"
                 rows={3}
               />
-            </div>
+            </Field>
 
             {/* Consumption Period */}
-            <div>
-              <label className="label">
-                <span className="label-text">{t('editMedia.start')}</span>
-              </label>
+            <Field label={t('editMedia.start')}>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                  className="input w-full flex items-center justify-between cursor-pointer"
                 >
                   <span
                     className={
@@ -187,7 +179,7 @@ export default function EditClubMediaModal({
                 </div>
                 <div
                   tabIndex={0}
-                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                 >
                   <DayPicker
                     className="react-day-picker mx-auto"
@@ -220,17 +212,14 @@ export default function EditClubMediaModal({
                   />
                 </div>
               </div>
-            </div>
+            </Field>
 
-            <div>
-              <label className="label">
-                <span className="label-text">{t('editMedia.end')}</span>
-              </label>
+            <Field label={t('editMedia.end')}>
               <div className="dropdown dropdown-top dropdown-end w-full">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="input input-bordered w-full flex items-center justify-between cursor-pointer"
+                  className="input w-full flex items-center justify-between cursor-pointer"
                 >
                   <span
                     className={
@@ -245,7 +234,7 @@ export default function EditClubMediaModal({
                 </div>
                 <div
                   tabIndex={0}
-                  className="dropdown-content z-[1000] card card-compact w-64 p-2 shadow bg-base-100 border border-base-300"
+                  className="dropdown-content z-[1000] card card-sm w-64 p-2 surface-raised"
                 >
                   <DayPicker
                     className="react-day-picker mx-auto"
@@ -273,7 +262,7 @@ export default function EditClubMediaModal({
                   />
                 </div>
               </div>
-            </div>
+            </Field>
           </div>
 
           <div className="modal-action">
@@ -295,7 +284,7 @@ export default function EditClubMediaModal({
           </div>
         </div>
       </div>
-      <div className="modal-backdrop bg-black/50" onClick={onClose}></div>
+      <div className="modal-backdrop" onClick={onClose}></div>
     </div>
   );
 }

@@ -205,7 +205,7 @@ export default function AchievementRevealModal({
             className={`achievement-flip-card ${isFlipped ? 'flipped' : ''}`}
           >
             {/* Front — unrevealed ? card */}
-            <div className="achievement-flip-front rounded-2xl border border-base-300 bg-base-200 flex items-center justify-center">
+            <div className="achievement-flip-front surface-muted flex items-center justify-center">
               <span className="text-7xl font-black text-base-content/20">
                 ?
               </span>
@@ -287,7 +287,7 @@ export default function AchievementRevealModal({
 
         {/* Action buttons */}
         <div className="flex gap-3 mt-2">
-          <button onClick={handleNext} className="btn btn-sm btn-primary px-6">
+          <button onClick={handleNext} className="btn btn-primary btn-sm px-6">
             {isLast
               ? t('reveal.done')
               : t('reveal.next', {
@@ -298,7 +298,7 @@ export default function AchievementRevealModal({
           {!isLast && (
             <button
               onClick={handleDismiss}
-              className="btn btn-sm btn-ghost text-white/60 hover:text-white"
+              className="btn btn-ghost btn-sm text-white/60 hover:text-white"
             >
               {t('reveal.skipAll')}
             </button>

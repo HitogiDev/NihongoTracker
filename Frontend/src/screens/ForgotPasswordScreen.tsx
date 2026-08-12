@@ -57,7 +57,7 @@ function ForgotPasswordScreen() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-sm">
+        <div className="card w-full max-w-md surface">
           <div className="card-body text-center">
             <div className="text-6xl mb-4">📧</div>
             <h2 className="card-title justify-center text-2xl mb-4">
@@ -87,7 +87,7 @@ function ForgotPasswordScreen() {
 
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-sm">
+      <div className="card w-full max-w-md surface">
         <div className="card-body">
           <h2 className="card-title justify-center text-2xl mb-6">
             {t('forgotPassword.title')}
@@ -97,32 +97,26 @@ function ForgotPasswordScreen() {
           </p>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-control w-full mb-4">
+            <div className="w-full mb-4">
               <label className="label justify-center">
-                <span className="label-text">
-                  {t('forgotPassword.email.label')}
-                </span>
+                <span>{t('forgotPassword.email.label')}</span>
               </label>
               <input
                 type="email"
                 placeholder={t('forgotPassword.email.placeholder')}
-                className={`input input-bordered w-full ${
-                  errors.email ? 'input-error' : ''
-                }`}
+                className={`input w-full ${errors.email ? 'input-error' : ''}`}
                 value={email}
                 onChange={(e) => handleFieldChange(e.target.value)}
                 disabled={isPending}
               />
               {errors.email && (
                 <label className="label justify-center">
-                  <span className="label-text-alt text-error">
-                    {vt(errors.email)}
-                  </span>
+                  <span className="text-error">{vt(errors.email)}</span>
                 </label>
               )}
             </div>
 
-            <div className="form-control mt-6 items-center">
+            <div className="mt-6 items-center">
               <button
                 type="submit"
                 className="btn btn-primary w-full"

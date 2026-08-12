@@ -225,10 +225,14 @@ export default function LogCelebration({
       {/* Mute toggle */}
       <button
         onClick={() => setMuted(toggleSfx())}
-        className="btn btn-circle btn-ghost btn-sm absolute top-4 right-4 text-white/60 hover:text-white"
+        className="btn btn-ghost btn-sm btn-circle absolute top-4 right-4 text-white/60 hover:text-white"
         aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
       >
-        {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        {muted ? (
+          <VolumeX className="w-5 h-5" />
+        ) : (
+          <Volume2 className="w-5 h-5" />
+        )}
       </button>
 
       {/* Step dots */}
@@ -313,10 +317,10 @@ export default function LogCelebration({
             {streak > 0 && (
               <div
                 ref={streakRef}
-                className="flex items-center gap-1.5 rounded-full bg-orange-500/15 border border-orange-400/30 px-4 py-1.5 text-orange-300 font-bold"
+                className="flex items-center gap-1.5 rounded-full bg-warning/15 border border-warning/30 px-4 py-1.5 text-warning font-bold"
                 style={{ opacity: 0 }}
               >
-                <Flame size={18} className="fill-orange-400 text-orange-500" />
+                <Flame className="w-5 h-5 fill-warning text-warning" />
                 {streak} day{streak === 1 ? '' : 's'} streak
               </div>
             )}
@@ -336,11 +340,11 @@ export default function LogCelebration({
         {step === 'overtake' && rank && (
           <div
             ref={overtakeCardRef}
-            className="w-full max-w-sm rounded-2xl border border-primary/40 bg-base-100/95 shadow-2xl shadow-primary/20 p-6 flex flex-col items-center gap-4"
+            className="w-full max-w-sm rounded-2xl border border-primary/40 bg-base-100/95 shadow-lg shadow-primary/20 p-6 flex flex-col items-center gap-4"
             style={{ opacity: 0 }}
           >
             <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-xs">
-              <TrendingUp size={16} />
+              <TrendingUp className="w-4 h-4" />
               {t('celebration.monthlyRanking')}
             </div>
 

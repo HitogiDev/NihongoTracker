@@ -36,7 +36,7 @@ export default function ClubMediaRankings() {
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="space-y-6">
         {/* Period Toggle */}
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body p-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
               <div>
@@ -49,10 +49,8 @@ export default function ClubMediaRankings() {
               </div>
               <div className="join">
                 <button
-                  className={`btn btn-sm join-item ${
-                    period === 'consumption'
-                      ? 'btn-active btn-primary'
-                      : 'btn-outline'
+                  className={`join-item btn btn-sm ${
+                    period === 'consumption' ? 'btn-primary' : 'btn-outline'
                   }`}
                   onClick={() => setPeriod('consumption')}
                 >
@@ -63,10 +61,8 @@ export default function ClubMediaRankings() {
                   <span className="sm:hidden">{t('media.period')}</span>
                 </button>
                 <button
-                  className={`btn btn-sm join-item ${
-                    period === 'alltime'
-                      ? 'btn-active btn-primary'
-                      : 'btn-outline'
+                  className={`join-item btn btn-sm ${
+                    period === 'alltime' ? 'btn-primary' : 'btn-outline'
                   }`}
                   onClick={() => setPeriod('alltime')}
                 >
@@ -79,7 +75,7 @@ export default function ClubMediaRankings() {
           </div>
         </div>
 
-        <div className="card bg-base-100 shadow-sm">
+        <div className="card surface">
           <div className="card-body">
             <div className="mb-4">
               <p className="text-base-content/70">
