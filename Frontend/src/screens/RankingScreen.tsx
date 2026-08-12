@@ -761,7 +761,11 @@ function RankingScreen() {
           {/* Combined scope+metric dropdown (Global mode only) */}
 
           <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:gap-4">
-            <div className="dropdown dropdown-end w-full sm:w-auto">
+            {/* Start-aligned on mobile: this trigger sits in the left grid
+                column, so an end-aligned 18rem panel would hang off the left
+                edge of the screen. From `sm` up the toolbar is a flex row at
+                the right, where end alignment is the correct one. */}
+            <div className="dropdown dropdown-start sm:dropdown-end w-full sm:w-auto">
               <div
                 tabIndex={0}
                 role="button"
@@ -785,7 +789,7 @@ function RankingScreen() {
               </div>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu p-2 surface-raised w-72"
+                className="dropdown-content menu p-2 surface-raised w-72 max-w-[calc(100vw-2rem)]"
               >
                 {timeFilterOptions.map((option) => (
                   <li key={option.value}>
