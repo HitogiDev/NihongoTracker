@@ -137,6 +137,7 @@
     "achievements": "Logros",
     "totalXp": "XP total",
     "totalTime": "Tiempo total de inmersión",
+    "totalTimeHours": "{{hours}} horas de inmersión",
     "hoverPosition": "{{date}}: n.º {{position}}",
     "noRankingHistory": "Todavía no hay suficiente historial de posiciones."
   },
