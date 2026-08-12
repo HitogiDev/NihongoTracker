@@ -7,6 +7,7 @@ import { useTimezone } from '../hooks/useTimezone';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { convertToUserTimezone, getLocale } from '../utils/timezone';
 import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
+import { effectiveLogMinutes } from '../utils/immersionTime';
 import { useTranslation } from 'react-i18next';
 
 interface LocalDateInfo {
@@ -276,7 +277,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByHour[hour.toString()] += log.xp;
         } else {
-          metricByHour[hour.toString()] += (log.time || 0) / 60; // Convert minutes to hours
+          metricByHour[hour.toString()] += effectiveLogMinutes(log) / 60; // Convert minutes to hours
         }
       });
 
@@ -304,7 +305,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByDay[dayName] += log.xp;
         } else {
-          metricByDay[dayName] += (log.time || 0) / 60; // Convert minutes to hours
+          metricByDay[dayName] += effectiveLogMinutes(log) / 60; // Convert minutes to hours
         }
       });
 
@@ -344,7 +345,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByMonth[monthIndex.toString()] += log.xp;
         } else {
-          metricByMonth[monthIndex.toString()] += (log.time || 0) / 60; // Convert minutes to hours
+          metricByMonth[monthIndex.toString()] += effectiveLogMinutes(log) / 60; // Convert minutes to hours
         }
       });
 
@@ -371,7 +372,7 @@ export default function ProgressChart({
         if (metric === 'xp') {
           metricByMonthYear[yearMonth] += log.xp;
         } else {
-          metricByMonthYear[yearMonth] += (log.time || 0) / 60; // Convert minutes to hours
+          metricByMonthYear[yearMonth] += effectiveLogMinutes(log) / 60; // Convert minutes to hours
         }
       });
 
@@ -433,7 +434,7 @@ export default function ProgressChart({
       if (metric === 'xp') {
         metricByDate[dateStr] += log.xp;
       } else {
-        metricByDate[dateStr] += (log.time || 0) / 60; // Convert minutes to hours
+        metricByDate[dateStr] += effectiveLogMinutes(log) / 60; // Convert minutes to hours
       }
     });
 

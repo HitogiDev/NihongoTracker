@@ -18,6 +18,7 @@ import {
   updateMediaCompletionStatusFn,
 } from '../api/trackerApi';
 import { numberWithCommas } from '../utils/utils';
+import { effectiveLogMinutes } from '../utils/immersionTime';
 import LogCard from '../components/LogCard';
 import { useState, useEffect, useRef } from 'react';
 import { useUserDataStore } from '../store/userData';
@@ -497,7 +498,12 @@ function MediaDetails() {
         : [];
 
     const totalXp = logsArray.reduce((acc, log) => acc + log.xp, 0);
-    const totalTime = logsArray.reduce((acc, log) => acc + (log.time ?? 0), 0);
+    // Episode-only anime logs carry no `time`; count them at 24 min/episode
+    // like every server-side total does.
+    const totalTime = logsArray.reduce(
+      (acc, log) => acc + effectiveLogMinutes(log),
+      0
+    );
 
     // Calculate reading statistics
     const totalCharsRead = logsArray.reduce(

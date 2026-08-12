@@ -137,6 +137,7 @@
     "achievements": "Achievements",
     "totalXp": "Total XP",
     "totalTime": "Total Immersion Time",
+    "totalTimeHours": "{{hours}} hours of immersion",
     "hoverPosition": "{{date}}: #{{position}}",
     "noRankingHistory": "Not enough ranking history yet."
   },

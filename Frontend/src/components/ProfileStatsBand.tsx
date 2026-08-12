@@ -11,6 +11,7 @@ import {
   getUserLogsFn,
 } from '../api/trackerApi';
 import ShareStatsModal from './ShareStatsModal';
+import { effectiveLogMinutes } from '../utils/immersionTime';
 
 interface ProfileStatsBandProps {
   username: string;
@@ -87,6 +88,8 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const location = useLocation();
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  // daisyUI tooltips are hover-only; touch devices need an explicit toggle.
+  const [totalTimeTipOpen, setTotalTimeTipOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     // Collapsed by default — only expanded if the user explicitly opened it before.
@@ -157,7 +160,9 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     let totalXp = 0;
 
     for (const log of logs ?? []) {
-      totalMinutes += Math.max(0, Number(log.time) || 0);
+      // Not `log.time`: anime logged as episodes without a duration carries no
+      // `time`, and every other total in the app counts it at 24 min/episode.
+      totalMinutes += effectiveLogMinutes(log);
       totalXp += Math.max(0, Number(log.xp) || 0);
     }
 
@@ -423,9 +428,23 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
                   {t('stats.totalTime')}
                 </div>
-                <div className="text-lg font-semibold leading-tight">
+                {/* `d` here is 24 hours of immersion, not a calendar day, so
+                    the plain hour count is worth having one tap away. */}
+                <button
+                  type="button"
+                  className={`tooltip tooltip-bottom cursor-help text-lg font-semibold leading-tight ${
+                    totalTimeTipOpen ? 'tooltip-open' : ''
+                  }`}
+                  data-tip={t('stats.totalTimeHours', {
+                    hours: formatNumber(totalMinutes / 60, {
+                      maximumFractionDigits: 1,
+                    }),
+                  })}
+                  onClick={() => setTotalTimeTipOpen((open) => !open)}
+                  onBlur={() => setTotalTimeTipOpen(false)}
+                >
                   {formatTotalTime(totalMinutes)}
-                </div>
+                </button>
               </div>
             </div>
           </>
