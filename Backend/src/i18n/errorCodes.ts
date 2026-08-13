@@ -210,6 +210,8 @@ export const ERROR_CODES = [
   'patreon.badgeColorTierRequired',
   'patreon.invalidBadgeColor',
   'patreon.invalidBadgeTextColor',
+  'patreon.invalidBadgeVisibility',
+  'patreon.badgeVisibilityTierRequired',
   'mediaRequest.tooManyPending',
   'mediaRequest.alreadyReviewed',
   'changelog.fieldsRequired',

@@ -6,6 +6,7 @@ import {
   getPatreonStatus,
   updateCustomBadgeText,
   updateBadgeColors,
+  updateBadgeVisibility,
   initiatePatreonOAuth,
   handlePatreonOAuthCallback,
 } from '../controllers/patreon.controller.js';
@@ -19,6 +20,7 @@ router.post('/link', protect, linkPatreonAccount);
 router.post('/unlink', protect, unlinkPatreonAccount);
 router.patch('/badge', protect, updateCustomBadgeText);
 router.patch('/badge-colors', protect, updateBadgeColors);
+router.patch('/badge-visibility', protect, updateBadgeVisibility);
 
 // OAuth2 routes
 router.get('/oauth/init', protect, initiatePatreonOAuth);

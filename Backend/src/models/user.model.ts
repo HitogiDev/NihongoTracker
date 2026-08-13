@@ -87,6 +87,10 @@ const PatreonSchema = new Schema<IPatreonData>(
       type: String,
       default: '',
     },
+    hideBadge: {
+      type: Boolean,
+      default: false,
+    },
     memberSince: { type: Date, default: null },
     lastChecked: { type: Date },
     isActive: { type: Boolean, default: false },

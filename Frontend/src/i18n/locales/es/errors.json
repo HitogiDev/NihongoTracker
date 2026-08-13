@@ -178,8 +178,10 @@
     "badgeTextNotAllowed": "El texto de la insignia contiene lenguaje no permitido",
     "badgeTextTierRequired": "El texto personalizado de la insignia solo está disponible para los niveles Enthusiast y Consumer",
     "badgeTextTooLong": "El texto de la insignia no puede superar los 20 caracteres",
+    "badgeVisibilityTierRequired": "Solo los mecenas activos pueden cambiar la visibilidad de la insignia",
     "invalidBadgeColor": "El color de la insignia debe ser un color hex válido, \"rainbow\", \"primary\" o \"secondary\"",
     "invalidBadgeTextColor": "El color del texto de la insignia debe ser un color hex válido, \"primary-content\" o \"secondary-content\"",
+    "invalidBadgeVisibility": "La visibilidad de la insignia debe ser un valor booleano",
     "notConfigured": "El OAuth de Patreon no está configurado en este servidor",
     "oauthNotConfigured": "OAuth no está configurado correctamente en este servidor",
     "useOauthFlow": "Usa el flujo de OAuth para vincular tu cuenta de Patreon"

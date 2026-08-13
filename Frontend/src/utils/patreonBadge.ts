@@ -7,6 +7,8 @@ export type PatreonBadgeData = {
   customBadgeText?: string;
   badgeColor?: string;
   badgeTextColor?: string;
+  /** Supporter opted out of showing the badge publicly. */
+  hideBadge?: boolean;
 };
 
 export type PatreonBadgeProps = {
@@ -27,10 +29,19 @@ const TIER_KEYS: Record<
   consumer: 'patreonTiers.consumer',
 };
 
+/**
+ * @param options.ignoreHidden render the badge even when the supporter hid it —
+ *   used by the settings previews, which have to show what is being edited.
+ */
 export function getPatreonBadgeProps(
-  patreon?: PatreonBadgeData
+  patreon?: PatreonBadgeData,
+  options?: { ignoreHidden?: boolean }
 ): PatreonBadgeProps | null {
   if (!patreon?.isActive || !patreon.tier) {
+    return null;
+  }
+
+  if (patreon.hideBadge && !options?.ignoreHidden) {
     return null;
   }
 

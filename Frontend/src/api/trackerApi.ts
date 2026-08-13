@@ -1139,6 +1139,7 @@ export async function getPatreonStatusFn(): Promise<{
   customBadgeText?: string;
   badgeColor?: string;
   badgeTextColor?: string;
+  hideBadge?: boolean;
 }> {
   const { data } = await api.get('patreon/status');
   return data;
@@ -1175,6 +1176,13 @@ export async function updateBadgeColorsFn(
     badgeColor,
     badgeTextColor,
   });
+  return data;
+}
+
+export async function updateBadgeVisibilityFn(
+  hideBadge: boolean
+): Promise<{ message: string; hideBadge: boolean }> {
+  const { data } = await api.patch('patreon/badge-visibility', { hideBadge });
   return data;
 }
 

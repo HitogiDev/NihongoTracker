@@ -3589,6 +3589,30 @@ const swaggerDocument = {
         },
       },
     },
+    '/patreon/badge-visibility': {
+      patch: {
+        tags: ['Patreon'],
+        summary: 'Show or hide the public tier badge',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['hideBadge'],
+                properties: {
+                  hideBadge: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Badge visibility updated' },
+        },
+      },
+    },
     '/patreon/oauth/init': {
       get: {
         tags: ['Patreon'],

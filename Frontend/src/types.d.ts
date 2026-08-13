@@ -100,6 +100,7 @@ export interface IUser {
     customBadgeText?: string;
     badgeColor?: string;
     badgeTextColor?: string;
+    hideBadge?: boolean;
     isActive: boolean;
     memberSince?: Date | string | null;
     lastChecked?: Date;
@@ -623,6 +624,7 @@ export interface IRankingResponse {
     customBadgeText?: string;
     badgeColor?: string;
     badgeTextColor?: string;
+    hideBadge?: boolean;
   };
   /** Only the cosmetics a ranking row renders. */
   customization?: Pick<

@@ -326,6 +326,48 @@ export async function updateBadgeColors(
   }
 }
 
+// Toggle the public tier badge (any active supporter)
+export async function updateBadgeVisibility(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { hideBadge } = req.body;
+    const user = res.locals.user;
+
+    if (typeof hideBadge !== 'boolean') {
+      return next(
+        apiError(
+          'patreon.invalidBadgeVisibility',
+          400,
+          'hideBadge must be a boolean'
+        )
+      );
+    }
+
+    if (!user.patreon?.isActive || !user.patreon.tier) {
+      return next(
+        apiError(
+          'patreon.badgeVisibilityTierRequired',
+          403,
+          'Badge visibility can only be changed by active supporters'
+        )
+      );
+    }
+
+    user.patreon.hideBadge = hideBadge;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Badge visibility updated successfully',
+      hideBadge: user.patreon.hideBadge,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // Patreon webhook handler
 export async function handlePatreonWebhook(
   req: Request,
@@ -504,6 +546,7 @@ export async function getPatreonStatus(
       customBadgeText: user.patreon?.customBadgeText,
       badgeColor: user.patreon?.badgeColor,
       badgeTextColor: user.patreon?.badgeTextColor,
+      hideBadge: user.patreon?.hideBadge ?? false,
     });
   } catch (error) {
     next(error);

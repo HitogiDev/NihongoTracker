@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { Info, Lock } from 'lucide-react';
+import { Heart, Info, Lock } from 'lucide-react';
 import {
   getCustomizationFn,
   updateCustomizationFn,
@@ -22,6 +22,8 @@ import {
   resolveAccentColor,
 } from '../../utils/customization';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { usePatreonBadgeText } from '../../hooks/usePatreonBadgeText';
+import { getPatreonBadgeProps } from '../../utils/patreonBadge';
 import { getAvatarInitials } from '../../utils/avatar';
 import BannerEffectOverlay from '../BannerEffectOverlay';
 import type {
@@ -53,6 +55,10 @@ export default function CustomizationSettings() {
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
   const prefersReducedMotion = useReducedMotion();
+  const badgeText = usePatreonBadgeText();
+  // Mirrors the profile: a hidden badge stays hidden here too, so the toggle in
+  // Settings › Patreon is visible in this preview.
+  const patreonBadge = getPatreonBadgeProps(user?.patreon);
 
   const { data, isLoading } = useQuery({
     queryKey: ['customization'],
@@ -252,6 +258,17 @@ export default function CustomizationSettings() {
                     {equippedTitleName && (
                       <span className="badge badge-outline badge-sm border-white/40 bg-black/30 text-white backdrop-blur-sm">
                         {equippedTitleName}
+                      </span>
+                    )}
+                    {patreonBadge && (
+                      <span
+                        className={`badge badge-sm gap-1.5 shadow-sm ${patreonBadge.colorClass}`}
+                        style={patreonBadge.style}
+                      >
+                        <Heart className="h-3 w-3 fill-current" />
+                        <span className="font-bold">
+                          {badgeText(patreonBadge)}
+                        </span>
                       </span>
                     )}
                   </div>

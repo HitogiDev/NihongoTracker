@@ -187,6 +187,8 @@ export interface IPatreonData {
   customBadgeText?: string;
   badgeColor?: string;
   badgeTextColor?: string;
+  /** Supporter opted out of showing the tier badge on their public profile */
+  hideBadge?: boolean;
   memberSince?: Date;
   lastChecked?: Date;
   isActive?: boolean;
