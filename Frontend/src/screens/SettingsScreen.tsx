@@ -19,6 +19,7 @@ import {
   unlinkPatreonAccountFn,
   updateCustomBadgeTextFn,
   updateBadgeColorsFn,
+  updateBadgeVisibilityFn,
   initiatePatreonOAuthFn,
   resendVerificationEmailFn,
   listApiKeysFn,
@@ -151,6 +152,7 @@ type PatreonStatus = {
   customBadgeText?: string;
   badgeColor?: string;
   badgeTextColor?: string;
+  hideBadge?: boolean;
   isActive: boolean;
 };
 
@@ -465,6 +467,7 @@ function SettingsScreen() {
   const [customBadgeText, setCustomBadgeText] = useState(
     user?.patreon?.customBadgeText || ''
   );
+  const [hideBadge, setHideBadge] = useState(user?.patreon?.hideBadge ?? false);
   const [badgeColor, setBadgeColor] = useState<string>(
     user?.patreon?.badgeColor || DEFAULT_BADGE_COLOR
   );
@@ -1131,6 +1134,36 @@ function SettingsScreen() {
       },
     });
 
+  const { mutate: updateBadgeVisibility, isPending: isUpdatingVisibility } =
+    useMutation({
+      mutationFn: updateBadgeVisibilityFn,
+      // Optimistic: the switch is the only control, so it has to move on click.
+      onMutate: (nextHidden: boolean) => {
+        const previous = hideBadge;
+        setHideBadge(nextHidden);
+        return previous;
+      },
+      onSuccess: (data) => {
+        toast.success(t('toast.badgeVisibilityUpdated'));
+        setHideBadge(data.hideBadge);
+        if (user?.patreon) {
+          setUser({
+            ...user,
+            patreon: { ...user.patreon, hideBadge: data.hideBadge },
+          });
+        }
+        void queryClient.invalidateQueries({ queryKey: ['user'] });
+      },
+      onError: (error, _next, previous) => {
+        setHideBadge(previous ?? false);
+        if (error instanceof AxiosError) {
+          toast.error(getApiErrorMessage(error));
+        } else {
+          toast.error(t('toast.badgeVisibilityFailed'));
+        }
+      },
+    });
+
   // Fetch Patreon status and API keys on mount
   useEffect(() => {
     fetchPatreonStatus();
@@ -1208,6 +1241,7 @@ function SettingsScreen() {
       if (status.badgeTextColor) {
         setBadgeTextColor(status.badgeTextColor);
       }
+      setHideBadge(status.hideBadge ?? false);
     } catch (error) {
       console.error('Failed to fetch Patreon status:', error);
     }
@@ -3027,6 +3061,43 @@ function SettingsScreen() {
                     </div>
                   </div>
                 </div>
+
+                {/* Badge visibility - any active supporter */}
+                {patreonStatus.isActive && patreonStatus.tier && (
+                  <div className="card surface">
+                    <div className="card-body">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-primary/10 rounded-lg">
+                            {hideBadge ? (
+                              <EyeOff className="h-5 w-5 text-primary" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-primary" />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold">
+                              {t('patreon.badgeVisibility')}
+                            </h3>
+                            <p className="text-base-content/70 text-sm">
+                              {t('patreon.badgeVisibilityHint')}
+                            </p>
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="toggle toggle-primary"
+                          checked={!hideBadge}
+                          disabled={isUpdatingVisibility}
+                          onChange={(e) =>
+                            updateBadgeVisibility(!e.target.checked)
+                          }
+                          aria-label={t('patreon.badgeVisibility')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Custom Badge Text - Enthusiast+ Only */}
                 {patreonStatus.patreonId &&

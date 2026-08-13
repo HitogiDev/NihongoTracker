@@ -178,8 +178,10 @@
     "badgeTextNotAllowed": "Custom badge text contains language that is not allowed",
     "badgeTextTierRequired": "Custom badge text is only available for Enthusiast and Consumer tier supporters",
     "badgeTextTooLong": "Custom badge text must be 20 characters or less",
+    "badgeVisibilityTierRequired": "Badge visibility can only be changed by active supporters",
     "invalidBadgeColor": "Badge color must be a valid hex color, \"rainbow\", \"primary\", or \"secondary\"",
     "invalidBadgeTextColor": "Badge text color must be a valid hex color, \"primary-content\", or \"secondary-content\"",
+    "invalidBadgeVisibility": "Badge visibility must be a boolean value",
     "notConfigured": "Patreon OAuth is not configured on this server",
     "oauthNotConfigured": "OAuth is not configured properly on this server",
     "useOauthFlow": "Please use the OAuth flow to link your Patreon account"

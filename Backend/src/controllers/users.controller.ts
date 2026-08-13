@@ -130,6 +130,7 @@ function getPublicPatreonProfile(patreon: IUser['patreon']) {
     customBadgeText: patreon?.customBadgeText,
     badgeColor: patreon?.badgeColor,
     badgeTextColor: patreon?.badgeTextColor,
+    hideBadge: patreon?.hideBadge ?? false,
   };
 }
 
@@ -1324,6 +1325,7 @@ export async function getRanking(
               customBadgeText: '$patreon.customBadgeText',
               badgeColor: '$patreon.badgeColor',
               badgeTextColor: '$patreon.badgeTextColor',
+              hideBadge: '$patreon.hideBadge',
             },
             customization: RANKING_COSMETICS_PROJECTION,
             stats: {
@@ -1581,6 +1583,7 @@ export async function getRanking(
               customBadgeText: '$patreon.customBadgeText',
               badgeColor: '$patreon.badgeColor',
               badgeTextColor: '$patreon.badgeTextColor',
+              hideBadge: '$patreon.hideBadge',
             },
             customization: RANKING_COSMETICS_PROJECTION,
           },
@@ -2078,6 +2081,7 @@ export async function getMediumRanking(
             customBadgeText: '$patreon.customBadgeText',
             badgeColor: '$patreon.badgeColor',
             badgeTextColor: '$patreon.badgeTextColor',
+            hideBadge: '$patreon.hideBadge',
           },
           customization: RANKING_COSMETICS_PROJECTION,
           stats: {
@@ -2210,6 +2214,7 @@ export async function clearUserData(
             customBadgeText: '',
             badgeColor: '',
             badgeTextColor: '',
+            hideBadge: false,
             manualTierExpiry: null,
           },
         },
