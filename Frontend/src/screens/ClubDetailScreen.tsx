@@ -279,7 +279,7 @@ function ClubDetailScreen() {
     mediaType: 'anime' as
       | 'anime'
       | 'manga'
-      | 'reading'
+      | 'light-novel'
       | 'vn'
       | 'game'
       | 'video'
@@ -746,7 +746,7 @@ function ClubDetailScreen() {
       case 'anime':
         return <Play className="text-lg" />;
       case 'manga':
-      case 'reading':
+      case 'light-novel':
       case 'book':
         return <Book className="text-lg" />;
       case 'movie':
@@ -1319,7 +1319,7 @@ function ClubDetailScreen() {
                                   ? 'visual novel'
                                   : media.mediaType === 'game'
                                     ? 'video game'
-                                    : media.mediaType === 'reading'
+                                    : media.mediaType === 'light-novel'
                                       ? 'light novel'
                                       : media.mediaType
                                 : 'unknown'}
@@ -1697,8 +1697,8 @@ function ClubDetailScreen() {
                 >
                   <option value="anime">{t('common:mediaTypes.anime')}</option>
                   <option value="manga">{t('common:mediaTypes.manga')}</option>
-                  <option value="reading">
-                    {t('common:mediaTypes.reading')}
+                  <option value="light-novel">
+                    {t('common:mediaTypes.light-novel')}
                   </option>
                   <option value="vn">{t('common:mediaTypes.vn')}</option>
                   <option value="game">{t('common:mediaTypes.game')}</option>
@@ -1884,7 +1884,7 @@ function ClubDetailScreen() {
             type: selectedMedia.mediaType as
               | 'anime'
               | 'manga'
-              | 'reading'
+              | 'light-novel'
               | 'vn'
               | 'game'
               | 'video'

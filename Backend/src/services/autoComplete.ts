@@ -55,7 +55,9 @@ export async function evaluateAutoCompleteForUserMedia(
     // If we don't have chars but this is a char-based type, try Jiten
     if (
       mediaCharTotal === null &&
-      ['reading', 'manga', 'vn', 'game', 'book'].includes(normalizedType)
+      ['light-novel', 'reading', 'manga', 'vn', 'game', 'book'].includes(
+        normalizedType
+      )
     ) {
       try {
         const jitenURL = process.env.JITEN_API_URL;
@@ -111,7 +113,9 @@ export async function evaluateAutoCompleteForUserMedia(
         shouldComplete = Number(totals.totalEpisodes || 0) >= totalEpisodes;
       }
     } else if (
-      ['vn', 'game', 'reading', 'manga', 'book'].includes(normalizedType)
+      ['vn', 'game', 'light-novel', 'reading', 'manga', 'book'].includes(
+        normalizedType
+      )
     ) {
       if (mediaCharTotal && mediaCharTotal > 0) {
         shouldComplete = Number(totals.totalChars || 0) >= mediaCharTotal;

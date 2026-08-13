@@ -83,7 +83,7 @@ function mediaTypeLabel(raw: string): string {
     manga: 'Manga',
     movie: 'Movie',
     video: 'Video',
-    reading: 'Reading',
+    'light-novel': 'Light Novel',
     audio: 'Audio',
     game: 'Video Game',
     other: 'Other',
@@ -168,7 +168,7 @@ async function mediaMeta(
     Movie: '#f77118',
     'Visual Novel': '#3a70e4',
     'TV Show': '#f8b420',
-    Reading: '#b34ce6',
+    'Light Novel': '#b34ce6',
     Video: '#2cc9a4',
     Audio: '#f2a15a',
     'Video Game': '#59c94e',
@@ -487,7 +487,7 @@ async function generateMetaTags(
     'vn',
     'video',
     'tv-show',
-    'reading',
+    'light-novel',
     'game',
   ]);
   if (parts.length >= 2 && MEDIA_TYPES.has(parts[0])) {

@@ -31,10 +31,10 @@ const MEDIA_TYPE_CONFIG: Record<
     color: 'text-warning',
     labelKey: 'mediaTypes.manga',
   },
-  reading: {
+  'light-novel': {
     icon: Book,
     color: 'text-primary',
-    labelKey: 'mediaTypes.reading',
+    labelKey: 'mediaTypes.light-novel',
   },
   vn: { icon: Gamepad, color: 'text-accent', labelKey: 'mediaTypes.vn' },
   game: {

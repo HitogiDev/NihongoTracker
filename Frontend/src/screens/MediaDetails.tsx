@@ -519,7 +519,7 @@ function MediaDetails() {
     const baseVolume = latestVolumeLog?.volume
       ? Math.floor(latestVolumeLog.volume)
       : logsArray.length > 0 &&
-          (mediaDocument?.type === 'manga' || mediaDocument?.type === 'reading')
+          (mediaDocument?.type === 'manga' || mediaDocument?.type === 'light-novel')
         ? 1
         : null;
 
@@ -670,7 +670,7 @@ function MediaDetails() {
     totalCharCount > 0 ? Math.max(0, 100 - readingPercentage) : 0;
 
   const isVolumeBasedMedia =
-    mediaDocument?.type === 'manga' || mediaDocument?.type === 'reading';
+    mediaDocument?.type === 'manga' || mediaDocument?.type === 'light-novel';
   const isLastVolumeCompleted =
     isVolumeBasedMedia &&
     totalSeriesVolumes > 0 &&
@@ -682,7 +682,7 @@ function MediaDetails() {
     (mediaDocument?.type === 'vn' ||
       mediaDocument?.type === 'game' ||
       mediaDocument?.type === 'manga' ||
-      mediaDocument?.type === 'reading' ||
+      mediaDocument?.type === 'light-novel' ||
       mediaDocument?.type === 'book') &&
     totalCharCount > 0 &&
     readingPercentage >= 100;
@@ -1209,7 +1209,7 @@ function MediaDetails() {
             {(mediaDocument?.type === 'vn' ||
               mediaDocument?.type === 'game' ||
               mediaDocument?.type === 'manga' ||
-              mediaDocument?.type === 'reading' ||
+              mediaDocument?.type === 'light-novel' ||
               mediaDocument?.type === 'book') &&
               totalCharCount > 0 &&
               myStats.readingPercentage !== null &&
@@ -1342,7 +1342,7 @@ function MediaDetails() {
                         ? 'visual novel'
                         : mediaDocument?.type === 'game'
                           ? 'video game'
-                          : mediaDocument?.type === 'reading'
+                          : mediaDocument?.type === 'light-novel'
                             ? 'light novel'
                             : mediaDocument?.type || mediaType}
                     </div>
@@ -1422,7 +1422,7 @@ function MediaDetails() {
                     </>
                   )}
 
-                  {(mediaType === 'manga' || mediaType === 'reading') && (
+                  {(mediaType === 'manga' || mediaType === 'light-novel') && (
                     <>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-base-content/70 min-w-20">
@@ -1476,7 +1476,7 @@ function MediaDetails() {
                     <div className="flex flex-wrap gap-2">
                       {(mediaDocument?.type === 'anime' ||
                         mediaDocument?.type === 'manga' ||
-                        mediaDocument?.type === 'reading') && (
+                        mediaDocument?.type === 'light-novel') && (
                         <a
                           className="btn btn-outline btn-sm gap-2"
                           href={`https://anilist.co/${
@@ -1813,7 +1813,7 @@ function MediaDetails() {
                     )}
 
                   {(mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading') &&
+                    mediaDocument?.type === 'light-novel') &&
                     logsArray.length > 0 && (
                       <div className="card surface hover:shadow-lg transition-shadow">
                         <div className="card-body">
@@ -1869,7 +1869,7 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading' ||
+                    mediaDocument?.type === 'light-novel' ||
                     mediaDocument?.type === 'book') &&
                     totalCharsRead > 0 && (
                       <div className="card surface hover:shadow-lg transition-shadow">
@@ -1906,7 +1906,7 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading' ||
+                    mediaDocument?.type === 'light-novel' ||
                     mediaDocument?.type === 'book') &&
                     progressTotalChars > 0 &&
                     !effectiveIsCompleted && (
@@ -1953,7 +1953,7 @@ function MediaDetails() {
                   {(mediaDocument?.type === 'vn' ||
                     mediaDocument?.type === 'game' ||
                     mediaDocument?.type === 'manga' ||
-                    mediaDocument?.type === 'reading' ||
+                    mediaDocument?.type === 'light-novel' ||
                     mediaDocument?.type === 'book') &&
                     readingSpeed > 0 && (
                       <div className="card surface hover:shadow-lg transition-shadow">
@@ -1994,7 +1994,7 @@ function MediaDetails() {
                 {(mediaDocument?.type === 'vn' ||
                   mediaDocument?.type === 'game' ||
                   mediaDocument?.type === 'manga' ||
-                  mediaDocument?.type === 'reading' ||
+                  mediaDocument?.type === 'light-novel' ||
                   mediaDocument?.type === 'book') &&
                   progressTotalChars > 0 &&
                   !effectiveIsCompleted && (

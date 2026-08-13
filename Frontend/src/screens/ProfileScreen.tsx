@@ -98,6 +98,7 @@ function ProfileScreen() {
     | 'all'
     | 'anime'
     | 'manga'
+    | 'light-novel'
     | 'reading'
     | 'vn'
     | 'game'
@@ -239,6 +240,7 @@ function ProfileScreen() {
   ): value is
     | 'anime'
     | 'manga'
+    | 'light-novel'
     | 'reading'
     | 'vn'
     | 'game'
@@ -249,6 +251,7 @@ function ProfileScreen() {
     return [
       'anime',
       'manga',
+      'light-novel',
       'reading',
       'vn',
       'game',
@@ -849,6 +852,10 @@ function ProfileScreen() {
                             {
                               value: 'manga',
                               label: tCommon('mediaTypes.manga'),
+                            },
+                            {
+                              value: 'light-novel',
+                              label: tCommon('mediaTypes.light-novel'),
                             },
                             {
                               value: 'reading',

@@ -12,6 +12,7 @@ const APP_NAME = 'NihongoTracker';
 const MEDIA_TYPES = new Set([
   'anime',
   'manga',
+  'light-novel',
   'reading',
   'vn',
   'game',
@@ -90,7 +91,7 @@ type TitleKey = ParseKeys<['nav', 'common']>;
 const MEDIA_TYPE_TITLE_KEYS: Record<string, TitleKey> = {
   anime: 'common:mediaTypes.anime',
   manga: 'common:mediaTypes.manga',
-  reading: 'common:mediaTypes.reading',
+  'light-novel': 'common:mediaTypes.light-novel',
   vn: 'common:mediaTypes.vn',
   game: 'common:mediaTypes.game',
   video: 'common:mediaTypes.video',

@@ -294,7 +294,7 @@ function ReviewDetailScreen() {
                 <span className="badge badge-soft capitalize">
                   {review.mediaType === 'vn'
                     ? 'visual novel'
-                    : review.mediaType === 'reading'
+                    : review.mediaType === 'light-novel'
                       ? 'light novel'
                       : review.mediaType}
                 </span>

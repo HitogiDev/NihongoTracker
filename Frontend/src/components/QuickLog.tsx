@@ -38,11 +38,11 @@ export interface QuickLogInitialValues {
 
 const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
 
-const getLastLoggedVolumeKey = (type: 'manga' | 'reading', mediaId: string) =>
+const getLastLoggedVolumeKey = (type: 'manga' | 'light-novel', mediaId: string) =>
   `${LAST_LOGGED_VOLUME_KEY_PREFIX}:${type}:${mediaId}`;
 
 const readLastLoggedVolume = (
-  type: 'manga' | 'reading',
+  type: 'manga' | 'light-novel',
   mediaId: string
 ): number | undefined => {
   const stored = localStorage.getItem(getLastLoggedVolumeKey(type, mediaId));
@@ -53,7 +53,7 @@ const readLastLoggedVolume = (
 };
 
 const writeLastLoggedVolume = (
-  type: 'manga' | 'reading',
+  type: 'manga' | 'light-novel',
   mediaId: string,
   volume: number
 ) => {
@@ -155,7 +155,7 @@ function QuickLog({
   } | null>(null);
 
   const resolveNextRememberedVolume = async (
-    type: 'manga' | 'reading',
+    type: 'manga' | 'light-novel',
     mediaId: string,
     submittedVolume: number
   ): Promise<number> => {
@@ -215,7 +215,7 @@ function QuickLog({
       setSeriesVolumes(media.volumes);
 
       if (
-        (media.type === 'manga' || media.type === 'reading') &&
+        (media.type === 'manga' || media.type === 'light-novel') &&
         media.contentId
       ) {
         setLoggedVolume(readLastLoggedVolume(media.type, media.contentId));
@@ -268,16 +268,16 @@ function QuickLog({
       logType !== 'vn' &&
       logType !== 'game' &&
       logType !== 'manga' &&
-      logType !== 'reading' &&
+      logType !== 'light-novel' &&
       logType !== 'book'
     ) {
       setChars(0);
     }
-    if (logType !== 'manga' && logType !== 'reading' && logType !== 'book') {
+    if (logType !== 'manga' && logType !== 'light-novel' && logType !== 'book') {
       setPages(0);
     }
     // Volumes are a series concept — books are standalone
-    if (logType !== 'manga' && logType !== 'reading') {
+    if (logType !== 'manga' && logType !== 'light-novel') {
       setLoggedVolume(undefined);
       setSeriesVolumes(undefined);
     }
@@ -287,7 +287,7 @@ function QuickLog({
       logType !== 'video' &&
       logType !== 'audio' &&
       logType !== 'manga' &&
-      logType !== 'reading' &&
+      logType !== 'light-novel' &&
       logType !== 'book' &&
       logType !== 'movie' &&
       logType !== 'vn' &&
@@ -357,7 +357,7 @@ function QuickLog({
         pendingVolume?.mediaId &&
         pendingVolume?.volume &&
         pendingVolume.volume > 0 &&
-        (pendingVolume.type === 'manga' || pendingVolume.type === 'reading')
+        (pendingVolume.type === 'manga' || pendingVolume.type === 'light-novel')
       ) {
         const nextRememberedVolume = await resolveNextRememberedVolume(
           pendingVolume.type,
@@ -482,7 +482,7 @@ function QuickLog({
       type: logType,
       mediaId: contentId,
       volume:
-        (logType === 'manga' || logType === 'reading') &&
+        (logType === 'manga' || logType === 'light-novel') &&
         typeof loggedVolume === 'number' &&
         loggedVolume > 0
           ? loggedVolume
@@ -494,7 +494,7 @@ function QuickLog({
       description: logDescription,
       episodes,
       volume:
-        (logType === 'manga' || logType === 'reading') &&
+        (logType === 'manga' || logType === 'light-novel') &&
         typeof loggedVolume === 'number' &&
         loggedVolume > 0
           ? loggedVolume
@@ -552,7 +552,7 @@ function QuickLog({
       setIsAdultImageMedia(group.isAdultImage ?? false);
       setSeriesVolumes(group.volumes);
 
-      if ((logType === 'manga' || logType === 'reading') && group.contentId) {
+      if ((logType === 'manga' || logType === 'light-novel') && group.contentId) {
         setLoggedVolume(readLastLoggedVolume(logType, group.contentId));
       } else {
         setLoggedVolume(undefined);
@@ -814,7 +814,7 @@ function QuickLog({
                         )}
 
                         {/* Pages field for Manga, Reading */}
-                        {(logType === 'manga' || logType === 'reading') && (
+                        {(logType === 'manga' || logType === 'light-novel') && (
                           <Field label={t('quick.volume')}>
                             <div className="flex items-center gap-2">
                               <input
@@ -849,7 +849,7 @@ function QuickLog({
                         {(logType === 'vn' ||
                           logType === 'game' ||
                           logType === 'manga' ||
-                          logType === 'reading' ||
+                          logType === 'light-novel' ||
                           logType === 'book') && (
                           <Field label={t('quick.charactersRead')}>
                             <input
@@ -865,7 +865,7 @@ function QuickLog({
                         )}
 
                         {(logType === 'manga' ||
-                          logType === 'reading' ||
+                          logType === 'light-novel' ||
                           logType === 'book') && (
                           <Field label={t('quick.pagesRead')}>
                             <input
@@ -884,7 +884,7 @@ function QuickLog({
                         {(logType === 'video' ||
                           logType === 'audio' ||
                           logType === 'manga' ||
-                          logType === 'reading' ||
+                          logType === 'light-novel' ||
                           logType === 'book' ||
                           logType === 'vn' ||
                           logType === 'game' ||

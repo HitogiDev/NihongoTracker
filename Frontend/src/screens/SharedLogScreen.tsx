@@ -26,6 +26,13 @@ import { useValidationText } from '../hooks/useValidationText';
 import { useTranslation } from 'react-i18next';
 
 const logTypeConfig = {
+  'light-novel': {
+    labelKey: 'common:mediaTypes.light-novel',
+    icon: Book,
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+  },
   reading: {
     labelKey: 'common:mediaTypes.reading',
     icon: Book,
@@ -596,6 +603,7 @@ function SharedLogScreen() {
                         </Field>
 
                         {(sharedLog.type === 'reading' ||
+                          sharedLog.type === 'light-novel' ||
                           sharedLog.type === 'vn' ||
                           sharedLog.type === 'manga') && (
                           <Field label={t('shared.characters')}>

@@ -8,7 +8,7 @@ import { getLocale } from '../utils/timezone';
 import { useTranslation } from 'react-i18next';
 
 type TimeframeType = 'total' | 'today' | 'week' | 'month' | 'year';
-type ReadingType = 'reading' | 'vn' | 'game' | 'manga';
+type ReadingType = 'reading' | 'light-novel' | 'vn' | 'game' | 'manga';
 
 // Updated to include the readingSpeedData format from IUserStats
 interface SpeedChartProps {
@@ -49,6 +49,7 @@ type FilteredData = {
 // Constants for reading types
 const READING_TYPES = [
   'reading',
+  'light-novel',
   'vn',
   'game',
   'manga',

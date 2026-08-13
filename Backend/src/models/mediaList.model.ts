@@ -4,7 +4,7 @@ import { IMediaList, IMediaListEntry } from '../types.js';
 const MEDIA_TYPES = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'video',
   'movie',

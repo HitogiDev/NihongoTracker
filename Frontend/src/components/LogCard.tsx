@@ -50,6 +50,11 @@ import { MEDIA_TYPE_CLASSES } from '../constants/mediaColors';
  * card and a chart segment can never disagree about what "anime" looks like.
  */
 const logTypeConfig = {
+  'light-novel': {
+    labelKey: 'mediaTypes.light-novel',
+    icon: Book,
+    ...MEDIA_TYPE_CLASSES['light-novel'],
+  },
   reading: {
     labelKey: 'mediaTypes.reading',
     icon: Book,
@@ -435,7 +440,12 @@ function LogCard({
           tooltip: t('card.tooltips.minutesReading', { time }),
         });
       }
-    } else if (type === 'vn' || type === 'game' || type === 'reading') {
+    } else if (
+      type === 'vn' ||
+      type === 'game' ||
+      type === 'reading' ||
+      type === 'light-novel'
+    ) {
       if (chars) {
         const readingSpeed =
           time && chars ? Math.round((chars / time) * 60) : null;
@@ -501,6 +511,7 @@ function LogCard({
   function getReadingSpeed() {
     if (
       (type === 'reading' ||
+        type === 'light-novel' ||
         type === 'vn' ||
         type === 'game' ||
         type === 'book') &&
@@ -870,7 +881,7 @@ function LogCard({
                           ? t('common:mediaTypes.vn')
                           : media.type === 'game'
                             ? t('common:mediaTypes.game')
-                            : media.type === 'reading'
+                            : media.type === 'light-novel'
                               ? t('details.lightNovel')
                               : media.type}
                       </span>
@@ -1083,7 +1094,7 @@ function LogCard({
                           ? t('common:mediaTypes.vn')
                           : media.type === 'game'
                             ? t('common:mediaTypes.game')
-                            : media.type === 'reading'
+                            : media.type === 'light-novel'
                               ? t('details.lightNovel')
                               : media.type}
                       </span>
@@ -1166,7 +1177,7 @@ function LogCard({
                         ? 'visual novel'
                         : type === 'game'
                           ? 'video game'
-                          : type === 'reading'
+                          : type === 'light-novel'
                             ? 'light novel'
                             : type}
                     </span>
@@ -1364,6 +1375,7 @@ function LogCard({
                           type: nextType,
                           episodes: nextType === 'anime' ? prev.episodes : 0,
                           chars: [
+                            'light-novel',
                             'reading',
                             'vn',
                             'game',
@@ -1372,7 +1384,7 @@ function LogCard({
                           ].includes(nextType)
                             ? prev.chars
                             : 0,
-                          volume: ['manga', 'reading'].includes(nextType)
+                          volume: ['manga', 'light-novel'].includes(nextType)
                             ? prev.volume
                             : 0,
                           pages: ['manga', 'book'].includes(nextType)
@@ -1381,6 +1393,9 @@ function LogCard({
                         }));
                       }}
                     >
+                      <option value="light-novel">
+                        {t('common:mediaTypes.light-novel')}
+                      </option>
                       <option value="reading">
                         {t('common:mediaTypes.reading')}
                       </option>
@@ -1504,6 +1519,7 @@ function LogCard({
                     )}
 
                     {(editData.type === 'reading' ||
+                      editData.type === 'light-novel' ||
                       editData.type === 'vn' ||
                       editData.type === 'game' ||
                       editData.type === 'manga' ||
@@ -1527,7 +1543,7 @@ function LogCard({
                     )}
 
                     {(editData.type === 'manga' ||
-                      editData.type === 'reading') && (
+                      editData.type === 'light-novel') && (
                       <Field label={t('edit.volume')}>
                         <input
                           type="number"

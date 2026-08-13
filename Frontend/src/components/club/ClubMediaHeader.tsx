@@ -23,7 +23,7 @@ const getMediaTypeIcon = (type: string) => {
     case 'anime':
       return <Play className="text-lg" />;
     case 'manga':
-    case 'reading':
+    case 'light-novel':
       return <Book className="text-lg" />;
     case 'movie':
     case 'video':
@@ -221,7 +221,7 @@ export default function ClubMediaHeader() {
                     ? 'visual novel'
                     : media.mediaType === 'game'
                       ? 'video game'
-                      : media.mediaType === 'reading'
+                      : media.mediaType === 'light-novel'
                         ? 'light novel'
                         : media.mediaType}
                 </span>
@@ -304,7 +304,7 @@ export default function ClubMediaHeader() {
             type: selectedMedia.mediaType as
               | 'anime'
               | 'manga'
-              | 'reading'
+              | 'light-novel'
               | 'vn'
               | 'game'
               | 'video'

@@ -434,6 +434,7 @@ export interface IMatchMediaLog {
   type:
     | 'anime'
     | 'manga'
+    | 'light-novel'
     | 'reading'
     | 'vn'
     | 'game'
@@ -495,7 +496,7 @@ export interface IContentMedia {
   type:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -570,6 +571,7 @@ export interface ILog {
   type:
     | 'anime'
     | 'manga'
+    | 'light-novel'
     | 'reading'
     | 'vn'
     | 'game'
@@ -724,7 +726,7 @@ export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';
 export type MediaRequestType =
   | 'anime'
   | 'manga'
-  | 'reading'
+  | 'light-novel'
   | 'vn'
   | 'video'
   | 'movie'
@@ -773,7 +775,7 @@ export interface IMediaRequestListResponse {
 export interface IImmersionList {
   anime: IMediaDocument[];
   manga: IMediaDocument[];
-  reading: IMediaDocument[];
+  'light-novel': IMediaDocument[];
   vn: IMediaDocument[];
   game: IMediaDocument[];
   video: IMediaDocument[];
@@ -802,7 +804,7 @@ export interface IMediaDocument {
   type:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'
@@ -1086,7 +1088,7 @@ export interface IClubMedia {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'
@@ -1116,7 +1118,7 @@ export interface IMediaReview {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'
@@ -1152,7 +1154,7 @@ export interface IClubMediaVoting {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'

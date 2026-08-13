@@ -74,7 +74,7 @@ function getMediaTypeForWinner(
   voting: IClubMediaVotingDocument
 ): IClubMedia['mediaType'] {
   if (voting.mediaType === 'custom') {
-    return 'reading';
+    return 'light-novel';
   }
 
   return voting.mediaType as IClubMedia['mediaType'];

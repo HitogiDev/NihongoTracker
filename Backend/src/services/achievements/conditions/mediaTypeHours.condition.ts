@@ -20,7 +20,7 @@ export async function evaluateMediaTypeHours(
   // Special case: 'reading_combined' groups manga + reading for Bookworm
   const matchTypes =
     mediaType === 'reading_combined'
-      ? { $in: ['manga', 'reading'] }
+      ? { $in: ['manga', 'light-novel', 'reading'] }
       : mediaType;
 
   const result = await Log.aggregate([

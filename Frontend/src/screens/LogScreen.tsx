@@ -132,11 +132,11 @@ const createInitialLogState = (
 
 const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
 
-const getLastLoggedVolumeKey = (type: 'manga' | 'reading', mediaId: string) =>
+const getLastLoggedVolumeKey = (type: 'manga' | 'light-novel', mediaId: string) =>
   `${LAST_LOGGED_VOLUME_KEY_PREFIX}:${type}:${mediaId}`;
 
 const readLastLoggedVolume = (
-  type: 'manga' | 'reading',
+  type: 'manga' | 'light-novel',
   mediaId: string
 ): number | undefined => {
   const stored = localStorage.getItem(getLastLoggedVolumeKey(type, mediaId));
@@ -147,7 +147,7 @@ const readLastLoggedVolume = (
 };
 
 const writeLastLoggedVolume = (
-  type: 'manga' | 'reading',
+  type: 'manga' | 'light-novel',
   mediaId: string,
   volume: number
 ) => {
@@ -231,7 +231,7 @@ function LogScreen() {
   const { user, setUser } = useUserDataStore();
 
   const resolveNextRememberedVolume = async (
-    type: 'manga' | 'reading',
+    type: 'manga' | 'light-novel',
     mediaId: string,
     submittedVolume: number
   ): Promise<number> => {
@@ -417,7 +417,7 @@ function LogScreen() {
         pendingVolume?.mediaId &&
         pendingVolume?.volume &&
         pendingVolume.volume > 0 &&
-        (pendingVolume.type === 'manga' || pendingVolume.type === 'reading')
+        (pendingVolume.type === 'manga' || pendingVolume.type === 'light-novel')
       ) {
         const nextRememberedVolume = await resolveNextRememberedVolume(
           pendingVolume.type,
@@ -637,7 +637,7 @@ function LogScreen() {
       }
 
       // For manga, store chapter/volume information
-      if (logData.type === 'manga' || logData.type === 'reading') {
+      if (logData.type === 'manga' || logData.type === 'light-novel') {
         if (group.chapters) {
           handleInputChange('chapters', group.chapters);
         }
@@ -741,7 +741,7 @@ function LogScreen() {
       type: logData.type,
       mediaId: logData.mediaId,
       volume:
-        (logData.type === 'manga' || logData.type === 'reading') &&
+        (logData.type === 'manga' || logData.type === 'light-novel') &&
         typeof logData.logVolume === 'number' &&
         logData.logVolume > 0
           ? logData.logVolume
@@ -755,7 +755,7 @@ function LogScreen() {
       mediaData,
       episodes: logData.watchedEpisodes,
       volume:
-        (logData.type === 'manga' || logData.type === 'reading') &&
+        (logData.type === 'manga' || logData.type === 'light-novel') &&
         typeof logData.logVolume === 'number' &&
         logData.logVolume > 0
           ? logData.logVolume
@@ -786,15 +786,21 @@ function LogScreen() {
     'vn',
     'game',
     'video',
+    'light-novel',
     'reading',
     'audio',
     'manga',
     'movie',
     'book',
   ].includes(logData.type ?? '');
-  const showCharsInMain = ['vn', 'game', 'reading', 'manga', 'book'].includes(
-    logData.type ?? ''
-  );
+  const showCharsInMain = [
+    'vn',
+    'game',
+    'light-novel',
+    'reading',
+    'manga',
+    'book',
+  ].includes(logData.type ?? '');
   const showPagesInMain = logData.type === 'manga' || logData.type === 'book';
 
   const autoCalculatedTime = (() => {
@@ -1283,7 +1289,7 @@ function LogScreen() {
                         )}
 
                         {(logData.type === 'manga' ||
-                          logData.type === 'reading') && (
+                          logData.type === 'light-novel') && (
                           <Field label={t('create.volume')}>
                             <div className="flex items-center gap-2">
                               <input

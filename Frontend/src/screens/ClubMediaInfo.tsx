@@ -101,7 +101,7 @@ export default function ClubMediaInfo() {
             icon: Files,
           },
         };
-      case 'reading':
+      case 'light-novel':
       case 'vn':
       case 'game':
         return {
@@ -384,7 +384,7 @@ export default function ClubMediaInfo() {
                           ? mediaStats.thisWeek.episodes
                           : mediaType === 'manga'
                             ? mediaStats.thisWeek.pages
-                            : mediaType === 'reading' ||
+                            : mediaType === 'light-novel' ||
                                 mediaType === 'vn' ||
                                 mediaType === 'game'
                               ? mediaStats.thisWeek.characters
@@ -462,7 +462,7 @@ export default function ClubMediaInfo() {
                             ? mediaStats.thisMonth.episodes
                             : mediaType === 'manga'
                               ? mediaStats.thisMonth.pages
-                              : mediaType === 'reading' ||
+                              : mediaType === 'light-novel' ||
                                   mediaType === 'vn' ||
                                   mediaType === 'game'
                                 ? mediaStats.thisMonth.characters
@@ -601,7 +601,7 @@ export default function ClubMediaInfo() {
                         });
                       } else if (
                         mediaType === 'manga' ||
-                        mediaType === 'reading'
+                        mediaType === 'light-novel'
                       ) {
                         baseDatasets.push({
                           label:
@@ -623,7 +623,7 @@ export default function ClubMediaInfo() {
                           borderWidth: 1,
                         });
                       } else if (
-                        mediaType === 'reading' ||
+                        mediaType === 'light-novel' ||
                         mediaType === 'vn' ||
                         mediaType === 'game'
                       ) {

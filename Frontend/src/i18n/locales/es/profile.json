@@ -43,7 +43,7 @@
     "types": {
       "anime": "Anime",
       "manga": "Manga",
-      "reading": "Novelas ligeras",
+      "light-novel": "Novelas ligeras",
       "vn": "Novelas visuales",
       "game": "Videojuegos",
       "video": "Vídeos",

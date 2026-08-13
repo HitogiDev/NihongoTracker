@@ -14,7 +14,7 @@ type CandidateSubmissionType = 'manual' | 'member_suggestions';
 type MediaType =
   | 'anime'
   | 'manga'
-  | 'reading'
+  | 'light-novel'
   | 'vn'
   | 'video'
   | 'movie'
@@ -64,7 +64,7 @@ const ClubMediaVotingSchema = new Schema<IClubMediaVotingDocument>(
       enum: [
         'anime',
         'manga',
-        'reading',
+        'light-novel',
         'vn',
         'video',
         'movie',

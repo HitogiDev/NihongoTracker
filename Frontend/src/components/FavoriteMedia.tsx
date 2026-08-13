@@ -40,7 +40,7 @@ const MAX_FAVORITES = 50;
 const TYPE_ORDER: MediaListMediaType[] = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'game',
   'video',
@@ -53,7 +53,7 @@ const TYPE_ORDER: MediaListMediaType[] = [
 const TYPE_LABELS: Record<MediaListMediaType, ParseKeys<'profile'>> = {
   anime: 'favoritesWidget.types.anime',
   manga: 'favoritesWidget.types.manga',
-  reading: 'favoritesWidget.types.reading',
+  'light-novel': 'favoritesWidget.types.light-novel',
   vn: 'favoritesWidget.types.vn',
   game: 'favoritesWidget.types.game',
   video: 'favoritesWidget.types.video',

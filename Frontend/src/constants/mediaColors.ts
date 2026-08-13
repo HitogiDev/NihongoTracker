@@ -13,7 +13,8 @@ export const MEDIA_TYPE_COLORS: Record<string, string> = {
   video: '#2cc9a4',
   'tv show': '#f8b420',
   manga: '#ee4466',
-  reading: '#b34ce6',
+  'light-novel': '#b34ce6',
+  reading: '#ec4899',
   movie: '#f77118',
   book: '#7c6cf0',
   audio: '#f2a15a',
@@ -81,11 +82,17 @@ export const MEDIA_TYPE_CLASSES: Record<string, MediaTypeClasses> = {
     'border-[#ee4466]/30',
     'bg-[#ee4466]'
   ),
-  reading: classesFor(
+  'light-novel': classesFor(
     'text-[#b34ce6]',
     'bg-[#b34ce6]/10',
     'border-[#b34ce6]/30',
     'bg-[#b34ce6]'
+  ),
+  reading: classesFor(
+    'text-[#ec4899]',
+    'bg-[#ec4899]/10',
+    'border-[#ec4899]/30',
+    'bg-[#ec4899]'
   ),
   movie: classesFor(
     'text-[#f77118]',

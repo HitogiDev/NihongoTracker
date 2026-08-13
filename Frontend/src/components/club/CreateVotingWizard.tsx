@@ -27,7 +27,7 @@ interface VotingData {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'
@@ -56,7 +56,7 @@ interface Candidate {
 const MEDIA_TYPES = [
   { value: 'anime', labelKey: 'wizard.mediaTypes.anime' },
   { value: 'manga', labelKey: 'wizard.mediaTypes.manga' },
-  { value: 'reading', labelKey: 'wizard.mediaTypes.lightNovel' },
+  { value: 'light-novel', labelKey: 'wizard.mediaTypes.lightNovel' },
   { value: 'vn', labelKey: 'wizard.mediaTypes.vn' },
   { value: 'game', labelKey: 'wizard.mediaTypes.game' },
   { value: 'video', labelKey: 'wizard.mediaTypes.videoMovie' },

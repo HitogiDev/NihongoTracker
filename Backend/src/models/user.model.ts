@@ -25,7 +25,7 @@ import Tag from './tag.model.js';
 const FAVORITE_MEDIA_TYPES = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'video',
   'movie',

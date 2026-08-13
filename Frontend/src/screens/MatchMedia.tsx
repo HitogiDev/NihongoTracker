@@ -45,7 +45,7 @@ function AssignMedia() {
               ),
             },
             {
-              label: t('mediaTypes.reading'),
+              label: t('mediaTypes.light-novel'),
               component: (isActive) => (
                 <ReadingLogs username={user?.username} isActive={isActive} />
               ),

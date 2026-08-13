@@ -2802,7 +2802,7 @@ function TextHooker() {
                       <span className="badge badge-primary badge-sm capitalize">
                         {media.type === 'vn'
                           ? 'visual novel'
-                          : media.type === 'reading'
+                          : media.type === 'light-novel'
                             ? 'light novel'
                             : media.type}
                       </span>
