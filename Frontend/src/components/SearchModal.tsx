@@ -46,10 +46,10 @@ const MEDIA_TYPE_CONFIG: Record<
     color: 'text-warning',
     labelKey: 'mediaTypes.manga',
   },
-  reading: {
+  'light-novel': {
     icon: Book,
     color: 'text-primary',
-    labelKey: 'mediaTypes.reading',
+    labelKey: 'mediaTypes.light-novel',
   },
   vn: { icon: Gamepad, color: 'text-accent', labelKey: 'mediaTypes.vn' },
   game: {
@@ -88,7 +88,7 @@ const MEDIA_TYPE_FILTERS: {
   { value: 'all', labelKey: 'allTypes' },
   { value: 'anime', labelKey: 'mediaTypes.anime' },
   { value: 'manga', labelKey: 'mediaTypes.manga' },
-  { value: 'reading', labelKey: 'mediaTypes.reading' },
+  { value: 'light-novel', labelKey: 'mediaTypes.light-novel' },
   { value: 'vn', labelKey: 'mediaTypes.vn' },
   { value: 'game', labelKey: 'mediaTypes.game' },
   { value: 'video', labelKey: 'mediaTypes.video' },

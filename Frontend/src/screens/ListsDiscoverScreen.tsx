@@ -30,7 +30,7 @@ const MEDIA_TYPE_FILTERS: Array<{
   { value: '', labelKey: 'lists.filters.all' },
   { value: 'anime', labelKey: 'lists.filters.anime' },
   { value: 'manga', labelKey: 'lists.filters.manga' },
-  { value: 'reading', labelKey: 'lists.filters.reading' },
+  { value: 'light-novel', labelKey: 'lists.filters.light-novel' },
   { value: 'vn', labelKey: 'lists.filters.vn' },
   { value: 'game', labelKey: 'lists.filters.game' },
   { value: 'video', labelKey: 'lists.filters.video' },

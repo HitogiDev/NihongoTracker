@@ -95,6 +95,7 @@ const feedTypeOptions: Array<{
   { labelKey: 'dashboard.feed.allTypes', ns: 'home', value: 'all' },
   { labelKey: 'mediaTypes.anime', ns: 'common', value: 'anime' },
   { labelKey: 'mediaTypes.manga', ns: 'common', value: 'manga' },
+  { labelKey: 'mediaTypes.light-novel', ns: 'common', value: 'light-novel' },
   { labelKey: 'mediaTypes.reading', ns: 'common', value: 'reading' },
   { labelKey: 'mediaTypes.vn', ns: 'common', value: 'vn' },
   { labelKey: 'mediaTypes.game', ns: 'common', value: 'game' },
@@ -352,6 +353,13 @@ function Dashboard() {
 
     for (const log of sortedLogs) {
       if (!log.media?.contentId) {
+        continue;
+      }
+
+      // Playlist-batch logs share the channel as their media, so a single
+      // channel tile would quick-log the whole channel instead of the
+      // playlist. Skip them — playlists aren't re-logged from here.
+      if (log.playlistBatchId) {
         continue;
       }
 

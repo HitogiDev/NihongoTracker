@@ -18,7 +18,8 @@
     "manga": "Manga",
     "movie": "Movies",
     "other": "Other",
-    "reading": "Light Novels",
+    "light-novel": "Light Novels",
+    "reading": "Reading",
     "tvShow": "TV Shows",
     "video": "Video",
     "vn": "Visual Novels"
@@ -31,7 +32,8 @@
     "manga": "Manga",
     "movie": "Movie",
     "other": "Other",
-    "reading": "Light Novel",
+    "light-novel": "Light Novel",
+    "reading": "Reading",
     "tvShow": "TV Show",
     "video": "Video",
     "vn": "Visual Novel"
@@ -42,7 +44,8 @@
     "game": "video games",
     "manga": "manga",
     "movie": "movies",
-    "reading": "light novels",
+    "light-novel": "light novels",
+    "reading": "reading",
     "tvShow": "TV shows",
     "video": "video",
     "vn": "visual novels"

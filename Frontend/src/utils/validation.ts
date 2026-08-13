@@ -138,6 +138,7 @@ export const validateLogData = (
 
   if (
     logData.type === 'reading' ||
+    logData.type === 'light-novel' ||
     logData.type === 'vn' ||
     logData.type === 'game'
   ) {
@@ -222,7 +223,7 @@ export const validateQuickLogData = (logData: {
   }
 
   if (
-    logData.type === 'reading' &&
+    (logData.type === 'reading' || logData.type === 'light-novel') &&
     logData.pages <= 0 &&
     logData.chars <= 0 &&
     totalMinutes <= 0

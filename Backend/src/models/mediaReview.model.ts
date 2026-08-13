@@ -11,7 +11,7 @@ const MediaReviewSchema = new Schema<IMediaReview>(
       enum: [
         'anime',
         'manga',
-        'reading',
+        'light-novel',
         'vn',
         'video',
         'movie',

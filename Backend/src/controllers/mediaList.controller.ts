@@ -10,7 +10,7 @@ import { IMediaList, IMediaListEntry, MediaListMediaType } from '../types.js';
 const MEDIA_TYPES: MediaListMediaType[] = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'video',
   'movie',

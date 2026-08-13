@@ -22,7 +22,7 @@ const MEDIA_TYPES: {
 }[] = [
   { value: 'anime', labelKey: 'mediaRequest.types.anime' },
   { value: 'manga', labelKey: 'mediaRequest.types.manga' },
-  { value: 'reading', labelKey: 'mediaRequest.types.reading' },
+  { value: 'light-novel', labelKey: 'mediaRequest.types.light-novel' },
   { value: 'vn', labelKey: 'mediaRequest.types.vn' },
   { value: 'movie', labelKey: 'mediaRequest.types.movie' },
   { value: 'tv show', labelKey: 'mediaRequest.types.tvShow' },

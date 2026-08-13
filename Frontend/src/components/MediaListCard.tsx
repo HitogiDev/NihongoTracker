@@ -20,7 +20,7 @@ interface MediaListCardProps {
 const TYPE_CONTEXTS: Record<MediaListMediaType, string> = {
   anime: 'anime',
   manga: 'manga',
-  reading: 'book',
+  'light-novel': 'book',
   vn: 'vn',
   video: 'video',
   movie: 'movie',

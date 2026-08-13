@@ -445,6 +445,7 @@ function transformOtherCSVLogsList(
   user: Omit<IUser, 'password'>
 ): ILogNT[] {
   const validTypes: ILog['type'][] = [
+    'light-novel',
     'reading',
     'anime',
     'vn',

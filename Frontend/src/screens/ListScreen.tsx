@@ -121,7 +121,7 @@ function ListScreen() {
   const MEDIA_TYPES = [
     'anime',
     'manga',
-    'reading',
+    'light-novel',
     'vn',
     'game',
     'video',
@@ -358,9 +358,9 @@ function ListScreen() {
         ...item,
         category: 'manga' as const,
       })),
-      ...immersionList.reading.map((item) => ({
+      ...immersionList['light-novel'].map((item) => ({
         ...item,
-        category: 'reading' as const,
+        category: 'light-novel' as const,
       })),
       ...immersionList.vn.map((item) => ({ ...item, category: 'vn' as const })),
       ...immersionList.game.map((item) => ({
@@ -449,7 +449,7 @@ function ListScreen() {
     const typeOrder = [
       'anime',
       'manga',
-      'reading',
+      'light-novel',
       'vn',
       'game',
       'video',
@@ -1194,10 +1194,10 @@ function MediaGroup({
       color: MEDIA_TYPE_CLASSES.manga.color,
       label: tCommon('mediaTypeGroups.manga'),
     },
-    reading: {
+    'light-novel': {
       icon: Book,
-      color: MEDIA_TYPE_CLASSES.reading.color,
-      label: tCommon('mediaTypeGroups.reading'),
+      color: MEDIA_TYPE_CLASSES['light-novel'].color,
+      label: tCommon('mediaTypeGroups.light-novel'),
     },
     vn: {
       icon: Gamepad,
@@ -1330,7 +1330,7 @@ function MediaCard({
       bg: 'bg-[#ee4466]/10',
       border: 'border-[#ee4466]/30',
     },
-    reading: {
+    'light-novel': {
       icon: Book,
       color: 'text-[#b34ce6]',
       bg: 'bg-[#b34ce6]/10',
@@ -1622,7 +1622,7 @@ function MediaListItem({
   const typeConfig = {
     anime: { icon: Play, color: 'text-[#26b2f2]', bg: 'bg-[#26b2f2]/10' },
     manga: { icon: Book, color: 'text-[#ee4466]', bg: 'bg-[#ee4466]/10' },
-    reading: { icon: Book, color: 'text-[#b34ce6]', bg: 'bg-[#b34ce6]/10' },
+    'light-novel': { icon: Book, color: 'text-[#b34ce6]', bg: 'bg-[#b34ce6]/10' },
     vn: { icon: Gamepad, color: 'text-[#3a70e4]', bg: 'bg-[#3a70e4]/10' },
     game: { icon: Gamepad, color: 'text-[#59c94e]', bg: 'bg-[#59c94e]/10' },
     video: { icon: Video, color: 'text-[#2cc9a4]', bg: 'bg-[#2cc9a4]/10' },

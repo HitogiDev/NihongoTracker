@@ -107,7 +107,7 @@ export async function getUntrackedLogs(
     const untrackedLogs = await Log.find({
       user: user._id,
       type: {
-        $in: ['anime', 'manga', 'reading', 'vn', 'video', 'movie', 'game'],
+        $in: ['anime', 'manga', 'light-novel', 'vn', 'video', 'movie', 'game'],
       },
       $or: [
         { mediaId: { $exists: false } },
@@ -489,7 +489,7 @@ export async function getDashboardHours(
       previousMonthActualDateLocal.getTime() + offsetNow
     );
 
-    const readingTypes = ['reading', 'manga', 'vn', 'game'];
+    const readingTypes = ['light-novel', 'reading', 'manga', 'vn', 'game'];
     const listeningTypes = ['anime', 'audio', 'video'];
 
     const currentMonthStats = await Log.aggregate([
@@ -1335,7 +1335,12 @@ export async function adminDeleteLogsBulk(
             readingXp: {
               $sum: {
                 $cond: [
-                  { $in: ['$type', ['manga', 'reading', 'vn', 'game']] },
+                  {
+                    $in: [
+                      '$type',
+                      ['manga', 'light-novel', 'reading', 'vn', 'game'],
+                    ],
+                  },
                   '$xp',
                   0,
                 ],
@@ -1779,7 +1784,7 @@ export async function createLog(
     const immersionMediaTypes = new Set([
       'anime',
       'manga',
-      'reading',
+      'light-novel',
       'vn',
       'game',
       'video',
@@ -1922,7 +1927,7 @@ interface IImportStats {
   anilistMediaId: {
     anime: number[];
     manga: number[];
-    reading: number[];
+    'light-novel': number[];
   };
 }
 
@@ -1940,7 +1945,7 @@ async function createImportedMedia(
       logsMediaId &&
       (logsMediaId.anime.length > 0 ||
         logsMediaId.manga.length > 0 ||
-        logsMediaId.reading.length > 0)
+        logsMediaId['light-novel'].length > 0)
     ) {
       const userLogs = await Log.find({ user: userId });
       if (!userLogs) return 0;
@@ -1951,13 +1956,13 @@ async function createImportedMedia(
               acc.anime.push(parseInt(log.mediaId));
             } else if (log.type === 'manga') {
               acc.manga.push(parseInt(log.mediaId));
-            } else if (log.type === 'reading') {
-              acc.reading.push(parseInt(log.mediaId));
+            } else if (log.type === 'light-novel') {
+              acc['light-novel'].push(parseInt(log.mediaId));
             }
           }
           return acc;
         },
-        { anime: [], manga: [], reading: [] }
+        { anime: [], manga: [], 'light-novel': [] }
       );
       if (logsMediaId.anime.length > 0) {
         logsMediaId.anime = [...new Set(logsMediaId.anime)];
@@ -1965,8 +1970,8 @@ async function createImportedMedia(
       if (logsMediaId.manga.length > 0) {
         logsMediaId.manga = [...new Set(logsMediaId.manga)];
       }
-      if (logsMediaId.reading.length > 0) {
-        logsMediaId.reading = [...new Set(logsMediaId.reading)];
+      if (logsMediaId['light-novel'].length > 0) {
+        logsMediaId['light-novel'] = [...new Set(logsMediaId['light-novel'])];
       }
     }
 
@@ -2000,7 +2005,7 @@ async function createImportedMedia(
             Manga.insertMany(mediaData, {
               ordered: false,
             });
-          } else if (type === 'reading') {
+          } else if (type === 'light-novel') {
             Reading.insertMany(mediaData, {
               ordered: false,
             });
@@ -2055,6 +2060,7 @@ export async function importLogs(
         ) {
           acc.listeningXp += log.xp;
         } else if (
+          log.type === 'light-novel' ||
           log.type === 'reading' ||
           log.type === 'manga' ||
           log.type === 'vn' ||
@@ -2066,7 +2072,7 @@ export async function importLogs(
           log.mediaId &&
           (log.type === 'anime' ||
             log.type === 'manga' ||
-            log.type === 'reading')
+            log.type === 'light-novel')
         ) {
           if (!acc.anilistMediaId[log.type].includes(parseInt(log.mediaId))) {
             acc.anilistMediaId[log.type].push(parseInt(log.mediaId));
@@ -2077,7 +2083,7 @@ export async function importLogs(
       {
         listeningXp: 0,
         readingXp: 0,
-        anilistMediaId: { anime: [], manga: [], reading: [] },
+        anilistMediaId: { anime: [], manga: [], 'light-novel': [] },
       }
     );
     res.locals.importedStats = importStats;
@@ -2204,6 +2210,7 @@ interface IGetUserStatsQuery {
     | 'all'
     | 'anime'
     | 'manga'
+    | 'light-novel'
     | 'reading'
     | 'audio'
     | 'video'
@@ -2317,6 +2324,7 @@ export async function getUserStats(
       'all',
       'anime',
       'manga',
+      'light-novel',
       'reading',
       'audio',
       'video',
@@ -2513,6 +2521,7 @@ export async function getUserStats(
     }
 
     const logTypes = [
+      'light-novel',
       'reading',
       'anime',
       'vn',
@@ -2672,7 +2681,11 @@ export async function getUserStats(
         acc.untrackedCount += stat.untrackedCount;
         acc.totalChars += stat.totalChars || 0;
 
-        if (['reading', 'manga', 'vn', 'game', 'book'].includes(stat.type)) {
+        if (
+          ['light-novel', 'reading', 'manga', 'vn', 'game', 'book'].includes(
+            stat.type
+          )
+        ) {
           acc.readingHours += stat.totalTimeHours;
         } else if (
           ['anime', 'video', 'tv show', 'movie', 'audio'].includes(stat.type)
@@ -2732,8 +2745,12 @@ export async function getUserStats(
     const readingSpeedData =
       type === 'all' ||
       (Array.isArray(type) &&
-        type.some((t) => ['reading', 'manga', 'vn', 'game'].includes(t))) ||
-      ['reading', 'manga', 'vn', 'game'].includes(type as string)
+        type.some((t) =>
+          ['light-novel', 'reading', 'manga', 'vn', 'game'].includes(t)
+        )) ||
+      ['light-novel', 'reading', 'manga', 'vn', 'game'].includes(
+        type as string
+      )
         ? await Log.aggregate([
             {
               $match: {
@@ -2741,7 +2758,7 @@ export async function getUserStats(
                 private: { $ne: true },
                 ...dateFilter,
                 unknownDate: { $ne: true },
-                type: { $in: ['reading', 'manga', 'vn', 'game'] },
+                type: { $in: ['light-novel', 'reading', 'manga', 'vn', 'game'] },
                 time: { $ne: null, $gt: 0 },
                 $or: [
                   { chars: { $ne: null, $gt: 0 } },

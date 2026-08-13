@@ -127,9 +127,9 @@ function cleanVariables<T extends object>(variables: T): Partial<T> {
 function determineMediaType(
   type: string,
   format: string
-): 'anime' | 'manga' | 'reading' {
+): 'anime' | 'manga' | 'light-novel' {
   if (type.toLowerCase() === 'anime' || type.toLowerCase() === 'music')
     return 'anime';
   if (format === 'MANGA' || format === 'ONE_SHOT') return 'manga';
-  return 'reading';
+  return 'light-novel';
 }

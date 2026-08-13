@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 const SEARCH_TYPES: { value: string; labelKey: ParseKeys<'common'> }[] = [
   { value: 'anime', labelKey: 'mediaTypes.anime' },
   { value: 'manga', labelKey: 'mediaTypes.manga' },
-  { value: 'reading', labelKey: 'mediaTypes.reading' },
+  { value: 'light-novel', labelKey: 'mediaTypes.light-novel' },
   { value: 'vn', labelKey: 'mediaTypes.vn' },
   { value: 'movie', labelKey: 'mediaTypes.movie' },
   { value: 'tv_show', labelKey: 'mediaTypes.tvShow' },
@@ -155,11 +155,11 @@ export default function MediaEditPanel() {
       payload.episodeDuration = edit.episodeDuration ?? undefined;
     }
     if (t === 'tv show') payload.seasons = edit.seasons ?? undefined;
-    if (t === 'manga' || t === 'reading') {
+    if (t === 'manga' || t === 'light-novel') {
       payload.chapters = edit.chapters ?? undefined;
       payload.volumes = edit.volumes ?? undefined;
     }
-    if (t === 'manga' || t === 'reading' || t === 'vn')
+    if (t === 'manga' || t === 'light-novel' || t === 'vn')
       payload.characters = edit.characters ?? undefined;
     if (t === 'movie') payload.runtime = edit.runtime ?? undefined;
     if (t === 'book') payload.pageCount = edit.pageCount ?? undefined;
@@ -357,12 +357,12 @@ export default function MediaEditPanel() {
               {(edit.type === 'anime' || edit.type === 'tv show') &&
                 numberField('Episode duration (min)', 'episodeDuration')}
               {edit.type === 'tv show' && numberField('Seasons', 'seasons')}
-              {(edit.type === 'manga' || edit.type === 'reading') &&
+              {(edit.type === 'manga' || edit.type === 'light-novel') &&
                 numberField('Chapters', 'chapters')}
-              {(edit.type === 'manga' || edit.type === 'reading') &&
+              {(edit.type === 'manga' || edit.type === 'light-novel') &&
                 numberField('Volumes', 'volumes')}
               {(edit.type === 'manga' ||
-                edit.type === 'reading' ||
+                edit.type === 'light-novel' ||
                 edit.type === 'vn') &&
                 numberField('Characters', 'characters')}
               {edit.type === 'movie' && numberField('Runtime (min)', 'runtime')}

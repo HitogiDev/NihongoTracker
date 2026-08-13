@@ -22,7 +22,7 @@ interface EditVotingData {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'
@@ -43,7 +43,7 @@ interface EditVotingData {
 const MEDIA_TYPES = [
   { value: 'anime', label: 'Anime' },
   { value: 'manga', label: 'Manga' },
-  { value: 'reading', label: 'Light Novel' },
+  { value: 'light-novel', label: 'Light Novel' },
   { value: 'vn', label: 'Visual Novel' },
   { value: 'game', label: 'Video Game' },
   { value: 'video', label: 'Video' },

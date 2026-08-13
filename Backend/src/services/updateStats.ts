@@ -57,7 +57,12 @@ export async function recalculateUserXpFromLogs(
         readingXp: {
           $sum: {
             $cond: [
-              { $in: ['$type', ['manga', 'reading', 'vn', 'game', 'book']] },
+              {
+                $in: [
+                  '$type',
+                  ['manga', 'light-novel', 'reading', 'vn', 'game', 'book'],
+                ],
+              },
               '$xp',
               0,
             ],
@@ -126,6 +131,7 @@ export default async function updateStats(
         userStats.listeningXp = Math.max(0, userStats.listeningXp + xpUpdate);
         break;
       case 'manga':
+      case 'light-novel':
       case 'reading':
       case 'vn':
       case 'game':

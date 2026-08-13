@@ -391,7 +391,7 @@ export async function markLogsWithoutStatusToInProgress(
     const immersionTypes = [
       'anime',
       'manga',
-      'reading',
+      'light-novel',
       'vn',
       'game',
       'video',
@@ -479,7 +479,7 @@ export async function markLogsWithoutStatusToInProgress(
             : ('in_progress' as const);
         }
 
-        if (type === 'vn' || type === 'manga' || type === 'reading') {
+        if (type === 'vn' || type === 'manga' || type === 'light-novel') {
           const totalCharacters = Number(
             (media as (IMediaDocument & { characters?: number }) | undefined)
               ?.characters

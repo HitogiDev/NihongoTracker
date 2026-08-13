@@ -37,6 +37,7 @@ const LogSchema = new Schema<ILog>(
       type: String,
       required: true,
       enum: [
+        'light-novel',
         'reading',
         'anime',
         'vn',
@@ -92,6 +93,7 @@ const LogSchema = new Schema<ILog>(
         return (
           (!hasChars && !hasTime && this.type === 'manga') ||
           (!hasChars && !hasTime && this.type === 'reading') ||
+          (!hasChars && !hasTime && this.type === 'light-novel') ||
           (!hasChars && !hasTime && this.type === 'book')
         );
       },
@@ -103,7 +105,9 @@ const LogSchema = new Schema<ILog>(
         const hasPages = hasPositiveValue(this.pages);
         return (
           (!hasChars &&
-            ((this.type === 'reading' && !hasPages) || this.type === 'vn')) ||
+            (((this.type === 'reading' || this.type === 'light-novel') &&
+              !hasPages) ||
+              this.type === 'vn')) ||
           this.type === 'video' ||
           this.type === 'movie' ||
           this.type === 'audio' ||
@@ -120,6 +124,7 @@ const LogSchema = new Schema<ILog>(
         return (
           (!hasTime && this.type === 'vn') ||
           (!hasTime && !hasPages && this.type === 'reading') ||
+          (!hasTime && !hasPages && this.type === 'light-novel') ||
           (!hasTime && !hasPages && this.type === 'manga') ||
           (!hasTime && !hasPages && this.type === 'book')
         );

@@ -11,7 +11,7 @@ import {
 export const MEDIA_INDEXES = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'movie',
   'tv_show',
@@ -100,7 +100,7 @@ async function isIndexEmpty(indexName: string): Promise<boolean> {
 const TYPE_TO_INDEX: Record<string, string> = {
   anime: 'anime',
   manga: 'manga',
-  reading: 'reading',
+  'light-novel': 'light-novel',
   vn: 'vn',
   movie: 'movie',
   'tv show': 'tv_show',

@@ -19,6 +19,7 @@ export const LOG_TYPE_OPTIONS: {
   { value: 'video', labelKey: 'mediaTypes.video' },
   { value: 'tv show', labelKey: 'mediaTypes.tvShow' },
   { value: 'movie', labelKey: 'mediaTypes.movie' },
+  { value: 'light-novel', labelKey: 'mediaTypes.light-novel' },
   { value: 'reading', labelKey: 'mediaTypes.reading' },
   { value: 'book', labelKey: 'mediaTypes.book' },
   { value: 'audio', labelKey: 'mediaTypes.audio' },

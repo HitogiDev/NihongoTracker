@@ -1856,7 +1856,7 @@ function AdminScreen() {
                       />
                     </Field>
                     {(selectedLog.type === 'manga' ||
-                      selectedLog.type === 'reading') && (
+                      selectedLog.type === 'light-novel') && (
                       <Field label={'Volume'}>
                         <input
                           type="number"

@@ -250,7 +250,7 @@ export async function createMediaVotingFn(
     mediaType:
       | 'anime'
       | 'manga'
-      | 'reading'
+      | 'light-novel'
       | 'vn'
       | 'game'
       | 'video'
@@ -305,7 +305,7 @@ export async function editMediaVotingFn(
     mediaType:
       | 'anime'
       | 'manga'
-      | 'reading'
+      | 'light-novel'
       | 'vn'
       | 'game'
       | 'video'

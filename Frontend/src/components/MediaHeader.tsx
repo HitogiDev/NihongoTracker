@@ -40,7 +40,7 @@ const getMediaTypeIcon = (type: string) => {
     case 'anime':
       return <Play className="text-lg" />;
     case 'manga':
-    case 'reading':
+    case 'light-novel':
       return <Book className="text-lg" />;
     case 'movie':
     case 'video':
@@ -416,7 +416,7 @@ export default function MediaHeader() {
       mediaType !== 'vn' &&
       mediaType !== 'game' &&
       mediaType !== 'video' &&
-      mediaType !== 'reading' &&
+      mediaType !== 'light-novel' &&
       mediaType !== 'movie' &&
       mediaType !== 'tv show' &&
       mediaType !== 'book'
@@ -627,7 +627,7 @@ export default function MediaHeader() {
                     </button>
                   )}
                   {isOwnProfile &&
-                    (media?.type === 'reading' || media?.type === 'vn') && (
+                    (media?.type === 'light-novel' || media?.type === 'vn') && (
                       <button
                         className="btn btn-secondary w-full"
                         onClick={() =>

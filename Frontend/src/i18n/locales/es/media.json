@@ -210,7 +210,8 @@
       "game": "Videojuegos",
       "manga": "Manga",
       "movie": "Películas",
-      "reading": "Novelas ligeras",
+      "light-novel": "Novelas ligeras",
+      "reading": "Lectura",
       "tvShow": "Series",
       "video": "Vídeo",
       "vn": "Novelas visuales"

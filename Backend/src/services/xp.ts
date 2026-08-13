@@ -70,6 +70,7 @@ export const LISTENING_TYPES: ILog['type'][] = [
   'audio',
 ];
 export const READING_TYPES: ILog['type'][] = [
+  'light-novel',
   'reading',
   'manga',
   'vn',
@@ -283,7 +284,10 @@ function creditedMinutes(
 
   if (
     isPositive(input.pages) &&
-    (type === 'reading' || type === 'manga' || type === 'book')
+    (type === 'reading' ||
+      type === 'light-novel' ||
+      type === 'manga' ||
+      type === 'book')
   ) {
     const estimatedChars = input.pages * CHARS_PER_PAGE;
     return {

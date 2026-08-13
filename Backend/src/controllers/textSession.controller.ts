@@ -269,7 +269,7 @@ export const getSessionByContentId = async (
     const jitenURL = process.env.JITEN_API_URL;
     let jitenData = null;
 
-    if (jitenURL && ['vn', 'manga', 'reading'].includes(mediaDoc.type)) {
+    if (jitenURL && ['vn', 'manga', 'light-novel'].includes(mediaDoc.type)) {
       try {
         const LinkType: number | null = mediaDoc.type
           ? (LinkTypeObject[mediaDoc.type as keyof typeof LinkTypeObject] ??

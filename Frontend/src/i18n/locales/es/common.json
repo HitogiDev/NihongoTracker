@@ -18,7 +18,8 @@
     "manga": "Manga",
     "movie": "Películas",
     "other": "Otros",
-    "reading": "Novelas ligeras",
+    "light-novel": "Novelas ligeras",
+    "reading": "Lectura",
     "tvShow": "Series",
     "video": "Vídeo",
     "vn": "Novelas visuales"
@@ -31,7 +32,8 @@
     "manga": "Manga",
     "movie": "Película",
     "other": "Otro",
-    "reading": "Novela Ligera",
+    "light-novel": "Novela Ligera",
+    "reading": "Lectura",
     "tvShow": "Serie",
     "video": "Vídeo",
     "vn": "Novela Visual"
@@ -42,7 +44,8 @@
     "game": "juegos",
     "manga": "manga",
     "movie": "películas",
-    "reading": "novelas ligeras",
+    "light-novel": "novelas ligeras",
+    "reading": "lecturas",
     "tvShow": "series",
     "video": "vídeos",
     "vn": "novelas visuales"

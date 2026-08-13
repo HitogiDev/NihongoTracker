@@ -24,7 +24,7 @@
     "types": {
       "anime": "Anime",
       "manga": "Manga",
-      "reading": "Light Novel",
+      "light-novel": "Light Novel",
       "vn": "Visual Novel",
       "movie": "Movie",
       "tvShow": "TV Show",

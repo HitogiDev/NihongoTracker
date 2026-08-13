@@ -57,7 +57,7 @@ function MediaStats({ mediaId, mediaType, mediaName }: MediaStatsProps) {
         return ['episodes', 'hours'];
       case 'manga':
         return ['characters', 'pages', 'hours'];
-      case 'reading':
+      case 'light-novel':
       case 'vn':
       case 'game':
         return ['characters', 'hours'];

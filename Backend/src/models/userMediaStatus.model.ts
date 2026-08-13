@@ -11,7 +11,7 @@ const UserMediaStatusSchema = new Schema<IUserMediaStatus>(
       enum: [
         'anime',
         'manga',
-        'reading',
+        'light-novel',
         'vn',
         'video',
         'movie',

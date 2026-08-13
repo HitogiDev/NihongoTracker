@@ -145,7 +145,7 @@ export default function useSearch(
         }
       }
 
-      if (type === 'anime' || type === 'manga' || type === 'reading') {
+      if (type === 'anime' || type === 'manga' || type === 'light-novel') {
         // try {
 
         // const dbResults = await searchMediaFn({
@@ -180,7 +180,7 @@ export default function useSearch(
         //       ids
         //     );
         //     return [...dbResults, ...mangaResults];
-        //   } else if (type === 'reading') {
+        //   } else if (type === 'light-novel') {
         //     const readingResults = await searchAnilist(
         //       debouncedSearch,
         //       'MANGA',
@@ -212,7 +212,7 @@ export default function useSearch(
             'MANGA',
             ids
           );
-        } else if (type === 'reading') {
+        } else if (type === 'light-novel') {
           return searchAnilist(
             debouncedSearch,
             'MANGA',

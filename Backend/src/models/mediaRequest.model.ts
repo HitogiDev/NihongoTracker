@@ -13,7 +13,7 @@ const MediaTitle = new Schema<IMediaTitle>(
 const MEDIA_REQUEST_TYPES = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'video',
   'movie',

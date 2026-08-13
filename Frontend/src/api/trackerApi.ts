@@ -148,6 +148,7 @@ export async function getMediumRankingFn(params: {
   type:
     | 'anime'
     | 'manga'
+    | 'light-novel'
     | 'reading'
     | 'vn'
     | 'game'

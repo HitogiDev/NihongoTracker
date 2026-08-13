@@ -38,16 +38,16 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
     data: readingResult,
     error: searchReadingError,
     isLoading: isSearchingReading,
-  } = useSearch('reading', shouldSearch ? searchQuery : '');
+  } = useSearch('light-novel', shouldSearch ? searchQuery : '');
 
   const {
     data: logs,
     error: logError,
     isLoading: isLoadingLogs,
   } = useQuery({
-    queryKey: ['readingLogs', username, 'reading'],
+    queryKey: ['readingLogs', username, 'light-novel'],
     queryFn: () =>
-      getUserLogsFn(username as string, { limit: 0, type: 'reading' }),
+      getUserLogsFn(username as string, { limit: 0, type: 'light-novel' }),
     enabled: !!username && isActive,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -83,7 +83,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
     []
   );
 
-  const groupedLogs = useGroupLogs(logs, 'reading');
+  const groupedLogs = useGroupLogs(logs, 'light-novel');
 
   const filteredGroupedLogs = useFilteredGroupedLogs(
     logs,
@@ -135,7 +135,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
   const handleAssignMedia = useCallback(() => {
     if (!selectedReading) {
       toast.error(
-        t('matcher.selectOne', { type: t('common:mediaTypesPlural.reading') })
+        t('matcher.selectOne', { type: t('common:mediaTypesPlural.light-novel') })
       );
       return;
     }
@@ -151,7 +151,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
           contentImage: selectedReading.contentImage,
           coverImage: selectedReading.coverImage,
           description: selectedReading.description,
-          type: 'reading',
+          type: 'light-novel',
           title: {
             contentTitleNative: selectedReading.title.contentTitleNative,
             contentTitleEnglish: selectedReading.title.contentTitleEnglish,
@@ -187,7 +187,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
       )) {
         try {
           const dbResults = await searchMediaFn({
-            type: 'reading',
+            type: 'light-novel',
             search: groupName,
             perPage: 5,
           });
@@ -250,14 +250,14 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
         setAssignedLogs((prev) => [...prev, ...newlyAssignedLogs]);
 
         queryClient.invalidateQueries({
-          queryKey: ['readingLogs', username, 'reading'],
+          queryKey: ['readingLogs', username, 'light-novel'],
         });
 
         toast.success(
           t('matcher.autoMatchedSuccess', {
             count: totalProcessed,
             matches: matches.length,
-            type: t('common:mediaTypesPlural.reading'),
+            type: t('common:mediaTypesPlural.light-novel'),
           })
         );
       } else {
@@ -353,7 +353,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
       <div className="alert alert-error">
         <span>
           {t('matcher.errorLoading', {
-            type: t('common:mediaTypesPlural.reading'),
+            type: t('common:mediaTypesPlural.light-novel'),
           })}
         </span>
       </div>
@@ -398,7 +398,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
 
       <h1 className="text-2xl font-bold text-center mb-4">
         {t('matcher.assignTitle', {
-          type: t('common:mediaTypesPlural.reading'),
+          type: t('common:mediaTypesPlural.light-novel'),
         })}
       </h1>
 
@@ -529,7 +529,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
                 </svg>
                 <span>
                   {t('matcher.noUnassigned', {
-                    type: t('common:mediaTypesPlural.reading'),
+                    type: t('common:mediaTypesPlural.light-novel'),
                   })}
                 </span>
               </div>
@@ -542,7 +542,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
           <div className="card-body p-4">
             <h2 className="card-title">
               {t('matcher.findMatching', {
-                type: t('common:mediaTypesPlural.reading'),
+                type: t('common:mediaTypesPlural.light-novel'),
               })}
             </h2>
             <div className="divider my-1"></div>
@@ -564,7 +564,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
                 type="text"
                 className="grow"
                 placeholder={t('matcher.searchPlaceholder', {
-                  type: t('common:mediaTypesPlural.reading'),
+                  type: t('common:mediaTypesPlural.light-novel'),
                 })}
                 value={searchQuery}
                 onChange={(e) => {
@@ -580,7 +580,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
                   <span className="loading loading-spinner loading-lg text-primary"></span>
                   <p className="mt-2">
                     {t('matcher.searching', {
-                      type: t('common:mediaTypesPlural.reading'),
+                      type: t('common:mediaTypesPlural.light-novel'),
                     })}
                   </p>
                 </div>
@@ -672,7 +672,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
                   </svg>
                   <span>
                     {t('matcher.noneFound', {
-                      type: t('common:mediaTypesPlural.reading'),
+                      type: t('common:mediaTypesPlural.light-novel'),
                     })}
                   </span>
                 </div>
@@ -693,7 +693,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
                   </svg>
                   <span>
                     {t('matcher.selectGroupOrTitle', {
-                      type: t('common:mediaTypesPlural.reading'),
+                      type: t('common:mediaTypesPlural.light-novel'),
                     })}
                   </span>
                 </div>
@@ -725,7 +725,7 @@ function ReadingLogs({ username, isActive = true }: ReadingLogsProps) {
             </>
           ) : (
             t('matcher.assignTo', {
-              type: t('common:mediaTypes.reading'),
+              type: t('common:mediaTypes.light-novel'),
             })
           )}
         </button>

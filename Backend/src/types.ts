@@ -251,7 +251,7 @@ export interface IUserMediaStatus extends Document {
   type:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -506,7 +506,7 @@ export interface IMediaDocument {
   type:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -565,7 +565,7 @@ export type MediaRequestStatus = 'pending' | 'approved' | 'rejected';
 export type MediaRequestType =
   | 'anime'
   | 'manga'
-  | 'reading'
+  | 'light-novel'
   | 'vn'
   | 'video'
   | 'movie'
@@ -731,6 +731,7 @@ export interface IXpBreakdown {
 export interface ILog extends Document {
   user: Types.ObjectId;
   type:
+    | 'light-novel'
     | 'reading'
     | 'anime'
     | 'vn'
@@ -780,7 +781,7 @@ export interface IContentMedia {
   type:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -1014,7 +1015,7 @@ export interface IClubMediaVoting {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -1056,7 +1057,7 @@ export interface IClubMedia {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -1096,7 +1097,7 @@ export interface IMediaReview extends Document {
   mediaType:
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'video'
     | 'movie'
@@ -1520,7 +1521,7 @@ export interface IAchievementCheckContext {
 export type MediaListMediaType =
   | 'anime'
   | 'manga'
-  | 'reading'
+  | 'light-novel'
   | 'vn'
   | 'video'
   | 'movie'

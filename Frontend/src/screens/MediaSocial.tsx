@@ -26,7 +26,7 @@ export default function MediaSocial() {
   const allowedTypes: ILog['type'][] = [
     'anime',
     'manga',
-    'reading',
+    'light-novel',
     'vn',
     'game',
     'video',
@@ -53,7 +53,7 @@ export default function MediaSocial() {
     if (
       normalizedType === 'vn' ||
       normalizedType === 'game' ||
-      normalizedType === 'reading' ||
+      normalizedType === 'light-novel' ||
       normalizedType === 'light novel' ||
       normalizedType === 'light novels'
     ) {

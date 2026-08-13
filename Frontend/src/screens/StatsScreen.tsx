@@ -95,11 +95,18 @@ type GanttSortOption =
   | 'time-desc'
   | 'xp-desc';
 
-type ReadingType = 'reading' | 'manga' | 'vn' | 'game' | 'book';
+type ReadingType =
+  | 'reading'
+  | 'light-novel'
+  | 'manga'
+  | 'vn'
+  | 'game'
+  | 'book';
 type EpisodeType = 'anime' | 'video' | 'movie';
 
 const READING_TYPES: ReadonlyArray<ReadingType> = [
   'reading',
+  'light-novel',
   'manga',
   'vn',
   'game',
@@ -107,6 +114,7 @@ const READING_TYPES: ReadonlyArray<ReadingType> = [
 ];
 const EPISODE_TYPES: ReadonlyArray<EpisodeType> = ['anime', 'video', 'movie'];
 const LOG_TYPES = [
+  'light-novel',
   'reading',
   'anime',
   'vn',
@@ -140,6 +148,7 @@ const PERIOD_LABEL_KEYS: Record<TimeRange, ParseKeys<'stats'>> = {
 
 // Log types are stored raw (`tv show`); `common:mediaTypes` keys are camelCase.
 const MEDIA_TYPE_KEYS: Record<string, string> = {
+  'light-novel': 'common:mediaTypes.light-novel',
   reading: 'common:mediaTypes.reading',
   anime: 'common:mediaTypes.anime',
   vn: 'common:mediaTypes.vn',

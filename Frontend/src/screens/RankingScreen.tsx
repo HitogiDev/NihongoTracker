@@ -61,7 +61,7 @@ type RankingDisplayMode = 'xp' | 'hours' | 'chars';
 type RankingMediumType =
   | 'anime'
   | 'manga'
-  | 'reading'
+  | 'light-novel'
   | 'vn'
   | 'game'
   | 'video'
@@ -97,7 +97,7 @@ const VALID_DISPLAY_MODES: RankingDisplayMode[] = ['xp', 'hours', 'chars'];
 const VALID_MEDIUM_TYPES: RankingMediumType[] = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'game',
   'video',
@@ -235,7 +235,7 @@ function RankingScreen() {
   const mediumMetricOptions: Record<
     | 'anime'
     | 'manga'
-    | 'reading'
+    | 'light-novel'
     | 'vn'
     | 'game'
     | 'video'
@@ -258,7 +258,7 @@ function RankingScreen() {
         { label: t('metrics.xp'), value: 'xp' },
         { label: t('metrics.time'), value: 'time' },
       ],
-      reading: [
+      'light-novel': [
         { label: t('metrics.xp'), value: 'xp' },
         { label: t('metrics.time'), value: 'time' },
         { label: t('metrics.characters'), value: 'chars' },
@@ -1092,7 +1092,7 @@ function RankingScreen() {
                 [
                   'anime',
                   'manga',
-                  'reading',
+                  'light-novel',
                   'vn',
                   'game',
                   'video',

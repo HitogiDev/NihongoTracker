@@ -130,6 +130,7 @@ const swaggerDocument = {
           type: {
             type: 'string',
             enum: [
+              'light-novel',
               'reading',
               'anime',
               'vn',
@@ -180,6 +181,7 @@ const swaggerDocument = {
           type: {
             type: 'string',
             enum: [
+              'light-novel',
               'reading',
               'anime',
               'vn',
@@ -272,7 +274,7 @@ const swaggerDocument = {
             enum: [
               'anime',
               'manga',
-              'reading',
+              'light-novel',
               'vn',
               'game',
               'video',
@@ -1734,7 +1736,7 @@ const swaggerDocument = {
               enum: [
                 'anime',
                 'manga',
-                'reading',
+                'light-novel',
                 'vn',
                 'movie',
                 'tv_show',

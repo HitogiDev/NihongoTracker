@@ -70,6 +70,8 @@ function normalizeMediaTypeParam(mediaType: string): string {
     game: 'game',
     'video game': 'game',
     videogame: 'game',
+    // Legacy alias: light novels used to be stored/linked as 'reading'.
+    reading: 'light-novel',
   };
 
   return mediaTypeMap[rawMediaType] ?? rawMediaType;
@@ -181,7 +183,7 @@ export async function getMedia(
       media &&
       (normalizedMediaType === 'anime' ||
         normalizedMediaType === 'manga' ||
-        normalizedMediaType === 'reading' ||
+        normalizedMediaType === 'light-novel' ||
         normalizedMediaType === 'movie')
     ) {
       const needsAnimeFields =
@@ -192,7 +194,7 @@ export async function getMedia(
           media.airingStartDate == null);
       const needsMangaLikeFields =
         (normalizedMediaType === 'manga' ||
-          normalizedMediaType === 'reading') &&
+          normalizedMediaType === 'light-novel') &&
         (media.chapters == null || media.volumes == null);
 
       if (needsAnimeFields || needsMangaLikeFields) {
@@ -257,7 +259,7 @@ export async function getMedia(
       !media &&
       (normalizedMediaType === 'anime' ||
         normalizedMediaType === 'manga' ||
-        normalizedMediaType === 'reading' ||
+        normalizedMediaType === 'light-novel' ||
         normalizedMediaType === 'movie')
     ) {
       const searchType =
@@ -283,7 +285,7 @@ export async function getMedia(
           await Manga.insertMany(mediaAnilist, {
             ordered: false,
           });
-        } else if (normalizedMediaType === 'reading') {
+        } else if (normalizedMediaType === 'light-novel') {
           await Reading.insertMany(mediaAnilist, {
             ordered: false,
           });
@@ -380,12 +382,12 @@ export async function anilistSearchProxy(
     const normalizedTypeMap: Record<string, string> = {
       anime: 'anime',
       manga: 'manga',
-      reading: 'reading',
-      'light novel': 'reading',
-      'light novels': 'reading',
-      light_novel: 'reading',
-      'light-novel': 'reading',
-      ln: 'reading',
+      reading: 'light-novel',
+      'light novel': 'light-novel',
+      'light novels': 'light-novel',
+      light_novel: 'light-novel',
+      'light-novel': 'light-novel',
+      ln: 'light-novel',
       movie: 'movie',
     };
     const type = normalizedTypeMap[rawType] ?? rawType;
@@ -455,8 +457,9 @@ export async function searchMedia(
     const normalizedTypeMap: Record<string, string> = {
       anime: 'anime',
       manga: 'manga',
-      reading: 'reading',
-      ln: 'reading',
+      reading: 'light-novel',
+      'light-novel': 'light-novel',
+      ln: 'light-novel',
       vn: 'vn',
       movie: 'movie',
       tv_show: 'tv_show',
@@ -475,7 +478,7 @@ export async function searchMedia(
     const allowedTypes = new Set([
       'anime',
       'manga',
-      'reading',
+      'light-novel',
       'vn',
       'movie',
       'tv_show',

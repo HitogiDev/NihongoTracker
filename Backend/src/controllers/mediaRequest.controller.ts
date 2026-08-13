@@ -28,7 +28,7 @@ import {
 const MEDIA_REQUEST_TYPES: MediaRequestType[] = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'movie',
   'tv show',
@@ -40,7 +40,7 @@ const MEDIA_REQUEST_TYPES: MediaRequestType[] = [
 const TYPE_TO_MODEL: Record<MediaRequestType, Model<IMediaDocument>> = {
   anime: Anime as unknown as Model<IMediaDocument>,
   manga: Manga as unknown as Model<IMediaDocument>,
-  reading: Reading as unknown as Model<IMediaDocument>,
+  'light-novel': Reading as unknown as Model<IMediaDocument>,
   vn: Vn as unknown as Model<IMediaDocument>,
   video: Video as unknown as Model<IMediaDocument>,
   movie: Movie as unknown as Model<IMediaDocument>,

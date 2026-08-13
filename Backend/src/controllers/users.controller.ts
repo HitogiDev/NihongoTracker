@@ -52,7 +52,7 @@ import {
 type ImmersionMediaType =
   | 'anime'
   | 'manga'
-  | 'reading'
+  | 'light-novel'
   | 'vn'
   | 'game'
   | 'video'
@@ -63,7 +63,7 @@ type ImmersionMediaType =
 const IMMERSION_MEDIA_TYPES: ImmersionMediaType[] = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'game',
   'video',
@@ -834,7 +834,7 @@ export async function updateProfileLayout(
 const FAVORITE_MEDIA_TYPES: MediaListMediaType[] = [
   'anime',
   'manga',
-  'reading',
+  'light-novel',
   'vn',
   'video',
   'movie',
@@ -1218,7 +1218,12 @@ export async function getRanking(
                   readingXp: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
                         '$xp',
                         0,
                       ],
@@ -1258,7 +1263,12 @@ export async function getRanking(
                   readingMinutes: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
                         { $ifNull: ['$time', 0] },
                         0,
                       ],
@@ -1385,7 +1395,12 @@ export async function getRanking(
                   readingXp: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
                         '$xp',
                         0,
                       ],
@@ -1430,7 +1445,12 @@ export async function getRanking(
                   readingMinutes: {
                     $sum: {
                       $cond: [
-                        { $in: ['$type', ['reading', 'manga', 'vn', 'game']] },
+                        {
+                          $in: [
+                            '$type',
+                            ['light-novel', 'reading', 'manga', 'vn', 'game'],
+                          ],
+                        },
                         { $ifNull: ['$time', 0] },
                         0,
                       ],
@@ -1936,7 +1956,7 @@ export async function getMediumRanking(
     const type = req.query.type as string as
       | 'anime'
       | 'manga'
-      | 'reading'
+      | 'light-novel'
       | 'vn'
       | 'game'
       | 'video'
@@ -2373,7 +2393,7 @@ export async function getImmersionList(
     const result: Record<ImmersionMediaType, IMediaDocument[]> = {
       anime: [],
       manga: [],
-      reading: [],
+      'light-novel': [],
       vn: [],
       game: [],
       video: [],
@@ -2951,7 +2971,11 @@ export async function compareUserStats(
 
     // Get media info for character count (if applicable)
     let totalCharCount = 0;
-    if (['reading', 'manga', 'vn', 'game'].includes(type as string)) {
+    if (
+      ['light-novel', 'reading', 'manga', 'vn', 'game'].includes(
+        type as string
+      )
+    ) {
       try {
         // Try to get character count from jiten API
         const jitenURL = process.env.JITEN_API_URL;
