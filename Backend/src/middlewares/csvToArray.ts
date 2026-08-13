@@ -105,17 +105,20 @@ export async function csvToArray(
         throw apiError('import.emptyCsv', 400, 'No data found in the CSV file');
       }
 
+      // The medium can arrive under any of three columns depending on the
+      // export version, so require one of them rather than a fixed name.
       for (const row of results) {
-        if (
-          !row.Date ||
-          !row['Log Name'] ||
-          !row['Media Type'] ||
-          !row.Duration
-        ) {
+        const hasMedium =
+          row['Media Variant'] ||
+          row['Activity Type'] ||
+          row['Default Activity Type'] ||
+          row['Media Type'];
+
+        if (!row.Date || !row['Log Name'] || !row.Duration || !hasMedium) {
           throw apiError(
             'import.rowMissingColumns',
             400,
-            'Each row must have "Date", "Log Name", "Media Type", and "Duration" fields'
+            'Each row must have "Date", "Log Name", "Duration", and an activity or media type column'
           );
         }
       }

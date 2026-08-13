@@ -543,10 +543,14 @@ function parseKechimochiNumber(value?: string): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function mapKechimochiType(
-  mediaTypeValue: string,
-  activityTypeValue?: string
-): ILog['type'] {
+/**
+ * Kechimochi describes a log with up to four columns, and which ones exist
+ * depends on the export version. The medium is the most specific signal
+ * (`Media Variant` — "Light Novel", "Anime"; `Media Type` in older exports),
+ * then the activity (`Activity Type`, falling back to the media's
+ * `Default Activity Type`). First column that maps to a known type wins.
+ */
+function mapKechimochiType(log: KechimochiCSVLog): ILog['type'] {
   const explicitTypeMap: { [key: string]: ILog['type'] } = {
     anime: 'anime',
     manga: 'manga',
@@ -564,8 +568,14 @@ function mapKechimochiType(
     youtube: 'video',
     livestream: 'video',
     video: 'video',
+    // Generic "Watching" stays video; `Media Variant` upgrades it to anime,
+    // movie or tv show when Kechimochi knows the subtype.
+    watching: 'video',
     reading: 'reading',
     novel: 'reading',
+    'light novel': 'reading',
+    lightnovel: 'reading',
+    ln: 'reading',
     'web novel': 'reading',
     webnovel: 'reading',
     nonfiction: 'reading',
@@ -582,26 +592,27 @@ function mapKechimochiType(
     unknown: 'other',
   };
 
-  const normalizedActivityType = normalizeKechimochiLabel(activityTypeValue);
-  const activityAlias = normalizedActivityType.replace(/\s+/g, '');
+  const candidates = [
+    log['Media Variant'],
+    log['Media Type'],
+    log['Activity Type'],
+    log['Default Activity Type'],
+  ];
 
-  if (normalizedActivityType) {
-    if (explicitTypeMap[normalizedActivityType]) {
-      return explicitTypeMap[normalizedActivityType];
+  for (const candidate of candidates) {
+    const normalized = normalizeKechimochiLabel(candidate);
+    if (!normalized) {
+      continue;
     }
-    if (explicitTypeMap[activityAlias]) {
-      return explicitTypeMap[activityAlias];
+
+    if (explicitTypeMap[normalized]) {
+      return explicitTypeMap[normalized];
     }
-  }
 
-  const normalizedMediaType = normalizeKechimochiLabel(mediaTypeValue);
-  const mediaAlias = normalizedMediaType.replace(/\s+/g, '');
-
-  if (explicitTypeMap[normalizedMediaType]) {
-    return explicitTypeMap[normalizedMediaType];
-  }
-  if (explicitTypeMap[mediaAlias]) {
-    return explicitTypeMap[mediaAlias];
+    const alias = normalized.replace(/\s+/g, '');
+    if (explicitTypeMap[alias]) {
+      return explicitTypeMap[alias];
+    }
   }
 
   return 'other';
@@ -618,7 +629,7 @@ function transformKechimochiLogsList(
         return null;
       }
 
-      const type = mapKechimochiType(log['Media Type'], log['Activity Type']);
+      const type = mapKechimochiType(log);
       const time = Math.round(parseKechimochiNumber(log.Duration));
       const chars = Math.round(parseKechimochiNumber(log.Characters));
 
