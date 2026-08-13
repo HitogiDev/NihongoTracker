@@ -116,7 +116,7 @@
     "fileTooLarge": "El archivo supera el límite de 5 MB",
     "invalidType": "El tipo de importación no es válido",
     "noFile": "No se ha subido ningún archivo",
-    "rowMissingColumns": "Cada fila debe tener los campos \"Date\", \"Log Name\", \"Media Type\" y \"Duration\"",
+    "rowMissingColumns": "Cada fila debe tener \"Date\", \"Log Name\", \"Duration\" y una columna de tipo de actividad o de medio",
     "rowMissingFields": "Cada fila debe tener al menos los campos \"date\" y \"type\"",
     "unsupportedCsvType": "Tipo de CSV no admitido"
   },

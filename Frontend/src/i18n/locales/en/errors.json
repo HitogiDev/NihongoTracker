@@ -116,7 +116,7 @@
     "fileTooLarge": "File size exceeds the 5MB limit",
     "invalidType": "Import type is invalid",
     "noFile": "No file uploaded",
-    "rowMissingColumns": "Each row must have \"Date\", \"Log Name\", \"Media Type\", and \"Duration\" fields",
+    "rowMissingColumns": "Each row must have \"Date\", \"Log Name\", \"Duration\", and an activity or media type column",
     "rowMissingFields": "Each row must have at least a \"date\" and \"type\" field",
     "unsupportedCsvType": "Unsupported CSV type"
   },

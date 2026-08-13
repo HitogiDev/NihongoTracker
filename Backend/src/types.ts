@@ -918,14 +918,23 @@ export interface OtherCSVLog {
   mediaId?: string;
 }
 
+/**
+ * Kechimochi's activity export. The current export has no `Media Type` column —
+ * the medium is described by `Media Variant` (most specific, e.g. "Light Novel")
+ * and the activity by `Activity Type` / `Default Activity Type` ("Reading",
+ * "Watching"). `Media Type` is kept optional for older exports.
+ */
 export interface KechimochiCSVLog {
   Date: string;
   'Log Name': string;
-  'Media Type': string;
   Duration: string;
-  Language: string;
+  Language?: string;
   Characters?: string;
   'Activity Type'?: string;
+  'Default Activity Type'?: string;
+  'Media Variant'?: string;
+  'Media Type'?: string;
+  Notes?: string;
 }
 
 export interface IDailyGoal extends Document {
