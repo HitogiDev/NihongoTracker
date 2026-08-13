@@ -198,7 +198,7 @@
     "saved": "Personalización actualizada",
     "saving": "Guardando...",
     "signatureStat": "Estadística destacada",
-    "signatureStatHint": "Un número bajo tu nombre. Gratis para todos.",
+    "signatureStatHint": "Un número bajo tu nombre. Se puede mostrar el total de XP, el nivel, las horas totales o los caracteres leídos.",
     "signatureStats": {
       "chars": "Caracteres leídos",
       "hours": "Horas totales",

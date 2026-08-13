@@ -198,7 +198,7 @@
     "saved": "Customization updated",
     "saving": "Saving...",
     "signatureStat": "Signature stat",
-    "signatureStatHint": "One number shown under your name. Free for everyone.",
+    "signatureStatHint": "One number shown under your name. It can show total XP, level, total hours, or characters read.",
     "signatureStats": {
       "chars": "Characters read",
       "hours": "Total hours",
