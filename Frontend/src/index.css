@@ -121,6 +121,15 @@
   --size-field: 0.25rem;
 }
 
+/* The navbar is translucent (bg-neutral/85) so hero art shows through it. On a
+   dark page the bar stays dark; on a light page that 15% bleed washes it toward
+   grey and drops the near-white neutral-content text below a legible contrast.
+   Make it solid in the light theme (dark keeps the glass). Unlayered on purpose
+   so it beats the Tailwind opacity utility, same as the geometry rule above. */
+[data-theme='light'] .site-navbar {
+  background-color: var(--color-neutral);
+}
+
 @theme {
   --padding-22px: 22px;
   --padding-25px: 25px;
