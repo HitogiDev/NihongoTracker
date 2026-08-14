@@ -1,0 +1,20 @@
+{
+  "name": "@nihongotracker/yomitan-content",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Renderer for Yomitan structured content, shared by the NihongoTracker web frontend and the desktop companion",
+  "license": "MIT",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}

@@ -28,8 +28,13 @@ WORKDIR /app/Backend
 RUN npm ci
 
 # 4. Copy frontend package files and install dependencies
+#
+# `vendor/` comes along at this step, before the install and not with the rest
+# of the source: `@nihongotracker/yomitan-content` is a `file:` dependency
+# pointing inside it, so `npm ci` cannot resolve the tree without it.
 WORKDIR /app
 COPY Frontend/package*.json ./Frontend/
+COPY Frontend/vendor ./Frontend/vendor
 WORKDIR /app/Frontend
 RUN npm ci
 

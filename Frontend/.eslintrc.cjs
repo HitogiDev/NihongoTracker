@@ -37,7 +37,10 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  // `vendor` is a checked-in copy of a package owned by another repository
+  // (see Frontend/vendor/yomitan-content/README.md). It is linted where it is
+  // maintained; linting the copy here would only invite edits to the copy.
+  ignorePatterns: ['dist', 'vendor', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh', '@stylistic/js'],
   rules: {

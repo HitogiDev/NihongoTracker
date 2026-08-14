@@ -284,10 +284,24 @@ DICTIONARY_SERVICE_URL=http://dictionary:8081
 
 ### Texthooker dictionary
 
-`docker compose up` builds and starts a `dictionary` service that serves Yomitan
+`docker compose up` pulls and starts a `dictionary` service that serves Yomitan
 dictionary lookups to the texthooker. It has no host port: only the backend
 reaches it, because that is where authentication and the per-user rate limit
 live.
+
+The image is `elaxdev/nihongotracker-dictionary:latest`, published the same way
+the app image is. Its source is `crates/dictionary-service` in the
+[desktop companion](https://github.com/HitogiDev/NihongoTrackerDesktopCompanion)
+repository, because it wraps the C++ lookup engine that lives there; this
+repository only consumes it. To run a build of your own, build it in that
+repository and point the service at your tag:
+
+```bash
+# in the companion checkout
+docker build -f crates/dictionary-service/Dockerfile -t my/dictionary:dev .
+# then, here
+DICTIONARY_IMAGE=my/dictionary:dev docker compose up   # see docker-compose.yml
+```
 
 Put a Yomitan `.zip` in `./dictionaries` before the first start —
 [Jitendex](https://jitendex.org) is the one this was built against. It is

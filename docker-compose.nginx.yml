@@ -62,12 +62,11 @@ services:
   # network — no host port, and nothing in nginx points at it. The browser talks
   # to the backend, which is where the auth and the rate limiting live.
   #
-  # The source lives in the desktop companion repository, next to the engine
-  # crate it wraps, so the build context is a sibling checkout.
+  # A published image, like `app` above: the source lives in the desktop
+  # companion repository (`crates/dictionary-service`), next to the C++ engine
+  # crate it wraps, so it is released from there rather than built from here.
   dictionary:
-    build:
-      context: ../NihongoTrackerDesktopCompanion
-      dockerfile: crates/dictionary-service/Dockerfile
+    image: ${DICTIONARY_IMAGE:-elaxdev/nihongotracker-dictionary:latest}
     restart: always
     environment:
       DICTIONARY_DATA_DIR: /data/dictionaries
