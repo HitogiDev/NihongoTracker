@@ -130,6 +130,17 @@
   background-color: var(--color-neutral);
 }
 
+/* daisyUI .btn sets its own foreground (base-content), which is dark in light
+   themes, so the ghost logo/search/bell buttons on the dark navbar render
+   dark-on-dark. Give the bar-level ghost buttons the bar's own content colour.
+   Exclude the ones inside dropdown popovers (they sit on a light surface and
+   keep base-content / their own text-primary) and the avatar trigger (its
+   initials fallback stays base-content). Unlayered so it beats the daisyUI btn
+   colour; applies in both themes (neutral-content is already light in dark). */
+.site-navbar .btn-ghost:not(:where(.dropdown-content, .dropdown-content *, .avatar)) {
+  color: var(--color-neutral-content);
+}
+
 @theme {
   --padding-22px: 22px;
   --padding-25px: 25px;

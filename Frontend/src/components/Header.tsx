@@ -527,7 +527,7 @@ function Header() {
                     }
                   >
                     <div
-                      className={`w-8 sm:w-10 rounded-full ${
+                      className={`w-8 sm:w-10 rounded-full overflow-hidden ${
                         user?.patreon?.isActive && !hasEquippedFrame
                           ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'
                           : ''
