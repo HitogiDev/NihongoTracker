@@ -139,6 +139,8 @@ Class order is always `btn` → colour → style → behavior → size → shape
 
 **Realtime/Texthooker**: `HookerScreen.tsx` is the socket.io-client counterpart to the backend's texthooker rooms — treat the wire protocol (event names like `join_room`, `send_line`, `delete_lines`, `restore_lines`, `room_users_update`) as shared contract between `Backend/src/index.ts` and this screen.
 
+**Dictionary popups** render Yomitan structured content through `@nihongotracker/yomitan-content`, a package shared with the desktop companion. It lives in that repository and this one depends on it by relative path, so the two repos have to be siblings on disk until the package is published. The renderer never emits an `href` and never touches `innerHTML`: an internal cross-reference becomes a button that pushes onto `useLookupHistory`, anything else becomes plain text. An imported dictionary's `styles.css` goes through `scopeDictionaryCss` into a `<style>` inside the popup, never global — it came out of a zip the user chose. The package ships no strings; the back control and its label are `texthooker:dictionary.*` here.
+
 ## Cross-Cutting Conventions
 
 - Both packages use ESM (`"type": "module"` in both `package.json`s). Backend imports use explicit `.js` extensions even for `.ts` source files (required by `moduleResolution: node16`) — follow this pattern when adding new backend imports.

@@ -40,6 +40,22 @@
     "deleteSessionConfirm": "¿Seguro que quieres eliminar esta sesión?",
     "delete": "Eliminar"
   },
+  "dictionary": {
+    "back": "Volver",
+    "close": "Cerrar",
+    "depth_one": "{{count}} atrás",
+    "depth_other": "{{count}} atrás",
+    "derivedFrom": "Derivado de",
+    "licenses": "Licencias",
+    "licensesIntro": "Las definiciones del texthooker salen de estos diccionarios. Sus licencias viajan con el contenido, así que aquí está el crédito completo.",
+    "licensesTitle": "Licencias de los diccionarios",
+    "loading": "Buscando…",
+    "noDictionaries": "Esta instancia no tiene diccionarios cargados.",
+    "noResults": "No hay nada para {{term}}.",
+    "position": "{{index}} de {{total}}",
+    "title": "Diccionario",
+    "unavailable": "El diccionario no está disponible ahora mismo."
+  },
   "duration": {
     "hours": "{{hours}} h",
     "hoursMinutes": "{{hours}} h {{minutes}} min",

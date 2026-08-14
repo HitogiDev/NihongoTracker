@@ -8,10 +8,15 @@ services:
     environment:
       MEILISEARCH_HOST: http://meilisearch:7700
       MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-nihongotracker-master-key}
+      DICTIONARY_SERVICE_URL: http://dictionary:8081
     depends_on:
       mongo:
         condition: service_healthy
       meilisearch:
+        condition: service_started
+      # Started, not healthy: a dictionary that is still importing must not hold
+      # the app back, and the texthooker works without it.
+      dictionary:
         condition: service_started
     volumes:
       - ./Backend/.env:/app/Backend/.env:ro
@@ -53,6 +58,31 @@ services:
     networks:
       - nginx_default
 
+  # Yomitan dictionary lookup for the texthooker. Reachable only on the internal
+  # network — no host port, and nothing in nginx points at it. The browser talks
+  # to the backend, which is where the auth and the rate limiting live.
+  #
+  # The source lives in the desktop companion repository, next to the engine
+  # crate it wraps, so the build context is a sibling checkout.
+  dictionary:
+    build:
+      context: ../NihongoTrackerDesktopCompanion
+      dockerfile: crates/dictionary-service/Dockerfile
+    restart: always
+    environment:
+      DICTIONARY_DATA_DIR: /data/dictionaries
+      DICTIONARY_IMPORT_DIR: /data/import
+      PORT: 8081
+      RUST_LOG: ${DICTIONARY_LOG:-info}
+    volumes:
+      # Imported dictionaries survive restarts: importing Jitendex takes ~11 s
+      # and produces 181 MB, and there is no reason to redo it on every boot.
+      - dictionary-data:/data/dictionaries
+      # Drop a Yomitan .zip here to have it imported on the next start.
+      - ./dictionaries:/data/import:ro
+    networks:
+      - nginx_default
+
   migration:
     profiles: ['migration']
     image: elaxdev/nihongotracker:latest
@@ -74,6 +104,7 @@ services:
 volumes:
   mongo-data:
   meilisearch-data:
+  dictionary-data:
 
 networks:
   nginx_default:

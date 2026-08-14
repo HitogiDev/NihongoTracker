@@ -48,6 +48,9 @@ if (typeof window !== 'undefined') {
 
 const App = lazy(() => import('./App.tsx'));
 const CalculatorScreen = lazy(() => import('./screens/CalculatorScreen.tsx'));
+const DictionaryLicensesScreen = lazy(
+  () => import('./screens/DictionaryLicensesScreen.tsx')
+);
 const FeaturesScreen = lazy(() => import('./screens/FeaturesScreen.tsx'));
 const HomeScreen = lazy(() => import('./screens/HomeScreen.tsx'));
 const ListScreen = lazy(() => import('./screens/ListScreen.tsx'));
@@ -165,6 +168,10 @@ const router = createBrowserRouter(
         <Route path="refund-policy" element={<RefundPolicyScreen />} />
         <Route path="changelog" element={<ChangelogScreen />} />
         <Route path="texthooker" element={<TextHookerDashboard />} />
+        <Route
+          path="licenses/dictionaries"
+          element={<DictionaryLicensesScreen />}
+        />
         <Route path="admin" element={<AdminScreen />} />
         <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
         <Route path="user/:username" element={<ProfileHeader />}>

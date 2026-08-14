@@ -18,6 +18,10 @@ export const ERROR_CODES = [
   'common.validationError',
   'common.routeNotFound',
   'common.internal',
+  'common.tooManyRequests',
+
+  // Dictionary lookup
+  'dictionary.unavailable',
 
   // Authentication and session
   'auth.tokenExpired',

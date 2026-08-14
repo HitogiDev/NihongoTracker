@@ -17,6 +17,13 @@ export default defineConfig(({ mode }) => {
       }),
       tailwindcss(),
     ],
+    resolve: {
+      // `@nihongotracker/yomitan-content` is a linked path dependency with its
+      // own dev-only React (for its tests). Without deduping, Rollup resolves
+      // the JSX runtime from inside the package and the build fails with
+      // `"jsx" is not exported by react/jsx-runtime`.
+      dedupe: ['react', 'react-dom'],
+    },
     server: {
       host: true, // Allow external connections
       allowedHosts: ['localhost', '.ngrok.io', '.ngrok-free.app', '.ngrok.app'],

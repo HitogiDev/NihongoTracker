@@ -38,6 +38,22 @@
     "deleteSessionConfirm": "Are you sure you want to delete this session?",
     "delete": "Delete"
   },
+  "dictionary": {
+    "back": "Back",
+    "close": "Close",
+    "depth_one": "{{count}} back",
+    "depth_other": "{{count}} back",
+    "derivedFrom": "Derived from",
+    "licenses": "Licences",
+    "licensesIntro": "Definitions in the texthooker come from these dictionaries. Their licences travel with the content, so they are credited here in full.",
+    "licensesTitle": "Dictionary licences",
+    "loading": "Looking it up…",
+    "noDictionaries": "This instance has no dictionaries loaded.",
+    "noResults": "Nothing found for {{term}}.",
+    "position": "{{index}} of {{total}}",
+    "title": "Dictionary",
+    "unavailable": "The dictionary is unavailable right now."
+  },
   "duration": {
     "hours": "{{hours}}h",
     "hoursMinutes": "{{hours}}h {{minutes}}m",

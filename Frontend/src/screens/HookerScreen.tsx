@@ -55,6 +55,12 @@ import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import { IMediaDocument, ITextSession } from '../types';
 import { toast, ToastContainer } from 'react-toastify';
 import QuickLog, { QuickLogInitialValues } from '../components/QuickLog';
+import axiosInstance from '../api/axiosConfig';
+import DictionaryPopup from '../components/dictionary/DictionaryPopup';
+import {
+  useDictionaryLookup,
+  type DictionaryMatch,
+} from '../hooks/useDictionaryLookup';
 import { useUserDataStore } from '../store/userData';
 
 type LineEntry = {
@@ -145,6 +151,23 @@ function TextHooker() {
   }>();
   const contentId = paramContentId || mediaId;
   const queryClient = useQueryClient();
+  // Shift+hover dictionary lookups. Disabled entirely when the service is not
+  // configured, so a deployment without it behaves as if the feature did not
+  // exist rather than failing on every hover.
+  const dictionary = useDictionaryLookup(true);
+
+  // Cross-references inside a definition look up a term rather than a line, so
+  // they go through the same endpoint with the term as the whole text.
+  const lookupDictionaryTerm = useCallback(
+    async (term: string): Promise<DictionaryMatch[]> => {
+      const { data } = await axiosInstance.post<{ matches: DictionaryMatch[] }>(
+        'dictionary/lookup',
+        { text: term, offset: 0 }
+      );
+      return data.matches;
+    },
+    []
+  );
   const user = useUserDataStore((state) => state.user);
   const hasPatreonAccess =
     (user?.patreon?.isActive && user?.patreon?.tier) ||
@@ -3572,6 +3595,12 @@ function TextHooker() {
         className={`${listContainerClasses} th-line-list`}
         style={listStyles}
         onScroll={handleScroll}
+        // Shift+hover asks the dictionary about the character under the
+        // pointer. One listener on the container, not one element per
+        // character: wrapping every character of every line is what makes a
+        // long session crawl.
+        onPointerMove={dictionary.hover}
+        onPointerLeave={dictionary.close}
       >
         {lines.map((line) => {
           const marginStyles: CSSProperties = {
@@ -3652,6 +3681,18 @@ function TextHooker() {
         }}
         allowedTypes={['vn']}
       />
+
+      {dictionary.state ? (
+        <DictionaryPopup
+          anchor={dictionary.state.anchor}
+          query={dictionary.state.query}
+          matches={dictionary.state.matches}
+          loading={dictionary.state.loading}
+          failed={dictionary.state.failed}
+          onClose={dictionary.close}
+          lookupTerm={lookupDictionaryTerm}
+        />
+      ) : null}
     </div>
   );
 }

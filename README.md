@@ -246,6 +246,10 @@ Create a `Backend/.env` file with the following variables:
 | `MAILTRAP_INBOX_DOMAIN`         | No       | Mailtrap inbox domain                                                 |
 | `MEILISEARCH_HOST`              | No       | Meilisearch host URL                                                  |
 | `MEILISEARCH_API_KEY`           | No       | Meilisearch admin/search API key                                      |
+| `DICTIONARY_SERVICE_URL`        | No       | Dictionary lookup service. Unset disables texthooker lookups          |
+| `DICTIONARY_TIMEOUT_MS`         | No       | Per-request timeout, default 2000                                     |
+| `DICTIONARY_COOLDOWN_MS`        | No       | How long a failed service is left alone, default 30000                |
+| `DICTIONARY_RATE_LIMIT`         | No       | Lookups per user per minute, default 240                              |
 
 **Example `.env` file:**
 
@@ -272,7 +276,29 @@ GOOGLE_BOOKS_API_KEY=your-google-books-api-key
 # Optional: Search
 MEILISEARCH_HOST=http://localhost:7700
 MEILISEARCH_API_KEY=your-meilisearch-key
+
+# Optional: Texthooker dictionary lookups. Leave unset and the texthooker
+# simply has no dictionary — nothing else changes.
+DICTIONARY_SERVICE_URL=http://dictionary:8081
 ```
+
+### Texthooker dictionary
+
+`docker compose up` builds and starts a `dictionary` service that serves Yomitan
+dictionary lookups to the texthooker. It has no host port: only the backend
+reaches it, because that is where authentication and the per-user rate limit
+live.
+
+Put a Yomitan `.zip` in `./dictionaries` before the first start —
+[Jitendex](https://jitendex.org) is the one this was built against. It is
+imported once into a named volume, which takes about eleven seconds and 181 MB,
+and skipped on every start after that.
+
+Serving dictionary content carries its licence with it: Jitendex is CC BY-SA 4.0
+over JMdict (EDRDG) and Tatoeba, and the attribution is shown in the lookup
+popup and in full at `/licenses/dictionaries`. Adding a dictionary the service
+has no licence entry for surfaces a placeholder saying so; add it to
+`licenses.json` in the dictionary volume rather than leaving it unattributed.
 
 ## Support
 

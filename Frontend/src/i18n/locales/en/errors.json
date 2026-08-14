@@ -68,16 +68,12 @@
     "internal": "Something went wrong on our side",
     "resourceNotFound": "Resource not found",
     "routeNotFound": "That page could not be found",
+    "tooManyRequests": "Too many requests, slow down",
     "unexpected": "Something went wrong. Please try again.",
     "validationError": "Some of the submitted data is not valid"
   },
-  "customization": {
-    "accentColorRequired": "Pick a color for your custom accent",
-    "invalidColor": "Colors must be in #rrggbb format",
-    "invalidPayload": "The customization data is not valid",
-    "invalidValue": "That customization option does not exist",
-    "locked": "You have not unlocked that customization option yet",
-    "titleNotUnlocked": "You have not unlocked that title yet"
+  "dictionary": {
+    "unavailable": "The dictionary is unavailable right now"
   },
   "favorites": {
     "invalidAction": "The action must be add or remove",

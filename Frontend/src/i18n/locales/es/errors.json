@@ -68,16 +68,12 @@
     "internal": "Algo ha fallado por nuestra parte",
     "resourceNotFound": "No se encontró el recurso",
     "routeNotFound": "No se encontró esa página",
+    "tooManyRequests": "Demasiadas peticiones, ve más despacio",
     "unexpected": "Algo ha fallado. Inténtalo de nuevo.",
     "validationError": "Algunos de los datos enviados no son válidos"
   },
-  "customization": {
-    "accentColorRequired": "Elige un color para tu acento personalizado",
-    "invalidColor": "Los colores deben tener el formato #rrggbb",
-    "invalidPayload": "Los datos de personalización no son válidos",
-    "invalidValue": "Esa opción de personalización no existe",
-    "locked": "Todavía no has desbloqueado esa opción de personalización",
-    "titleNotUnlocked": "Todavía no has desbloqueado ese título"
+  "dictionary": {
+    "unavailable": "El diccionario no está disponible ahora mismo"
   },
   "favorites": {
     "invalidAction": "La acción debe ser añadir o quitar",
