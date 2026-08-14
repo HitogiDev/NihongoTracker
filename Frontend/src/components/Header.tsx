@@ -182,7 +182,7 @@ function Header() {
 
   return (
     <div className="relative">
-      <div className="navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
+      <div className="site-navbar navbar transition duration-200 bg-neutral/85 hover:bg-neutral/100 text-neutral-content absolute w-full z-40 max-h-32">
         <div className="navbar-start flex-1 w-auto">
           <div className="dropdown">
             <div
