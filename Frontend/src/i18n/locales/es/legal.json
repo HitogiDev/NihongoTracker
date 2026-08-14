@@ -3,11 +3,11 @@
     "lastUpdated": "Última actualización: {{date}}",
     "tagline": "Un tracker de inmersión en japonés",
     "seeAlso": "Ver también:",
-    "translationNotice": "Este documento es una traducción proporcionada por conveniencia. La **versión en inglés es el texto autoritativo** y prevalece en caso de cualquier discrepancia."
+    "translationNotice": "Este documento es una traducción proporcionada por conveniencia. Si eres una persona consumidora, prevalece la versión en el idioma en el que se te presentó el Servicio. Cuando no exista una versión en ese idioma, se aplicará la **versión en inglés**."
   },
   "privacy": {
     "title": "Política de Privacidad",
-    "lastUpdated": "18 de octubre de 2025",
+    "lastUpdated": "14 de agosto de 2026",
     "sections": [
       {
         "heading": "Introducción",
@@ -281,7 +281,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "NihongoTracker no está dirigido a menores de 13 años. No recopilamos conscientemente información personal de menores de 13 años. Si eres madre, padre o tutor legal y crees que tu hijo o hija nos ha proporcionado información personal, contáctanos para que podamos eliminarla."
+            "text": "NihongoTracker no está dirigido a menores de 16 años. No recopilamos conscientemente información personal de menores de 16 años. Si eres madre, padre o tutor legal y crees que tu hijo o hija nos ha proporcionado información personal, contáctanos para que podamos eliminarla."
           }
         ]
       },
@@ -361,7 +361,7 @@
   },
   "terms": {
     "title": "Términos de Servicio",
-    "lastUpdated": "25 de diciembre de 2025",
+    "lastUpdated": "14 de agosto de 2026",
     "intro": [
       {
         "type": "p",
@@ -374,7 +374,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Al crear una cuenta o usar NihongoTracker, reconoces que has leído y entendido estos Términos y que aceptas quedar vinculado por ellos, así como por nuestra [Política de Privacidad](/privacy). Nos reservamos el derecho de modificar estos Términos en cualquier momento. Te notificaremos los cambios importantes publicando los Términos actualizados en nuestro sitio web. El uso continuado del Servicio tras dichas modificaciones constituye tu aceptación de los Términos actualizados."
+            "text": "Al crear una cuenta o usar NihongoTracker, reconoces que has leído y comprendido estos Términos y que aceptas quedar vinculado por ellos, así como por nuestra [Política de Privacidad](/privacy). Podemos modificar estos Términos cada cierto tiempo. Ante cualquier cambio sustancial te avisaremos con al menos **30 días naturales de antelación** antes de que entre en vigor, publicando los Términos actualizados en nuestro sitio web y, cuando dispongamos de tu correo electrónico, por correo. Si no aceptas un cambio, puedes cancelar tu suscripción y cerrar tu cuenta sin coste antes de que entre en vigor."
           }
         ]
       },
@@ -383,11 +383,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "Debes tener al menos 13 años para usar NihongoTracker. Al usar nuestro Servicio, declaras y garantizas que cumples este requisito de edad. Si eres menor de 18 años, confirmas que has obtenido el permiso de tu madre, padre o tutor legal para usar este Servicio."
+            "text": "Debes tener al menos 16 años para usar NihongoTracker. Al usar nuestro Servicio, declaras y garantizas que cumples este requisito de edad. Si eres menor de 18 años, confirmas que has obtenido el permiso de tu madre, padre o tutor legal para usar este Servicio."
           },
           {
             "type": "p",
-            "text": "Nos reservamos el derecho de solicitar una prueba de edad en cualquier momento. Si descubrimos que una persona usuaria es menor de 13 años, cerraremos su cuenta de inmediato."
+            "text": "Nos reservamos el derecho de solicitar una prueba de edad en cualquier momento. Si descubrimos que una persona usuaria es menor de 16 años, cerraremos su cuenta de inmediato."
           }
         ]
       },
@@ -516,7 +516,7 @@
           },
           {
             "type": "p",
-            "text": "Todos los pagos de suscripción se procesan a través de Patreon. Al suscribirte, aceptas los Términos de Servicio y la Política de Privacidad de Patreon. No somos responsables de ningún problema de facturación, reembolso o disputa de pago con Patreon."
+            "text": "Todos los pagos de las suscripciones se procesan a través de Patreon, y los Términos de Servicio y la Política de Privacidad de Patreon rigen la transacción de pago en sí. Patreon es responsable de las incidencias propias de su plataforma de pago, como los fallos de procesamiento de tarjetas o sus herramientas de facturación y de cuenta. NihongoTracker sigue siendo plenamente responsable de sus propias obligaciones contigo, incluidas las derivadas de nuestra [Política de Reembolsos](/refund-policy) y de la normativa de consumo aplicable. Nuestra integración con Patreon es de solo lectura: los reembolsos y las cancelaciones los revisamos y ejecutamos manualmente, por lo que no podemos cancelar una membresía ni emitir un reembolso de forma automática en tu nombre."
           },
           {
             "type": "h3",
@@ -540,7 +540,7 @@
           },
           {
             "type": "p",
-            "text": "Ofrecemos reembolsos dentro de los 14 días posteriores a la compra de los pagos de suscripción. Para conocer todos los detalles sobre nuestro proceso de reembolso, los requisitos y cómo solicitarlo, consulta nuestra [Política de Reembolsos](/refund-policy)."
+            "text": "Ofrecemos reembolsos dentro de los 30 días siguientes al cargo, en línea con tu derecho de retracto conforme a la Ley núm. 358-05 de la República Dominicana. Para conocer en detalle nuestro proceso de reembolso, cómo ejercer tu derecho de retracto y cómo solicitar un reembolso, consulta nuestra [Política de Reembolsos](/refund-policy)."
           }
         ]
       },
@@ -618,7 +618,11 @@
               "Periodos prolongados de inactividad",
               "Solicitudes de las fuerzas del orden o de organismos públicos"
             ],
-            "intro": "Nos reservamos el derecho de suspender o cerrar tu cuenta y tu acceso al Servicio en cualquier momento, con o sin aviso, por cualquier motivo, incluidos entre otros:"
+            "intro": "Podemos suspender o cerrar tu cuenta y tu acceso al Servicio, avisándote previamente siempre que sea razonablemente posible, por motivos que incluyen, entre otros:"
+          },
+          {
+            "type": "p",
+            "text": "Solo actuaremos sin aviso previo cuando la suspensión o el cierre se deba a fraude, actividad ilegal o a un requerimiento legal o de las autoridades que nos vincule. El cierre no afecta a ningún reembolso ni derecho de retracto ya devengado antes de que surtiera efecto; consulta nuestra [Política de Reembolsos](/refund-policy)."
           },
           {
             "type": "h3",
@@ -636,6 +640,10 @@
           {
             "type": "p",
             "text": "Estos Términos se regirán e interpretarán conforme a las leyes de la República Dominicana, sin atender a sus normas sobre conflicto de leyes. Cualquier disputa derivada de estos Términos o de tu uso del Servicio se resolverá mediante arbitraje vinculante, salvo que cualquiera de las partes podrá solicitar medidas cautelares u otras medidas de equidad ante los tribunales para impedir la vulneración de derechos de propiedad intelectual."
+          },
+          {
+            "type": "p",
+            "text": "**Personas consumidoras.** Si eres una persona consumidora residente en el Espacio Económico Europeo, nada en esta cláusula te priva de la protección que te otorgan las normas imperativas de la ley de tu país de residencia. Puedes acudir a los tribunales de tu lugar de residencia, y el requisito de arbitraje vinculante anterior no te resulta aplicable."
           }
         ]
       },
@@ -672,7 +680,9 @@
           {
             "type": "plain",
             "items": [
-              "**Correo electrónico:** support@nihongotracker.app",
+              "**Nombre comercial:** NihongoTracker",
+              "**País de establecimiento:** República Dominicana",
+              "**Correo electrónico:** [support@nihongotracker.app](mailto:support@nihongotracker.app)",
               "**Sitio web:** https://nihongotracker.app"
             ],
             "intro": "Si tienes cualquier duda sobre estos Términos de Servicio, contáctanos:"
@@ -697,7 +707,7 @@
   },
   "refund": {
     "title": "Política de Reembolsos",
-    "lastUpdated": "25 de diciembre de 2025",
+    "lastUpdated": "14 de agosto de 2026",
     "intro": [
       {
         "type": "p",
@@ -733,24 +743,91 @@
         ]
       },
       {
-        "heading": "3. Requisitos para el reembolso",
+        "heading": "3. Derecho de retracto",
         "blocks": [
           {
+            "type": "p",
+            "text": "Tienes derecho a retractarte de tu suscripción dentro de los **30 días naturales** siguientes al cargo, sin necesidad de justificación y sin penalización, conforme a la Ley núm. 358-05 General de Protección de los Derechos del Consumidor o Usuario de la República Dominicana, que reconoce este derecho en las ventas a distancia, incluida la contratación por internet."
+          },
+          {
+            "type": "p",
+            "text": "Ofrecemos este derecho a **todas las personas usuarias**, vivas donde vivas. No comprobamos tu ubicación: el mismo plazo de 30 días se aplica a todo el mundo."
+          },
+          {
             "type": "h3",
-            "text": "3.1 Dentro de los 14 días tras la compra"
+            "text": "3.1 Cómo ejercerlo"
           },
           {
             "type": "ul",
             "items": [
-              "La solicitud debe hacerse dentro de los 14 días siguientes al cargo",
-              "No debes haber recibido antes un reembolso por la misma suscripción",
-              "Tu cuenta debe estar en regla (ni suspendida ni vetada)"
+              "Un correo a [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "El formulario modelo de retracto de la Sección 3.3 — su uso es opcional",
+              "Cualquier otra comunicación escrita en la que tu decisión quede clara"
             ],
-            "intro": "Si no estás satisfecho con tu suscripción, puedes solicitar un reembolso completo dentro de los 14 días siguientes a la compra inicial o a la renovación. Para optar al reembolso:"
+            "intro": "Para retractarte, envíanos una declaración inequívoca de que te retractas. Vale cualquier medio, y el correo electrónico se ofrece solo por comodidad: no es la única vía aceptada. Por ejemplo:"
+          },
+          {
+            "type": "p",
+            "text": "No tienes que dar ningún motivo ni te pediremos que cumplas ninguna condición adicional. Basta con que recibamos tu declaración dentro del plazo de 30 días."
           },
           {
             "type": "h3",
-            "text": "3.2 Pasados los 14 días"
+            "text": "3.2 Importe y plazo del reembolso"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "Recibes el **reembolso íntegro** de lo que pagaste, incluidos los impuestos aplicados a la compra",
+              "**No** descontamos nada por el tiempo que ya hayas usado las funciones premium",
+              "Te reembolsamos sin demora indebida y, como máximo, dentro de los **14 días naturales** siguientes a la recepción de tu declaración de retracto",
+              "Te reembolsamos por el mismo medio de pago que usaste en la compra, sin coste alguno para ti"
+            ],
+            "intro": "Cuando te retractas:"
+          },
+          {
+            "type": "h3",
+            "text": "3.3 Formulario modelo de retracto"
+          },
+          {
+            "type": "plain",
+            "items": [
+              "**Destinatario:** NihongoTracker — [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "**Declaración:** Por la presente comunico que me retracto de mi contrato de la siguiente suscripción premium de NihongoTracker.",
+              "**Fecha de la compra:** _______________________",
+              "**Tu nombre:** _______________________",
+              "**Correo de la cuenta:** _______________________",
+              "**Fecha:** _______________________"
+            ],
+            "intro": "Puedes copiar el formulario siguiente en un correo o en cualquier otro mensaje escrito. Su uso es opcional: cualquier declaración clara de tu decisión sirve igual."
+          },
+          {
+            "type": "h3",
+            "text": "3.4 Cancela también tu membresía en Patreon"
+          },
+          {
+            "type": "p",
+            "text": "Nuestras suscripciones se cobran a través de Patreon y no podemos cancelar una membresía en tu nombre. El retracto te devuelve el cargo del que te retractas, pero no detiene los futuros. Para que no se te vuelva a cobrar, cancela además tu membresía en los [ajustes de membresías de Patreon](https://www.patreon.com/settings/memberships)."
+          }
+        ]
+      },
+      {
+        "heading": "4. Requisitos para el reembolso",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "4.1 Dentro del plazo de retracto de 30 días"
+          },
+          {
+            "type": "p",
+            "text": "El derecho de retracto descrito en la Sección 3 es **incondicional**. No existe requisito alguno para acogerse a él: tu reembolso no depende de cuánto hayas usado el Servicio, de si has recibido antes un reembolso ni del estado de tu cuenta."
+          },
+          {
+            "type": "h3",
+            "text": "4.2 Reembolsos de buena voluntad fuera de ese plazo"
+          },
+          {
+            "type": "p",
+            "text": "Al margen del derecho legal anterior, mantenemos una **política comercial voluntaria** para las solicitudes hechas una vez transcurrido el plazo de retracto de 30 días. Esta política es adicional a tu derecho legal de retracto y no lo limita en modo alguno."
           },
           {
             "type": "ul",
@@ -759,31 +836,50 @@
               "Cargos duplicados accidentales",
               "Transacciones no autorizadas (con la verificación correspondiente)"
             ],
-            "intro": "Pasado el periodo de 14 días, por lo general no se conceden reembolsos. No obstante, podemos estudiar las solicitudes caso por caso ante circunstancias excepcionales, como:"
-          }
-        ]
-      },
-      {
-        "heading": "4. Cómo solicitar un reembolso",
-        "blocks": [
+            "intro": "Pasados los 30 días, los reembolsos no están garantizados. Estudiamos estas solicitudes caso por caso y podemos concederlas ante circunstancias como:"
+          },
           {
-            "type": "ol",
+            "type": "ul",
             "items": [
-              "Escríbenos a [support@nihongotracker.app](mailto:support@nihongotracker.app)",
-              "Incluye el nombre de usuario o el correo de tu cuenta",
-              "Indica la fecha de la transacción",
-              "Explica el motivo de tu solicitud de reembolso"
+              "Si has recibido antes un reembolso de buena voluntad por la misma suscripción",
+              "Si tu cuenta está en regla (ni suspendida ni vetada)"
             ],
-            "intro": "Para solicitar un reembolso:"
+            "intro": "Como los reembolsos de buena voluntad son discrecionales y no debidos, podemos tener en cuenta lo siguiente al decidir:"
           },
           {
             "type": "p",
-            "text": "Revisaremos tu solicitud y responderemos en un plazo de 5 días hábiles. Si se aprueba, los reembolsos se procesarán a tu método de pago original en un plazo de 5 a 10 días hábiles, según tu proveedor de pago."
+            "text": "Estas consideraciones se aplican **únicamente** a los reembolsos de buena voluntad de esta Sección 4.2. Nunca se aplican al derecho de retracto descrito en la Sección 3 ni pueden reducirlo."
           }
         ]
       },
       {
-        "heading": "5. Política de cancelación",
+        "heading": "5. Cómo solicitar un reembolso",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "Aceptamos **cualquier declaración inequívoca** de tu decisión, enviada por cualquier medio: un correo electrónico, el formulario modelo de retracto de la Sección 3.3 o cualquier otra comunicación escrita. El correo se ofrece por comodidad y no es la única vía aceptada."
+          },
+          {
+            "type": "ol",
+            "items": [
+              "El nombre de usuario o el correo de tu cuenta",
+              "La fecha de la transacción",
+              "Un motivo, si quieres: es opcional y nunca es obligatorio cuando te retractas dentro del plazo de 30 días"
+            ],
+            "intro": "Para ayudarnos a identificar el pago rápidamente, conviene incluir:"
+          },
+          {
+            "type": "p",
+            "text": "Si estás ejerciendo tu derecho de retracto, te reembolsaremos sin demora indebida y, como máximo, dentro de los **14 días naturales** siguientes a la recepción de tu declaración, por tu medio de pago original. Los reembolsos los aprobamos nosotros y se procesan manualmente a través de Patreon, por lo que el dinero puede tardar algunos días más en aparecer según tu proveedor de pago."
+          },
+          {
+            "type": "p",
+            "text": "Para las solicitudes tramitadas bajo la política de buena voluntad de la Sección 4.2, te responderemos dentro de los 14 días naturales siguientes a su recepción."
+          }
+        ]
+      },
+      {
+        "heading": "6. Política de cancelación",
         "blocks": [
           {
             "type": "ul",
@@ -794,35 +890,41 @@
               "Tu cuenta volverá automáticamente al nivel gratuito cuando termine tu suscripción"
             ],
             "intro": "Puedes cancelar tu suscripción en cualquier momento desde los ajustes de tu cuenta o desde el panel de tu proveedor de pago. Tras la cancelación:"
+          },
+          {
+            "type": "p",
+            "text": "Lo anterior se refiere a la cancelación ordinaria. No afecta a tu derecho de retracto de la Sección 3, que te da derecho al reembolso íntegro de un cargo dentro de los 30 días naturales siguientes a ese cargo."
           }
         ]
       },
       {
-        "heading": "6. Conceptos no reembolsables",
+        "heading": "7. Límites de la política de buena voluntad",
         "blocks": [
           {
             "type": "ul",
             "items": [
               "Donaciones puntuales realizadas mediante Ko-fi o plataformas similares",
-              "Suscripciones canceladas tras un uso extenso de las funciones premium",
-              "Cuentas suspendidas o cerradas por infringir nuestros [Términos de Servicio](/terms)",
-              "Solicitudes hechas más de 14 días después de la compra (salvo circunstancias excepcionales)"
+              "Solicitudes hechas más de 30 días después del cargo, que solo estudiamos de forma discrecional conforme a la Sección 4.2"
             ],
-            "intro": "Los siguientes conceptos no son reembolsables:"
+            "intro": "Los siguientes conceptos quedan fuera de la política comercial voluntaria descrita en la Sección 4.2. **No** limitan tu derecho de retracto de la Sección 3, que se aplica íntegramente durante 30 días con independencia de lo dispuesto en esta sección:"
           }
         ]
       },
       {
-        "heading": "7. Contracargos",
+        "heading": "8. Contracargos",
         "blocks": [
           {
             "type": "p",
-            "text": "Si crees que se te ha cobrado por error, contáctanos antes de iniciar un contracargo con tu proveedor de pago. Presentar un contracargo sin intentar primero resolver el problema con nosotros puede conllevar la suspensión permanente de tu cuenta. Nos comprometemos a resolver cualquier incidencia de facturación de forma justa y rápida."
+            "text": "Si crees que se te ha cobrado por error, te pedimos que nos contactes primero para poder corregirlo. Nos comprometemos a resolver las incidencias de facturación de forma justa y rápida, y hacerlo con nosotros suele ser más rápido que un contracargo."
+          },
+          {
+            "type": "p",
+            "text": "Presentar un contracargo es un derecho que te corresponde como pagador y hacerlo no conllevará por sí solo la suspensión ni el cierre de tu cuenta. Nos reservamos el derecho de actuar únicamente en casos de fraude o abuso comprobados."
           }
         ]
       },
       {
-        "heading": "8. Cambios de precio",
+        "heading": "9. Cambios de precio",
         "blocks": [
           {
             "type": "p",
@@ -831,7 +933,7 @@
         ]
       },
       {
-        "heading": "9. Disponibilidad del servicio",
+        "heading": "10. Disponibilidad del servicio",
         "blocks": [
           {
             "type": "p",
@@ -840,24 +942,30 @@
         ]
       },
       {
-        "heading": "10. Contacto",
+        "heading": "11. Contacto",
         "blocks": [
           {
             "type": "plain",
             "items": [
+              "**Nombre comercial:** NihongoTracker",
+              "**País de establecimiento:** República Dominicana",
               "**Correo electrónico:** [support@nihongotracker.app](mailto:support@nihongotracker.app)",
               "**Sitio web:** https://nihongotracker.app"
             ],
-            "intro": "Si tienes cualquier duda sobre nuestra Política de Reembolsos o necesitas ayuda con una solicitud de reembolso, contáctanos:"
+            "intro": "Si tienes cualquier duda sobre nuestra Política de Reembolsos o quieres ejercer tu derecho de retracto, contáctanos:"
           }
         ]
       },
       {
-        "heading": "11. Actualizaciones de la política",
+        "heading": "12. Actualizaciones de la política",
         "blocks": [
           {
             "type": "p",
-            "text": "Podemos actualizar esta Política de Reembolsos cada cierto tiempo. Cualquier cambio se publicará en esta página con una fecha de «Última actualización» renovada. El uso continuado de nuestros servicios de suscripción tras cualquier cambio indica que aceptas la política actualizada."
+            "text": "Podemos actualizar esta Política de Reembolsos cada cierto tiempo. Ante cualquier cambio sustancial te avisaremos con al menos **30 días naturales de antelación** antes de que entre en vigor, publicando la política actualizada en esta página con una nueva fecha de «Última actualización» y, cuando dispongamos de tu correo electrónico, por correo."
+          },
+          {
+            "type": "p",
+            "text": "Si no aceptas un cambio, puedes cancelar tu suscripción sin coste antes de que entre en vigor. Los cambios nunca se aplican retroactivamente a una compra ya realizada: la política vigente en el momento de tu cargo es la que lo rige."
           }
         ]
       }

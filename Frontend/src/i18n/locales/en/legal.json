@@ -3,11 +3,11 @@
     "lastUpdated": "Last Updated: {{date}}",
     "tagline": "A Japanese immersion tracker",
     "seeAlso": "See also:",
-    "translationNotice": "This document is a translation provided for convenience. The **English version is the authoritative text** and prevails in the event of any discrepancy."
+    "translationNotice": "This document is a translation provided for convenience. If you are a consumer, the version in the language in which the Service was presented to you is the one that prevails. Where no version exists in that language, the **English version** applies."
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "October 18, 2025",
+    "lastUpdated": "August 14, 2026",
     "sections": [
       {
         "heading": "Introduction",
@@ -281,7 +281,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "NihongoTracker is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete it."
+            "text": "NihongoTracker is not intended for children under the age of 16. We do not knowingly collect personal information from children under 16. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete it."
           }
         ]
       },
@@ -361,7 +361,7 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "lastUpdated": "December 25, 2025",
+    "lastUpdated": "August 14, 2026",
     "intro": [
       {
         "type": "p",
@@ -374,7 +374,7 @@
         "blocks": [
           {
             "type": "p",
-            "text": "By creating an account or using NihongoTracker, you acknowledge that you have read, understood, and agree to be bound by these Terms, as well as our [Privacy Policy](/privacy). We reserve the right to modify these Terms at any time. We will notify you of significant changes by posting the updated Terms on our website. Your continued use of the Service after such modifications constitutes your acceptance of the updated Terms."
+            "text": "By creating an account or using NihongoTracker, you acknowledge that you have read, understood, and agree to be bound by these Terms, as well as our [Privacy Policy](/privacy). We may modify these Terms from time to time. For any material change we will give you at least **30 days’ advance notice** before it takes effect, by posting the updated Terms on our website and, where we hold your email address, by email. If you do not accept a change, you may cancel your subscription and close your account free of charge before it takes effect."
           }
         ]
       },
@@ -383,11 +383,11 @@
         "blocks": [
           {
             "type": "p",
-            "text": "You must be at least 13 years old to use NihongoTracker. By using our Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have obtained permission from your parent or legal guardian to use this Service."
+            "text": "You must be at least 16 years old to use NihongoTracker. By using our Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have obtained permission from your parent or legal guardian to use this Service."
           },
           {
             "type": "p",
-            "text": "We reserve the right to request proof of age at any time. If we discover that a user is under 13 years of age, we will terminate their account immediately."
+            "text": "We reserve the right to request proof of age at any time. If we discover that a user is under 16 years of age, we will terminate their account immediately."
           }
         ]
       },
@@ -516,7 +516,7 @@
           },
           {
             "type": "p",
-            "text": "All subscription payments are processed through Patreon. By subscribing, you agree to Patreon's Terms of Service and Privacy Policy. We are not responsible for any billing issues, refunds, or payment disputes with Patreon."
+            "text": "All subscription payments are processed through Patreon, and Patreon's Terms of Service and Privacy Policy govern the payment transaction itself. Patreon is responsible for incidents belonging to its own payment platform, such as card processing failures or its billing and account tools. NihongoTracker remains fully responsible for its own obligations to you, including those under our [Refund Policy](/refund-policy) and under applicable consumer protection law. Our Patreon integration is read-only: refunds and cancellations are reviewed and carried out manually by us, so we cannot cancel a membership or issue a refund automatically on your behalf."
           },
           {
             "type": "h3",
@@ -540,7 +540,7 @@
           },
           {
             "type": "p",
-            "text": "We offer refunds within 14 days of purchase for subscription payments. For complete details about our refund process, eligibility, and how to request a refund, please see our [Refund Policy](/refund-policy)."
+            "text": "We offer refunds within 30 days of the charge, reflecting your right of withdrawal under Law No. 358-05 of the Dominican Republic. For complete details about our refund process, how to exercise your right of withdrawal, and how to request a refund, please see our [Refund Policy](/refund-policy)."
           }
         ]
       },
@@ -618,7 +618,11 @@
               "Extended periods of inactivity",
               "Requests by law enforcement or government agencies"
             ],
-            "intro": "We reserve the right to suspend or terminate your account and access to the Service at any time, with or without notice, for any reason, including but not limited to:"
+            "intro": "We may suspend or terminate your account and access to the Service, giving you prior notice wherever reasonably possible, for reasons including but not limited to:"
+          },
+          {
+            "type": "p",
+            "text": "We may act without prior notice only where the suspension or termination is due to fraud, illegal activity, or a binding legal or law-enforcement requirement. Termination does not affect any refund or right of withdrawal you had already accrued before it took effect — see our [Refund Policy](/refund-policy)."
           },
           {
             "type": "h3",
@@ -636,6 +640,10 @@
           {
             "type": "p",
             "text": "These Terms shall be governed by and construed in accordance with the laws of the Dominican Republic, without regard to its conflict of law provisions. Any disputes arising from these Terms or your use of the Service shall be resolved through binding arbitration, except that either party may seek injunctive or other equitable relief in court to prevent infringement of intellectual property rights."
+          },
+          {
+            "type": "p",
+            "text": "**Consumers.** If you are a consumer resident in the European Economic Area, nothing in this section deprives you of the protection afforded by the mandatory provisions of the law of your country of residence. You may bring proceedings before the courts of your place of residence, and the binding arbitration requirement above does not apply to you."
           }
         ]
       },
@@ -672,7 +680,9 @@
           {
             "type": "plain",
             "items": [
-              "**Email:** support@nihongotracker.app",
+              "**Trading name:** NihongoTracker",
+              "**Country of establishment:** Dominican Republic",
+              "**Email:** [support@nihongotracker.app](mailto:support@nihongotracker.app)",
               "**Website:** https://nihongotracker.app"
             ],
             "intro": "If you have any questions about these Terms of Service, please contact us:"
@@ -697,7 +707,7 @@
   },
   "refund": {
     "title": "Refund Policy",
-    "lastUpdated": "December 25, 2025",
+    "lastUpdated": "August 14, 2026",
     "intro": [
       {
         "type": "p",
@@ -733,24 +743,91 @@
         ]
       },
       {
-        "heading": "3. Refund Eligibility",
+        "heading": "3. Right of Withdrawal",
         "blocks": [
           {
+            "type": "p",
+            "text": "You have the right to withdraw from your subscription within **30 calendar days** of the charge, without giving any reason and without penalty, in accordance with Law No. 358-05 on the General Protection of Consumer or User Rights of the Dominican Republic, which grants this right for distance contracts, including contracts concluded over the internet."
+          },
+          {
+            "type": "p",
+            "text": "We offer this right to **all users**, wherever you live. We do not check your location, and the same 30-day period applies to everyone."
+          },
+          {
             "type": "h3",
-            "text": "3.1 Within 14 Days of Purchase"
+            "text": "3.1 How to Exercise It"
           },
           {
             "type": "ul",
             "items": [
-              "The request must be made within 14 days of the charge",
-              "You must not have previously received a refund for the same subscription",
-              "Your account must be in good standing (not suspended or banned)"
+              "An email to [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "The model withdrawal form in Section 3.3 below — using it is optional",
+              "Any other written communication in which your decision is clear"
             ],
-            "intro": "If you are not satisfied with your subscription, you may request a full refund within 14 days of your initial purchase or renewal. To be eligible for a refund:"
+            "intro": "To withdraw, send us an unequivocal statement that you are withdrawing. Any means is valid, and email is offered only for convenience — it is not the only accepted route. For example:"
+          },
+          {
+            "type": "p",
+            "text": "You do not have to give a reason, and we will not ask you to meet any further condition. It is enough that we receive your statement within the 30-day period."
           },
           {
             "type": "h3",
-            "text": "3.2 After 14 Days"
+            "text": "3.2 Refund Amount and Timing"
+          },
+          {
+            "type": "ul",
+            "items": [
+              "You receive a **full refund** of what you paid, including any taxes charged on the purchase",
+              "We do **not** deduct anything for the time you already used the premium features",
+              "We refund you without undue delay and at the latest within **14 calendar days** of receiving your withdrawal statement",
+              "We refund using the same means of payment you used for the purchase, at no cost to you"
+            ],
+            "intro": "When you withdraw:"
+          },
+          {
+            "type": "h3",
+            "text": "3.3 Model Withdrawal Form"
+          },
+          {
+            "type": "plain",
+            "items": [
+              "**To:** NihongoTracker — [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "**Declaration:** I hereby give notice that I withdraw from my contract for the following NihongoTracker premium subscription.",
+              "**Date of purchase:** _______________________",
+              "**Your name:** _______________________",
+              "**Account email:** _______________________",
+              "**Date:** _______________________"
+            ],
+            "intro": "You may copy the form below into an email or any other written message. Using it is optional — any clear statement of your decision works just as well."
+          },
+          {
+            "type": "h3",
+            "text": "3.4 Also Cancel Your Membership on Patreon"
+          },
+          {
+            "type": "p",
+            "text": "Our subscriptions are billed through Patreon, and we cannot cancel a membership on your behalf. Withdrawing gets you a refund of the charge you are withdrawing from, but it does not stop future ones. To avoid being charged again, please also cancel your membership in your [Patreon membership settings](https://www.patreon.com/settings/memberships)."
+          }
+        ]
+      },
+      {
+        "heading": "4. Refund Eligibility",
+        "blocks": [
+          {
+            "type": "h3",
+            "text": "4.1 Within the 30-Day Withdrawal Period"
+          },
+          {
+            "type": "p",
+            "text": "Your right of withdrawal described in Section 3 is **unconditional**. There are no eligibility requirements of any kind: your refund does not depend on how much you used the Service, on whether you have been refunded before, or on the status of your account."
+          },
+          {
+            "type": "h3",
+            "text": "4.2 Goodwill Refunds Outside That Period"
+          },
+          {
+            "type": "p",
+            "text": "Separately from the legal right above, we operate a **voluntary goodwill policy** for requests made after the 30-day withdrawal period has passed. This policy is additional to your legal right of withdrawal and does not limit it in any way."
           },
           {
             "type": "ul",
@@ -759,31 +836,50 @@
               "Accidental duplicate charges",
               "Unauthorized transactions (with appropriate verification)"
             ],
-            "intro": "After the 14-day period, refunds are generally not provided. However, we may consider refund requests on a case-by-case basis for exceptional circumstances, such as:"
-          }
-        ]
-      },
-      {
-        "heading": "4. How to Request a Refund",
-        "blocks": [
+            "intro": "After the 30-day period, refunds are not guaranteed. We review these requests case by case and may grant one in circumstances such as:"
+          },
           {
-            "type": "ol",
+            "type": "ul",
             "items": [
-              "Email us at [support@nihongotracker.app](mailto:support@nihongotracker.app)",
-              "Include your account username or email",
-              "Provide the date of the transaction",
-              "Explain the reason for your refund request"
+              "Whether you have previously received a goodwill refund for the same subscription",
+              "Whether your account is in good standing (not suspended or banned)"
             ],
-            "intro": "To request a refund, please:"
+            "intro": "Because goodwill refunds are discretionary rather than owed, we may take the following into account when deciding:"
           },
           {
             "type": "p",
-            "text": "We will review your request and respond within 5 business days. If approved, refunds will be processed to your original payment method within 5-10 business days, depending on your payment provider."
+            "text": "These considerations apply **only** to goodwill refunds under this Section 4.2. They never apply to, and cannot reduce, the right of withdrawal described in Section 3."
           }
         ]
       },
       {
-        "heading": "5. Cancellation Policy",
+        "heading": "5. How to Request a Refund",
+        "blocks": [
+          {
+            "type": "p",
+            "text": "We accept **any unequivocal statement** of your decision, sent by any means — an email, the model withdrawal form in Section 3.3, or any other written communication. Email is offered for convenience and is not the only accepted route."
+          },
+          {
+            "type": "ol",
+            "items": [
+              "Your account username or email address",
+              "The date of the transaction",
+              "A reason, if you wish — this is optional, and never required when you are withdrawing within the 30-day period"
+            ],
+            "intro": "To help us identify the payment quickly, it is useful to include:"
+          },
+          {
+            "type": "p",
+            "text": "If you are exercising your right of withdrawal, we will refund you without undue delay and at the latest within **14 calendar days** of receiving your statement, to your original means of payment. Refunds are approved by us and processed manually through Patreon, so the funds may take a few additional days to appear depending on your payment provider."
+          },
+          {
+            "type": "p",
+            "text": "For requests handled under the goodwill policy in Section 4.2, we will reply within 14 calendar days of receiving your request."
+          }
+        ]
+      },
+      {
+        "heading": "6. Cancellation Policy",
         "blocks": [
           {
             "type": "ul",
@@ -794,35 +890,41 @@
               "Your account will automatically revert to our free tier when your subscription ends"
             ],
             "intro": "You may cancel your subscription at any time through your account settings or payment provider dashboard. Upon cancellation:"
+          },
+          {
+            "type": "p",
+            "text": "The above concerns ordinary cancellation. It does not affect your right of withdrawal under Section 3, which entitles you to a full refund of a charge within 30 calendar days of that charge."
           }
         ]
       },
       {
-        "heading": "6. Non-Refundable Items",
+        "heading": "7. Limits of the Goodwill Policy",
         "blocks": [
           {
             "type": "ul",
             "items": [
               "One-time donations made through Ko-fi or similar platforms",
-              "Subscriptions cancelled after using premium features extensively",
-              "Accounts that have been suspended or terminated for violating our [Terms of Service](/terms)",
-              "Requests made more than 14 days after purchase (except in exceptional circumstances)"
+              "Requests made more than 30 days after the charge, which we consider only at our discretion under Section 4.2"
             ],
-            "intro": "The following are not eligible for refunds:"
+            "intro": "The following fall outside the voluntary goodwill policy described in Section 4.2. They do **not** limit your right of withdrawal under Section 3, which applies in full for 30 days regardless of anything in this section:"
           }
         ]
       },
       {
-        "heading": "7. Chargebacks",
+        "heading": "8. Chargebacks",
         "blocks": [
           {
             "type": "p",
-            "text": "If you believe you have been charged in error, please contact us first before initiating a chargeback with your payment provider. Filing a chargeback without first attempting to resolve the issue with us may result in permanent suspension of your account. We are committed to resolving any billing issues fairly and promptly."
+            "text": "If you believe you have been charged in error, we ask that you contact us first so we can put it right. We are committed to resolving billing issues fairly and promptly, and going through us is usually faster than a chargeback."
+          },
+          {
+            "type": "p",
+            "text": "Filing a chargeback is your right as a payer, and doing so will not by itself lead to your account being suspended or closed. We reserve the right to take action only in cases of proven fraud or abuse."
           }
         ]
       },
       {
-        "heading": "8. Changes to Pricing",
+        "heading": "9. Changes to Pricing",
         "blocks": [
           {
             "type": "p",
@@ -831,7 +933,7 @@
         ]
       },
       {
-        "heading": "9. Service Availability",
+        "heading": "10. Service Availability",
         "blocks": [
           {
             "type": "p",
@@ -840,24 +942,30 @@
         ]
       },
       {
-        "heading": "10. Contact Us",
+        "heading": "11. Contact Us",
         "blocks": [
           {
             "type": "plain",
             "items": [
+              "**Trading name:** NihongoTracker",
+              "**Country of establishment:** Dominican Republic",
               "**Email:** [support@nihongotracker.app](mailto:support@nihongotracker.app)",
               "**Website:** https://nihongotracker.app"
             ],
-            "intro": "If you have any questions about our Refund Policy or need assistance with a refund request, please contact us:"
+            "intro": "If you have any questions about our Refund Policy, or you want to exercise your right of withdrawal, please contact us:"
           }
         ]
       },
       {
-        "heading": "11. Policy Updates",
+        "heading": "12. Policy Updates",
         "blocks": [
           {
             "type": "p",
-            "text": "We may update this Refund Policy from time to time. Any changes will be posted on this page with an updated \"Last Updated\" date. Your continued use of our subscription services after any changes indicates your acceptance of the updated policy."
+            "text": "We may update this Refund Policy from time to time. For any material change we will give you at least **30 days’ advance notice** before it takes effect, by posting the updated policy on this page with a new \"Last Updated\" date and, where we hold your email address, by email."
+          },
+          {
+            "type": "p",
+            "text": "If you do not accept a change, you may cancel your subscription free of charge before it takes effect. Changes never apply retroactively to a purchase you already made: the policy in force at the time of your charge is the one that governs it."
           }
         ]
       }
