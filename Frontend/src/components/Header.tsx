@@ -35,8 +35,8 @@ import Loader from './Loader';
 import SearchModal from './SearchModal';
 import NotificationBell from './NotificationBell';
 import { useNotificationCount } from '../hooks/useNotificationCount';
-import { getAvatarInitials } from '../utils/avatar';
-import { getAvatarFrameClass, hasAvatarFrame } from '../utils/customization';
+import { hasAvatarFrame } from '../utils/customization';
+import UserAvatar from './UserAvatar';
 import { useTranslation } from 'react-i18next';
 
 type ThemeMode = 'dark' | 'light' | 'system';
@@ -70,7 +70,6 @@ function Header() {
   const { user, logout } = useUserDataStore();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       return normalizeThemeMode(localStorage.getItem('theme'));
@@ -78,10 +77,6 @@ function Header() {
 
     return 'system';
   });
-
-  useEffect(() => {
-    setAvatarLoadFailed(false);
-  }, [user?.avatar]);
 
   const equippedFrame = user?.customization?.avatarFrame;
   const hasEquippedFrame = hasAvatarFrame(equippedFrame);
@@ -517,35 +512,20 @@ function Header() {
                   // avatar, so the ring would spill outside it. p-1 leaves room.
                   className="btn btn-ghost avatar m-1 h-auto min-h-0 w-auto rounded-full p-1"
                 >
-                  {/* An equipped frame replaces the supporter ring rather than
-                      stacking a second circle around the avatar. */}
-                  <div
-                    className={
-                      hasEquippedFrame
-                        ? getAvatarFrameClass(equippedFrame)
-                        : undefined
-                    }
-                  >
-                    <div
-                      className={`w-8 sm:w-10 rounded-full overflow-hidden ${
-                        user?.patreon?.isActive && !hasEquippedFrame
-                          ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'
-                          : ''
-                      }`}
-                    >
-                      {user.avatar && !avatarLoadFailed ? (
-                        <img
-                          src={user.avatar}
-                          alt={`${user.username} avatar`}
-                          onError={() => setAvatarLoadFailed(true)}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-base-300 flex items-center justify-center text-sm font-semibold">
-                          {getAvatarInitials(user.username)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  {/* Shared UserAvatar structure: no empty wrapper when there is
+                      no frame, so the daisyUI .avatar overflow-clip can't cut the
+                      supporter ring's box-shadow, and the image is round on its
+                      own. An equipped frame replaces the ring. */}
+                  <UserAvatar
+                    username={user.username}
+                    avatar={user.avatar}
+                    frame={equippedFrame}
+                    containerClassName={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
+                      user?.patreon?.isActive && !hasEquippedFrame
+                        ? 'ring-2 ring-primary ring-offset-neutral ring-offset-1'
+                        : ''
+                    }`}
+                  />
                 </div>
                 <ul
                   tabIndex={0}
