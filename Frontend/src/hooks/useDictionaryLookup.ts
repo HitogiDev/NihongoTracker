@@ -228,8 +228,24 @@ function characterAtPoint(x: number, y: number): { text: string; offset: number 
   if (!element?.closest('.th-line-text')) return null;
 
   const text = node.textContent ?? '';
-  if (offset >= text.length) return null;
-  return { text, offset };
+  if (text.length === 0) return null;
+
+  // Both caret APIs return the nearest *insertion point*, so hovering the right
+  // half of a glyph reports the offset after it — the popup would then define
+  // the next character along. Pick whichever candidate's own rectangle actually
+  // contains the pointer.
+  for (const candidate of [offset, offset - 1]) {
+    if (candidate < 0 || candidate >= text.length) continue;
+    const range = document.createRange();
+    range.setStart(node, candidate);
+    range.setEnd(node, candidate + 1);
+    const rect = range.getBoundingClientRect();
+    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+      return { text, offset: candidate };
+    }
+  }
+
+  return offset < text.length ? { text, offset } : null;
 }
 
 const JAPANESE = /[぀-ヿ㐀-䶿一-鿿]/;

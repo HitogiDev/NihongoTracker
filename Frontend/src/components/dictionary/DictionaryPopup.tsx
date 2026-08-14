@@ -55,26 +55,26 @@ export default function DictionaryPopup({
   // The hover already fetched the first term; anything deeper is a
   // cross-reference and gets fetched here.
   const [results, setResults] = useState<Record<string, DictionaryMatch[]>>({});
-  const [followLoading, setFollowLoading] = useState(false);
+  // Terms already asked for, so a re-render does not ask again. A ref rather
+  // than state on purpose: as state it would be both the guard and a
+  // dependency of the effect below, and the re-render it caused would cancel
+  // the very request it was guarding.
+  const requested = useRef(new Set<string>());
 
   const current = history.current?.query ?? query;
   const shown = current === query ? matches : results[current];
 
   useEffect(() => {
-    if (current === query || results[current] || followLoading) return;
-    let cancelled = false;
-    setFollowLoading(true);
+    if (current === query || results[current] !== undefined) return;
+    if (requested.current.has(current)) return;
+    requested.current.add(current);
+
     lookupTerm(current)
-      .then((found) => {
-        if (!cancelled) setResults((previous) => ({ ...previous, [current]: found }));
-      })
-      .finally(() => {
-        if (!cancelled) setFollowLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [current, query, results, followLoading, lookupTerm]);
+      .then((found) => setResults((previous) => ({ ...previous, [current]: found })))
+      // An empty result is how a failure shows up: the popup says it found
+      // nothing rather than spinning forever.
+      .catch(() => setResults((previous) => ({ ...previous, [current]: [] })));
+  }, [current, query, results, lookupTerm]);
 
   useEffect(() => setActive(0), [current]);
 
@@ -147,7 +147,8 @@ export default function DictionaryPopup({
     return [...names];
   }, [shown]);
 
-  const busy = loading || followLoading;
+  // Anything not yet answered is still in flight.
+  const busy = current === query ? loading : shown === undefined;
 
   return (
     <div
@@ -235,14 +236,21 @@ export default function DictionaryPopup({
               ))}
             </div>
 
-            {match.glossaries.map((gloss, glossIndex) => (
-              <StructuredContent
-                key={`${gloss.dictName}-${glossIndex}`}
-                glossary={gloss.content as Glossary}
-                onLookup={history.push}
-                className="text-sm mt-1"
-              />
-            ))}
+            {match.glossaries.map((gloss, glossIndex) =>
+              // One dictionary entry holds a *list* of glossaries — Jitendex
+              // splits senses across several — so the array is rendered, not
+              // handed over as if it were a single tree.
+              (Array.isArray(gloss.content) ? gloss.content : [gloss.content]).map(
+                (entry, entryIndex) => (
+                  <StructuredContent
+                    key={`${gloss.dictName}-${glossIndex}-${entryIndex}`}
+                    glossary={entry as Glossary}
+                    onLookup={history.push}
+                    className="text-sm mt-1"
+                  />
+                )
+              )
+            )}
           </article>
         ))}
       </div>
