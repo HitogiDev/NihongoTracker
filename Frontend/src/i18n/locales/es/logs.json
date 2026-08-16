@@ -172,6 +172,8 @@
     "hours": "Horas",
     "minutes": "Minutos",
     "pagesPlaceholder": "Número de páginas",
+    "timeOfDay": "Hora",
+    "timezoneHint": "Mostrado en tu zona horaria ({{timezone}})",
     "subtitle": "Modifica los datos de tu log",
     "title": "Editar log",
     "type": "Tipo",

@@ -41,6 +41,8 @@ import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
 import { useTranslation } from 'react-i18next';
 import { LOG_TYPE_OPTIONS } from '../utils/logTypes';
+import { useTimezone } from '../hooks/useTimezone';
+import { pickedDayToUtc } from '../utils/timezone';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -229,6 +231,7 @@ function LogScreen() {
     volume?: number;
   } | null>(null);
   const { user, setUser } = useUserDataStore();
+  const { timezone } = useTimezone();
 
   const resolveNextRememberedVolume = async (
     type: 'manga' | 'light-novel',
@@ -353,7 +356,10 @@ function LogScreen() {
               isAdult: false,
             },
             time: hours * 60 + minutes || undefined,
-            date: override.unknownDate ? undefined : override.date,
+            date:
+              override.unknownDate || !override.date
+                ? undefined
+                : pickedDayToUtc(override.date, timezone),
             unknownDate: override.unknownDate,
             private: false,
             isAdult: false,
@@ -393,7 +399,7 @@ function LogScreen() {
         })
       );
     },
-    [queryClient, user?.username, playlistResult?.playlistTitle, t]
+    [queryClient, user?.username, playlistResult?.playlistTitle, t, timezone]
   );
 
   // ── End playlist helpers ────────────────────────────────────────────────────
@@ -763,7 +769,12 @@ function LogScreen() {
       time: totalMinutes || undefined,
       chars: logData.readChars || undefined,
       pages: logData.readPages || undefined,
-      date: logData.unknownDate ? undefined : logData.date,
+      // Anchor the picked day in the user's timezone — the frame streaks and
+      // the heatmap bucket by — instead of the browser's local midnight.
+      date:
+        logData.unknownDate || !logData.date
+          ? undefined
+          : pickedDayToUtc(logData.date, timezone),
       unknownDate: logData.unknownDate,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
     } as ICreateLog);

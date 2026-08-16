@@ -170,6 +170,8 @@
     "hours": "Hours",
     "minutes": "Minutes",
     "pagesPlaceholder": "Number of pages",
+    "timeOfDay": "Time",
+    "timezoneHint": "Shown in your timezone ({{timezone}})",
     "subtitle": "Modify your log details below",
     "title": "Edit Log Entry",
     "type": "Type",

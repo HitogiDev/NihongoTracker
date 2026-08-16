@@ -36,6 +36,12 @@ import { useUserDataStore } from '../store/userData';
 import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import { useTimezone } from '../hooks/useTimezone';
+import {
+  getDayKeyInTimezone,
+  getTimeInTimezone,
+  zonedDayTimeToUtc,
+} from '../utils/timezone';
 import TagSelector from './TagSelector';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
@@ -115,7 +121,10 @@ const logTypeConfig = {
 type EditLogFormState = {
   description: string;
   type: ILog['type'];
+  /** Calendar day (YYYY-MM-DD) in the user's configured timezone. */
   date: string;
+  /** Wall-clock time (HH:mm) in the user's configured timezone. */
+  timeOfDay: string;
   episodes: number;
   volume: number;
   pages: number;
@@ -124,26 +133,6 @@ type EditLogFormState = {
   minutes: number;
   tags: string[];
 };
-
-// `dateOnly` comes from a native <input type="date"> ("YYYY-MM-DD"). Parsing
-// that directly with `new Date()` reads it as UTC midnight, which rolls back
-// to the previous day once rendered in a timezone behind UTC. Building the
-// date from components keeps it anchored to local midnight instead, and
-// carries over the original time-of-day so only the calendar day changes.
-function buildEditedDate(dateOnly: string, referenceDate: Date | string): Date {
-  const [year, month, day] = dateOnly.split('-').map(Number);
-  const reference =
-    typeof referenceDate === 'string' ? new Date(referenceDate) : referenceDate;
-  return new Date(
-    year,
-    month - 1,
-    day,
-    reference.getHours(),
-    reference.getMinutes(),
-    reference.getSeconds(),
-    reference.getMilliseconds()
-  );
-}
 
 function extractTagIds(tags?: ILog['tags']): string[] {
   if (!tags) return [];
@@ -185,6 +174,7 @@ function LogCard({
   const { user } = useUserDataStore();
   const { formatRelativeDate, formatDateTime, formatNumber } =
     useDateFormatting();
+  const { timezone } = useTimezone();
 
   /** "1h 30m" in English, "1 h 30 min" in Spanish. */
   const formatDuration = (minutes: number) =>
@@ -204,11 +194,12 @@ function LogCard({
   const buildEditState = (): EditLogFormState => ({
     description: description || '',
     type,
-    date: date
-      ? typeof date === 'string'
-        ? date.split('T')[0]
-        : new Date(date).toISOString().split('T')[0]
-      : '',
+    // Read the day and time in the user's timezone — the same frame streaks and
+    // the heatmap bucket by — so what the form shows is the day the log counts
+    // for, and editing it round-trips instead of silently rebuilding the
+    // original instant.
+    date: date ? getDayKeyInTimezone(date, timezone) : '',
+    timeOfDay: date ? getTimeInTimezone(date, timezone) : '',
     episodes: episodes || 0,
     volume: volume || 0,
     pages: pages || 0,
@@ -324,22 +315,25 @@ function LogCard({
 
     const totalMinutes = editData.hours * 60 + editData.minutes;
 
-    // Check if the date was actually changed (compare date-only strings)
-    const originalDateString = date
-      ? typeof date === 'string'
-        ? date.split('T')[0]
-        : new Date(date).toISOString().split('T')[0]
-      : '';
-    const hasDateChanged = editData.date !== originalDateString;
+    // Compare in the user's timezone, the same frame the form was filled from.
+    const originalDay = date ? getDayKeyInTimezone(date, timezone) : '';
+    const originalTime = date ? getTimeInTimezone(date, timezone) : '';
+    const hasDateChanged =
+      editData.date !== originalDay || editData.timeOfDay !== originalTime;
 
     const updateData: IUpdateLogRequest = {
       description: editData.description,
       type: editData.type,
-      // Only include date if it was changed; keep the original time-of-day and
-      // just move the calendar day (built in local time, not UTC — see buildEditedDate).
+      // Only send the date when the day or the time of day actually moved. The
+      // instant is rebuilt from the user's timezone so the log lands on the day
+      // they picked once streaks and the heatmap re-derive it.
       date:
         hasDateChanged && editData.date
-          ? buildEditedDate(editData.date, date ?? new Date())
+          ? zonedDayTimeToUtc(
+              editData.date,
+              editData.timeOfDay || '00:00',
+              timezone
+            )
           : undefined,
       time: totalMinutes || undefined,
       episodes: editData.episodes || undefined,
@@ -1439,6 +1433,20 @@ function LogCard({
                         setEditData({ ...editData, date: e.target.value })
                       }
                     />
+                  </Field>
+
+                  <Field label={t('edit.timeOfDay')}>
+                    <input
+                      type="time"
+                      className="input w-full"
+                      value={editData.timeOfDay}
+                      onChange={(e) =>
+                        setEditData({ ...editData, timeOfDay: e.target.value })
+                      }
+                    />
+                    <span className="label">
+                      {t('edit.timezoneHint', { timezone })}
+                    </span>
                   </Field>
                 </div>
               </div>

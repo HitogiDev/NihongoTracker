@@ -335,6 +335,128 @@ export const formatRelativeDateInTimezone = (
   }
 };
 
+/**
+ * Day/time bucketing in the user's configured timezone.
+ *
+ * A log stores one instant, but every day-based reader (streaks, heatmap,
+ * rankings) buckets it by the calendar day that instant falls on *in the user's
+ * configured timezone*. Write paths therefore have to build instants in the
+ * same frame. Using the browser's local timezone instead is what made backdated
+ * logs land a day early (missing the heatmap cell and leaving the streak hole
+ * unfilled) and made editing an evening log's date a silent no-op: the day was
+ * read back in UTC while the replacement was built in local time, so for a log
+ * whose UTC day and local day differ the "new" instant equalled the old one.
+ */
+function zonedParts(
+  date: Date,
+  timeZone: string
+): { year: number; month: number; day: number; hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    // h23 keeps midnight as "00" — hour12:false reports it as "24" in some engines.
+    hourCycle: 'h23',
+  }).formatToParts(date);
+
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? '0');
+
+  return {
+    year: value('year'),
+    month: value('month'),
+    day: value('day'),
+    hour: value('hour'),
+    minute: value('minute'),
+  };
+}
+
+/** Offset of `timeZone` at the given instant, in milliseconds. */
+function zoneOffsetMs(date: Date, timeZone: string): number {
+  const { year, month, day, hour, minute } = zonedParts(date, timeZone);
+  const asIfUtc = Date.UTC(year, month - 1, day, hour, minute);
+  // Seconds/ms don't shift across timezones, so compare on whole minutes.
+  return asIfUtc - Math.floor(date.getTime() / 60000) * 60000;
+}
+
+/** The calendar day (YYYY-MM-DD) an instant falls on in the given timezone. */
+export const getDayKeyInTimezone = (
+  date: Date | string,
+  timezone?: string
+): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(dateObj.getTime())) return '';
+  try {
+    const { year, month, day } = zonedParts(dateObj, timezone || FALLBACK_TIMEZONE);
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  } catch {
+    return dateObj.toISOString().split('T')[0];
+  }
+};
+
+/** The wall-clock time (HH:mm) an instant shows in the given timezone. */
+export const getTimeInTimezone = (
+  date: Date | string,
+  timezone?: string
+): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(dateObj.getTime())) return '';
+  try {
+    const { hour, minute } = zonedParts(dateObj, timezone || FALLBACK_TIMEZONE);
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * The instant at which the given wall clock (`YYYY-MM-DD` + `HH:mm`) reads in
+ * `timezone` — the inverse of the two helpers above.
+ */
+export const zonedDayTimeToUtc = (
+  dayKey: string,
+  time: string,
+  timezone?: string
+): Date => {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  const [hour, minute] = (time || '00:00').split(':').map(Number);
+  const wallClock = Date.UTC(year, month - 1, day, hour || 0, minute || 0);
+  const zone = timezone || FALLBACK_TIMEZONE;
+
+  try {
+    // Treat the wall clock as UTC, then step back by the zone's offset. The
+    // offset is re-read at the resulting instant because a DST boundary between
+    // the two can make the first guess an hour off.
+    const firstGuess = wallClock - zoneOffsetMs(new Date(wallClock), zone);
+    const corrected = wallClock - zoneOffsetMs(new Date(firstGuess), zone);
+    return new Date(corrected);
+  } catch {
+    return new Date(year, (month || 1) - 1, day, hour || 0, minute || 0);
+  }
+};
+
+/**
+ * Turn a calendar day picked in a date picker into the instant to store.
+ *
+ * Date pickers hand back local midnight of the chosen day, which is an instant
+ * in the *browser's* timezone — re-read in the user's configured timezone it
+ * can be the previous or next day, so a backdated log missed the heatmap cell
+ * and the streak hole it was meant to fill. Anchor the day in the user's own
+ * timezone instead: at the current time when they picked today, otherwise at
+ * midday, which no timezone or DST shift can push onto an adjacent day.
+ */
+export const pickedDayToUtc = (picked: Date, timezone?: string): Date => {
+  const dayKey = `${picked.getFullYear()}-${String(picked.getMonth() + 1).padStart(2, '0')}-${String(picked.getDate()).padStart(2, '0')}`;
+  const zone = timezone || FALLBACK_TIMEZONE;
+  const now = new Date();
+
+  if (getDayKeyInTimezone(now, zone) === dayKey) return now;
+  return zonedDayTimeToUtc(dayKey, '12:00', zone);
+};
+
 // Get user's detected timezone
 export const getUserTimezone = (): string => {
   try {
