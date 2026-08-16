@@ -1,5 +1,6 @@
 import Achievement from '../models/achievement.model.js';
 import Log from '../models/log.model.js';
+import { EFFECTIVE_MINUTES_EXPR } from './achievements/conditions/effectiveMinutes.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { apiError } from '../i18n/errorCodes.js';
 import {
@@ -547,7 +548,7 @@ export async function computeSignatureValues(
     {
       $group: {
         _id: null,
-        minutes: { $sum: { $ifNull: ['$time', 0] } },
+        minutes: { $sum: EFFECTIVE_MINUTES_EXPR },
         chars: { $sum: { $ifNull: ['$chars', 0] } },
         logs: { $sum: 1 },
       },

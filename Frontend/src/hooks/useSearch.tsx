@@ -146,83 +146,47 @@ export default function useSearch(
       }
 
       if (type === 'anime' || type === 'manga' || type === 'light-novel') {
-        // try {
-
-        // const dbResults = await searchMediaFn({
-        //   type,
-        //   search: debouncedSearch,
-        //   ids,
-        //   page,
-        //   perPage,
-        // });
-
-        // if (dbResults && dbResults.length >= 10) {
-        //   return dbResults;
-        // }
-
-        //   if (type === 'anime') {
-        //     const animeResults = await searchAnilist(
-        //       debouncedSearch,
-        //       'ANIME',
-        //       page,
-        //       perPage,
-        //       undefined,
-        //       ids
-        //     );
-        //     return [...dbResults, ...animeResults];
-        //   } else if (type === 'manga') {
-        //     const mangaResults = await searchAnilist(
-        //       debouncedSearch,
-        //       'MANGA',
-        //       page,
-        //       perPage,
-        //       'MANGA',
-        //       ids
-        //     );
-        //     return [...dbResults, ...mangaResults];
-        //   } else if (type === 'light-novel') {
-        //     const readingResults = await searchAnilist(
-        //       debouncedSearch,
-        //       'MANGA',
-        //       page,
-        //       perPage,
-        //       'NOVEL',
-        //       ids
-        //     );
-        //     return [...dbResults, ...readingResults];
-        //   }
-        // } catch (error) {
-        //   console.error(`Search error for ${type}:`, error);
-        //   // On error, try AniList as fallback
-        if (type === 'anime') {
-          return searchAnilist(
-            debouncedSearch,
-            'ANIME',
+        try {
+          if (type === 'anime') {
+            return await searchAnilist(
+              debouncedSearch,
+              'ANIME',
+              page,
+              perPage,
+              undefined,
+              ids
+            );
+          } else if (type === 'manga') {
+            return await searchAnilist(
+              debouncedSearch,
+              'MANGA',
+              page,
+              perPage,
+              'MANGA',
+              ids
+            );
+          } else {
+            return await searchAnilist(
+              debouncedSearch,
+              'MANGA',
+              page,
+              perPage,
+              'NOVEL',
+              ids
+            );
+          }
+        } catch (error) {
+          // AniList down/rate-limited: fall back to NihongoTracker's own
+          // media database (Meilisearch) so suggestions keep working.
+          console.error(`AniList search error for ${type}, falling back to NT DB:`, error);
+          return searchMediaFn({
+            type,
+            search: debouncedSearch,
+            ids,
             page,
             perPage,
-            undefined,
-            ids
-          );
-        } else if (type === 'manga') {
-          return searchAnilist(
-            debouncedSearch,
-            'MANGA',
-            page,
-            perPage,
-            'MANGA',
-            ids
-          );
-        } else if (type === 'light-novel') {
-          return searchAnilist(
-            debouncedSearch,
-            'MANGA',
-            page,
-            perPage,
-            'NOVEL',
-            ids
-          );
+          });
         }
-        // }
       }
 
       // Books search Google Books live
