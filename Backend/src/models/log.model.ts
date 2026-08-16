@@ -60,6 +60,11 @@ const LogSchema = new Schema<ILog>(
     // Dedupe key for the AniList integration: one log per list activity, so a
     // re-sync (or an overlapping backfill) can never double-count an episode.
     anilistActivityId: { type: Number },
+    // Episode range (inclusive) of the source AniList activity. Lets a later
+    // merged activity be matched against the log it supersedes so combining
+    // episodes on AniList updates the existing log instead of duplicating it.
+    anilistProgressStart: { type: Number },
+    anilistProgressEnd: { type: Number },
     xp: { type: Number, required: true },
     private: { type: Boolean, default: false },
     isAdult: { type: Boolean, default: false },

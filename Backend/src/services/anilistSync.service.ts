@@ -18,7 +18,7 @@ import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import { Anime, MediaBase } from '../models/media.model.js';
 import { searchAnilist } from './searchAnilist.js';
-import { parseEpisodeProgress } from './anilistActivity.js';
+import { parseEpisodeRange } from './anilistActivity.js';
 import { addMediaToIndex } from './meilisearch/mediaIndex.js';
 import { recalculateStreaksForUser } from './streaks.js';
 import { recalculateUserXpFromLogs } from './updateStats.js';
@@ -108,6 +108,8 @@ export interface IAnilistSyncResult {
   scanned: number;
   /** Logs written. */
   created: number;
+  /** Existing logs updated in place by a merged (combined) AniList activity. */
+  updated: number;
   /** Activities that carried no episode progress (status changes, manga…). */
   skipped: number;
   /** Media documents created on the fly for newly seen shows. */
@@ -257,6 +259,7 @@ export async function syncAnilistForUser(
   const result: IAnilistSyncResult = {
     scanned: 0,
     created: 0,
+    updated: 0,
     skipped: 0,
     mediaCreated: 0,
     lastActivityId: user.anilist.lastActivityId ?? 0,
@@ -312,11 +315,21 @@ export async function syncAnilistForUser(
 
     const episodeActivities = collected
       .filter((activity) => activity.media?.type === 'ANIME')
-      .map((activity) => ({
-        activity,
-        episodes: parseEpisodeProgress(activity.status, activity.progress),
-      }))
-      .filter((entry) => entry.episodes > 0);
+      .map((activity) => {
+        const range = parseEpisodeRange(activity.status, activity.progress);
+        return {
+          activity,
+          range,
+          episodes: range ? range.to - range.from + 1 : 0,
+        };
+      })
+      .filter(
+        (entry): entry is {
+          activity: IAnilistListActivity;
+          range: { from: number; to: number };
+          episodes: number;
+        } => entry.range !== null && entry.episodes > 0
+      );
 
     result.skipped = collected.length - episodeActivities.length;
 
@@ -362,7 +375,33 @@ export async function syncAnilistForUser(
       'listening'
     ).catch(() => null);
 
-    const logs: Partial<ILog>[] = pending.map(({ activity, episodes }) => {
+    // Existing synced logs for the same shows, with the episode range each one
+    // covered. When AniList combines several progress updates it replaces the
+    // originals with one new activity spanning the whole range, so a merged
+    // activity must update the logs it absorbs instead of adding a duplicate.
+    const pendingMediaIds = Array.from(
+      new Set(pending.map((entry) => entry.activity.media!.id.toString()))
+    );
+    const syncedLogs = await Log.find({
+      user: user._id,
+      type: 'anime',
+      mediaId: { $in: pendingMediaIds },
+      anilistActivityId: { $type: 'number' },
+    })
+      .select(
+        'anilistActivityId mediaId anilistProgressStart anilistProgressEnd'
+      )
+      .lean();
+    const syncedByMedia = new Map<string, typeof syncedLogs>();
+    for (const log of syncedLogs) {
+      const key = log.mediaId ?? '';
+      const list = syncedByMedia.get(key) ?? [];
+      list.push(log);
+      syncedByMedia.set(key, list);
+    }
+
+    const buildPayload = (entry: (typeof pending)[number]): Partial<ILog> => {
+      const { activity, range, episodes } = entry;
       const contentId = activity.media!.id.toString();
       const mediaDoc = media.get(contentId);
       const episodeDuration = mediaDoc?.episodeDuration;
@@ -385,6 +424,8 @@ export async function syncAnilistForUser(
         type: 'anime',
         mediaId: contentId,
         anilistActivityId: activity.id,
+        anilistProgressStart: range.from,
+        anilistProgressEnd: range.to,
         episodes,
         time,
         xp,
@@ -394,25 +435,80 @@ export async function syncAnilistForUser(
         private: false,
         date: new Date(activity.createdAt * 1000),
       };
-    });
+    };
 
-    const pendingIds = pending.map((entry) => entry.activity.id);
-    try {
-      const insertedDocs = await Log.insertMany(logs, { ordered: false });
-      result.created = insertedDocs.length;
-    } catch (error) {
-      // `ordered: false` keeps inserting past a duplicate, and a concurrent run
-      // hitting the same activity is expected rather than exceptional. Count
-      // what actually landed instead of trusting the driver's error shape; a
-      // batch where nothing landed is a real failure and still propagates.
-      result.created = await Log.countDocuments({
-        user: user._id,
-        anilistActivityId: { $in: pendingIds },
-      });
-      if (result.created === 0) throw error;
+    const toInsert: Partial<ILog>[] = [];
+    // Old activity ids whose logs were absorbed by a merged activity.
+    const supersededIds: number[] = [];
+
+    for (const entry of pending) {
+      const contentId = entry.activity.media!.id.toString();
+      const superseded = (syncedByMedia.get(contentId) ?? []).filter(
+        (log) =>
+          typeof log.anilistProgressStart === 'number' &&
+          typeof log.anilistProgressEnd === 'number' &&
+          log.anilistProgressStart >= entry.range.from &&
+          log.anilistProgressEnd <= entry.range.to &&
+          log.anilistActivityId !== entry.activity.id
+      );
+      const payload = buildPayload(entry);
+
+      if (superseded.length === 0) {
+        toInsert.push(payload);
+        continue;
+      }
+
+      // Reuse the first absorbed log as the merged one; drop any others.
+      const [keep, ...remove] = superseded;
+      await Log.updateOne(
+        { user: user._id, anilistActivityId: keep.anilistActivityId },
+        { $set: payload }
+      );
+      supersededIds.push(
+        ...remove
+          .map((log) => log.anilistActivityId)
+          .filter((id): id is number => typeof id === 'number')
+      );
+      // A later entry in this same batch must not re-match logs we just
+      // reassigned or are about to delete.
+      syncedByMedia.set(
+        contentId,
+        (syncedByMedia.get(contentId) ?? []).filter(
+          (log) => !superseded.includes(log)
+        )
+      );
+      result.updated += 1;
     }
 
-    if (result.created > 0) {
+    if (supersededIds.length > 0) {
+      await Log.deleteMany({
+        user: user._id,
+        anilistActivityId: { $in: supersededIds },
+      });
+    }
+
+    const insertIds = toInsert
+      .map((log) => log.anilistActivityId)
+      .filter((id): id is number => typeof id === 'number');
+
+    if (toInsert.length > 0) {
+      try {
+        const insertedDocs = await Log.insertMany(toInsert, { ordered: false });
+        result.created = insertedDocs.length;
+      } catch (error) {
+        // `ordered: false` keeps inserting past a duplicate, and a concurrent
+        // run hitting the same activity is expected rather than exceptional.
+        // Count what actually landed instead of trusting the driver's error
+        // shape; a batch where nothing landed is a real failure and propagates.
+        result.created = await Log.countDocuments({
+          user: user._id,
+          anilistActivityId: { $in: insertIds },
+        });
+        if (result.created === 0) throw error;
+      }
+    }
+
+    if (result.created > 0 || result.updated > 0) {
       await recalculateUserXpFromLogs(user._id);
       await recalculateStreaksForUser(user._id);
       // Left unnotified on purpose: the user isn't watching a request here, so

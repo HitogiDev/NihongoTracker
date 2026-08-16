@@ -748,6 +748,14 @@ export interface ILog extends Document {
   manabeId?: string;
   /** AniList ListActivity this log was synced from — the dedupe key. */
   anilistActivityId?: number;
+  /**
+   * Episode range the source AniList activity covered (inclusive). Stored so a
+   * later merged activity — AniList replaces the originals with a new id
+   * spanning the combined range — can be recognised as superseding this log
+   * instead of being written as a duplicate.
+   */
+  anilistProgressStart?: number;
+  anilistProgressEnd?: number;
   mediaTitle?: string;
   xp: number;
   private: boolean;
