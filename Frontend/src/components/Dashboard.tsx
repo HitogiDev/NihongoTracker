@@ -13,6 +13,7 @@ import {
   getUserFn,
   getAverageColorFn,
   hideRecentMediaFn,
+  getHiddenRecentMediaFn,
 } from '../api/trackerApi';
 import {
   Flame,
@@ -35,6 +36,8 @@ import {
   Funnel,
   Clock,
   Sparkles,
+  Settings2,
+  Eye,
 } from 'lucide-react';
 import { numberWithCommas } from '../utils/utils';
 import { useDateFormatting } from '../hooks/useDateFormatting';
@@ -49,7 +52,10 @@ import {
   IPendingAchievement,
   UnifiedFeedItem,
   UnifiedFeedFilter,
+  IHiddenRecentMediaItem,
 } from '../types';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 const logTypeIcons: { [key: string]: React.ElementType } = {
   reading: Book,
@@ -166,6 +172,7 @@ function Dashboard() {
     mediaId: string;
     title: string;
   } | null>(null);
+  const [manageHiddenOpen, setManageHiddenOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -513,6 +520,16 @@ function Dashboard() {
         onLogged={handleQuickLogSuccess}
       />
 
+      <ManageHiddenMedia
+        open={manageHiddenOpen}
+        onClose={() => setManageHiddenOpen(false)}
+        onUnhidden={() => {
+          queryClient.invalidateQueries({
+            queryKey: ['recentLogs', username],
+          });
+        }}
+      />
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm uppercase tracking-wide text-primary font-semibold">
@@ -547,6 +564,7 @@ function Dashboard() {
           allLogs={recentMediaHighlights}
           onQuickLog={handleQuickLogOpen}
           onRemove={handleRemoveMedia}
+          onManage={() => setManageHiddenOpen(true)}
         />
       </div>
 
@@ -1021,6 +1039,7 @@ function Dashboard() {
               user={user}
               onQuickLog={handleQuickLogOpen}
               onRemove={handleRemoveMedia}
+              onManage={() => setManageHiddenOpen(true)}
             />
           </div>
 
@@ -1083,6 +1102,7 @@ type RecentMediaPanelProps = {
   user: ILoginResponse | null;
   onQuickLog: (media?: ILog['media']) => void;
   onRemove: (mediaId: string, title: string) => void;
+  onManage: () => void;
 };
 
 function RecentMediaPanel({
@@ -1090,13 +1110,14 @@ function RecentMediaPanel({
   user,
   onQuickLog,
   onRemove,
+  onManage,
 }: RecentMediaPanelProps) {
   const { t } = useTranslation('home');
 
   return (
     <div className="card surface">
       <div className="card-body space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h2
               className={`${DASHBOARD_CARD_TITLE_CLASS} flex items-center gap-2`}
@@ -1108,6 +1129,15 @@ function RecentMediaPanel({
               {t('dashboard.quickShortcuts')}
             </p>
           </div>
+          <Button
+            appearance="outline"
+            size="sm"
+            onClick={onManage}
+            className="shrink-0"
+          >
+            <Settings2 className="w-4 h-4" />
+            {t('dashboard.manage')}
+          </Button>
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
@@ -1135,12 +1165,14 @@ type RecentMediaRailProps = {
   allLogs: RecentMediaLog[];
   onQuickLog: (media?: ILog['media']) => void;
   onRemove: (mediaId: string, title: string) => void;
+  onManage: () => void;
 };
 
 function RecentMediaRail({
   allLogs,
   onQuickLog,
   onRemove,
+  onManage,
 }: RecentMediaRailProps) {
   const { t } = useTranslation('home');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1181,11 +1213,24 @@ function RecentMediaRail({
               {t('dashboard.quickShortcuts')}
             </p>
           </div>
-          {showSwipeHint && (
-            <span className="text-xs text-base-content/60">
-              {t('dashboard.swipe')}
-            </span>
-          )}
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {showSwipeHint && (
+              <span className="text-xs text-base-content/60">
+                {t('dashboard.swipe')}
+              </span>
+            )}
+            <Button
+              appearance="outline"
+              size="sm"
+              onClick={onManage}
+              aria-label={t('dashboard.manage')}
+            >
+              <Settings2 className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {t('dashboard.manage')}
+              </span>
+            </Button>
+          </div>
         </div>
         {logs.length === 0 ? (
           <p className="text-base-content/70 text-sm">
@@ -1382,5 +1427,126 @@ function RecentMediaTile({
         </p>
       </div>
     </div>
+  );
+}
+
+const hiddenMediaTypeLabelKey: Record<
+  IHiddenRecentMediaItem['type'],
+  ParseKeys<'common'>
+> = {
+  anime: 'mediaTypes.anime',
+  manga: 'mediaTypes.manga',
+  'light-novel': 'mediaTypes.light-novel',
+  vn: 'mediaTypes.vn',
+  game: 'mediaTypes.game',
+  video: 'mediaTypes.video',
+  movie: 'mediaTypes.movie',
+  'tv show': 'mediaTypes.tvShow',
+  book: 'mediaTypes.book',
+};
+
+type ManageHiddenMediaProps = {
+  open: boolean;
+  onClose: () => void;
+  onUnhidden?: () => void;
+};
+
+function ManageHiddenMedia({
+  open,
+  onClose,
+  onUnhidden,
+}: ManageHiddenMediaProps) {
+  const { t } = useTranslation('home');
+  const { t: tCommon } = useTranslation('common');
+  const queryClient = useQueryClient();
+
+  const { data: hiddenMedia = [], isLoading } = useQuery({
+    queryKey: ['hiddenRecentMedia'],
+    queryFn: getHiddenRecentMediaFn,
+    enabled: open,
+    staleTime: 1000 * 60,
+  });
+
+  const unhideMutation = useMutation({
+    mutationFn: (mediaId: string) => hideRecentMediaFn('remove', mediaId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hiddenRecentMedia'] });
+      onUnhidden?.();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t('dashboard.manageHiddenTitle')}
+    >
+      <p className="text-sm text-base-content/70 -mt-2 mb-4">
+        {t('dashboard.manageHiddenDescription')}
+      </p>
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="skeleton h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : hiddenMedia.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+          <Settings2 className="w-8 h-8 text-base-content/40" />
+          <p className="text-sm text-base-content/70">
+            {t('dashboard.manageHiddenEmpty')}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+          {hiddenMedia.map((media) => {
+            const title = media.title?.contentTitleNative ?? media.contentId;
+            const image = media.contentImage || media.coverImage;
+            const isAdult =
+              media.type === 'vn' ? media.isAdultImage : media.isAdult;
+            const isPending = unhideMutation.isPending
+              ? unhideMutation.variables === media.contentId
+              : false;
+            return (
+              <div
+                key={media.contentId}
+                className="flex items-center gap-3 p-2 rounded-xl bg-base-200/60 border border-base-300"
+              >
+                {image ? (
+                  <img
+                    src={image}
+                    alt={title}
+                    className={`w-12 h-16 rounded-lg object-cover shrink-0 ${
+                      isAdult ? 'blur-sm scale-110' : ''
+                    }`}
+                  />
+                ) : (
+                  <div className="w-12 h-16 rounded-lg bg-base-300 flex items-center justify-center shrink-0">
+                    <Play className="w-5 h-5 text-base-content/40" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{title}</p>
+                  <p className="text-xs text-base-content/60">
+                    {tCommon(hiddenMediaTypeLabelKey[media.type])}
+                  </p>
+                </div>
+                <Button
+                  appearance="outline"
+                  size="sm"
+                  loading={isPending}
+                  disabled={unhideMutation.isPending && !isPending}
+                  onClick={() => unhideMutation.mutate(media.contentId)}
+                  className="shrink-0"
+                >
+                  <Eye className="w-4 h-4" />
+                  {t('dashboard.unhide')}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Modal>
   );
 }

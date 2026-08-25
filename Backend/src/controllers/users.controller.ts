@@ -7,6 +7,7 @@ import { MediaBase } from '../models/media.model.js';
 import { Request, Response, NextFunction } from 'express';
 import {
   IMediaDocument,
+  IMediaTitle,
   IUpdateRequest,
   IUser,
   IFavoriteEntry,
@@ -613,6 +614,77 @@ export async function updateHiddenRecentMedia(
       message: `Media ${action === 'add' ? 'hidden' : 'restored'} successfully`,
       hiddenRecentMedia: user.settings.hiddenRecentMedia,
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+interface HiddenRecentMediaItem {
+  contentId: string;
+  type: IMediaDocument['type'];
+  title: IMediaTitle | null;
+  contentImage: string | null;
+  coverImage: string | null;
+  isAdult: boolean;
+  isAdultImage: boolean;
+}
+
+/**
+ * Lists the user's hidden recent media with enough detail to render in the
+ * dashboard's manage modal (title, cover, type). Resolved from the latest log
+ * per contentId so entries survive even if the media doc was deleted.
+ */
+export async function getHiddenRecentMedia(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userDoc = await User.findById(res.locals.user._id);
+    if (!userDoc) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+
+    const hiddenIds = (userDoc.settings?.hiddenRecentMedia || []).filter(
+      (id): id is string => typeof id === 'string' && id.trim().length > 0
+    );
+
+    if (hiddenIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const logs = await Log.find({
+      user: userDoc._id,
+      mediaId: { $in: hiddenIds },
+    })
+      .sort({ date: -1 })
+      .populate<{ media: IMediaDocument | null }>('media')
+      .lean();
+
+    const seen = new Set<string>();
+    const items: HiddenRecentMediaItem[] = [];
+    for (const log of logs) {
+      if (!log.mediaId || seen.has(log.mediaId)) continue;
+      seen.add(log.mediaId);
+      const media = log.media ?? null;
+      items.push({
+        contentId: log.mediaId,
+        type: (media?.type ?? log.type) as HiddenRecentMediaItem['type'],
+        title: media?.title ?? null,
+        contentImage: media?.contentImage ?? log.mediaTitle ?? null,
+        coverImage: media?.coverImage ?? null,
+        isAdult: media?.isAdult ?? log.isAdult ?? false,
+        isAdultImage: media?.isAdultImage ?? false,
+      });
+    }
+
+    // Preserve the order the user hid them in.
+    const byContentId = new Map(items.map((item) => [item.contentId, item]));
+    const ordered = hiddenIds
+      .map((id) => byContentId.get(id))
+      .filter((item): item is HiddenRecentMediaItem => Boolean(item));
+
+    return res.status(200).json(ordered);
   } catch (error) {
     return next(error as customError);
   }

@@ -843,6 +843,17 @@ export interface IMediaDocument {
     | null;
 }
 
+/** Entry in the dashboard's manage-hidden-media modal. */
+export interface IHiddenRecentMediaItem {
+  contentId: string;
+  type: IMediaDocument['type'];
+  title: IMediaTitle | null;
+  contentImage: string | null;
+  coverImage: string | null;
+  isAdult: boolean;
+  isAdultImage: boolean;
+}
+
 export interface IAverageColor {
   rgb: string;
   rgba: string;

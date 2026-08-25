@@ -1211,6 +1211,43 @@ const swaggerDocument = {
       },
     },
     '/users/settings/hidden-media': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get hidden recent media list',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'List of hidden recent media with display details',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      contentId: { type: 'string' },
+                      type: { type: 'string' },
+                      title: {
+                        type: 'object',
+                        nullable: true,
+                        properties: {
+                          contentTitleNative: { type: 'string' },
+                          contentTitleRomaji: { type: 'string' },
+                          contentTitleEnglish: { type: 'string' },
+                        },
+                      },
+                      contentImage: { type: 'string', nullable: true },
+                      coverImage: { type: 'string', nullable: true },
+                      isAdult: { type: 'boolean' },
+                      isAdultImage: { type: 'boolean' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       patch: {
         tags: ['Users'],
         summary: 'Update hidden recent media list',

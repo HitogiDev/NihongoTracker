@@ -45,6 +45,7 @@ import {
   MediaRequestStatus,
   IFavoriteEntry,
   MediaListMediaType,
+  IHiddenRecentMediaItem,
 } from '../types';
 
 const api = axiosInstance;
@@ -1448,6 +1449,13 @@ export async function hideRecentMediaFn(
     action,
     mediaId,
   });
+  return data;
+}
+
+export async function getHiddenRecentMediaFn() {
+  const { data } = await api.get<IHiddenRecentMediaItem[]>(
+    'users/settings/hidden-media'
+  );
   return data;
 }
 

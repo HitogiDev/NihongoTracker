@@ -13,6 +13,7 @@ import {
   updateMediaCompletionStatus,
   removeMediaFromImmersionList,
   updateHiddenRecentMedia,
+  getHiddenRecentMedia,
   updateStatsLayout,
   updateProfileLayout,
   updateFavorites,
@@ -81,6 +82,7 @@ router.put(
 );
 
 router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
+router.get('/settings/hidden-media', protect, getHiddenRecentMedia);
 router.patch('/settings/stats-layout', protect, updateStatsLayout);
 router.patch('/settings/profile-layout', protect, updateProfileLayout);
 router.patch('/favorites', protect, updateFavorites);

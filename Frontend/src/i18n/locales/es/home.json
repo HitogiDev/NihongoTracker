@@ -106,7 +106,12 @@
     "quickShortcuts": "Atajos de log rápido",
     "recentEmpty": "Loguea algo para desbloquear acciones rápidas aquí.",
     "thisMedia": "este contenido",
-    "hideConfirm": "¿Seguro que quieres ocultar <title>{{title}}</title> de tu contenido reciente? Dejará de aparecer en las acciones rápidas."
+    "hideConfirm": "¿Seguro que quieres ocultar <title>{{title}}</title> de tu contenido reciente? Dejará de aparecer en las acciones rápidas.",
+    "manage": "Gestionar",
+    "unhide": "Mostrar",
+    "manageHiddenTitle": "Contenido reciente oculto",
+    "manageHiddenDescription": "El contenido que ocultaste de las acciones rápidas se puede restaurar aquí. El contenido restaurado volverá a aparecer en el contenido reciente cuando se loguee de nuevo.",
+    "manageHiddenEmpty": "Aún no hay contenido oculto."
   },
   "features": {
     "hero": {

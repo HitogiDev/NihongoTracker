@@ -105,7 +105,12 @@
     "quickShortcuts": "Quick log shortcuts",
     "recentEmpty": "Log something to unlock quick actions here.",
     "thisMedia": "this media",
-    "hideConfirm": "Are you sure you want to hide <title>{{title}}</title> from your recent media? It will no longer appear in quick actions."
+    "hideConfirm": "Are you sure you want to hide <title>{{title}}</title> from your recent media? It will no longer appear in quick actions.",
+    "manage": "Manage",
+    "unhide": "Unhide",
+    "manageHiddenTitle": "Hidden recent media",
+    "manageHiddenDescription": "Media you hid from quick actions can be restored here. Restored media will reappear in recent media when logged again.",
+    "manageHiddenEmpty": "Nothing hidden yet."
   },
   "features": {
     "hero": {
