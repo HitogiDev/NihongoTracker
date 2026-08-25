@@ -497,6 +497,7 @@ export async function getDashboardHours(
         $match: {
           user: user._id,
           date: { $gte: currentMonthStart, $lte: now },
+          unknownDate: { $ne: true },
         },
       },
       {
@@ -560,6 +561,7 @@ export async function getDashboardHours(
         $match: {
           user: user._id,
           date: { $gte: previousMonthStart, $lte: previousMonthActualDate },
+          unknownDate: { $ne: true },
         },
       },
       {
