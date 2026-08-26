@@ -2,8 +2,6 @@ client_secret.json
 .env
 .env.production
 build
-.eslintrc.json
-.prettierrc
 Planning.md
 Changelog.md
 .github

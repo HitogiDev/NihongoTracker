@@ -1,0 +1,55 @@
+{
+  "root": true,
+  "plugins": ["@typescript-eslint", "import"],
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es2021": true
+  },
+  "extends": [
+    "airbnb-typescript/base",
+    "prettier",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/typescript"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "project": "./Backend/tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "variable",
+        "format": ["camelCase", "UPPER_CASE"],
+        "leadingUnderscore": "allowSingleOrDouble"
+      },
+      {
+        "selector": ["function", "parameter", "classMethod", "classProperty"],
+        "format": ["camelCase"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "typeLike",
+        "format": ["camelCase", "PascalCase"]
+      },
+      {
+        "selector": "enumMember",
+        "format": ["camelCase", "UPPER_CASE"]
+      },
+      {
+        "selector": ["objectLiteralProperty", "typeProperty"],
+        "format": null
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["*.d.ts", "**/types.ts"],
+      "rules": {
+        "@typescript-eslint/no-namespace": "off"
+      }
+    }
+  ]
+}

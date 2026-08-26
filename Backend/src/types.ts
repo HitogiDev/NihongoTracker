@@ -1,6 +1,12 @@
 import { Request } from 'express';
 import { Document, Types } from 'mongoose';
 
+declare module 'express-serve-static-core' {
+  interface Request {
+    rawBody?: string;
+  }
+}
+
 export interface decodedJWT {
   id: Types.ObjectId;
   iat: number;
@@ -91,12 +97,7 @@ export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
  * rules and is the only place allowed to decide what a user may equip. The
  * stored value is always re-validated on write, never trusted from the client.
  */
-export const NAME_EFFECTS = [
-  'none',
-  'gradient',
-  'glow',
-  'shimmer',
-] as const;
+export const NAME_EFFECTS = ['none', 'gradient', 'glow', 'shimmer'] as const;
 export type NameEffect = (typeof NAME_EFFECTS)[number];
 
 export const AVATAR_FRAMES = [

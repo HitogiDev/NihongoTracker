@@ -37,9 +37,9 @@ app.use(
   express.raw({ type: 'application/json' }),
   (req, res, next) => {
     if (req.body) {
-      (req as any).rawBody = req.body.toString('utf8');
+      req.rawBody = req.body.toString('utf8');
       try {
-        req.body = JSON.parse((req as any).rawBody);
+        req.body = JSON.parse(req.rawBody || '{}');
       } catch (e) {
         return res.status(400).json({ error: 'Invalid JSON' });
       }
