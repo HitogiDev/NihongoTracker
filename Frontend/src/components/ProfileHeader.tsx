@@ -98,12 +98,12 @@ export default function ProfileHeader() {
                 <div
                   className={
                     hasAvatarFrame(customization?.avatarFrame)
-                      ? getAvatarFrameClass(customization?.avatarFrame)
+                      ? `w-24 h-24 ${getAvatarFrameClass(customization?.avatarFrame)}`
                       : undefined
                   }
                 >
                   <div className="avatar">
-                    <div className="w-24 rounded-full">
+                    <div className={`${hasAvatarFrame(customization?.avatarFrame) ? 'w-full h-full' : 'w-24'} rounded-full`}>
                       {user?.avatar && !avatarLoadFailed ? (
                         <img
                           src={user.avatar}
