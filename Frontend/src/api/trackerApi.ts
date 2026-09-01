@@ -1204,9 +1204,18 @@ export async function unlinkAnilistAccountFn() {
   return data;
 }
 
-export async function updateAnilistSettingsFn(settings: {
-  autoSync: boolean;
-}): Promise<IAnilistStatus> {
+export interface IUpdateAnilistSettings {
+  autoSync?: boolean;
+  excludedMedia?: Array<{
+    anilistId: number;
+    title?: string;
+    image?: string | null;
+  }>;
+}
+
+export async function updateAnilistSettingsFn(
+  settings: IUpdateAnilistSettings
+): Promise<IAnilistStatus> {
   const { data } = await api.patch<IAnilistStatus>('anilist/settings', settings);
   return data;
 }

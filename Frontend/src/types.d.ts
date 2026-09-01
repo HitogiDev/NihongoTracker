@@ -53,6 +53,15 @@ export interface ProfileWidgetLayout {
   visible: boolean;
 }
 
+/** A media title the user asked AniList sync to skip. */
+export interface IAnilistMediaExclusion {
+  /** AniList id of the excluded media. */
+  anilistId: number;
+  /** Denormalized for display in the settings UI. */
+  title?: string;
+  image?: string | null;
+}
+
 /**
  * State of the AniList link. `linked: false` is the whole payload when no
  * account is connected, so every other field can be read safely once linked.
@@ -63,6 +72,7 @@ export interface IAnilistStatus {
   anilistUsername?: string;
   anilistAvatar?: string;
   autoSync?: boolean;
+  excludedMedia?: IAnilistMediaExclusion[];
   linkedAt?: string | Date;
   lastSyncedAt?: string | Date | null;
   lastSyncStatus?: 'ok' | 'error' | null;

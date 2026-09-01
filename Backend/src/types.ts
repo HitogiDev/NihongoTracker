@@ -202,6 +202,15 @@ export interface IPatreonData {
  * AniList access tokens are valid for a year and there is no refresh grant, so
  * `tokenExpiry` exists to tell the user to re-link rather than to refresh.
  */
+/** A media title the user asked AniList sync to skip. */
+export interface IAnilistMediaExclusion {
+  /** AniList id of the excluded media. */
+  anilistId: number;
+  /** Denormalized for display in the settings UI. */
+  title?: string;
+  image?: string | null;
+}
+
 export interface IAnilistData {
   anilistId?: number;
   anilistUsername?: string;
@@ -211,6 +220,8 @@ export interface IAnilistData {
   linkedAt?: Date;
   /** Whether the scheduler may poll this account. Manual sync ignores it. */
   autoSync?: boolean;
+  /** AniList shows the user asked not to import. */
+  excludedMedia?: IAnilistMediaExclusion[];
   /** Highest AniList activity id already turned into a log. */
   lastActivityId?: number;
   /**

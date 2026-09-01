@@ -32,12 +32,21 @@ import {
   updateAnilistSettingsFn,
   syncAnilistNowFn,
   backfillAnilistFn,
+  type IUpdateAnilistSettings,
   type IApiKey,
   type ICreatedApiKey,
 } from '../api/trackerApi';
+import { searchAnilist } from '../api/anilistApi';
+import { useDebounce } from '../hooks/useDebounce';
 import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
-import { ILoginResponse, ProfileWidgetLayout } from '../types';
+import {
+  ILoginResponse,
+  ProfileWidgetLayout,
+  type IAnilistMediaExclusion,
+  type IAnilistStatus,
+  type IMediaDocument,
+} from '../types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useUserDataStore } from '../store/userData';
 import {
@@ -124,6 +133,9 @@ import {
   GripVertical,
   LayoutList,
   RotateCcw,
+  Search,
+  Film,
+  X,
 } from 'lucide-react';
 
 const ABOUT_MAX_LENGTH = 2000;
@@ -1069,6 +1081,42 @@ function SettingsScreen() {
     },
     onError: (error) => reportAnilistError(error, 'common.unexpected'),
   });
+
+  // ── AniList exclusion list ──
+  const excludedMedia = useMemo(
+    () => anilistStatus?.excludedMedia ?? [],
+    [anilistStatus]
+  );
+
+  function saveAnilistExclusions(
+    next: IAnilistMediaExclusion[],
+    successMessage?: string
+  ) {
+    const payload: IUpdateAnilistSettings = { excludedMedia: next };
+    updateAnilistSettings(payload, {
+      onSuccess: (updated) => {
+        void queryClient.setQueryData<IAnilistStatus>(
+          ['anilist', 'status'],
+          updated
+        );
+        if (successMessage) toast.success(successMessage);
+      },
+      onError: (error) => reportAnilistError(error, 'common.unexpected'),
+    });
+  }
+
+  const { mutate: updateAnilistSettings, isPending: isSavingAnilistSettings } =
+    useMutation({
+      mutationFn: updateAnilistSettingsFn,
+      onSuccess: () => {
+        void refetchAnilistStatus();
+      },
+      onError: () => {
+        /* handled by saveAnilistExclusions */
+      },
+    });
+
+  const [isExclusionPickerOpen, setIsExclusionPickerOpen] = useState(false);
 
   const { mutate: unlinkAnilist, isPending: isUnlinkingAnilist } = useMutation({
     mutationFn: unlinkAnilistAccountFn,
@@ -3421,6 +3469,77 @@ function SettingsScreen() {
                           />
                         </div>
 
+                        <div className="p-4 rounded-lg border border-base-300/50">
+                          <div className="flex items-center justify-between gap-3 mb-3">
+                            <div>
+                              <div className="font-medium">
+                                {t('anilist.excludedMedia')}
+                              </div>
+                              <p className="text-sm text-base-content/70">
+                                {t('anilist.excludedMediaHint')}
+                              </p>
+                            </div>
+                          </div>
+
+                          {excludedMedia.length === 0 ? (
+                            <p className="text-sm text-base-content/50 mb-3">
+                              {t('anilist.excludedMediaEmpty')}
+                            </p>
+                          ) : (
+                            <ul className="flex flex-col gap-1.5 mb-3">
+                              {excludedMedia.map((ex) => (
+                                <li
+                                  key={ex.anilistId}
+                                  className="flex items-center gap-2.5 p-2 rounded-lg bg-base-content/5"
+                                >
+                                  {ex.image ? (
+                                    <img
+                                      src={ex.image}
+                                      alt={ex.title ?? ''}
+                                      className="w-7 h-10 rounded object-cover ring-1 ring-base-content/10 flex-shrink-0"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <div className="flex items-center justify-center w-7 h-10 rounded bg-base-300 flex-shrink-0">
+                                      <Film className="w-3 h-3 opacity-50" />
+                                    </div>
+                                  )}
+                                  <span className="flex-1 text-sm min-w-0 truncate">
+                                    {ex.title || t('anilist.excludedUntitled')}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="btn btn-ghost btn-xs btn-square"
+                                    title={t('anilist.excludedRemove')}
+                                    disabled={isSavingAnilistSettings}
+                                    onClick={() =>
+                                      saveAnilistExclusions(
+                                        excludedMedia.filter(
+                                          (item) =>
+                                            item.anilistId !== ex.anilistId
+                                        ),
+                                        t('anilist.excludedRemoved')
+                                      )
+                                    }
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm gap-2"
+                            disabled={isSavingAnilistSettings}
+                            onClick={() => setIsExclusionPickerOpen(true)}
+                          >
+                            <Plus className="h-4 w-4" />
+                            {t('anilist.excludedAdd')}
+                          </button>
+                        </div>
+
                         <div className="text-sm text-base-content/70 flex items-center gap-2">
                           <Clock3 className="h-4 w-4" />
                           {anilistStatus.lastSyncedAt
@@ -3540,6 +3659,26 @@ function SettingsScreen() {
                     <button>close</button>
                   </form>
                 </dialog>
+
+                <AnilistExclusionPickerModal
+                  isOpen={isExclusionPickerOpen}
+                  onClose={() => setIsExclusionPickerOpen(false)}
+                  existingIds={new Set(excludedMedia.map((ex) => ex.anilistId))}
+                  onSelect={(media) => {
+                    if (
+                      excludedMedia.some(
+                        (ex) => ex.anilistId === media.anilistId
+                      )
+                    ) {
+                      return;
+                    }
+                    saveAnilistExclusions(
+                      [...excludedMedia, media],
+                      t('anilist.excludedAdded')
+                    );
+                    setIsExclusionPickerOpen(false);
+                  }}
+                />
 
                 {/* Data Management */}
                 <div className="card surface">
@@ -4753,6 +4892,169 @@ function ProfileLayoutEditor() {
         </p>
       </div>
     </div>
+  );
+}
+
+interface IAnilistExclusionPickerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  /** AniList ids already excluded, hidden from results. */
+  existingIds: Set<number>;
+  /** Called with the chosen show's display data. */
+  onSelect: (media: IAnilistMediaExclusion) => void;
+}
+
+function AnilistExclusionPickerModal({
+  isOpen,
+  onClose,
+  existingIds,
+  onSelect,
+}: IAnilistExclusionPickerModalProps) {
+  const { t } = useTranslation('settings');
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<IMediaDocument[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedQuery = useDebounce(query, 300);
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      setResults([]);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!debouncedQuery.trim() || debouncedQuery.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    void (async () => {
+      setIsSearching(true);
+      try {
+        const found = await searchAnilist(debouncedQuery, 'ANIME', 1, 10);
+        if (controller.signal.aborted) return;
+        setResults(found);
+      } catch {
+        if (!controller.signal.aborted) setResults([]);
+      } finally {
+        if (!controller.signal.aborted) setIsSearching(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [debouncedQuery]);
+
+  if (!isOpen) return null;
+
+  const hasQuery = debouncedQuery.trim().length >= 2;
+  const visibleResults = results.filter(
+    (m) => !existingIds.has(Number(m.contentId))
+  );
+
+  return (
+    <dialog
+      className="modal modal-bottom sm:modal-middle modal-open"
+      onClick={onClose}
+    >
+      <div
+        className="modal-box max-w-2xl p-0 overflow-hidden border border-base-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-base-content/10">
+          <Search className="w-5 h-5 text-base-content/40 flex-shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            className="flex-1 bg-transparent outline-none text-base placeholder:text-base-content/30"
+            placeholder={t('anilist.exclusionSearchPlaceholder')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {isSearching && (
+            <span className="loading loading-spinner loading-sm text-primary" />
+          )}
+          <button
+            className="btn btn-ghost btn-sm btn-circle"
+            onClick={onClose}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[28rem] overflow-y-auto overscroll-contain">
+          {!hasQuery && (
+            <div className="px-4 py-16 text-center text-base-content/40">
+              <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">{t('anilist.exclusionSearchHint')}</p>
+            </div>
+          )}
+
+          {hasQuery && !isSearching && visibleResults.length === 0 && (
+            <div className="px-4 py-16 text-center text-base-content/40">
+              <p className="text-sm">
+                {t('anilist.excludedNoResults')} &ldquo;{debouncedQuery}&rdquo;
+              </p>
+            </div>
+          )}
+
+          {visibleResults.length > 0 && (
+            <div className="divide-y divide-base-content/5">
+              {visibleResults.map((media) => (
+                <button
+                  key={media.contentId}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer transition-all duration-200 hover:bg-base-content/5"
+                  onClick={() => {
+                    onSelect({
+                      anilistId: Number(media.contentId),
+                      title:
+                        media.title.contentTitleNative ||
+                        media.title.contentTitleRomaji ||
+                        media.title.contentTitleEnglish ||
+                        '',
+                      image: media.contentImage ?? media.coverImage,
+                    });
+                  }}
+                >
+                  <div className="w-9 h-12 rounded-md overflow-hidden flex-shrink-0 ring-1 ring-base-content/10">
+                    {media.contentImage ? (
+                      <img
+                        src={media.contentImage}
+                        alt={media.title.contentTitleNative}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full bg-base-300">
+                        <Film className="w-4 h-4 opacity-50" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate leading-tight">
+                      {media.title.contentTitleNative ||
+                        media.title.contentTitleEnglish ||
+                        media.title.contentTitleRomaji}
+                    </p>
+                    {media.title.contentTitleEnglish &&
+                      media.title.contentTitleNative && (
+                        <p className="text-xs text-base-content/50 truncate mt-0.5">
+                          {media.title.contentTitleEnglish}
+                        </p>
+                      )}
+                  </div>
+                  <Plus className="w-4 h-4 text-base-content/50 flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <form method="dialog" className="modal-backdrop">
+        <button onClick={onClose}>close</button>
+      </form>
+    </dialog>
   );
 }
 

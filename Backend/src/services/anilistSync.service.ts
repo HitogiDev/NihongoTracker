@@ -313,8 +313,16 @@ export async function syncAnilistForUser(
 
     result.scanned = collected.length;
 
+    const excludedIds = new Set(
+      (user.anilist.excludedMedia ?? []).map((entry) => entry.anilistId)
+    );
+
     const episodeActivities = collected
-      .filter((activity) => activity.media?.type === 'ANIME')
+      .filter(
+        (activity) =>
+          activity.media?.type === 'ANIME' &&
+          !(activity.media && excludedIds.has(activity.media.id))
+      )
       .map((activity) => {
         const range = parseEpisodeRange(activity.status, activity.progress);
         return {

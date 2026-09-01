@@ -4,6 +4,7 @@ import {
   userRoles,
   IUserSettings,
   IAnilistData,
+  IAnilistMediaExclusion,
   IPatreonData,
   IUserModeration,
   IUserModerationHistoryItem,
@@ -99,6 +100,15 @@ const PatreonSchema = new Schema<IPatreonData>(
   { _id: false }
 );
 
+const AnilistMediaExclusionSchema = new Schema<IAnilistMediaExclusion>(
+  {
+    anilistId: { type: Number, required: true },
+    title: { type: String, default: '' },
+    image: { type: String, default: null },
+  },
+  { _id: false }
+);
+
 const AnilistSchema = new Schema<IAnilistData>(
   {
     anilistId: { type: Number, sparse: true, unique: true },
@@ -110,6 +120,10 @@ const AnilistSchema = new Schema<IAnilistData>(
     tokenExpiry: { type: Date },
     linkedAt: { type: Date },
     autoSync: { type: Boolean, default: true },
+    // AniList shows the user asks not to import. Stored denormalized (title +
+    // image) so the settings UI can render them without an extra lookup; the
+    // sync only ever reads `anilistId`.
+    excludedMedia: { type: [AnilistMediaExclusionSchema], default: [] },
     lastActivityId: { type: Number, default: 0 },
     syncFrom: { type: Date, default: null },
     lastSyncedAt: { type: Date, default: null },

@@ -101,6 +101,7 @@ function serializeStatus(user: IUser) {
     anilistUsername: anilist.anilistUsername,
     anilistAvatar: anilist.anilistAvatar,
     autoSync: anilist.autoSync ?? true,
+    excludedMedia: anilist.excludedMedia ?? [],
     linkedAt: anilist.linkedAt,
     lastSyncedAt: anilist.lastSyncedAt,
     lastSyncStatus: anilist.lastSyncStatus,
@@ -241,6 +242,9 @@ export async function handleAnilistOAuthCallback(
       ),
       linkedAt: isSameAccount ? (previous?.linkedAt ?? now) : now,
       autoSync: previous?.autoSync ?? true,
+      excludedMedia: isSameAccount
+        ? (previous?.excludedMedia ?? [])
+        : [],
       lastActivityId: isSameAccount ? (previous?.lastActivityId ?? 0) : 0,
       syncFrom: isSameAccount ? (previous?.syncFrom ?? null) : now,
       syncedLogCount: isSameAccount ? (previous?.syncedLogCount ?? 0) : 0,
@@ -293,6 +297,28 @@ export async function updateAnilistSettings(
 
     if (typeof req.body?.autoSync === 'boolean') {
       user.anilist.autoSync = req.body.autoSync;
+    }
+
+    // The frontend sends the whole desired exclusion list; dedupe and drop
+    // entries without a numeric AniList id.
+    if (Array.isArray(req.body?.excludedMedia)) {
+      const seen = new Set<number>();
+      const normalized = req.body.excludedMedia
+        .filter(
+          (entry: { anilistId?: unknown }) =>
+            typeof entry?.anilistId === 'number' && !Number.isNaN(entry.anilistId)
+        )
+        .filter((entry: { anilistId: number }) => {
+          if (seen.has(entry.anilistId)) return false;
+          seen.add(entry.anilistId);
+          return true;
+        })
+        .map((entry: { anilistId: number; title?: string; image?: string }) => ({
+          anilistId: entry.anilistId,
+          title: entry.title ?? '',
+          image: entry.image ?? null,
+        }));
+      user.anilist.excludedMedia = normalized;
     }
 
     await user.save();
