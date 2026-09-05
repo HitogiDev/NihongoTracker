@@ -162,7 +162,7 @@ export default function useSearch(
               'MANGA',
               page,
               perPage,
-              'MANGA',
+              undefined,
               ids
             );
           } else {

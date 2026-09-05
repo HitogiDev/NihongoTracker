@@ -443,7 +443,7 @@ function SearchModal({
             searchAnilist(debouncedQuery, 'ANIME', 1, 3).catch(
               () => [] as SearchResultType[]
             ),
-            searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'MANGA').catch(
+            searchAnilist(debouncedQuery, 'MANGA', 1, 3).catch(
               () => [] as SearchResultType[]
             ),
             searchAnilist(debouncedQuery, 'MANGA', 1, 3, 'NOVEL').catch(

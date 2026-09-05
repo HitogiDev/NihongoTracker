@@ -41,3 +41,4 @@ dist-ssr
 *.sw?
 skills-lock.json
 *.tsbuildinfo
+.claude/worktrees/
