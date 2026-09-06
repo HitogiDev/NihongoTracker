@@ -533,6 +533,7 @@ export async function getGlobalFeedFn(params?: {
   type?: ILog['type'] | 'all';
   timeRange?: 'day' | 'week' | 'month' | 'year' | 'all';
   limit?: number;
+  page?: number;
   includeSelf?: boolean;
 }) {
   const { data } = await api.get<ILog[]>('logs/feed', {

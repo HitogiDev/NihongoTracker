@@ -306,7 +306,9 @@ export async function getGlobalFeed(
 ) {
   const { user } = res.locals;
   const limitParam = parseInt(req.query.limit as string) || 20;
-  const limit = Math.min(limitParam, 100);
+  const limit = Math.min(Math.max(limitParam, 1), 100);
+  const pageParam = parseInt(req.query.page as string) || 1;
+  const page = Math.max(pageParam, 1);
   const typeFilter = (req.query.type as string) || 'all';
   const timeRange = (req.query.timeRange as string) || 'day';
   const includeSelf = req.query.includeSelf === 'true';
@@ -361,6 +363,7 @@ export async function getGlobalFeed(
     const feedLogs = await Log.aggregate([
       { $match: matchStage },
       { $sort: { date: -1 } },
+      { $skip: (page - 1) * limit },
       { $limit: limit },
       {
         $lookup: {

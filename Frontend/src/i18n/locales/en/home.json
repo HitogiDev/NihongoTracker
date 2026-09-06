@@ -53,6 +53,7 @@
       "allTypes": "All types",
       "subtitle": "See what the community is immersing in right now",
       "empty": "No activity for the selected filters.",
+      "loadMore": "Load more activity",
       "tracked": "tracked"
     },
     "time": {

@@ -749,7 +749,13 @@ export async function getAchievementFeed(
     // Filter out items where achievement didn't match (populate match returned null)
     const filtered = feed
       .filter((ua) => ua.achievement !== null)
-      .slice(0, limit);
+      .slice(0, limit)
+      .map((ua) => ({
+        userAchievementId: ua._id,
+        achievement: ua.achievement,
+        unlockedAt: ua.unlockedAt,
+        user: ua.user,
+      }));
 
     return res.status(200).json(filtered);
   } catch (error) {

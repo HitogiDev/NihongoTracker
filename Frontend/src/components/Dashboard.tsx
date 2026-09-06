@@ -3,7 +3,12 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUserDataStore } from '../store/userData';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   getDashboardHoursFn,
   getRecentLogsFn,
@@ -168,6 +173,7 @@ function Dashboard() {
     timeRange: FeedTimeRange;
   }>({ type: 'all', timeRange: 'day' });
   const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
+  const feedKindDropdownRef = useRef<HTMLDetailsElement>(null);
   const [mediaToRemove, setMediaToRemove] = useState<{
     mediaId: string;
     title: string;
@@ -215,34 +221,53 @@ function Dashboard() {
     staleTime: 1000 * 60,
   });
 
-  const { data: globalFeed, isLoading: globalFeedLoading } = useQuery({
+  const {
+    data: globalFeedPages,
+    isLoading: globalFeedLoading,
+    fetchNextPage: fetchNextGlobalFeedPage,
+    hasNextPage: hasNextGlobalFeedPage,
+    isFetchingNextPage: isFetchingNextGlobalFeedPage,
+  } = useInfiniteQuery({
     queryKey: ['globalFeed', username, feedFilters],
-    queryFn: () =>
+    queryFn: ({ pageParam }) =>
       getGlobalFeedFn({
         type: feedFilters.type,
         timeRange: feedFilters.timeRange,
         limit: 20,
+        page: pageParam,
         includeSelf: true,
       }).catch(() => []),
-    enabled: !!username,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length < 20 ? undefined : allPages.length + 1,
+    enabled: !!username && feedKind !== 'achievements',
     staleTime: 1000 * 60 * 2,
   });
+
+  const globalFeed = useMemo(
+    () => globalFeedPages?.pages.flatMap((page) => page) ?? [],
+    [globalFeedPages]
+  );
 
   const { data: achievementFeed, isLoading: achievementFeedLoading } = useQuery(
     {
       queryKey: ['achievementFeed', feedFilters.timeRange],
       queryFn: () => getAchievementFeedFn(20),
+      enabled: feedKind !== 'logs',
       staleTime: 60_000,
     }
   );
 
   // Build unified chronological feed (logs + achievements)
   const unifiedFeed = useMemo<UnifiedFeedItem[]>(() => {
-    const logItems: UnifiedFeedItem[] = (globalFeed ?? []).map((log) => ({
-      kind: 'log',
-      sortDate: new Date(log.date ?? 0),
-      data: log,
-    }));
+    const logItems: UnifiedFeedItem[] =
+      feedKind === 'achievements'
+        ? []
+        : globalFeed.map((log) => ({
+            kind: 'log',
+            sortDate: new Date(log.date ?? 0),
+            data: log,
+          }));
 
     // Filter achievements by timeRange
     const now = Date.now();
@@ -252,23 +277,26 @@ function Dashboard() {
       month: 30 * 24 * 60 * 60 * 1000,
       year: 365 * 24 * 60 * 60 * 1000,
     };
-    const achievementItems: UnifiedFeedItem[] = (achievementFeed ?? [])
-      .filter((a) => {
-        if (feedFilters.timeRange === 'all') return true;
-        const ms = rangeMs[feedFilters.timeRange];
-        if (!ms) return true;
-        return new Date(a.unlockedAt).getTime() >= now - ms;
-      })
-      .map((a) => ({
-        kind: 'achievement',
-        sortDate: new Date(a.unlockedAt),
-        data: a,
-      }));
+    const achievementItems: UnifiedFeedItem[] =
+      feedKind === 'logs'
+        ? []
+        : (achievementFeed ?? [])
+            .filter((a) => {
+              if (feedFilters.timeRange === 'all') return true;
+              const ms = rangeMs[feedFilters.timeRange];
+              if (!ms) return true;
+              return new Date(a.unlockedAt).getTime() >= now - ms;
+            })
+            .map((a) => ({
+              kind: 'achievement',
+              sortDate: new Date(a.unlockedAt),
+              data: a,
+            }));
 
     return [...logItems, ...achievementItems].sort(
       (a, b) => b.sortDate.getTime() - a.sortDate.getTime()
     );
-  }, [globalFeed, achievementFeed, feedFilters.timeRange]);
+  }, [globalFeed, achievementFeed, feedFilters.timeRange, feedKind]);
 
   // Group consecutive log entries by playlist batch (for display)
   const groupedGlobalFeed = useMemo<GlobalFeedGroup[]>(() => {
@@ -692,10 +720,11 @@ function Dashboard() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
                   {/* Kind filter */}
-                  <div className="dropdown dropdown-end">
-                    <div
-                      tabIndex={0}
-                      role="button"
+                  <details
+                    ref={feedKindDropdownRef}
+                    className="dropdown dropdown-end"
+                  >
+                    <summary
                       className="btn btn-outline btn-sm gap-2 justify-start whitespace-nowrap"
                     >
                       {(() => {
@@ -709,29 +738,34 @@ function Dashboard() {
                           ?.labelKey ?? 'dashboard.feed.all'
                       )}
                       <ChevronDown className="w-3.5 h-3.5 ml-auto" />
-                    </div>
+                    </summary>
                     <ul
-                      tabIndex={0}
                       className="dropdown-content menu surface-raised z-[1] w-48 p-2"
                     >
                       {feedKindOptions.map((option) => {
                         const Icon = option.icon;
                         return (
                           <li key={option.value}>
-                            <a
+                            <button
+                              type="button"
                               className={
                                 feedKind === option.value ? 'active' : ''
                               }
-                              onClick={() => setFeedKind(option.value)}
+                              onClick={() => {
+                                setFeedKind(option.value);
+                                feedKindDropdownRef.current?.removeAttribute(
+                                  'open'
+                                );
+                              }}
                             >
                               <Icon className="w-4 h-4" />
                               {t(option.labelKey)}
-                            </a>
+                            </button>
                           </li>
                         );
                       })}
                     </ul>
-                  </div>
+                  </details>
 
                   {/* Log type filter (hidden when showing achievements only) */}
                   {feedKind !== 'achievements' && (
@@ -767,12 +801,15 @@ function Dashboard() {
                                   ? 'active'
                                   : ''
                               }
-                              onClick={() =>
+                              onClick={() => {
                                 setFeedFilters((prev) => ({
                                   ...prev,
                                   type: option.value,
-                                }))
-                              }
+                                }));
+                                if (option.value !== 'all') {
+                                  setFeedKind('logs');
+                                }
+                              }}
                             >
                               {tAny(option.labelKey, { ns: option.ns })}
                             </a>
@@ -827,7 +864,8 @@ function Dashboard() {
 
               {/* Feed items */}
               <div className="space-y-3">
-                {globalFeedLoading || achievementFeedLoading
+                {(feedKind !== 'achievements' && globalFeedLoading) ||
+                (feedKind !== 'logs' && achievementFeedLoading)
                   ? Array.from({ length: 5 }).map((_, index) => (
                       <div
                         key={index}
@@ -835,14 +873,7 @@ function Dashboard() {
                       />
                     ))
                   : (() => {
-                      const items = unifiedFeed.filter((item) => {
-                        if (feedKind === 'logs') return item.kind === 'log';
-                        if (feedKind === 'achievements')
-                          return item.kind === 'achievement';
-                        return true;
-                      });
-
-                      if (items.length === 0) {
+                      if (unifiedFeed.length === 0) {
                         return (
                           <div className="text-base-content/70 text-sm">
                             {t('dashboard.feed.empty')}
@@ -850,7 +881,7 @@ function Dashboard() {
                         );
                       }
 
-                      return items.map((item) => {
+                      return unifiedFeed.map((item) => {
                         if (item.kind === 'achievement') {
                           return (
                             <AchievementFeedItem
@@ -1028,6 +1059,19 @@ function Dashboard() {
                       });
                     })()}
               </div>
+              {feedKind !== 'achievements' && hasNextGlobalFeedPage && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    appearance="outline"
+                    loading={isFetchingNextGlobalFeedPage}
+                    onClick={() => void fetchNextGlobalFeedPage()}
+                  >
+                    {t('dashboard.feed.loadMore')}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -29,6 +29,8 @@ dist-ssr
 
 # Editor directories and files
 .claude/*
+.codex
+.agents
 .github/instructions/
 .vscode/*
 !.vscode/extensions.json
