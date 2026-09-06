@@ -24,6 +24,10 @@ import {
   CloudUpload,
   MonitorSmartphone,
   Heart,
+  Bell,
+  MessageSquare,
+  Palette,
+  RefreshCw,
   ChevronDown,
   ChevronUp,
   ArrowRight,
@@ -45,7 +49,8 @@ interface FeatureEntry {
 interface FeatureCategory {
   id: string;
   icon: React.ElementType;
-  color: string;
+  headerIconClass: string;
+  itemIconClass: string;
   features: FeatureEntry[];
 }
 
@@ -53,7 +58,9 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
   {
     id: 'tracking',
     icon: Layers,
-    color: 'text-primary',
+    headerIconClass:
+      'p-3 rounded-xl bg-base-200 text-primary shrink-0',
+    itemIconClass: 'w-4 h-4 text-primary',
     features: [
       { id: 'multiMedia', icon: Book },
       { id: 'durationEstimates', icon: Timer },
@@ -61,13 +68,16 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
       { id: 'episodePages', icon: ClipboardList },
       { id: 'databaseIntegration', icon: Search },
       { id: 'importExport', icon: CloudUpload },
+      { id: 'anilistSync', icon: RefreshCw },
       { id: 'texthooker', icon: Book, highlight: true },
     ],
   },
   {
     id: 'analytics',
     icon: ChartArea,
-    color: 'text-secondary',
+    headerIconClass:
+      'p-3 rounded-xl bg-base-200 text-secondary shrink-0',
+    itemIconClass: 'w-4 h-4 text-secondary',
     features: [
       { id: 'readingSpeed', icon: Gauge, highlight: true },
       { id: 'charts', icon: BarChart },
@@ -80,11 +90,12 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
   {
     id: 'gamification',
     icon: CircleStar,
-    color: 'text-accent',
+    headerIconClass: 'p-3 rounded-xl bg-base-200 text-accent shrink-0',
+    itemIconClass: 'w-4 h-4 text-accent',
     features: [
       { id: 'xpLeveling', icon: CircleStar, highlight: true },
       { id: 'streaks', icon: Calendar },
-      { id: 'achievements', icon: CircleStar, planned: true },
+      { id: 'achievements', icon: CircleStar },
       { id: 'goals', icon: Calendar },
       { id: 'progressIndicators', icon: TrendingUp },
       { id: 'dashboard', icon: Heart },
@@ -93,7 +104,8 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
   {
     id: 'social',
     icon: Users,
-    color: 'text-info',
+    headerIconClass: 'p-3 rounded-xl bg-base-200 text-info shrink-0',
+    itemIconClass: 'w-4 h-4 text-info',
     features: [
       { id: 'rankings', icon: Trophy, highlight: true },
       { id: 'comparison', icon: GitCompare },
@@ -101,12 +113,17 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
       { id: 'sharedMedia', icon: Eye },
       { id: 'logSharing', icon: Share2 },
       { id: 'activityFeed', icon: Newspaper },
+      { id: 'reviews', icon: MessageSquare },
+      { id: 'notifications', icon: Bell },
+      { id: 'profileCustomization', icon: Palette },
     ],
   },
   {
     id: 'clubs',
     icon: Users,
-    color: 'text-warning',
+    headerIconClass:
+      'p-3 rounded-xl bg-base-200 text-warning shrink-0',
+    itemIconClass: 'w-4 h-4 text-warning',
     features: [
       { id: 'createJoin', icon: Users },
       { id: 'mediaTracking', icon: Layers },
@@ -119,7 +136,9 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
   {
     id: 'tools',
     icon: Settings,
-    color: 'text-success',
+    headerIconClass:
+      'p-3 rounded-xl bg-base-200 text-success shrink-0',
+    itemIconClass: 'w-4 h-4 text-success',
     features: [
       { id: 'calculator', icon: Timer },
       { id: 'discovery', icon: Search },
@@ -189,13 +208,13 @@ function FeaturesScreen() {
       <section className="py-10 px-4 bg-base-200/50 border-y border-base-300/50">
         <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
-            <div className="text-3xl font-bold text-primary">35+</div>
+            <div className="text-3xl font-bold text-primary">40+</div>
             <div className="text-sm text-base-content/50 mt-1">
               {t('features.stats.features')}
             </div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-secondary">6</div>
+            <div className="text-3xl font-bold text-secondary">11</div>
             <div className="text-sm text-base-content/50 mt-1">
               {t('features.stats.mediaTypes')}
             </div>
@@ -229,9 +248,7 @@ function FeaturesScreen() {
                 onClick={() => toggleCategory(category.id)}
               >
                 <div className="flex items-center gap-4 min-w-0">
-                  <div
-                    className={`p-3 rounded-xl bg-base-200 ${category.color} shrink-0`}
-                  >
+                  <div className={category.headerIconClass}>
                     <category.icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
@@ -269,7 +286,7 @@ function FeaturesScreen() {
                         }`}
                       >
                         <div className="w-8 h-8 surface flex items-center justify-center shrink-0 mt-0.5">
-                          <feature.icon size={15} className={category.color} />
+                          <feature.icon className={category.itemIconClass} />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">

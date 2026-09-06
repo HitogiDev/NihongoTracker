@@ -1649,11 +1649,41 @@ export async function createLog(
 
     let logMedia;
     let createMedia = true;
+    let verifiedAnimeMedia: IMediaDocument | undefined;
 
     if (mediaId) {
       logMedia = await MediaBase.findOne({ contentId: mediaId, type });
       if (logMedia) {
         createMedia = false;
+      }
+    }
+
+    // Verify airing dates server-side. Search results sent by clients are not
+    // trusted because these fields decide whether an achievement is awarded.
+    if (
+      type === 'anime' &&
+      mediaId &&
+      (!logMedia || logMedia.airingStartDate == null)
+    ) {
+      const anilistId = Number.parseInt(mediaId, 10);
+      if (!Number.isNaN(anilistId)) {
+        try {
+          const [result] = await searchAnilist({
+            ids: [anilistId],
+            type: 'ANIME',
+          });
+          if (result?.type === 'anime' && result.contentId === mediaId) {
+            verifiedAnimeMedia = result;
+            if (logMedia && result.airingStartDate != null) {
+              logMedia.airingStartDate = result.airingStartDate;
+              logMedia.airingEndDate = result.airingEndDate ?? null;
+              await logMedia.save();
+            }
+          }
+        } catch (error) {
+          // Metadata enrichment must never prevent the immersion log itself.
+          console.error('Failed to verify AniList airing window:', error);
+        }
       }
     }
     if (type === 'video' && createMedia && mediaId) {
@@ -1689,6 +1719,8 @@ export async function createLog(
         contentImage: mediaData.contentImage,
         episodes: mediaData.episodes,
         episodeDuration: mediaData.episodeDuration,
+        airingStartDate: verifiedAnimeMedia?.airingStartDate,
+        airingEndDate: verifiedAnimeMedia?.airingEndDate,
         synonyms: mediaData.synonyms,
         chapters: mediaData.chapters,
         volumes: mediaData.volumes,

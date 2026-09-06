@@ -42,7 +42,12 @@ export async function evaluateLogDuringAiring(
             { $gte: ['$date', '$media.airingStartDate'] },
             {
               $or: [
-                { $eq: ['$media.airingEndDate', null] },
+                {
+                  $eq: [
+                    { $ifNull: ['$media.airingEndDate', null] },
+                    null,
+                  ],
+                },
                 { $lte: ['$date', '$media.airingEndDate'] },
               ],
             },

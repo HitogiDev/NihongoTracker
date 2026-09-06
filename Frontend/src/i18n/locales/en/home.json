@@ -158,6 +158,10 @@
             "title": "Import/Export Logs",
             "description": "Import from other trackers and export your data"
           },
+          "anilistSync": {
+            "title": "Automatic AniList Sync",
+            "description": "Link AniList to automatically log watched anime episodes"
+          },
           "texthooker": {
             "title": "TextHooker Integration",
             "description": "Track VN reading sessions in real time with character and line analytics synced to your logs"
@@ -251,6 +255,18 @@
           "activityFeed": {
             "title": "Recent Activity Feed",
             "description": "See what other learners are reading and watching"
+          },
+          "reviews": {
+            "title": "Reviews & Ratings",
+            "description": "Review media, rate it, and discover opinions from other learners"
+          },
+          "notifications": {
+            "title": "Notifications",
+            "description": "Stay informed about achievements, clubs, reviews, and social activity"
+          },
+          "profileCustomization": {
+            "title": "Profile Customization",
+            "description": "Personalize profile layouts, colors, titles, frames, and visual effects"
           }
         }
       },

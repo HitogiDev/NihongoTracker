@@ -93,8 +93,8 @@ export async function searchAnilist(variables: {
       episodeDuration: media.duration,
       // Airing window, used by the "Currently Airing" achievement to tell
       // whether a log happened while the show was still on air
-      airingStartDate: toFuzzyDate(media.startDate),
-      airingEndDate: toFuzzyDate(media.endDate),
+      airingStartDate: toFuzzyDate(media.startDate, 'start'),
+      airingEndDate: toFuzzyDate(media.endDate, 'end'),
     }),
     ...(media.type === 'MANGA' && {
       chapters: media.chapters,
@@ -106,14 +106,31 @@ export async function searchAnilist(variables: {
 
 /**
  * AniList fuzzy dates can have null parts (e.g. a year with no known day).
- * Anything without at least a year is unusable; missing month/day default to
- * the start of the period, which is close enough for an airing-window check.
+ * Anything without at least a year is unusable. Start dates use the beginning
+ * of the known period; inclusive end dates use its final millisecond.
  */
-function toFuzzyDate(
-  date?: { year: number | null; month: number | null; day: number | null } | null
+export function toFuzzyDate(
+  date:
+    | { year: number | null; month: number | null; day: number | null }
+    | null
+    | undefined,
+  boundary: 'start' | 'end'
 ): Date | null {
   if (!date?.year) return null;
-  return new Date(Date.UTC(date.year, (date.month ?? 1) - 1, date.day ?? 1));
+
+  if (boundary === 'start') {
+    return new Date(Date.UTC(date.year, (date.month ?? 1) - 1, date.day ?? 1));
+  }
+
+  // AniList end dates are inclusive. Store the end of the reported day (or
+  // fuzzy month/year) so a log later on the final day still qualifies.
+  if (date.day && date.month) {
+    return new Date(Date.UTC(date.year, date.month - 1, date.day + 1) - 1);
+  }
+  if (date.month) {
+    return new Date(Date.UTC(date.year, date.month, 1) - 1);
+  }
+  return new Date(Date.UTC(date.year + 1, 0, 1) - 1);
 }
 
 function cleanVariables<T extends object>(variables: T): Partial<T> {

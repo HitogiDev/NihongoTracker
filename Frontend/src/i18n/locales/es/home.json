@@ -160,6 +160,10 @@
             "title": "Importar y exportar logs",
             "description": "Importa desde otros trackers y exporta tus datos"
           },
+          "anilistSync": {
+            "title": "Sincronización automática con AniList",
+            "description": "Vincula AniList para loguear automáticamente los episodios de anime que veas"
+          },
           "texthooker": {
             "title": "Integración con el texthooker",
             "description": "Loguea tus sesiones de lectura de novelas visuales en tiempo real, con analíticas de caracteres y líneas sincronizadas con tus logs"
@@ -253,6 +257,18 @@
           "activityFeed": {
             "title": "Actividad reciente",
             "description": "Mira qué están leyendo y viendo otras personas"
+          },
+          "reviews": {
+            "title": "Reseñas y valoraciones",
+            "description": "Reseña y valora contenido, y descubre las opiniones de otras personas"
+          },
+          "notifications": {
+            "title": "Notificaciones",
+            "description": "Mantente al tanto de logros, clubes, reseñas y actividad social"
+          },
+          "profileCustomization": {
+            "title": "Personalización del perfil",
+            "description": "Personaliza el diseño, los colores, títulos, marcos y efectos visuales de tu perfil"
           }
         }
       },

@@ -51,6 +51,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
+import Spinner from '../components/ui/Spinner';
 
 /** The shared date formatter adds time and zone unless opted out. */
 const DATE_ONLY: Intl.DateTimeFormatOptions = {
@@ -140,6 +141,7 @@ function ProfileScreen() {
   const showAboutPreview = shouldCollapseAbout && !showFullAbout;
   const aboutPreviewHeight = 224;
   const [feedKind, setFeedKind] = useState<UnifiedFeedFilter>('all');
+  const [visibleActivityCount, setVisibleActivityCount] = useState(limit);
 
   const feedKindOptions: Array<{
     label: string;
@@ -183,6 +185,24 @@ function ProfileScreen() {
   useEffect(() => {
     setShowFullAbout(false);
   }, [username, aboutText]);
+
+  // "All activity" is one feed, so its page size must include both logs and
+  // achievements. Reset whenever a filter changes and reveal another combined
+  // page only when the user asks for it.
+  useEffect(() => {
+    setVisibleActivityCount(limit);
+  }, [
+    username,
+    searchTerm,
+    filterType,
+    achievementCategory,
+    dateFilter,
+    customStartDate,
+    customEndDate,
+    showUnknownDates,
+    sortBy,
+    sortDirection,
+  ]);
 
   // Sort options differ by feed kind — reset to a value valid for the newly selected kind.
   // "all" supports every field (items missing it sort to the end), so it never needs a reset.
@@ -574,6 +594,15 @@ function ProfileScreen() {
       return sortDirection === 'asc' ? -diff : diff;
     });
   }, [displayedLogs, filteredAchievements, sortBy, sortDirection]);
+
+  const visibleUnifiedFeed = unifiedFeed.slice(0, visibleActivityCount);
+  const hasMoreUnifiedActivity =
+    Boolean(hasNextPage) || visibleUnifiedFeed.length < unifiedFeed.length;
+
+  const loadMoreUnifiedActivity = async () => {
+    if (hasNextPage) await fetchNextPage();
+    setVisibleActivityCount((count) => count + limit);
+  };
 
   const isOwner = username === loggedUser?.username;
   const profileLayout = resolveProfileLayout(user?.profileLayout);
@@ -1409,7 +1438,7 @@ function ProfileScreen() {
                   disabled={!hasNextPage || isFetchingNextPage}
                 >
                   {isFetchingNextPage ? (
-                    <span className="loading loading-spinner loading-sm"></span>
+                    <Spinner size="sm" />
                   ) : hasNextPage ? (
                     t('loadMore')
                   ) : (
@@ -1428,7 +1457,7 @@ function ProfileScreen() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {unifiedFeed.map((item) => {
+                    {visibleUnifiedFeed.map((item) => {
                       if (item.kind === 'achievement') {
                         return (
                           <AchievementFeedItem
@@ -1470,16 +1499,16 @@ function ProfileScreen() {
                     </div>
                   </div>
                 ) : null}
-                {hasNextPage && (
+                {hasMoreUnifiedActivity && (
                   <button
                     className="btn btn-primary w-full sm:btn-wide mt-2 self-center"
-                    onClick={() => fetchNextPage()}
+                    onClick={() => void loadMoreUnifiedActivity()}
                     disabled={isFetchingNextPage}
                   >
                     {isFetchingNextPage ? (
-                      <span className="loading loading-spinner loading-sm"></span>
+                      <Spinner size="sm" />
                     ) : (
-                      t('loadMoreLogs')
+                      t('loadMore')
                     )}
                   </button>
                 )}

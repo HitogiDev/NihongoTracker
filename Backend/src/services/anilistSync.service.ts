@@ -195,24 +195,39 @@ async function resolveAnimeMedia(
     media.set(doc.contentId, doc as unknown as IMediaDocument);
   }
 
-  const missing = anilistIds.filter((id) => !media.has(id.toString()));
-  if (missing.length === 0) return { media, created: 0 };
+  const needsMetadata = anilistIds.filter((id) => {
+    const existingMedia = media.get(id.toString());
+    return !existingMedia || existingMedia.airingStartDate == null;
+  });
+  if (needsMetadata.length === 0) return { media, created: 0 };
 
   let created = 0;
   try {
-    const fetched = await searchAnilist({ ids: missing, type: 'ANIME' });
+    const fetched = await searchAnilist({
+      ids: needsMetadata,
+      type: 'ANIME',
+    });
     for (const doc of fetched) {
       // Guard against AniList returning something the mapper typed as manga.
       if (doc.type !== 'anime') continue;
+      const alreadyExisted = media.has(doc.contentId);
+      const update = alreadyExisted
+        ? {
+            $set: {
+              airingStartDate: doc.airingStartDate ?? null,
+              airingEndDate: doc.airingEndDate ?? null,
+            },
+          }
+        : { $setOnInsert: doc };
       const saved = await Anime.findOneAndUpdate(
         { contentId: doc.contentId, type: 'anime' },
-        { $setOnInsert: doc },
+        update,
         { upsert: true, new: true, setDefaultsOnInsert: true }
       ).lean();
       if (saved) {
         const savedDoc = saved as unknown as IMediaDocument & { _id: unknown };
         media.set(savedDoc.contentId, savedDoc);
-        created += 1;
+        if (!alreadyExisted) created += 1;
         // Search indexing is best-effort: the document is already in Mongo, so
         // an unreachable Meilisearch must not abort the remaining lookups.
         await addMediaToIndex(savedDoc).catch((error) =>
