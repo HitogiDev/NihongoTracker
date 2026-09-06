@@ -3651,41 +3651,49 @@ function SettingsScreen() {
                   id="anilist_backfill_modal"
                   className="modal modal-bottom sm:modal-middle"
                 >
-                  <div className="modal-box">
-                    <h3 className="font-bold text-lg">
+                  <div className="modal-box max-w-2xl p-5 sm:p-6">
+                    <h3 className="text-xl font-bold leading-tight">
                       {t('anilist.backfillConfirmTitle')}
                     </h3>
-                    <p className="py-4 text-sm text-base-content/80">
+                    <p className="mt-3 text-sm leading-relaxed text-base-content/80 sm:text-base">
                       {t('anilist.backfillConfirmBody')}
                     </p>
                     {!anilistStatus?.hasCompletedFullSync && (
-                      <Field
-                        label={t('anilist.includeExistingMedia')}
-                        hint={t('anilist.includeExistingMediaHint')}
-                        className="surface-muted p-3"
+                      <label
+                        htmlFor="anilist-include-existing-media"
+                        className="surface-muted mt-5 flex cursor-pointer items-start gap-3 p-4"
                       >
-                        {(id) => (
-                          <input
-                            id={id}
-                            type="checkbox"
-                            className="checkbox checkbox-sm"
-                            checked={includeExistingAnilistMedia}
-                            onChange={(event) =>
-                              setIncludeExistingAnilistMedia(
-                                event.target.checked
-                              )
-                            }
-                          />
-                        )}
-                      </Field>
+                        <input
+                          id="anilist-include-existing-media"
+                          type="checkbox"
+                          className="checkbox checkbox-primary mt-0.5 shrink-0"
+                          checked={includeExistingAnilistMedia}
+                          onChange={(event) =>
+                            setIncludeExistingAnilistMedia(
+                              event.target.checked
+                            )
+                          }
+                        />
+                        <span className="min-w-0">
+                          <span className="block font-semibold leading-snug">
+                            {t('anilist.includeExistingMedia')}
+                          </span>
+                          <span className="mt-1 block text-sm leading-relaxed text-base-content/65">
+                            {t('anilist.includeExistingMediaHint')}
+                          </span>
+                        </span>
+                      </label>
                     )}
-                    <div className="modal-action">
-                      <form method="dialog" className="flex gap-2">
-                        <button className="btn btn-ghost btn-sm">
+                    <div className="modal-action mt-6">
+                      <form
+                        method="dialog"
+                        className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row"
+                      >
+                        <button className="btn btn-ghost sm:btn-sm">
                           {t('common.cancel')}
                         </button>
                         <button
-                          className="btn btn-primary btn-sm"
+                          className="btn btn-primary whitespace-normal sm:btn-sm"
                           onClick={() =>
                             backfillAnilist(includeExistingAnilistMedia)
                           }
