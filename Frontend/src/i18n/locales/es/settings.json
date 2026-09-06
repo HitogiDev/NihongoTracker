@@ -56,6 +56,9 @@
     "backfillConfirmTitle": "¿Importar todo tu historial de AniList?",
     "backfillDone": "Se importaron {{count}} registro(s) de {{scanned}} actividades de AniList",
     "connect": "Conectar cuenta de AniList",
+    "connected": "Conectada",
+    "connection": "Conexión",
+    "connectionHint": "Gestiona el acceso a tu cuenta de AniList.",
     "errors": {
       "accountAlreadyLinked": "Esta cuenta de AniList ya está vinculada a otro usuario",
       "invalidState": "Estado de autorización inválido o caducado",
@@ -83,6 +86,7 @@
     "lastSyncFailed": "La última sincronización falló",
     "lastSyncedAt": "Última revisión: {{date}}",
     "linked": "Cuenta de AniList vinculada",
+    "manualSync": "Sincronización manual",
     "neverSynced": "Aún sin sincronizar",
     "oauthNote": "Te llevaremos a AniList para autorizar. Nunca vemos tu contraseña.",
     "subtitle": "Registra anime automáticamente desde tu progreso en AniList",
@@ -95,6 +99,9 @@
     "title": "AniList",
     "tokenExpired": "Tu autorización de AniList ha caducado. Vuelve a conectar la cuenta para seguir sincronizando.",
     "unlink": "Desvincular",
+    "unlinkConfirm": "Desvincular AniList",
+    "unlinkConfirmBody": "La sincronización automática se detendrá, pero los registros ya creados en NihongoTracker se conservarán.",
+    "unlinkConfirmTitle": "¿Desvincular tu cuenta de AniList?",
     "unlinked": "Cuenta de AniList desvinculada",
     "viewProfile": "Perfil"
   },

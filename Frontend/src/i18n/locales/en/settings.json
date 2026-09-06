@@ -56,6 +56,9 @@
     "backfillConfirmTitle": "Import your full AniList history?",
     "backfillDone": "Imported {{count}} log(s) from {{scanned}} AniList activities",
     "connect": "Connect AniList account",
+    "connected": "Connected",
+    "connection": "Connection",
+    "connectionHint": "Manage access to your AniList account.",
     "errors": {
       "accountAlreadyLinked": "This AniList account is already linked to another user",
       "invalidState": "Invalid or expired authorization state",
@@ -83,6 +86,7 @@
     "lastSyncFailed": "The last sync failed",
     "lastSyncedAt": "Last checked {{date}}",
     "linked": "AniList account linked",
+    "manualSync": "Manual sync",
     "neverSynced": "Not synced yet",
     "oauthNote": "You'll be sent to AniList to authorize. We never see your password.",
     "subtitle": "Log anime automatically from your AniList progress",
@@ -95,6 +99,9 @@
     "title": "AniList",
     "tokenExpired": "Your AniList authorization has expired. Connect the account again to resume syncing.",
     "unlink": "Unlink",
+    "unlinkConfirm": "Unlink AniList",
+    "unlinkConfirmBody": "Automatic sync will stop, but the logs already created in NihongoTracker will remain.",
+    "unlinkConfirmTitle": "Unlink your AniList account?",
     "unlinked": "AniList account unlinked",
     "viewProfile": "Profile"
   },

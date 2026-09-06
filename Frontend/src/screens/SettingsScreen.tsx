@@ -8,6 +8,8 @@ import React, {
   useMemo,
 } from 'react';
 import Field from '../components/ui/Field';
+import Button from '../components/ui/Button';
+import { buttonClass } from '../components/ui/buttons';
 import { useNavigate } from 'react-router-dom';
 import {
   clearUserDataFn,
@@ -1130,6 +1132,11 @@ function SettingsScreen() {
   const { mutate: unlinkAnilist, isPending: isUnlinkingAnilist } = useMutation({
     mutationFn: unlinkAnilistAccountFn,
     onSuccess: () => {
+      (
+        document.getElementById(
+          'anilist_unlink_modal'
+        ) as HTMLDialogElement | null
+      )?.close();
       toast.success(t('anilist.unlinked'));
       void refetchAnilistStatus();
     },
@@ -3388,11 +3395,11 @@ function SettingsScreen() {
               <div className="space-y-6">
                 {/* AniList lives here rather than in its own tab: it is how logs
                     get in automatically, alongside the manual import/export. */}
-                <div className="card surface">
-                  <div className="card-body">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-primary/10 rounded-lg">
-                        <MonitorPlay className="h-6 w-6 text-primary" />
+                <div className="card surface overflow-hidden">
+                  <div className="flex flex-col items-start gap-4 border-b border-base-300/50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-box bg-primary/10 p-3">
+                        <MonitorPlay className="size-6 text-primary" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold">
@@ -3403,25 +3410,38 @@ function SettingsScreen() {
                         </p>
                       </div>
                     </div>
+                    {anilistStatus?.linked && (
+                      <span className="badge badge-success badge-soft gap-2">
+                        <span
+                          className="size-2 rounded-full bg-success"
+                          aria-hidden="true"
+                        />
+                        {t('anilist.connected')}
+                      </span>
+                    )}
+                  </div>
 
-                    {anilistStatus?.linked ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-3 p-4 bg-success/10 border border-success/20 rounded-lg">
-                          <div className="flex items-center gap-3">
+                  {anilistStatus?.linked ? (
+                    <>
+                      <div className="space-y-6 p-5 sm:p-6">
+                        <div className="surface-muted flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex min-w-0 items-center gap-3">
                             {anilistStatus.anilistAvatar ? (
                               <img
                                 src={anilistStatus.anilistAvatar}
                                 alt={anilistStatus.anilistUsername ?? 'AniList'}
-                                className="w-10 h-10 rounded-lg object-cover"
+                                className="size-11 shrink-0 rounded-full object-cover"
                               />
                             ) : (
-                              <Link2 className="w-5 h-5 text-success" />
+                              <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <Link2 className="size-5 text-primary" />
+                              </div>
                             )}
-                            <div>
-                              <div className="font-semibold text-success">
+                            <div className="min-w-0">
+                              <div className="truncate font-semibold">
                                 {anilistStatus.anilistUsername}
                               </div>
-                              <div className="text-xs text-base-content/60">
+                              <div className="text-sm text-base-content/60">
                                 {t('anilist.syncedLogs', {
                                   count: anilistStatus.syncedLogCount ?? 0,
                                 })}
@@ -3432,23 +3452,27 @@ function SettingsScreen() {
                             href={`https://anilist.co/user/${anilistStatus.anilistUsername}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-ghost btn-xs gap-1"
+                            className={buttonClass({
+                              appearance: 'ghost',
+                              size: 'sm',
+                              className: 'gap-2',
+                            })}
                           >
-                            <LinkIcon className="h-3 w-3" />
+                            <LinkIcon className="size-4" />
                             {t('anilist.viewProfile')}
                           </a>
                         </div>
 
                         {anilistStatus.tokenExpired && (
-                          <div className="alert alert-warning">
-                            <TriangleAlert className="h-5 w-5" />
+                          <div role="alert" className="alert alert-warning">
+                            <TriangleAlert className="size-5" />
                             <span>{t('anilist.tokenExpired')}</span>
                           </div>
                         )}
 
                         {anilistStatus.lastSyncStatus === 'error' && (
-                          <div className="alert alert-error">
-                            <XCircle className="h-5 w-5" />
+                          <div role="alert" className="alert alert-error">
+                            <XCircle className="size-5" />
                             <div>
                               <div>{t('anilist.lastSyncFailed')}</div>
                               {anilistStatus.lastSyncError && (
@@ -3460,7 +3484,7 @@ function SettingsScreen() {
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-base-300/50">
+                        <div className="flex items-center justify-between gap-4 border-y border-base-300/50 py-4">
                           <div>
                             <div className="font-medium">
                               {t('anilist.autoSync')}
@@ -3471,59 +3495,75 @@ function SettingsScreen() {
                           </div>
                           <input
                             type="checkbox"
-                            className="toggle toggle-primary"
+                            className="toggle toggle-primary shrink-0"
+                            aria-label={t('anilist.autoSync')}
                             checked={anilistStatus.autoSync ?? true}
                             disabled={isUpdatingAnilistSettings}
-                            onChange={(e) =>
+                            onChange={(event) =>
                               toggleAnilistAutoSync({
-                                autoSync: e.target.checked,
+                                autoSync: event.target.checked,
                               })
                             }
                           />
                         </div>
 
-                        <div className="p-4 rounded-lg border border-base-300/50">
-                          <div className="flex items-center justify-between gap-3 mb-3">
+                        <section
+                          className="space-y-3"
+                          aria-labelledby="anilist-excluded-shows"
+                        >
+                          <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
                             <div>
-                              <div className="font-medium">
+                              <h3
+                                id="anilist-excluded-shows"
+                                className="font-semibold"
+                              >
                                 {t('anilist.excludedMedia')}
-                              </div>
-                              <p className="text-sm text-base-content/70">
+                              </h3>
+                              <p className="text-sm text-base-content/65">
                                 {t('anilist.excludedMediaHint')}
                               </p>
                             </div>
+                            <Button
+                              size="sm"
+                              appearance="outline"
+                              className="gap-2"
+                              disabled={isSavingAnilistSettings}
+                              onClick={() => setIsExclusionPickerOpen(true)}
+                            >
+                              <Plus className="size-4" />
+                              {t('anilist.excludedAdd')}
+                            </Button>
                           </div>
 
                           {excludedMedia.length === 0 ? (
-                            <p className="text-sm text-base-content/50 mb-3">
-                              {t('anilist.excludedMediaEmpty')}
-                            </p>
+                            <div className="surface-muted flex items-center gap-3 p-4 text-sm text-base-content/60">
+                              <List className="size-5 shrink-0" />
+                              <span>{t('anilist.excludedMediaEmpty')}</span>
+                            </div>
                           ) : (
-                            <ul className="flex flex-col gap-1.5 mb-3">
+                            <ul className="list surface-muted overflow-hidden">
                               {excludedMedia.map((ex) => (
-                                <li
-                                  key={ex.anilistId}
-                                  className="flex items-center gap-2.5 p-2 rounded-lg bg-base-content/5"
-                                >
+                                <li key={ex.anilistId} className="list-row">
                                   {ex.image ? (
                                     <img
                                       src={ex.image}
                                       alt={ex.title ?? ''}
-                                      className="w-7 h-10 rounded object-cover ring-1 ring-base-content/10 flex-shrink-0"
+                                      className="h-12 w-9 shrink-0 rounded-field object-cover"
                                       loading="lazy"
                                     />
                                   ) : (
-                                    <div className="flex items-center justify-center w-7 h-10 rounded bg-base-300 flex-shrink-0">
-                                      <Film className="w-3 h-3 opacity-50" />
+                                    <div className="flex h-12 w-9 shrink-0 items-center justify-center rounded-field bg-base-300">
+                                      <Film className="size-4 opacity-50" />
                                     </div>
                                   )}
-                                  <span className="flex-1 text-sm min-w-0 truncate">
+                                  <span className="list-col-grow min-w-0 self-center truncate text-sm">
                                     {ex.title || t('anilist.excludedUntitled')}
                                   </span>
-                                  <button
-                                    type="button"
-                                    className="btn btn-ghost btn-xs btn-square"
-                                    title={t('anilist.excludedRemove')}
+                                  <Button
+                                    appearance="ghost"
+                                    size="sm"
+                                    shape="square"
+                                    aria-label={`${t('anilist.excludedRemove')}: ${ex.title || t('anilist.excludedUntitled')}`}
                                     disabled={isSavingAnilistSettings}
                                     onClick={() =>
                                       saveAnilistExclusions(
@@ -3535,116 +3575,132 @@ function SettingsScreen() {
                                       )
                                     }
                                   >
-                                    <X className="w-4 h-4" />
-                                  </button>
+                                    <X className="size-4" />
+                                  </Button>
                                 </li>
                               ))}
                             </ul>
                           )}
+                        </section>
 
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm gap-2"
-                            disabled={isSavingAnilistSettings}
-                            onClick={() => setIsExclusionPickerOpen(true)}
-                          >
-                            <Plus className="h-4 w-4" />
-                            {t('anilist.excludedAdd')}
-                          </button>
-                        </div>
-
-                        <div className="text-sm text-base-content/70 flex items-center gap-2">
-                          <Clock3 className="h-4 w-4" />
-                          {anilistStatus.lastSyncedAt
-                            ? t('anilist.lastSyncedAt', {
-                                date: new Date(
-                                  anilistStatus.lastSyncedAt
-                                ).toLocaleString(),
-                              })
-                            : t('anilist.neverSynced')}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className="btn btn-primary btn-sm gap-2"
-                            onClick={() => syncAnilist()}
-                            disabled={isSyncingAnilist || isBackfillingAnilist}
-                          >
-                            {isSyncingAnilist ? (
-                              <span className="loading loading-spinner loading-sm"></span>
-                            ) : (
-                              <RefreshCw className="h-4 w-4" />
-                            )}
-                            {t('anilist.syncNow')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-sm gap-2"
-                            onClick={() => {
-                              setIncludeExistingAnilistMedia(
-                                anilistStatus.fullSyncIncludeExistingMedia ??
-                                  false
-                              );
-                              (
-                                document.getElementById(
-                                  'anilist_backfill_modal'
-                                ) as HTMLDialogElement | null
-                              )?.showModal();
-                            }}
-                            disabled={isSyncingAnilist || isBackfillingAnilist}
-                          >
-                            {isBackfillingAnilist ? (
-                              <span className="loading loading-spinner loading-sm"></span>
-                            ) : (
-                              <CloudDownload className="h-4 w-4" />
-                            )}
-                            {t('anilist.backfill')}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-error btn-outline btn-sm gap-2 ml-auto"
-                            onClick={() => unlinkAnilist()}
-                            disabled={isUnlinkingAnilist}
-                          >
-                            {isUnlinkingAnilist ? (
-                              <span className="loading loading-spinner loading-sm"></span>
-                            ) : (
-                              <Unlink2 className="h-4 w-4" />
-                            )}
-                            {t('anilist.unlink')}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <button
-                          type="button"
-                          className="btn btn-primary w-full gap-2"
-                          onClick={handleAnilistOAuth}
-                          disabled={isInitiatingAnilistOAuth}
+                        <section
+                          className="flex flex-col items-start gap-4 lg:flex-row lg:items-center lg:justify-between"
+                          aria-labelledby="anilist-manual-sync"
                         >
-                          {isInitiatingAnilistOAuth ? (
-                            <span className="loading loading-spinner loading-sm"></span>
-                          ) : (
-                            <>
-                              <Link2 className="size-5" />
-                              {t('anilist.connect')}
-                            </>
-                          )}
-                        </button>
-                        <div className="text-xs text-center text-base-content/60 flex items-center justify-center gap-1">
-                          <Lock className="h-4 w-4" />
-                          {t('anilist.oauthNote')}
+                          <div>
+                            <h3
+                              id="anilist-manual-sync"
+                              className="font-semibold"
+                            >
+                              {t('anilist.manualSync')}
+                            </h3>
+                            <div className="mt-1 flex items-center gap-2 text-sm text-base-content/65">
+                              <Clock3 className="size-4 shrink-0" />
+                              <span>
+                                {anilistStatus.lastSyncedAt
+                                  ? t('anilist.lastSyncedAt', {
+                                      date: new Date(
+                                        anilistStatus.lastSyncedAt
+                                      ).toLocaleString(),
+                                    })
+                                  : t('anilist.neverSynced')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="gap-2"
+                              loading={isSyncingAnilist}
+                              loadingText={t('anilist.syncNow')}
+                              onClick={() => syncAnilist()}
+                              disabled={isBackfillingAnilist}
+                            >
+                              <RefreshCw className="size-4" />
+                              {t('anilist.syncNow')}
+                            </Button>
+                            <Button
+                              appearance="outline"
+                              size="sm"
+                              className="gap-2"
+                              loading={isBackfillingAnilist}
+                              loadingText={t('anilist.backfill')}
+                              onClick={() => {
+                                setIncludeExistingAnilistMedia(
+                                  anilistStatus.fullSyncIncludeExistingMedia ??
+                                    false
+                                );
+                                (
+                                  document.getElementById(
+                                    'anilist_backfill_modal'
+                                  ) as HTMLDialogElement | null
+                                )?.showModal();
+                              }}
+                              disabled={isSyncingAnilist}
+                            >
+                              <CloudDownload className="size-4" />
+                              {t('anilist.backfill')}
+                            </Button>
+                          </div>
+                        </section>
+
+                        <div role="note" className="alert alert-info alert-soft">
+                          <Info className="size-5" />
+                          <span>{t('anilist.animeOnlyNote')}</span>
                         </div>
                       </div>
-                    )}
 
-                    <div className="alert alert-info mt-4">
-                      <Info className="h-5 w-5" />
-                      <span>{t('anilist.animeOnlyNote')}</span>
+                      <div className="flex flex-col items-start gap-4 border-t border-base-300/50 bg-base-200/50 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                        <div>
+                          <h3 className="font-semibold">
+                            {t('anilist.connection')}
+                          </h3>
+                          <p className="text-sm text-base-content/65">
+                            {t('anilist.connectionHint')}
+                          </p>
+                        </div>
+                        <Button
+                          variant="error"
+                          appearance="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() =>
+                            (
+                              document.getElementById(
+                                'anilist_unlink_modal'
+                              ) as HTMLDialogElement | null
+                            )?.showModal()
+                          }
+                        >
+                          <Unlink2 className="size-4" />
+                          {t('anilist.unlink')}
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-4 p-5 sm:p-6">
+                      <Button
+                        variant="primary"
+                        block
+                        className="gap-2"
+                        loading={isInitiatingAnilistOAuth}
+                        loadingText={t('anilist.connect')}
+                        onClick={handleAnilistOAuth}
+                      >
+                        <Link2 className="size-5" />
+                        {t('anilist.connect')}
+                      </Button>
+                      <div className="flex items-center justify-center gap-2 text-center text-xs text-base-content/60">
+                        <Lock className="size-4" />
+                        {t('anilist.oauthNote')}
+                      </div>
+                      <div role="note" className="alert alert-info alert-soft">
+                        <Info className="size-5" />
+                        <span>{t('anilist.animeOnlyNote')}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <dialog
@@ -3705,6 +3761,49 @@ function SettingsScreen() {
                   </div>
                   <form method="dialog" className="modal-backdrop">
                     <button>close</button>
+                  </form>
+                </dialog>
+
+                <dialog
+                  id="anilist_unlink_modal"
+                  className="modal modal-bottom sm:modal-middle"
+                >
+                  <div className="modal-box p-5 sm:p-6">
+                    <h3 className="text-xl font-bold leading-tight">
+                      {t('anilist.unlinkConfirmTitle')}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-base-content/75 sm:text-base">
+                      {t('anilist.unlinkConfirmBody')}
+                    </p>
+                    <div className="modal-action mt-6 flex-col-reverse gap-2 sm:flex-row">
+                      <Button
+                        appearance="ghost"
+                        size="sm"
+                        onClick={() =>
+                          (
+                            document.getElementById(
+                              'anilist_unlink_modal'
+                            ) as HTMLDialogElement | null
+                          )?.close()
+                        }
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                      <Button
+                        variant="error"
+                        size="sm"
+                        className="gap-2"
+                        loading={isUnlinkingAnilist}
+                        loadingText={t('anilist.unlinkConfirm')}
+                        onClick={() => unlinkAnilist()}
+                      >
+                        <Unlink2 className="size-4" />
+                        {t('anilist.unlinkConfirm')}
+                      </Button>
+                    </div>
+                  </div>
+                  <form method="dialog" className="modal-backdrop">
+                    <button>{t('common.close')}</button>
                   </form>
                 </dialog>
 
