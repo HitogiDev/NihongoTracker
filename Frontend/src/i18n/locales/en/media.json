@@ -213,8 +213,8 @@
       "description": "Description",
       "descriptionPlaceholder": "What is this list about?",
       "editTitle": "Edit list",
-      "public": "Public — anyone can see this list",
-      "ranked": "Ranked list — show numbered positions",
+      "public": "Public: anyone can see this list",
+      "ranked": "Ranked list: show numbered positions",
       "save": "Save",
       "title": "Title",
       "titlePlaceholder": "Best VNs for beginners"

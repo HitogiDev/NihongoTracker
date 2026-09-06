@@ -7,7 +7,7 @@ const swaggerDocument = {
   info: {
     title: 'NihongoTracker API',
     description:
-      'API documentation for NihongoTracker — a Japanese immersion tracker. Authenticate using either JWT cookies (browser sessions) or API keys via the `X-API-Key` header.',
+      'API documentation for NihongoTracker, a Japanese immersion tracker. Authenticate using either JWT cookies (browser sessions) or API keys via the `X-API-Key` header.',
     version: '0.1.0',
     contact: {
       name: 'NihongoTracker',
@@ -373,7 +373,7 @@ const swaggerDocument = {
           keyPrefix: { type: 'string', example: 'ntk_abc12345' },
           key: {
             type: 'string',
-            description: 'The full API key — only returned on creation',
+            description: 'The full API key, only returned on creation',
           },
           expiresAt: {
             type: 'string',
@@ -561,7 +561,7 @@ const swaggerDocument = {
         },
         responses: {
           200: {
-            description: 'Login successful — sets JWT cookie',
+            description: 'Login successful; sets JWT cookie',
           },
           401: { description: 'Invalid credentials' },
         },
@@ -1332,7 +1332,7 @@ const swaggerDocument = {
         tags: ['Users'],
         summary: 'Update profile customization (cosmetics)',
         description:
-          'Partial update — only the provided keys change. Values the user has not unlocked are rejected with 403.',
+          'Partial update: only the provided keys change. Values the user has not unlocked are rejected with 403.',
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         requestBody: {
           required: true,
@@ -3702,7 +3702,7 @@ const swaggerDocument = {
         tags: ['API Keys'],
         summary: 'Generate a new API key',
         description:
-          'Creates a new API key. The raw key is returned ONLY in this response — store it securely.',
+          'Creates a new API key. The raw key is returned ONLY in this response; store it securely.',
         security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
         requestBody: {
           required: true,
@@ -3731,7 +3731,7 @@ const swaggerDocument = {
         },
         responses: {
           201: {
-            description: 'API key created — raw key returned once',
+            description: 'API key created; raw key returned once',
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ApiKeyResponse' },

@@ -12,7 +12,7 @@
     "referenceUrlPlaceholder": "AniList / VNDB / IGDB link",
     "coverImage": "Cover image URL",
     "descriptions": "Descriptions",
-    "descriptionsHint": "(all optional — fill in any languages you can)",
+    "descriptionsHint": "(all optional, fill in any languages you can)",
     "optional": "optional",
     "note": "Note to reviewer",
     "notePlaceholder": "Anything the reviewer should know",

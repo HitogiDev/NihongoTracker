@@ -674,7 +674,7 @@ function ListScreen() {
                     </div>
                   ) : (
                     <p className="text-sm text-base-content/70">
-                      Your logs and XP are kept — the media just stops showing
+                      Your logs and XP are kept; the media just stops showing
                       in your list. Logging it again brings it back.
                     </p>
                   )}

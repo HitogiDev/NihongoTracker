@@ -70,7 +70,7 @@
     "excludedAdd": "Add excluded show",
     "excludedAdded": "Show added to the exclusion list",
     "excludedMedia": "Excluded shows",
-    "excludedMediaEmpty": "No shows excluded — every anime you watch will be imported.",
+    "excludedMediaEmpty": "No shows excluded, every anime you watch will be imported.",
     "excludedMediaHint": "Shows in this list are never imported, even on a backfill.",
     "excludedNoResults": "No anime found for",
     "excludedRemove": "Remove",

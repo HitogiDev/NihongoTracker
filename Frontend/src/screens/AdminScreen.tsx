@@ -2550,7 +2550,7 @@ function AdminScreen() {
                           {jitenBackfillStatus.matched} matched /{' '}
                           {jitenBackfillStatus.processed} processed
                           {jitenBackfillStatus.error
-                            ? ` — error: ${jitenBackfillStatus.error}`
+                            ? `: error: ${jitenBackfillStatus.error}`
                             : ''}
                         </p>
                       )}

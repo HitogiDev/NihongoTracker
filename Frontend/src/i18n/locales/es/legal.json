@@ -761,7 +761,7 @@
             "type": "ul",
             "items": [
               "Un correo a [support@nihongotracker.app](mailto:support@nihongotracker.app)",
-              "El formulario modelo de retracto de la Sección 3.3 — su uso es opcional",
+              "El formulario modelo de retracto de la Sección 3.3 (su uso es opcional)",
               "Cualquier otra comunicación escrita en la que tu decisión quede clara"
             ],
             "intro": "Para retractarte, envíanos una declaración inequívoca de que te retractas. Vale cualquier medio, y el correo electrónico se ofrece solo por comodidad: no es la única vía aceptada. Por ejemplo:"
@@ -791,7 +791,7 @@
           {
             "type": "plain",
             "items": [
-              "**Destinatario:** NihongoTracker — [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "**Destinatario:** NihongoTracker, [support@nihongotracker.app](mailto:support@nihongotracker.app)",
               "**Declaración:** Por la presente comunico que me retracto de mi contrato de la siguiente suscripción premium de NihongoTracker.",
               "**Fecha de la compra:** _______________________",
               "**Tu nombre:** _______________________",

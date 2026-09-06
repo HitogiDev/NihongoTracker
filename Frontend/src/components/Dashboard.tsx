@@ -600,8 +600,8 @@ function Dashboard() {
                   {t('dashboard.monthlyRanking')}
                 </p>
                 <h3 className="text-2xl font-bold text-base-content">
-                  #{monthlyRanking?.position ?? '—'} /{' '}
-                  {monthlyRanking?.totalUsers ?? '—'}
+                  #{monthlyRanking?.position ?? '-'} /{' '}
+                  {monthlyRanking?.totalUsers ?? '-'}
                 </h3>
                 <p className="text-base-content/70 text-sm">{xpGapContent}</p>
               </div>

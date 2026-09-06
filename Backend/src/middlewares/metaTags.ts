@@ -197,7 +197,7 @@ async function clubMeta(
   const memberCount = club.members?.length ?? 0;
   const description = club.description
     ? `${esc(club.description.slice(0, 120))} • ${memberCount} members • Lv ${club.level}`
-    : `${memberCount} members • Level ${club.level} • ${formatNumber(club.totalXp)} XP — Join on NihongoTracker`;
+    : `${memberCount} members • Level ${club.level} • ${formatNumber(club.totalXp)} XP. Join on NihongoTracker`;
 
   return buildTags({
     title: `${esc(club.name)} — Club on NihongoTracker`,
@@ -236,7 +236,7 @@ async function clubVotingMeta(
   };
   const candidates = voting.candidates?.length ?? 0;
   const status = statusLabel[voting.status] ?? voting.status;
-  const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''} — Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
+  const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''}. Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
 
   return buildTags({
     title: `${esc(voting.title)} — ${esc(clubName)} Voting`,
@@ -274,7 +274,7 @@ async function clubVotingByIdMeta(
   };
   const candidates = voting.candidates?.length ?? 0;
   const status = statusLabel[voting.status] ?? voting.status;
-  const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''} — Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
+  const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''}. Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
 
   return buildTags({
     title: `${esc(voting.title)} — ${esc(clubName)} Voting`,
@@ -321,7 +321,7 @@ async function sharedLogMeta(
   const typeLabel = mediaTypeLabel(log.type);
   const title = log.mediaTitle ?? typeLabel;
   const metric = logMetricSummary(log);
-  const description = `${esc(username)} logged "${esc(title)}" (${typeLabel})${metric ? ' • ' + metric : ''} — NihongoTracker`;
+  const description = `${esc(username)} logged "${esc(title)}" (${typeLabel})${metric ? ' • ' + metric : ''} on NihongoTracker`;
 
   const image = `${protocol}://${host}/og-image.png`;
 
@@ -512,7 +512,7 @@ async function generateMetaTags(
     changelog: {
       title: 'Changelog — NihongoTracker',
       description:
-        "See what's new in NihongoTracker — latest features, fixes and improvements.",
+        "See what's new in NihongoTracker: latest features, fixes and improvements.",
     },
     support: {
       title: 'Support — NihongoTracker',

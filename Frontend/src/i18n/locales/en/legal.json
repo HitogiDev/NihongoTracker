@@ -622,7 +622,7 @@
           },
           {
             "type": "p",
-            "text": "We may act without prior notice only where the suspension or termination is due to fraud, illegal activity, or a binding legal or law-enforcement requirement. Termination does not affect any refund or right of withdrawal you had already accrued before it took effect — see our [Refund Policy](/refund-policy)."
+            "text": "We may act without prior notice only where the suspension or termination is due to fraud, illegal activity, or a binding legal or law-enforcement requirement. Termination does not affect any refund or right of withdrawal you had already accrued before it took effect; see our [Refund Policy](/refund-policy)."
           },
           {
             "type": "h3",
@@ -761,10 +761,10 @@
             "type": "ul",
             "items": [
               "An email to [support@nihongotracker.app](mailto:support@nihongotracker.app)",
-              "The model withdrawal form in Section 3.3 below — using it is optional",
+              "The model withdrawal form in Section 3.3 below (using it is optional)",
               "Any other written communication in which your decision is clear"
             ],
-            "intro": "To withdraw, send us an unequivocal statement that you are withdrawing. Any means is valid, and email is offered only for convenience — it is not the only accepted route. For example:"
+            "intro": "To withdraw, send us an unequivocal statement that you are withdrawing. Any means is valid, and email is offered only for convenience; it is not the only accepted route. For example:"
           },
           {
             "type": "p",
@@ -791,14 +791,14 @@
           {
             "type": "plain",
             "items": [
-              "**To:** NihongoTracker — [support@nihongotracker.app](mailto:support@nihongotracker.app)",
+              "**To:** NihongoTracker, [support@nihongotracker.app](mailto:support@nihongotracker.app)",
               "**Declaration:** I hereby give notice that I withdraw from my contract for the following NihongoTracker premium subscription.",
               "**Date of purchase:** _______________________",
               "**Your name:** _______________________",
               "**Account email:** _______________________",
               "**Date:** _______________________"
             ],
-            "intro": "You may copy the form below into an email or any other written message. Using it is optional — any clear statement of your decision works just as well."
+            "intro": "You may copy the form below into an email or any other written message. Using it is optional; any clear statement of your decision works just as well."
           },
           {
             "type": "h3",
@@ -857,14 +857,14 @@
         "blocks": [
           {
             "type": "p",
-            "text": "We accept **any unequivocal statement** of your decision, sent by any means — an email, the model withdrawal form in Section 3.3, or any other written communication. Email is offered for convenience and is not the only accepted route."
+            "text": "We accept **any unequivocal statement** of your decision, sent by any means, including an email, the model withdrawal form in Section 3.3, or any other written communication. Email is offered for convenience and is not the only accepted route."
           },
           {
             "type": "ol",
             "items": [
               "Your account username or email address",
               "The date of the transaction",
-              "A reason, if you wish — this is optional, and never required when you are withdrawing within the 30-day period"
+              "A reason, if you wish (this is optional and never required when you are withdrawing within the 30-day period)"
             ],
             "intro": "To help us identify the payment quickly, it is useful to include:"
           },

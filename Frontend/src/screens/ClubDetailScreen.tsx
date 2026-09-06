@@ -1178,7 +1178,7 @@ function ClubDetailScreen() {
                         <div>
                           <div className="font-medium">{m.title}</div>
                           <div className="text-xs text-base-content/60">
-                            {new Date(m.startDate).toLocaleDateString()} —{' '}
+                            {new Date(m.startDate).toLocaleDateString()} ·{' '}
                             {new Date(m.endDate).toLocaleDateString()}
                           </div>
                         </div>

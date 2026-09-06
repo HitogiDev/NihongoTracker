@@ -230,10 +230,10 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
 
   const compactGlobal = rankingSummary?.position
     ? `#${formatNumber(rankingSummary.position)}`
-    : '—';
+    : '-';
   const compactMonthly = rankingSummary?.monthly?.position
     ? `#${formatNumber(rankingSummary.monthly.position)}`
-    : '—';
+    : '-';
 
   return (
     <div className="card w-full surface">
