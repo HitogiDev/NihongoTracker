@@ -107,6 +107,11 @@ function serializeStatus(user: IUser) {
     lastSyncStatus: anilist.lastSyncStatus,
     lastSyncError: anilist.lastSyncError,
     syncedLogCount: anilist.syncedLogCount ?? 0,
+    hasCompletedFullSync: Boolean(anilist.fullSyncCompletedAt),
+    fullSyncIncludeExistingMedia:
+      anilist.fullSyncIncludeExistingMedia ?? false,
+    lastActivityId: anilist.lastActivityId ?? 0,
+    syncFrom: anilist.syncFrom ?? null,
     tokenExpiry: anilist.tokenExpiry,
     tokenExpired: anilist.tokenExpiry
       ? new Date(anilist.tokenExpiry) <= new Date()
@@ -248,6 +253,12 @@ export async function handleAnilistOAuthCallback(
       lastActivityId: isSameAccount ? (previous?.lastActivityId ?? 0) : 0,
       syncFrom: isSameAccount ? (previous?.syncFrom ?? null) : now,
       syncedLogCount: isSameAccount ? (previous?.syncedLogCount ?? 0) : 0,
+      fullSyncCompletedAt: isSameAccount
+        ? previous?.fullSyncCompletedAt
+        : undefined,
+      fullSyncIncludeExistingMedia: isSameAccount
+        ? (previous?.fullSyncIncludeExistingMedia ?? false)
+        : false,
       lastSyncedAt: isSameAccount ? previous?.lastSyncedAt : undefined,
       lastSyncStatus: null,
       lastSyncError: null,
@@ -331,6 +342,7 @@ export async function updateAnilistSettings(
 // ─── Sync ────────────────────────────────────────────────────────────────────
 
 async function runSync(
+  req: Request,
   res: Response,
   next: NextFunction,
   options: { backfill: boolean }
@@ -354,15 +366,13 @@ async function runSync(
       );
     }
 
-    if (options.backfill) {
-      // A backfill is explicitly asking for history, so the link-date floor
-      // that normally protects new links no longer applies.
-      user.anilist.syncFrom = null;
-      await user.save();
-    }
-
     const result = await syncAnilistForUser(user._id, {
       backfill: options.backfill,
+      includeExistingMedia: req.body?.includeExistingMedia !== false,
+      clientActivities: Array.isArray(req.body?.activities)
+        ? req.body.activities
+        : undefined,
+      clientMedia: Array.isArray(req.body?.media) ? req.body.media : undefined,
     });
 
     const updated = await User.findById(user._id);
@@ -387,19 +397,19 @@ async function runSync(
 }
 
 export async function syncAnilistNow(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
-  return runSync(res, next, { backfill: false });
+  return runSync(req, res, next, { backfill: false });
 }
 
 export async function backfillAnilist(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) {
-  return runSync(res, next, { backfill: true });
+  return runSync(req, res, next, { backfill: true });
 }
 
 /** Logs this integration created, newest first — shown in settings. */

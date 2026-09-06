@@ -3,7 +3,7 @@
  * AniList show up here without the user doing anything.
  *
  * Accounts are walked one at a time with a pause between them: AniList's rate
- * limit is per application, not per user, so a burst across many accounts would
+ * limit applies to the server IP, so a burst across many accounts would
  * throttle everyone. A run that overruns the interval is skipped rather than
  * overlapped.
  */
@@ -17,7 +17,7 @@ import {
 /** Cron expression: every 30 minutes. */
 const SYNC_SCHEDULE = '*/30 * * * *';
 /** Gap between accounts, keeping the shared AniList rate budget healthy. */
-const USER_DELAY_MS = 1500;
+const USER_DELAY_MS = 2100;
 
 let isRunning = false;
 

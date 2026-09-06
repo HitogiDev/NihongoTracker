@@ -1,6 +1,7 @@
 import axiosInstance from './axiosConfig';
 import { revealAchievements } from '../store/achievementReveal';
 import { celebrateLog } from '../store/logCelebration';
+import { fetchAnilistSyncPayload } from './anilistApi';
 import {
   ILoginResponse,
   IRegisterInput,
@@ -1221,14 +1222,24 @@ export async function updateAnilistSettingsFn(
   return data;
 }
 
-export async function syncAnilistNowFn(): Promise<IAnilistSyncResult> {
-  const { data } = await api.post<IAnilistSyncResult>('anilist/sync');
+export async function syncAnilistNowFn(
+  status: IAnilistStatus
+): Promise<IAnilistSyncResult> {
+  const payload = await fetchAnilistSyncPayload(status, false);
+  const { data } = await api.post<IAnilistSyncResult>('anilist/sync', payload);
   return data;
 }
 
 /** Walks the whole AniList activity feed instead of only what's new. */
-export async function backfillAnilistFn(): Promise<IAnilistSyncResult> {
-  const { data } = await api.post<IAnilistSyncResult>('anilist/backfill');
+export async function backfillAnilistFn(
+  status: IAnilistStatus,
+  includeExistingMedia: boolean
+): Promise<IAnilistSyncResult> {
+  const payload = await fetchAnilistSyncPayload(status, true);
+  const { data } = await api.post<IAnilistSyncResult>('anilist/backfill', {
+    ...payload,
+    includeExistingMedia,
+  });
   return data;
 }
 

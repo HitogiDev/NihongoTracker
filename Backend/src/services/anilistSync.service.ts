@@ -34,8 +34,8 @@ import { ILog, IMediaDocument, IUser } from '../types.js';
 const ANILIST_GRAPHQL_URL = 'https://graphql.anilist.co';
 const anilist = new GraphQLClient(ANILIST_GRAPHQL_URL);
 
-/** AniList allows ~90 requests/minute; pace pages well under that. */
-const PAGE_DELAY_MS = 700;
+/** AniList currently permits 30 requests/minute per IP. */
+const PAGE_DELAY_MS = 2100;
 const PER_PAGE = 50;
 /** Safety valve so one account can't spend the whole rate budget. */
 const MAX_PAGES_INCREMENTAL = 10;
@@ -112,10 +112,20 @@ export interface IAnilistSyncResult {
   updated: number;
   /** Activities that carried no episode progress (status changes, manga…). */
   skipped: number;
+  /** Activities skipped because the user already tracks their show locally. */
+  skippedExistingMedia: number;
   /** Media documents created on the fly for newly seen shows. */
   mediaCreated: number;
   /** Highest activity id seen, i.e. the new incremental watermark. */
   lastActivityId: number;
+}
+
+interface IAnilistSyncOptions {
+  backfill?: boolean;
+  includeExistingMedia?: boolean;
+  /** Browser-fetched data keeps manual sync traffic on the user's IP. */
+  clientActivities?: unknown[];
+  clientMedia?: unknown[];
 }
 
 export interface IAnilistViewer {
@@ -180,7 +190,8 @@ async function fetchActivityPage(
  * missing from the same AniList data the rest of the app already uses.
  */
 async function resolveAnimeMedia(
-  anilistIds: number[]
+  anilistIds: number[],
+  clientMedia?: unknown[]
 ): Promise<{ media: Map<string, IMediaDocument>; created: number }> {
   const media = new Map<string, IMediaDocument>();
   if (anilistIds.length === 0) return { media, created: 0 };
@@ -203,10 +214,11 @@ async function resolveAnimeMedia(
 
   let created = 0;
   try {
-    const fetched = await searchAnilist({
-      ids: needsMetadata,
-      type: 'ANIME',
-    });
+    // Manual syncs include media data fetched by the browser. Scheduled syncs
+    // have no browser, so they retain the server-side lookup fallback.
+    const fetched = clientMedia
+      ? normalizeClientMedia(clientMedia, new Set(needsMetadata))
+      : await searchAnilist({ ids: needsMetadata, type: 'ANIME' });
     for (const doc of fetched) {
       // Guard against AniList returning something the mapper typed as manga.
       if (doc.type !== 'anime') continue;
@@ -244,6 +256,101 @@ async function resolveAnimeMedia(
   return { media, created };
 }
 
+function normalizeClientActivities(raw: unknown[]): IAnilistListActivity[] {
+  const maxActivities = MAX_PAGES_BACKFILL * PER_PAGE;
+  if (raw.length > maxActivities) {
+    throw new Error(`AniList sync payload exceeds ${maxActivities} activities`);
+  }
+
+  return raw.flatMap((value) => {
+    if (!value || typeof value !== 'object') return [];
+    const activity = value as Record<string, unknown>;
+    const media = activity.media as Record<string, unknown> | null | undefined;
+    if (
+      !Number.isInteger(activity.id) ||
+      !Number.isInteger(activity.createdAt) ||
+      !media ||
+      !Number.isInteger(media.id) ||
+      (media.type !== 'ANIME' && media.type !== 'MANGA')
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        id: activity.id as number,
+        status:
+          typeof activity.status === 'string'
+            ? activity.status.slice(0, 100)
+            : null,
+        progress:
+          typeof activity.progress === 'string'
+            ? activity.progress.slice(0, 100)
+            : null,
+        createdAt: activity.createdAt as number,
+        media: { id: media.id as number, type: media.type },
+      },
+    ];
+  });
+}
+
+function normalizeClientMedia(
+  raw: unknown[],
+  allowedIds: Set<number>
+): IMediaDocument[] {
+  return raw.flatMap((value) => {
+    if (!value || typeof value !== 'object') return [];
+    const item = value as Record<string, unknown>;
+    const id = Number(item.contentId);
+    const title = item.title as Record<string, unknown> | null | undefined;
+    if (!Number.isInteger(id) || !allowedIds.has(id) || item.type !== 'anime') {
+      return [];
+    }
+
+    const stringValue = (candidate: unknown, max = 500) =>
+      typeof candidate === 'string' ? candidate.slice(0, max) : undefined;
+    const numericValue = (candidate: unknown) =>
+      typeof candidate === 'number' && Number.isFinite(candidate)
+        ? candidate
+        : undefined;
+    const dateValue = (candidate: unknown) => {
+      if (typeof candidate !== 'string' && !(candidate instanceof Date)) {
+        return null;
+      }
+      const date = new Date(candidate);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    return [
+      {
+        contentId: id.toString(),
+        title: {
+          contentTitleNative:
+            stringValue(title?.contentTitleNative, 300) ?? '',
+          contentTitleRomaji:
+            stringValue(title?.contentTitleRomaji, 300) ?? '',
+          contentTitleEnglish:
+            stringValue(title?.contentTitleEnglish, 300) ?? '',
+        },
+        contentImage: stringValue(item.contentImage, 1000),
+        coverImage: stringValue(item.coverImage, 1000),
+        type: 'anime' as const,
+        episodes: numericValue(item.episodes),
+        episodeDuration: numericValue(item.episodeDuration),
+        airingStartDate: dateValue(item.airingStartDate),
+        airingEndDate: dateValue(item.airingEndDate),
+        synonyms: Array.isArray(item.synonyms)
+          ? item.synonyms
+              .filter((entry): entry is string => typeof entry === 'string')
+              .slice(0, 50)
+              .map((entry) => entry.slice(0, 300))
+          : [],
+        isAdult: item.isAdult === true,
+      },
+    ];
+  });
+}
+
 function mediaTitle(media?: IMediaDocument): string {
   return (
     media?.title?.contentTitleRomaji ||
@@ -261,7 +368,7 @@ function mediaTitle(media?: IMediaDocument): string {
  */
 export async function syncAnilistForUser(
   userId: Types.ObjectId | string,
-  options: { backfill?: boolean } = {}
+  options: IAnilistSyncOptions = {}
 ): Promise<IAnilistSyncResult> {
   const user = (await User.findById(userId).select(
     '+anilist.accessToken'
@@ -276,6 +383,7 @@ export async function syncAnilistForUser(
     created: 0,
     updated: 0,
     skipped: 0,
+    skippedExistingMedia: 0,
     mediaCreated: 0,
     lastActivityId: user.anilist.lastActivityId ?? 0,
   };
@@ -300,7 +408,17 @@ export async function syncAnilistForUser(
     let hasNextPage = true;
     let highestId = watermark;
 
-    while (hasNextPage && page <= maxPages) {
+    if (options.clientActivities) {
+      const supplied = normalizeClientActivities(options.clientActivities);
+      for (const activity of supplied) {
+        if (activity.id > highestId) highestId = activity.id;
+        if (watermark && activity.id <= watermark) continue;
+        if (createdAtGreater && activity.createdAt <= createdAtGreater) continue;
+        collected.push(activity);
+      }
+    }
+
+    while (!options.clientActivities && hasNextPage && page <= maxPages) {
       const pageResult = await fetchActivityPage(
         user.anilist.anilistId,
         page,
@@ -332,7 +450,7 @@ export async function syncAnilistForUser(
       (user.anilist.excludedMedia ?? []).map((entry) => entry.anilistId)
     );
 
-    const episodeActivities = collected
+    let episodeActivities = collected
       .filter(
         (activity) =>
           activity.media?.type === 'ANIME' &&
@@ -354,10 +472,30 @@ export async function syncAnilistForUser(
         } => entry.range !== null && entry.episodes > 0
       );
 
+    if (backfill && options.includeExistingMedia === false) {
+      const existingMediaIds = new Set(
+        await Log.distinct('mediaId', {
+          user: user._id,
+          type: 'anime',
+        })
+      );
+      const before = episodeActivities.length;
+      episodeActivities = episodeActivities.filter(
+        (entry) => !existingMediaIds.has(entry.activity.media!.id.toString())
+      );
+      result.skippedExistingMedia = before - episodeActivities.length;
+    }
+
     result.skipped = collected.length - episodeActivities.length;
 
     if (episodeActivities.length === 0) {
-      await markSyncSuccess(user, highestId, 0);
+      await markSyncSuccess(
+        user,
+        highestId,
+        0,
+        backfill,
+        options.includeExistingMedia
+      );
       result.lastActivityId = highestId;
       return result;
     }
@@ -380,13 +518,20 @@ export async function syncAnilistForUser(
     );
 
     if (pending.length === 0) {
-      await markSyncSuccess(user, highestId, 0);
+      await markSyncSuccess(
+        user,
+        highestId,
+        0,
+        backfill,
+        options.includeExistingMedia
+      );
       result.lastActivityId = highestId;
       return result;
     }
 
     const { media, created: mediaCreated } = await resolveAnimeMedia(
-      Array.from(new Set(pending.map((entry) => entry.activity.media!.id)))
+      Array.from(new Set(pending.map((entry) => entry.activity.media!.id))),
+      options.clientMedia
     );
     result.mediaCreated = mediaCreated;
 
@@ -540,7 +685,13 @@ export async function syncAnilistForUser(
       await checkAchievements(user._id, { trigger: 'streak' });
     }
 
-    await markSyncSuccess(user, highestId, result.created);
+    await markSyncSuccess(
+      user,
+      highestId,
+      result.created,
+      backfill,
+      options.includeExistingMedia
+    );
     result.lastActivityId = highestId;
     return result;
   } catch (error) {
@@ -552,7 +703,9 @@ export async function syncAnilistForUser(
 async function markSyncSuccess(
   user: IUser,
   lastActivityId: number,
-  createdCount: number
+  createdCount: number,
+  completedFullSync = false,
+  includeExistingMedia = true
 ): Promise<void> {
   await User.updateOne(
     { _id: user._id },
@@ -562,6 +715,15 @@ async function markSyncSuccess(
         'anilist.lastSyncedAt': new Date(),
         'anilist.lastSyncStatus': 'ok',
         'anilist.lastSyncError': null,
+        ...(completedFullSync
+          ? {
+              'anilist.fullSyncCompletedAt': new Date(),
+              'anilist.fullSyncIncludeExistingMedia': includeExistingMedia,
+              // A successful full import makes the original link-date floor
+              // unnecessary. Keep it if the import fails midway.
+              'anilist.syncFrom': null,
+            }
+          : {}),
       },
       ...(createdCount > 0
         ? { $inc: { 'anilist.syncedLogCount': createdCount } }

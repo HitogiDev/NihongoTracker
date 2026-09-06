@@ -1044,7 +1044,10 @@ function SettingsScreen() {
   }
 
   const { mutate: syncAnilist, isPending: isSyncingAnilist } = useMutation({
-    mutationFn: syncAnilistNowFn,
+    mutationFn: () => {
+      if (!anilistStatus?.linked) throw new Error('AniList is not linked');
+      return syncAnilistNowFn(anilistStatus);
+    },
     onSuccess: (result) => {
       if (result.created > 0) {
         toast.success(t('anilist.syncCreated', { count: result.created }));
@@ -1056,9 +1059,15 @@ function SettingsScreen() {
     onError: (error) => reportAnilistError(error, 'anilist.syncFailed'),
   });
 
+  const [includeExistingAnilistMedia, setIncludeExistingAnilistMedia] =
+    useState(false);
+
   const { mutate: backfillAnilist, isPending: isBackfillingAnilist } =
     useMutation({
-      mutationFn: backfillAnilistFn,
+      mutationFn: (includeExistingMedia: boolean) => {
+        if (!anilistStatus?.linked) throw new Error('AniList is not linked');
+        return backfillAnilistFn(anilistStatus, includeExistingMedia);
+      },
       onSuccess: (result) => {
         toast.success(
           t('anilist.backfillDone', {
@@ -2621,17 +2630,21 @@ function SettingsScreen() {
 
                     <form onSubmit={handleUpdateUser} className="space-y-6">
                       {/* Current Password — shown prominently at top */}
-                      <Field
-                        label={
-                          <>
+                      <div className="w-full surface-muted rounded-box p-4">
+                        <div className="mb-2 flex items-center justify-between gap-4">
+                          <label
+                            htmlFor="settings-current-password"
+                            className="flex items-center gap-2 font-semibold"
+                          >
                             <Lock className="h-4 w-4 text-secondary" />
                             {t('account.currentPassword')}
-                          </>
-                        }
-                        aside={t('account.requiredForChanges')}
-                        className="w-full surface-muted p-4"
-                      >
+                          </label>
+                          <span className="text-right text-sm text-base-content/60">
+                            {t('account.requiredForChanges')}
+                          </span>
+                        </div>
                         <input
+                          id="settings-current-password"
                           ref={passwordRef}
                           name="settings_current_password"
                           type="password"
@@ -2642,7 +2655,7 @@ function SettingsScreen() {
                             setHasPassword(e.target.value.trim().length > 0)
                           }
                         />
-                      </Field>
+                      </div>
 
                       <div className="divider text-xs text-base-content/40">
                         {t('account.detailsHeading')}
@@ -3568,13 +3581,17 @@ function SettingsScreen() {
                           <button
                             type="button"
                             className="btn btn-outline btn-sm gap-2"
-                            onClick={() =>
+                            onClick={() => {
+                              setIncludeExistingAnilistMedia(
+                                anilistStatus.fullSyncIncludeExistingMedia ??
+                                  false
+                              );
                               (
                                 document.getElementById(
                                   'anilist_backfill_modal'
                                 ) as HTMLDialogElement | null
-                              )?.showModal()
-                            }
+                              )?.showModal();
+                            }}
                             disabled={isSyncingAnilist || isBackfillingAnilist}
                           >
                             {isBackfillingAnilist ? (
@@ -3641,6 +3658,27 @@ function SettingsScreen() {
                     <p className="py-4 text-sm text-base-content/80">
                       {t('anilist.backfillConfirmBody')}
                     </p>
+                    {!anilistStatus?.hasCompletedFullSync && (
+                      <Field
+                        label={t('anilist.includeExistingMedia')}
+                        hint={t('anilist.includeExistingMediaHint')}
+                        className="surface-muted p-3"
+                      >
+                        {(id) => (
+                          <input
+                            id={id}
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={includeExistingAnilistMedia}
+                            onChange={(event) =>
+                              setIncludeExistingAnilistMedia(
+                                event.target.checked
+                              )
+                            }
+                          />
+                        )}
+                      </Field>
+                    )}
                     <div className="modal-action">
                       <form method="dialog" className="flex gap-2">
                         <button className="btn btn-ghost btn-sm">
@@ -3648,7 +3686,9 @@ function SettingsScreen() {
                         </button>
                         <button
                           className="btn btn-primary btn-sm"
-                          onClick={() => backfillAnilist()}
+                          onClick={() =>
+                            backfillAnilist(includeExistingAnilistMedia)
+                          }
                         >
                           {t('anilist.backfill')}
                         </button>

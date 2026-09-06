@@ -78,6 +78,14 @@ export interface IAnilistStatus {
   lastSyncStatus?: 'ok' | 'error' | null;
   lastSyncError?: string | null;
   syncedLogCount?: number;
+  /** Whether this account has completed at least one full-history import. */
+  hasCompletedFullSync?: boolean;
+  /** Choice retained for later full-history re-runs. */
+  fullSyncIncludeExistingMedia?: boolean;
+  /** Incremental-sync cursor used by the browser-side AniList query. */
+  lastActivityId?: number;
+  /** Oldest timestamp included by the first incremental sync. */
+  syncFrom?: string | Date | null;
   tokenExpiry?: string | Date;
   /** AniList tokens last a year and can't be refreshed — re-link when true. */
   tokenExpired?: boolean;
@@ -86,7 +94,9 @@ export interface IAnilistStatus {
 export interface IAnilistSyncResult {
   scanned: number;
   created: number;
+  updated?: number;
   skipped: number;
+  skippedExistingMedia?: number;
   mediaCreated: number;
   lastActivityId: number;
   status?: IAnilistStatus;
@@ -823,6 +833,9 @@ export interface IMediaDocument {
     | 'book';
   episodes?: number;
   episodeDuration?: number;
+  /** Anime airing window supplied by AniList. */
+  airingStartDate?: string | Date | null;
+  airingEndDate?: string | Date | null;
   runtime?: number;
   seasons?: number;
   chapters?: number;

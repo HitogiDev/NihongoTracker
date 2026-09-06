@@ -205,51 +205,63 @@ export async function getMedia(
             normalizedMediaType === 'anime' ? 'ANIME' : 'MANGA';
           const refreshFormat = null;
 
-          const refreshedFromAnilist = await searchAnilist({
-            ids: [parsedContentId],
-            type: refreshType,
-            format: refreshFormat,
-          });
+          try {
+            const refreshedFromAnilist = await searchAnilist({
+              ids: [parsedContentId],
+              type: refreshType,
+              format: refreshFormat,
+            });
 
-          const refreshedMedia = refreshedFromAnilist[0];
-          if (refreshedMedia) {
-            const metadataUpdates: Record<string, number | Date> = {};
+            const refreshedMedia = refreshedFromAnilist[0];
+            if (refreshedMedia) {
+              const metadataUpdates: Record<string, number | Date> = {};
 
-            if (media.episodes == null && refreshedMedia.episodes != null) {
-              metadataUpdates.episodes = refreshedMedia.episodes;
-            }
-            if (
-              media.episodeDuration == null &&
-              refreshedMedia.episodeDuration != null
-            ) {
-              metadataUpdates.episodeDuration = refreshedMedia.episodeDuration;
-            }
-            if (
-              media.airingStartDate == null &&
-              refreshedMedia.airingStartDate != null
-            ) {
-              metadataUpdates.airingStartDate = refreshedMedia.airingStartDate;
-            }
-            if (
-              media.airingEndDate == null &&
-              refreshedMedia.airingEndDate != null
-            ) {
-              metadataUpdates.airingEndDate = refreshedMedia.airingEndDate;
-            }
-            if (media.chapters == null && refreshedMedia.chapters != null) {
-              metadataUpdates.chapters = refreshedMedia.chapters;
-            }
-            if (media.volumes == null && refreshedMedia.volumes != null) {
-              metadataUpdates.volumes = refreshedMedia.volumes;
-            }
+              if (media.episodes == null && refreshedMedia.episodes != null) {
+                metadataUpdates.episodes = refreshedMedia.episodes;
+              }
+              if (
+                media.episodeDuration == null &&
+                refreshedMedia.episodeDuration != null
+              ) {
+                metadataUpdates.episodeDuration =
+                  refreshedMedia.episodeDuration;
+              }
+              if (
+                media.airingStartDate == null &&
+                refreshedMedia.airingStartDate != null
+              ) {
+                metadataUpdates.airingStartDate =
+                  refreshedMedia.airingStartDate;
+              }
+              if (
+                media.airingEndDate == null &&
+                refreshedMedia.airingEndDate != null
+              ) {
+                metadataUpdates.airingEndDate = refreshedMedia.airingEndDate;
+              }
+              if (media.chapters == null && refreshedMedia.chapters != null) {
+                metadataUpdates.chapters = refreshedMedia.chapters;
+              }
+              if (media.volumes == null && refreshedMedia.volumes != null) {
+                metadataUpdates.volumes = refreshedMedia.volumes;
+              }
 
-            if (Object.keys(metadataUpdates).length > 0) {
-              await MediaBase.updateOne(
-                { _id: media._id },
-                { $set: metadataUpdates }
-              );
-              Object.assign(media, metadataUpdates);
+              if (Object.keys(metadataUpdates).length > 0) {
+                await MediaBase.updateOne(
+                  { _id: media._id },
+                  { $set: metadataUpdates }
+                );
+                Object.assign(media, metadataUpdates);
+              }
             }
+          } catch (error) {
+            // This record already exists locally. AniList enrichment is
+            // optional, so an upstream outage or blocked IP must not turn a
+            // usable media-details response into a 500.
+            console.warn(
+              `Failed to refresh AniList metadata for ${normalizedMediaType}/${contentId}:`,
+              error instanceof Error ? error.message : error
+            );
           }
         }
       }

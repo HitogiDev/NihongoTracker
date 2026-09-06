@@ -5,7 +5,7 @@
  *
  * Run with `npm run lint:ui`. See CLAUDE.md > UI Conventions (Frontend).
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { relative } from 'node:path';
 
@@ -68,6 +68,9 @@ const files = execSync(
 let failures = 0;
 
 for (const rel of files) {
+  // `git ls-files` includes tracked files deleted in the working tree. Ignore
+  // them so the lint gate can validate a deletion before it is committed.
+  if (!existsSync(ROOT + rel)) continue;
   const src = readFileSync(ROOT + rel, 'utf8');
   const lines = src.split('\n');
 

@@ -234,6 +234,10 @@ export interface IAnilistData {
   lastSyncError?: string | null;
   /** Logs this integration has created, for the settings summary. */
   syncedLogCount?: number;
+  /** Set after the first successful full-history import. */
+  fullSyncCompletedAt?: Date;
+  /** Choice made for locally tracked anime during the first full import. */
+  fullSyncIncludeExistingMedia?: boolean;
 }
 
 export interface IUserModeration {

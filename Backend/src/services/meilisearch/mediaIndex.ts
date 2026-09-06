@@ -32,6 +32,8 @@ const MEDIA_INDEX_SETTINGS = {
     'title',
     'contentImage',
     'coverImage',
+    'episodes',
+    'episodeDuration',
     'isAdult',
     'isAdultImage',
     'synonyms',
@@ -120,7 +122,7 @@ async function syncIndexes(indexNames: readonly string[]) {
 
     const media = await MediaBase.find({ type: dbType })
       .select(
-        'contentId title contentImage coverImage isAdult isAdultImage synonyms type'
+        'contentId title contentImage coverImage episodes episodeDuration isAdult isAdultImage synonyms type'
       )
       .lean();
 
@@ -132,6 +134,8 @@ async function syncIndexes(indexNames: readonly string[]) {
       title: doc.title,
       contentImage: doc.contentImage,
       coverImage: doc.coverImage,
+      episodes: (doc as { episodes?: number }).episodes,
+      episodeDuration: (doc as { episodeDuration?: number }).episodeDuration,
       isAdult: doc.isAdult,
       isAdultImage: (doc as { isAdultImage?: boolean }).isAdultImage ?? false,
       synonyms: doc.synonyms || [],
@@ -159,6 +163,8 @@ export async function addMediaToIndex(doc: {
   title: unknown;
   contentImage?: string;
   coverImage?: string;
+  episodes?: number;
+  episodeDuration?: number;
   isAdult?: boolean;
   isAdultImage?: boolean;
   synonyms?: string[];
@@ -174,6 +180,8 @@ export async function addMediaToIndex(doc: {
       title: doc.title,
       contentImage: doc.contentImage,
       coverImage: doc.coverImage,
+      episodes: doc.episodes,
+      episodeDuration: doc.episodeDuration,
       isAdult: doc.isAdult ?? false,
       isAdultImage: doc.isAdultImage ?? false,
       synonyms: doc.synonyms || [],

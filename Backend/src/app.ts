@@ -55,7 +55,10 @@ app.use(
   })
 );
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// A full browser-side AniList sync can contain up to 3,000 compact activity
+// records plus deduplicated media metadata. Keep the limit bounded but large
+// enough for that authenticated import payload.
+app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(cookieParser());
 

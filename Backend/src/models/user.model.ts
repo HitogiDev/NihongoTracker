@@ -134,6 +134,8 @@ const AnilistSchema = new Schema<IAnilistData>(
     },
     lastSyncError: { type: String, default: null },
     syncedLogCount: { type: Number, default: 0 },
+    fullSyncCompletedAt: { type: Date, default: null },
+    fullSyncIncludeExistingMedia: { type: Boolean, default: false },
   },
   { _id: false }
 );
