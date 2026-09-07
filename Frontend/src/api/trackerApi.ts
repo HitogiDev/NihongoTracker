@@ -30,6 +30,7 @@ import {
   ITextSession,
   ITextLine,
   ITextSessionHistoryEntry,
+  ITextSessionIntelligenceSettings,
   StatsGroupLayout,
   ProfileWidgetLayout,
   ICustomizationOptionsResponse,
@@ -1448,7 +1449,11 @@ export async function clearSessionLinesFn(
 
 export async function addSessionHistoryEntryFn(
   contentId: string,
-  entry: Omit<ITextSessionHistoryEntry, 'loggedAt'> & { loggedAt?: string }
+  entry: Omit<ITextSessionHistoryEntry, 'loggedAt' | 'intelligence'> & {
+    loggedAt?: string;
+    lineIds?: string[];
+    intelligenceSettings?: ITextSessionIntelligenceSettings;
+  }
 ): Promise<ITextSession> {
   const { data } = await api.post<ITextSession>(
     `texthooker/${contentId}/history`,

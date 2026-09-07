@@ -41,6 +41,12 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['react-refresh', '@stylistic/js'],
   rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/naming-convention': [
+      'error',
+      { selector: 'variable', format: ['camelCase', 'UPPER_CASE', 'PascalCase'] },
+      { selector: 'parameter', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
+    ],
     'react-refresh/only-export-components': [
       'warn',
       { allowConstantExport: true },
@@ -59,6 +65,10 @@ module.exports = {
         `(^|\\\\s)(${BANNED_SHADOWS})($|\\\\s)`,
         'Only shadow-sm (resting) and shadow-lg (floating) are allowed. Prefer the `surface` / `surface-raised` utilities.'
       ),
+      {
+        selector: "TSAsExpression[typeAnnotation.type='TSAnyKeyword']",
+        message: 'Do not use `as any`; use an explicit type or `unknown`.',
+      },
     ],
   },
 };

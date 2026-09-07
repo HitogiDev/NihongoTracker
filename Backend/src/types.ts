@@ -1340,6 +1340,41 @@ export interface ITextLine {
   text: string;
   charsCount: number;
   createdAt: Date;
+  /** Active TextHooker timer position when this line arrived. */
+  elapsedSeconds?: number;
+}
+
+export type TextSessionAttentionMode = 'automatic' | 'manual' | 'off';
+
+export interface ITextSessionIntelligenceSettings {
+  mode: TextSessionAttentionMode;
+  manualThresholdSeconds?: number;
+  afkThresholdSeconds: number;
+}
+
+export interface ITextSessionAttentionPeriod {
+  startSecond: number;
+  endSecond: number;
+  type: 'distracted' | 'afk';
+}
+
+export interface ITextSessionIntelligence {
+  algorithmVersion: number;
+  detectionMode: TextSessionAttentionMode;
+  baselineIntervalSeconds: number | null;
+  distractionThresholdSeconds: number | null;
+  afkThresholdSeconds: number;
+  focusedSeconds: number;
+  distractedSeconds: number;
+  afkSeconds: number;
+  distractionCount: number;
+  longestDistractionSeconds: number;
+  focusPercentage: number;
+  firstThirtyMinutesSpeed: number;
+  lastThirtyMinutesSpeed: number;
+  peakReadingSpeed: number;
+  charactersPerMinute: number[];
+  periods: ITextSessionAttentionPeriod[];
 }
 
 export interface ITextSessionHistoryEntry {
@@ -1350,6 +1385,7 @@ export interface ITextSessionHistoryEntry {
   charactersLogged: number;
   readingSpeed: number;
   sessionSeconds: number;
+  intelligence?: ITextSessionIntelligence;
 }
 
 export interface ITextSession extends Document {
@@ -1380,6 +1416,7 @@ export interface ISocketLineData {
   text: string;
   japaneseCount: number;
   createdAt: Date;
+  elapsedSeconds?: number;
 }
 
 export interface ISocketSendLineData {

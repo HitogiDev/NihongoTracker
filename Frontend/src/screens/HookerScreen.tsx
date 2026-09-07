@@ -47,21 +47,32 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronLeft,
+  Brain,
+  LockKeyhole,
 } from 'lucide-react';
 import useMutationObserver from '../hooks/useMutationObserver';
 import { io, Socket } from 'socket.io-client';
 import { numberWithCommas } from '../utils/utils';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
-import { IMediaDocument, ITextSession } from '../types';
+import {
+  IMediaDocument,
+  ITextSession,
+  ITextSessionHistoryEntry,
+  ITextSessionIntelligenceSettings,
+  TextSessionAttentionMode,
+} from '../types';
 import { toast, ToastContainer } from 'react-toastify';
 import QuickLog, { QuickLogInitialValues } from '../components/QuickLog';
 import { useUserDataStore } from '../store/userData';
+import SessionIntelligenceModal from '../components/texthooker/SessionIntelligenceModal';
+import Spinner from '../components/ui/Spinner';
 
 type LineEntry = {
   id: string;
   text: string;
   japaneseCount: number;
   createdAt?: string;
+  elapsedSeconds?: number;
 };
 
 type PendingSessionLine = {
@@ -69,6 +80,7 @@ type PendingSessionLine = {
   text: string;
   japaneseCount: number;
   createdAt: string;
+  elapsedSeconds?: number;
 };
 
 type Member = {
@@ -149,6 +161,12 @@ function TextHooker() {
   const hasPatreonAccess =
     (user?.patreon?.isActive && user?.patreon?.tier) ||
     user?.roles?.includes('admin');
+  const hasSessionIntelligenceAccess = Boolean(
+    user?.roles?.includes('admin') ||
+      (user?.patreon?.isActive &&
+        (user.patreon.tier === 'enthusiast' ||
+          user.patreon.tier === 'consumer'))
+  );
   const availableHookerThemes = hasPatreonAccess
     ? HOOKER_THEME_OPTIONS
     : HOOKER_THEME_OPTIONS.filter(
@@ -228,6 +246,7 @@ function TextHooker() {
     null
   );
   const isFlushingPendingSessionLinesRef = useRef(false);
+  const pendingSessionLinesFlushPromiseRef = useRef<Promise<void> | null>(null);
   const [pendingSessionLinesCount, setPendingSessionLinesCount] = useState(0);
   const [isPendingSessionSyncing, setIsPendingSessionSyncing] = useState(false);
   const pendingRoomLinesRef = useRef<LineEntry[]>([]);
@@ -243,6 +262,8 @@ function TextHooker() {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [selectedIntelligenceEntry, setSelectedIntelligenceEntry] =
+    useState<ITextSessionHistoryEntry | null>(null);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
   const [isResetTimerConfirmOpen, setIsResetTimerConfirmOpen] = useState(false);
   const [isPreventDuplicateConfirmOpen, setIsPreventDuplicateConfirmOpen] =
@@ -250,7 +271,7 @@ function TextHooker() {
   const [isResumePromptOpen, setIsResumePromptOpen] = useState(false);
   const [resumePromptHandled, setResumePromptHandled] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<
-    'display' | 'behavior'
+    'display' | 'behavior' | 'intelligence'
   >('display');
   const [customCss, setCustomCss] = useState(() => {
     return localStorage.getItem('texthooker_customCss') || '';
@@ -364,7 +385,14 @@ function TextHooker() {
   }, [pendingSessionLinesStorageKey]);
 
   const flushPendingSessionLines = useCallback(async () => {
-    if (!contentId || isFlushingPendingSessionLinesRef.current) return;
+    if (!contentId) return;
+    if (pendingSessionLinesFlushPromiseRef.current) {
+      await pendingSessionLinesFlushPromiseRef.current;
+      if (pendingSessionLinesRef.current.length > 0) {
+        await flushPendingSessionLines();
+      }
+      return;
+    }
     if (pendingSessionLinesRef.current.length === 0) {
       syncPendingSessionSyncState();
       return;
@@ -374,27 +402,36 @@ function TextHooker() {
     syncPendingSessionSyncState();
     const queuedLines = [...pendingSessionLinesRef.current];
 
-    try {
-      await addLinesToSessionFn(
-        contentId,
-        queuedLines.map((line) => ({
-          id: line.id,
-          text: line.text,
-          charsCount: line.japaneseCount,
-          createdAt: line.createdAt,
-        }))
-      );
+    const flushPromise = (async () => {
+      try {
+        await addLinesToSessionFn(
+          contentId,
+          queuedLines.map((line) => ({
+            id: line.id,
+            text: line.text,
+            charsCount: line.japaneseCount,
+            createdAt: line.createdAt,
+            elapsedSeconds: line.elapsedSeconds,
+          }))
+        );
 
-      const sentIds = new Set(queuedLines.map((line) => line.id));
-      pendingSessionLinesRef.current = pendingSessionLinesRef.current.filter(
-        (line) => !sentIds.has(line.id)
-      );
-      persistPendingSessionLines();
-    } catch (error) {
-      console.error('Failed to flush pending session lines:', error);
-    } finally {
-      isFlushingPendingSessionLinesRef.current = false;
-      syncPendingSessionSyncState();
+        const sentIds = new Set(queuedLines.map((line) => line.id));
+        pendingSessionLinesRef.current = pendingSessionLinesRef.current.filter(
+          (line) => !sentIds.has(line.id)
+        );
+        persistPendingSessionLines();
+      } catch (error) {
+        console.error('Failed to flush pending session lines:', error);
+      } finally {
+        isFlushingPendingSessionLinesRef.current = false;
+        syncPendingSessionSyncState();
+      }
+    })();
+
+    pendingSessionLinesFlushPromiseRef.current = flushPromise;
+    await flushPromise;
+    if (pendingSessionLinesFlushPromiseRef.current === flushPromise) {
+      pendingSessionLinesFlushPromiseRef.current = null;
     }
   }, [contentId, persistPendingSessionLines, syncPendingSessionSyncState]);
 
@@ -429,6 +466,7 @@ function TextHooker() {
           text: line.text,
           japaneseCount: line.japaneseCount,
           createdAt: line.createdAt || new Date().toISOString(),
+          elapsedSeconds: line.elapsedSeconds,
         });
         queuedIds.add(line.id);
         changed = true;
@@ -580,6 +618,24 @@ function TextHooker() {
     const saved = localStorage.getItem('texthooker_autoPauseTimeout');
     return saved ? Number(saved) : 120;
   });
+  const [attentionMode, setAttentionMode] = useState<TextSessionAttentionMode>(
+    () => {
+      const saved = localStorage.getItem('texthooker_attentionMode');
+      return saved === 'manual' || saved === 'off' ? saved : 'automatic';
+    }
+  );
+  const [manualDistractionThreshold, setManualDistractionThreshold] = useState(
+    () => {
+      const saved = localStorage.getItem(
+        'texthooker_manualDistractionThreshold'
+      );
+      return saved ? Number(saved) : 40;
+    }
+  );
+  const [attentionAfkThreshold, setAttentionAfkThreshold] = useState(() => {
+    const saved = localStorage.getItem('texthooker_attentionAfkThreshold');
+    return saved === '600' ? 600 : 300;
+  });
   const [autostartTimerByPaste, setAutostartTimerByPaste] = useState(() => {
     return localStorage.getItem('texthooker_autostartTimerByPaste') === 'true';
   });
@@ -660,6 +716,7 @@ function TextHooker() {
       createdAt: l.createdAt
         ? new Date(l.createdAt).toISOString()
         : new Date().toISOString(),
+      elapsedSeconds: l.elapsedSeconds,
     }));
 
     let nextLines = mappedLines;
@@ -699,6 +756,7 @@ function TextHooker() {
         text: pendingLine.text,
         japaneseCount: pendingLine.japaneseCount,
         createdAt: pendingLine.createdAt,
+        elapsedSeconds: pendingLine.elapsedSeconds,
       });
       existingIds.add(pendingLine.id);
     });
@@ -778,12 +836,15 @@ function TextHooker() {
   const timerInitializedFromServerRef = useRef(false);
   const lastSavedTimerRef = useRef<number>(0);
   const pendingHistoryEntryRef = useRef<{
+    loggedAt: string;
     isShared: boolean;
     connectedUsersCount: number;
     linesLogged: number;
     charactersLogged: number;
     readingSpeed: number;
     sessionSeconds: number;
+    lineIds: string[];
+    intelligenceSettings: ITextSessionIntelligenceSettings;
   } | null>(null);
 
   const timerKey = contentId || inviteRoomFromParams || roomId || 'session';
@@ -981,6 +1042,21 @@ function TextHooker() {
       String(autoPauseTimeout)
     );
   }, [autoPauseTimeout]);
+  useEffect(() => {
+    localStorage.setItem('texthooker_attentionMode', attentionMode);
+  }, [attentionMode]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_manualDistractionThreshold',
+      String(manualDistractionThreshold)
+    );
+  }, [manualDistractionThreshold]);
+  useEffect(() => {
+    localStorage.setItem(
+      'texthooker_attentionAfkThreshold',
+      String(attentionAfkThreshold)
+    );
+  }, [attentionAfkThreshold]);
   useEffect(() => {
     localStorage.setItem('texthooker_vertical', String(vertical));
   }, [vertical]);
@@ -1226,7 +1302,10 @@ function TextHooker() {
 
     if (mode === 'guest' || mode === 'host') {
       newSocket.on('receive_line', (lineData: LineEntry) => {
-        const lineAdded = appendIncomingLine(lineData);
+        const lineAdded = appendIncomingLine({
+          ...lineData,
+          elapsedSeconds: secondsRef.current,
+        });
         if (!lineAdded) return;
 
         lastActivityRef.current = Date.now();
@@ -1268,6 +1347,7 @@ function TextHooker() {
                 text: restored.text,
                 japaneseCount: restored.japaneseCount,
                 createdAt: restored.createdAt,
+                elapsedSeconds: restored.elapsedSeconds,
               });
             }
           });
@@ -1321,6 +1401,7 @@ function TextHooker() {
         text,
         japaneseCount,
         createdAt: new Date().toISOString(),
+        elapsedSeconds: secondsRef.current,
       };
 
       const lineAdded = appendIncomingLine(newLine);
@@ -1654,6 +1735,7 @@ function TextHooker() {
               text: l.text,
               japaneseCount: l.japaneseCount,
               createdAt: new Date(),
+              elapsedSeconds: l.elapsedSeconds,
             })),
           });
         }
@@ -1750,16 +1832,27 @@ function TextHooker() {
     [loggedChars, currentSessionChars]
   );
 
+  const persistPendingHistoryEntry = useCallback(async () => {
+    const entry = pendingHistoryEntryRef.current;
+    pendingHistoryEntryRef.current = null;
+    if (!contentId || !entry) return;
+
+    try {
+      const updatedSession = await addSessionHistoryEntryFn(contentId, entry);
+      queryClient.setQueryData<ITextSession | undefined>(
+        ['textSession', contentId],
+        updatedSession
+      );
+    } catch (error) {
+      toast.error(t('hooker.toast.analysisSaveFailed'));
+      console.error(error);
+    }
+  }, [contentId, queryClient, t]);
+
   const { mutate: createLog, isPending: isLogging } = useMutation({
     mutationFn: createLogFn,
-    onSuccess: () => {
-      if (contentId && pendingHistoryEntryRef.current) {
-        addSessionHistoryEntry({
-          contentId,
-          entry: pendingHistoryEntryRef.current,
-        });
-      }
-      pendingHistoryEntryRef.current = null;
+    onSuccess: async () => {
+      await persistPendingHistoryEntry();
       triggerLogAnimation(clearSessionLineHistoryAfterLog);
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       queryClient.invalidateQueries({ queryKey: ['userStats'] });
@@ -1772,30 +1865,32 @@ function TextHooker() {
     },
   });
 
-  const { mutate: addSessionHistoryEntry } = useMutation({
-    mutationFn: ({
-      contentId,
-      entry,
-    }: {
-      contentId: string;
-      entry: {
-        isShared: boolean;
-        connectedUsersCount: number;
-        linesLogged: number;
-        charactersLogged: number;
-        readingSpeed: number;
-        sessionSeconds: number;
-      };
-    }) => addSessionHistoryEntryFn(contentId, entry),
-    onSuccess: (updatedSession, variables) => {
-      queryClient.setQueryData<ITextSession | undefined>(
-        ['textSession', variables.contentId],
-        updatedSession
-      );
-    },
-  });
+  const handleLogSession = async () => {
+    const sessionLines = linesRef.current.slice(initialStatsRef.current.lines);
+    const isSharedNow =
+      isRoomConnected && (mode === 'host' || mode === 'guest');
+    const connectedUsersCount = isSharedNow
+      ? Math.max(connectedMembers.length, 1)
+      : 0;
 
-  const handleLogSession = () => {
+    pendingHistoryEntryRef.current = {
+      loggedAt: new Date().toISOString(),
+      isShared: isSharedNow,
+      connectedUsersCount,
+      linesLogged: currentSessionLines,
+      charactersLogged: currentSessionChars,
+      readingSpeed: formatSpeed(currentSessionChars, seconds),
+      sessionSeconds: seconds,
+      lineIds: sessionLines.map((line) => line.id),
+      intelligenceSettings: {
+        mode: attentionMode,
+        manualThresholdSeconds: manualDistractionThreshold,
+        afkThresholdSeconds: attentionAfkThreshold,
+      },
+    };
+
+    await flushPendingSessionLines();
+
     if (!media) {
       const totalMinutes = Math.floor(seconds / 60);
       setIsStatsOpen(false);
@@ -1807,21 +1902,6 @@ function TextHooker() {
       setIsQuickLogOpen(true);
       return;
     }
-
-    const isSharedNow =
-      isRoomConnected && (mode === 'host' || mode === 'guest');
-    const connectedUsersCount = isSharedNow
-      ? Math.max(connectedMembers.length, 1)
-      : 0;
-
-    pendingHistoryEntryRef.current = {
-      isShared: isSharedNow,
-      connectedUsersCount,
-      linesLogged: currentSessionLines,
-      charactersLogged: currentSessionChars,
-      readingSpeed: formatSpeed(currentSessionChars, seconds),
-      sessionSeconds: seconds,
-    };
 
     createLog({
       mediaId: media.contentId,
@@ -1931,6 +2011,7 @@ function TextHooker() {
             text,
             japaneseCount,
             createdAt: new Date().toISOString(),
+            elapsedSeconds: secondsRef.current,
           };
 
           const lineAdded = appendIncomingLine(newLine);
@@ -3016,6 +3097,36 @@ function TextHooker() {
                             </span>
                           </div>
                         </div>
+                        <div className="mt-3 border-t border-base-content/10 pt-3">
+                          {hasSessionIntelligenceAccess ? (
+                            entry.intelligence ? (
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-sm w-full"
+                                onClick={() =>
+                                  setSelectedIntelligenceEntry(entry)
+                                }
+                              >
+                                <Brain className="w-4 h-4" />
+                                {t('hooker.intelligence.viewAnalysis')}
+                              </button>
+                            ) : (
+                              <p className="text-xs text-base-content/60">
+                                {t('hooker.intelligence.historicalUnavailable')}
+                              </p>
+                            )
+                          ) : (
+                            <a
+                              href="https://www.patreon.com/nihongotracker"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-ghost btn-sm w-full"
+                            >
+                              <LockKeyhole className="w-4 h-4" />
+                              {t('hooker.intelligence.enthusiastOnly')}
+                            </a>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -3029,7 +3140,7 @@ function TextHooker() {
                   className={`btn btn-primary w-full sm:w-auto transition-all ${isLogAnimating ? 'btn-success scale-105' : ''}`}
                 >
                   {isLogging ? (
-                    <span className="loading loading-spinner loading-md"></span>
+                    <Spinner />
                   ) : isLogAnimating ? (
                     <>
                       <span className="text-xl">✓</span>
@@ -3050,6 +3161,11 @@ function TextHooker() {
           <button onClick={() => setIsStatsOpen(false)}>close</button>
         </form>
       </dialog>
+
+      <SessionIntelligenceModal
+        entry={selectedIntelligenceEntry}
+        onClose={() => setSelectedIntelligenceEntry(null)}
+      />
 
       {/* Settings Dropdown Panel */}
       {isSettingsOpen && (
@@ -3085,13 +3201,20 @@ function TextHooker() {
             >
               {t('hooker.settings.tabBehavior')}
             </button>
+            <button
+              role="tab"
+              className={`tab ${activeSettingsTab === 'intelligence' ? 'tab-active' : ''}`}
+              onClick={() => setActiveSettingsTab('intelligence')}
+            >
+              {t('hooker.settings.tabIntelligence')}
+            </button>
           </div>
 
           {activeSettingsTab === 'display' && (
             <div className="space-y-4">
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                  <Monitor className="w-4 h-4" />{' '}
+                  <Monitor className="w-4 h-4 text-primary" />{' '}
                   {t('hooker.settings.displayHeading')}
                 </h4>
 
@@ -3279,26 +3402,130 @@ function TextHooker() {
             </div>
           )}
 
-          {activeSettingsTab === 'behavior' && (
+          {(activeSettingsTab === 'behavior' ||
+            activeSettingsTab === 'intelligence') && (
             <div className="space-y-4">
               <div className="space-y-4">
-                <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
-                  <Activity className="w-4 h-4" />{' '}
-                  {t('hooker.settings.behaviorHeading')}
-                </h4>
+                {activeSettingsTab === 'behavior' && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" />{' '}
+                      {t('hooker.settings.behaviorHeading')}
+                    </h4>
 
-                <Field label={t('hooker.timer.autoPause')}>
-                  <input
-                    type="number"
-                    min={10}
-                    max={3600}
-                    value={autoPauseTimeout}
-                    onChange={handleAutoPauseTimeoutChange}
-                    className="input input-sm w-full"
-                  />
-                </Field>
+                    <Field label={t('hooker.timer.autoPause')}>
+                      <input
+                        type="number"
+                        min={10}
+                        max={3600}
+                        value={autoPauseTimeout}
+                        onChange={handleAutoPauseTimeoutChange}
+                        className="input input-sm w-full"
+                      />
+                    </Field>
+                  </div>
+                )}
 
-                <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
+                {activeSettingsTab === 'intelligence' && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold border-b border-base-content/10 pb-2 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-primary" />
+                      {t('hooker.intelligence.settingsTitle')}
+                    </h4>
+
+                    {hasSessionIntelligenceAccess ? (
+                      <>
+                        <p className="text-sm text-base-content/70">
+                          {t('hooker.intelligence.settingsHint')}
+                        </p>
+                        <Field label={t('hooker.intelligence.detectionMode')}>
+                          <select
+                            className="select select-sm w-full"
+                            value={attentionMode}
+                            onChange={(event) =>
+                              setAttentionMode(
+                                event.target.value as TextSessionAttentionMode
+                              )
+                            }
+                          >
+                            <option value="automatic">
+                              {t('hooker.intelligence.mode.automatic')}
+                            </option>
+                            <option value="manual">
+                              {t('hooker.intelligence.mode.manual')}
+                            </option>
+                            <option value="off">
+                              {t('hooker.intelligence.mode.off')}
+                            </option>
+                          </select>
+                        </Field>
+
+                      {attentionMode === 'manual' && (
+                        <Field
+                          label={t('hooker.intelligence.distractionThreshold')}
+                        >
+                          <input
+                            type="number"
+                            min={30}
+                            max={180}
+                            value={manualDistractionThreshold}
+                            onChange={(event) =>
+                              setManualDistractionThreshold(
+                                Math.min(
+                                  180,
+                                  Math.max(30, Number(event.target.value) || 40)
+                                )
+                              )
+                            }
+                            className="input input-sm w-full focus:input-primary"
+                          />
+                        </Field>
+                      )}
+
+                      {attentionMode !== 'off' && (
+                        <Field label={t('hooker.intelligence.afkThreshold')}>
+                          <select
+                            className="select select-sm w-full focus:select-primary"
+                            value={attentionAfkThreshold}
+                            onChange={(event) =>
+                              setAttentionAfkThreshold(
+                                Number(event.target.value) === 600 ? 600 : 300
+                              )
+                            }
+                          >
+                            <option value={300}>
+                              {t('hooker.intelligence.fiveMinutes')}
+                            </option>
+                            <option value={600}>
+                              {t('hooker.intelligence.tenMinutes')}
+                            </option>
+                          </select>
+                        </Field>
+                      )}
+                      </>
+                    ) : (
+                      <div role="alert" className="alert alert-soft alert-info">
+                        <LockKeyhole className="w-5 h-5" />
+                        <div className="min-w-0">
+                          <p className="text-sm">
+                            {t('hooker.intelligence.lockedHint')}
+                          </p>
+                          <a
+                            href="https://www.patreon.com/nihongotracker"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="link link-hover text-sm font-semibold"
+                          >
+                            {t('hooker.intelligence.upgrade')}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeSettingsTab === 'behavior' && (
+                  <div className="rounded-lg border border-base-content/10 bg-base-200/40 p-3">
                   <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70 mb-2">
                     {t('hooker.settings.runtimeBehavior')}
                   </div>
@@ -3408,8 +3635,11 @@ function TextHooker() {
                       />
                     </label>
                   </div>
-                </div>
+                  </div>
+                )}
 
+                {activeSettingsTab === 'behavior' && (
+                  <div className="space-y-4">
                 <Field label={t('hooker.collab.websocketUrl')}>
                   <input
                     type="text"
@@ -3511,6 +3741,8 @@ function TextHooker() {
                     {t('hooker.settings.clearAllLines')}
                   </button>
                 </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -3647,6 +3879,7 @@ function TextHooker() {
         onClose={() => setIsQuickLogOpen(false)}
         initialValues={quickLogDefaults || undefined}
         onLogged={async () => {
+          await persistPendingHistoryEntry();
           triggerLogAnimation(clearSessionLineHistoryAfterLog);
           await queryClient.invalidateQueries({ queryKey: ['userStats'] });
         }}

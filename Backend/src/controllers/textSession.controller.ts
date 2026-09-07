@@ -5,6 +5,9 @@ import TextSession from '../models/textSession.model.js';
 import { MediaBase as Media } from '../models/media.model.js';
 import { apiError } from '../i18n/errorCodes.js';
 import axios from 'axios';
+import { computeTextSessionIntelligence } from '../services/textSessionIntelligence.js';
+import { hasSessionIntelligenceAccess } from '../services/textSessionAccess.js';
+import { ITextSessionIntelligenceSettings, IUser } from '../types.js';
 
 // Blank (media-less, user-named) sessions are keyed by a generated id in
 // this format instead of a media contentId, so the existing :contentId
@@ -13,6 +16,19 @@ const BLANK_SESSION_ID_PREFIX = 'session-';
 
 function isBlankSessionId(contentId: string) {
   return contentId.startsWith(BLANK_SESSION_ID_PREFIX);
+}
+
+function sessionResponseForUser(session: { toObject: () => any }, user: IUser) {
+  const response = session.toObject();
+  if (!hasSessionIntelligenceAccess(user)) {
+    response.sessionHistory = (response.sessionHistory ?? []).map(
+      (entry: Record<string, unknown>) => {
+        const { intelligence: _intelligence, ...summary } = entry;
+        return summary;
+      }
+    );
+  }
+  return response;
 }
 
 /**
@@ -137,6 +153,8 @@ interface IAddSessionHistoryBody {
   readingSpeed: number;
   sessionSeconds: number;
   linesLogged?: number;
+  lineIds?: string[];
+  intelligenceSettings?: Partial<ITextSessionIntelligenceSettings>;
 }
 
 export const getRecentSessions = async (
@@ -149,10 +167,13 @@ export const getRecentSessions = async (
     const sessions = await TextSession.find({ userId })
       .sort({ updatedAt: -1 })
       .limit(20)
+      .select('-sessionHistory.intelligence')
       .populate('mediaId', 'title coverImage contentImage contentId');
 
     // Calculate overall stats
-    const allSessions = await TextSession.find({ userId });
+    const allSessions = await TextSession.find({ userId }).select(
+      'sessionHistory.linesLogged sessionHistory.charactersLogged sessionHistory.sessionSeconds'
+    );
     const allHistoryEntries = allSessions.flatMap(
       (session) => session.sessionHistory || []
     );
@@ -172,7 +193,9 @@ export const getRecentSessions = async (
     );
 
     res.status(200).json({
-      sessions,
+      sessions: sessions.map((session) =>
+        sessionResponseForUser(session, res.locals.user)
+      ),
       stats: {
         totalSessions,
         totalLines,
@@ -242,7 +265,7 @@ export const getSessionByContentId = async (
       if (!session) {
         throw apiError('textSession.notFound', 404, 'Session not found');
       }
-      res.status(200).json(session);
+      res.status(200).json(sessionResponseForUser(session, res.locals.user));
       return;
     }
 
@@ -306,9 +329,9 @@ export const getSessionByContentId = async (
       }
     }
 
-    const response = session.toObject();
+    const response = sessionResponseForUser(session, res.locals.user);
     if (typeof response.mediaId === 'object' && response.mediaId !== null) {
-      (response.mediaId as any).jiten = jitenData;
+      (response.mediaId as Record<string, unknown>).jiten = jitenData;
     }
 
     res.status(200).json(response);
@@ -392,6 +415,7 @@ export const addLinesToSession = async (
           text?: string;
           charsCount?: number;
           createdAt?: string | Date;
+          elapsedSeconds?: number;
         } => typeof line?.id === 'string' && line.id.trim().length > 0
       )
       .filter((line) => {
@@ -407,6 +431,12 @@ export const addLinesToSession = async (
         text: typeof line.text === 'string' ? line.text : '',
         charsCount: typeof line.charsCount === 'number' ? line.charsCount : 0,
         createdAt: line.createdAt ? new Date(line.createdAt) : new Date(),
+        elapsedSeconds:
+          typeof line.elapsedSeconds === 'number' &&
+          Number.isFinite(line.elapsedSeconds) &&
+          line.elapsedSeconds >= 0
+            ? Math.floor(line.elapsedSeconds)
+            : undefined,
       }));
 
     let updatedSession = session;
@@ -426,7 +456,9 @@ export const addLinesToSession = async (
       }
     }
 
-    res.status(200).json(updatedSession);
+    res
+      .status(200)
+      .json(sessionResponseForUser(updatedSession, res.locals.user));
   } catch (error) {
     next(error);
   }
@@ -461,7 +493,7 @@ export const removeLinesFromSession = async (
       throw apiError('textSession.notFound', 404, 'Session not found');
     }
 
-    res.status(200).json(session);
+    res.status(200).json(sessionResponseForUser(session, res.locals.user));
   } catch (error) {
     next(error);
   }
@@ -490,7 +522,7 @@ export const clearSessionLines = async (
       throw apiError('textSession.notFound', 404, 'Session not found');
     }
 
-    res.status(200).json(session);
+    res.status(200).json(sessionResponseForUser(session, res.locals.user));
   } catch (error) {
     next(error);
   }
@@ -512,6 +544,8 @@ export const addSessionHistoryEntry = async (
       readingSpeed,
       sessionSeconds,
       linesLogged,
+      lineIds,
+      intelligenceSettings,
     } = req.body as IAddSessionHistoryBody;
 
     if (typeof isShared !== 'boolean') {
@@ -530,7 +564,8 @@ export const addSessionHistoryEntry = async (
     ];
     if (
       numericFields.some(
-        (value) => typeof value !== 'number' || Number.isNaN(value) || value < 0
+        (value) =>
+          typeof value !== 'number' || !Number.isFinite(value) || value < 0
       )
     ) {
       throw apiError(
@@ -542,8 +577,35 @@ export const addSessionHistoryEntry = async (
 
     const { filter } = await resolveSessionContext(userId, contentId);
 
+    const loggedAtDate = loggedAt ? new Date(loggedAt) : new Date();
+    if (Number.isNaN(loggedAtDate.getTime())) {
+      throw apiError(
+        'textSession.invalidHistoryMetrics',
+        400,
+        'Invalid session history date'
+      );
+    }
+
+    if (
+      lineIds !== undefined &&
+      (!Array.isArray(lineIds) ||
+        lineIds.some((lineId) => typeof lineId !== 'string'))
+    ) {
+      throw apiError(
+        'textSession.invalidHistoryMetrics',
+        400,
+        'Invalid session line identifiers'
+      );
+    }
+
+    const existingSession = await TextSession.findOne(filter);
+    const selectedLineIds = lineIds ? new Set(lineIds) : null;
+    const intelligenceLines = (existingSession?.lines ?? []).filter(
+      (line) => !selectedLineIds || selectedLineIds.has(line.id)
+    );
+
     const historyEntry = {
-      loggedAt: loggedAt ? new Date(loggedAt) : new Date(),
+      loggedAt: loggedAtDate,
       isShared,
       connectedUsersCount: Math.floor(connectedUsersCount),
       linesLogged:
@@ -553,6 +615,12 @@ export const addSessionHistoryEntry = async (
       charactersLogged: Math.floor(charactersLogged),
       readingSpeed: Math.round(readingSpeed),
       sessionSeconds: Math.floor(sessionSeconds),
+      intelligence: computeTextSessionIntelligence({
+        lines: intelligenceLines,
+        sessionSeconds,
+        loggedAt: loggedAtDate,
+        settings: intelligenceSettings,
+      }),
     };
 
     const session = await TextSession.findOneAndUpdate(
@@ -564,7 +632,7 @@ export const addSessionHistoryEntry = async (
       { new: true, upsert: true }
     ).populate('mediaId', 'title coverImage contentImage contentId type');
 
-    res.status(200).json(session);
+    res.status(200).json(sessionResponseForUser(session, res.locals.user));
   } catch (error) {
     next(error);
   }

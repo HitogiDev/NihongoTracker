@@ -168,6 +168,7 @@ io.on('connection', (socket) => {
                 text: line.text,
                 japaneseCount: line.charsCount,
                 createdAt: line.createdAt,
+                elapsedSeconds: line.elapsedSeconds,
               }));
               socket.emit('load_history', history);
             }
@@ -205,6 +206,7 @@ io.on('connection', (socket) => {
               text: l.text,
               japaneseCount: l.charsCount,
               createdAt: l.createdAt,
+              elapsedSeconds: l.elapsedSeconds,
             }));
             socket.emit('load_history', history);
           }
@@ -244,6 +246,7 @@ io.on('connection', (socket) => {
         text: lineData.text,
         charsCount: lineData.japaneseCount,
         createdAt: lineData.createdAt,
+        elapsedSeconds: lineData.elapsedSeconds,
       };
 
       const updateResult = await TextSession.updateOne(
@@ -286,6 +289,7 @@ io.on('connection', (socket) => {
         text: lineData.text,
         charsCount: lineData.japaneseCount,
         createdAt: lineData.createdAt,
+        elapsedSeconds: lineData.elapsedSeconds,
       }));
 
       await TextSession.updateOne(

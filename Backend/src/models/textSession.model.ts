@@ -15,6 +15,7 @@ const TextSessionSchema = new Schema<ITextSession>({
       text: String,
       charsCount: Number,
       createdAt: { type: Date, default: Date.now },
+      elapsedSeconds: { type: Number, min: 0 },
     },
   ],
   sessionHistory: [
@@ -26,6 +27,7 @@ const TextSessionSchema = new Schema<ITextSession>({
       charactersLogged: { type: Number, default: 0 },
       readingSpeed: { type: Number, default: 0 },
       sessionSeconds: { type: Number, default: 0 },
+      intelligence: { type: Schema.Types.Mixed },
     },
   ],
   createdAt: { type: Date, default: Date.now },
