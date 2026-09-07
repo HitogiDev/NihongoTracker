@@ -17,6 +17,7 @@ import {
 } from './services/meilisearch/userIndex.js';
 import {
   initMediaIndexes,
+  syncApprovedRequestMedia,
   syncAllMedia,
 } from './services/meilisearch/mediaIndex.js';
 import meiliClient from './services/meilisearch/meiliClient.js';
@@ -61,6 +62,7 @@ async function bootstrapMeilisearch() {
 
   await Promise.all([initUsersIndex(), initMediaIndexes()]);
   await Promise.all([syncAllUsers(), syncAllMedia()]);
+  await syncApprovedRequestMedia();
 }
 
 bootstrapMeilisearch().catch((err) =>

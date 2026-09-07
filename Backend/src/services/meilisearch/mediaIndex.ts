@@ -1,6 +1,8 @@
 import { MediaBase } from '../../models/media.model.js';
+import MediaRequest from '../../models/mediaRequest.model.js';
 import {
   addDocuments,
+  addDocumentsAndWait,
   createIndex,
   updateIndexSettings,
   getIndexStats,
@@ -173,7 +175,7 @@ export async function addMediaToIndex(doc: {
   const indexName = TYPE_TO_INDEX[doc.type];
   if (!indexName) return;
 
-  await addDocuments(indexName, [
+  await addDocumentsAndWait(indexName, [
     {
       _id: String(doc._id),
       contentId: doc.contentId,
@@ -188,6 +190,58 @@ export async function addMediaToIndex(doc: {
       type: doc.type,
     },
   ]);
+}
+
+// Re-index approved requests on startup. This repairs records approved before
+// single-document writes began waiting for Meilisearch task completion.
+export async function syncApprovedRequestMedia(): Promise<number> {
+  const approvedRequests = await MediaRequest.find({
+    status: 'approved',
+    createdMediaContentId: { $ne: null },
+  })
+    .select('createdMediaContentId')
+    .lean();
+  const contentIds = approvedRequests
+    .map((request) => request.createdMediaContentId)
+    .filter((contentId): contentId is string => Boolean(contentId));
+
+  if (contentIds.length === 0) return 0;
+
+  const media = await MediaBase.find({ contentId: { $in: contentIds } })
+    .select(
+      'contentId title contentImage coverImage episodes episodeDuration isAdult isAdultImage synonyms type'
+    )
+    .lean();
+
+  const documentsByIndex = new Map<string, object[]>();
+  media.forEach((doc) => {
+    const indexName = TYPE_TO_INDEX[doc.type];
+    if (!indexName) return;
+
+    const documents = documentsByIndex.get(indexName) ?? [];
+    documents.push({
+      _id: String(doc._id),
+      contentId: doc.contentId,
+      title: doc.title,
+      contentImage: doc.contentImage,
+      coverImage: doc.coverImage,
+      episodes: doc.episodes,
+      episodeDuration: doc.episodeDuration,
+      isAdult: doc.isAdult ?? false,
+      isAdultImage: doc.isAdultImage ?? false,
+      synonyms: doc.synonyms || [],
+      type: doc.type,
+    });
+    documentsByIndex.set(indexName, documents);
+  });
+
+  await Promise.all(
+    Array.from(documentsByIndex.entries()).map(([indexName, documents]) =>
+      addDocumentsAndWait(indexName, documents)
+    )
+  );
+  console.log(`  📚 approved requests: ${media.length} documents indexed`);
+  return media.length;
 }
 
 export async function syncAllMedia() {

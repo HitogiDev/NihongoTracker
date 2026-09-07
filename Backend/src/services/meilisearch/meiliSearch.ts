@@ -72,6 +72,29 @@ export async function addDocuments(indexName: string, documents: any[]) {
   return document;
 }
 
+// Single-document writes often feed an immediate user action. Wait until
+// Meilisearch has processed the write so the following search can see it and
+// task-level indexing failures are not mistaken for success.
+export async function addDocumentsAndWait(
+  indexName: string,
+  documents: any[]
+) {
+  const index = client.index(indexName);
+  const task = await index
+    .addDocuments(documents)
+    .waitTask({ timeout: INDEX_TASK_TIMEOUT_MS });
+
+  if (task.status !== 'succeeded') {
+    throw new Error(
+      `Meilisearch document indexing ${task.status}: ${
+        task.error?.message ?? 'unknown error'
+      }`
+    );
+  }
+
+  return task;
+}
+
 // Indexes
 
 export async function indexDocuments(indexName: string, documents: any[]) {

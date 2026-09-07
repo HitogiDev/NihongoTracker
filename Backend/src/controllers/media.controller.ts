@@ -502,16 +502,6 @@ export async function searchMedia(
       return res.status(400).json({ message: 'Unsupported media type' });
     }
 
-    if (type === 'book') {
-      const normalizedTitle = title.trim();
-      if (!normalizedTitle) {
-        return res.status(200).json([]);
-      }
-
-      const results = await searchGoogleBooks(normalizedTitle);
-      return res.status(200).json(results);
-    }
-
     if (type === 'game') {
       const normalizedTitle = title.trim();
       if (!normalizedTitle) {

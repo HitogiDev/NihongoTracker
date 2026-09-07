@@ -60,6 +60,33 @@ function normalizeYouTubeUrl(input: string): string | null {
   return videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
 }
 
+function mergeSearchResults(
+  localResults: SearchResultType[],
+  externalResults: SearchResultType[],
+  limit: number
+): SearchResultType[] {
+  const seen = new Set<string>();
+  const combined: SearchResultType[] = [];
+
+  for (
+    let index = 0;
+    index < Math.max(localResults.length, externalResults.length);
+    index += 1
+  ) {
+    if (localResults[index]) combined.push(localResults[index]);
+    if (externalResults[index]) combined.push(externalResults[index]);
+  }
+
+  return combined
+    .filter((result) => {
+      const key = `${result.type}:${result.contentId}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, limit);
+}
+
 export default function useSearch(
   type: string,
   search: string = '',
@@ -146,9 +173,20 @@ export default function useSearch(
       }
 
       if (type === 'anime' || type === 'manga' || type === 'light-novel') {
-        try {
+        const localSearch = searchMediaFn({
+          type,
+          search: debouncedSearch,
+          ids,
+          page,
+          perPage,
+        }).catch((error) => {
+          console.error(`NihongoTracker search error for ${type}:`, error);
+          return [];
+        });
+
+        const externalSearch = (async () => {
           if (type === 'anime') {
-            return await searchAnilist(
+            return searchAnilist(
               debouncedSearch,
               'ANIME',
               page,
@@ -157,7 +195,7 @@ export default function useSearch(
               ids
             );
           } else if (type === 'manga') {
-            return await searchAnilist(
+            return searchAnilist(
               debouncedSearch,
               'MANGA',
               page,
@@ -166,7 +204,7 @@ export default function useSearch(
               ids
             );
           } else {
-            return await searchAnilist(
+            return searchAnilist(
               debouncedSearch,
               'MANGA',
               page,
@@ -175,23 +213,31 @@ export default function useSearch(
               ids
             );
           }
-        } catch (error) {
-          // AniList down/rate-limited: fall back to NihongoTracker's own
-          // media database (Meilisearch) so suggestions keep working.
-          console.error(`AniList search error for ${type}, falling back to NT DB:`, error);
-          return searchMediaFn({
+        })().catch((error) => {
+          console.error(`AniList search error for ${type}:`, error);
+          return [];
+        });
+
+        const [localResults, externalResults] = await Promise.all([
+          localSearch,
+          externalSearch,
+        ]);
+        return mergeSearchResults(localResults, externalResults, perPage);
+      }
+
+      // Keep approved/local books visible alongside Google Books discovery.
+      if (type === 'book') {
+        const [localResults, externalResults] = await Promise.all([
+          searchMediaFn({
             type,
             search: debouncedSearch,
             ids,
             page,
             perPage,
-          });
-        }
-      }
-
-      // Books search Google Books live
-      if (type === 'book') {
-        return searchGoogleBooksFn(debouncedSearch);
+          }).catch(() => []),
+          searchGoogleBooksFn(debouncedSearch).catch(() => []),
+        ]);
+        return mergeSearchResults(localResults, externalResults, perPage);
       }
 
       // VN, game, movie, and TV show only search in database
