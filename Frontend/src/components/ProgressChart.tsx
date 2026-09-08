@@ -1,5 +1,4 @@
 import { ILog } from '../types';
-import { ChartArea, ScriptableContext } from 'chart.js';
 import LineChart from './LineChart';
 import BarChart from './BarChart';
 import { useEffect, useState } from 'react';
@@ -441,18 +440,6 @@ export default function ProgressChart({
     return metricByDate;
   }
 
-  function createGradient(
-    ctx: CanvasRenderingContext2D,
-    chartArea: ChartArea,
-    color: string
-  ) {
-    const { top, bottom } = chartArea;
-    const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-    gradient.addColorStop(0, withAlpha(color, 0.55));
-    gradient.addColorStop(1, withAlpha(color, 0));
-    return gradient;
-  }
-
   const datasetLabel = metric === 'xp' ? 'XP Earned' : 'Time Spent (hours)';
   const progressColor = getProgressColor(selectedType, themeColors.primary);
 
@@ -464,22 +451,17 @@ export default function ProgressChart({
         data: metricValues,
         fill: true,
         spanGaps: true,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBorderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 4,
+        pointBorderWidth: 0,
         pointHitRadius: 12,
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+        pointBackgroundColor: progressColor,
         pointBorderColor: progressColor,
         pointHoverBackgroundColor: progressColor,
         pointHoverBorderColor: progressColor,
         borderColor: progressColor,
         borderWidth: 3,
-        backgroundColor: function (context: ScriptableContext<'line'>) {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
-          if (!chartArea) return undefined;
-          return createGradient(ctx, chartArea, progressColor);
-        },
+        backgroundColor: withAlpha(progressColor, 0.16),
         tension: 0.35,
         cubicInterpolationMode: 'monotone' as const,
       },
@@ -511,14 +493,15 @@ export default function ProgressChart({
   return (
     <div className="w-full h-full">
       <div className="h-full w-full">
-        <div className="flex items-center justify-between mb-6 px-4">
+        {(showTitle || !externalTimeframe) && (
+          <div className="flex items-center justify-between mb-6 px-4">
           <div>
             {showTitle && (
               <h2 className="text-2xl font-bold text-primary mb-2">
                 {t('progress.activity')}
               </h2>
             )}
-            {hasData ? (
+            {showTitle && hasData ? (
               <p className="text-sm text-base-content mb-4">
                 {typeLabel} -
                 {timeframe === 'today'
@@ -557,24 +540,23 @@ export default function ProgressChart({
               </select>
             </div>
           )}
-        </div>
+          </div>
+        )}
         {chartType === 'line' ? (
           <LineChart data={lineData} />
         ) : (
-          <div className="rounded-lg border border-base-content/30 mx-4">
-            <div className="bg-base-50 p-4" style={{ height: '350px' }}>
-              <BarChart
-                data={barData}
-                options={{
-                  interaction: { mode: 'index', intersect: false },
-                  plugins: {
-                    legend: {
-                      position: 'right',
-                    },
+          <div className="w-full" style={{ height: '350px' }}>
+            <BarChart
+              data={barData}
+              options={{
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                  legend: {
+                    position: 'right',
                   },
-                }}
-              />
-            </div>
+                },
+              }}
+            />
           </div>
         )}
       </div>

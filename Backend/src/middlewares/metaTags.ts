@@ -125,7 +125,7 @@ async function userMeta(
   const description = `Level ${user.stats.userLevel} • ${formatNumber(user.stats.userXp)} XP${streak} • Japanese immersion tracker`;
 
   return buildTags({
-    title: `${esc(username)}'s Profile — NihongoTracker`,
+    title: `${esc(username)}'s Profile | NihongoTracker`,
     description,
     image,
     url: `${protocol}://${host}${urlPath}`,
@@ -175,7 +175,7 @@ async function mediaMeta(
   };
 
   return buildTags({
-    title: `${esc(title)} — NihongoTracker`,
+    title: `${esc(title)} | NihongoTracker`,
     description: `Track your ${typeLabel} progress on NihongoTracker • Log episodes, pages, reading time and more`,
     image,
     url: `${protocol}://${host}${urlPath}`,
@@ -200,7 +200,7 @@ async function clubMeta(
     : `${memberCount} members • Level ${club.level} • ${formatNumber(club.totalXp)} XP. Join on NihongoTracker`;
 
   return buildTags({
-    title: `${esc(club.name)} — Club on NihongoTracker`,
+    title: `${esc(club.name)} | Club on NihongoTracker`,
     description,
     image: club.banner || club.avatar || `${protocol}://${host}/og-image.png`,
     url: `${protocol}://${host}${urlPath}`,
@@ -239,7 +239,7 @@ async function clubVotingMeta(
   const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''}. Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
 
   return buildTags({
-    title: `${esc(voting.title)} — ${esc(clubName)} Voting`,
+    title: `${esc(voting.title)} | ${esc(clubName)} Voting`,
     description,
     image: club?.banner || club?.avatar || `${protocol}://${host}/og-image.png`,
     url: `${protocol}://${host}${urlPath}`,
@@ -277,7 +277,7 @@ async function clubVotingByIdMeta(
   const description = `${status} • ${candidates} ${typeLabel} candidate${candidates !== 1 ? 's' : ''}. Vote for the next ${clubName} ${typeLabel.toLowerCase()}`;
 
   return buildTags({
-    title: `${esc(voting.title)} — ${esc(clubName)} Voting`,
+    title: `${esc(voting.title)} | ${esc(clubName)} Voting`,
     description,
     image: club?.banner || club?.avatar || `${protocol}://${host}/og-image.png`,
     url: `${protocol}://${host}${urlPath}`,
@@ -296,7 +296,7 @@ async function rankingMeta(
   const image = `${protocol}://${host}/og-image.png`;
 
   return buildTags({
-    title: `${monthName} ${year} Ranking — NihongoTracker`,
+    title: `${monthName} ${year} Ranking | NihongoTracker`,
     description: `See who's at the top of the monthly Japanese immersion ranking on NihongoTracker • Compete with learners worldwide`,
     image,
     url: `${protocol}://${host}${urlPath}`,
@@ -326,7 +326,7 @@ async function sharedLogMeta(
   const image = `${protocol}://${host}/og-image.png`;
 
   return buildTags({
-    title: `${esc(username)}'s ${typeLabel} Log — NihongoTracker`,
+    title: `${esc(username)}'s ${typeLabel} Log | NihongoTracker`,
     description,
     image,
     url: `${protocol}://${host}${urlPath}`,
@@ -366,7 +366,7 @@ async function reviewMeta(
     `${protocol}://${host}/og-image.png`;
 
   return buildTags({
-    title: `Review: ${esc(title)} ${stars} — NihongoTracker`,
+    title: `Review: ${esc(title)} ${stars} | NihongoTracker`,
     description: summary
       ? esc(summary)
       : `Community review for ${esc(title)} on NihongoTracker`,
@@ -378,9 +378,9 @@ async function reviewMeta(
 
 function defaultMeta(protocol: string, host: string, urlPath: string): string {
   return buildTags({
-    title: 'NihongoTracker — Track Your Japanese Learning',
+    title: 'NihongoTracker | Track Your Japanese Immersion',
     description:
-      'Track your Japanese immersion with anime, manga, reading, visual novels, and more! Compete in monthly rankings and join study clubs.',
+      'Log the Japanese you read, watch, play, and hear. Track XP, streaks, rankings, and club activity.',
     image: `${protocol}://${host}/og-image.png`,
     url: `${protocol}://${host}${urlPath}`,
     themeColor: '#3b82f6',
@@ -417,9 +417,9 @@ async function generateMetaTags(
   // /clubs (list)
   if (parts[0] === 'clubs' && !parts[1]) {
     return buildTags({
-      title: 'Study Clubs — NihongoTracker',
+      title: 'Study Clubs | NihongoTracker',
       description:
-        'Join a Japanese study club on NihongoTracker! Read manga together, watch anime, and compete in group challenges.',
+        'Join a Japanese study club to share media, vote on what comes next, and take part in group challenges.',
       image: `${base}/og-image.png`,
       url: `${base}${normalizedUrl}`,
       themeColor: '#8b5cf6',
@@ -500,41 +500,41 @@ async function generateMetaTags(
   // Static / informational pages
   const staticPages: Record<string, { title: string; description: string }> = {
     calculator: {
-      title: 'XP Calculator — NihongoTracker',
+      title: 'XP Calculator | NihongoTracker',
       description:
         'Calculate how much XP your Japanese immersion activities are worth.',
     },
     features: {
-      title: 'Features — NihongoTracker',
+      title: 'Features | NihongoTracker',
       description:
-        'Explore everything NihongoTracker has to offer for tracking your Japanese learning journey.',
+        'See how NihongoTracker handles immersion logs, statistics, XP, achievements, clubs, and texthooker sessions.',
     },
     changelog: {
-      title: 'Changelog — NihongoTracker',
+      title: 'Changelog | NihongoTracker',
       description:
         "See what's new in NihongoTracker: latest features, fixes and improvements.",
     },
     support: {
-      title: 'Support — NihongoTracker',
+      title: 'Support | NihongoTracker',
       description: 'Get help with NihongoTracker or support the project.',
     },
     privacy: {
-      title: 'Privacy Policy — NihongoTracker',
+      title: 'Privacy Policy | NihongoTracker',
       description: 'NihongoTracker privacy policy.',
     },
     terms: {
-      title: 'Terms of Service — NihongoTracker',
+      title: 'Terms of Service | NihongoTracker',
       description: 'NihongoTracker terms of service.',
     },
     login: {
-      title: 'Log In — NihongoTracker',
+      title: 'Log In | NihongoTracker',
       description:
-        'Sign in to your NihongoTracker account and continue your Japanese immersion journey.',
+        'Sign in to view your logs, stats, goals, clubs, and recent activity.',
     },
     register: {
       title: 'Join NihongoTracker',
       description:
-        'Create a free account to start tracking your Japanese immersion with anime, manga, reading and more!',
+        'Create a free account to log the Japanese you read, watch, play, and hear.',
     },
   };
   if (parts[0] && staticPages[parts[0]]) {
@@ -584,7 +584,7 @@ export async function metaTagsMiddleware(
 </head>
 <body>
   <h1>NihongoTracker</h1>
-  <p>Track your Japanese immersion journey.</p>
+  <p>Track the Japanese you read, watch, play, and hear.</p>
 </body>
 </html>`);
   } catch {

@@ -386,7 +386,7 @@
   },
   "profile": {
     "about": "About Me",
-    "aboutPlaceholder": "Share a bit about your immersion journey (Markdown supported)",
+    "aboutPlaceholder": "Tell people what you read, watch, or study (Markdown supported)",
     "allowedFormats": "Allowed Formats: JPEG, PNG, WebP{{gif}}. Max size: {{maxSize}} MB. Optimal dimensions: {{dimensions}}",
     "avatar": "Avatar",
     "avatarCropped": "Cropped avatar ready to upload",
@@ -419,10 +419,10 @@
     },
     "achievements": {
       "description": "Your top earned achievements.",
-      "label": "Achievement Showcase"
+      "label": "Featured Achievements"
     },
     "favorites": {
-      "description": "Showcase of your favorite media.",
+      "description": "Your favorite media and notes.",
       "label": "Favorite Media"
     },
     "hide": "Hide widget",

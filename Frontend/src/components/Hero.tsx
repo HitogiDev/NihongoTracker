@@ -188,42 +188,13 @@ function Hero() {
           />
         </div>
       )}
-      <style>{`
-        @keyframes gradient-flow {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .gradient-text-animated {
-          background: linear-gradient(
-            90deg,
-            var(--color-primary),
-            var(--color-secondary),
-            var(--color-primary)
-          );
-          background-size: 200% 200%;
-          animation: gradient-flow 10s ease infinite;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          padding-bottom: 0.2em;
-          display: inline-block;
-        }
-      `}</style>
-
       <div ref={containerRef} className="pt-20 bg-base-100">
         {/* ─── Hero ─── */}
         <section className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-20 overflow-hidden">
-          {/* Subtle bg blobs */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-            <div className="absolute bottom-1/4 -right-32 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl" />
-          </div>
-
           <div className="relative z-10 max-w-4xl mx-auto text-center mb-14">
             <h1
               ref={titleRef}
-              className="gradient-text-animated text-5xl sm:text-6xl md:text-7xl font-bold mb-6 leading-tight"
+              className="text-5xl sm:text-6xl md:text-7xl font-bold text-base-content mb-6 leading-tight"
             >
               NihongoTracker
             </h1>
@@ -557,7 +528,7 @@ function Hero() {
         </section>
 
         {/* ─── CTA ─── */}
-        <section className="py-28 px-4 bg-gradient-to-b from-base-100 to-base-200/60">
+        <section className="py-28 px-4 bg-base-200/50 border-t border-base-300/50">
           <div className="max-w-xl mx-auto text-center scroll-reveal">
             <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
               {t('cta.title')}

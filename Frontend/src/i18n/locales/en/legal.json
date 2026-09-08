@@ -987,49 +987,113 @@
   },
   "support": {
     "hero": {
-      "badge": "Support the Project",
-      "title": "Keep NihongoTracker <hl>free</hl>, fast, and growing",
-      "subtitle": "Your support helps cover infrastructure and development so I can keep building the best immersion tracker for Japanese learners.",
-      "cta": "Become a Patron"
+      "badge": "Independent and community-supported",
+      "title": "Support NihongoTracker and help me keep <hl>building</hl>",
+      "subtitle": "The core tracker stays free forever. Your support helps cover hosting and gives me time to work on new tools, session insights, and profile customization.",
+      "cta": "Support NihongoTracker",
+      "seeBenefits": "Explore supporter benefits",
+      "noteEyebrow": "A note from Hitogi",
+      "noteTitle": "Creator of NihongoTracker",
+      "noteBody": "I'm Hitogi, the creator of NihongoTracker. It has been my main project for several years, and I want to dedicate even more time to making it the best Japanese immersion tracker I can. Your support helps cover server costs and gives me more time to improve the app, while also unlocking extra features and customization options for you.",
+      "openSource": "Open source",
+      "communityLed": "Community-led",
+      "indie": "One-person project",
+      "builtWithCommunity": "Shaped by your feedback"
     },
     "stats": {
-      "tiers": "Patreon Tiers",
-      "freeCore": "Core Features Free",
-      "community": "Community Access",
-      "creator": "Independent Creator"
+      "tiers": "Supporter tiers",
+      "freeCore": "Core tracking, free forever",
+      "community": "Community-shaped updates",
+      "creator": "One person building it",
+      "openSource": "Source code"
+    },
+    "showcase": {
+      "badge": "What's included",
+      "title": "Tools for planning, reading, and profiles",
+      "subtitle": "Support adds practical tools for planning immersion, reviewing sessions, and customizing your profile.",
+      "session": {
+        "tier": "Immersion Enthusiast +",
+        "title": "Understand how you read",
+        "description": "See where your attention went during a texthooker session, with pace and distraction insights beyond raw session time.",
+        "benefits": [
+          "See your estimated focus and focused reading time",
+          "Follow reading pace minute by minute and spot slowdowns",
+          "Automatically separate distractions and AFK gaps from active time"
+        ],
+        "note": "Attention values are estimates based on the gaps between captured lines.",
+        "previewTitle": "Session Intelligence",
+        "previewSubtitle": "Attention values are estimates based on the gaps between captured lines.",
+        "focus": "Estimated focus",
+        "focusedTime": "Estimated reading",
+        "distractionTime": "Estimated distraction",
+        "distractions": "Distractions",
+        "afk": "AFK excluded",
+        "firstThirty": "First 30 min",
+        "lastThirty": "Last 30 min",
+        "peak": "Peak (5 min)",
+        "longest": "Longest distraction",
+        "chartTitle": "Characters per minute",
+        "baseline": "Usual rhythm: 8s · Distraction after 30s",
+        "chartLabel": "Example chart showing reading activity, one distracted period, and one AFK period during a texthooker session",
+        "focused": "Focused",
+        "distracted": "Distracted",
+        "away": "AFK"
+      },
+      "planner": {
+        "tier": "Immersion Enthusiast +",
+        "title": "Plan your next finish",
+        "description": "Pick a title and a finish date, then get a daily pace that adjusts as your real progress changes.",
+        "onTrack": "On track",
+        "remaining": "Remaining",
+        "daily": "Recommended daily",
+        "timeLeft": "Estimated time",
+        "units": {
+          "chars": "chars",
+          "episodes": "episodes",
+          "pages": "pages",
+          "minutes": "minutes"
+        }
+      },
+      "profile": {
+        "tier": "All supporter tiers",
+        "title": "Customize your profile",
+        "description": "Choose custom colors, animated frames, GIF banners, name effects, and supporter badges.",
+        "badge": "Immersion friend",
+        "gif": "GIF header",
+        "colors": "Custom colors",
+        "effects": "Name effects",
+        "avatarAlt": "{{username}} avatar"
+      }
     },
     "why": {
-      "badge": "Why It Matters",
-      "title": "Where your support goes",
+      "badge": "Where your support goes",
+      "title": "What your support pays for",
+      "subtitle": "I use your support for the practical work behind NihongoTracker and to keep the core tracker free for everyone.",
       "items": {
         "lights": {
-          "title": "Keep the Lights On",
-          "description": "Server costs, database hosting, and API integrations aren't free. Your support helps me maintain reliable service."
+          "title": "Server and service costs",
+          "description": "Your support helps pay for hosting, the database, search, and the other services NihongoTracker depends on."
         },
         "development": {
-          "title": "Continuous Development",
-          "description": "We're constantly adding new features, improving performance, and fixing bugs. Support enables full-time development."
+          "title": "Time to work on NihongoTracker",
+          "description": "It gives me more hours to fix bugs, improve rough edges, and build features."
         },
-        "community": {
-          "title": "Community First",
-          "description": "NihongoTracker will always have a generous free tier. Supporters help me keep it that way for everyone."
-        },
-        "openSource": {
-          "title": "Open Source Values",
-          "description": "Your support helps me contribute back to the open source community and keep our codebase transparent."
+        "features": {
+          "title": "Build supporter features",
+          "description": "Support helps me build features like Immersion Planner and Session Intelligence, and keep improving them."
         }
       }
     },
     "tiers": {
-      "badge": "Patreon Tiers",
-      "title": "Pick the support level that fits you",
-      "subtitle": "Benefits are cumulative. Higher tiers include all lower tier benefits.",
-      "highlighted": "Popular Choice",
+      "badge": "Supporter tiers",
+      "title": "Choose the level that fits",
+      "subtitle": "Every tier helps keep core tracking free. Higher tiers include the benefits below them.",
+      "highlighted": "Most popular",
       "perMonth": "/month",
-      "cta": "Become a Patron",
+      "cta": "Support on Patreon",
       "items": {
         "donator": {
-          "description": "You like what NihongoTracker strives for: \"helping self-learners track their Japanese immersion\", and you want to show a little love. Every dollar helps keep the servers running and the project alive 💕",
+          "description": "You enjoy using NihongoTracker and want to help keep it running. Every dollar supports the servers and the next improvements 💕",
           "benefits": [
             "Show your symbolic support for the project",
             "Donator Badge on the profile",
@@ -1040,8 +1104,10 @@
           ]
         },
         "enthusiast": {
-          "description": "For those who use NihongoTracker daily and want to contribute a little more to its development. This tier helps fund hosting, testing, and small feature improvements.",
+          "description": "For daily users who want to give the project more room to grow. This tier helps fund hosting, testing, and larger feature improvements.",
           "benefits": [
+            "Immersion Planner with adaptive finish forecasts",
+            "Session Intelligence for texthooker focus and pace insights",
             "Animated GIF avatars and banners",
             "Custom text in the profile donator badge",
             "Animated avatar frames and ambient banner effects",
@@ -1051,7 +1117,7 @@
           ]
         },
         "consumer": {
-          "description": "You're going above and beyond to support NihongoTracker. This tier helps cover development and server costs while allowing the project to grow sustainably. Every update, every improvement, and every new feature is made possible thanks to people like you.",
+          "description": "For people who want to make a larger contribution to NihongoTracker. This tier helps cover development and server costs so the project can grow sustainably.",
           "benefits": [
             "Exclusive Aura avatar frame",
             "Custom donator badge color (rainbow included)",
@@ -1060,26 +1126,27 @@
             "Increase maximum club members to 1000"
           ]
         }
-      }
+      },
+      "noPressure": "Supporting is optional, and canceling is always okay. Using NihongoTracker, reporting a bug, or sharing it with a friend helps too."
     },
     "oneTime": {
-      "title": "Prefer a one-time donation?",
-      "subtitle": "Not ready for a monthly commitment? You can still support the project through Ko-fi."
+      "title": "Prefer a one-time contribution?",
+      "subtitle": "No monthly commitment needed. A coffee through Ko-fi helps keep the project moving."
     },
     "faq": {
       "badge": "FAQ",
       "title": "Frequently asked questions",
       "alwaysFree": {
-        "question": "Will NihongoTracker always be free?",
-        "answer": "Yes! Core features will always remain free. Premium tiers unlock additional features and customization options, but you'll always be able to track your immersion, view stats, and compete on leaderboards for free."
+        "question": "Will the free tracker stay free?",
+        "answer": "Yes. Core tracking, stats, and leaderboards will remain free. Supporter tiers add extra tools and customization without putting essential immersion tracking behind a paywall."
       },
       "benefits": {
-        "question": "How do I get my supporter benefits?",
-        "answer": "After becoming a Patreon supporter, link your Patreon account in your settings. Benefits will be automatically applied to your account within 24 hours."
+        "question": "When do supporter benefits appear?",
+        "answer": "After becoming a Patreon supporter, link your Patreon account in Settings. Benefits are normally applied to your account within 24 hours."
       },
       "cancel": {
-        "question": "Can I cancel anytime?",
-        "answer": "Absolutely. You can cancel your Patreon membership at any time, and you'll keep your benefits until the end of your current billing period."
+        "question": "Can I cancel whenever I want?",
+        "answer": "Yes. Cancel your Patreon membership at any time and keep your benefits until the end of your current billing period."
       },
       "notApplying": {
         "question": "I linked my patreon and my benefits are not applying, what should I do?",
@@ -1087,10 +1154,10 @@
       }
     },
     "cta": {
-      "title": "Ready to support?",
-      "subtitle": "Join the supporters helping NihongoTracker stay free and keep improving.",
-      "button": "Become a Patron",
-      "thanks": "Thank you for supporting the project"
+      "title": "Help me keep NihongoTracker running",
+      "subtitle": "Your support pays for hosting and gives me more time to work on NihongoTracker.",
+      "button": "Support the project",
+      "thanks": "Thank you for being part of NihongoTracker, whether you pledge or not."
     }
   },
   "changelog": {

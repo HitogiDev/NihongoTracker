@@ -40,7 +40,7 @@ import {
   Minus,
   Funnel,
   Clock,
-  Sparkles,
+  Star,
   Settings2,
   Eye,
 } from 'lucide-react';
@@ -89,7 +89,7 @@ const feedKindOptions: Array<{
   value: UnifiedFeedFilter;
   icon: React.ElementType;
 }> = [
-  { labelKey: 'dashboard.feed.all', value: 'all', icon: Sparkles },
+  { labelKey: 'dashboard.feed.all', value: 'all', icon: Star },
   { labelKey: 'dashboard.feed.logs', value: 'logs', icon: LayoutList },
   {
     labelKey: 'dashboard.feed.achievements',

@@ -1,7 +1,7 @@
 import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
 import Field from '../components/ui/Field';
 import { useTranslation } from 'react-i18next';
-import { useCallback, useRef, useState, useEffect, Fragment } from 'react';
+import { useCallback, useRef, useState, useEffect, Fragment, useMemo } from 'react';
 import {
   useLocation,
   useParams,
@@ -58,6 +58,7 @@ import {
   IMediaDocument,
   ITextSession,
   ITextSessionHistoryEntry,
+  ITextSessionIntelligence,
   ITextSessionIntelligenceSettings,
   TextSessionAttentionMode,
 } from '../types';
@@ -65,6 +66,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import QuickLog, { QuickLogInitialValues } from '../components/QuickLog';
 import { useUserDataStore } from '../store/userData';
 import SessionIntelligenceModal from '../components/texthooker/SessionIntelligenceModal';
+import SessionIntelligenceChart from '../components/texthooker/SessionIntelligenceChart';
 import Spinner from '../components/ui/Spinner';
 
 type LineEntry = {
@@ -145,6 +147,101 @@ function createLineId() {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function calculateLiveIntelligence(
+  lines: LineEntry[],
+  sessionSeconds: number,
+  settings: ITextSessionIntelligenceSettings
+): ITextSessionIntelligence {
+  const chronological = lines
+    .filter((line) => line.createdAt && !Number.isNaN(Date.parse(line.createdAt)))
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()
+    );
+  const gaps = chronological.slice(1).map((line, index) =>
+    Math.max(
+      0,
+      Math.round(
+        (new Date(line.createdAt!).getTime() -
+          new Date(chronological[index].createdAt!).getTime()) /
+          1000
+      )
+    )
+  );
+  const normalGaps = gaps.filter(
+    (gap) => gap > 0 && gap < settings.afkThresholdSeconds
+  );
+  const sortedGaps = [...normalGaps].sort((a, b) => a - b);
+  const baseline = sortedGaps.length
+    ? sortedGaps[Math.floor(sortedGaps.length / 2)]
+    : null;
+  const threshold =
+    settings.mode === 'manual'
+      ? settings.manualThresholdSeconds || 40
+      : baseline === null
+        ? null
+        : Math.max(40, Math.round(baseline * 2));
+  let focusedSeconds = 0;
+  let distractedSeconds = 0;
+  let afkSeconds = 0;
+  let distractionCount = 0;
+  let longestDistractionSeconds = 0;
+
+  gaps.forEach((gap) => {
+    if (settings.mode === 'off') return;
+    if (gap >= settings.afkThresholdSeconds) {
+      afkSeconds += gap;
+    } else if (threshold !== null && gap > threshold) {
+      const distracted = gap - threshold;
+      focusedSeconds += threshold;
+      distractedSeconds += distracted;
+      distractionCount += 1;
+      longestDistractionSeconds = Math.max(longestDistractionSeconds, distracted);
+    } else {
+      focusedSeconds += gap;
+    }
+  });
+
+  const characters = chronological.reduce(
+    (total, line) => total + Math.max(0, line.japaneseCount),
+    0
+  );
+  const attentionSeconds = focusedSeconds + distractedSeconds;
+  const minutes = Math.max(1, Math.ceil(Math.max(0, sessionSeconds) / 60));
+
+  return {
+    algorithmVersion: 1,
+    detectionMode: settings.mode,
+    baselineIntervalSeconds: baseline,
+    distractionThresholdSeconds: threshold,
+    afkThresholdSeconds: settings.afkThresholdSeconds,
+    focusedSeconds,
+    distractedSeconds,
+    afkSeconds,
+    distractionCount,
+    longestDistractionSeconds,
+    focusPercentage:
+      attentionSeconds > 0
+        ? Math.round((focusedSeconds / attentionSeconds) * 100)
+        : 0,
+    firstThirtyMinutesSpeed: sessionSeconds > 0 ? Math.round((characters / Math.min(sessionSeconds, 1800)) * 3600) : 0,
+    lastThirtyMinutesSpeed: sessionSeconds > 0 ? Math.round((characters / Math.min(sessionSeconds, 1800)) * 3600) : 0,
+    peakReadingSpeed: sessionSeconds > 0 ? Math.round((characters / sessionSeconds) * 3600) : 0,
+    charactersPerMinute: Array.from({ length: minutes }, (_, index) => {
+      const start = index * 60;
+      const end = start + 60;
+      const count = chronological
+        .filter((line) => {
+          const elapsed = line.elapsedSeconds ?? 0;
+          return elapsed >= start && elapsed < end;
+        })
+        .reduce((total, line) => total + Math.max(0, line.japaneseCount), 0);
+      return count;
+    }),
+    periods: [],
+  };
 }
 
 function TextHooker() {
@@ -1768,6 +1865,25 @@ function TextHooker() {
   const currentSessionChars = Math.max(
     0,
     charsNumber - initialStatsRef.current.chars
+  );
+  const liveSessionIntelligence = useMemo(
+    () =>
+      calculateLiveIntelligence(
+        lines.slice(initialStatsRef.current.lines),
+        seconds,
+        {
+          mode: attentionMode,
+          manualThresholdSeconds: manualDistractionThreshold,
+          afkThresholdSeconds: attentionAfkThreshold,
+        }
+      ),
+    [
+      lines,
+      seconds,
+      attentionMode,
+      manualDistractionThreshold,
+      attentionAfkThreshold,
+    ]
   );
   const loggedChars = Math.max(charsNumber - currentSessionChars, 0);
 
@@ -3433,6 +3549,72 @@ function TextHooker() {
                       {t('hooker.intelligence.settingsTitle')}
                     </h4>
 
+                    {hasSessionIntelligenceAccess && currentSessionLines > 0 && (
+                      <div className="surface-muted p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <h5 className="font-semibold">
+                            {t('hooker.intelligence.liveTitle')}
+                          </h5>
+                          <span className="text-xs text-base-content/60">
+                            {currentSessionLines} {t('hooker.stats.linesRead')}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <div>
+                            <div className="text-xs text-base-content/60">
+                              {t('hooker.intelligence.focus')}
+                            </div>
+                            <div className="text-lg font-bold">
+                              {liveSessionIntelligence.focusPercentage}%
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-base-content/60">
+                              {t('hooker.intelligence.distractedTime')}
+                            </div>
+                            <div className="text-lg font-bold">
+                              {formatTime(liveSessionIntelligence.distractedSeconds)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-base-content/60">
+                              {t('hooker.intelligence.distractions')}
+                            </div>
+                            <div className="text-lg font-bold">
+                              {liveSessionIntelligence.distractionCount}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-base-content/60">
+                              {t('hooker.intelligence.afkExcluded')}
+                            </div>
+                            <div className="text-lg font-bold">
+                              {formatTime(liveSessionIntelligence.afkSeconds)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-xs text-base-content/60">
+                          {liveSessionIntelligence.baselineIntervalSeconds !== null
+                            ? t('hooker.intelligence.liveBaseline', {
+                                seconds: Math.round(
+                                  liveSessionIntelligence.baselineIntervalSeconds
+                                ),
+                              })
+                            : t('hooker.intelligence.settingsHint')}
+                        </div>
+                        <div className="pt-2">
+                          <h6 className="text-sm font-semibold mb-3">
+                            {t('hooker.intelligence.charactersPerMinute')}
+                          </h6>
+                          <div className="h-52 sm:h-64">
+                            <SessionIntelligenceChart
+                              intelligence={liveSessionIntelligence}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {hasSessionIntelligenceAccess ? (
                       <>
                         <p className="text-sm text-base-content/70">
@@ -3510,14 +3692,12 @@ function TextHooker() {
                           <p className="text-sm">
                             {t('hooker.intelligence.lockedHint')}
                           </p>
-                          <a
-                            href="https://www.patreon.com/nihongotracker"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <RouterLink
+                            to="/support"
                             className="link link-hover text-sm font-semibold"
                           >
                             {t('hooker.intelligence.upgrade')}
-                          </a>
+                          </RouterLink>
                         </div>
                       </div>
                     )}

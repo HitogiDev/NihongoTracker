@@ -386,7 +386,7 @@
   },
   "profile": {
     "about": "Sobre mí",
-    "aboutPlaceholder": "Cuenta algo sobre tu viaje de inmersión (admite Markdown)",
+    "aboutPlaceholder": "Cuenta qué lees, ves o estudias (admite Markdown)",
     "allowedFormats": "Formatos permitidos: JPEG, PNG, WebP{{gif}}. Tamaño máximo: {{maxSize}} MB. Dimensiones óptimas: {{dimensions}}",
     "avatar": "Avatar",
     "avatarCropped": "Avatar recortado listo para subir",

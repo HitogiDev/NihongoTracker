@@ -19,6 +19,7 @@ export const invalidateLogScreenQueries = (
   username?: string
 ) => {
   if (!type) return;
+  queryClient.invalidateQueries({ queryKey: ['immersionForecasts'] });
   const keys = LOG_SCREEN_QUERY_KEYS[type];
   if (!keys || keys.length === 0) return;
 

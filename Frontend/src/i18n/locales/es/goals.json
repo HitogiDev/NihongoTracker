@@ -1,7 +1,48 @@
 {
-  "analyticsHint": "Analiza tus patrones, rachas y mejora con el tiempo.",
-  "analyticsSoon": "Próximamente: analítica avanzada de objetivos.",
-  "analyticsTitle": "Analítica de objetivos",
+  "forecast": {
+    "behindBy": "Vas {{value}} {{unit}} por detrás del plan original.",
+    "change": "Cambiar",
+    "create": "Crear pronóstico",
+    "createTitle": "Planificar fecha de finalización",
+    "daily": "Recomendación diaria",
+    "deleteBody": "Esto elimina permanentemente el pronóstico de {{title}}.",
+    "deleteTitle": "¿Eliminar pronóstico?",
+    "editTitle": "Cambiar fecha de finalización",
+    "emptyBody": "Elige un medio medible y una fecha. La meta diaria se adapta a tus logs.",
+    "emptyTitle": "Todavía no hay pronósticos",
+    "insufficientData": "Sin datos suficientes",
+    "lockedBody": "Los pronósticos adaptativos están disponibles para usuarios Enthusiast y Consumer activos.",
+    "lockedTitle": "Desbloquea pronósticos de inmersión",
+    "media": "Medio",
+    "new": "Nuevo pronóstico",
+    "noResults": "No se encontraron medios",
+    "previewBody": "Elige una fecha y el planificador calcula cuánto te falta, cuánto hacer cada día y el tiempo estimado. Cada nuevo log actualiza el plan automáticamente.",
+    "previewDeadline": "Fecha de ejemplo: {{date}}",
+    "previewLabel": "Vista previa",
+    "previewTitle": "Sabrás exactamente qué hacer cada día",
+    "readOnly": "Tus pronósticos están en modo lectura hasta renovar Enthusiast o Consumer.",
+    "remaining": "Restante",
+    "searching": "Buscando…",
+    "searchPlaceholder": "Busca anime, libros, VN…",
+    "selectRequired": "Selecciona un medio primero",
+    "status": {
+      "behind": "Atrasado",
+      "completed": "Completado",
+      "on_track": "Al día",
+      "overdue": "Vencido"
+    },
+    "subtitle": "Termina medios a tiempo con una meta diaria que se adapta a tu progreso.",
+    "targetDate": "Terminar antes del",
+    "timeLeft": "Tiempo estimado",
+    "title": "Planificador de inmersión",
+    "units": {
+      "chars": "caracteres",
+      "episodes": "episodios",
+      "minutes": "min",
+      "pages": "páginas"
+    },
+    "upgrade": "Ver Enthusiast"
+  },
   "modal": {
     "active": "Activo",
     "addGoal": "Añadir objetivo",
@@ -41,9 +82,6 @@
     "creating": "Creando...",
     "displayProgressAs": "Mostrar el progreso como"
   },
-  "statsHint": "Sigue tu tasa de cumplimiento y tu constancia a lo largo del tiempo.",
-  "statsSoon": "Próximamente: historial de cumplimiento y analíticas.",
-  "statsTitle": "Estadísticas de objetivos",
   "subtitle": "Define y sigue tus objetivos de inmersión diarios y a largo plazo",
   "timeframes": {
     "daily": "Diario",

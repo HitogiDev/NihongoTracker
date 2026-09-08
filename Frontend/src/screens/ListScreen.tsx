@@ -36,7 +36,7 @@ import {
   Circle,
   Clock,
   Ban,
-  Sparkles,
+  Star,
   ChevronDown,
   Plus,
   Filter,
@@ -97,7 +97,7 @@ const STATUS_CONFIG: Record<
   planning: {
     labelKey: 'list.status.planning',
     badgeClass: 'badge-info',
-    icon: Sparkles,
+    icon: Star,
   },
   in_progress: {
     labelKey: 'list.status.inProgress',
@@ -922,7 +922,7 @@ function ListScreen() {
                           {
                             value: 'planning',
                             label: t('list.status.planning'),
-                            icon: Sparkles,
+                            icon: Star,
                           },
                           {
                             value: 'paused',

@@ -14,7 +14,7 @@
     "pages": "Pages:",
     "pagesLabel": "Pages",
     "quantity": "Quantity",
-    "subtitle": "Find out how much you need to immerse to reach your desired goals",
+    "subtitle": "Estimate the immersion needed to reach your XP target",
     "targetXp": "Target XP",
     "time": "Time:",
     "tip1": "Different media types use different calculation rules",
@@ -31,7 +31,7 @@
     "close": "Close"
   },
   "cta": {
-    "body": "Free, start tracking your immersion.",
+    "body": "Track your immersion for free.",
     "joinNow": "Join Now",
     "madeBy": "Made with ❤️ by a fellow learner",
     "seeFeatures": "See all features →",
@@ -42,8 +42,8 @@
       "immersion": "Let's get some immersion done!",
       "track": "Time to track your progress!",
       "fluency": "Another day, another step towards fluency!",
-      "keepUp": "Keep up the great work!",
-      "journey": "The journey of a thousand miles begins with a single step."
+      "keepUp": "Nice work. Keep the streak going!",
+      "journey": "What are you reading or watching today?"
     },
     "feed": {
       "all": "All activity",
@@ -104,7 +104,7 @@
     },
     "quickLog": "Quick Log",
     "quickShortcuts": "Quick log shortcuts",
-    "recentEmpty": "Log something to unlock quick actions here.",
+    "recentEmpty": "Your recent media will appear here after you log it.",
     "thisMedia": "this media",
     "hideConfirm": "Are you sure you want to hide <title>{{title}}</title> from your recent media? It will no longer appear in quick actions.",
     "manage": "Manage",
@@ -115,9 +115,9 @@
   },
   "features": {
     "hero": {
-      "badge": "Complete Feature Set",
-      "title": "Everything you need to <hl>master Japanese</hl>",
-      "subtitle": "Every feature is built specifically for Japanese immersion learners. From graphs to gamification, and texthooker to clubs, we got you covered.",
+      "badge": "Built for immersion",
+      "title": "Track the Japanese you <hl>read, watch, and hear</hl>",
+      "subtitle": "Log your immersion, see the numbers, earn XP, and join clubs with other learners.",
       "ctaPrimary": "Start for Free",
       "ctaSecondary": "View Leaderboard"
     },
@@ -133,7 +133,7 @@
     "categories": {
       "tracking": {
         "title": "Smart Immersion Tracking",
-        "description": "Comprehensive logging system for all your Japanese content",
+        "description": "Log the Japanese content you read, watch, play, and hear",
         "items": {
           "multiMedia": {
             "title": "Multi-Media Support",
@@ -153,7 +153,7 @@
           },
           "databaseIntegration": {
             "title": "Media Database Integration",
-            "description": "Automatic matching with AniList, VNDB and our extensive database for easy logging"
+            "description": "Match titles with AniList, VNDB, and the built-in media database"
           },
           "importExport": {
             "title": "Import/Export Logs",
@@ -179,7 +179,7 @@
           },
           "charts": {
             "title": "Progress Charts & Graphs",
-            "description": "Beautiful visualizations of your immersion journey"
+            "description": "See how your time, reading speed, and totals change over time"
           },
           "timeBased": {
             "title": "Time-Based Statistics",
@@ -243,7 +243,7 @@
           },
           "profiles": {
             "title": "Profile Pages",
-            "description": "Showcase your immersion journey and statistics"
+            "description": "Put your stats, favorites, and achievements on your profile"
           },
           "sharedMedia": {
             "title": "Shared Media Pages",
@@ -303,7 +303,7 @@
       },
       "tools": {
         "title": "Productivity Tools",
-        "description": "Additional features to enhance your learning experience",
+        "description": "Plan your immersion and keep your data organized",
         "items": {
           "calculator": {
             "title": "Time Calculator",
@@ -327,13 +327,13 @@
           },
           "sync": {
             "title": "Multi-Device Sync",
-            "description": "Access your data seamlessly across all devices"
+            "description": "Keep the same data on every device"
           }
         }
       }
     },
     "howItWorks": {
-      "badge": "The Complete System",
+      "badge": "From log to leaderboard",
       "title": "How it all works together",
       "step": "Step {{number}}",
       "steps": {
@@ -357,7 +357,7 @@
     },
     "cta": {
       "title": "Ready to start?",
-      "subtitle": "Free, start tracking your immersion.",
+      "subtitle": "Track your immersion for free.",
       "primary": "Start tracking",
       "secondary": "Browse rankings →",
       "madeWith": "Made with ❤️ by a fellow learner"
@@ -365,22 +365,22 @@
   },
   "hero": {
     "builtForVn": "Built for visual<br />novel readers",
-    "clubBody": "Join or create an immersion club. Compete on club leaderboards,",
+    "clubBody": "Join or create an immersion club. Vote on titles and compare progress with the group.",
     "clubBullet1": "Vote to decide what media to consume together next",
     "clubBullet2": "Public and private clubs with tags",
     "clubBullet3": "Find clubs by genre, style, or level",
     "clubs": "Clubs",
     "dashboardAlt": "NihongoTracker Dashboard",
-    "freeForever": "Start tracking today · Core features free forever",
+    "freeForever": "Core tracking features are free",
     "friendly": "A little friendly<br />competition",
     "hookerAlt": "TextHooker Dashboard",
-    "hookerBody": "The integrated texthooker makes it easy to log your sessions",
+    "hookerBody": "Capture lines and log VN reading sessions from one screen.",
     "hookerBullet1": "Multiplayer texthooker rooms for shared reading sessions",
     "hookerBullet2": "Full session history per title",
     "hookerBullet3": "Easy one-click reading session logging",
     "leaderboards": "Leaderboards",
     "learnBetter": "Learn better<br />together",
-    "logBody": "Search a title, fill in the details, hit save. No more writing",
+    "logBody": "Search a title, add your numbers, and save the log.",
     "logBullet1": "Anime, manga, VNs, audio, light novels & more",
     "logBullet2": "AniList & VNDB integration for instant metadata",
     "logBullet3": "XP and streaks calculated automatically",
@@ -394,7 +394,7 @@
     "seeHowFar": "See exactly how far<br />you've come",
     "startTracking": "Start Tracking",
     "statistics": "Statistics",
-    "statsBody": "Detailed charts and breakdowns show your growth over time.",
+    "statsBody": "Charts break down your time, XP, reading speed, and streaks.",
     "statsBullet1": "Overall, listening & reading level progress",
     "statsBullet2": "Activity heatmap, streaks & daily averages",
     "statsBullet3": "Filter by time range, medium, or tags",

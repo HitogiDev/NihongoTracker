@@ -987,49 +987,113 @@
   },
   "support": {
     "hero": {
-      "badge": "Apoya el proyecto",
-      "title": "Mantén NihongoTracker <hl>gratis</hl>, rápido y en crecimiento",
-      "subtitle": "Tu apoyo ayuda a cubrir la infraestructura y el desarrollo para que pueda seguir construyendo el mejor tracker de inmersión para quienes aprenden japonés.",
-      "cta": "Hazte mecenas"
+      "badge": "Independiente y apoyado por la comunidad",
+      "title": "Apoya NihongoTracker y ayúdame a <hl>seguir construyéndolo</hl>",
+      "subtitle": "El tracker básico seguirá siendo gratis para siempre. Tu apoyo ayuda a pagar el alojamiento y me da tiempo para trabajar en nuevas herramientas, análisis de sesiones y personalización del perfil.",
+      "cta": "Apoyar NihongoTracker",
+      "seeBenefits": "Ver beneficios para mecenas",
+      "noteEyebrow": "Una nota de Hitogi",
+      "noteTitle": "Creador de NihongoTracker",
+      "noteBody": "Soy Hitogi, el creador de NihongoTracker. Llevo varios años trabajando en él y quiero dedicarle aún más tiempo para convertirlo en el mejor tracker de inmersión en japonés que pueda. Tu apoyo ayuda a cubrir los costes del servidor y me da más tiempo para mejorar la aplicación, además de desbloquear funciones extra y opciones de personalización.",
+      "openSource": "Código abierto",
+      "communityLed": "Guiado por la comunidad",
+      "indie": "Proyecto de una persona",
+      "builtWithCommunity": "Moldeado por tus sugerencias"
     },
     "stats": {
-      "tiers": "Niveles de Patreon",
-      "freeCore": "Funciones básicas gratis",
-      "community": "Acceso a la comunidad",
-      "creator": "Creador independiente"
+      "tiers": "Niveles para mecenas",
+      "freeCore": "Tracking básico, gratis para siempre",
+      "community": "Actualizaciones guiadas por la comunidad",
+      "creator": "Una persona construyéndolo",
+      "openSource": "Código fuente"
+    },
+    "showcase": {
+      "badge": "Qué incluye",
+      "title": "Herramientas para planificar, leer y personalizar tu perfil",
+      "subtitle": "El apoyo añade herramientas prácticas para planificar tu inmersión, revisar tus sesiones y personalizar tu perfil.",
+      "session": {
+        "tier": "Immersion Enthusiast +",
+        "title": "Entiende cómo lees",
+        "description": "Mira dónde estuvo tu atención durante una sesión de texthooker, con datos de ritmo y distracciones más allá del tiempo total de la sesión.",
+        "benefits": [
+          "Consulta tu enfoque estimado y el tiempo de lectura activa",
+          "Sigue tu ritmo minuto a minuto y detecta cuándo baja",
+          "Separa automáticamente distracciones y periodos AFK del tiempo activo"
+        ],
+        "note": "Los valores de atención son estimaciones basadas en los espacios entre las líneas capturadas.",
+        "previewTitle": "Session Intelligence",
+        "previewSubtitle": "Los valores de atención son estimaciones basadas en los intervalos entre las líneas capturadas.",
+        "focus": "Enfoque estimado",
+        "focusedTime": "Lectura estimada",
+        "distractionTime": "Distracción estimada",
+        "distractions": "Distracciones",
+        "afk": "AFK excluido",
+        "firstThirty": "Primeros 30 min",
+        "lastThirty": "Últimos 30 min",
+        "peak": "Pico (5 min)",
+        "longest": "Distracción más larga",
+        "chartTitle": "Caracteres por minuto",
+        "baseline": "Ritmo habitual: 8 s · Distracción después de 30 s",
+        "chartLabel": "Gráfica de ejemplo con actividad de lectura, un periodo de distracción y un periodo AFK durante una sesión de texthooker",
+        "focused": "Enfoque",
+        "distracted": "Distracción",
+        "away": "AFK"
+      },
+      "planner": {
+        "tier": "Immersion Enthusiast +",
+        "title": "Planifica tu próximo objetivo",
+        "description": "Elige un título y una fecha de finalización. Recibirás un ritmo diario que se ajusta a tu progreso real.",
+        "onTrack": "Vas al día",
+        "remaining": "Restante",
+        "daily": "Diario recomendado",
+        "timeLeft": "Tiempo estimado",
+        "units": {
+          "chars": "caracteres",
+          "episodes": "episodios",
+          "pages": "páginas",
+          "minutes": "minutos"
+        }
+      },
+      "profile": {
+        "tier": "Todos los niveles",
+        "title": "Personaliza tu perfil",
+        "description": "Elige colores propios, marcos animados, banners GIF, efectos de nombre e insignias de mecenas.",
+        "badge": "Amigo de la inmersión",
+        "gif": "Cabecera GIF",
+        "colors": "Colores propios",
+        "effects": "Efectos de nombre",
+        "avatarAlt": "Avatar de {{username}}"
+      }
     },
     "why": {
-      "badge": "Por qué importa",
-      "title": "A dónde va tu apoyo",
+      "badge": "A dónde va tu apoyo",
+      "title": "En qué se usa tu apoyo",
+      "subtitle": "Uso tu apoyo para el trabajo práctico detrás de NihongoTracker y para mantener gratis el tracker básico para todos.",
       "items": {
         "lights": {
-          "title": "Mantener todo en marcha",
-          "description": "Los servidores, el alojamiento de la base de datos y las integraciones con APIs no son gratis. Tu apoyo me ayuda a mantener un servicio fiable."
+          "title": "Servidores y servicios",
+          "description": "Tu apoyo ayuda a pagar el alojamiento, la base de datos, la búsqueda y los demás servicios de los que depende NihongoTracker."
         },
         "development": {
-          "title": "Desarrollo continuo",
-          "description": "Añadimos funciones nuevas, mejoramos el rendimiento y corregimos errores constantemente. Tu apoyo permite dedicarle tiempo completo."
+          "title": "Tiempo para trabajar en NihongoTracker",
+          "description": "Me da más horas para corregir errores, pulir detalles y desarrollar funciones."
         },
-        "community": {
-          "title": "La comunidad primero",
-          "description": "NihongoTracker siempre tendrá un nivel gratuito generoso. Quienes lo apoyan me ayudan a que siga así para todo el mundo."
-        },
-        "openSource": {
-          "title": "Valores del código abierto",
-          "description": "Tu apoyo me ayuda a devolver algo a la comunidad de código abierto y a mantener nuestro código transparente."
+        "features": {
+          "title": "Desarrollar funciones para mecenas",
+          "description": "Tu apoyo me ayuda a desarrollar funciones como el Planificador de inmersión y Session Intelligence, y a seguir mejorándolas."
         }
       }
     },
     "tiers": {
-      "badge": "Niveles de Patreon",
-      "title": "Elige el nivel de apoyo que encaje contigo",
-      "subtitle": "Los beneficios son acumulativos. Los niveles superiores incluyen los de los inferiores.",
-      "highlighted": "Opción Más Popular",
+      "badge": "Niveles para mecenas",
+      "title": "Elige el nivel que encaje contigo",
+      "subtitle": "Cada nivel ayuda a mantener gratis el tracking básico. Los niveles superiores incluyen los beneficios de los anteriores.",
+      "highlighted": "Más popular",
       "perMonth": "/mes",
-      "cta": "Hazte mecenas",
+      "cta": "Apoyar en Patreon",
       "items": {
         "donator": {
-          "description": "Te gusta lo que NihongoTracker busca: «ayudar a quienes aprenden por su cuenta a loguear su inmersión en japonés», y quieres mostrar algo de cariño. Cada dólar ayuda a mantener los servidores en marcha y el proyecto vivo 💕",
+          "description": "Disfrutas usando NihongoTracker y quieres ayudar a mantenerlo en marcha. Cada dólar apoya los servidores y las próximas mejoras 💕",
           "benefits": [
             "Muestra tu apoyo simbólico al proyecto",
             "Insignia de Donator en el perfil",
@@ -1040,8 +1104,10 @@
           ]
         },
         "enthusiast": {
-          "description": "Para quienes usan NihongoTracker a diario y quieren aportar un poco más a su desarrollo. Este nivel ayuda a financiar el alojamiento, las pruebas y pequeñas mejoras.",
+          "description": "Para quienes usan NihongoTracker a diario y quieren darle más espacio para crecer. Este nivel ayuda a financiar el alojamiento, las pruebas y mejoras grandes.",
           "benefits": [
+            "Planificador de inmersión con pronósticos adaptativos",
+            "Session Intelligence para analizar enfoque y ritmo en el texthooker",
             "Avatares y banners GIF animados",
             "Texto personalizado en la insignia de mecenas del perfil",
             "Marcos de avatar animados y efectos ambientales en la cabecera",
@@ -1051,7 +1117,7 @@
           ]
         },
         "consumer": {
-          "description": "Estás yendo mucho más allá para apoyar NihongoTracker. Este nivel ayuda a cubrir los costes de desarrollo y de servidor, y permite que el proyecto crezca de forma sostenible. Cada actualización, cada mejora y cada función nueva son posibles gracias a personas como tú.",
+          "description": "Para quienes quieren hacer un aporte mayor a NihongoTracker. Este nivel ayuda a cubrir los costes de desarrollo y servidor para que el proyecto crezca de forma sostenible.",
           "benefits": [
             "Marco de avatar Aura exclusivo",
             "Color personalizado en la insignia de mecenas (arcoíris incluido)",
@@ -1060,26 +1126,27 @@
             "Amplía el máximo de miembros por club a 1000"
           ]
         }
-      }
+      },
+      "noPressure": "Apoyar es opcional y cancelar siempre está bien. Usar NihongoTracker, avisar de un error o compartirlo con alguien también ayuda."
     },
     "oneTime": {
-      "title": "¿Prefieres una donación puntual?",
-      "subtitle": "¿No te convence un compromiso mensual? También puedes apoyar el proyecto a través de Ko-fi."
+      "title": "¿Prefieres hacer un aporte puntual?",
+      "subtitle": "No hace falta un compromiso mensual. Un café a través de Ko-fi ayuda a mantener el proyecto avanzando."
     },
     "faq": {
       "badge": "FAQ",
       "title": "Preguntas frecuentes",
       "alwaysFree": {
-        "question": "¿NihongoTracker será siempre gratis?",
-        "answer": "¡Sí! Las funciones básicas seguirán siendo gratuitas siempre. Los niveles premium desbloquean funciones adicionales y opciones de personalización, pero siempre podrás loguear tu inmersión, ver tus estadísticas y competir en la clasificación gratis."
+        "question": "¿El tracker gratuito seguirá siendo gratis?",
+        "answer": "Sí. El tracking básico, las estadísticas y la clasificación seguirán siendo gratuitos. Los niveles para mecenas añaden herramientas y personalización sin bloquear lo esencial."
       },
       "benefits": {
-        "question": "¿Cómo consigo los beneficios de mecenas?",
-        "answer": "Tras hacerte mecenas en Patreon, vincula tu cuenta de Patreon en tus ajustes. Los beneficios se aplicarán automáticamente en un plazo de 24 horas."
+        "question": "¿Cuándo aparecen los beneficios?",
+        "answer": "Después de hacerte mecenas en Patreon, vincula tu cuenta en Ajustes. Normalmente los beneficios se aplican en un plazo de 24 horas."
       },
       "cancel": {
         "question": "¿Puedo cancelar cuando quiera?",
-        "answer": "Por supuesto. Puedes cancelar tu suscripción de Patreon en cualquier momento y conservarás tus beneficios hasta el final del periodo de facturación en curso."
+        "answer": "Sí. Puedes cancelar tu suscripción de Patreon en cualquier momento y conservarás tus beneficios hasta el final del periodo de facturación en curso."
       },
       "notApplying": {
         "question": "He vinculado mi Patreon y no se aplican los beneficios, ¿qué hago?",
@@ -1087,10 +1154,10 @@
       }
     },
     "cta": {
-      "title": "¿Listo para apoyar?",
-      "subtitle": "Únete a quienes ayudan a que NihongoTracker siga siendo gratis y siga mejorando.",
-      "button": "Hazte mecenas",
-      "thanks": "Gracias por apoyar el proyecto"
+      "title": "Ayúdame a mantener NihongoTracker en marcha",
+      "subtitle": "Tu apoyo paga el alojamiento y me da más tiempo para trabajar en NihongoTracker.",
+      "button": "Apoyar el proyecto",
+      "thanks": "Gracias por formar parte de NihongoTracker, aportes o no."
     }
   },
   "changelog": {

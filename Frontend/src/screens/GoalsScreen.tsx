@@ -3,6 +3,7 @@ import { OutletProfileContextType } from '../types';
 import ImmersionGoals from '../components/ImmersionGoals';
 import { useUserDataStore } from '../store/userData';
 import { useTranslation } from 'react-i18next';
+import ImmersionPlanner from '../components/ImmersionPlanner';
 
 function GoalsScreen() {
   const { t } = useTranslation('goals');
@@ -28,85 +29,9 @@ function GoalsScreen() {
         {/* Immersion Goals Section */}
         <div className="mb-8">
           <ImmersionGoals username={username} />
+          {username === loggedInUser?.username && <ImmersionPlanner />}
         </div>
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card surface">
-            <div className="card-body">
-              <h2 className="card-title">
-                <svg
-                  className="w-6 h-6 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  ></path>
-                </svg>
-                {t('statsTitle')}
-              </h2>
-              <p className="text-base-content/70 mb-4">{t('statsHint')}</p>
-              <div className="alert alert-info">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="stroke-current shrink-0 w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                <span>{t('statsSoon')}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="card surface">
-            <div className="card-body">
-              <h2 className="card-title">
-                <svg
-                  className="w-6 h-6 text-accent"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                  ></path>
-                </svg>
-                {t('analyticsTitle')}
-              </h2>
-              <p className="text-base-content/70 mb-4">{t('analyticsHint')}</p>
-              <div className="alert alert-info">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="stroke-current shrink-0 w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                <span>{t('analyticsSoon')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

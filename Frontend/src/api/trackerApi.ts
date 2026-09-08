@@ -48,6 +48,8 @@ import {
   IFavoriteEntry,
   MediaListMediaType,
   IHiddenRecentMediaItem,
+  IImmersionForecast,
+  IImmersionForecastsResponse,
 } from '../types';
 
 const api = axiosInstance;
@@ -680,6 +682,41 @@ export async function updateLongTermGoalFn(
 
 export async function deleteLongTermGoalFn(goalId: string) {
   const { data } = await api.delete(`goals/long-term/${goalId}`);
+  return data;
+}
+
+export async function getImmersionForecastsFn() {
+  const { data } = await api.get<IImmersionForecastsResponse>(
+    'goals/forecasts'
+  );
+  return data;
+}
+
+export async function createImmersionForecastFn(payload: {
+  mediaId: string;
+  mediaType: IMediaDocument['type'];
+  targetDate: string;
+}) {
+  const { data } = await api.post<IImmersionForecast>(
+    'goals/forecasts',
+    payload
+  );
+  return data;
+}
+
+export async function updateImmersionForecastFn(
+  forecastId: string,
+  targetDate: string
+) {
+  const { data } = await api.patch<IImmersionForecast>(
+    `goals/forecasts/${forecastId}`,
+    { targetDate }
+  );
+  return data;
+}
+
+export async function deleteImmersionForecastFn(forecastId: string) {
+  const { data } = await api.delete(`goals/forecasts/${forecastId}`);
   return data;
 }
 

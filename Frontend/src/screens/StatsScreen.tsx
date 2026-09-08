@@ -2113,6 +2113,7 @@ function StatsScreen() {
                           statsData={selectedStats}
                           selectedType={progressSelectedType}
                           metric={progressMetric}
+                          showTitle={false}
                         />
                       ) : (
                         <StackedBarChart
@@ -2122,6 +2123,7 @@ function StatsScreen() {
                           timeframe={
                             timeRange === 'custom' ? 'total' : timeRange
                           }
+                          showTitle={false}
                         />
                       )}
                     </div>

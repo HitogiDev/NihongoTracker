@@ -143,6 +143,26 @@ describe('checkAchievements', () => {
     expect(result).toEqual([]);
   });
 
+  it('does not evaluate logDuringAiring for a non-anime log', async () => {
+    vi.mocked(Achievement.find).mockReturnValue({
+      lean: vi.fn().mockResolvedValue([]),
+    } as any);
+
+    await checkAchievements(userId, {
+      trigger: 'log',
+      log: { type: 'manga' } as never,
+    });
+
+    const findCalls = vi.mocked(Achievement.find).mock.calls as unknown as Array<
+      [{ 'condition.type': { $in: string[] } }]
+    >;
+    const query = findCalls[0]?.[0];
+    expect(query).toBeDefined();
+    if (!query) return;
+    const conditions = query['condition.type'].$in;
+    expect(conditions).not.toContain('logDuringAiring');
+  });
+
   it('grants a newly met achievement and returns it', async () => {
     const achievement = makeAchievement({ condition: { type: 'logCount', threshold: 10 } });
 

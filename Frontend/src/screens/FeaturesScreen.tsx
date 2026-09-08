@@ -352,7 +352,7 @@ function FeaturesScreen() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="py-28 px-4 bg-gradient-to-b from-base-100 to-base-200/60">
+      <section className="py-28 px-4 bg-base-200/50 border-t border-base-300/50">
         <div className="max-w-xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-base-content mb-4">
             {t('features.cta.title')}

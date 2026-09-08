@@ -1047,6 +1047,53 @@ export interface ILongTermGoalsResponse {
   goals: ILongTermGoal[];
 }
 
+export type ImmersionForecastMetric =
+  | 'chars'
+  | 'pages'
+  | 'episodes'
+  | 'minutes';
+
+export type ImmersionForecastStatus =
+  | 'on_track'
+  | 'behind'
+  | 'completed'
+  | 'overdue';
+
+export interface IImmersionForecastProgress {
+  currentProgress: number;
+  remaining: number;
+  percentage: number;
+  remainingDays: number;
+  requiredPerDay: number;
+  behindBy: number;
+  status: ImmersionForecastStatus;
+  estimatedMinutes: number | null;
+  paceStatus: 'available' | 'insufficient_data';
+}
+
+export interface IImmersionForecast {
+  _id: string;
+  mediaId: string;
+  mediaType: IMediaDocument['type'];
+  metric: ImmersionForecastMetric;
+  targetTotal: number;
+  targetSource: 'media' | 'jiten' | 'google_books';
+  startingProgress: number;
+  targetDate: string;
+  timezone: string;
+  mediaTitle: string;
+  mediaImage?: string;
+  episodeDuration?: number;
+  createdAt: string;
+  updatedAt: string;
+  progress: IImmersionForecastProgress;
+}
+
+export interface IImmersionForecastsResponse {
+  forecasts: IImmersionForecast[];
+  canManage: boolean;
+}
+
 interface IJitenDeckLink {
   linkId: number;
   linkType: number;

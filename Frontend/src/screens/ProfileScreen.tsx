@@ -45,7 +45,7 @@ import {
   ArrowDown,
   LayoutList,
   Trophy,
-  Sparkles,
+  Star,
   Tag,
   X,
 } from 'lucide-react';
@@ -148,7 +148,7 @@ function ProfileScreen() {
     value: UnifiedFeedFilter;
     icon: React.ElementType;
   }> = [
-    { label: t('feed.all'), value: 'all', icon: Sparkles },
+    { label: t('feed.all'), value: 'all', icon: Star },
     { label: t('feed.logs'), value: 'logs', icon: LayoutList },
     { label: t('feed.achievements'), value: 'achievements', icon: Trophy },
   ];

@@ -6,6 +6,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -25,13 +26,21 @@ function PieChart({
   data: ChartData<'pie', number[]>;
   valueFormat?: PieValueFormat;
 }) {
+  const lineColors = useThemeColors(1);
+
   return (
     <Pie
       options={{
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'right' },
+          legend: {
+            position: 'right',
+            labels: {
+              color: lineColors.baseContent,
+              font: { size: 12 },
+            },
+          },
           tooltip: {
             callbacks: {
               label: (context) => {

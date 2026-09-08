@@ -339,9 +339,9 @@
   "screen": {
     "titleOwn": "Achievements",
     "titleOther": "{{username}}'s Achievements",
-    "documentTitleOwn": "My Achievements — NihongoTracker",
-    "documentTitleOther": "{{username}}'s Achievements — NihongoTracker",
-    "subtitle": "Track your immersion milestones and unlock hidden secrets.",
+    "documentTitleOwn": "My Achievements | NihongoTracker",
+    "documentTitleOther": "{{username}}'s Achievements | NihongoTracker",
+    "subtitle": "See what you've earned and what to work toward next.",
     "loadError": "Failed to load achievements.",
     "stats": {
       "earned": "Earned",
@@ -378,10 +378,10 @@
   "secretHint": "Complete a secret condition to reveal this achievement.",
   "secretName": "Secret Achievement",
   "showcase": {
-    "title": "Showcase",
+    "title": "Featured Achievements",
     "edit": "Edit",
     "empty": "No achievements pinned yet.",
     "pin": "+ Pin achievements",
-    "select": "Select up to 5 to showcase ({{selected}}/5)"
+    "select": "Select up to 5 to feature ({{selected}}/5)"
   }
 }

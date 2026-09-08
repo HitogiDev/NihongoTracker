@@ -100,6 +100,14 @@
     "totalTargetPositive": "The total target must be greater than 0",
     "typeAndTargetRequired": "A type and a target are required"
   },
+  "forecast": {
+    "alreadyComplete": "This media is already complete",
+    "alreadyExists": "You already have a forecast for this media",
+    "invalidDate": "Choose a date after today",
+    "mediaNotMeasurable": "This media does not have a reliable completion total",
+    "notFound": "Forecast not found",
+    "tierRequired": "Immersion Planner requires an active Enthusiast or Consumer tier"
+  },
   "immersionList": {
     "invalidMediaType": "That media type is not valid",
     "invalidSource": "That source is not valid",

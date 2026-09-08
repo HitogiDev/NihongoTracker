@@ -1011,6 +1011,53 @@ export interface ILongTermGoalProgress {
   progressThisMonth?: number;
 }
 
+export type ImmersionForecastMetric =
+  | 'chars'
+  | 'pages'
+  | 'episodes'
+  | 'minutes';
+
+export type ImmersionForecastTargetSource =
+  | 'media'
+  | 'jiten'
+  | 'google_books';
+
+export type ImmersionForecastStatus =
+  | 'on_track'
+  | 'behind'
+  | 'completed'
+  | 'overdue';
+
+export interface IImmersionForecast extends Document {
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
+  mediaId: string;
+  mediaType: IMediaDocument['type'];
+  metric: ImmersionForecastMetric;
+  targetTotal: number;
+  targetSource: ImmersionForecastTargetSource;
+  startingProgress: number;
+  targetDate: Date;
+  timezone: string;
+  mediaTitle: string;
+  mediaImage?: string;
+  episodeDuration?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IImmersionForecastProgress {
+  currentProgress: number;
+  remaining: number;
+  percentage: number;
+  remainingDays: number;
+  requiredPerDay: number;
+  behindBy: number;
+  status: ImmersionForecastStatus;
+  estimatedMinutes: number | null;
+  paceStatus: 'available' | 'insufficient_data';
+}
+
 export interface IClubMember {
   user: Types.ObjectId;
   role: 'leader' | 'moderator' | 'member';

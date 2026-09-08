@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { ChartArea, ScriptableContext } from 'chart.js';
 import { ILog } from '../types';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
@@ -279,18 +278,6 @@ function SpeedChart({
     return sortedDates;
   };
 
-  function createGradient(
-    ctx: CanvasRenderingContext2D,
-    chartArea: ChartArea,
-    color: string
-  ) {
-    const { top, bottom } = chartArea;
-    const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-    gradient.addColorStop(0, withAlpha(color, 0.55));
-    gradient.addColorStop(1, withAlpha(color, 0));
-    return gradient;
-  }
-
   function withAlpha(hexColor: string, alpha: number) {
     const normalized = hexColor.replace('#', '');
 
@@ -385,19 +372,14 @@ function SpeedChart({
           return result;
         })(),
         borderColor: lineColor,
-        backgroundColor: function (context: ScriptableContext<'line'>) {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
-          if (!chartArea) return undefined;
-          return createGradient(ctx, chartArea, lineColor);
-        },
+        backgroundColor: withAlpha(lineColor, 0.16),
         fill: true,
         spanGaps: true,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBorderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 4,
+        pointBorderWidth: 0,
         pointHitRadius: 12,
-        pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+        pointBackgroundColor: lineColor,
         pointBorderColor: lineColor,
         pointHoverBackgroundColor: lineColor,
         pointHoverBorderColor: lineColor,

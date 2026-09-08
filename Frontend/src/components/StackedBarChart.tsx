@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
@@ -60,6 +60,7 @@ interface StackedBarChartProps {
   selectedType: string;
   metric: 'xp' | 'hours';
   timeframe: 'today' | 'week' | 'month' | 'year' | 'total';
+  showTitle?: boolean;
 }
 
 const typeColors = MEDIA_TYPE_COLORS;
@@ -69,35 +70,13 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   selectedType,
   metric,
   timeframe,
+  showTitle = true,
 }) => {
   const { t } = useTranslation('stats');
   const { t: tCommon } = useTranslation('common');
-  const themeColors = useThemeColors(1);
-  const [colorsReady, setColorsReady] = useState(false);
+  const lineColors = useThemeColors(1);
+  const fillColors = useThemeColors(0.16);
   const { timezone } = useTimezone();
-
-  useEffect(() => {
-    if (themeColors.baseContent && !themeColors.baseContent.startsWith('#')) {
-      setColorsReady(true);
-    }
-  }, [themeColors.baseContent]);
-
-  const { baseContent, gridColor } = (() => {
-    const base = themeColors.baseContent || 'oklch(0.6 0 0)';
-
-    let baseContent: string;
-    let gridColor: string;
-
-    if (base.includes('oklch')) {
-      baseContent = base.replace(/\/?\s*[\d.]+\)$/, ' / 0.7)');
-      gridColor = base.replace(/\/?\s*[\d.]+\)$/, ' / 0.05)');
-    } else {
-      baseContent = base.replace(/,?\s*[\d.]+\)$/, ', 0.7)');
-      gridColor = base.replace(/,?\s*[\d.]+\)$/, ', 0.05)');
-    }
-
-    return { baseContent, gridColor };
-  })();
 
   const chartData = (() => {
     if (!statsData || statsData.length === 0) return null;
@@ -329,12 +308,12 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         display: true,
         position: 'right',
         labels: {
-          color: baseContent || 'oklch(0.6 0 0)',
+          color: lineColors.baseContent,
           font: {
             size: 12,
           },
-          boxWidth: 15,
-          boxHeight: 15,
+          boxWidth: 28,
+          boxHeight: 10,
         },
       },
       title: {
@@ -343,10 +322,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       tooltip: {
         mode: 'index',
         intersect: false,
-        backgroundColor: themeColors.base100 || '#fff',
-        titleColor: baseContent || 'oklch(0.6 0 0)',
-        bodyColor: baseContent || 'oklch(0.6 0 0)',
-        borderColor: gridColor || 'oklch(0.6 0 0 / 0.1)',
+        backgroundColor: lineColors.base100,
+        titleColor: lineColors.baseContent,
+        bodyColor: lineColors.baseContent,
+        borderColor: fillColors.baseContent,
         borderWidth: 1,
         callbacks: {
           label: function (context) {
@@ -384,11 +363,13 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
       x: {
         stacked: true,
         grid: {
-          color: gridColor || 'oklch(0.6 0 0 / 0.05)',
+          display: false,
         },
         ticks: {
-          color: baseContent || 'oklch(0.6 0 0)',
-          maxRotation: 45,
+          color: lineColors.baseContent,
+          autoSkip: true,
+          maxTicksLimit: 10,
+          maxRotation: 0,
           minRotation: 0,
         },
       },
@@ -396,10 +377,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         stacked: true,
         beginAtZero: true,
         grid: {
-          color: gridColor || 'oklch(0.6 0 0 / 0.05)',
+          color: fillColors.baseContent,
         },
         ticks: {
-          color: baseContent || 'oklch(0.6 0 0)',
+          color: lineColors.baseContent,
           callback: function (value) {
             if (metric === 'xp') {
               return typeof value === 'number' ? value.toLocaleString() : value;
@@ -417,23 +398,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     },
   };
 
-  // Don't render until colors are loaded to prevent flash
-  if (!colorsReady) {
-    return (
-      <div
-        className="bg-base-50 p-4 flex items-center justify-center mx-4"
-        style={{ height: '350px' }}
-      >
-        <span className="loading loading-spinner loading-md text-primary" />
-      </div>
-    );
-  }
-
   if (!chartData) {
     return (
-      <div className="rounded-lg border border-base-content/30 mx-4">
-        <div className="bg-base-50 p-4" style={{ height: '350px' }}>
-          <div className="alert alert-info">
+      <div className="w-full h-full min-h-[350px]">
+        <div className="alert alert-info">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -450,7 +418,6 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
             <span>{t('stacked.noData')}</span>
           </div>
         </div>
-      </div>
     );
   }
 
@@ -477,21 +444,21 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
   return (
     <div className="w-full h-full">
       <div className="h-full w-full">
-        <div className="flex items-center justify-between mb-6 px-4">
-          <div>
-            <h2 className="text-2xl font-bold text-primary mb-2">
-              {t('stacked.activity')}
-            </h2>
-            <p className="text-sm text-base-content mb-4">
-              {typeLabel} - {timeframeLabel}
-            </p>
+        {showTitle && (
+          <div className="flex items-center justify-between mb-6 px-4">
+            <div>
+              <h2 className="text-2xl font-bold text-primary mb-2">
+                {t('stacked.activity')}
+              </h2>
+              <p className="text-sm text-base-content mb-4">
+                {typeLabel} - {timeframeLabel}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="rounded-lg border border-base-content/30 mx-4">
-          <div className="bg-base-50 p-4" style={{ height: '350px' }}>
-            <Bar data={chartData} options={options} />
-          </div>
+        <div className="w-full h-full min-h-[350px]">
+          <Bar data={chartData} options={options} />
         </div>
       </div>
     </div>

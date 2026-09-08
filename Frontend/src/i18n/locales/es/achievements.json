@@ -340,9 +340,9 @@
   "screen": {
     "titleOwn": "Logros",
     "titleOther": "Logros de {{username}}",
-    "documentTitleOwn": "Mis logros — NihongoTracker",
-    "documentTitleOther": "Logros de {{username}} — NihongoTracker",
-    "subtitle": "Sigue tus hitos de inmersión y desbloquea secretos ocultos.",
+    "documentTitleOwn": "Mis logros | NihongoTracker",
+    "documentTitleOther": "Logros de {{username}} | NihongoTracker",
+    "subtitle": "Consulta qué has conseguido y cuál puede ser tu próximo logro.",
     "loadError": "No se pudieron cargar los logros.",
     "stats": {
       "earned": "Conseguidos",

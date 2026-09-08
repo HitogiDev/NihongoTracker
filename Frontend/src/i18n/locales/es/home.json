@@ -14,7 +14,7 @@
     "pages": "Páginas:",
     "pagesLabel": "Páginas",
     "quantity": "Cantidad",
-    "subtitle": "Descubre cuánta inmersión necesitas para llegar a tus objetivos",
+    "subtitle": "Calcula cuánta inmersión necesitas para alcanzar tu meta de XP",
     "targetXp": "XP objetivo",
     "time": "Tiempo:",
     "tip1": "Cada tipo de contenido usa reglas de cálculo distintas",
@@ -31,7 +31,7 @@
     "close": "Cerrar"
   },
   "cta": {
-    "body": "Gratis. Empieza a loguear tu inmersión.",
+    "body": "Loguea tu inmersión gratis.",
     "joinNow": "Únete ahora",
     "madeBy": "Hecho con ❤️ por otro estudiante",
     "seeFeatures": "Ver todas las funciones →",
@@ -42,8 +42,8 @@
       "immersion": "¡Vamos a hacer algo de inmersión!",
       "track": "¡Toca loguear tu progreso!",
       "fluency": "Otro día, otro paso hacia la fluidez.",
-      "keepUp": "¡Sigue así!",
-      "journey": "Un viaje de mil millas empieza con un solo paso."
+      "keepUp": "Buen trabajo. ¡Mantén la racha!",
+      "journey": "¿Qué vas a leer o ver hoy?"
     },
     "feed": {
       "all": "Toda la actividad",
@@ -105,7 +105,7 @@
     },
     "quickLog": "Log rápido",
     "quickShortcuts": "Atajos de log rápido",
-    "recentEmpty": "Loguea algo para desbloquear acciones rápidas aquí.",
+    "recentEmpty": "Aquí aparecerá tu contenido reciente después de loguearlo.",
     "thisMedia": "este contenido",
     "hideConfirm": "¿Seguro que quieres ocultar <title>{{title}}</title> de tu contenido reciente? Dejará de aparecer en las acciones rápidas.",
     "manage": "Gestionar",
@@ -116,9 +116,9 @@
   },
   "features": {
     "hero": {
-      "badge": "Todas las funciones",
-      "title": "Todo lo que necesitas para <hl>dominar el japonés</hl>",
-      "subtitle": "Cada función está pensada específicamente para quienes aprenden japonés por inmersión. De las gráficas a la gamificación, y del texthooker a los clubes, lo tienes todo cubierto.",
+      "badge": "Hecho para la inmersión",
+      "title": "Loguea el japonés que <hl>lees, ves y escuchas</hl>",
+      "subtitle": "Registra tu inmersión, consulta tus datos, gana XP y únete a clubes con otros estudiantes.",
       "ctaPrimary": "Empieza gratis",
       "ctaSecondary": "Ver la clasificación"
     },
@@ -135,7 +135,7 @@
     "categories": {
       "tracking": {
         "title": "Seguimiento inteligente de la inmersión",
-        "description": "Sistema completo para loguear todo tu contenido en japonés",
+        "description": "Loguea el contenido en japonés que lees, ves, juegas y escuchas",
         "items": {
           "multiMedia": {
             "title": "Compatible con todo tipo de contenido",
@@ -155,7 +155,7 @@
           },
           "databaseIntegration": {
             "title": "Integración con bases de datos",
-            "description": "Emparejado automático con AniList, VNDB y nuestra amplia base de datos para loguear sin esfuerzo"
+            "description": "Empareja títulos con AniList, VNDB y la base de datos integrada"
           },
           "importExport": {
             "title": "Importar y exportar logs",
@@ -181,7 +181,7 @@
           },
           "charts": {
             "title": "Gráficas de progreso",
-            "description": "Visualizaciones cuidadas de tu viaje de inmersión"
+            "description": "Comprueba cómo cambian tu tiempo, velocidad de lectura y totales"
           },
           "timeBased": {
             "title": "Estadísticas por periodo",
@@ -245,7 +245,7 @@
           },
           "profiles": {
             "title": "Páginas de perfil",
-            "description": "Muestra tu viaje de inmersión y tus estadísticas"
+            "description": "Muestra tus estadísticas, favoritos y logros en tu perfil"
           },
           "sharedMedia": {
             "title": "Páginas de contenido compartidas",
@@ -305,7 +305,7 @@
       },
       "tools": {
         "title": "Herramientas de productividad",
-        "description": "Funciones adicionales para mejorar tu aprendizaje",
+        "description": "Planifica tu inmersión y mantén tus datos ordenados",
         "items": {
           "calculator": {
             "title": "Calculadora de tiempo",
@@ -329,13 +329,13 @@
           },
           "sync": {
             "title": "Sincronización entre dispositivos",
-            "description": "Accede a tus datos sin fricción desde cualquier dispositivo"
+            "description": "Mantén los mismos datos en todos tus dispositivos"
           }
         }
       }
     },
     "howItWorks": {
-      "badge": "El sistema completo",
+      "badge": "Del log a la clasificación",
       "title": "Cómo encaja todo",
       "step": "Paso {{number}}",
       "steps": {
@@ -359,7 +359,7 @@
     },
     "cta": {
       "title": "¿Listo para empezar?",
-      "subtitle": "Gratis, empieza a loguear tu inmersión.",
+      "subtitle": "Loguea tu inmersión gratis.",
       "primary": "Empezar a loguear",
       "secondary": "Ver clasificaciones →",
       "madeWith": "Hecho con ❤️ por alguien que también aprende"
@@ -373,10 +373,10 @@
     "clubBullet3": "Encuentra clubes por género, estilo o nivel",
     "clubs": "Clubes",
     "dashboardAlt": "Panel de NihongoTracker",
-    "freeForever": "Empieza hoy · Las funciones principales son gratis para siempre",
+    "freeForever": "Las funciones principales de seguimiento son gratis",
     "friendly": "Un poco de<br />competitividad sana",
     "hookerAlt": "Panel del TextHooker",
-    "hookerBody": "El texthooker integrado hace fácil loguear tus sesiones.",
+    "hookerBody": "Captura líneas y loguea sesiones de lectura de VN desde una sola pantalla.",
     "hookerBullet1": "Salas de texthooker compartidas para leer en grupo",
     "hookerBullet2": "Historial completo de sesiones por título",
     "hookerBullet3": "Loguea la sesión de lectura con un clic",
@@ -396,7 +396,7 @@
     "seeHowFar": "Mira exactamente<br />cuánto has avanzado",
     "startTracking": "Empezar a loguear",
     "statistics": "Estadísticas",
-    "statsBody": "Gráficos y desgloses detallados muestran tu evolución con el tiempo.",
+    "statsBody": "Las gráficas desglosan tu tiempo, XP, velocidad de lectura y rachas.",
     "statsBullet1": "Progreso de nivel global, de escucha y de lectura",
     "statsBullet2": "Mapa de calor de actividad, rachas y medias diarias",
     "statsBullet3": "Filtra por periodo, medio o etiquetas",

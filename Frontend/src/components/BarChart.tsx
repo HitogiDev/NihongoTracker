@@ -11,6 +11,7 @@ import {
   TooltipItem,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 ChartJS.register(
   CategoryScale,
@@ -27,6 +28,8 @@ interface BarChartProps {
 }
 
 function BarChart({ data, options }: BarChartProps) {
+  const lineColors = useThemeColors(1);
+  const fillColors = useThemeColors(0.16);
   const defaultOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -34,6 +37,10 @@ function BarChart({ data, options }: BarChartProps) {
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: {
+          color: lineColors.baseContent,
+          font: { size: 12 },
+        },
       },
       tooltip: {
         callbacks: {
@@ -51,11 +58,15 @@ function BarChart({ data, options }: BarChartProps) {
         title: {
           display: true,
         },
+        grid: { color: fillColors.baseContent },
+        ticks: { color: lineColors.baseContent },
       },
       x: {
         title: {
           display: true,
         },
+        grid: { display: false },
+        ticks: { color: lineColors.baseContent },
       },
     },
     ...options,

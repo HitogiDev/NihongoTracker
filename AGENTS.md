@@ -17,6 +17,7 @@ In production, the frontend build is copied to `Backend/dist`; Express serves th
 
 - Run npm commands from `Backend/` or `Frontend/`, never from the repository root.
 - Preserve unrelated user changes. The worktree may already be dirty.
+- Do not use em dashes in UI copy, documentation, comments, or user-facing responses. Use commas, periods, colons, or parentheses instead.
 - Both packages use ESM. Backend TypeScript imports use explicit `.js` extensions, including imports of `.ts` source modules.
 - Keep backend code compatible with the strict settings in `Backend/tsconfig.json`, including unused-symbol and implicit-return checks.
 - Prefer focused verification: typecheck/test the backend area changed, and lint/build the frontend area changed.
@@ -103,6 +104,10 @@ Throw `customError(message, statusCode, kind?)` from controllers/services and pa
 `services/customization.ts` owns unlock and downgrade rules. When adding a capability, update `CustomizationCapabilities`, `getCustomizationCapabilities`, `getDisplayCapabilities`, and `FULL_PAID_ACCESS` together.
 
 The frontend mirrors customization enums in `Frontend/src/types.d.ts` and maps them in `Frontend/src/utils/customization.ts` plus `Frontend/src/customization.css`. Do not spread Mongoose customization subdocuments; copy fields explicitly because values are exposed through prototype getters. Respect `prefers-reduced-motion` for animated cosmetics.
+
+### Immersion forecasts
+
+`ImmersionForecast` stores private, media-linked finish plans. Target totals are snapshotted at creation; progress and daily pacing are derived from matching logs by `services/immersionForecast.service.ts`. Creation and deadline edits require active Enthusiast/Consumer access, while owners retain read/delete access after downgrade. Keep these records out of username-based public goal responses.
 
 ### Notifications
 

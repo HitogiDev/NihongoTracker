@@ -25,6 +25,7 @@ import { useValidationText } from '../hooks/useValidationText';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { getLearnerCountKey } from '../utils/learnerCount';
 import { getApiErrorMessage } from '../utils/apiError';
+import { Rocket } from 'lucide-react';
 
 function RegisterScreen() {
   const { t } = useTranslation('auth');
@@ -254,7 +255,7 @@ function RegisterScreen() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-base-200 via-base-300 to-base-200 overflow-hidden pt-20">
+    <div className="relative min-h-screen bg-base-200 overflow-hidden pt-20">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
@@ -292,7 +293,7 @@ function RegisterScreen() {
                   i18nKey="register.title"
                   components={{
                     hl: (
-                      <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent" />
+                      <span className="block text-primary" />
                     ),
                   }}
                 />
@@ -427,12 +428,13 @@ function RegisterScreen() {
               <form className="card-body p-8" onSubmit={handleSubmit}>
                 <h2
                   ref={titleRef}
-                  className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+                  className="text-3xl font-bold text-center text-base-content mb-2"
                 >
                   {t('register.form.title')}
                 </h2>
-                <p className="text-center text-base-content/60 mb-6 text-sm">
-                  {t('register.form.subtitle')}
+                <p className="mb-6 flex items-center justify-center gap-2 text-center text-sm text-base-content/60">
+                  <Rocket className="h-4 w-4 flex-none text-primary" />
+                  <span>{t('register.form.subtitle')}</span>
                 </p>
 
                 {/* Username Field */}
@@ -877,14 +879,14 @@ function RegisterScreen() {
 
                 {/* Terms and Conditions */}
                 <div ref={addToRefs}>
-                  <label className="label cursor-pointer justify-start gap-3 items-start p-3 rounded-lg hover:bg-base-200/50 transition-colors">
+                  <label className="label flex w-full min-w-0 cursor-pointer items-start justify-start gap-3 whitespace-normal rounded-lg p-3 transition-colors hover:bg-base-200/50">
                     <input
                       type="checkbox"
                       className="checkbox checkbox-primary mt-0.5 flex-shrink-0"
                       checked={agreedToTerms}
                       onChange={(e) => setAgreedToTerms(e.target.checked)}
                     />
-                    <span className="text-sm text-left leading-relaxed">
+                    <span className="min-w-0 flex-1 text-left text-sm leading-relaxed whitespace-normal break-words">
                       <Trans
                         t={t}
                         i18nKey="register.form.terms"

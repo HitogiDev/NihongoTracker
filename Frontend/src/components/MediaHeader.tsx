@@ -19,9 +19,10 @@ import {
   ChevronDown,
   Clock,
   Ban,
-  Sparkles,
+  Star,
   Trash2,
   TriangleAlert,
+  CalendarClock,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { IMediaDocument, OutletMediaContextType } from '../types';
@@ -34,6 +35,7 @@ import { useUserDataStore } from '../store/userData';
 import MediaNavbar from './MediaNavbar';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { useTranslation } from 'react-i18next';
+import ForecastModal from './ForecastModal';
 
 const getMediaTypeIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -72,7 +74,7 @@ const STATUS_CONFIG: Record<
   },
   dropped: { label: 'Dropped', badgeClass: 'btn-error', icon: Ban },
   paused: { label: 'Paused', badgeClass: 'btn-warning', icon: Clock },
-  planning: { label: 'Planning', badgeClass: 'btn-info', icon: Sparkles },
+  planning: { label: 'Planning', badgeClass: 'btn-info', icon: Star },
   in_progress: {
     label: 'In progress',
     badgeClass: 'btn-primary',
@@ -81,7 +83,7 @@ const STATUS_CONFIG: Record<
 };
 
 export default function MediaHeader() {
-  const { t } = useTranslation(['media', 'common']);
+  const { t } = useTranslation(['media', 'common', 'goals']);
   const { mediaType, mediaId, username } = useParams<{
     mediaType: IMediaDocument['type'] | undefined;
     mediaId: string;
@@ -104,6 +106,7 @@ export default function MediaHeader() {
   const [averageColor, setAverageColor] = useState<string>('#ffffff');
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [addToListOpen, setAddToListOpen] = useState(false);
+  const [forecastModalOpen, setForecastModalOpen] = useState(false);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
   const [removeWithLogs, setRemoveWithLogs] = useState(false);
   const [completionStatus, setCompletionStatus] = useState({
@@ -451,6 +454,13 @@ export default function MediaHeader() {
         onClose={() => setLogModalOpen(false)}
         media={media}
       />
+      {media && (
+        <ForecastModal
+          open={forecastModalOpen}
+          onClose={() => setForecastModalOpen(false)}
+          initialMedia={media}
+        />
+      )}
       {media?.contentId && media?.type && (
         <AddToListModal
           open={addToListOpen}
@@ -618,6 +628,15 @@ export default function MediaHeader() {
                   >
                     {t('header.log')}
                   </button>
+                  {user && isOwnProfile && !isClubContext && media && (
+                    <button
+                      className="btn btn-outline w-full"
+                      onClick={() => setForecastModalOpen(true)}
+                    >
+                      <CalendarClock className="w-4 h-4" />
+                      {t('goals:forecast.createTitle')}
+                    </button>
+                  )}
                   {user && media?.contentId && media?.type && (
                     <button
                       className="btn btn-outline w-full"

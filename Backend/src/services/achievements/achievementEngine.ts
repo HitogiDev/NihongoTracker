@@ -233,7 +233,7 @@ export async function checkAchievements(
 ): Promise<IAchievement[]> {
   try {
     // Determine which condition types are relevant for this trigger
-    const relevantConditions: string[] = getRelevantConditions(context.trigger);
+    const relevantConditions: string[] = getRelevantConditions(context);
     if (relevantConditions.length === 0) return [];
 
     // Fetch only active achievements relevant to the trigger
@@ -478,10 +478,8 @@ export async function grantAchievement(
   return true;
 }
 
-function getRelevantConditions(
-  trigger: IAchievementCheckContext['trigger']
-): string[] {
-  switch (trigger) {
+function getRelevantConditions(context: IAchievementCheckContext): string[] {
+  switch (context.trigger) {
     case 'log':
       return [
         'logCount',
@@ -512,7 +510,12 @@ function getRelevantConditions(
         'rankDethroned',
         'secretAchievementCount',
         'earlyAdopter',
-      ];
+      ].filter(
+        (condition) =>
+          condition !== 'logDuringAiring' ||
+          context.log == null ||
+          context.log.type === 'anime'
+      );
     case 'streak':
       return ['streak', 'streakComeback', 'streakAfterBreak'];
     case 'levelup':

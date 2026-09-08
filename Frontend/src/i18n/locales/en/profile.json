@@ -29,7 +29,7 @@
   },
   "favoritesWidget": {
     "empty": "No favorites yet.",
-    "emptyOwn": "Add your favorite media to showcase them here.",
+    "emptyOwn": "Add your favorite media to feature them here.",
     "hint": "{{current}}/{{max}} · drag to reorder, tap the note icon to add a note.",
     "viewInfo": "View info",
     "viewNote": "View note and info",

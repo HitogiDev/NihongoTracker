@@ -1,7 +1,48 @@
 {
-  "analyticsHint": "Analyze your goal patterns, streaks, and improvement over time.",
-  "analyticsSoon": "Coming soon: Advanced goal analytics and insights!",
-  "analyticsTitle": "Goal Analytics",
+  "forecast": {
+    "behindBy": "You are {{value}} {{unit}} behind the original plan.",
+    "change": "Change",
+    "create": "Create forecast",
+    "createTitle": "Plan a finish date",
+    "daily": "Recommended daily",
+    "deleteBody": "This permanently deletes the forecast for {{title}}.",
+    "deleteTitle": "Delete forecast?",
+    "editTitle": "Change finish date",
+    "emptyBody": "Choose measurable media and a finish date. Your daily target adapts as you log.",
+    "emptyTitle": "No forecasts yet",
+    "insufficientData": "Not enough data",
+    "lockedBody": "Adaptive finish forecasts are available to active Enthusiast and Consumer supporters.",
+    "lockedTitle": "Unlock adaptive immersion forecasts",
+    "media": "Media",
+    "new": "New forecast",
+    "noResults": "No matching media found",
+    "previewBody": "Choose a finish date and the planner calculates what remains, how much to do each day, and your estimated time. Every new log automatically updates the plan.",
+    "previewDeadline": "Example finish date: {{date}}",
+    "previewLabel": "Preview",
+    "previewTitle": "See exactly what to do each day",
+    "readOnly": "Your forecasts are read-only until you renew Enthusiast or Consumer.",
+    "remaining": "Remaining",
+    "searching": "Searching…",
+    "searchPlaceholder": "Search anime, books, VNs…",
+    "selectRequired": "Select media first",
+    "status": {
+      "behind": "Behind",
+      "completed": "Completed",
+      "on_track": "On track",
+      "overdue": "Overdue"
+    },
+    "subtitle": "Finish media on time with a daily target that adapts to your progress.",
+    "targetDate": "Finish by",
+    "timeLeft": "Estimated time",
+    "title": "Immersion Planner",
+    "units": {
+      "chars": "chars",
+      "episodes": "episodes",
+      "minutes": "min",
+      "pages": "pages"
+    },
+    "upgrade": "View Enthusiast"
+  },
   "modal": {
     "active": "Active",
     "addGoal": "Add Goal",
@@ -41,9 +82,6 @@
     "creating": "Creating...",
     "displayProgressAs": "Display Progress As"
   },
-  "statsHint": "Track your goal completion rates and consistency over time.",
-  "statsSoon": "Coming soon: Goal completion history and analytics!",
-  "statsTitle": "Goal Statistics",
   "subtitle": "Set and track your daily and long-term immersion goals",
   "timeframes": {
     "daily": "Daily",

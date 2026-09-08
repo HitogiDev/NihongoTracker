@@ -100,6 +100,14 @@
     "totalTargetPositive": "El objetivo total debe ser mayor que 0",
     "typeAndTargetRequired": "Hacen falta un tipo y un objetivo"
   },
+  "forecast": {
+    "alreadyComplete": "Este medio ya está completado",
+    "alreadyExists": "Ya tienes un pronóstico para este medio",
+    "invalidDate": "Elige una fecha posterior a hoy",
+    "mediaNotMeasurable": "Este medio no tiene un total de finalización fiable",
+    "notFound": "No se encontró el pronóstico",
+    "tierRequired": "Immersion Planner requiere un nivel Enthusiast o Consumer activo"
+  },
   "immersionList": {
     "invalidMediaType": "Ese tipo de contenido no es válido",
     "invalidSource": "Esa fuente no es válida",

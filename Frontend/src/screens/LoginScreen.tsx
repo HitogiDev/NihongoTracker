@@ -159,7 +159,7 @@ function LoginScreen() {
   }, [navigate, isSuccess, t]);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-base-200 via-base-300 to-base-200 overflow-hidden pt-20">
+    <div className="relative min-h-screen bg-base-200 overflow-hidden pt-20">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
@@ -197,7 +197,7 @@ function LoginScreen() {
                   i18nKey="login.title"
                   components={{
                     hl: (
-                      <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent" />
+                      <span className="block text-primary" />
                     ),
                   }}
                 />
@@ -332,7 +332,7 @@ function LoginScreen() {
               <form className="card-body p-8" onSubmit={handleSubmit}>
                 <h2
                   ref={titleRef}
-                  className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+                  className="text-3xl font-bold text-center text-base-content mb-2"
                 >
                   {t('login.form.title')}
                 </h2>

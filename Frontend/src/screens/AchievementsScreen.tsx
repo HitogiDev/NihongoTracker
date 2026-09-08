@@ -22,7 +22,6 @@ import {
   CircleCheck,
   Layers,
   Trophy,
-  Sparkles,
   ListFilter,
   Star,
   Flame,
@@ -402,7 +401,7 @@ export default function AchievementsScreen() {
                 {
                   value: 'rarity',
                   label: t('screen.sort.rarityLong'),
-                  icon: <Sparkles className="w-4 h-4" />,
+                  icon: <Star className="w-4 h-4" />,
                 },
                 {
                   value: 'earned',
@@ -467,7 +466,7 @@ export default function AchievementsScreen() {
                   className="flex items-center gap-2 mb-3 text-sm font-bold capitalize"
                   style={{ color: RARITY_COLOR[rarity] }}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Star className="w-4 h-4" />
                   {t(RARITY_CONFIG[rarity].labelKey)}
                   <span className="opacity-50 font-normal">
                     ({group.length})

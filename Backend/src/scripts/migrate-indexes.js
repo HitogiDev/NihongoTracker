@@ -38,6 +38,17 @@ Time: ${new Date().toISOString()}
 // Indexes to ensure, grouped by collection.
 const MIGRATIONS = [
   {
+    collection: 'immersionforecasts',
+    indexes: [
+      {
+        key: { user: 1, mediaId: 1, mediaType: 1 },
+        name: 'user_1_mediaId_1_mediaType_1',
+        description: 'One immersion forecast per user and media',
+        unique: true,
+      },
+    ],
+  },
+  {
     collection: 'logs',
     indexes: [
       {
