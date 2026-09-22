@@ -16,6 +16,13 @@
   "activity": {
     "title": "Actividad de inmersión"
   },
+  "socialActivity": {
+    "title": "Actividad de {{username}}",
+    "empty": "Todavía no hay actividad.",
+    "loadError": "No se pudo cargar esta actividad.",
+    "retry": "Reintentar",
+    "loadMore": "Cargar más"
+  },
   "social": {
     "follow": "Seguir",
     "unfollow": "Dejar de seguir",
@@ -170,6 +177,7 @@
   },
   "tabs": {
     "overview": "Resumen",
+    "activity": "Actividad",
     "stats": "Estadísticas",
     "immersionList": "Lista de inmersión",
     "lists": "Listas",

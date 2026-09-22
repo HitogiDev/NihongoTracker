@@ -1082,6 +1082,10 @@ function MediaDetails() {
             (acc, log) => acc + (log.episodes ?? 0),
             0
           ),
+          totalVolumes: myLogsArray.reduce(
+            (max, log) => Math.max(max, log.volume ?? 0),
+            0
+          ),
           logCount: myLogsArray.length,
           readingPercentage: myReadingPercentage,
         };
@@ -1096,6 +1100,10 @@ function MediaDetails() {
           totalPages: logsArray.reduce((acc, log) => acc + (log.pages ?? 0), 0),
           totalEpisodes: logsArray.reduce(
             (acc, log) => acc + (log.episodes ?? 0),
+            0
+          ),
+          totalVolumes: logsArray.reduce(
+            (max, log) => Math.max(max, log.volume ?? 0),
             0
           ),
           logCount: logsArray.length,

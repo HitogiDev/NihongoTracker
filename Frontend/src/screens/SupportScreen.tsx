@@ -5,6 +5,8 @@ import {
   Brain,
   CalendarClock,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Coffee,
   Gauge,
@@ -19,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { multiSearchMediaFn } from '../api/trackerApi';
 import BannerEffectOverlay from '../components/BannerEffectOverlay';
@@ -142,6 +144,15 @@ const PLANNER_EXAMPLES: PlannerExample[] = [
 ];
 
 const FAQ_IDS = ['alwaysFree', 'benefits', 'cancel', 'notApplying'] as const;
+
+const THEME_PREVIEWS = [
+  'abyss',
+  'dim',
+  'forest',
+  'sunset',
+  'valentine',
+  'emerald',
+] as const;
 
 const PATREON_URL = 'https://www.patreon.com/nihongotracker';
 
@@ -475,6 +486,8 @@ function SupportScreen() {
     deadline.setDate(deadline.getDate() + 30);
     return deadline;
   });
+  const [activeThemeIndex, setActiveThemeIndex] = useState(0);
+  const themeCarouselRef = useRef<HTMLDivElement>(null);
   const { data: plannerResults, isLoading: plannerLoading } = useQuery({
     queryKey: ['supportPlannerPreview', plannerExample.search],
     queryFn: () =>
@@ -511,6 +524,18 @@ function SupportScreen() {
     key: string,
     options: { returnObjects: true },
   ) => string[];
+
+  const moveTheme = (direction: -1 | 1) => {
+    const nextIndex =
+      (activeThemeIndex + direction + THEME_PREVIEWS.length) %
+      THEME_PREVIEWS.length;
+    setActiveThemeIndex(nextIndex);
+    themeCarouselRef.current?.children[nextIndex]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'start',
+    });
+  };
 
   return (
     <div className="min-h-screen overflow-hidden bg-base-100 pt-20">
@@ -727,6 +752,85 @@ function SupportScreen() {
                   {t('support.showcase.profile.description')}
                 </p>
                 <PremiumProfilePreview tf={tf} />
+              </div>
+            </div>
+          </div>
+
+          <div className="card card-border mt-6 bg-base-100 shadow-sm">
+            <div className="card-body p-6 sm:p-8">
+              <span className="badge badge-primary badge-soft w-fit">
+                {t('support.showcase.themes.badge')}
+              </span>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="card-title text-2xl">
+                    <Palette className="w-6 h-6 text-primary" />
+                    {t('support.showcase.themes.title')}
+                  </h3>
+                  <p className="mt-2 max-w-2xl text-base-content/60">
+                    {t('support.showcase.themes.subtitle')}
+                  </p>
+                </div>
+                <span
+                  className="text-sm text-base-content/55"
+                  aria-live="polite"
+                >
+                  {t('support.showcase.themes.position', {
+                    current: activeThemeIndex + 1,
+                    total: THEME_PREVIEWS.length,
+                  })}
+                </span>
+              </div>
+
+              <div
+                ref={themeCarouselRef}
+                className="carousel carousel-center mt-5 w-full rounded-box bg-base-200"
+                aria-label={t('support.showcase.themes.carouselLabel')}
+              >
+                {THEME_PREVIEWS.map((theme) => (
+                  <div
+                    key={theme}
+                    className="carousel-item w-full shrink-0"
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={t('support.showcase.themes.slide', {
+                      name: t(`support.showcase.themes.names.${theme}`),
+                    })}
+                  >
+                    <img
+                      src={`/screenshots/themes/${theme}.png`}
+                      alt={t('support.showcase.themes.slide', {
+                        name: t(`support.showcase.themes.names.${theme}`),
+                      })}
+                      className="h-auto w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-circle"
+                  onClick={() => moveTheme(-1)}
+                  aria-label={t('support.showcase.themes.previous')}
+                >
+                  <ChevronLeft className="w-5 h-5" aria-hidden="true" />
+                </button>
+                <span className="min-w-32 text-center text-sm font-medium text-base-content/70">
+                  {t(
+                    `support.showcase.themes.names.${THEME_PREVIEWS[activeThemeIndex]}`,
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-circle"
+                  onClick={() => moveTheme(1)}
+                  aria-label={t('support.showcase.themes.next')}
+                >
+                  <ChevronRight className="w-5 h-5" aria-hidden="true" />
+                </button>
               </div>
             </div>
           </div>

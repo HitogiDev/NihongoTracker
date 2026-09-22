@@ -211,8 +211,9 @@ function parseBefore(
 export async function getActivityFeed(input: {
   viewerId: Types.ObjectId;
   clubIds: Types.ObjectId[];
-  scope: 'global' | 'following' | 'clubs';
+  scope: 'global' | 'following' | 'clubs' | 'user';
   clubId?: Types.ObjectId;
+  targetUserId?: Types.ObjectId;
   before?: unknown;
   limit?: unknown;
 }) {
@@ -232,7 +233,7 @@ export async function getActivityFeed(input: {
       actor: { $in: [input.viewerId, ...followedUserIds] },
     });
     clauses.push(visibility);
-  } else {
+  } else if (input.scope === 'clubs') {
     const allowedClubIds = input.clubId ? [input.clubId] : input.clubIds;
     if (
       input.clubId &&
@@ -245,6 +246,12 @@ export async function getActivityFeed(input: {
       );
     }
     clauses.push({ club: { $in: allowedClubIds } });
+    clauses.push(visibility);
+  } else {
+    if (!input.targetUserId) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
+    clauses.push({ actor: input.targetUserId });
     clauses.push(visibility);
   }
 

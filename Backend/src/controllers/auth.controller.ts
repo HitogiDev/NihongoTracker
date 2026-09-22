@@ -18,6 +18,7 @@ import {
 } from '../mailtrap/emails.js';
 import { indexUser } from '../services/meilisearch/userIndex.js';
 import { getLiveCurrentStreak } from '../services/streaks.js';
+import { serializeAuthenticatedUser } from '../services/authenticatedUser.js';
 
 const isValidTimezone = (timezone?: string): boolean => {
   if (!timezone) {
@@ -31,26 +32,6 @@ const isValidTimezone = (timezone?: string): boolean => {
     return false;
   }
 };
-
-function sanitizeAuthUser(user: IUser) {
-  return {
-    _id: user._id,
-    username: user.username,
-    email: user.email,
-    verified: user.verified,
-    about: user.about,
-    stats: user.stats,
-    avatar: user.avatar,
-    banner: user.banner,
-    titles: user.titles,
-    roles: user.roles,
-    settings: user.settings,
-    discordId: user.discordId ?? '',
-    patreon: user.patreon,
-    moderation: user.moderation,
-    customization: user.customization ?? {},
-  };
-}
 
 export async function register(
   req: Request,
@@ -240,7 +221,7 @@ export async function logout(_req: Request, res: Response) {
 export async function verifyToken(_req: Request, res: Response) {
   res.status(200).json({
     valid: true,
-    user: sanitizeAuthUser(res.locals.user),
+    user: serializeAuthenticatedUser(res.locals.user),
   });
 }
 

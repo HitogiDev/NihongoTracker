@@ -5,13 +5,14 @@ import {
   ISocialActivity,
 } from '../types';
 
-export type ActivityFeedScope = 'following' | 'global' | 'clubs';
+export type ActivityFeedScope = 'following' | 'global' | 'clubs' | 'user';
 
 export async function getActivityFeedFn(params: {
   scope: ActivityFeedScope;
   before?: string;
   limit?: number;
   clubId?: string;
+  username?: string;
 }): Promise<{ activities: ISocialActivity[]; nextCursor: string | null }> {
   const { data } = await api.get('/activities', { params });
   return data;

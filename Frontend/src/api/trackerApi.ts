@@ -785,6 +785,7 @@ export interface IComparisonStats {
   totalChars: number;
   totalPages: number;
   totalEpisodes: number;
+  totalVolumes: number;
   logCount: number;
   readingSpeed: number;
   readingPercentage: number | null; // null when no character count data available

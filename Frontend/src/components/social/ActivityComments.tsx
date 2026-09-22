@@ -241,7 +241,13 @@ export default function ActivityComments({
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
   const likeMutation = useMutation({
-    mutationFn: ({ commentId, liked }: { commentId: string; liked: boolean }) =>
+    mutationFn: ({
+      commentId,
+      liked,
+    }: {
+      commentId: string;
+      liked: boolean;
+    }) =>
       liked
         ? unlikeActivityCommentFn(activityId, commentId)
         : likeActivityCommentFn(activityId, commentId),
@@ -292,83 +298,94 @@ export default function ActivityComments({
   };
 
   return (
-    <div className="mt-4 border-t border-base-300 pt-4">
-      <div className="space-y-2">
-        {composerOpen && (
-          <CommentFormattingToolbar
-            value={content}
-            onChange={setContent}
-            textareaRef={composerRef}
+    <div className="space-y-3">
+      <div className="surface-muted p-3 shadow-sm sm:p-4">
+        <div className="space-y-2">
+          {composerOpen && (
+            <CommentFormattingToolbar
+              value={content}
+              onChange={setContent}
+              textareaRef={composerRef}
+              maxLength={1000}
+            />
+          )}
+          <textarea
+            ref={composerRef}
+            className="textarea textarea-sm focus:textarea-primary h-10 min-h-10 w-full resize-none"
+            rows={1}
             maxLength={1000}
+            value={content}
+            onFocus={() => setComposerOpen(true)}
+            onChange={(event) => setContent(event.target.value)}
+            placeholder={t('comments.placeholder')}
+            aria-label={t('comments.add')}
           />
-        )}
-        <textarea
-          ref={composerRef}
-          className="textarea textarea-sm focus:textarea-primary h-10 min-h-10 w-full resize-none"
-          rows={1}
-          maxLength={1000}
-          value={content}
-          onFocus={() => setComposerOpen(true)}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder={t('comments.placeholder')}
-          aria-label={t('comments.add')}
-        />
-        {composerOpen && (
-          <div className="flex items-end justify-between gap-3">
-            <span className="text-xs text-base-content/60">
-              {t('comments.count', { count: content.length })}
-            </span>
-            <div className="flex flex-col items-end gap-2">
-              <Link
-                to="/guidelines"
-                className="link link-primary text-right text-xs"
-              >
-                {t('comments.readGuidelines')}
-              </Link>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  disabled={addMutation.isPending}
-                  onClick={cancelComment}
+          {composerOpen && (
+            <div className="flex items-end justify-between gap-3">
+              <span className="text-xs text-base-content/60">
+                {t('comments.count', { count: content.length })}
+              </span>
+              <div className="flex flex-col items-end gap-2">
+                <Link
+                  to="/guidelines"
+                  className="link link-primary text-right text-xs"
                 >
-                  {t('comments.cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  disabled={!content.trim() || addMutation.isPending}
-                  onClick={() => addMutation.mutate()}
-                >
-                  {addMutation.isPending && <Spinner size="sm" />}
-                  {t('comments.post')}
-                </button>
+                  {t('comments.readGuidelines')}
+                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={addMutation.isPending}
+                    onClick={cancelComment}
+                  >
+                    {t('comments.cancel')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={!content.trim() || addMutation.isPending}
+                    onClick={() => addMutation.mutate()}
+                  >
+                    {addMutation.isPending && <Spinner size="sm" />}
+                    {t('comments.post')}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {commentsQuery.isLoading ? (
-        <div className="mt-4 space-y-2" aria-busy="true">
-          <div className="skeleton h-14 w-full" />
-          <div className="skeleton h-14 w-full" />
+        <div className="space-y-3" aria-busy="true">
+          <div className="surface-muted p-4">
+            <div className="skeleton h-14 w-full" />
+          </div>
+          <div className="surface-muted p-4">
+            <div className="skeleton h-14 w-full" />
+          </div>
         </div>
       ) : commentsQuery.isError ? (
-        <p className="mt-4 text-sm text-error">{t('comments.loadError')}</p>
+        <p role="alert" className="surface-muted p-4 text-sm text-error">
+          {t('comments.loadError')}
+        </p>
       ) : commentsQuery.data?.comments.length ? (
-        <ul className="list mt-4">
+        <ul className="list gap-3 bg-transparent p-0">
           {commentsQuery.data.comments.map((comment) => {
             const isOwner = currentUser?._id === comment.user._id;
             const isEditing = editingId === comment._id;
             return (
-              <li key={comment._id} className="list-row px-0">
+              <li
+                key={comment._id}
+                className="list-row surface-muted p-3 shadow-sm sm:p-4"
+              >
                 <Link to={`/user/${encodeURIComponent(comment.user.username)}`}>
                   <div className="avatar">
                     <UserAvatar
                       username={comment.user.username}
                       avatar={comment.user.avatar}
-                      containerClassName="w-9 rounded-full overflow-hidden"
+                      containerClassName="h-9 w-9 overflow-hidden rounded-full"
                       imageClassName="h-full w-full object-cover"
                       fallbackClassName="flex h-full w-full items-center justify-center bg-base-300"
                       textClassName="text-xs font-semibold"
@@ -376,20 +393,104 @@ export default function ActivityComments({
                   </div>
                 </Link>
                 <div className="list-col-grow min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-                    <Link
-                      to={`/user/${encodeURIComponent(comment.user.username)}`}
-                      className="link link-hover font-semibold text-base-content"
-                    >
-                      {comment.user.username}
-                    </Link>
-                    <span>
-                      {formatRelativeDateInTimezone(comment.createdAt)}
-                    </span>
-                    {comment.editedAt && <span>{t('comments.edited')}</span>}
+                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
+                      <Link
+                        to={`/user/${encodeURIComponent(comment.user.username)}`}
+                        className="link link-hover font-semibold text-primary"
+                      >
+                        {comment.user.username}
+                      </Link>
+                      {comment.editedAt && <span>{t('comments.edited')}</span>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-xs text-base-content/60">
+                      {!isEditing && (
+                        <button
+                          type="button"
+                          className={
+                            comment.currentUserLiked
+                              ? 'btn btn-error btn-soft btn-xs gap-1 px-1.5'
+                              : 'btn btn-ghost btn-xs gap-1 px-1.5'
+                          }
+                          aria-label={t(
+                            comment.currentUserLiked
+                              ? 'comments.unlike'
+                              : 'comments.like',
+                          )}
+                          aria-pressed={comment.currentUserLiked}
+                          title={t(
+                            comment.currentUserLiked
+                              ? 'comments.unlike'
+                              : 'comments.like',
+                          )}
+                          disabled={likeMutation.isPending || !currentUser}
+                          onClick={() =>
+                            likeMutation.mutate({
+                              commentId: comment._id,
+                              liked: comment.currentUserLiked,
+                            })
+                          }
+                        >
+                          <Heart
+                            className="h-3.5 w-3.5"
+                            fill={
+                              comment.currentUserLiked ? 'currentColor' : 'none'
+                            }
+                          />
+                          {comment.likeCount > 0 && (
+                            <span>{comment.likeCount}</span>
+                          )}
+                        </button>
+                      )}
+                      <span>
+                        {formatRelativeDateInTimezone(comment.createdAt)}
+                      </span>
+                      {isOwner && !isEditing && (
+                        <div className="dropdown dropdown-end">
+                          <div
+                            tabIndex={0}
+                            role="button"
+                            className="btn btn-ghost btn-xs btn-square"
+                            aria-label={t('comments.moreActions')}
+                            title={t('comments.moreActions')}
+                          >
+                            <EllipsisVertical className="h-4 w-4" />
+                          </div>
+                          <ul
+                            tabIndex={0}
+                            className="dropdown-content menu surface-raised z-[1] w-36 p-1"
+                          >
+                            <li>
+                              <button
+                                onClick={() => {
+                                  setEditingId(comment._id);
+                                  setEditingContent(comment.content);
+                                }}
+                                className="flex items-center gap-2 text-sm text-warning hover:bg-warning/10"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                {t('comments.edit')}
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                disabled={deleteMutation.isPending}
+                                onClick={() =>
+                                  deleteMutation.mutate(comment._id)
+                                }
+                                className="flex items-center gap-2 text-sm text-error"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                {t('comments.delete')}
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {isEditing ? (
-                    <div className="mt-2">
+                    <div className="mt-3">
                       <CommentFormattingToolbar
                         value={editingContent}
                         onChange={setEditingContent}
@@ -425,96 +526,20 @@ export default function ActivityComments({
                       </div>
                     </div>
                   ) : (
-                    <>
-                      <div
-                        className="prose prose-sm mt-1 max-w-none wrap-break-word text-base-content [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-                        dangerouslySetInnerHTML={{
-                          __html: renderMarkdownWithSpoilers(comment.content),
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className={
-                          comment.currentUserLiked
-                            ? 'btn btn-error btn-soft btn-xs mt-1'
-                            : 'btn btn-ghost btn-xs mt-1'
-                        }
-                        aria-label={t(
-                          comment.currentUserLiked
-                            ? 'comments.unlike'
-                            : 'comments.like',
-                        )}
-                        aria-pressed={comment.currentUserLiked}
-                        title={t(
-                          comment.currentUserLiked
-                            ? 'comments.unlike'
-                            : 'comments.like',
-                        )}
-                        disabled={likeMutation.isPending}
-                        onClick={() =>
-                          likeMutation.mutate({
-                            commentId: comment._id,
-                            liked: comment.currentUserLiked,
-                          })
-                        }
-                      >
-                        <Heart
-                          className="h-3.5 w-3.5"
-                          fill={
-                            comment.currentUserLiked ? 'currentColor' : 'none'
-                          }
-                        />
-                        {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
-                      </button>
-                    </>
+                    <div
+                      className="prose prose-sm mt-3 max-w-none wrap-break-word text-base-content [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdownWithSpoilers(comment.content),
+                      }}
+                    />
                   )}
                 </div>
-                {isOwner && !isEditing && (
-                  <div className="dropdown dropdown-end">
-                    <div
-                      tabIndex={0}
-                      role="button"
-                      className="btn btn-ghost btn-xs btn-square"
-                      aria-label={t('comments.moreActions')}
-                      title={t('comments.moreActions')}
-                    >
-                      <EllipsisVertical className="h-4 w-4" />
-                    </div>
-                    <ul
-                      tabIndex={0}
-                      className="dropdown-content menu surface-raised z-[1] w-36 p-1"
-                    >
-                      <li>
-                        <button
-                          onClick={() => {
-                            setEditingId(comment._id);
-                            setEditingContent(comment.content);
-                          }}
-                          className="flex items-center gap-2 text-sm text-warning hover:bg-warning/10"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          {t('comments.edit')}
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          disabled={deleteMutation.isPending}
-                          onClick={() => deleteMutation.mutate(comment._id)}
-                          className="flex items-center gap-2 text-sm text-error"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          {t('comments.delete')}
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
               </li>
             );
           })}
         </ul>
       ) : (
-        <p className="mt-4 text-sm text-base-content/60">
+        <p className="surface-muted p-4 text-sm text-base-content/60">
           {t('comments.empty')}
         </p>
       )}

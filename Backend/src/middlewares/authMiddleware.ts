@@ -136,6 +136,24 @@ export async function protect(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export function requireSessionAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) {
+  if (req.headers['x-api-key']) {
+    return next(
+      apiError(
+        'auth.forbidden',
+        403,
+        'API keys cannot access this endpoint'
+      )
+    );
+  }
+
+  return next();
+}
+
 export async function optionalProtect(
   req: Request,
   res: Response,

@@ -15,7 +15,9 @@
     "watched": "watched",
     "notable": "Notable",
     "notableSession": "completed a notable immersion session",
-    "review": "published a review"
+    "readMore": "Read more",
+    "review": "published a review",
+    "showLess": "Show less"
   },
   "comments": {
     "add": "Add a comment",

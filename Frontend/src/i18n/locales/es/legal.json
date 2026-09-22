@@ -1063,6 +1063,24 @@
         "colors": "Colores propios",
         "effects": "Efectos de nombre",
         "avatarAlt": "Avatar de {{username}}"
+      },
+      "themes": {
+        "badge": "Temas premium",
+        "title": "Haz que NihongoTracker sea más tuyo",
+        "subtitle": "Los niveles para mecenas desbloquean temas adicionales. Estos son algunos de los estilos que puedes elegir.",
+        "carouselLabel": "Previsualización de temas",
+        "previous": "Tema anterior",
+        "next": "Tema siguiente",
+        "slide": "Previsualización del tema {{name}}",
+        "position": "{{current}} de {{total}}",
+        "names": {
+          "abyss": "Abyss",
+          "dim": "Dim",
+          "forest": "Forest",
+          "sunset": "Sunset",
+          "valentine": "Valentine",
+          "emerald": "Emerald"
+        }
       }
     },
     "why": {

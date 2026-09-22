@@ -39,6 +39,7 @@ import {
   unfollowProfile,
 } from '../controllers/follow.controller.js';
 import { socialRateLimit } from '../middlewares/socialRateLimit.js';
+import { getCurrentUser } from '../controllers/currentUser.controller.js';
 
 const router = Router();
 const followRateLimit = socialRateLimit({
@@ -57,6 +58,7 @@ const upload = multer({
 router.get('/search', searchUsers);
 
 // Registered before `/:username` so "me" is never treated as a username.
+router.get('/me', protect, getCurrentUser);
 router.get('/me/customization', protect, getCustomizationOptions);
 router.patch('/me/customization', protect, updateCustomization);
 

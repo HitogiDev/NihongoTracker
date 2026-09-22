@@ -10,7 +10,10 @@ import {
   resendVerificationEmail,
   getPublicStats,
 } from '../controllers/auth.controller.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import {
+  protect,
+  requireSessionAuth,
+} from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
@@ -20,7 +23,7 @@ router.post('/login', login);
 
 router.post('/logout', logout);
 
-router.get('/verify', protect, verifyToken);
+router.get('/verify', requireSessionAuth, protect, verifyToken);
 
 router.post('/verify-email', verifyEmail);
 

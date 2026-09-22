@@ -265,6 +265,82 @@ export default function MediaSocial() {
   });
 
   const community = communityQuery.data;
+  type ComparisonMetric = {
+    label: string;
+    value: number;
+    valueClassName: 'text-primary' | 'text-secondary';
+    description?: string;
+  };
+  const getComparisonMetrics = (stats: IComparisonResult['user1']['stats']) => {
+    const metrics: ComparisonMetric[] = [
+      {
+        label: t('media:stats.totalXp'),
+        value: stats.totalXp,
+        valueClassName: 'text-primary',
+      },
+    ];
+    const addTime = () => {
+      metrics.push({
+        label: t('media:stats.timeLabel'),
+        value: stats.totalTime,
+        valueClassName: 'text-secondary',
+        description: t('media:social.minutes', { count: stats.totalTime }),
+      });
+    };
+    const addCharacters = () => {
+      metrics.push({
+        label: t('media:stats.charactersLabel'),
+        value: stats.totalChars,
+        valueClassName: 'text-secondary',
+      });
+    };
+    const addVolumes = () => {
+      metrics.push({
+        label: t('media:stats.volumesLabel'),
+        value: stats.totalVolumes,
+        valueClassName: 'text-secondary',
+      });
+    };
+    const addEpisodes = () => {
+      metrics.push({
+        label: t('media:stats.episodesLabel'),
+        value: stats.totalEpisodes,
+        valueClassName: 'text-secondary',
+      });
+    };
+
+    switch (type) {
+      case 'vn':
+        addTime();
+        addCharacters();
+        break;
+      case 'light-novel':
+        addVolumes();
+        addTime();
+        addCharacters();
+        break;
+      case 'manga':
+        addTime();
+        addVolumes();
+        break;
+      case 'book':
+      case 'reading':
+        addCharacters();
+        addTime();
+        break;
+      case 'anime':
+      case 'tv show':
+        addEpisodes();
+        break;
+      case 'audio':
+      case 'movie':
+      default:
+        addTime();
+        break;
+    }
+
+    return metrics;
+  };
 
   return (
     <main className="container mx-auto max-w-7xl px-4 py-8">
@@ -520,35 +596,44 @@ export default function MediaSocial() {
                 </div>
                 {comparison && (
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {[comparison.user1, comparison.user2].map((comparedUser, index) => (
-                      <div key={comparedUser.username} className="surface-muted p-4">
-                        <h3 className="text-base font-semibold text-base-content">
-                          {comparedUser.username}
-                          {index === 0 && (
-                            <span className="ml-2 text-xs font-normal text-base-content/60">
-                              {t('media:social.you')}
-                            </span>
-                          )}
-                        </h3>
-                        <div className="mt-3 grid grid-cols-2 gap-3">
-                          <div>
-                            <div className="text-xs text-base-content/60">{t('media:stats.totalXp')}</div>
-                            <div className="text-2xl font-bold text-primary">
-                              {numberWithCommas(comparedUser.stats.totalXp)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-base-content/60">{t('media:stats.timeLabel')}</div>
-                            <div className="text-2xl font-bold text-secondary">
-                              {numberWithCommas(comparedUser.stats.totalTime)}
-                            </div>
-                            <div className="text-xs text-base-content/60">
-                              {t('media:social.minutes', { count: comparedUser.stats.totalTime })}
-                            </div>
+                    {[comparison.user1, comparison.user2].map((comparedUser, index) => {
+                      const metrics = getComparisonMetrics(comparedUser.stats);
+                      return (
+                        <div key={comparedUser.username} className="surface-muted p-4">
+                          <h3 className="text-base font-semibold text-base-content">
+                            {comparedUser.username}
+                            {index === 0 && (
+                              <span className="ml-2 text-xs font-normal text-base-content/60">
+                                {t('media:social.you')}
+                              </span>
+                            )}
+                          </h3>
+                          <div className="mt-3 grid grid-cols-2 gap-3">
+                            {metrics.map((metric) => (
+                              <div key={metric.label}>
+                                <div className="text-xs text-base-content/60">
+                                  {metric.label}
+                                </div>
+                                <div
+                                  className={
+                                    metric.valueClassName === 'text-primary'
+                                      ? 'text-2xl font-bold text-primary'
+                                      : 'text-2xl font-bold text-secondary'
+                                  }
+                                >
+                                  {numberWithCommas(metric.value)}
+                                </div>
+                                {metric.description && (
+                                  <div className="text-xs text-base-content/60">
+                                    {metric.description}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

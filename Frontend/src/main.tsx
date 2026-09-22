@@ -62,6 +62,9 @@ const NotificationsScreen = lazy(
 );
 const ProfileHeader = lazy(() => import('./components/ProfileHeader.tsx'));
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen.tsx'));
+const ProfileActivityScreen = lazy(
+  () => import('./screens/ProfileActivityScreen.tsx'),
+);
 const ProtectedRoutes = lazy(() => import('./contexts/protectedRoute.tsx'));
 const RankingScreen = lazy(() => import('./screens/RankingScreen.tsx'));
 const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'));
@@ -175,6 +178,7 @@ const router = createBrowserRouter(
         <Route path="/shared-log/:logId" element={<SharedLogScreen />} />
         <Route path="user/:username" element={<ProfileHeader />}>
           <Route index element={<ProfileScreen />} />
+          <Route path="activity" element={<ProfileActivityScreen />} />
           <Route path="stats" element={<StatsScreen />} />
           <Route path="list" element={<ListScreen />} />
           <Route path="lists" element={<UserListsScreen />} />

@@ -3270,6 +3270,7 @@ interface IComparisonStats {
   totalChars: number;
   totalPages: number;
   totalEpisodes: number;
+  totalVolumes: number;
   logCount: number;
   readingSpeed: number;
   readingPercentage: number | null; // null when no character count data available
@@ -3458,6 +3459,7 @@ async function calculateUserMediaStats(
         totalChars: { $sum: { $ifNull: ['$chars', 0] } },
         totalPages: { $sum: { $ifNull: ['$pages', 0] } },
         totalEpisodes: { $sum: { $ifNull: ['$episodes', 0] } },
+        totalVolumes: { $max: { $ifNull: ['$volume', 0] } },
         logCount: { $sum: 1 },
       },
     },
@@ -3469,6 +3471,7 @@ async function calculateUserMediaStats(
     totalChars: 0,
     totalPages: 0,
     totalEpisodes: 0,
+    totalVolumes: 0,
     logCount: 0,
   };
 

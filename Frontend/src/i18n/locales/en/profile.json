@@ -16,6 +16,13 @@
   "activity": {
     "title": "Immersion Activity"
   },
+  "socialActivity": {
+    "title": "{{username}}'s Activity",
+    "empty": "No activity yet.",
+    "loadError": "Could not load this activity feed.",
+    "retry": "Retry",
+    "loadMore": "Load more"
+  },
   "social": {
     "follow": "Follow",
     "unfollow": "Unfollow",
@@ -170,6 +177,7 @@
   },
   "tabs": {
     "overview": "Overview",
+    "activity": "Activity",
     "stats": "Stats",
     "immersionList": "Immersion List",
     "lists": "Lists",

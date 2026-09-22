@@ -40,6 +40,7 @@ import {
 import { IMediaListEntry } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { getMediaDisplayTitle } from '../utils/mediaTitle';
+import { getLogTypeLabelKey } from '../utils/logTypes';
 import UserAvatar from '../components/UserAvatar';
 import MediaListComments from '../components/MediaListComments';
 import MediaListFormModal, {
@@ -66,7 +67,7 @@ function EntryRow({
   onNoteChange,
   onRemove,
 }: EntryRowProps) {
-  const { t } = useTranslation('media');
+  const { t } = useTranslation(['media', 'common']);
   const id = `${entry.mediaType}:${entry.mediaId}`;
   const {
     attributes,
@@ -79,6 +80,7 @@ function EntryRow({
 
   const media = entry.media;
   const title = getMediaDisplayTitle(media);
+  const mediaTypeLabelKey = getLogTypeLabelKey(entry.mediaType);
 
   const content = (
     <>
@@ -95,8 +97,10 @@ function EntryRow({
       />
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{title}</p>
-        <p className="text-xs text-base-content/60 capitalize">
-          {entry.mediaType}
+        <p className="text-xs text-base-content/60">
+          {mediaTypeLabelKey
+            ? t(mediaTypeLabelKey, { ns: 'common' })
+            : entry.mediaType}
         </p>
         {!isEditing && entry.note && (
           <p className="text-sm text-base-content/80 mt-1 whitespace-pre-wrap">

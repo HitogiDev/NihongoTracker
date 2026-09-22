@@ -99,7 +99,7 @@ function Dashboard() {
     return keys[Math.floor(Math.random() * keys.length)];
   });
 
-  const { formatRelativeDate } = useDateFormatting();
+  const { formatRelativeDate, formatNumber } = useDateFormatting();
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<
     IMediaDocument | undefined
@@ -283,7 +283,7 @@ function Dashboard() {
       uniqueLogs.push({
         ...log,
         formattedDate: formatRelativeDate(log.date),
-        formattedTime: formatTime(log.time, log.episodes),
+        formattedTime: formatTime(log.time, log.episodes, log.chars),
       });
     }
 
@@ -299,7 +299,7 @@ function Dashboard() {
     return null;
   }
 
-  function formatTime(minutes?: number, episodes?: number) {
+  function formatTime(minutes?: number, episodes?: number, chars?: number) {
     if (minutes && minutes > 0) {
       const hoursValue = Math.floor(minutes / 60);
       const mins = minutes % 60;
@@ -308,6 +308,11 @@ function Dashboard() {
         : `${mins}m`;
     } else if (episodes) {
       return `${episodes} ep${episodes > 1 ? 's' : ''}`;
+    } else if (chars && chars > 0) {
+      return formatNumber(chars, {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      });
     }
     return 'N/A';
   }

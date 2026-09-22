@@ -49,6 +49,18 @@ function ProfileNavbar({
               {t('tabs.overview')}
             </Link>
           </li>
+          <li>
+            <Link
+              to={`/user/${username}/activity`}
+              className={
+                isActive(`/user/${username}/activity`)
+                  ? 'active bg-primary text-primary-content'
+                  : ''
+              }
+            >
+              {t('tabs.activity')}
+            </Link>
+          </li>
           {canViewStatistics && (
             <li>
               <Link

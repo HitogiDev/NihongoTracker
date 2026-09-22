@@ -287,6 +287,7 @@ export async function getRecentLogs(
           description: 1,
           type: 1,
           time: 1,
+          chars: 1,
           episodes: 1,
           volume: 1,
           mediaId: 1,

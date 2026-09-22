@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { userRoles } from '../types.js';
+import User from '../models/user.model.js';
 import { apiError, ErrorCode } from '../i18n/errorCodes.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import {
@@ -39,17 +40,28 @@ export async function getFeed(
 ) {
   try {
     const scope = req.query.scope ?? 'following';
-    if (!['global', 'following', 'clubs'].includes(String(scope))) {
+    if (!['global', 'following', 'clubs', 'user'].includes(String(scope))) {
       throw apiError('activity.invalidScope', 400, 'Invalid feed scope');
     }
     const clubId = req.query.clubId
       ? parseObjectId(String(req.query.clubId), 'activity.invalidClubId')
       : undefined;
+    const targetUser =
+      scope === 'user'
+        ? await User.findOne({ username: String(req.query.username ?? '') })
+            .select('_id')
+            .collation({ locale: 'en', strength: 2 })
+            .lean()
+        : null;
+    if (scope === 'user' && !targetUser) {
+      throw apiError('user.notFound', 404, 'User not found');
+    }
     const result = await getActivityFeed({
       viewerId: res.locals.user._id,
       clubIds: res.locals.user.clubs ?? [],
-      scope: scope as 'global' | 'following' | 'clubs',
+      scope: scope as 'global' | 'following' | 'clubs' | 'user',
       clubId,
+      targetUserId: targetUser?._id,
       before: req.query.before,
       limit: req.query.limit,
     });

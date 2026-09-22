@@ -739,9 +739,10 @@ const swaggerDocument = {
       get: {
         tags: ['Auth'],
         summary: 'Verify current JWT token',
-        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        security: [{ cookieAuth: [] }],
         responses: {
           200: { description: 'Token is valid' },
+          403: { description: 'API keys are not accepted' },
           401: { description: 'Invalid or expired token' },
         },
       },
@@ -850,6 +851,24 @@ const swaggerDocument = {
     },
 
     // ──────────────── Users ────────────────
+    '/users/me': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get the authenticated user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        responses: {
+          200: {
+            description: 'Authenticated user data',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/User' },
+              },
+            },
+          },
+          401: { description: 'Authentication required' },
+        },
+      },
+    },
     '/users': {
       put: {
         tags: ['Users'],

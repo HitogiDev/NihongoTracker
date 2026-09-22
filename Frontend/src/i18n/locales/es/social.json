@@ -15,7 +15,9 @@
     "watched": "vio",
     "notable": "Destacada",
     "notableSession": "completó una sesión de inmersión destacada",
-    "review": "publicó una reseña"
+    "readMore": "Ver más",
+    "review": "publicó una reseña",
+    "showLess": "Ver menos"
   },
   "comments": {
     "add": "Añadir un comentario",

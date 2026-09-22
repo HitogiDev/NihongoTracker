@@ -108,6 +108,7 @@ const CLUB_SECTION_TITLE_KEYS: Record<string, TitleKey> = {
 };
 
 const USER_SECTION_TITLE_KEYS: Record<string, TitleKey> = {
+  activity: 'titles.sections.activity',
   stats: 'titles.sections.stats',
   list: 'titles.sections.immersionList',
   lists: 'titles.sections.lists',
