@@ -23,6 +23,7 @@ const xpBreakdownSchema = new Schema<IXpBreakdown>(
     difficulty: { type: Number, default: null },
     categoryLevelAt: { type: Number, required: true },
     comfortAt: { type: Number, default: null },
+    targetDifficulty: { type: Number, default: null },
     multiplier: { type: Number, required: true },
     version: { type: Number, required: true },
   },

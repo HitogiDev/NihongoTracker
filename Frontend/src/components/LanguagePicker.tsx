@@ -1,3 +1,4 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { useTranslation } from 'react-i18next';
 import {
   LANGUAGE_LABELS,
@@ -18,7 +19,7 @@ export default function LanguagePicker() {
       <legend className="fieldset-legend font-medium">
         {t('preferences.language.label')}
       </legend>
-      <select
+      <DropdownSelect
         id="language-picker"
         aria-label={t('preferences.language.label')}
         className="select w-full max-w-xs"
@@ -32,7 +33,7 @@ export default function LanguagePicker() {
             {LANGUAGE_LABELS[language]}
           </option>
         ))}
-      </select>
+      </DropdownSelect>
       <p className="label text-base-content/60 text-wrap">
         {t('preferences.language.help')}
       </p>

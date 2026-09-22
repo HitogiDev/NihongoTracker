@@ -34,6 +34,12 @@ const UserMediaStatusSchema = new Schema<IUserMediaStatus>(
 );
 
 UserMediaStatusSchema.index({ user: 1, mediaId: 1, type: 1 }, { unique: true });
+UserMediaStatusSchema.index({
+  mediaId: 1,
+  type: 1,
+  hiddenFromList: 1,
+  user: 1,
+});
 
 export default model<IUserMediaStatus>(
   'UserMediaStatus',

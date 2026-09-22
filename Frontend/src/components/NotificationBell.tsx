@@ -7,6 +7,7 @@ import {
 } from '../utils/notificationText';
 import { Link } from 'react-router-dom';
 import {
+  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQueryClient,
@@ -26,7 +27,11 @@ import {
   markNotificationsAsReadFn,
 } from '../api/notificationsApi';
 import UserAvatar from './UserAvatar';
-import { INotificationListItem } from '../types';
+import {
+  INotificationListItem,
+  INotificationListResponse,
+  INotificationSummaryResponse,
+} from '../types';
 import { useNotificationCount } from '../hooks/useNotificationCount';
 import {
   getNotificationAccent,
@@ -90,9 +95,73 @@ function NotificationBell() {
 
   const markNotificationsAsReadMutation = useMutation({
     mutationFn: markNotificationsAsReadFn,
-    onSuccess: () => {
-      queryClient.refetchQueries({ queryKey: ['notifications', 'summary'] });
-      queryClient.refetchQueries({
+    onMutate: async () => {
+      await Promise.all([
+        queryClient.cancelQueries({
+          queryKey: ['notifications', 'summary'],
+        }),
+        queryClient.cancelQueries({
+          queryKey: ['notifications', 'list'],
+          exact: false,
+        }),
+      ]);
+
+      const previousSummary =
+        queryClient.getQueryData<INotificationSummaryResponse>([
+          'notifications',
+          'summary',
+        ]);
+      const previousLists = queryClient.getQueriesData<
+        InfiniteData<INotificationListResponse>
+      >({ queryKey: ['notifications', 'list'], exact: false });
+
+      queryClient.setQueryData<INotificationSummaryResponse>(
+        ['notifications', 'summary'],
+        (current) =>
+          current
+            ? {
+                ...current,
+                totalCount: 0,
+                sections: [],
+              }
+            : current
+      );
+      queryClient.setQueriesData<InfiniteData<INotificationListResponse>>(
+        { queryKey: ['notifications', 'list'], exact: false },
+        (current) =>
+          current
+            ? {
+                ...current,
+                pages: current.pages.map((page) => ({
+                  ...page,
+                  items: page.items.map((item) => ({
+                    ...item,
+                    isRead: true,
+                  })),
+                })),
+              }
+            : current
+      );
+
+      return { previousLists, previousSummary };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousSummary) {
+        queryClient.setQueryData(
+          ['notifications', 'summary'],
+          context.previousSummary
+        );
+      }
+
+      context?.previousLists.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['notifications', 'summary'],
+      });
+      queryClient.invalidateQueries({
         queryKey: ['notifications', 'list'],
         exact: false,
       });
@@ -281,6 +350,11 @@ function NotificationBell() {
       <button
         type="button"
         className="btn btn-ghost btn-sm sm:btn-md btn-circle relative"
+        onClick={() => {
+          if (totalCount > 0 && !markNotificationsAsReadMutation.isPending) {
+            markNotificationsAsReadMutation.mutate();
+          }
+        }}
         aria-label={
           totalCount > 0
             ? t('bell.ariaLabel', { count: totalCount })
@@ -352,21 +426,12 @@ function NotificationBell() {
 
         {isLoggedIn && (
           <div className="border-t border-base-300/70 px-3 py-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                to="/notifications"
-                className="btn btn-ghost btn-sm text-primary"
-              >
-                {t('bell.goToPage')}
-              </Link>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                onClick={() => markNotificationsAsReadMutation.mutate()}
-              >
-                {t('summary.markAsRead')}
-              </button>
-            </div>
+            <Link
+              to="/notifications"
+              className="btn btn-ghost btn-sm w-full text-primary"
+            >
+              {t('bell.goToPage')}
+            </Link>
           </div>
         )}
       </div>

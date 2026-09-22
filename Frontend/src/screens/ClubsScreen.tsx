@@ -1,3 +1,4 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -10,11 +11,13 @@ import {
   ListFilter,
   Funnel,
   ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 import { getClubsFn } from '../api/clubApi';
 import { IClubResponse } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { useTranslation } from 'react-i18next';
+import Field from '../components/ui/Field';
 
 function ClubsScreen() {
   const { t } = useTranslation('clubs');
@@ -26,7 +29,12 @@ function ClubsScreen() {
   const [search, setSearch] = useState(''); // Debounced value for query
   const [sortBy, setSortBy] = useState('memberCount');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [showPublicOnly, setShowPublicOnly] = useState(false);
+  const [visibility, setVisibility] = useState<
+    'all' | 'public' | 'private'
+  >('all');
+  const [membership, setMembership] = useState<
+    'all' | 'member' | 'leader'
+  >('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [page, setPage] = useState(1);
 
@@ -51,7 +59,8 @@ function ClubsScreen() {
       search,
       sortBy,
       sortOrder,
-      showPublicOnly,
+      visibility,
+      membership,
       selectedTags,
       page,
     ],
@@ -62,8 +71,9 @@ function ClubsScreen() {
         search,
         sortBy,
         sortOrder,
-        isPublic: showPublicOnly ? true : undefined,
+        isPublic: visibility === 'all' ? undefined : visibility === 'public',
         tags: selectedTags.join(','),
+        membership,
       }),
     placeholderData: (previousData) => previousData,
   });
@@ -88,6 +98,21 @@ function ClubsScreen() {
     );
     setPage(1); // Reset to first page when filtering
   };
+
+  const resetFilters = () => {
+    setSearchInput('');
+    setSearch('');
+    setVisibility('all');
+    setMembership('all');
+    setSelectedTags([]);
+    setPage(1);
+  };
+
+  const hasActiveFilters =
+    searchInput.trim() !== '' ||
+    visibility !== 'all' ||
+    membership !== 'all' ||
+    selectedTags.length > 0;
 
   const sortOptions = [
     { value: 'memberCount', label: t('browse.sort.members') },
@@ -219,23 +244,66 @@ function ClubsScreen() {
 
               {/* Visibility Filter */}
               <div>
-                <h3 className="font-semibold text-base-content mb-3 flex items-center gap-2">
-                  <Funnel className="w-5 h-5" />
-                  {t('common.visibility')}
-                </h3>
-                <label className="label cursor-pointer">
-                  <span>{t('browse.publicOnly')}</span>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-sm"
-                    checked={showPublicOnly}
-                    onChange={(e) => {
-                      setShowPublicOnly(e.target.checked);
-                      setPage(1);
-                    }}
-                  />
-                </label>
+                <Field
+                  label={
+                    <>
+                      <Funnel className="w-5 h-5" />
+                      {t('browse.visibility')}
+                    </>
+                  }
+                >
+                  {(id) => (
+                    <DropdownSelect
+                      id={id}
+                      className="select w-full"
+                      value={visibility}
+                      onChange={(e) => {
+                        setVisibility(e.target.value as typeof visibility);
+                        setPage(1);
+                      }}
+                    >
+                      <option value="all">
+                        {t('browse.visibilityOptions.all')}
+                      </option>
+                      <option value="public">
+                        {t('browse.visibilityOptions.public')}
+                      </option>
+                      <option value="private">
+                        {t('browse.visibilityOptions.private')}
+                      </option>
+                    </DropdownSelect>
+                  )}
+                </Field>
               </div>
+
+              {/* Membership Filter */}
+              {user && (
+                <div>
+                  <Field label={t('browse.membership')}>
+                    {(id) => (
+                      <DropdownSelect
+                        id={id}
+                        className="select w-full"
+                        value={membership}
+                        onChange={(e) => {
+                          setMembership(e.target.value as typeof membership);
+                          setPage(1);
+                        }}
+                      >
+                        <option value="all">
+                          {t('browse.membershipOptions.all')}
+                        </option>
+                        <option value="member">
+                          {t('browse.membershipOptions.member')}
+                        </option>
+                        <option value="leader">
+                          {t('browse.membershipOptions.leader')}
+                        </option>
+                      </DropdownSelect>
+                    )}
+                  </Field>
+                </div>
+              )}
 
               {/* Tags Filter */}
               <div>
@@ -258,6 +326,16 @@ function ClubsScreen() {
                   ))}
                 </div>
               </div>
+
+              {hasActiveFilters && (
+                <button
+                  className="btn btn-ghost btn-sm w-full gap-2"
+                  onClick={resetFilters}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  {t('browse.clearFilters')}
+                </button>
+              )}
             </div>
           </div>
 
@@ -434,11 +512,13 @@ function ClubCard({ club }: { club: IClubResponse }) {
           {club.isUserMember && club.userStatus === 'active' ? (
             <div className="badge badge-primary gap-1">
               <Users className="w-4 h-4" />
-              {club.userRole === 'leader'
-                ? t('roles.leader')
-                : club.userRole === 'moderator'
-                  ? t('roles.moderator')
-                  : t('roles.member')}
+              {club.userRole === 'owner'
+                ? t('roles.owner')
+                : club.userRole === 'leader'
+                  ? t('roles.leader')
+                  : club.userRole === 'moderator'
+                    ? t('roles.moderator')
+                    : t('roles.member')}
             </div>
           ) : club.isUserMember && club.userStatus === 'pending' ? (
             <div className="badge badge-warning gap-1">

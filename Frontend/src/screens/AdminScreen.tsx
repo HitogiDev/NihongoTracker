@@ -1,5 +1,7 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Field from '../components/ui/Field';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
@@ -32,19 +34,23 @@ import {
   adminBackfillAchievementsFn,
   adminBackfillRankingHistoryFn,
   adminBackfillRankAchievementsFn,
+  adminTriggerActivityBackfillFn,
+  getActivityBackfillStatusFn,
   adminTriggerJitenDifficultyBackfillFn,
   getJitenDifficultyBackfillStatusFn,
   type IIgdbDumpSyncStatus,
   type IVndbDumpSyncStatus,
   type IJitenBackfillStatus,
+  type IActivityBackfillStatus,
 } from '../api/trackerApi';
-import { Users, Play } from 'lucide-react';
+import { ArrowDown, ArrowUp, Users, Play } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
 import MediaRequestQueue from '../components/MediaRequestQueue';
 import MediaEditPanel from '../components/MediaEditPanel';
 import { getLocale } from '../utils/timezone';
+import Button from '../components/ui/Button';
 
-// Format a Date as the local "YYYY-MM-DD" a native <input type="date"> expects.
+// Format a Date as the local "YYYY-MM-DD" used by the shared date picker.
 // `toISOString()` would convert to UTC first, which can shift the calendar
 // day for timezones behind UTC.
 function toLocalDateInputValue(date: Date): string {
@@ -303,11 +309,30 @@ function AdminScreen() {
     },
   });
 
+  const { data: activityBackfillStatus } = useQuery({
+    queryKey: ['adminActivityBackfillStatus'],
+    queryFn: getActivityBackfillStatusFn,
+    enabled: isAdmin && selectedTab === 'system',
+    staleTime: 2_000,
+    refetchInterval: (query) => {
+      const status = query.state.data as IActivityBackfillStatus | undefined;
+      return status?.running ? 2_000 : false;
+    },
+  });
+
   // Mutations
   const recalcMutation = useMutation({
     mutationFn: recalculateStatsFn,
-    onSuccess: (_, type) => {
-      toast.success(`${type === 'streaks' ? 'Streaks' : 'XP'} recalculated`);
+    onSuccess: (data, request) => {
+      if (request.type === 'xp' && request.dryRun) {
+        toast.success(
+          `XP v3 preview: ${data.results.updatedLogs} logs, XP delta ${data.results.xpDelta}`
+        );
+      } else {
+        toast.success(
+          `${request.type === 'streaks' ? 'Streaks' : 'XP v3'} recalculated`
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
     },
     onError: () => toast.error('Recalculation failed'),
@@ -517,6 +542,17 @@ function AdminScreen() {
     onError: () => toast.error('Failed to backfill rank achievements'),
   });
 
+  const backfillActivityMutation = useMutation({
+    mutationFn: adminTriggerActivityBackfillFn,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({
+        queryKey: ['adminActivityBackfillStatus'],
+      });
+    },
+    onError: () => toast.error('Failed to start activity feed backfill'),
+  });
+
   const backfillJitenDifficultyMutation = useMutation({
     mutationFn: (force: boolean) =>
       adminTriggerJitenDifficultyBackfillFn(force),
@@ -546,6 +582,25 @@ function AdminScreen() {
     const date = new Date(millis);
     if (Number.isNaN(date.getTime())) return 'Unknown';
     return date.toLocaleString();
+  };
+
+  const moveChangelogChange = (index: number, direction: -1 | 1) => {
+    if (!selectedChangelog) return;
+
+    const targetIndex = index + direction;
+    if (
+      targetIndex < 0 ||
+      targetIndex >= selectedChangelog.changes.length
+    ) {
+      return;
+    }
+
+    const changes = [...selectedChangelog.changes];
+    [changes[index], changes[targetIndex]] = [
+      changes[targetIndex],
+      changes[index],
+    ];
+    setSelectedChangelog({ ...selectedChangelog, changes });
   };
 
   // Gate
@@ -1190,7 +1245,9 @@ function AdminScreen() {
                     <div className="flex gap-2">
                       <button
                         className="btn btn-warning btn-sm"
-                        onClick={() => recalcMutation.mutate('streaks')}
+                        onClick={() =>
+                          recalcMutation.mutate({ type: 'streaks' })
+                        }
                         disabled={recalcMutation.isPending}
                       >
                         {recalcMutation.isPending ? (
@@ -1201,13 +1258,15 @@ function AdminScreen() {
                       </button>
                       <button
                         className="btn btn-info btn-sm"
-                        onClick={() => recalcMutation.mutate('xp')}
+                        onClick={() =>
+                          recalcMutation.mutate({ type: 'xp', dryRun: true })
+                        }
                         disabled={recalcMutation.isPending}
                       >
                         {recalcMutation.isPending ? (
                           <span className="loading loading-spinner loading-sm"></span>
                         ) : (
-                          'Recalc XP'
+                          'Preview XP v3'
                         )}
                       </button>
                       <button
@@ -1506,7 +1565,7 @@ function AdminScreen() {
                       </legend>
                       <div className="space-y-3">
                         <Field label={'Tier'}>
-                          <select
+                          <DropdownSelect
                             className="select w-full"
                             value={grantTier}
                             onChange={(e) =>
@@ -1523,7 +1582,7 @@ function AdminScreen() {
                             <option value="donator">Donator</option>
                             <option value="enthusiast">Enthusiast</option>
                             <option value="consumer">Consumer</option>
-                          </select>
+                          </DropdownSelect>
                         </Field>
                         {grantTier && (
                           <Field
@@ -1613,7 +1672,7 @@ function AdminScreen() {
                     value={logUsername}
                     onChange={(e) => setLogUsername(e.target.value)}
                   />
-                  <select
+                  <DropdownSelect
                     className="select"
                     value={logType}
                     onChange={(e) => setLogType(e.target.value)}
@@ -1627,18 +1686,14 @@ function AdminScreen() {
                     <option>movie</option>
                     <option>tv show</option>
                     <option>audio</option>
-                  </select>
-                  <input
-                    type="date"
-                    className="input"
+                  </DropdownSelect>
+                  <DatePickerInput
                     value={logStart}
-                    onChange={(e) => setLogStart(e.target.value)}
+                    onChange={setLogStart}
                   />
-                  <input
-                    type="date"
-                    className="input"
+                  <DatePickerInput
                     value={logEnd}
-                    onChange={(e) => setLogEnd(e.target.value)}
+                    onChange={setLogEnd}
                   />
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -1806,15 +1861,14 @@ function AdminScreen() {
                       />
                     </Field>
                     <Field label={'Date'}>
-                      <input
-                        type="date"
-                        className="input"
+                      <DatePickerInput
                         value={
                           selectedLog.date
                             ? toLocalDateInputValue(new Date(selectedLog.date))
                             : ''
                         }
-                        onChange={(e) =>
+                        required
+                        onChange={(dateOnly) =>
                           setSelectedLog((l) => {
                             if (!l) return l;
                             const reference = l.date
@@ -1823,7 +1877,7 @@ function AdminScreen() {
                             return {
                               ...l,
                               date: buildLocalDateWithTime(
-                                e.target.value,
+                                dateOnly,
                                 reference
                               ).toISOString(),
                             };
@@ -2148,9 +2202,7 @@ function AdminScreen() {
                         />
                       </Field>
                       <Field label={'Date *'}>
-                        <input
-                          type="date"
-                          className="input"
+                        <DatePickerInput
                           value={
                             selectedChangelog.date &&
                             selectedChangelog.date.length === 10
@@ -2159,10 +2211,11 @@ function AdminScreen() {
                                   .toISOString()
                                   .split('T')[0]
                           }
-                          onChange={(e) =>
+                          required
+                          onChange={(date) =>
                             setSelectedChangelog({
                               ...selectedChangelog,
-                              date: e.target.value,
+                              date,
                             })
                           }
                         />
@@ -2216,10 +2269,13 @@ function AdminScreen() {
                           + Add Change
                         </button>
                       </div>
+                      <p className="text-sm text-base-content/60 mb-2">
+                        Use the arrow buttons to set the display order.
+                      </p>
                       <div className="space-y-2 max-h-80 overflow-y-auto">
                         {selectedChangelog.changes.map((change, index) => (
                           <div key={index} className="flex gap-2 items-start">
-                            <select
+                            <DropdownSelect
                               className="select select-sm"
                               value={change.type}
                               onChange={(e) => {
@@ -2241,7 +2297,33 @@ function AdminScreen() {
                               <option value="improvement">Improvement</option>
                               <option value="bugfix">Bug Fix</option>
                               <option value="breaking">Breaking</option>
-                            </select>
+                            </DropdownSelect>
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                appearance="ghost"
+                                size="xs"
+                                shape="square"
+                                aria-label={`Move change ${index + 1} up`}
+                                title="Move change up"
+                                disabled={index === 0}
+                                onClick={() => moveChangelogChange(index, -1)}
+                              >
+                                <ArrowUp className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                appearance="ghost"
+                                size="xs"
+                                shape="square"
+                                aria-label={`Move change ${index + 1} down`}
+                                title="Move change down"
+                                disabled={
+                                  index === selectedChangelog.changes.length - 1
+                                }
+                                onClick={() => moveChangelogChange(index, 1)}
+                              >
+                                <ArrowDown className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                             <input
                               type="text"
                               className="input input-sm flex-1"
@@ -2381,7 +2463,7 @@ function AdminScreen() {
                   <div className="space-y-3">
                     <button
                       className="btn btn-warning w-full"
-                      onClick={() => recalcMutation.mutate('streaks')}
+                      onClick={() => recalcMutation.mutate({ type: 'streaks' })}
                       disabled={recalcMutation.isPending}
                     >
                       <svg
@@ -2401,7 +2483,9 @@ function AdminScreen() {
                     </button>
                     <button
                       className="btn btn-info w-full"
-                      onClick={() => recalcMutation.mutate('xp')}
+                      onClick={() =>
+                        recalcMutation.mutate({ type: 'xp', dryRun: true })
+                      }
                       disabled={recalcMutation.isPending}
                     >
                       <svg
@@ -2417,14 +2501,29 @@ function AdminScreen() {
                           d="M13 10V3L4 14h7v7l9-11h-7z"
                         />
                       </svg>
-                      Recalculate All XP
+                      Preview XP v3 Recalculation
+                    </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This rewrites every log and user total with XP v3. Run the preview and database backup first. Continue?'
+                          )
+                        ) {
+                          recalcMutation.mutate({ type: 'xp' });
+                        }
+                      }}
+                      disabled={recalcMutation.isPending}
+                    >
+                      Apply XP v3 Recalculation
                     </button>
                     <button
                       className="btn btn-success w-full"
                       onClick={() => {
                         if (
                           confirm(
-                            'This will re-check all achievement conditions for every user: granting any that were previously missed, and REVOKING any the user no longer qualifies for. Admin-granted achievements are kept. This may take a while. Continue?'
+                            'This grants newly eligible achievements without revoking existing ones. This may take a while. Continue?'
                           )
                         ) {
                           backfillAchievementsMutation.mutate();
@@ -2509,6 +2608,52 @@ function AdminScreen() {
                         ? 'Backfilling Rank Achievements...'
                         : 'Backfill Rank Achievements'}
                     </button>
+                    <button
+                      className="btn btn-info w-full"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            'This creates activity feed entries for all historical logs with known dates. It preserves each log date and privacy setting, and can be run again without creating duplicates. This runs in the background. Continue?'
+                          )
+                        ) {
+                          backfillActivityMutation.mutate();
+                        }
+                      }}
+                      disabled={
+                        backfillActivityMutation.isPending ||
+                        activityBackfillStatus?.running
+                      }
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {activityBackfillStatus?.running
+                        ? `Backfilling Activity... ${activityBackfillStatus.processed}/${activityBackfillStatus.total}`
+                        : 'Backfill Activity Feed'}
+                    </button>
+                    {activityBackfillStatus &&
+                      !activityBackfillStatus.running &&
+                      activityBackfillStatus.finishedAt && (
+                        <p className="text-xs text-base-content/60 -mt-2">
+                          Last activity backfill:{' '}
+                          {activityBackfillStatus.created} created,{' '}
+                          {activityBackfillStatus.existing} already present,{' '}
+                          {activityBackfillStatus.skipped} skipped
+                          {activityBackfillStatus.error
+                            ? `: error: ${activityBackfillStatus.error}`
+                            : ''}
+                        </p>
+                      )}
                     <button
                       className="btn btn-info w-full"
                       onClick={() => {

@@ -9,6 +9,15 @@ import {
   IClubMediaCandidate,
   ILog,
   IMediaDocument,
+  ClubChallengeMetric,
+  ClubRole,
+  IClubChallenge,
+  IClubChallengeProgress,
+  IClubObjective,
+  ClubObjectiveMode,
+  ClubObjectivePeriod,
+  IClubGoal,
+  ISocialActivity,
 } from '../types';
 
 const api = axiosInstance;
@@ -22,6 +31,7 @@ export async function getClubsFn(params: {
   sortOrder?: 'asc' | 'desc';
   isPublic?: boolean;
   tags?: string;
+  membership?: 'all' | 'member' | 'leader';
 }): Promise<IClubListResponse> {
   const { data } = await api.get<IClubListResponse>('/clubs', {
     params,
@@ -528,7 +538,7 @@ export async function getClubMediaStatsFn(
 export async function getClubMemberRankingsFn(
   clubId: string,
   params: {
-    sortBy?: 'totalXp' | 'totalLogs' | 'totalTime' | 'level';
+    metric?: 'xp' | 'time' | 'chars' | 'reading' | 'listening';
     period?: 'week' | 'month' | 'all-time';
     limit?: number;
     page?: number;
@@ -555,6 +565,7 @@ export async function getClubMemberRankingsFn(
     totalXp: number;
     totalTime: number; // in minutes
     totalHours: number; // calculated field
+    value: number;
     rank: number;
     joinDate: string;
   }>;
@@ -568,6 +579,124 @@ export async function getClubMemberRankingsFn(
   const { data } = await api.get(`/clubs/${clubId}/rankings`, {
     params,
   });
+  return data;
+}
+
+export async function getClubFeedFn(
+  clubId: string,
+  params?: { before?: string; limit?: number }
+): Promise<{ activities: Array<ISocialActivity & { isPinned?: boolean }>; nextCursor: string | null }> {
+  const { data } = await api.get(`/clubs/${clubId}/feed`, { params });
+  return data;
+}
+
+export async function getClubChallengesFn(
+  clubId: string
+): Promise<{ challenges: IClubChallenge[] }> {
+  const { data } = await api.get('/clubs/challenges', { params: { clubId } });
+  return data;
+}
+
+export async function getClubObjectivesFn(
+  clubId: string
+): Promise<{ objectives: IClubObjective[] }> {
+  const { data } = await api.get(`/clubs/${clubId}/objectives`);
+  return data;
+}
+
+export async function createClubObjectiveFn(input: {
+  clubId: string;
+  mode: ClubObjectiveMode;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  period?: ClubObjectivePeriod;
+  metric: ClubChallengeMetric;
+  goal: number;
+}): Promise<{ challenge: IClubObjective }> {
+  const { data } = await api.post('/clubs/objectives', {
+    ...input,
+    scope: 'club',
+    visibility: 'members',
+  });
+  return data;
+}
+
+export async function pinClubObjectiveFn(
+  clubId: string,
+  objectiveId: string,
+  pinned: boolean
+): Promise<{ pinned: boolean; objectiveId: string }> {
+  const { data } = await api.put(
+    `/clubs/${clubId}/objectives/${objectiveId}/pin`,
+    { pinned }
+  );
+  return data;
+}
+
+export async function getClubChallengeFn(
+  challengeId: string
+): Promise<{ challenge: IClubChallenge; participants: IClubChallengeProgress[] }> {
+  const { data } = await api.get(`/clubs/challenges/${challengeId}`);
+  return data;
+}
+
+export async function getClubObjectiveFn(
+  objectiveId: string
+): Promise<{ challenge: IClubObjective; participants: IClubChallengeProgress[] }> {
+  const { data } = await api.get(`/clubs/challenges/${objectiveId}`);
+  return data;
+}
+
+export async function createClubChallengeFn(input: {
+  clubId: string;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  metric: ClubChallengeMetric;
+  goal: number;
+}): Promise<{ challenge: IClubChallenge }> {
+  const { clubId, ...challenge } = input;
+  const { data } = await api.post('/clubs/challenges', {
+    ...challenge,
+    clubId,
+    scope: 'club',
+    visibility: 'members',
+  });
+  return data;
+}
+
+export async function joinClubChallengeFn(challengeId: string): Promise<{ joined: boolean }> {
+  const { data } = await api.post(`/clubs/challenges/${challengeId}/join`);
+  return data;
+}
+
+export async function leaveClubChallengeFn(challengeId: string): Promise<void> {
+  await api.delete(`/clubs/challenges/${challengeId}/join`);
+}
+
+export async function completeClubChallengeFn(
+  challengeId: string
+): Promise<{ completed: boolean; progress: number }> {
+  const { data } = await api.post(`/clubs/challenges/${challengeId}/complete`);
+  return data;
+}
+
+export async function getCooperativeClubGoalsFn(
+  clubId: string
+): Promise<{ goals: IClubGoal[] }> {
+  const { data } = await api.get(`/clubs/${clubId}/cooperative-goals`);
+  return data;
+}
+
+export async function updateClubMemberRoleFn(
+  clubId: string,
+  memberId: string,
+  role: Exclude<ClubRole, 'owner' | 'leader'>
+): Promise<{ role: ClubRole }> {
+  const { data } = await api.patch(`/clubs/${clubId}/members/${memberId}/role`, { role });
   return data;
 }
 

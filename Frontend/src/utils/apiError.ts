@@ -8,6 +8,21 @@ interface ApiErrorBody {
   params?: Record<string, string | number>;
 }
 
+export function isPrivateProfileError(error: unknown): boolean {
+  const response = (error as {
+    response?: {
+      status?: number;
+      data?: ApiErrorBody;
+    };
+  })?.response;
+
+  return (
+    response?.status === 403 &&
+    (response.data?.code === 'privacy.profileRestricted' ||
+      response.data?.message === 'This profile is private')
+  );
+}
+
 /**
  * Turns any thrown value from an API call into a message to show the user.
  *

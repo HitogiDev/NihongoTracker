@@ -384,6 +384,31 @@
     "timezoneHint": "Todas las fechas y horas se mostrarán en la zona horaria que elijas",
     "title": "Preferencias"
   },
+  "privacy": {
+    "fields": {
+      "immersionActivity": {
+        "help": "Controla quién puede ver tus sesiones de inmersión en el feed social.",
+        "label": "Actividad de inmersión"
+      },
+      "profile": {
+        "help": "Controla quién puede abrir tu perfil y ver sus secciones públicas.",
+        "label": "Perfil"
+      },
+      "statistics": {
+        "help": "Controla quién puede ver tus totales, gráficos, clasificaciones y estadísticas de progreso.",
+        "label": "Estadísticas"
+      }
+    },
+    "save": "Guardar ajustes de privacidad",
+    "saved": "Ajustes de privacidad actualizados",
+    "subtitle": "Elige quién puede ver cada parte de tu actividad social.",
+    "title": "Privacidad social",
+    "visibility": {
+      "followers": "Seguidores",
+      "private": "Solo yo",
+      "public": "Todo el mundo"
+    }
+  },
   "profile": {
     "about": "Sobre mí",
     "aboutPlaceholder": "Cuenta qué lees, ves o estudias (admite Markdown)",
@@ -449,6 +474,7 @@
     "advanced": "Gestión de datos",
     "customization": "Personalización",
     "patreon": "Patreon",
+    "privacy": "Privacidad",
     "preferences": "Preferencias",
     "profile": "Perfil"
   },

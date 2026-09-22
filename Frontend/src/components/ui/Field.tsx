@@ -42,7 +42,7 @@ function Field({
   const wired = typeof children === 'function';
 
   return (
-    <fieldset className={`fieldset ${className}`}>
+    <fieldset className={`fieldset min-w-0 ${className}`}>
       {/* `w-full`: a <legend> shrink-wraps its content by default, which would
           collapse the label / aside pair together instead of pushing them to
           opposite ends of the row. */}
@@ -67,11 +67,18 @@ function Field({
       {wired ? children(id) : children}
 
       {error ? (
-        <p id={describedBy} role="alert" className="label text-error">
+        <p
+          id={describedBy}
+          role="alert"
+          className="label w-full min-w-0 whitespace-normal break-words text-error"
+        >
           {error}
         </p>
       ) : hint ? (
-        <p id={describedBy} className="label">
+        <p
+          id={describedBy}
+          className="label w-full min-w-0 whitespace-normal break-words"
+        >
           {hint}
         </p>
       ) : null}

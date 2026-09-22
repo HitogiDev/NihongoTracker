@@ -113,6 +113,8 @@ const USER_SECTION_TITLE_KEYS: Record<string, TitleKey> = {
   lists: 'titles.sections.lists',
   goals: 'titles.sections.goals',
   moderation: 'titles.sections.moderation',
+  followers: 'titles.sections.followers',
+  following: 'titles.sections.following',
 };
 
 interface TitleDescriptor {
@@ -146,6 +148,8 @@ function getTitleDescriptor(pathname: string): TitleDescriptor {
   if (segments[0] === 'settings') return { key: 'titles.settings' };
   if (segments[0] === 'media-request') return { key: 'titles.requestMedia' };
   if (segments[0] === 'notifications') return { key: 'titles.notifications' };
+  if (segments[0] === 'recommendations')
+    return { key: 'titles.recommendations' };
 
   if (segments[0] === 'ranking') return { key: 'titles.ranking' };
 
@@ -168,6 +172,7 @@ function getTitleDescriptor(pathname: string): TitleDescriptor {
 
   if (segments[0] === 'calculator') return { key: 'titles.calculator' };
   if (segments[0] === 'features') return { key: 'titles.features' };
+  if (segments[0] === 'guidelines') return { key: 'titles.guidelines' };
   if (segments[0] === 'about') return { key: 'titles.about' };
   if (segments[0] === 'support') return { key: 'titles.support' };
   if (segments[0] === 'privacy') return { key: 'titles.privacy' };
@@ -219,7 +224,7 @@ function TitleManager() {
     // over a union of keys.
     const translate = t as (
       key: TitleKey,
-      params?: Record<string, string>
+      params?: Record<string, string>,
     ) => string;
 
     document.title = `${translate(key, params)} • ${APP_NAME}`;

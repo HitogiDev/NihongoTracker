@@ -4,7 +4,7 @@ import { MediaBase } from '../models/media.model.js';
 import { ILog, IXpBreakdown } from '../types.js';
 
 /**
- * XP engine (formula v2).
+ * XP engine (formula v3).
  *
  * Philosophy: time is the base currency — one immersion hour earns the same
  * base XP regardless of reading speed. Characters act as validation (cap
@@ -15,7 +15,7 @@ import { ILog, IXpBreakdown } from '../types.js';
  * penalizes (floor 1.0) and its ceiling is the same at every level.
  */
 
-export const XP_FORMULA_VERSION = 2;
+export const XP_FORMULA_VERSION = 3;
 
 /** Base earn rate: 135 XP per immersion hour. */
 export const XP_PER_HOUR = 135;
@@ -46,17 +46,19 @@ export const MAX_DIFFICULTY_BONUS = 0.3;
 export const JITEN_MAX_DIFFICULTY = 5;
 /** Curve constant for comfort difficulty: Dc(L) = 100 * L / (L + K). */
 export const COMFORT_CURVE_K = 25;
+/** Full bonus is reached 0.5 Jiten points above effective comfort. */
+export const CHALLENGE_TARGET_GAP = 10;
+/** Recent history may calibrate level comfort by at most 0.25 Jiten. */
+export const HISTORY_COMFORT_ADJUSTMENT_LIMIT = 5;
 
 /**
- * Consumed-difficulty signal (Krashen i+1): the comfort point is raised to
- * the hours-weighted p75 of the difficulty the user actually consumed in the
- * category recently. max() with the level-based comfort makes it a ratchet —
- * consuming hard content raises your comfort, consuming easy content never
- * lowers it below what your level implies (no sandbagging).
+ * Consumed-difficulty signal: the hours-weighted median of difficulty recently
+ * consumed in the category calibrates the level-based comfort point.
+ * History is a small calibration, not a claim about comprehension.
  */
 export const CONSUMED_DIFFICULTY_WINDOW_DAYS = 90;
 export const CONSUMED_DIFFICULTY_MIN_HOURS = 10;
-export const CONSUMED_DIFFICULTY_PERCENTILE = 0.75;
+export const CONSUMED_DIFFICULTY_PERCENTILE = 0.5;
 
 // Must mirror services/calculateLevel.ts (xpVar / xpDiff).
 const LEVEL_XP_VAR = 0.07;
@@ -97,7 +99,7 @@ function clamp(value: number, min: number, max: number): number {
  */
 export function continuousLevel(xp: number): number {
   if (!xp || xp <= 0) return 0;
-  return Math.pow(xp, 1 / LEVEL_XP_DIFF) * LEVEL_XP_VAR;
+  return xp ** (1 / LEVEL_XP_DIFF) * LEVEL_XP_VAR;
 }
 
 /**
@@ -109,7 +111,7 @@ export function comfortDifficulty(categoryLevel: number): number {
   return (100 * level) / (level + COMFORT_CURVE_K);
 }
 
-/** Native Jiten difficulty (0-6) → the engine's 0-100 scale. */
+/** Native Jiten difficulty (0-5) converted to the engine's 0-100 scale. */
 export function normalizeJitenDifficulty(
   difficulty: number | null | undefined
 ): number | null {
@@ -141,10 +143,8 @@ export function weightedPercentile(
 }
 
 /**
- * Effective comfort point: the max of what the user's level implies and the
- * difficulty they demonstrably consume (p75, hours-weighted). The max() is
- * what prevents sandbagging — comfort can be raised by consuming harder
- * content but never pushed below the level-based floor.
+ * Effective comfort point: level estimate plus a bounded calibration from the
+ * hours-weighted median of recently consumed difficulty.
  */
 export function effectiveComfort(
   categoryLevel: number,
@@ -154,7 +154,17 @@ export function effectiveComfort(
   if (consumedDifficulty === null || consumedDifficulty === undefined) {
     return levelComfort;
   }
-  return Math.max(levelComfort, clamp(consumedDifficulty, 0, 100));
+  const history = clamp(consumedDifficulty, 0, 100);
+  const adjustment = clamp(
+    history - levelComfort,
+    -HISTORY_COMFORT_ADJUSTMENT_LIMIT,
+    HISTORY_COMFORT_ADJUSTMENT_LIMIT
+  );
+  return clamp(levelComfort + adjustment, 0, 100);
+}
+
+export function challengeTargetDifficulty(comfort: number): number {
+  return Math.min(clamp(comfort, 0, 100) + CHALLENGE_TARGET_GAP, 100);
 }
 
 function multiplierFromComfort(
@@ -163,16 +173,17 @@ function multiplierFromComfort(
 ): number {
   if (difficulty === null || difficulty === undefined) return 1;
   const d = clamp(difficulty, 0, 100);
-  const room = 100 - comfort;
-  if (room <= 0) return 1;
-  const normalizedGap = clamp((d - comfort) / room, 0, 1);
+  const target = challengeTargetDifficulty(comfort);
+  const targetGap = target - comfort;
+  if (targetGap <= 0) return 1;
+  const normalizedGap = clamp((d - comfort) / targetGap, 0, 1);
   return 1 + MAX_DIFFICULTY_BONUS * normalizedGap;
 }
 
 /**
  * Multiplier for content difficulty relative to the user's comfort point.
- * The gap is normalized by the remaining difficulty space above comfort, so
- * the max bonus (1 + MAX_DIFFICULTY_BONUS) is reachable at every level.
+ * The max bonus is reached 10 normalized points (0.5 Jiten) above comfort,
+ * or at difficulty 100 when comfort is above 90.
  * Content at or below comfort — or with no difficulty data — is neutral
  * (1.0): the bonus only rewards, never punishes.
  */
@@ -203,7 +214,7 @@ export interface IXpComputationContext {
   /** Continuous level in the log's category at computation time. */
   categoryLevel?: number;
   /**
-   * Hours-weighted p75 of the difficulty consumed recently in the category
+   * Hours-weighted median of the difficulty consumed recently in the category
    * (0-100); null when there's not enough tagged history.
    */
   consumedDifficulty?: number | null;
@@ -325,8 +336,9 @@ export function computeXp(
       baseXp,
       timeCreditedMin: Math.round(minutes * 100) / 100,
       difficulty: context.difficulty ?? null,
-      categoryLevelAt: Math.round(categoryLevel * 100) / 100,
-      comfortAt: Math.round(comfort * 100) / 100,
+      categoryLevelAt: Math.round(categoryLevel * 10000) / 10000,
+      comfortAt: Math.round(comfort * 10000) / 10000,
+      targetDifficulty: Math.round(challengeTargetDifficulty(comfort) * 10000) / 10000,
       multiplier: Math.round(multiplier * 1000) / 1000,
       version: XP_FORMULA_VERSION,
     },
@@ -345,11 +357,20 @@ export function roughLogMinutes(input: IXpComputationInput): number {
   if (isPositive(input.chars)) {
     return (input.chars / FALLBACK_READING_SPEED_CPH) * 60;
   }
+  if (
+    isPositive(input.pages) &&
+    (input.type === 'reading' ||
+      input.type === 'light-novel' ||
+      input.type === 'manga' ||
+      input.type === 'book')
+  ) {
+    return ((input.pages * CHARS_PER_PAGE) / FALLBACK_READING_SPEED_CPH) * 60;
+  }
   return 0;
 }
 
 /**
- * Hours-weighted p75 of the Jiten difficulty (normalized 0-100) the user
+ * Hours-weighted median of the Jiten difficulty (normalized 0-100) the user
  * consumed in the category within the recent window. Null when less than
  * CONSUMED_DIFFICULTY_MIN_HOURS of difficulty-tagged immersion exists —
  * callers then fall back to the level-based comfort alone.
@@ -369,7 +390,7 @@ export async function getUserConsumedDifficulty(
     date: { $gte: cutoff },
     mediaId: { $ne: null },
   })
-    .select('mediaId type time chars episodes')
+    .select('mediaId type time chars episodes pages')
     .lean();
 
   if (!logs.length) return null;
@@ -396,17 +417,20 @@ export async function getUserConsumedDifficulty(
     const difficulty = log.mediaId
       ? difficultyByContentId.get(log.mediaId)
       : undefined;
-    if (difficulty === undefined) continue;
-    const hours =
-      roughLogMinutes({
-        type: log.type as ILog['type'],
-        time: log.time,
-        chars: log.chars,
-        episodes: log.episodes,
-      }) / 60;
-    if (hours <= 0) continue;
-    totalHours += hours;
-    samples.push({ value: difficulty, weight: hours });
+    if (difficulty !== undefined) {
+      const hours =
+        roughLogMinutes({
+          type: log.type as ILog['type'],
+          time: log.time,
+          chars: log.chars,
+          episodes: log.episodes,
+          pages: log.pages,
+        }) / 60;
+      if (hours > 0) {
+        totalHours += hours;
+        samples.push({ value: difficulty, weight: hours });
+      }
+    }
   }
 
   if (totalHours < CONSUMED_DIFFICULTY_MIN_HOURS) return null;

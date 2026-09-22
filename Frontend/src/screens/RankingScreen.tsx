@@ -7,6 +7,7 @@ import {
   Calendar1,
   BarChart,
   Calendar,
+  Flame,
   Bookmark,
   BookmarkX,
   MoreHorizontal,
@@ -26,6 +27,7 @@ import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
 import UserAvatar from '../components/UserAvatar';
 import { useUserDataStore } from '../store/userData';
 import { getNameEffectRender } from '../utils/customization';
+import { getLogTypeLabelKey } from '../utils/logTypes';
 
 type RankedUser = {
   username: string;
@@ -92,7 +94,12 @@ const VALID_TIME_FILTERS: RankingTimeFilter[] = [
   'custom',
 ];
 const VALID_MODES: RankingMode[] = ['global', 'medium'];
-const VALID_SCOPES: filterTypes[] = ['userXp', 'readingXp', 'listeningXp'];
+const VALID_SCOPES: filterTypes[] = [
+  'userXp',
+  'readingXp',
+  'listeningXp',
+  'currentStreak',
+];
 const VALID_DISPLAY_MODES: RankingDisplayMode[] = ['xp', 'hours', 'chars'];
 const VALID_MEDIUM_TYPES: RankingMediumType[] = [
   'anime',
@@ -183,17 +190,20 @@ function RankingScreen() {
   const startParam = searchParams.get('start');
   const endParam = searchParams.get('end');
 
-  const resolvedMode = isOneOf(modeParam, VALID_MODES)
-    ? modeParam
-    : isOneOf(initialDefaults.mode, VALID_MODES)
-      ? initialDefaults.mode
-      : 'global';
-
   const resolvedScope = isOneOf(scopeParam, VALID_SCOPES)
     ? scopeParam
     : isOneOf(initialDefaults.xpFilter, VALID_SCOPES)
       ? initialDefaults.xpFilter
       : 'userXp';
+
+  const resolvedMode =
+    resolvedScope === 'currentStreak'
+      ? 'global'
+      : isOneOf(modeParam, VALID_MODES)
+        ? modeParam
+        : isOneOf(initialDefaults.mode, VALID_MODES)
+          ? initialDefaults.mode
+          : 'global';
 
   const resolvedDisplayMode = isOneOf(metricParam, VALID_DISPLAY_MODES)
     ? metricParam
@@ -209,10 +219,12 @@ function RankingScreen() {
   const resolvedStartCandidate = startParam || initialDefaults.startDate || '';
   const resolvedEndCandidate = endParam || initialDefaults.endDate || '';
   const resolvedTimeFilter =
-    resolvedTimeFilterCandidate === 'custom' &&
-    (!resolvedStartCandidate || !resolvedEndCandidate)
-      ? 'month'
-      : resolvedTimeFilterCandidate;
+    resolvedScope === 'currentStreak'
+      ? 'all-time'
+      : resolvedTimeFilterCandidate === 'custom' &&
+          (!resolvedStartCandidate || !resolvedEndCandidate)
+        ? 'month'
+        : resolvedTimeFilterCandidate;
   const resolvedStartDate =
     resolvedTimeFilter === 'custom' ? resolvedStartCandidate : '';
   const resolvedEndDate =
@@ -386,6 +398,10 @@ function RankingScreen() {
 
   // Get the actual filter to send to backend based on display mode
   const getBackendFilter = () => {
+    if (xpFilter === 'currentStreak') {
+      return 'currentStreak';
+    }
+
     if (displayMode === 'hours') {
       return xpFilter === 'userXp'
         ? 'userHours'
@@ -487,6 +503,11 @@ function RankingScreen() {
       value: 'listeningXp',
       icon: <Headphones className="w-4 h-4" />,
     },
+    {
+      label: t('scope.streaks'),
+      value: 'currentStreak',
+      icon: <Flame className="w-4 h-4" />,
+    },
   ] as const;
   const metricOptions = [
     { label: t('metrics.xp'), value: 'xp' as const },
@@ -494,12 +515,26 @@ function RankingScreen() {
     { label: t('metrics.chars'), value: 'chars' as const },
   ];
   const allowedMetricOptions = () =>
-    xpFilter === 'listeningXp'
+    xpFilter === 'currentStreak'
+      ? []
+      : xpFilter === 'listeningXp'
       ? metricOptions.filter((m) => m.value !== 'chars')
       : metricOptions;
 
   // Ensure invalid metric is corrected when switching to Listening scope
   useEffect(() => {
+    if (xpFilter === 'currentStreak') {
+      setTimeFilter('all-time');
+      setStartDate('');
+      setEndDate('');
+      setCustomStartDate(undefined);
+      setCustomEndDate(undefined);
+      if (displayMode !== 'xp') {
+        setDisplayMode('xp');
+      }
+      return;
+    }
+
     if (xpFilter === 'listeningXp' && displayMode === 'chars') {
       setDisplayMode('xp');
     }
@@ -587,6 +622,7 @@ function RankingScreen() {
   // Get display value based on mode
   const getDisplayValue = (user: {
     stats?: {
+      currentStreak?: number;
       userXp?: number;
       readingXp?: number;
       listeningXp?: number;
@@ -595,6 +631,10 @@ function RankingScreen() {
       listeningHours?: number;
     };
   }) => {
+    if (xpFilter === 'currentStreak') {
+      return user.stats?.currentStreak || 0;
+    }
+
     if (displayMode === 'hours') {
       return xpFilter === 'userXp'
         ? user.stats?.userHours || 0
@@ -613,6 +653,7 @@ function RankingScreen() {
   // Get formatted display value for the podium (top 3)
   const getTopDisplayValue = (user: {
     stats?: {
+      currentStreak?: number;
       userChars?: number;
       userXp?: number;
       readingXp?: number;
@@ -622,6 +663,10 @@ function RankingScreen() {
       listeningHours?: number;
     };
   }) => {
+    if (xpFilter === 'currentStreak') {
+      return `${numberWithCommas(getDisplayValue(user) as number)} ${t('units.days')}`;
+    }
+
     if (displayMode === 'hours') {
       return `${numberWithCommas(getDisplayValue(user) as number)} hrs`;
     }
@@ -674,7 +719,10 @@ function RankingScreen() {
   // Get the correct label for the selected filter
   const getFilterLabel = () => {
     const option = scopeOptions.find((option) => option.value === xpFilter);
-    const metric = metricOptions.find((m) => m.value === displayMode)?.label;
+    const metric =
+      xpFilter === 'currentStreak'
+        ? t('metrics.streaks')
+        : metricOptions.find((m) => m.value === displayMode)?.label;
     return t('filterLabel', {
       scope: option?.label || t('scope.total'),
       metric,
@@ -716,17 +764,8 @@ function RankingScreen() {
   };
 
   const getMediumTypeLabel = (type: string) => {
-    switch (type) {
-      case 'vn':
-        return tCommon('mediaTypes.vn');
-      case 'game':
-        return tCommon('mediaTypes.game');
-      case 'tv show':
-        return tCommon('mediaTypes.tvShow');
-      default:
-        // Falls back to the raw value for any media type without a key yet.
-        return type.slice(0, 1).toUpperCase() + type.slice(1);
-    }
+    const labelKey = getLogTypeLabelKey(type);
+    return labelKey ? tCommon(labelKey) : type;
   };
 
   return (
@@ -743,20 +782,22 @@ function RankingScreen() {
         </div>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
-          <div className="join w-full sm:w-auto">
-            <button
-              className={`join-item btn btn-sm flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setMode('global')}
-            >
-              {t('modes.global')}
-            </button>
-            <button
-              className={`join-item btn btn-sm flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setMode('medium')}
-            >
-              {t('modes.medium')}
-            </button>
-          </div>
+          {xpFilter !== 'currentStreak' && (
+            <div className="join w-full sm:w-auto">
+              <button
+                className={`join-item btn flex-1 sm:flex-none ${mode === 'global' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setMode('global')}
+              >
+                {t('modes.global')}
+              </button>
+              <button
+                className={`join-item btn flex-1 sm:flex-none ${mode === 'medium' ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setMode('medium')}
+              >
+                {t('modes.medium')}
+              </button>
+            </div>
+          )}
 
           {/* Combined scope+metric dropdown (Global mode only) */}
 
@@ -765,7 +806,10 @@ function RankingScreen() {
                 column, so an end-aligned 18rem panel would hang off the left
                 edge of the screen. From `sm` up the toolbar is a flex row at
                 the right, where end alignment is the correct one. */}
-            <div className="dropdown dropdown-start sm:dropdown-end w-full sm:w-auto">
+            <div
+              className="dropdown dropdown-start sm:dropdown-end w-full sm:w-auto"
+              hidden={mode !== 'global' || xpFilter === 'currentStreak'}
+            >
               <div
                 tabIndex={0}
                 role="button"
@@ -986,7 +1030,14 @@ function RankingScreen() {
                       className={`gap-3 ${xpFilter === option.value ? 'active' : ''}`}
                       onClick={() => {
                         setXpFilter(option.value as filterTypes);
-                        if (
+                        if (option.value === 'currentStreak') {
+                          setTimeFilter('all-time');
+                          setStartDate('');
+                          setEndDate('');
+                          setCustomStartDate(undefined);
+                          setCustomEndDate(undefined);
+                          setDisplayMode('xp');
+                        } else if (
                           option.value === 'listeningXp' &&
                           displayMode === 'chars'
                         ) {
@@ -999,17 +1050,23 @@ function RankingScreen() {
                     </button>
                   </li>
                 ))}
-                <li className="menu-title px-2 mt-2">{t('metricLabel')}</li>
-                {allowedMetricOptions().map((m) => (
-                  <li key={m.value}>
-                    <button
-                      className={`gap-3 ${displayMode === m.value ? 'active' : ''}`}
-                      onClick={() => setDisplayMode(m.value)}
-                    >
-                      {m.label}
-                    </button>
-                  </li>
-                ))}
+                {xpFilter !== 'currentStreak' && (
+                  <>
+                    <li className="menu-title px-2 mt-2">
+                      {t('metricLabel')}
+                    </li>
+                    {allowedMetricOptions().map((m) => (
+                      <li key={m.value}>
+                        <button
+                          className={`gap-3 ${displayMode === m.value ? 'active' : ''}`}
+                          onClick={() => setDisplayMode(m.value)}
+                        >
+                          {m.label}
+                        </button>
+                      </li>
+                    ))}
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -1167,12 +1224,12 @@ function RankingScreen() {
             </div>
           </div>
         ) : (
-          <div className="card surface">
+          <div className="card surface overflow-hidden">
             <div className="card-body p-0">
               {mode === 'global' &&
                 rankedUsers?.pages[0] &&
                 rankedUsers.pages[0].length >= 3 && (
-                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-3 sm:p-8 rounded-t-md">
+                  <div className="bg-primary/15 p-3 sm:p-8">
                     <div className="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto items-end">
                       <div className="text-center order-1">
                         <div className="relative mb-1 sm:mb-4">
@@ -1387,7 +1444,7 @@ function RankingScreen() {
               {mode === 'medium' &&
                 mediumUsers?.pages[0] &&
                 mediumUsers.pages[0].length >= 3 && (
-                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-3 sm:p-8 rounded-t-md">
+                  <div className="bg-primary/15 p-3 sm:p-8">
                     <div className="grid grid-cols-3 gap-1.5 sm:gap-4 max-w-2xl mx-auto items-end">
                       <div className="text-center order-1">
                         <div className="relative mb-1 sm:mb-4">
@@ -1612,14 +1669,16 @@ function RankingScreen() {
                       </th>
                       <th className="text-end">
                         {mode === 'global'
-                          ? displayMode === 'chars'
+                          ? xpFilter === 'currentStreak'
+                            ? t('metrics.streaks')
+                            : displayMode === 'chars'
                             ? t('metrics.characters')
                             : t('columnHeader', {
                                 filter: getFilterLabel(),
                                 unit:
-                                  displayMode === 'hours'
-                                    ? t('units.hours')
-                                    : t('units.xp'),
+                                displayMode === 'hours'
+                                  ? t('units.hours')
+                                  : t('units.xp'),
                               })
                           : mediumMetricOptions[mediumType].find(
                               (o) => o.value === mediumMetric
@@ -1750,7 +1809,9 @@ function RankingScreen() {
                               </div>
                               <div className="text-xs text-base-content/60">
                                 {mode === 'global'
-                                  ? displayMode === 'hours'
+                                  ? xpFilter === 'currentStreak'
+                                    ? t('units.days')
+                                    : displayMode === 'hours'
                                     ? 'hrs'
                                     : displayMode === 'chars'
                                       ? 'chars'

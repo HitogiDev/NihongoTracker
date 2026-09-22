@@ -58,7 +58,7 @@ function ClubRanking({ username }: ClubRankingProps) {
     queryKey: ['clubMemberRankings', selectedClub?._id, 'totalXp', 'all-time'],
     queryFn: () =>
       getClubMemberRankingsFn(selectedClub!._id, {
-        sortBy: 'totalXp',
+        metric: 'xp',
         period: 'all-time',
         limit: 50,
         page: 1,
@@ -232,7 +232,7 @@ function ClubRanking({ username }: ClubRankingProps) {
                       {t('common.totalXp')}
                     </p>
                     <p className="text-2xl sm:text-3xl leading-none font-bold tabular-nums text-primary mt-1">
-                      {numberWithCommas(userRanking.totalXp)}
+                      {numberWithCommas(userRanking.value)}
                     </p>
                   </div>
                 </div>

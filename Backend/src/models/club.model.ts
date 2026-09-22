@@ -4,6 +4,9 @@ import { IClub, IClubMember, IClubMedia, IClubGoal } from '../types.js';
 // Club Goal Schema
 const ClubGoalSchema = new Schema<IClubGoal>(
   {
+    title: { type: String, trim: true, maxlength: 120 },
+    description: { type: String, trim: true, maxlength: 500 },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     type: {
       type: String,
       enum: ['time', 'chars', 'episodes', 'pages'],
@@ -19,9 +22,9 @@ const ClubGoalSchema = new Schema<IClubGoal>(
     isActive: { type: Boolean, default: true },
     startDate: { type: Date },
     endDate: { type: Date },
+    completedAt: { type: Date },
     createdAt: { type: Date, default: Date.now },
-  },
-  { _id: false }
+  }
 );
 
 // Club Member Schema
@@ -30,7 +33,7 @@ const ClubMemberSchema = new Schema<IClubMember>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     role: {
       type: String,
-      enum: ['leader', 'moderator', 'member'],
+      enum: ['owner', 'leader', 'moderator', 'event_manager', 'member'],
       default: 'member',
     },
     joinedAt: { type: Date, default: Date.now },
@@ -81,6 +84,12 @@ const ClubSchema = new Schema<IClub>(
     members: [ClubMemberSchema],
     currentMedia: [ClubMediaSchema],
     clubGoals: [ClubGoalSchema],
+    pinnedActivities: [{ type: Schema.Types.ObjectId, ref: 'Activity' }],
+    pinnedObjective: {
+      type: Schema.Types.ObjectId,
+      ref: 'ClubChallenge',
+      default: null,
+    },
     tags: [{ type: String, maxlength: 30 }], // For filtering (e.g., "beginner", "advanced", "anime-focused")
     memberLimit: { type: Number, default: 100 },
     rules: { type: String, maxlength: 1000 },

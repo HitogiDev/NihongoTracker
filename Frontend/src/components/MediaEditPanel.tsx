@@ -1,3 +1,4 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { useEffect, useState } from 'react';
 import Field from './ui/Field';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -199,7 +200,7 @@ export default function MediaEditPanel() {
       <div className="card-body">
         <h3 className="card-title mb-4">Edit Media</h3>
         <div className="flex flex-col sm:flex-row gap-3">
-          <select
+          <DropdownSelect
             className="select"
             value={type}
             onChange={(e) => setType(e.target.value)}
@@ -209,7 +210,7 @@ export default function MediaEditPanel() {
                 {t(searchType.labelKey)}
               </option>
             ))}
-          </select>
+          </DropdownSelect>
           <input
             type="text"
             className="input flex-1"

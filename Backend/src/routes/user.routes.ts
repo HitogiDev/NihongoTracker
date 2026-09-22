@@ -16,6 +16,7 @@ import {
   getHiddenRecentMedia,
   updateStatsLayout,
   updateProfileLayout,
+  updateSocialPrivacy,
   updateFavorites,
   getGanttData,
   getCustomizationOptions,
@@ -30,8 +31,21 @@ import {
 } from '../controllers/logs.controller.js';
 import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
+import {
+  followProfile,
+  getFollowers,
+  getFollowing,
+  getRelationship,
+  unfollowProfile,
+} from '../controllers/follow.controller.js';
+import { socialRateLimit } from '../middlewares/socialRateLimit.js';
 
 const router = Router();
+const followRateLimit = socialRateLimit({
+  action: 'follow',
+  max: 60,
+  windowMs: 60_000,
+});
 const MAX_USER_MEDIA_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -46,12 +60,18 @@ router.get('/search', searchUsers);
 router.get('/me/customization', protect, getCustomizationOptions);
 router.patch('/me/customization', protect, updateCustomization);
 
-router.get('/compare', compareUserStats);
+router.get('/compare', optionalProtect, compareUserStats);
+
+router.get('/:username/followers', optionalProtect, getFollowers);
+router.get('/:username/following', optionalProtect, getFollowing);
+router.get('/:username/relationship', protect, getRelationship);
+router.post('/:username/follow', protect, followRateLimit, followProfile);
+router.delete('/:username/follow', protect, followRateLimit, unfollowProfile);
 
 router.get('/ranking', getRanking);
 router.get('/ranking/media', getMediumRanking);
-router.get('/:username/ranking-summary', getRankingSummary);
-router.get('/:username/ranking-history', getRankingHistory);
+router.get('/:username/ranking-summary', optionalProtect, getRankingSummary);
+router.get('/:username/ranking-history', optionalProtect, getRankingHistory);
 
 router.get('/:username', optionalProtect, getUser);
 
@@ -61,15 +81,15 @@ router.delete('/media/:type/:mediaId', protect, removeMediaFromImmersionList);
 
 router.get('/:username/logs', optionalProtect, getUserLogs);
 
-router.get('/:username/stats', getUserStats);
+router.get('/:username/stats', optionalProtect, getUserStats);
 
 router.get('/:username/dashboard', protect, getDashboardHours);
 
 router.get('/:username/recentlogs', protect, getRecentLogs);
 
-router.get('/:username/immersionlist', getImmersionList);
+router.get('/:username/immersionlist', optionalProtect, getImmersionList);
 
-router.get('/:username/gantt', getGanttData);
+router.get('/:username/gantt', optionalProtect, getGanttData);
 
 router.put(
   '/',
@@ -85,6 +105,7 @@ router.patch('/settings/hidden-media', protect, updateHiddenRecentMedia);
 router.get('/settings/hidden-media', protect, getHiddenRecentMedia);
 router.patch('/settings/stats-layout', protect, updateStatsLayout);
 router.patch('/settings/profile-layout', protect, updateProfileLayout);
+router.patch('/settings/social-privacy', protect, updateSocialPrivacy);
 router.patch('/favorites', protect, updateFavorites);
 
 router.post('/cleardata', protect, clearUserData);

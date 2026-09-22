@@ -28,8 +28,15 @@ import {
   createNotifications,
 } from '../services/notifications.service.js';
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
-import { recalculateClubGoalsProgress } from '../services/clubGoals.js';
 import { checkAchievements } from '../services/achievements/achievementEngine.js';
+import { recordClubJoinedActivity } from '../services/activityEvents.service.js';
+import { buildVisibleImmersionLogFilter } from '../services/socialVisibility.service.js';
+import {
+  hasClubPermission,
+  normalizeClubRole,
+} from '../services/clubAuthorization.service.js';
+import { getClubMediaEngagement } from '../services/clubMedia.service.js';
+import { syncLegacyClubObjectives } from '../services/clubObjectives.service.js';
 
 type PatreonTier = 'donator' | 'enthusiast' | 'consumer' | null | undefined;
 
@@ -171,11 +178,13 @@ export async function getClubs(
       sortOrder = 'desc',
       isPublic,
       tags,
+      membership = 'all',
     } = req.query;
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
+    const userId = res.locals.user?._id;
 
     // Build search query
     const searchQuery: any = { isActive: true };
@@ -194,6 +203,23 @@ export async function getClubs(
     if (tags) {
       const tagArray = (tags as string).split(',');
       searchQuery.tags = { $in: tagArray };
+    }
+
+    if (membership === 'member' || membership === 'leader') {
+      if (!userId) {
+        searchQuery._id = { $in: [] };
+      } else {
+        searchQuery.members = {
+          $elemMatch:
+            membership === 'leader'
+              ? {
+                  user: userId,
+                  status: 'active',
+                  role: { $in: ['owner', 'leader'] },
+                }
+              : { user: userId, status: 'active' },
+        };
+      }
     }
 
     // Build sort query
@@ -233,7 +259,6 @@ export async function getClubs(
     const total = await Club.countDocuments(searchQuery);
 
     // Add user membership info if user is authenticated
-    const userId = res.locals.user?._id;
     const clubsWithUserInfo: IClubResponse[] = clubs.map((club) => {
       const userMember = userId
         ? club.members.find(
@@ -286,7 +311,6 @@ export async function getClub(
 
     // Auto-update voting statuses based on current date
     await updateVotingStatusesForClub(club);
-    await recalculateClubGoalsProgress(clubId);
 
     // Refresh club data after potential status updates
     const updatedClub = await Club.findById(clubId)
@@ -436,7 +460,7 @@ export async function createClub(
       members: [
         {
           user: userId,
-          role: 'leader',
+          role: 'owner',
           joinedAt: new Date(),
           status: 'active',
         },
@@ -493,8 +517,13 @@ export async function joinClub(
 
     const clubLeader =
       club.members.find(
-        (member) => member.role === 'leader' && member.status === 'active'
-      ) || club.members.find((member) => member.role === 'leader');
+        (member) =>
+          normalizeClubRole(member.role) === 'owner' &&
+          member.status === 'active'
+      ) ||
+      club.members.find(
+        (member) => normalizeClubRole(member.role) === 'owner'
+      );
 
     const leaderUser = clubLeader
       ? await User.findById(clubLeader.user).select(
@@ -531,6 +560,12 @@ export async function joinClub(
     if (memberStatus === 'active') {
       await User.findByIdAndUpdate(userId, {
         $push: { clubs: clubId },
+      });
+      await recordClubJoinedActivity({
+        userId,
+        clubId: club._id as Types.ObjectId,
+        clubName: club.name,
+        memberCount: club.members.filter((member) => member.status === 'active').length,
       });
     }
 
@@ -574,7 +609,10 @@ export async function leaveClub(
 
     // If user is the leader and there are other active members, they need to transfer leadership first
     const activeMembers = club.members.filter((m) => m.status === 'active');
-    if (member.role === 'leader' && activeMembers.length > 1) {
+    if (
+      normalizeClubRole(member.role) === 'owner' &&
+      activeMembers.length > 1
+    ) {
       return res.status(400).json({
         message:
           'Cannot leave club as leader. Transfer leadership or disband the club first.',
@@ -629,7 +667,7 @@ export async function transferLeadership(
     const currentLeader = club.members.find(
       (member) =>
         member.user.equals(currentUserId) &&
-        member.role === 'leader' &&
+        normalizeClubRole(member.role) === 'owner' &&
         member.status === 'active'
     );
 
@@ -652,7 +690,7 @@ export async function transferLeadership(
 
     // Transfer leadership
     currentLeader.role = 'member';
-    newLeaderMember.role = 'leader';
+    newLeaderMember.role = 'owner';
 
     await club.save();
 
@@ -688,7 +726,7 @@ export async function updateClub(
       member.user.equals(userId)
     );
 
-    if (!userMember || userMember.role !== 'leader') {
+    if (!hasClubPermission(userMember, 'manage_settings')) {
       return res.status(403).json({
         message: 'Only club leaders can update club settings',
       });
@@ -819,8 +857,9 @@ export async function updateClub(
     });
 
     await club.save();
-
-    await recalculateClubGoalsProgress(clubId);
+    if (updateData.clubGoals !== undefined) {
+      await syncLegacyClubObjectives(club);
+    }
 
     const updatedClub = await Club.findById(clubId)
       .populate('members.user', 'username avatar level totalXp')
@@ -876,7 +915,7 @@ export async function manageJoinRequests(
       member.user.equals(userId)
     );
 
-    if (!userMember || userMember.role !== 'leader') {
+    if (!hasClubPermission(userMember, 'manage_members')) {
       return res.status(403).json({
         message: 'Only club leaders can manage membership requests',
       });
@@ -914,6 +953,13 @@ export async function manageJoinRequests(
         $push: { clubs: clubId },
       });
       await club.save();
+
+      await recordClubJoinedActivity({
+        userId: new Types.ObjectId(memberId),
+        clubId: club._id as Types.ObjectId,
+        clubName: club.name,
+        memberCount: club.members.filter((member) => member.status === 'active').length,
+      });
 
       await createNotification({
         recipient: memberId,
@@ -985,7 +1031,7 @@ export async function kickClubMember(
         .json({ message: 'You must be an active member to manage members' });
     }
 
-    if (actor.role !== 'leader' && actor.role !== 'moderator') {
+    if (!hasClubPermission(actor, 'manage_members')) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 
@@ -1015,7 +1061,10 @@ export async function kickClubMember(
         .json({ message: 'Moderators can only remove members' });
     }
 
-    if (actor.role === 'leader' && target.role === 'leader') {
+    if (
+      normalizeClubRole(actor.role) === 'owner' &&
+      normalizeClubRole(target.role) === 'owner'
+    ) {
       return res.status(400).json({ message: 'Cannot remove another leader' });
     }
 
@@ -1068,7 +1117,7 @@ export async function getPendingJoinRequests(
     }
 
     const userMember = club.members.find((m) => m.user.equals(userId));
-    if (!userMember || userMember.role !== 'leader') {
+    if (!hasClubPermission(userMember, 'manage_members')) {
       return res
         .status(403)
         .json({ message: 'Only club leaders can view pending requests' });
@@ -1113,10 +1162,7 @@ export async function addClubMedia(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can add media' });
@@ -1254,10 +1300,7 @@ export async function editClubMedia(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can edit media' });
@@ -1365,6 +1408,11 @@ export async function getClubMedia(
 
       return computedIsActive === isActiveFilter;
     });
+    const engagementByMedia = await getClubMediaEngagement({
+      club,
+      media: filteredMedia,
+      viewerId: res.locals.user?._id,
+    });
 
     // Enhance media with actual media documents for images and metadata
     const enhancedMedia = await Promise.all(
@@ -1391,6 +1439,10 @@ export async function getClubMedia(
           return {
             ...obj,
             mediaDocument: mediaDocument || null,
+            community:
+              engagementByMedia.get(
+                `${media.mediaType}:${media.mediaId ?? ''}`
+              ) ?? null,
           };
         } catch (error) {
           return {
@@ -1443,10 +1495,7 @@ export async function createMediaVoting(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can create votings' });
@@ -1617,10 +1666,7 @@ export async function editMediaVoting(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can edit votings' });
@@ -1810,10 +1856,7 @@ export async function deleteMediaVoting(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can delete votings' });
@@ -1879,7 +1922,7 @@ export async function addVotingCandidate(
     const now = new Date();
     const canAddCandidate =
       (voting.candidateSubmissionType === 'manual' &&
-        (userMember.role === 'leader' || userMember.role === 'moderator') &&
+        hasClubPermission(userMember, 'manage_media') &&
         voting.status === 'setup') ||
       (voting.candidateSubmissionType === 'member_suggestions' &&
         voting.status === 'suggestions_open' &&
@@ -1947,10 +1990,7 @@ export async function finalizeVoting(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can finalize votings' });
@@ -2147,10 +2187,7 @@ export async function completeVoting(
       (member) => member.user.toString() === userId.toString()
     );
 
-    if (
-      !userMember ||
-      (userMember.role !== 'leader' && userMember.role !== 'moderator')
-    ) {
+    if (!hasClubPermission(userMember, 'manage_media')) {
       return res
         .status(403)
         .json({ message: 'Only leaders and moderators can complete votings' });
@@ -2199,6 +2236,10 @@ export async function getClubRecentActivity(
     const memberIds = club.members
       .filter((member) => member.status === 'active')
       .map((member) => member.user);
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
 
     // Calculate date range
     const daysNum = parseInt(days as string);
@@ -2232,7 +2273,7 @@ export async function getClubRecentActivity(
     }
     // Get recent logs (do NOT filter by club media)
     const recentLogs: IRecentLog[] = await Log.aggregate([
-      { $match: { user: { $in: memberIds }, createdAt: { $gte: startDate } } },
+      { $match: { ...visibleLogFilter, createdAt: { $gte: startDate } } },
       { $sort: { createdAt: -1 } },
       { $skip: skipNum },
       { $limit: limitNum },
@@ -2323,7 +2364,7 @@ export async function getClubRecentActivity(
 
     // Get total count for pagination
     const totalLogs = await Log.countDocuments({
-      user: { $in: memberIds },
+      ...visibleLogFilter,
       createdAt: { $gte: startDate },
     });
     const total = totalLogs;
@@ -2369,6 +2410,10 @@ export async function getClubMediaLogs(
     const memberIds = club.members
       .filter((member) => member.status === 'active')
       .map((member) => member.user);
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
 
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -2376,7 +2421,7 @@ export async function getClubMediaLogs(
 
     // Get logs from club members for this media after the start date
     const logs = await Log.find({
-      user: { $in: memberIds },
+      ...visibleLogFilter,
       mediaId: media.mediaId,
       type: media.mediaType,
       createdAt: { $gte: new Date(media.startDate) },
@@ -2391,7 +2436,7 @@ export async function getClubMediaLogs(
       .limit(limitNum);
 
     const total = await Log.countDocuments({
-      user: { $in: memberIds },
+      ...visibleLogFilter,
       mediaId: media.mediaId,
       type: media.mediaType,
       createdAt: { $gte: new Date(media.startDate) },
@@ -2448,8 +2493,12 @@ export async function getClubMediaRankings(
       });
 
     // Base match criteria
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
     const baseMatch: any = {
-      user: { $in: memberIds },
+      ...visibleLogFilter,
       mediaId: media.mediaId,
       type: media.mediaType,
     };
@@ -2609,8 +2658,12 @@ export async function getClubMediaStats(
       .map((member) => member.user);
 
     // Base match criteria
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
     const baseMatch: any = {
-      user: { $in: memberIds },
+      ...visibleLogFilter,
       mediaId: media.mediaId,
       type: media.mediaType,
     };
@@ -2898,6 +2951,10 @@ export async function getClubMemberRankings(
       }));
 
     const memberIds = activeMembers.map((m) => m.userId);
+    const visibleLogFilter = await buildVisibleImmersionLogFilter(
+      memberIds,
+      res.locals.user?._id
+    );
 
     // Create date filter based on period
     let dateFilter: { createdAt?: { $gte?: Date; $lt?: Date } } = {};
@@ -2919,7 +2976,7 @@ export async function getClubMemberRankings(
     const memberStats = await Log.aggregate([
       {
         $match: {
-          user: { $in: memberIds },
+          ...visibleLogFilter,
           ...(shouldExcludeUnknownDate ? { unknownDate: { $ne: true } } : {}),
           ...dateFilter,
         },

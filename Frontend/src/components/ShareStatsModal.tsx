@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { Download, Share2, X } from 'lucide-react';
 import { getUserStatsFn, generateStatsCardFn } from '../api/trackerApi';
 import { useDateFormatting } from '../hooks/useDateFormatting';
+import DatePickerInput from './ui/DatePickerInput';
 
 interface ShareStatsModalProps {
   username: string;
@@ -232,23 +233,23 @@ export default function ShareStatsModal({
           <div className="flex flex-col sm:flex-row gap-2 mb-3">
             <label className="flex-1 text-xs text-base-content/60">
               {t('share.from')}
-              <input
-                type="date"
-                className="input input-sm w-full mt-1"
+              <DatePickerInput
+                className="mt-1"
+                size="sm"
                 value={customStart}
                 max={customEnd || toQueryDate(new Date())}
-                onChange={(e) => setCustomStart(e.target.value)}
+                onChange={setCustomStart}
               />
             </label>
             <label className="flex-1 text-xs text-base-content/60">
               {t('share.to')}
-              <input
-                type="date"
-                className="input input-sm w-full mt-1"
+              <DatePickerInput
+                className="mt-1"
+                size="sm"
                 value={customEnd}
                 min={customStart || undefined}
                 max={toQueryDate(new Date())}
-                onChange={(e) => setCustomEnd(e.target.value)}
+                onChange={setCustomEnd}
               />
             </label>
           </div>

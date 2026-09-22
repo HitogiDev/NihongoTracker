@@ -5,6 +5,7 @@ import { useTimezone } from '../hooks/useTimezone';
 import LineChart from './LineChart';
 import { getLocale } from '../utils/timezone';
 import { useTranslation } from 'react-i18next';
+import { getLogTypeLabelKey } from '../utils/logTypes';
 
 type TimeframeType = 'total' | 'today' | 'week' | 'month' | 'year';
 type ReadingType = 'reading' | 'light-novel' | 'vn' | 'game' | 'manga';
@@ -60,6 +61,7 @@ function SpeedChart({
   readingSpeedData,
 }: SpeedChartProps) {
   const { t } = useTranslation('stats');
+  const { t: tCommon } = useTranslation('common');
   // Use state to manage the timeframe
   const [timeframe, setTimeframe] = useState<TimeframeType>('total');
   const [filteredData, setFilteredData] = useState<FilteredData>({});
@@ -319,13 +321,10 @@ function SpeedChart({
     datasets: READING_TYPES.map((type) => {
       const lineColor = getMediaTypeColor(type);
 
+      const labelKey = getLogTypeLabelKey(type);
+
       return {
-        label:
-          type === 'vn'
-            ? 'Visual Novel'
-            : type === 'game'
-              ? 'Video Game'
-              : type.charAt(0).toUpperCase() + type.slice(1),
+        label: labelKey ? tCommon(labelKey) : type,
         data: (() => {
           // Create a map of dates to speeds with null gaps filled in
           const allDates = getAllDates();

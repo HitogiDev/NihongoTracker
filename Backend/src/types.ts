@@ -175,6 +175,11 @@ export interface IUserSettings {
   dismissedNotificationClubIds?: string[];
   dismissedNotificationClubAt?: Record<string, Date | string>;
   lastSeenChangelogAt?: Date | null;
+  socialPrivacy?: {
+    profile: SocialVisibility;
+    immersionActivity: SocialVisibility;
+    statistics: SocialVisibility;
+  };
 }
 
 export interface IPatreonData {
@@ -500,6 +505,85 @@ export interface IUser extends Document {
   matchPassword: (enteredPassword: string) => Promise<boolean>;
 }
 
+export interface IFollow extends Document {
+  follower: Types.ObjectId;
+  following: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const ACTIVITY_TYPES = [
+  'immersion_log',
+  'notable_immersion_session',
+  'media_started',
+  'media_completed',
+  'media_review',
+  'journal_entry',
+  'level_milestone',
+  'streak_milestone',
+  'achievement_unlocked',
+  'personal_record',
+  'goal_completed',
+  'challenge_joined',
+  'challenge_completed',
+  'club_joined',
+  'club_milestone',
+  'club_challenge_started',
+  'cooperative_goal_progress',
+  'cooperative_goal_completed',
+] as const;
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
+
+export const SOCIAL_VISIBILITIES = ['public', 'followers', 'private'] as const;
+export type SocialVisibility = (typeof SOCIAL_VISIBILITIES)[number];
+
+export const ACTIVITY_REACTIONS = [
+  'like',
+] as const;
+export type ActivityReactionType = (typeof ACTIVITY_REACTIONS)[number];
+
+export interface IActivity extends Document {
+  actor: Types.ObjectId;
+  type: ActivityType;
+  targetType: string;
+  targetId: Types.ObjectId;
+  club?: Types.ObjectId | null;
+  metadata?: Record<string, unknown>;
+  visibility: SocialVisibility;
+  importance: 'normal' | 'important';
+  dedupeKey?: string;
+  reactionCounts: Partial<Record<ActivityReactionType, number>>;
+  commentCount: number;
+  occurredAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IActivityReaction extends Document {
+  activity: Types.ObjectId;
+  user: Types.ObjectId;
+  type: ActivityReactionType;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IActivityComment extends Document {
+  activity: Types.ObjectId;
+  user: Types.ObjectId;
+  content: string;
+  likeCount: number;
+  editedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IActivityCommentLike extends Document {
+  comment: Types.ObjectId;
+  user: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface IMediaTitle {
   contentTitleNative: string;
   contentTitleRomaji?: string;
@@ -739,6 +823,8 @@ export interface IXpBreakdown {
   categoryLevelAt: number;
   /** Effective comfort point (0-100) used for the multiplier. */
   comfortAt?: number | null;
+  /** Difficulty (0-100) where the full challenge bonus is reached. */
+  targetDifficulty?: number | null;
   multiplier: number;
   version: number;
 }
@@ -1058,9 +1144,24 @@ export interface IImmersionForecastProgress {
   paceStatus: 'available' | 'insufficient_data';
 }
 
+export type ClubRole =
+  | 'owner'
+  | 'leader'
+  | 'moderator'
+  | 'event_manager'
+  | 'member';
+
+export type ClubPermission =
+  | 'manage_members'
+  | 'moderate_content'
+  | 'create_challenges'
+  | 'manage_media'
+  | 'pin_posts'
+  | 'manage_settings';
+
 export interface IClubMember {
   user: Types.ObjectId;
-  role: 'leader' | 'moderator' | 'member';
+  role: ClubRole;
   joinedAt: Date;
   status: 'active' | 'pending' | 'banned';
 }
@@ -1150,6 +1251,10 @@ export interface IClubMedia {
 }
 
 export interface IClubGoal {
+  _id?: Types.ObjectId;
+  title?: string;
+  description?: string;
+  createdBy?: Types.ObjectId;
   type: 'time' | 'chars' | 'episodes' | 'pages';
   target: number;
   period: 'weekly' | 'monthly' | 'custom' | 'indefinite';
@@ -1157,7 +1262,53 @@ export interface IClubGoal {
   isActive: boolean;
   startDate?: Date;
   endDate?: Date;
+  completedAt?: Date;
   createdAt?: Date;
+}
+
+export const CLUB_CHALLENGE_METRICS = [
+  'time',
+  'chars',
+  'pages',
+  'episodes',
+  'active_days',
+] as const;
+export type ClubChallengeMetric = (typeof CLUB_CHALLENGE_METRICS)[number];
+export type ClubObjectiveMode = 'collective' | 'individual';
+export type ClubObjectivePeriod =
+  | 'weekly'
+  | 'monthly'
+  | 'custom'
+  | 'indefinite';
+export type ClubChallengeScope = 'global' | 'official' | 'club';
+export type ClubChallengeStatus =
+  | 'scheduled'
+  | 'active'
+  | 'completed'
+  | 'cancelled';
+export type ClubChallengeVisibility = 'public' | 'members';
+
+export interface IClubChallenge extends Document {
+  _id: Types.ObjectId;
+  title: string;
+  description: string;
+  creator: Types.ObjectId;
+  club?: Types.ObjectId | null;
+  mode: ClubObjectiveMode;
+  period?: ClubObjectivePeriod;
+  /** Links legacy embedded club goals to their unified objective. */
+  legacyGoalId?: Types.ObjectId;
+  scope: ClubChallengeScope;
+  startDate: Date;
+  endDate: Date;
+  metric: ClubChallengeMetric;
+  goal: number;
+  participants: Types.ObjectId[];
+  completedParticipants: Types.ObjectId[];
+  status: ClubChallengeStatus;
+  visibility: ClubChallengeVisibility;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IMediaReview extends Document {
@@ -1196,6 +1347,8 @@ export interface IClub extends Document {
   members: IClubMember[];
   currentMedia: IClubMedia[];
   clubGoals: IClubGoal[];
+  pinnedActivities: Types.ObjectId[];
+  pinnedObjective?: Types.ObjectId | null;
   tags: string[];
   memberLimit: number;
   rules?: string;
@@ -1236,7 +1389,7 @@ export interface IClubResponse {
   updatedAt?: Date;
   memberCount: number;
   isUserMember: boolean;
-  userRole?: 'leader' | 'moderator' | 'member';
+  userRole?: ClubRole;
   userStatus?: 'active' | 'pending' | 'banned';
 }
 
@@ -1260,6 +1413,9 @@ export const NOTIFICATION_TYPES = [
   'comment_like',
   'mention',
   'follow',
+  'activity_reaction',
+  'activity_comment',
+  'media_recommendation',
   // Clubs
   'club_join_request',
   'club_join_approved',
@@ -1635,6 +1791,29 @@ export type MediaListMediaType =
   | 'tv show'
   | 'game'
   | 'book';
+
+export const MEDIA_RECOMMENDATION_STATUSES = [
+  'pending',
+  'viewed',
+  'dismissed',
+  'accepted',
+] as const;
+
+export type MediaRecommendationStatus =
+  (typeof MEDIA_RECOMMENDATION_STATUSES)[number];
+
+export interface IMediaRecommendation extends Document {
+  sender: Types.ObjectId;
+  recipient: Types.ObjectId;
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  message?: string;
+  status: MediaRecommendationStatus;
+  viewedAt?: Date | null;
+  respondedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface IMediaListEntry {
   mediaId: string;

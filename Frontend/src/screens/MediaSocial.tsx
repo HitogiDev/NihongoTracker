@@ -1,475 +1,680 @@
-import { useState } from 'react';
-import { useOutletContext, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useOutletContext } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  compareUserStatsFn,
-  getGlobalMediaStatsFn,
-  getRecentMediaLogsFn,
-  IComparisonResult,
-} from '../api/trackerApi';
-import { OutletMediaContextType, ILog } from '../types';
-import { useUserDataStore } from '../store/userData';
-import LogCard from '../components/LogCard';
-import { numberWithCommas } from '../utils/utils';
-import { toast } from 'react-toastify';
-import type { AxiosError } from 'axios';
+  BarChart3,
+  CheckCircle2,
+  Clock3,
+  Inbox,
+  MessageSquareText,
+  PlayCircle,
+  Percent,
+  Send,
+  Star,
+  Timer,
+  Users,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-toastify';
+import {
+  compareUserStatsFn,
+  getConnectionsFn,
+  IComparisonResult,
+  searchUsersFn,
+} from '../api/trackerApi';
+import {
+  getMediaCommunityFn,
+  recommendMediaFn,
+  MediaCommunityRelation,
+} from '../api/mediaSocialApi';
+import {
+  IMediaCommunityPerson,
+  OutletMediaContextType,
+} from '../types';
+import { useUserDataStore } from '../store/userData';
+import { getApiErrorMessage } from '../utils/apiError';
+import { numberWithCommas } from '../utils/utils';
+import ActivityCard from '../components/social/ActivityCard';
+import UserAvatar from '../components/UserAvatar';
+import Modal from '../components/ui/Modal';
+import Field from '../components/ui/Field';
+import Spinner from '../components/ui/Spinner';
+import { BTN } from '../components/ui/buttons';
+import { useDebounce } from '../hooks/useDebounce';
+
+function PeopleProgressList({
+  title,
+  people,
+  mediaType,
+  empty,
+}: {
+  title: string;
+  people: IMediaCommunityPerson[];
+  mediaType?: string;
+  empty: string;
+}) {
+  const { t } = useTranslation('media');
+
+  const getProgressText = (person: IMediaCommunityPerson) => {
+    const progress = person.progress;
+    const parts: string[] = [];
+
+    if (mediaType === 'manga' || mediaType === 'light-novel') {
+      if (progress.volume !== null) {
+        parts.push(t('social.volumeProgress', { volume: progress.volume }));
+      }
+      if (progress.chars > 0) {
+        parts.push(
+          t('social.charactersProgress', {
+            count: numberWithCommas(progress.chars),
+          })
+        );
+      }
+    } else if (mediaType === 'anime' || mediaType === 'tv show') {
+      if (progress.episodes > 0) {
+        parts.push(
+          t('social.episodesProgress', {
+            count: numberWithCommas(progress.episodes),
+          })
+        );
+      }
+    } else if (
+      ['vn', 'game', 'reading', 'book'].includes(mediaType ?? '') &&
+      progress.chars > 0
+    ) {
+      parts.push(
+        t('social.charactersProgress', {
+          count: numberWithCommas(progress.chars),
+        })
+      );
+    }
+
+    if (progress.chars === 0 && progress.pages > 0) {
+      parts.push(
+        t('social.pagesProgress', {
+          count: numberWithCommas(progress.pages),
+        })
+      );
+    }
+    if (parts.length === 0 && progress.time > 0) {
+      parts.push(
+        t('social.timeProgress', {
+          count: numberWithCommas(progress.time),
+        })
+      );
+    }
+
+    return parts.join(' · ') || t('social.noProgressRecorded');
+  };
+
+  const getStatus = (status?: string | null) => {
+    if (!status) return null;
+    const labels: Record<string, string> = {
+      completed: t('list.status.completed'),
+      in_progress: t('list.status.inProgress'),
+      paused: t('list.status.paused'),
+      planning: t('list.status.planning'),
+      dropped: t('list.status.dropped'),
+    };
+    return labels[status] ?? status;
+  };
+
+  return (
+    <section className="card card-sm surface-muted">
+      <div className="card-body">
+        <h3 className="card-title text-base">
+          <Users className="h-5 w-5 text-primary" />
+          {title}
+          <span className="badge badge-neutral badge-sm">{people.length}</span>
+        </h3>
+        {people.length > 0 ? (
+          <ul className="list">
+            {people.map((person) => (
+              <li key={person.user._id} className="list-row px-0">
+                <UserAvatar
+                  username={person.user.username}
+                  avatar={person.user.avatar}
+                  containerClassName="h-10 w-10 overflow-hidden rounded-full"
+                  imageClassName="h-full w-full object-cover"
+                  fallbackClassName="flex h-full w-full items-center justify-center bg-base-300"
+                  textClassName="text-sm font-semibold"
+                />
+                <div className="list-col-grow min-w-0">
+                  <Link
+                    to={`/user/${encodeURIComponent(person.user.username)}`}
+                    className="link link-hover truncate font-medium"
+                  >
+                    {person.user.username}
+                  </Link>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-base-content/70">
+                    <span>{getProgressText(person)}</span>
+                    {getStatus(person.status) && (
+                      <span
+                        className={
+                          person.status === 'completed'
+                            ? 'badge badge-success badge-xs'
+                            : person.status === 'in_progress'
+                              ? 'badge badge-primary badge-xs'
+                              : 'badge badge-ghost badge-xs'
+                        }
+                      >
+                        {getStatus(person.status)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="py-4 text-sm text-base-content/60">{empty}</p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function MediaSocial() {
   const { t } = useTranslation(['media', 'common']);
-  const { mediaDocument, mediaType } =
-    useOutletContext<OutletMediaContextType>();
+  const { mediaDocument, mediaType } = useOutletContext<OutletMediaContextType>();
   const { user: currentUser } = useUserDataStore();
-
-  const mediaId = mediaDocument?.contentId;
-  const type = mediaDocument?.type || mediaType;
-  const allowedTypes: ILog['type'][] = [
-    'anime',
-    'manga',
-    'light-novel',
-    'vn',
-    'game',
-    'video',
-    'movie',
-    'tv show',
-    'book',
-    'audio',
-    'other',
-  ];
-  const logType = allowedTypes.includes(type as ILog['type'])
-    ? (type as ILog['type'])
-    : undefined;
-
-  const normalizedType = (type || '').toLowerCase().trim();
-  const socialMetricType: 'episodes' | 'pages' | 'characters' | null = (() => {
-    if (normalizedType === 'anime' || normalizedType === 'tv show') {
-      return 'episodes';
-    }
-
-    if (normalizedType === 'manga') {
-      return 'pages';
-    }
-
-    if (
-      normalizedType === 'vn' ||
-      normalizedType === 'game' ||
-      normalizedType === 'light-novel' ||
-      normalizedType === 'light novel' ||
-      normalizedType === 'light novels'
-    ) {
-      return 'characters';
-    }
-
-    return null;
-  })();
-
-  // Fetch aggregate media stats (global for this media/type)
-  const {
-    data: mediaStats,
-    isLoading: statsLoading,
-    error: statsError,
-    refetch: refetchStats,
-  } = useQuery({
-    queryKey: ['mediaStats', mediaId, type],
-    queryFn: () => {
-      if (!mediaId || !type) throw new Error('Missing media parameters');
-      return getGlobalMediaStatsFn(mediaId, type);
-    },
-    enabled: !!mediaId && !!type,
-    staleTime: 10 * 60 * 1000,
-  });
-
-  // Fetch recent logs across all users for this media (paginated by increasing limit)
-  const [globalLimit, setGlobalLimit] = useState(10);
-  const {
-    data: globalLogs,
-    isLoading: globalLogsLoading,
-    error: globalLogsError,
-    refetch: refetchGlobalLogs,
-  } = useQuery({
-    queryKey: ['media', 'recent', mediaId, type, globalLimit],
-    queryFn: () => {
-      if (!mediaId || !logType) throw new Error('Missing params');
-      return getRecentMediaLogsFn(mediaId, logType, globalLimit);
-    },
-    enabled: !!mediaId && !!logType,
-    staleTime: 60 * 1000,
-  });
-
-  // Compare with a friend
-  const [friend, setFriend] = useState('');
+  const [recommendOpen, setRecommendOpen] = useState(false);
+  const [recipientUsername, setRecipientUsername] = useState('');
+  const [message, setMessage] = useState('');
+  const [compareUsername, setCompareUsername] = useState('');
+  const [compareDropdownOpen, setCompareDropdownOpen] = useState(false);
   const [comparison, setComparison] = useState<IComparisonResult | null>(null);
-  const { mutate: runCompare, isPending: comparing } = useMutation({
-    mutationFn: async () => {
-      const friendTrim = friend.trim();
-      if (!currentUser?.username || !friendTrim || !mediaId || !type)
-        throw new Error('Missing comparison params');
-      if (friendTrim === currentUser.username) {
-        toast.info(t('social.compareSelf'));
-        return null;
+  const [relation, setRelation] = useState<MediaCommunityRelation>('following');
+  const recipientDropdownRef = useRef<HTMLDetailsElement>(null);
+  const compareDropdownRef = useRef<HTMLDivElement>(null);
+  const mediaId = mediaDocument?.contentId;
+  const type = mediaDocument?.type ?? mediaType;
+  const title =
+    mediaDocument?.title.contentTitleEnglish ||
+    mediaDocument?.title.contentTitleRomaji ||
+    mediaDocument?.title.contentTitleNative ||
+    '';
+  const communityQuery = useQuery({
+    queryKey: ['mediaCommunity', type, mediaId, relation],
+    queryFn: () =>
+      getMediaCommunityFn(type!, mediaId!, currentUser ? relation : undefined),
+    enabled: Boolean(type && mediaId),
+    staleTime: 60_000,
+  });
+  const connectionsQuery = useQuery({
+    queryKey: ['connections', currentUser?.username, 'followers', 1],
+    queryFn: () => getConnectionsFn(currentUser!.username, 'followers', 1, 50),
+    enabled: Boolean(currentUser),
+  });
+  const selectedRecipient = connectionsQuery.data?.users.find(
+    (user) => user.username === recipientUsername
+  );
+  const debouncedCompareUsername = useDebounce(compareUsername, 250);
+  const compareUsersQuery = useQuery({
+    queryKey: ['compare-users', debouncedCompareUsername],
+    queryFn: () => searchUsersFn(debouncedCompareUsername.trim()),
+    enabled: debouncedCompareUsername.trim().length >= 2,
+    staleTime: 30_000,
+  });
+  const compareUsers = (compareUsersQuery.data ?? []).filter(
+    (user) =>
+      user.username.toLowerCase() !== currentUser?.username.toLowerCase()
+  );
+
+  useEffect(() => {
+    const handleOutsidePointerDown = (event: PointerEvent) => {
+      const dropdown = recipientDropdownRef.current;
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        dropdown.removeAttribute('open');
       }
-      const res = await compareUserStatsFn(
-        currentUser.username,
-        friendTrim,
-        mediaId,
-        type
-      );
-      return res;
+      const compareDropdown = compareDropdownRef.current;
+      if (compareDropdown && !compareDropdown.contains(event.target as Node)) {
+        setCompareDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePointerDown);
+    return () => document.removeEventListener('pointerdown', handleOutsidePointerDown);
+  }, []);
+  const recommendMutation = useMutation({
+    mutationFn: () =>
+      recommendMediaFn({
+        recipientUsername,
+        mediaId: mediaId!,
+        mediaType: mediaDocument!.type,
+        message,
+      }),
+    onSuccess: () => {
+      toast.success(t('media:recommendations.sentSuccess'));
+      setRecommendOpen(false);
+      setRecipientUsername('');
+      setMessage('');
     },
-    onSuccess: (res) => {
-      if (res) setComparison(res);
-    },
-    onError: (err: unknown) => {
-      let msg = 'Comparison failed';
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      if (axiosErr?.response?.data?.message)
-        msg = axiosErr.response.data.message;
-      else if (err instanceof Error && err.message) msg = err.message;
-      toast.error(msg);
-    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+  const compareMutation = useMutation({
+    mutationFn: () =>
+      compareUserStatsFn(
+        currentUser!.username,
+        compareUsername.trim(),
+        mediaId!,
+        type!
+      ),
+    onSuccess: setComparison,
+    onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
-  // Avoid toasting during render; show inline alerts instead below
+  const community = communityQuery.data;
 
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold">
-              Social for {mediaDocument?.title?.contentTitleNative}
-            </h2>
-            <p className="text-sm text-base-content/60">
-              {t('social.subtitle')}
-            </p>
-          </div>
+    <main className="container mx-auto max-w-7xl px-4 py-8">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">
+            {t('media:social.title', { title })}
+          </h1>
+          <p className="text-sm text-base-content/60">{t('media:social.subtitle')}</p>
         </div>
+        {currentUser && mediaDocument && (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/recommendations"
+              className="btn btn-ghost btn-sm btn-square"
+              title={t('media:recommendations.inbox')}
+              aria-label={t('media:recommendations.inbox')}
+            >
+              <Inbox className="h-4 w-4" />
+            </Link>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setRecommendOpen(true)}
+            >
+              <Send className="h-4 w-4" />
+              {t('media:recommendations.recommend')}
+            </button>
+          </div>
+        )}
+      </div>
 
-        {/* Stats */}
-        <div className="card surface mb-6">
-          <div className="card-body">
-            <h3 className="card-title text-lg mb-2">
-              {t('social.mediaWideStats')}
-            </h3>
-            {statsError && (
-              <div role="alert" className="alert alert-error mb-4">
-                <span>
-                  {(statsError as Error)?.message ||
-                    'Failed to load media stats'}
-                </span>
-                <button className="btn btn-sm" onClick={() => refetchStats()}>
-                  {t('social.retry')}
-                </button>
+      {communityQuery.isError && (
+        <div role="alert" className="alert alert-error mb-6">
+          <span>{t('media:social.loadFailed')}</span>
+          <button className="btn btn-sm" onClick={() => communityQuery.refetch()}>
+            {t('media:social.retry')}
+          </button>
+        </div>
+      )}
+
+      {communityQuery.isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="skeleton h-28 w-full" />
+          ))}
+        </div>
+      ) : community ? (
+        <>
+          <section className="card surface mb-6">
+            <div className="card-body">
+              <h2 className="card-title text-lg">
+                <BarChart3 className="h-5 w-5" />
+                {t('media:social.communityStats')}
+              </h2>
+              <div className="stats stats-vertical mt-2 w-full shadow-sm sm:stats-horizontal">
+                <div className="stat">
+                  <Users className="stat-figure h-5 w-5 text-primary" />
+                  <div className="stat-title">{t('media:social.trackingUsers')}</div>
+                  <div className="stat-value text-primary">
+                    {numberWithCommas(community.stats.trackingUsers)}
+                  </div>
+                </div>
+                <div className="stat">
+                  <CheckCircle2 className="stat-figure h-5 w-5" />
+                  <div className="stat-title">{t('media:social.completedUsers')}</div>
+                  <div className="stat-value">
+                    {numberWithCommas(community.stats.completedUsers)}
+                  </div>
+                </div>
+                <div className="stat">
+                  <PlayCircle className="stat-figure h-5 w-5" />
+                  <div className="stat-title">{t('media:social.inProgressUsers')}</div>
+                  <div className="stat-value">
+                    {numberWithCommas(community.stats.inProgressUsers)}
+                  </div>
+                </div>
+                <div className="stat">
+                  <Percent className="stat-figure h-5 w-5" />
+                  <div className="stat-title">{t('media:social.completionRate')}</div>
+                  <div className="stat-value">
+                    {community.stats.completionRate !== null
+                      ? `${community.stats.completionRate}%`
+                      : t('media:social.notAvailable')}
+                  </div>
+                </div>
+                <div className="stat">
+                  <Star className="stat-figure h-5 w-5" />
+                  <div className="stat-title">{t('media:social.averageRating')}</div>
+                  <div className="stat-value">
+                    {community.stats.averageRating ?? t('media:social.notAvailable')}
+                  </div>
+                  <div className="stat-desc">
+                    {t('media:social.reviewCount', { count: community.stats.reviewCount })}
+                  </div>
+                </div>
+                <div className="stat">
+                  <Timer className="stat-figure h-5 w-5" />
+                  <div className="stat-title">{t('media:social.averageCompletion')}</div>
+                  <div className="stat-value">
+                    {community.stats.completionDaysAverage ??
+                      t('media:social.notAvailable')}
+                  </div>
+                  {community.stats.completionDaysAverage !== null && (
+                    <div className="stat-desc">{t('media:social.days')}</div>
+                  )}
+                </div>
+                <div className="stat">
+                  <Clock3 className="stat-figure h-5 w-5" />
+                  <div className="stat-title">{t('media:social.medianCompletion')}</div>
+                  <div className="stat-value">
+                    {community.stats.completionDaysMedian ?? t('media:social.notAvailable')}
+                  </div>
+                  {community.stats.completionDaysMedian !== null && (
+                    <div className="stat-desc">{t('media:social.days')}</div>
+                  )}
+                </div>
               </div>
-            )}
-            {statsLoading ? (
-              <div className="w-full" aria-busy>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="card surface-muted">
-                      <div className="card-body">
-                        <div className="skeleton h-4 w-24 mb-2" />
-                        <div className="skeleton h-8 w-32 mb-2" />
-                        <div className="skeleton h-3 w-20" />
-                      </div>
-                    </div>
+            </div>
+          </section>
+
+          <section className="card surface mb-6">
+            <div className="card-body">
+              <h2 className="card-title text-lg">
+                <Users className="h-5 w-5" />
+                {t('media:social.peopleProgress')}
+              </h2>
+              {currentUser ? (
+                <div
+                  role="tablist"
+                  aria-label={t('media:social.peopleFilters')}
+                  className="join w-fit max-w-full overflow-x-auto"
+                >
+                  {(
+                    [
+                      ['following', t('media:social.following')],
+                      ['friends', t('media:social.friends')],
+                      ['followers', t('media:social.followers')],
+                    ] as Array<[MediaCommunityRelation, string]>
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="tab"
+                      aria-selected={relation === value}
+                      className={
+                        relation === value ? BTN.segmentActive : BTN.segment
+                      }
+                      onClick={() => setRelation(value)}
+                    >
+                      {label}
+                    </button>
                   ))}
                 </div>
-              </div>
-            ) : mediaStats ? (
-              <div className="stats stats-vertical sm:stats-horizontal shadow-sm w-full">
-                <div className="stat">
-                  <div className="stat-title">{t('social.totalLogs')}</div>
-                  <div className="stat-value text-primary">
-                    {numberWithCommas(mediaStats.total.logs || 0)}
-                  </div>
-                  <div className="stat-desc">{t('social.allTime')}</div>
-                </div>
-                <div className="stat">
-                  <div className="stat-title">{t('stats.totalXp')}</div>
-                  <div className="stat-value text-secondary">
-                    {numberWithCommas(mediaStats.total.xp || 0)}
-                  </div>
-                  <div className="stat-desc">{t('social.allTime')}</div>
-                </div>
-                {(mediaStats.total.minutes || 0) > 0 && (
-                  <div className="stat">
-                    <div className="stat-title">{t('stats.totalTime')}</div>
-                    <div className="stat-value text-accent">
-                      {mediaStats.total.minutes >= 60
-                        ? `${Math.floor(mediaStats.total.minutes / 60)}h ${mediaStats.total.minutes % 60}m`
-                        : `${mediaStats.total.minutes}m`}
-                    </div>
-                    <div className="stat-desc">{t('social.allTime')}</div>
-                  </div>
-                )}
-                {socialMetricType === 'characters' &&
-                  (mediaStats.total.characters || 0) > 0 && (
-                    <div className="stat">
-                      <div className="stat-title">{t('stats.charsRead')}</div>
-                      <div className="stat-value text-info">
-                        {numberWithCommas(mediaStats.total.characters)}
-                      </div>
-                      <div className="stat-desc">{t('social.allTime')}</div>
-                    </div>
-                  )}
-                {socialMetricType === 'pages' &&
-                  (mediaStats.total.pages || 0) > 0 && (
-                    <div className="stat">
-                      <div className="stat-title">{t('stats.pagesLabel')}</div>
-                      <div className="stat-value text-warning">
-                        {numberWithCommas(mediaStats.total.pages)}
-                      </div>
-                      <div className="stat-desc">{t('social.allTime')}</div>
-                    </div>
-                  )}
-                {socialMetricType === 'episodes' &&
-                  (mediaStats.total.episodes || 0) > 0 && (
-                    <div className="stat">
-                      <div className="stat-title">
-                        {t('stats.episodesLabel')}
-                      </div>
-                      <div className="stat-value text-success">
-                        {numberWithCommas(mediaStats.total.episodes)}
-                      </div>
-                      <div className="stat-desc">{t('social.allTime')}</div>
-                    </div>
-                  )}
-              </div>
-            ) : (
-              <div className="text-sm text-base-content/60">
-                {t('social.noStats')}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Compare with a friend */}
-        <div className="card surface mb-6">
-          <div className="card-body">
-            <div className="flex items-center justify-between gap-4 mb-3">
-              <h3 className="card-title text-lg">{t('social.compare')}</h3>
-            </div>
-            <div className="join w-full max-w-xl">
-              <input
-                type="text"
-                className="input join-item w-full"
-                placeholder={t('social.usernamePlaceholder')}
-                value={friend}
-                onChange={(e) => setFriend(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !comparing && friend.trim()) {
-                    runCompare();
-                  }
-                }}
-              />
-              <button
-                className="join-item btn btn-primary btn-sm"
-                onClick={() => runCompare()}
-                disabled={comparing || !friend.trim()}
-              >
-                {comparing ? (
-                  <span className="loading loading-spinner loading-sm" />
-                ) : (
-                  'Compare'
-                )}
-              </button>
-              {comparison && (
-                <button
-                  className="join-item btn btn-ghost btn-sm"
-                  onClick={() => setComparison(null)}
-                >
-                  {t('common.clear')}
-                </button>
+              ) : (
+                <p className="text-sm text-base-content/60">
+                  {t('media:social.signInForPeopleProgress')}
+                </p>
               )}
-            </div>
-
-            {comparison && (
-              <div className="mt-4 overflow-x-auto" aria-live="polite">
-                <div className="stats stats-vertical lg:stats-horizontal shadow-sm">
-                  <div className="stat">
-                    <div className="stat-title">{t('stats.totalXp')}</div>
-                    <div className="stat-value text-primary">
-                      {numberWithCommas(comparison.user1.stats.totalXp)}
-                    </div>
-                    <div className="stat-desc">
-                      vs {comparison.user2.username}:{' '}
-                      {numberWithCommas(comparison.user2.stats.totalXp)}
-                    </div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-title">{t('stats.timeLabel')}</div>
-                    <div className="stat-value text-secondary">
-                      {comparison.user1.stats.totalTime >= 60
-                        ? `${Math.floor(comparison.user1.stats.totalTime / 60)}h ${comparison.user1.stats.totalTime % 60}m`
-                        : `${comparison.user1.stats.totalTime}m`}
-                    </div>
-                    <div className="stat-desc">
-                      vs {comparison.user2.username}:{' '}
-                      {comparison.user2.stats.totalTime >= 60
-                        ? `${Math.floor(comparison.user2.stats.totalTime / 60)}h ${comparison.user2.stats.totalTime % 60}m`
-                        : `${comparison.user2.stats.totalTime}m`}
-                    </div>
-                  </div>
-                  {socialMetricType === 'characters' &&
-                    (comparison.user1.stats.totalChars || 0) > 0 && (
-                      <div className="stat">
-                        <div className="stat-title">
-                          {t('stats.charactersLabel')}
-                        </div>
-                        <div className="stat-value text-info">
-                          {numberWithCommas(comparison.user1.stats.totalChars)}
-                        </div>
-                        <div className="stat-desc">
-                          vs {comparison.user2.username}:{' '}
-                          {numberWithCommas(comparison.user2.stats.totalChars)}
-                        </div>
-                      </div>
-                    )}
-                  {socialMetricType === 'pages' &&
-                    (comparison.user1.stats.totalPages || 0) > 0 && (
-                      <div className="stat">
-                        <div className="stat-title">
-                          {t('stats.pagesLabel')}
-                        </div>
-                        <div className="stat-value text-warning">
-                          {numberWithCommas(comparison.user1.stats.totalPages)}
-                        </div>
-                        <div className="stat-desc">
-                          vs {comparison.user2.username}:{' '}
-                          {numberWithCommas(comparison.user2.stats.totalPages)}
-                        </div>
-                      </div>
-                    )}
-                  {socialMetricType === 'episodes' &&
-                    (comparison.user1.stats.totalEpisodes || 0) > 0 && (
-                      <div className="stat">
-                        <div className="stat-title">
-                          {t('stats.episodesLabel')}
-                        </div>
-                        <div className="stat-value text-success">
-                          {numberWithCommas(
-                            comparison.user1.stats.totalEpisodes
-                          )}
-                        </div>
-                        <div className="stat-desc">
-                          vs {comparison.user2.username}:{' '}
-                          {numberWithCommas(
-                            comparison.user2.stats.totalEpisodes
-                          )}
-                        </div>
-                      </div>
-                    )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Global recent activity for this media */}
-        <div className="card surface mb-6">
-          <div className="card-body">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="card-title text-lg">
-                {t('social.recentActivity')}
-              </h3>
-              {globalLogs && globalLogs.length > 0 && (
-                <div className="badge badge-neutral">
-                  {globalLogs.length} item{globalLogs.length !== 1 ? 's' : ''}
-                </div>
-              )}
-            </div>
-            {globalLogsError && (
-              <div role="alert" className="alert alert-error mb-4">
-                <span>
-                  {(globalLogsError as Error)?.message ||
-                    'Failed to load recent activity'}
-                </span>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => refetchGlobalLogs()}
-                >
-                  {t('social.retry')}
-                </button>
-              </div>
-            )}
-            {globalLogsLoading ? (
-              <div className="space-y-3" aria-busy>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="card surface-muted">
-                    <div className="card-body">
-                      <div className="flex items-center gap-4">
-                        <div className="skeleton h-12 w-12 rounded-full" />
-                        <div className="flex-1">
-                          <div className="skeleton h-4 w-1/3 mb-2" />
-                          <div className="skeleton h-3 w-1/2" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : globalLogs && globalLogs.length > 0 ? (
-              <div>
-                <div className="space-y-3">
-                  {globalLogs.map((log) => {
-                    const logWithUser = log as unknown as {
-                      user?: { username?: string; avatar?: string };
-                    };
-                    const username = logWithUser.user?.username;
-                    const avatar = logWithUser.user?.avatar;
-                    return (
-                      <div key={log._id} className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-base-content/70">
-                          {avatar ? (
-                            <img
-                              src={avatar}
-                              alt={t('social.avatarAlt')}
-                              className="w-6 h-6 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-base-300" />
-                          )}
-                          {username ? (
-                            <Link
-                              to={`/user/${encodeURIComponent(username)}`}
-                              className="link link-hover"
-                            >
-                              {username}
-                            </Link>
-                          ) : (
-                            <span>unknown</span>
-                          )}
-                        </div>
-                        <LogCard log={log} user={username} />
-                      </div>
-                    );
+              {currentUser && (
+                <PeopleProgressList
+                  title={t('media:social.peopleInFilter', {
+                    filter: t(`media:social.${relation}`),
                   })}
-                </div>
-                {globalLogs.length >= globalLimit && (
-                  <div className="mt-4 text-center">
-                    <button
-                      className="btn"
-                      onClick={() => setGlobalLimit((l) => l + 10)}
-                      disabled={globalLogsLoading}
-                    >
-                      {globalLogsLoading ? (
-                        <span className="loading loading-spinner loading-sm" />
-                      ) : (
-                        'Load more'
+                  people={community.people ?? []}
+                  mediaType={type}
+                  empty={t('media:social.noPeopleForFilter')}
+                />
+              )}
+            </div>
+          </section>
+
+          {currentUser && (
+            <section className="card surface mb-6">
+              <div className="card-body">
+                <h2 className="card-title text-lg">{t('media:social.compare')}</h2>
+                <div className="join w-full max-w-xl">
+                  <div
+                    ref={compareDropdownRef}
+                    className={`dropdown dropdown-bottom join-item min-w-0 flex-1 ${
+                      compareDropdownOpen ? 'dropdown-open' : ''
+                    }`}
+                  >
+                    <input
+                      className="input input-md w-full focus:input-primary"
+                      value={compareUsername}
+                      placeholder={t('media:social.usernamePlaceholder')}
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded={compareDropdownOpen}
+                      onFocus={() =>
+                        setCompareDropdownOpen(compareUsername.trim().length >= 2)
+                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setCompareUsername(value);
+                        setCompareDropdownOpen(value.trim().length >= 2);
+                      }}
+                    />
+                    {compareDropdownOpen &&
+                      debouncedCompareUsername.trim().length >= 2 && (
+                        <ul className="dropdown-content menu surface-raised z-50 mt-2 max-h-72 w-full min-w-64 flex-nowrap overflow-y-auto p-2 shadow-lg">
+                          {compareUsersQuery.isLoading ? (
+                            <li>
+                              <span className="text-sm text-base-content/60">
+                                {t('media:social.searchingUsers')}
+                              </span>
+                            </li>
+                          ) : compareUsers.length > 0 ? (
+                            compareUsers.map((user) => (
+                              <li key={user._id}>
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-3 text-left"
+                                  onClick={() => {
+                                    setCompareUsername(user.username);
+                                    setCompareDropdownOpen(false);
+                                  }}
+                                >
+                                  <UserAvatar
+                                    username={user.username}
+                                    avatar={user.avatar}
+                                    containerClassName="h-9 w-9 shrink-0 rounded-full"
+                                    imageClassName="h-full w-full rounded-full object-cover"
+                                    fallbackClassName="flex h-full w-full items-center justify-center rounded-full bg-base-300"
+                                    textClassName="text-xs font-semibold"
+                                  />
+                                  <span className="truncate">{user.username}</span>
+                                </button>
+                              </li>
+                            ))
+                          ) : (
+                            <li>
+                              <span className="text-sm text-base-content/60">
+                                {t('media:social.noUsersFound')}
+                              </span>
+                            </li>
+                          )}
+                        </ul>
                       )}
-                    </button>
+                  </div>
+                  <button
+                    className="join-item btn btn-primary"
+                    disabled={
+                      compareMutation.isPending ||
+                      !compareUsername.trim() ||
+                      compareUsername.trim().toLowerCase() ===
+                        currentUser.username.toLowerCase()
+                    }
+                    onClick={() => compareMutation.mutate()}
+                  >
+                    {compareMutation.isPending ? <Spinner size="sm" /> : t('media:social.compareAction')}
+                  </button>
+                </div>
+                {comparison && (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {[comparison.user1, comparison.user2].map((comparedUser, index) => (
+                      <div key={comparedUser.username} className="surface-muted p-4">
+                        <h3 className="text-base font-semibold text-base-content">
+                          {comparedUser.username}
+                          {index === 0 && (
+                            <span className="ml-2 text-xs font-normal text-base-content/60">
+                              {t('media:social.you')}
+                            </span>
+                          )}
+                        </h3>
+                        <div className="mt-3 grid grid-cols-2 gap-3">
+                          <div>
+                            <div className="text-xs text-base-content/60">{t('media:stats.totalXp')}</div>
+                            <div className="text-2xl font-bold text-primary">
+                              {numberWithCommas(comparedUser.stats.totalXp)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-base-content/60">{t('media:stats.timeLabel')}</div>
+                            <div className="text-2xl font-bold text-secondary">
+                              {numberWithCommas(comparedUser.stats.totalTime)}
+                            </div>
+                            <div className="text-xs text-base-content/60">
+                              {t('media:social.minutes', { count: comparedUser.stats.totalTime })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="text-center py-10 text-base-content/60">
-                {t('social.noRecentActivity')}
-              </div>
+            </section>
+          )}
+
+          <section className="card surface">
+            <div className="card-body">
+              <h2 className="card-title text-lg">
+                <MessageSquareText className="h-5 w-5" />
+                {t('media:social.communityActivity')}
+              </h2>
+              {community.activities.length > 0 ? (
+                <div className="mt-2 space-y-3">
+                  {community.activities.map((activity) => (
+                    <ActivityCard key={activity._id} activity={activity} />
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-center text-base-content/60">
+                  {t('media:social.noRecentActivity')}
+                </p>
+              )}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      <Modal
+        open={recommendOpen}
+        onClose={() => setRecommendOpen(false)}
+        title={t('media:recommendations.modalTitle', { title })}
+        actions={
+          <>
+            <button className="btn btn-ghost" onClick={() => setRecommendOpen(false)}>
+              {t('common:cancel')}
+            </button>
+            <button
+              className="btn btn-primary"
+              disabled={!recipientUsername || recommendMutation.isPending}
+              onClick={() => recommendMutation.mutate()}
+            >
+              {recommendMutation.isPending ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}
+              {t('media:recommendations.send')}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label={t('media:recommendations.recipient')} required>
+            {(id) => (
+              <details ref={recipientDropdownRef} className="dropdown w-full">
+                <summary
+                  id={id}
+                  className="select flex w-full cursor-pointer items-center gap-3 focus:select-primary"
+                >
+                  {selectedRecipient ? (
+                    <>
+                      <UserAvatar
+                        username={selectedRecipient.username}
+                        avatar={selectedRecipient.avatar}
+                        containerClassName="h-7 w-7 shrink-0 overflow-hidden rounded-full"
+                        imageClassName="h-full w-full object-cover"
+                        fallbackClassName="flex h-full w-full items-center justify-center bg-base-300"
+                        textClassName="text-xs font-semibold"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-left">
+                        {selectedRecipient.username}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="flex-1 text-left text-base-content/60">
+                      {t('media:recommendations.chooseRecipient')}
+                    </span>
+                  )}
+                </summary>
+                <ul className="menu dropdown-content z-20 mt-1 max-h-64 w-full flex-nowrap overflow-y-auto rounded-box bg-base-100 p-2 shadow-lg">
+                  {connectionsQuery.data?.users.map((user) => (
+                    <li key={user._id}>
+                      <button
+                        type="button"
+                        className={user.username === recipientUsername ? 'menu-active' : undefined}
+                        onClick={(event) => {
+                          setRecipientUsername(user.username);
+                          event.currentTarget.closest('details')?.removeAttribute('open');
+                        }}
+                      >
+                        <UserAvatar
+                          username={user.username}
+                          avatar={user.avatar}
+                          containerClassName="h-8 w-8 shrink-0 overflow-hidden rounded-full"
+                          imageClassName="h-full w-full object-cover"
+                          fallbackClassName="flex h-full w-full items-center justify-center bg-base-300"
+                          textClassName="text-xs font-semibold"
+                        />
+                        <span className="truncate">{user.username}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             )}
-          </div>
+          </Field>
+          {connectionsQuery.data?.users.length === 0 && (
+            <p className="text-sm text-base-content/60">
+              {t('media:recommendations.noRecipients')}
+            </p>
+          )}
+          <Field
+            label={t('media:recommendations.message')}
+            aside={`${message.length}/280`}
+            hint={t('media:recommendations.messageHint')}
+          >
+            {(id) => (
+              <textarea
+                id={id}
+                className="textarea w-full focus:textarea-primary"
+                rows={3}
+                maxLength={280}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+              />
+            )}
+          </Field>
         </div>
-      </div>
-    </div>
+      </Modal>
+    </main>
   );
 }

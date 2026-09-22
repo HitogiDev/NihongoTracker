@@ -1,3 +1,4 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 
 import GoalsModal from './GoalsModal';
+import DatePickerInput from './ui/DatePickerInput';
 import { useUserDataStore } from '../store/userData';
 
 const goalTypeConfig = {
@@ -790,7 +792,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 <legend className="fieldset-legend">
                   {t('modal.goalType')}
                 </legend>
-                <select
+                <DropdownSelect
                   name="type"
                   className="select w-full"
                   defaultValue={editingGoal.type}
@@ -800,7 +802,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   <option value="chars">{t('types.chars')}</option>
                   <option value="episodes">{t('types.episodes')}</option>
                   <option value="pages">{t('types.pages')}</option>
-                </select>
+                </DropdownSelect>
               </fieldset>
 
               <fieldset className="fieldset">
@@ -822,10 +824,8 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   <legend className="fieldset-legend">
                     {t('modal.targetDate')}
                   </legend>
-                  <input
-                    type="date"
+                  <DatePickerInput
                     name="targetDate"
-                    className="input w-full"
                     defaultValue={
                       new Date(editingGoal.targetDate)
                         .toISOString()
@@ -839,7 +839,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                   <legend className="fieldset-legend">
                     {t('modal.displayProgressAs')}
                   </legend>
-                  <select
+                  <DropdownSelect
                     name="displayTimeframe"
                     className="select w-full"
                     defaultValue={editingGoal.displayTimeframe}
@@ -847,7 +847,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                     <option value="daily">{t('timeframes.daily')}</option>
                     <option value="weekly">{t('timeframes.weekly')}</option>
                     <option value="monthly">{t('timeframes.monthly')}</option>
-                  </select>
+                  </DropdownSelect>
                 </fieldset>
               </div>
 

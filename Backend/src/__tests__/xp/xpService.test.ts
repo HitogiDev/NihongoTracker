@@ -74,23 +74,35 @@ describe('difficultyMultiplier', () => {
     expect(difficultyMultiplier(50, 25)).toBe(1);
   });
 
-  it('reaches the max bonus at every level (normalized gap)', () => {
+  it('reaches the max bonus 10 points above comfort', () => {
     expect(difficultyMultiplier(100, 0)).toBeCloseTo(1.3);
     expect(difficultyMultiplier(100, 25)).toBeCloseTo(1.3);
     expect(difficultyMultiplier(100, 100)).toBeCloseTo(1.3);
   });
 
-  it('scales linearly inside the remaining difficulty space', () => {
-    // Level 0 → comfort 0: d=50 is half the space
-    expect(difficultyMultiplier(50, 0)).toBeCloseTo(1.15);
-    // Level 25 → comfort 50: d=75 is half the remaining space
-    expect(difficultyMultiplier(75, 25)).toBeCloseTo(1.15);
-    // Level 100 → comfort 80: d=90 is half the remaining space
-    expect(difficultyMultiplier(90, 100)).toBeCloseTo(1.15);
+  it('gives 0%, 15% and 30% at comfort 60, 65 and 70', () => {
+    expect(comfortDifficulty(37.5)).toBeCloseTo(60);
+    expect(difficultyMultiplier(60, 37.5)).toBe(1);
+    expect(difficultyMultiplier(65, 37.5)).toBeCloseTo(1.15);
+    expect(difficultyMultiplier(70, 37.5)).toBeCloseTo(1.3);
+    expect(difficultyMultiplier(90, 37.5)).toBeCloseTo(1.3);
+  });
+
+  it('reaches 30% at the scale ceiling when comfort is 95', () => {
+    expect(comfortDifficulty(475)).toBeCloseTo(95);
+    expect(difficultyMultiplier(100, 475)).toBeCloseTo(1.3);
+  });
+
+  it('is neutral when a fixed comfort snapshot is 100', () => {
+    const result = computeXp(
+      { type: 'anime', time: 60 },
+      { difficulty: 100, comfortAt: 100 }
+    );
+    expect(result.breakdown.multiplier).toBe(1);
   });
 
   it('shrinks the bonus for the same content as the level grows', () => {
-    const d = 70;
+    const d = 55;
     const low = difficultyMultiplier(d, 1);
     const mid = difficultyMultiplier(d, 25);
     const high = difficultyMultiplier(d, 100);
@@ -146,15 +158,13 @@ describe('weightedPercentile', () => {
   });
 });
 
-describe('effectiveComfort — i+1 consumed-difficulty signal', () => {
-  it('raises comfort when consumed difficulty exceeds the level floor', () => {
-    // Level 0 → floor 0; consuming ~d=50 content moves comfort to 50
-    expect(effectiveComfort(0, 50)).toBe(50);
+describe('effectiveComfort — bounded history calibration', () => {
+  it('limits upward history correction to five points', () => {
+    expect(effectiveComfort(25, 80)).toBe(55);
   });
 
-  it('never drops below the level-based floor (anti-sandbagging)', () => {
-    // Level 25 → floor 50; farming easy content (p75=20) cannot lower it
-    expect(effectiveComfort(25, 20)).toBeCloseTo(50);
+  it('limits downward history correction to five points', () => {
+    expect(effectiveComfort(25, 20)).toBe(45);
   });
 
   it('falls back to the level floor without enough tagged history', () => {
@@ -162,12 +172,10 @@ describe('effectiveComfort — i+1 consumed-difficulty signal', () => {
     expect(effectiveComfort(25, undefined)).toBeCloseTo(50);
   });
 
-  it('shrinks the bonus for content the user already consumes routinely', () => {
-    // Newcomer by level, but already consuming d≈70 content: d=70 is neutral,
-    // only content above their demonstrated frontier earns a bonus.
-    expect(difficultyMultiplier(70, 0, 70)).toBe(1);
-    expect(difficultyMultiplier(85, 0, 70)).toBeCloseTo(1.15);
-    expect(difficultyMultiplier(100, 0, 70)).toBeCloseTo(1.3);
+  it('uses calibrated comfort for the bonus', () => {
+    expect(difficultyMultiplier(55, 25, 70)).toBe(1);
+    expect(difficultyMultiplier(60, 25, 70)).toBeCloseTo(1.15);
+    expect(difficultyMultiplier(65, 25, 70)).toBeCloseTo(1.3);
   });
 });
 
@@ -300,14 +308,14 @@ describe('computeXp — difficulty multiplier integration', () => {
     expect(breakdown.timeCreditedMin).toBe(60);
   });
 
-  it('uses the consumed-difficulty signal to raise the comfort point', () => {
+  it('uses the consumed-difficulty signal as bounded calibration', () => {
     const withConsumed = computeXp(
       { type: 'reading', time: 60 },
       { difficulty: 85, categoryLevel: 0, consumedDifficulty: 70 }
     );
-    expect(withConsumed.breakdown.comfortAt).toBe(70);
-    expect(withConsumed.breakdown.multiplier).toBeCloseTo(1.15);
-    expect(withConsumed.xp).toBe(155);
+    expect(withConsumed.breakdown.comfortAt).toBe(5);
+    expect(withConsumed.breakdown.multiplier).toBeCloseTo(1.3);
+    expect(withConsumed.xp).toBe(175);
   });
 
   it('honors a fixed comfortAt snapshot over recomputation (edits)', () => {
@@ -321,7 +329,7 @@ describe('computeXp — difficulty multiplier integration', () => {
       }
     );
     expect(result.breakdown.comfortAt).toBe(70);
-    expect(result.breakdown.multiplier).toBeCloseTo(1.15);
+    expect(result.breakdown.multiplier).toBeCloseTo(1.3);
   });
 
   it('stores a null difficulty and neutral multiplier without data', () => {

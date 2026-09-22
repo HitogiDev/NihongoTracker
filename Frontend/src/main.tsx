@@ -58,7 +58,7 @@ const MediaDetails = lazy(() => import('./screens/MediaDetails.tsx'));
 const MediaHeader = lazy(() => import('./components/MediaHeader.tsx'));
 const NotFound = lazy(() => import('./screens/NotFound.tsx'));
 const NotificationsScreen = lazy(
-  () => import('./screens/NotificationsScreen.tsx')
+  () => import('./screens/NotificationsScreen.tsx'),
 );
 const ProfileHeader = lazy(() => import('./components/ProfileHeader.tsx'));
 const ProfileScreen = lazy(() => import('./screens/ProfileScreen.tsx'));
@@ -73,56 +73,61 @@ const MediaSocial = lazy(() => import('./screens/MediaSocial.tsx'));
 const MediaReviews = lazy(() => import('./screens/MediaReviews.tsx'));
 const MediaWriteReview = lazy(() => import('./screens/MediaWriteReview.tsx'));
 const ReviewDetailScreen = lazy(
-  () => import('./screens/ReviewDetailScreen.tsx')
+  () => import('./screens/ReviewDetailScreen.tsx'),
 );
 const AdminScreen = lazy(() => import('./screens/AdminScreen.tsx'));
 const ClubsScreen = lazy(() => import('./screens/ClubsScreen.tsx'));
 const CreateClubScreen = lazy(() => import('./screens/CreateClubScreen.tsx'));
 const ClubDetailScreen = lazy(() => import('./screens/ClubDetailScreen.tsx'));
 const ClubMediaHeader = lazy(
-  () => import('./components/club/ClubMediaHeader.tsx')
+  () => import('./components/club/ClubMediaHeader.tsx'),
 );
 const ClubMediaInfo = lazy(() => import('./screens/ClubMediaInfo.tsx'));
 const ClubMediaActivity = lazy(() => import('./screens/ClubMediaActivity.tsx'));
 const ClubMediaRankings = lazy(() => import('./screens/ClubMediaRankings.tsx'));
 const GoalsScreen = lazy(() => import('./screens/GoalsScreen.tsx'));
+const GuidelinesScreen = lazy(() => import('./screens/GuidelinesScreen.tsx'));
 const SupportScreen = lazy(() => import('./screens/SupportScreen.tsx'));
 const PrivacyPolicyScreen = lazy(
-  () => import('./screens/PrivacyPolicyScreen.tsx')
+  () => import('./screens/PrivacyPolicyScreen.tsx'),
 );
 const TermsOfServiceScreen = lazy(
-  () => import('./screens/TermsOfServiceScreen.tsx')
+  () => import('./screens/TermsOfServiceScreen.tsx'),
 );
 const RefundPolicyScreen = lazy(
-  () => import('./screens/RefundPolicyScreen.tsx')
+  () => import('./screens/RefundPolicyScreen.tsx'),
 );
 const ChangelogScreen = lazy(() => import('./screens/ChangelogScreen.tsx'));
 const ForgotPasswordScreen = lazy(
-  () => import('./screens/ForgotPasswordScreen.tsx')
+  () => import('./screens/ForgotPasswordScreen.tsx'),
 );
 const ResetPasswordScreen = lazy(
-  () => import('./screens/ResetPasswordScreen.tsx')
+  () => import('./screens/ResetPasswordScreen.tsx'),
 );
 const VerifyEmailScreen = lazy(() => import('./screens/VerifyEmailScreen.tsx'));
 const TextHookerDashboard = lazy(
-  () => import('./screens/TextHookerDashboard.tsx')
+  () => import('./screens/TextHookerDashboard.tsx'),
 );
 const ProfileModerationScreen = lazy(
-  () => import('./screens/ProfileModerationScreen.tsx')
+  () => import('./screens/ProfileModerationScreen.tsx'),
 );
 const AchievementsScreen = lazy(
-  () => import('./screens/AchievementsScreen.tsx')
+  () => import('./screens/AchievementsScreen.tsx'),
 );
 const MediaRequestScreen = lazy(
-  () => import('./screens/MediaRequestScreen.tsx')
+  () => import('./screens/MediaRequestScreen.tsx'),
 );
 const ListsDiscoverScreen = lazy(
-  () => import('./screens/ListsDiscoverScreen.tsx')
+  () => import('./screens/ListsDiscoverScreen.tsx'),
 );
 const MediaListDetailScreen = lazy(
-  () => import('./screens/MediaListDetailScreen.tsx')
+  () => import('./screens/MediaListDetailScreen.tsx'),
 );
 const UserListsScreen = lazy(() => import('./screens/UserListsScreen.tsx'));
+const ConnectionsScreen = lazy(() => import('./screens/ConnectionsScreen.tsx'));
+const RecommendationsScreen = lazy(
+  () => import('./screens/RecommendationsScreen.tsx'),
+);
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -159,6 +164,7 @@ const router = createBrowserRouter(
         <Route path="lists/:listId" element={<MediaListDetailScreen />} />
         <Route path="calculator" element={<CalculatorScreen />} />
         <Route path="features" element={<FeaturesScreen />} />
+        <Route path="guidelines" element={<GuidelinesScreen />} />
         <Route path="support" element={<SupportScreen />} />
         <Route path="privacy" element={<PrivacyPolicyScreen />} />
         <Route path="terms" element={<TermsOfServiceScreen />} />
@@ -175,12 +181,21 @@ const router = createBrowserRouter(
           <Route path="goals" element={<GoalsScreen />} />
           <Route path="moderation" element={<ProfileModerationScreen />} />
           <Route path="achievements" element={<AchievementsScreen />} />
+          <Route
+            path="followers"
+            element={<ConnectionsScreen direction="followers" />}
+          />
+          <Route
+            path="following"
+            element={<ConnectionsScreen direction="following" />}
+          />
         </Route>
         <Route path="review/:reviewId" element={<ReviewDetailScreen />} />
         <Route element={<ProtectedRoutes />}>
           <Route index path="log" element={<LogScreen />} />
           <Route path="matchmedia" element={<MatchMedia />} />
           <Route path="notifications" element={<NotificationsScreen />} />
+          <Route path="recommendations" element={<RecommendationsScreen />} />
           <Route path="settings" element={<SettingsScreen />} />
           <Route path="media-request" element={<MediaRequestScreen />} />
           <Route path="achievements" element={<AchievementsScreen />} />
@@ -199,8 +214,8 @@ const router = createBrowserRouter(
         <Route path="404" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Route>
-    </Route>
-  )
+    </Route>,
+  ),
 );
 
 // Global click handler for Discord-style spoilers (click to reveal/hide)
@@ -233,7 +248,7 @@ async function bootstrap() {
           </TimezoneProvider>
         </QueryClientProvider>
       </I18nextProvider>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 }
 

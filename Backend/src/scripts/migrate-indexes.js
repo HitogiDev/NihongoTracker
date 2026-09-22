@@ -38,6 +38,218 @@ Time: ${new Date().toISOString()}
 // Indexes to ensure, grouped by collection.
 const MIGRATIONS = [
   {
+    collection: 'livepresences',
+    indexes: [
+      {
+        key: { user: 1 },
+        name: 'user_1',
+        description: 'One current presence document per user',
+        unique: true,
+      },
+      {
+        key: { sharing: 1, expiresAt: 1 },
+        name: 'sharing_1_expiresAt_1',
+        description: 'Active opt-in presence discovery',
+      },
+      {
+        key: { groupSession: 1, sharing: 1, expiresAt: 1 },
+        name: 'groupSession_1_sharing_1_expiresAt_1',
+        description: 'Visible active participants in one club session',
+      },
+      {
+        key: { expiresAt: 1 },
+        name: 'expiresAt_1',
+        description: 'Expire stale presence records automatically',
+        expireAfterSeconds: 0,
+      },
+    ],
+  },
+  {
+    collection: 'clublivesessions',
+    indexes: [
+      {
+        key: { club: 1, status: 1, startedAt: -1 },
+        name: 'club_1_status_1_startedAt_-1',
+        description: 'Active live sessions for a club',
+      },
+      {
+        key: { club: 1, createdBy: 1, status: 1 },
+        name: 'club_1_createdBy_1_status_1',
+        description: 'One active session per creator in each club',
+        unique: true,
+        partialFilterExpression: { status: 'active' },
+      },
+      {
+        key: { expireAt: 1 },
+        name: 'expireAt_1',
+        description: 'Remove ended session records after retention',
+        expireAfterSeconds: 0,
+      },
+    ],
+  },
+  {
+    collection: 'activities',
+    indexes: [
+      {
+        key: { visibility: 1, occurredAt: -1 },
+        name: 'visibility_1_occurredAt_-1',
+        description: 'Global activity feed',
+      },
+      {
+        key: { actor: 1, occurredAt: -1 },
+        name: 'actor_1_occurredAt_-1',
+        description: 'Profile and following activity feeds',
+      },
+      {
+        key: { club: 1, occurredAt: -1 },
+        name: 'club_1_occurredAt_-1',
+        description: 'Club activity feeds',
+      },
+      {
+        key: { 'metadata.mediaId': 1, 'metadata.mediaType': 1, occurredAt: -1 },
+        name: 'metadata.mediaId_1_metadata.mediaType_1_occurredAt_-1',
+        description: 'Media community activity feeds',
+      },
+      {
+        key: { 'metadata.mediaId': 1, 'metadata.logType': 1, occurredAt: -1 },
+        name: 'metadata.mediaId_1_metadata.logType_1_occurredAt_-1',
+        description: 'Historical log activity on media community feeds',
+      },
+      {
+        key: { dedupeKey: 1 },
+        name: 'dedupeKey_1',
+        description: 'One activity per source event',
+        unique: true,
+        sparse: true,
+      },
+    ],
+  },
+  {
+    collection: 'activityreactions',
+    indexes: [
+      {
+        key: { activity: 1, user: 1 },
+        name: 'activity_1_user_1',
+        description: 'One reaction per user and activity',
+        unique: true,
+      },
+      {
+        key: { user: 1, createdAt: -1 },
+        name: 'user_1_createdAt_-1',
+        description: 'Current-user reaction lookups',
+      },
+    ],
+  },
+  {
+    collection: 'activitycomments',
+    indexes: [
+      {
+        key: { activity: 1, createdAt: -1 },
+        name: 'activity_1_createdAt_-1',
+        description: 'Paginated activity comments',
+      },
+      {
+        key: { user: 1, createdAt: -1 },
+        name: 'user_1_createdAt_-1',
+        description: 'Comment moderation by author',
+      },
+    ],
+  },
+  {
+    collection: 'activitycommentlikes',
+    indexes: [
+      {
+        key: { comment: 1, user: 1 },
+        name: 'comment_1_user_1',
+        description: 'One like per user and activity comment',
+        unique: true,
+      },
+      {
+        key: { user: 1, createdAt: -1 },
+        name: 'user_1_createdAt_-1',
+        description: 'Activity comment likes by user',
+      },
+    ],
+  },
+  {
+    collection: 'follows',
+    indexes: [
+      {
+        key: { follower: 1, following: 1 },
+        name: 'follower_1_following_1',
+        description: 'Prevent duplicate follow relationships',
+        unique: true,
+      },
+      {
+        key: { following: 1, createdAt: -1 },
+        name: 'following_1_createdAt_-1',
+        description: 'Follower lists and follower counts',
+      },
+      {
+        key: { follower: 1, createdAt: -1 },
+        name: 'follower_1_createdAt_-1',
+        description: 'Following lists and following counts',
+      },
+    ],
+  },
+  {
+    collection: 'mediarecommendations',
+    indexes: [
+      {
+        key: { sender: 1, recipient: 1, mediaId: 1, mediaType: 1 },
+        name: 'sender_1_recipient_1_mediaId_1_mediaType_1',
+        description: 'Prevent duplicate media recommendations',
+        unique: true,
+      },
+      {
+        key: { recipient: 1, status: 1, createdAt: -1 },
+        name: 'recipient_1_status_1_createdAt_-1',
+        description: 'Received recommendation inbox',
+      },
+      {
+        key: { sender: 1, createdAt: -1 },
+        name: 'sender_1_createdAt_-1',
+        description: 'Sent recommendation history',
+      },
+    ],
+  },
+  {
+    collection: 'usermediastatuses',
+    indexes: [
+      {
+        key: { mediaId: 1, type: 1, hiddenFromList: 1, user: 1 },
+        name: 'mediaId_1_type_1_hiddenFromList_1_user_1',
+        description: 'Media community visibility candidate lookup',
+      },
+    ],
+  },
+  {
+    collection: 'clubchallenges',
+    indexes: [
+      {
+        key: { club: 1, status: 1, startDate: -1 },
+        name: 'club_1_status_1_startDate_-1',
+        description: 'Club challenge lists by lifecycle state',
+      },
+      {
+        key: { scope: 1, visibility: 1, status: 1, startDate: -1 },
+        name: 'scope_1_visibility_1_status_1_startDate_-1',
+        description: 'Global and official challenge discovery',
+      },
+      {
+        key: { participants: 1, status: 1, endDate: 1 },
+        name: 'participants_1_status_1_endDate_1',
+        description: 'Participant active and completed challenge lookup',
+      },
+      {
+        key: { club: 1, legacyGoalId: 1 },
+        name: 'club_1_legacyGoalId_1',
+        description: 'Map legacy embedded club goals to unified objectives',
+        sparse: true,
+      },
+    ],
+  },
+  {
     collection: 'immersionforecasts',
     indexes: [
       {
@@ -209,6 +421,10 @@ async function createProductionIndexes() {
 
             if (indexSpec.unique) {
               indexOptions.unique = true;
+            }
+
+            if (indexSpec.expireAfterSeconds !== undefined) {
+              indexOptions.expireAfterSeconds = indexSpec.expireAfterSeconds;
             }
 
             // Partial indexes are how a compound index stays selective: a

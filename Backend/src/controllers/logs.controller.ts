@@ -31,14 +31,26 @@ import {
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
 import axios from 'axios';
 import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
-import { recalculateAllUsersXpV2 } from '../services/xpMigration.js';
+import { recalculateAllUsersXpV3 } from '../services/xpMigration.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
 import {
   checkAchievements,
   dismissAchievementNotifications,
 } from '../services/achievements/achievementEngine.js';
+import {
+  deleteActivitiesBySource,
+} from '../services/activity.service.js';
+import { recordLogActivity } from '../services/activityEvents.service.js';
 import UserAchievement from '../models/userAchievement.model.js';
 import { computeMonthlyOvertakes } from '../services/overtake.service.js';
+import {
+  calculateXpScenario,
+  XpCalculatorRequest,
+} from '../services/xpCalculator.js';
+import {
+  buildVisibleImmersionLogFilter,
+  canViewUserSocialCategory,
+} from '../services/socialVisibility.service.js';
 
 interface IMediaTitleFallback {
   contentTitleNative?: string;
@@ -756,12 +768,27 @@ export async function getUserLogs(
 
     const userExists = await User.findOne({
       username: req.params.username,
-    }).select('_id');
+    }).select('_id settings.socialPrivacy');
     if (!userExists) {
       throw apiError('user.notFound', 404, 'User not found');
     }
 
     const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: userExists._id,
+        viewerId: viewer?._id,
+        settings: userExists.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.immersionRestricted',
+        403,
+        'This user has restricted their immersion activity'
+      );
+    }
     const canViewPrivateLogs = canViewPrivateLog(viewer, userExists._id);
 
     let initialMatch: IInitialMatch = {
@@ -1069,6 +1096,20 @@ export async function previewLogXp(
   }
 }
 
+/** Calculates direct or inverse XP scenarios without persisting a log. */
+export async function calculateXpScenarioPreview(
+  req: Request<ParamsDictionary, any, XpCalculatorRequest>,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await calculateXpScenario(req.body, res.locals.user);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function getLog(req: Request, res: Response, next: NextFunction) {
   try {
     const logAggregation = await Log.aggregate([
@@ -1211,6 +1252,9 @@ export async function deleteLog(
     // After deletion, streaks may change; recalc for this user
     if (deletedLog) {
       await recalculateStreaksForUser(res.locals.user._id);
+      await deleteActivitiesBySource('log', [
+        deletedLog._id as Types.ObjectId,
+      ]);
     }
 
     // Re-evaluate auto-complete after deletion
@@ -1253,6 +1297,13 @@ export async function deleteLogsBulk(
 
     const userId = res.locals.user.id;
 
+    const ownedLogs = await Log.find({
+      _id: { $in: ids },
+      user: userId,
+    })
+      .select('_id')
+      .lean();
+
     // Delete all requested logs that belong to this user in one query
     const result = await Log.deleteMany({
       _id: { $in: ids },
@@ -1272,6 +1323,10 @@ export async function deleteLogsBulk(
 
     // Recalculate streaks once after all deletions
     await recalculateStreaksForUser(userId);
+    await deleteActivitiesBySource(
+      'log',
+      ownedLogs.map((log) => new Types.ObjectId(String(log._id)))
+    );
 
     return res.status(200).json({ deletedCount: result.deletedCount });
   } catch (error) {
@@ -1307,6 +1362,10 @@ export async function adminDeleteLogsBulk(
     }
 
     await Log.deleteMany({ _id: { $in: ids } });
+    await deleteActivitiesBySource(
+      'log',
+      logsToDelete.map((log) => new Types.ObjectId(String(log._id)))
+    );
 
     // Group affected users (usually all the same one)
     const affectedUserIds = [
@@ -1403,6 +1462,9 @@ export async function adminDeleteLog(
 
     await updateStats(res, next, true);
     await recalculateStreaksForUser(deletedLog.user);
+    await deleteActivitiesBySource('log', [
+      deletedLog._id as Types.ObjectId,
+    ]);
 
     return res.sendStatus(204);
   } catch (error) {
@@ -1630,6 +1692,7 @@ export async function createLog(
     mediaData,
     tags,
     unknownDate,
+    private: privateLog,
   } = req.body;
 
   try {
@@ -1660,7 +1723,6 @@ export async function createLog(
         createMedia = false;
       }
     }
-
     // Verify airing dates server-side. Search results sent by clients are not
     // trusted because these fields decide whether an achievement is awarded.
     if (
@@ -1759,7 +1821,7 @@ export async function createLog(
       description,
       playlistBatchId,
       playlistBatchTitle,
-      private: false,
+      private: privateLog === true,
       isAdult: logMedia?.isAdult ?? false,
       time,
       unknownDate: isUnknownDate,
@@ -1915,6 +1977,13 @@ export async function createLog(
         await userDoc.save();
       }
     }
+
+    const activityMediaTitle =
+      logMedia?.title?.contentTitleEnglish ||
+      logMedia?.title?.contentTitleRomaji ||
+      logMedia?.title?.contentTitleNative ||
+      savedLog.mediaTitle;
+    await recordLogActivity(savedLog, res.locals.user, activityMediaTitle);
 
     // Celebration payload the client plays back after logging (XP roll-up,
     // level up, monthly-rank overtakes). Best-effort — never fails the log.
@@ -2386,6 +2455,22 @@ export async function getUserStats(
 
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ message: 'User not found' });
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'This user has restricted their statistics'
+      );
+    }
 
     // Use provided timezone or user's timezone for date calculations
     const userTimezone = tzParam || user.settings?.timezone || 'UTC';
@@ -2885,7 +2970,7 @@ export async function recalculateXp(
     }
 
     const dryRun = req.query.dryRun === 'true';
-    const results = await recalculateAllUsersXpV2({ dryRun });
+    const results = await recalculateAllUsersXpV3({ dryRun });
 
     return res.status(200).json({
       message: `${dryRun ? '[dry run] Would recalculate' : 'Recalculated'} stats for ${results.processedUsers} users (${results.updatedLogs} logs ${dryRun ? 'would change' : 'updated'})`,
@@ -3342,11 +3427,20 @@ export async function getGlobalMediaStats(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
     );
 
-    const baseMatch = {
+    const mediaMatch = {
       mediaId: mediaId as string,
       type: type as string,
-      private: { $ne: true },
     };
+    const ownerIds = await Log.distinct('user', {
+      ...mediaMatch,
+      private: { $ne: true },
+    });
+    const visibilityFilter = await buildVisibleImmersionLogFilter(
+      ownerIds,
+      res.locals.user?._id,
+      'statistics'
+    );
+    const baseMatch = { $and: [mediaMatch, visibilityFilter] };
 
     const totalStats = await Log.aggregate([
       { $match: baseMatch },
@@ -3587,19 +3681,29 @@ export async function getRecentMediaLogs(
 ) {
   try {
     const { mediaId, type } = req.query;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    const limit = req.query.limit
+      ? Number.parseInt(req.query.limit as string, 10)
+      : 50;
 
     if (!mediaId || !type) {
       return res.status(400).json({ message: 'MediaId and type are required' });
     }
 
+    const mediaMatch = {
+      mediaId: mediaId as string,
+      type: type as string,
+    };
+    const ownerIds = await Log.distinct('user', {
+      ...mediaMatch,
+      private: { $ne: true },
+    });
+    const visibilityFilter = await buildVisibleImmersionLogFilter(
+      ownerIds,
+      res.locals.user?._id
+    );
     const pipeline: PipelineStage[] = [
       {
-        $match: {
-          mediaId: mediaId as string,
-          type: type as string,
-          $or: [{ private: { $exists: false } }, { private: false }],
-        },
+        $match: { $and: [mediaMatch, visibilityFilter] },
       },
       { $sort: { date: -1 } },
       { $limit: limit },

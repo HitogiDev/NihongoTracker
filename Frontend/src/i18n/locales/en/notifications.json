@@ -31,9 +31,14 @@
     "club.memberRemoved": "You were removed from {{clubName}}",
     "mediaRequest.approved": "Your media request \"{{title}}\" was approved",
     "mediaRequest.rejected": "Your media request \"{{title}}\" was rejected",
+    "mediaRecommendation.received": "{{username}} recommended {{mediaTitle}}",
     "review.liked_one": "{{username}} and {{count}} other liked your review",
     "review.liked_other": "{{username}} and {{count}} others liked your review",
-    "review.liked_zero": "{{username}} liked your review"
+    "review.liked_zero": "{{username}} liked your review",
+    "social.followed": "{{username}} followed you",
+    "social.reacted": "{{username}} liked your activity",
+    "social.commented": "{{username}} commented on your activity",
+    "social.replyLiked": "{{username}} liked your reply"
   },
   "list": {
     "empty": {

@@ -1,3 +1,4 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { ILog } from '../types';
 import LineChart from './LineChart';
 import BarChart from './BarChart';
@@ -8,6 +9,7 @@ import { convertToUserTimezone, getLocale } from '../utils/timezone';
 import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { effectiveLogMinutes } from '../utils/immersionTime';
 import { useTranslation } from 'react-i18next';
+import { getLogTypeLabelKey } from '../utils/logTypes';
 
 interface LocalDateInfo {
   iso: string;
@@ -100,6 +102,7 @@ export default function ProgressChart({
   showTitle = true,
 }: ProgressChartProps) {
   const { t } = useTranslation('stats');
+  const { t: tCommon } = useTranslation('common');
   const { timezone } = useTimezone();
   const themeColors = useThemeColors(1);
   const [timeframe, setTimeframe] = useState<
@@ -481,14 +484,15 @@ export default function ProgressChart({
     ],
   };
 
+  const selectedTypeLabelKey = getLogTypeLabelKey(selectedType);
   const typeLabel =
     logs && !statsData
       ? 'This Media'
       : selectedType === 'all'
-        ? 'All Media Types'
-        : selectedType === 'game'
-          ? 'Video Game'
-          : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
+        ? tCommon('allMediaTypes')
+        : selectedTypeLabelKey
+          ? tCommon(selectedTypeLabelKey)
+          : selectedType;
 
   return (
     <div className="w-full h-full">
@@ -518,7 +522,7 @@ export default function ProgressChart({
           </div>
           {!externalTimeframe && (
             <div>
-              <select
+              <DropdownSelect
                 value={timeframe}
                 onChange={(e) =>
                   setTimeframe(
@@ -537,7 +541,7 @@ export default function ProgressChart({
                 <option value="month">{t('progress.month')}</option>
                 <option value="week">{t('progress.week')}</option>
                 <option value="today">{t('range.today')}</option>
-              </select>
+              </DropdownSelect>
             </div>
           )}
           </div>

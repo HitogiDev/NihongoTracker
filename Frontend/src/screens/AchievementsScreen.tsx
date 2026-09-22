@@ -130,7 +130,9 @@ export default function AchievementsScreen() {
   const rarityBreakdown = RARITY_ORDER.map((r) => ({
     rarity: r,
     earned: earned.filter((a) => a.rarity === r).length,
-    total: visible.filter((a) => a.rarity === r).length,
+    // Secret achievements are still rendered as locked cards in the grouped
+    // sections, so the summary must use the same total as those sections.
+    total: (achievements ?? []).filter((a) => a.rarity === r).length,
   }));
 
   // Filter and sort

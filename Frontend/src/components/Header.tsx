@@ -22,6 +22,7 @@ import {
   SunMoon,
   Bell,
   Layers,
+  Send,
 } from 'lucide-react';
 
 import LanguageSwitcher, { LanguageMenuItem } from './LanguageSwitcher';
@@ -216,6 +217,15 @@ function Header() {
                   <span className="text-xs font-bold text-base-content/70">
                     {t('sections.navigation')}
                   </span>
+                </li>
+                <li>
+                  <Link
+                    to="/recommendations"
+                    className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
+                  >
+                    <Send className="w-4 h-4" />
+                    {t('links.recommendations')}
+                  </Link>
                 </li>
                 <li>
                   <Link

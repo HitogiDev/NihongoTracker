@@ -1,3 +1,4 @@
+import DropdownSelect from '../ui/DropdownSelect';
 import { useState, useEffect } from 'react';
 import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +9,7 @@ import { editMediaVotingFn } from '../../api/clubApi';
 import { IClub, IClubMediaVoting } from '../../types.d';
 import { useTranslation } from 'react-i18next';
 import { getLocale } from '../../utils/timezone';
+import { getLogTypeLabelKey } from '../../utils/logTypes';
 
 interface EditVotingModalProps {
   isOpen: boolean;
@@ -41,15 +43,14 @@ interface EditVotingData {
 }
 
 const MEDIA_TYPES = [
-  { value: 'anime', label: 'Anime' },
-  { value: 'manga', label: 'Manga' },
-  { value: 'light-novel', label: 'Light Novel' },
-  { value: 'vn', label: 'Visual Novel' },
-  { value: 'game', label: 'Video Game' },
-  { value: 'video', label: 'Video' },
-  { value: 'movie', label: 'Movie' },
-  { value: 'custom', label: 'Custom' },
-];
+  'anime',
+  'manga',
+  'light-novel',
+  'vn',
+  'game',
+  'video',
+  'movie',
+] as const;
 
 export default function EditVotingModal({
   isOpen,
@@ -58,6 +59,7 @@ export default function EditVotingModal({
   voting,
 }: EditVotingModalProps) {
   const { t } = useTranslation('clubs');
+  const { t: tCommon } = useTranslation('common');
   const queryClient = useQueryClient();
   const invalidateVotingQueries = () => {
     queryClient.invalidateQueries({
@@ -326,7 +328,7 @@ export default function EditVotingModal({
             </Field>
 
             <Field label={t('editVoting.mediaTypeRequired')}>
-              <select
+              <DropdownSelect
                 value={votingData.mediaType}
                 onChange={(e) =>
                   setVotingData((prev) => ({
@@ -338,11 +340,12 @@ export default function EditVotingModal({
                 disabled={onlyConsumptionEditable}
               >
                 {MEDIA_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
+                  <option key={type} value={type}>
+                    {tCommon(getLogTypeLabelKey(type)!)}
                   </option>
                 ))}
-              </select>
+                <option value="custom">{t('wizard.mediaTypes.custom')}</option>
+              </DropdownSelect>
             </Field>
 
             {votingData.mediaType === 'custom' && (

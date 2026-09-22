@@ -286,6 +286,17 @@ Need help or have questions?
 ## Acknowledgements
 
 - [Jiten](https://github.com/Sirush/Jiten) - Difficulty and character count.
+
+### XP formula
+
+NihongoTracker awards 135 base XP per credited immersion hour. Reading quantities can estimate or validate credited time, and game time without character evidence receives a 0.75 factor. Content with Jiten difficulty can earn a relative challenge bonus from 0% to 30%. The full bonus is reached 0.5 Jiten points above the user's effective comfort, capped at Jiten 5. Effective comfort starts from the reading or listening level and may move by at most 0.25 Jiten based on the hours-weighted median difficulty consumed during the last 90 days, after 10 tagged hours. This estimates relative challenge and does not measure comprehension.
+
+Before deploying XP formula changes, back up the database and pause log writes and automatic sync. Preview XP v3 impact with `cd Backend && npm run migrate:xp -- --dry-run`, run `npm run migrate:xp`, then grant newly eligible achievements with `npm run backfill:achievements -- --no-revoke` and rebuild completed rank achievements with `npm run backfill:ranks`. If validation fails, restore the backup and previous application version before reopening writes.
+
+### Club role migration
+
+The club role migration converts legacy `leader` member roles to the canonical `owner` role. It is a dry run by default. Back up the database, preview with `cd Backend && npm run migrate:club-leaders`, then apply with `npm run migrate:club-leaders -- --apply`.
+
 - [Texthooker-ui](https://github.com/Renji-XD/texthooker-ui) - Texthooker inspiration.
 - [VNDB](https://vndb.org/) - Visual Novel data.
 - [Anilist](https://anilist.co/) - Anime, manga and light novels data.

@@ -1,5 +1,7 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { useMutation } from '@tanstack/react-query';
 import Field from './ui/Field';
+import DatePickerInput from './ui/DatePickerInput';
 import { Link } from 'react-router-dom';
 import { ILog, IUpdateLogRequest } from '../types';
 
@@ -37,6 +39,7 @@ import { useRef, useState } from 'react';
 import { validateUpdateLogData } from '../utils/validation';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { useTimezone } from '../hooks/useTimezone';
+import { renderMarkdownWithSpoilers } from '../utils/markdown';
 import {
   getDayKeyInTimezone,
   getTimeInTimezone,
@@ -175,6 +178,9 @@ function LogCard({
   const { formatRelativeDate, formatDateTime, formatNumber } =
     useDateFormatting();
   const { timezone } = useTimezone();
+  const renderedDescription = description
+    ? renderMarkdownWithSpoilers(description)
+    : '';
 
   /** "1h 30m" in English, "1 h 30 min" in Spanish. */
   const formatDuration = (minutes: number) =>
@@ -639,11 +645,10 @@ function LogCard({
                     media.title?.contentTitleEnglish
                   ) ||
                     description !== media.title.contentTitleEnglish) && (
-                    <p className="text-sm text-base-content/60 mt-1 leading-tight">
-                      {description.length > 45
-                        ? `${description.slice(0, 45)}...`
-                        : description}
-                    </p>
+                    <div
+                      className="prose prose-sm max-w-none text-base-content/60 mt-1 leading-tight line-clamp-2 [&>*]:my-0 [&_p]:my-0"
+                      dangerouslySetInnerHTML={{ __html: renderedDescription }}
+                    />
                   )}
               </div>
             </div>
@@ -861,7 +866,12 @@ function LogCard({
                       <span className="font-medium">
                         {t('details.descriptionLabel')}
                       </span>
-                      <p className="text-base-content mt-1">{description}</p>
+                      <div
+                        className="prose prose-sm max-w-none text-base-content mt-1"
+                        dangerouslySetInnerHTML={{
+                          __html: renderedDescription,
+                        }}
+                      />
                     </div>
                   )}
 
@@ -1340,12 +1350,13 @@ function LogCard({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field
                     label={t('edit.description')}
+                    aside={t('edit.markdownSupported')}
                     required
                     className="md:col-span-2"
                   >
-                    <input
-                      type="text"
-                      className="input w-full"
+                    <textarea
+                      className="textarea w-full"
+                      rows={3}
                       value={editData.description}
                       onChange={(e) =>
                         setEditData({
@@ -1355,11 +1366,11 @@ function LogCard({
                       }
                       placeholder={t('edit.descriptionPlaceholder')}
                       required
-                    />
+                    ></textarea>
                   </Field>
 
                   <Field label={t('edit.type')}>
-                    <select
+                    <DropdownSelect
                       className="select w-full"
                       value={editData.type}
                       onChange={(e) => {
@@ -1421,16 +1432,14 @@ function LogCard({
                       <option value="other">
                         {t('common:mediaTypes.other')}
                       </option>
-                    </select>
+                    </DropdownSelect>
                   </Field>
 
                   <Field label={t('edit.date')}>
-                    <input
-                      type="date"
-                      className="input w-full"
+                    <DatePickerInput
                       value={editData.date}
-                      onChange={(e) =>
-                        setEditData({ ...editData, date: e.target.value })
+                      onChange={(date) =>
+                        setEditData({ ...editData, date })
                       }
                     />
                   </Field>

@@ -1,0 +1,69 @@
+{
+  "activity": {
+    "achievement": "unlocked an achievement",
+    "clubJoined": "joined a club",
+    "clubMilestone": "helped the club reach {{count}} members",
+    "challengeCompleted": "completed the challenge",
+    "challengeJoined": "joined the challenge",
+    "challengeStarted": "created the challenge",
+    "generic": "shared an update",
+    "goalCompleted": "completed the cooperative goal",
+    "goalProgress": "advanced the cooperative goal",
+    "immersionLog": "logged an immersion session",
+    "listened": "listened to",
+    "read": "read",
+    "watched": "watched",
+    "notable": "Notable",
+    "notableSession": "completed a notable immersion session",
+    "review": "published a review"
+  },
+  "comments": {
+    "add": "Add a comment",
+    "cancel": "Cancel",
+    "count": "{{count}}/1000",
+    "delete": "Delete",
+    "edit": "Edit",
+    "edited": "Edited",
+    "empty": "No comments yet.",
+    "loadError": "Comments could not be loaded.",
+    "like": "Like reply",
+    "moreActions": "More comment actions",
+    "placeholder": "Write a reply...",
+    "readGuidelines": "Please read the site guidelines before posting",
+    "post": "Publish",
+    "save": "Save",
+    "show": "Show comments",
+    "unlike": "Unlike reply"
+  },
+  "feed": {
+    "empty": {
+      "clubs": "There is no activity from your clubs yet.",
+      "following": "There is no activity from people you follow yet.",
+      "followingHint": "Follow learners from their profiles to build your feed.",
+      "global": "There is no public activity yet."
+    },
+    "loadError": "The activity feed could not be loaded.",
+    "loadMore": "Load more",
+    "retry": "Try again",
+    "scopes": {
+      "clubs": "Clubs",
+      "following": "Following",
+      "global": "Global"
+    },
+    "subtitle": "See recent progress and milestones from the community.",
+    "title": "Activity"
+  },
+  "metrics": {
+    "characters_one": "{{count}} character",
+    "characters_other": "{{count}} characters",
+    "episodes_one": "{{count}} episode",
+    "episodes_other": "{{count}} episodes",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages"
+  },
+  "reactions": {
+    "like": "Like"
+  }
+}

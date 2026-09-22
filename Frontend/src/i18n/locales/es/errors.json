@@ -197,6 +197,9 @@
   "search": {
     "failed": "Falló la operación de búsqueda"
   },
+  "social": {
+    "rateLimited": "Estás haciendo eso demasiado rápido. Inténtalo de nuevo en un momento."
+  },
   "tag": {
     "fieldsRequired": "El nombre y el color son obligatorios",
     "invalidId": "ID de etiqueta no válido",
@@ -241,6 +244,43 @@
     "noFile": "No se ha enviado ningún archivo",
     "sourceDimensionPositive": "{{field}} debe ser mayor que 0",
     "storageFailed": "Error al subir el archivo al almacenamiento"
+  },
+  "activity": {
+    "invalidId": "El ID de actividad no es válido",
+    "invalidCommentId": "El ID del comentario no es válido",
+    "invalidClubId": "El ID del club no es válido",
+    "invalidCursor": "El cursor del feed no es válido",
+    "invalidScope": "El ámbito del feed no es válido",
+    "invalidReaction": "Elige una reacción compatible",
+    "notFound": "Actividad no encontrada",
+    "clubMembershipRequired": "Debes ser miembro para ver el feed de este club",
+    "commentRequired": "Escribe un comentario",
+    "commentTooLong": "Los comentarios deben tener 1000 caracteres o menos",
+    "commentNotFound": "Comentario no encontrado",
+    "commentNotFoundOrForbidden": "No se encontró el comentario o no eres su autor"
+  },
+  "follow": {
+    "self": "No puedes seguirte a ti mismo"
+  },
+  "mediaRecommendation": {
+    "alreadyResolved": "Esta recomendación ya se resolvió",
+    "duplicate": "Ya recomendaste este contenido a esta persona",
+    "fieldsRequired": "Elige un destinatario y un contenido",
+    "followRequired": "Solo puedes recomendar contenido a personas que te siguen",
+    "invalidId": "El ID de la recomendación no es válido",
+    "invalidMediaType": "El tipo de contenido no es válido",
+    "invalidStatus": "El estado de la recomendación no es válido",
+    "mediaNotFound": "No se encontró el contenido",
+    "messageTooLong": "Los mensajes deben tener {{max}} caracteres o menos",
+    "notFound": "No se encontró la recomendación",
+    "self": "No puedes recomendarte contenido a ti mismo"
+  },
+  "privacy": {
+    "immersionRestricted": "Este usuario ha limitado quién puede ver su actividad de inmersión",
+    "invalidSettings": "Los ajustes de privacidad social son obligatorios",
+    "invalidVisibility": "Elige una opción de privacidad válida",
+    "profileRestricted": "Este perfil es privado",
+    "statisticsRestricted": "Este usuario ha limitado quién puede ver sus estadísticas"
   },
   "user": {
     "aboutTooLong": "Tu biografía debe tener 2000 caracteres o menos",

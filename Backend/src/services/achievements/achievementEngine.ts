@@ -37,6 +37,7 @@ import {
 } from '../notifications.service.js';
 import User from '../../models/user.model.js';
 import { isValidTimezone } from '../../constants/timezone.js';
+import { recordAchievementActivity } from '../activityEvents.service.js';
 
 // Condition types whose result depends on where calendar days / clock hours fall
 const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
@@ -309,6 +310,10 @@ export async function checkAchievements(
               achievementKey: achievement.key,
             },
           });
+          await recordAchievementActivity(
+            userId,
+            achievement as unknown as IAchievement
+          );
         } else if (progress > 0) {
           // Update progress for countable achievements (non-blocking)
           UserAchievement.findOneAndUpdate(
@@ -473,6 +478,10 @@ export async function grantAchievement(
         achievementKey: achievement.key,
       },
     });
+    await recordAchievementActivity(
+      userId,
+      achievement as unknown as IAchievement
+    );
   }
 
   return true;

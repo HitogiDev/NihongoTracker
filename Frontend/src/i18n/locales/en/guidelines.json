@@ -1,0 +1,90 @@
+{
+  "lastUpdated": "Last updated: {{date}}",
+  "document": {
+    "title": "Community Guidelines",
+    "lastUpdated": "September 9, 2026",
+    "intro": [
+      "These guidelines apply to every public area of NihongoTracker, including profiles, activities, reviews, comments, clubs, and rankings.",
+      "The moderation team interprets these guidelines according to the context of each case. Breaking them may result in content removal, restrictions, exclusion from the rankings, or an account ban. We may update these guidelines when needed."
+    ],
+    "sections": [
+      {
+        "heading": "Respect other users",
+        "items": [
+          "Treat other people with respect. Harassment, insults, threats, and personal attacks are not allowed.",
+          "Do not post discriminatory content or promote hatred toward a person or group.",
+          "Do not start arguments solely to provoke, antagonize, or pursue other users.",
+          "Do not share another person's private information without their consent.",
+          "Disagreement and criticism are welcome when they address the topic instead of attacking the people involved."
+        ]
+      },
+      {
+        "heading": "Public content",
+        "items": [
+          "Mark spoilers clearly.",
+          "Do not post sexually explicit material, extreme graphic violence, or illegal content.",
+          "Do not impersonate another person or claim someone else's work as your own.",
+          "Do not spam or repeatedly publish the same content.",
+          "Occasional promotion of projects related to learning Japanese is allowed. Do not use profiles, comments, reviews, or clubs only for advertising.",
+          "Do not share links intended to compromise another user's security or privacy."
+        ]
+      },
+      {
+        "heading": "Use of the platform",
+        "items": [
+          "Do not abuse bugs, automation, scripts, multiple accounts, or any NihongoTracker feature to manipulate statistics, achievements, XP, or rankings.",
+          "Do not evade a restriction through another account or with another user's help.",
+          "Report bugs that grant XP, achievements, or ranking positions incorrectly. Deliberately exploiting them may result in a restriction.",
+          "Do not manipulate reviews, votes, activities, or interactions to increase their visibility artificially."
+        ]
+      },
+      {
+        "heading": "Immersion logs",
+        "paragraphs": [
+          "Only log content you consumed. Reasonable estimates are acceptable when an exact count is unavailable, but entries must remain honest."
+        ],
+        "items": [
+          "Do not invent hours, pages, characters, episodes, or other amounts to gain XP, achievements, or a higher ranking.",
+          "Do not duplicate sessions or log the same content more than once.",
+          "Use the category and unit that best represent the activity you completed.",
+          "If you do not know when you completed an immersion session, open Advanced options while creating the log and select Unknown date. Do not choose a date at random.",
+          "You may import or add older logs when they represent immersion you actually completed."
+        ]
+      },
+      {
+        "heading": "Rankings and false entries",
+        "paragraphs": [
+          "Rankings depend on honest entries. Users who log large amounts in a month without having consumed that content will be banned from the rankings.",
+          "False entries provide no benefit. They only ruin the account's own statistics and make its level, progress, and averages stop representing actual immersion."
+        ],
+        "link": {
+          "before": "If you believe a ranking ban was a mistake or want to provide context about your logs, submit an appeal in the",
+          "label": "NihongoTracker Discord",
+          "href": "https://discord.gg/6QtXrVdwmx",
+          "after": "Each appeal is reviewed individually."
+        }
+      },
+      {
+        "heading": "Clubs",
+        "items": [
+          "Club owners may set additional rules for their members as long as those rules do not conflict with these guidelines.",
+          "Club names, descriptions, images, and posts must follow the same rules as all other public content.",
+          "Do not use a club to organize harassment, manipulate rankings, or coordinate abuse of the platform.",
+          "NihongoTracker moderators may intervene in any club that breaks the site guidelines."
+        ]
+      },
+      {
+        "heading": "Reports and restrictions",
+        "paragraphs": [
+          "Use the reporting tools or the NihongoTracker Discord to report content or conduct that breaks these guidelines. Do not organize public campaigns against another user or post accusations to pressure moderators into restricting an account.",
+          "The severity and duration of a restriction depend on the conduct, its frequency, and the account's history. Repeating a violation or trying to evade a restriction may lead to stronger action."
+        ],
+        "link": {
+          "before": "For questions about these guidelines or to appeal a moderation decision, contact the team in the",
+          "label": "NihongoTracker Discord",
+          "href": "https://discord.gg/6QtXrVdwmx"
+        }
+      }
+    ]
+  }
+}

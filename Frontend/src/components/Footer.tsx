@@ -1,129 +1,151 @@
 import { FilePlus, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import LanguageSwitcher from './LanguageSwitcher';
+
+function GitHubIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 fill-current"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.84 1.23 1.84 1.23 1.07 1.83 2.8 1.3 3.48.99.11-.77.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z" />
+    </svg>
+  );
+}
+
+function DiscordIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-4 fill-current"
+      viewBox="0 0 24 24"
+    >
+      <path d="M19.54 3.2A16.8 16.8 0 0 0 15.4 1.93l-.5 1.02a15.5 15.5 0 0 0-5.8 0l-.5-1.02A16.8 16.8 0 0 0 4.46 3.2C1.84 7.1 1.13 10.9 1.48 14.65a16.9 16.9 0 0 0 5.1 2.58l1.23-1.67c-.68-.25-1.33-.56-1.94-.93l.48-.37c3.74 1.75 7.78 1.75 11.48 0l.48.37c-.61.37-1.26.68-1.94.93l1.23 1.67a16.9 16.9 0 0 0 5.1-2.58c.41-4.35-.7-8.12-2.96-11.45ZM8.73 13.1c-1.12 0-2.04-1.03-2.04-2.3 0-1.27.9-2.3 2.04-2.3 1.14 0 2.06 1.03 2.04 2.3 0 1.27-.9 2.3-2.04 2.3Zm6.54 0c-1.12 0-2.04-1.03-2.04-2.3 0-1.27.9-2.3 2.04-2.3 1.14 0 2.06 1.03 2.04 2.3 0 1.27-.9 2.3-2.04 2.3Z" />
+    </svg>
+  );
+}
 
 function Footer() {
   const { t } = useTranslation('nav');
   const { user } = useUserDataStore();
 
   return (
-    <footer className="bg-base-100 text-base-content border-t border-base-300/60 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <aside className="text-center md:text-left">
-          <p className="text-base-content text-sm sm:text-base">
-            © {new Date().getFullYear()} NihongoTracker
-            <span className="text-base-content/50 mx-2">•</span>
-            <span className="text-base-content/70">
-              {t('footer.dataProvidedBy')}{' '}
-            </span>
-            <a
-              href="https://anilist.co"
-              target="_blank"
-              rel="noreferrer"
-              className="link link-hover text-sm"
-            >
-              AniList
-            </a>
-            <span className="text-base-content/70"> {t('footer.and')} </span>
-            <a
-              href="https://vndb.org"
-              target="_blank"
-              rel="noreferrer"
-              className="link link-hover text-sm"
-            >
-              VNDB
-            </a>
-            <span className="text-base-content/70">.</span>
-          </p>
-        </aside>
+    <footer className="footer footer-vertical sm:footer-horizontal mt-auto border-t border-base-300 bg-base-300 p-10 text-base-content">
+      <aside className="max-w-xs">
+        <p className="text-xl font-bold">NihongoTracker</p>
+        <p className="mt-2 text-sm text-base-content/70">
+          © {new Date().getFullYear()} NihongoTracker
+        </p>
+        <p className="mt-3 text-sm text-base-content/70">
+          {t('footer.dataProvidedBy')}{' '}
+          <a
+            href="https://anilist.co"
+            target="_blank"
+            rel="noreferrer"
+            className="link link-hover"
+          >
+            AniList
+          </a>{' '}
+          {t('footer.and')}{' '}
+          <a
+            href="https://vndb.org"
+            target="_blank"
+            rel="noreferrer"
+            className="link link-hover"
+          >
+            VNDB
+          </a>
+          .
+        </p>
+      </aside>
 
-        <div className="flex flex-col items-center gap-3 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-x-4">
-          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:justify-end xl:flex-nowrap">
-            <Link
-              to="/privacy"
-              className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
-            >
-              {t('footer.privacy')}
-            </Link>
-            <Link
-              to="/terms"
-              className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
-            >
-              {t('footer.terms')}
-            </Link>
-            <Link
-              to="/refund-policy"
-              className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
-            >
-              {t('footer.refund')}
-            </Link>
-            {user && (
-              <Link
-                to="/media-request"
-                className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
-              >
-                <FilePlus className="w-4 h-4" />
-                <span>{t('footer.requestMedia')}</span>
-              </Link>
-            )}
-            <Link
-              to="/changelog"
-              className="text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
-            >
-              {t('footer.changelog')}
-            </Link>
-            <Link
-              to="/support"
-              className="flex items-center gap-2 text-sm whitespace-nowrap text-base-content hover:text-primary transition-colors"
-            >
-              <Heart className="w-4 h-4" />
-              <span className="font-medium">{t('footer.support')}</span>
-            </Link>
-          </nav>
+      <nav>
+        <h6 className="footer-title">{t('footer.legal')}</h6>
+        <Link to="/guidelines" className="link link-hover">
+          {t('footer.guidelines')}
+        </Link>
+        <Link to="/privacy" className="link link-hover">
+          {t('footer.privacy')}
+        </Link>
+        <Link to="/terms" className="link link-hover">
+          {t('footer.terms')}
+        </Link>
+        <Link to="/refund-policy" className="link link-hover">
+          {t('footer.refund')}
+        </Link>
+      </nav>
 
-          <div className="flex shrink-0 items-center gap-3">
-            <LanguageSwitcher
-              className="dropdown-top dropdown-end"
-              buttonClassName="btn btn-ghost btn-sm gap-2 font-medium"
-              showLabel
-            />
-            <a
-              href="https://github.com/ElaxDev/NihongoTracker"
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-ghost btn-sm btn-circle"
-              aria-label={t('footer.github')}
-            >
-              <svg
-                role="img"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5 fill-current"
-              >
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-              </svg>
-            </a>
-            <a
-              href="https://discord.gg/6QtXrVdwmx"
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-ghost btn-sm btn-circle"
-              aria-label={t('footer.discord')}
-            >
-              <svg
-                role="img"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-5 h-5 fill-current"
-              >
-                <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </div>
+      <nav>
+        <h6 className="footer-title">{t('footer.explore')}</h6>
+        <Link to="/" className="link link-hover">
+          {t('links.home')}
+        </Link>
+        <Link to="/features" className="link link-hover">
+          {t('links.features')}
+        </Link>
+        <Link to="/calculator" className="link link-hover">
+          {t('links.calculator')}
+        </Link>
+        <Link to="/changelog" className="link link-hover">
+          {t('footer.changelog')}
+        </Link>
+      </nav>
+
+      <nav>
+        <h6 className="footer-title">{t('footer.community')}</h6>
+        <Link to="/ranking" className="link link-hover">
+          {t('links.ranking')}
+        </Link>
+        <Link to="/clubs" className="link link-hover">
+          {t('links.clubs')}
+        </Link>
+        <Link to="/recommendations" className="link link-hover">
+          {t('links.recommendations')}
+        </Link>
+        {user && (
+          <Link
+            to="/media-request"
+            className="link link-hover flex items-center gap-2"
+          >
+            <FilePlus className="h-4 w-4" />
+            {t('footer.requestMedia')}
+          </Link>
+        )}
+      </nav>
+
+      <nav>
+        <h6 className="footer-title">{t('footer.connect')}</h6>
+        <Link to="/support" className="link link-hover flex items-center gap-2">
+          <Heart className="h-4 w-4" />
+          {t('footer.support')}
+        </Link>
+        <a
+          href="https://discord.gg/6QtXrVdwmx"
+          target="_blank"
+          rel="noreferrer"
+          className="link link-hover flex items-center gap-2"
+        >
+          <DiscordIcon />
+          {t('footer.discord')}
+        </a>
+        <a
+          href="https://github.com/ElaxDev/NihongoTracker"
+          target="_blank"
+          rel="noreferrer"
+          className="link link-hover flex items-center gap-2"
+        >
+          <GitHubIcon />
+          {t('footer.github')}
+        </a>
+        <LanguageSwitcher
+          className="dropdown-top dropdown-end"
+          buttonClassName="btn btn-ghost btn-sm justify-start gap-2 px-0 font-medium"
+          showLabel
+        />
+      </nav>
     </footer>
   );
 }

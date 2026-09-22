@@ -79,6 +79,7 @@ import ThemeSwitcher from '../components/ThemeSwitcher';
 import TimezonePicker from '../components/TimezonePicker';
 import TagManager from '../components/TagManager';
 import CustomizationSettings from '../components/settings/CustomizationSettings';
+import SocialPrivacySettings from '../components/settings/SocialPrivacySettings';
 import { PercentCrop } from 'react-image-crop';
 import { canvasPreview } from '../utils/canvasPreview';
 import ImageCropDialog, {
@@ -438,6 +439,7 @@ type SettingsTab =
   | 'customization'
   | 'account'
   | 'preferences'
+  | 'privacy'
   | 'patreon'
   | 'advanced';
 
@@ -446,6 +448,7 @@ const TAB_CONFIG = [
   { id: 'customization', labelKey: 'tabs.customization', icon: Palette },
   { id: 'account', labelKey: 'tabs.account', icon: ShieldCheck },
   { id: 'preferences', labelKey: 'tabs.preferences', icon: Settings2 },
+  { id: 'privacy', labelKey: 'tabs.privacy', icon: Lock },
   { id: 'patreon', labelKey: 'tabs.patreon', icon: Heart },
   { id: 'advanced', labelKey: 'tabs.advanced', icon: CloudDownload },
 ] as const satisfies readonly {
@@ -3013,6 +3016,28 @@ function SettingsScreen() {
                     </div>
                     <TagManager />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── PATREON TAB ── */}
+            {activeTab === 'privacy' && (
+              <div className="card surface">
+                <div className="card-body">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-3">
+                      <Lock className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold">
+                        {t('privacy.title')}
+                      </h2>
+                      <p className="text-base-content/70">
+                        {t('privacy.subtitle')}
+                      </p>
+                    </div>
+                  </div>
+                  <SocialPrivacySettings />
                 </div>
               </div>
             )}

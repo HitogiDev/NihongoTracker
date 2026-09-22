@@ -43,6 +43,7 @@ import { useTranslation } from 'react-i18next';
 import { LOG_TYPE_OPTIONS } from '../utils/logTypes';
 import { useTimezone } from '../hooks/useTimezone';
 import { pickedDayToUtc } from '../utils/timezone';
+import LogPrivacyToggle from '../components/LogPrivacyToggle';
 
 interface logDataType {
   type: ILog['type'] | null;
@@ -80,6 +81,7 @@ interface logDataType {
   showChars: boolean;
   img: undefined | string;
   cover: undefined | string;
+  private: boolean;
   unknownDate: boolean;
   date: Date | undefined;
   runtime?: number;
@@ -126,6 +128,7 @@ const createInitialLogState = (
   showChars: false,
   img: undefined,
   cover: undefined,
+  private: false,
   unknownDate: false,
   date: undefined,
   runtime: undefined,
@@ -361,7 +364,7 @@ function LogScreen() {
                 ? undefined
                 : pickedDayToUtc(override.date, timezone),
             unknownDate: override.unknownDate,
-            private: false,
+            private: logData.private,
             isAdult: false,
           } as ICreateLog);
           loggedCount++;
@@ -399,7 +402,14 @@ function LogScreen() {
         })
       );
     },
-    [queryClient, user?.username, playlistResult?.playlistTitle, t, timezone]
+    [
+      queryClient,
+      user?.username,
+      playlistResult?.playlistTitle,
+      t,
+      timezone,
+      logData.private,
+    ]
   );
 
   // ── End playlist helpers ────────────────────────────────────────────────────
@@ -474,6 +484,7 @@ function LogScreen() {
         showChars: false,
         img: undefined,
         cover: undefined,
+        private: false,
         unknownDate: false,
         date: undefined,
         youtubeChannelInfo: null,
@@ -776,6 +787,7 @@ function LogScreen() {
           ? undefined
           : pickedDayToUtc(logData.date, timezone),
       unknownDate: logData.unknownDate,
+      private: logData.private,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
     } as ICreateLog);
   };
@@ -1077,6 +1089,21 @@ function LogScreen() {
                               </div>
                             )}
                         </div>
+                      </Field>
+
+                      <Field
+                        label={t('create.customDescription')}
+                        aside={t('create.markdownSupported')}
+                      >
+                        <textarea
+                          className="textarea w-full"
+                          placeholder={t('create.notesPlaceholder')}
+                          rows={3}
+                          onChange={(e) =>
+                            handleInputChange('description', e.target.value)
+                          }
+                          value={logData.description}
+                        ></textarea>
                       </Field>
 
                       {/* Dynamic Inputs based on Log Type */}
@@ -1391,7 +1418,7 @@ function LogScreen() {
                                     ? `${logData.duration}`
                                     : t('create.episodeDurationPlaceholder')
                                 }
-                                className="input input-sm"
+                                className="input"
                                 onChange={(e) => {
                                   const customDuration = Number(e.target.value);
                                   handleFieldChange(
@@ -1504,6 +1531,12 @@ function LogScreen() {
                               />
                             </Field>
                           )}
+                          <LogPrivacyToggle
+                            checked={logData.private}
+                            onChange={(privateLog) =>
+                              handleInputChange('private', privateLog)
+                            }
+                          />
                           <div>
                             <label className="label cursor-pointer justify-start gap-3">
                               <input
@@ -1595,16 +1628,6 @@ function LogScreen() {
                               </div>
                             </Field>
                           )}
-                          <Field label={t('create.customDescription')}>
-                            <textarea
-                              className="textarea w-full"
-                              placeholder={t('create.notesPlaceholder')}
-                              onChange={(e) =>
-                                handleInputChange('description', e.target.value)
-                              }
-                              value={logData.description}
-                            ></textarea>
-                          </Field>
                         </div>
                       </div>
                     </div>

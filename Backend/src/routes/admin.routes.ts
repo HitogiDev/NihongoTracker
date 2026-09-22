@@ -21,6 +21,8 @@ import {
   getVndbDumpSyncStatus,
   backfillRankingHistory,
   backfillWeeklyRankAchievements,
+  triggerActivityBackfill,
+  getActivityBackfillStatus,
   adminUpdateMedia,
   triggerJitenDifficultyBackfill,
   getJitenDifficultyBackfillStatus,
@@ -223,6 +225,20 @@ router.post(
   protect,
   checkPermission(userRoles.admin),
   backfillWeeklyRankAchievements
+);
+
+router.post(
+  '/activity-feed/backfill',
+  protect,
+  checkPermission(userRoles.admin),
+  triggerActivityBackfill
+);
+
+router.get(
+  '/activity-feed/backfill/status',
+  protect,
+  checkPermission(userRoles.admin),
+  getActivityBackfillStatus
 );
 
 router.post(

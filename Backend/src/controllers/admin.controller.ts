@@ -27,6 +27,10 @@ import {
 } from '../services/jiten.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
 import { Types } from 'mongoose';
+import {
+  getActivityBackfillState,
+  startActivityBackfill,
+} from '../services/activityBackfill.service.js';
 
 export async function getAdminStats(
   _req: Request,
@@ -987,6 +991,36 @@ export async function backfillWeeklyRankAchievements(
       message: `Replayed ${result.weeks} weeks and granted ${result.granted} rank achievements.`,
       ...result,
     });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function triggerActivityBackfill(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = startActivityBackfill();
+    return res.status(result.started ? 202 : 200).json({
+      message: result.started
+        ? 'Activity feed backfill started.'
+        : 'Activity feed backfill is already running.',
+      ...result.state,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getActivityBackfillStatus(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    return res.status(200).json(getActivityBackfillState());
   } catch (error) {
     return next(error as customError);
   }

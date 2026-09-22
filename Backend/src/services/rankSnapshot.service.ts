@@ -2,6 +2,161 @@ import { Types } from 'mongoose';
 import Log from '../models/log.model.js';
 import RankSnapshot from '../models/rankSnapshot.model.js';
 
+export interface IRankHistoryPoint {
+  date: Date;
+  position: number;
+}
+
+export interface IMonthlyRankEvent {
+  userId: Types.ObjectId | string;
+  xp: number;
+  date: Date;
+}
+
+/** Current calendar-month boundaries in the requested IANA timezone. */
+export function getMonthBoundaries(
+  timezone: string,
+  now = new Date()
+): { monthStart: Date; monthEnd: Date } {
+  let userNow: Date;
+  try {
+    userNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  } catch {
+    userNow = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+  }
+
+  const offset = now.getTime() - userNow.getTime();
+  const monthStartLocal = new Date(
+    userNow.getFullYear(),
+    userNow.getMonth(),
+    1
+  );
+  const nextMonthLocal = new Date(
+    userNow.getFullYear(),
+    userNow.getMonth() + 1,
+    1
+  );
+
+  return {
+    monthStart: new Date(monthStartLocal.getTime() + offset),
+    monthEnd: new Date(nextMonthLocal.getTime() + offset),
+  };
+}
+
+/**
+ * Replay monthly XP events, keeping each effective position change. Month
+ * start and the current position make a stable ranking drawable as a line.
+ */
+export function buildMonthlyRankHistory(
+  events: IMonthlyRankEvent[],
+  targetUserId: Types.ObjectId | string,
+  monthStart: Date,
+  asOf: Date
+): IRankHistoryPoint[] {
+  const targetId = String(targetUserId);
+  const totals = new Map<string, number>();
+  const points: IRankHistoryPoint[] = [{ date: monthStart, position: 1 }];
+  let position = 1;
+
+  for (const event of events) {
+    const eventUserId = String(event.userId);
+    const targetXp = totals.get(targetId) ?? 0;
+    const previousEventXp = totals.get(eventUserId) ?? 0;
+    const nextEventXp = previousEventXp + (Number(event.xp) || 0);
+    totals.set(eventUserId, nextEventXp);
+
+    let nextPosition = position;
+    if (eventUserId === targetId) {
+      nextPosition =
+        1 +
+        Array.from(totals.entries()).filter(
+          ([userId, xp]) => userId !== targetId && xp > nextEventXp
+        ).length;
+    } else if (previousEventXp <= targetXp && nextEventXp > targetXp) {
+      nextPosition += 1;
+    } else if (previousEventXp > targetXp && nextEventXp <= targetXp) {
+      nextPosition -= 1;
+    }
+
+    if (nextPosition !== position) {
+      position = nextPosition;
+      points.push({ date: event.date, position });
+    }
+  }
+
+  const lastPoint = points[points.length - 1];
+  if (asOf.getTime() > lastPoint.date.getTime()) {
+    points.push({ date: asOf, position });
+  }
+
+  return points;
+}
+
+/** Build the current month's position history from each public ranking event. */
+export async function getMonthlyRankHistory(
+  userId: Types.ObjectId,
+  timezone: string,
+  now = new Date()
+): Promise<IRankHistoryPoint[]> {
+  const { monthStart, monthEnd } = getMonthBoundaries(timezone, now);
+  const rangeEnd = new Date(Math.min(now.getTime(), monthEnd.getTime()));
+  const events = await Log.aggregate<IMonthlyRankEvent>([
+    {
+      $match: {
+        private: { $ne: true },
+        unknownDate: { $ne: true },
+        date: { $gte: monthStart, $lte: rangeEnd },
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'rankingUser',
+      },
+    },
+    { $unwind: { path: '$rankingUser', preserveNullAndEmptyArrays: false } },
+    {
+      $match: {
+        $or: [
+          { 'rankingUser._id': userId },
+          {
+            $and: [
+              {
+                $or: [
+                  {
+                    'rankingUser.moderation.rankingBanned': {
+                      $exists: false,
+                    },
+                  },
+                  { 'rankingUser.moderation.rankingBanned': false },
+                ],
+              },
+              {
+                $or: [
+                  {
+                    'rankingUser.settings.socialPrivacy.statistics': {
+                      $exists: false,
+                    },
+                  },
+                  {
+                    'rankingUser.settings.socialPrivacy.statistics': 'public',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    },
+    { $sort: { date: 1, _id: 1 } },
+    { $project: { _id: 0, userId: '$user', xp: 1, date: 1 } },
+  ]);
+
+  return buildMonthlyRankHistory(events, userId, monthStart, rangeEnd);
+}
+
 /** Return the UTC Sunday 00:00 on/before the given date. */
 function sundayOf(date: Date): Date {
   const d = new Date(

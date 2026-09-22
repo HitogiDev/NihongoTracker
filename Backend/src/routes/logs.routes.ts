@@ -18,6 +18,7 @@ import {
   getGlobalFeed,
   syncManabeIds,
   previewLogXp,
+  calculateXpScenarioPreview,
 } from '../controllers/logs.controller.js';
 import { calculateXp } from '../middlewares/calculateXp.js';
 import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
@@ -60,6 +61,7 @@ router.post<ParamsDictionary, any, ICreateLog>(
 
 // XP preview for the log form — computes without persisting
 router.post('/preview-xp', protect, calculateXp, previewLogXp);
+router.post('/calculate-xp', optionalProtect, calculateXpScenarioPreview);
 
 router.get('/untrackedlogs', protect, getUntrackedLogs);
 
@@ -67,9 +69,9 @@ router.get('/stats/logscreen', protect, getLogScreenStats);
 
 router.get('/stats/media', protect, getUserMediaStats);
 
-router.get('/stats/media/global', getGlobalMediaStats);
+router.get('/stats/media/global', optionalProtect, getGlobalMediaStats);
 
-router.get('/media/recent', getRecentMediaLogs);
+router.get('/media/recent', optionalProtect, getRecentMediaLogs);
 
 router.get('/feed', protect, getGlobalFeed);
 

@@ -16,6 +16,27 @@
   "activity": {
     "title": "Actividad de inmersión"
   },
+  "social": {
+    "follow": "Seguir",
+    "unfollow": "Dejar de seguir",
+    "friends": "Amigos",
+    "followingLabel": "Siguiendo",
+    "recommendations": "Recomendaciones",
+    "followers": "seguidores",
+    "following": "seguidos",
+    "mutual": "Mutuo",
+    "followersTitle": "Seguidores de {{username}}",
+    "followingTitle": "Personas que sigue {{username}}",
+    "peopleCount_one": "{{count}} persona",
+    "peopleCount_other": "{{count}} personas",
+    "noFollowers": "Todavía no tiene seguidores.",
+    "noFollowing": "Todavía no sigue a nadie.",
+    "loadError": "No se pudo cargar esta lista.",
+    "retry": "Reintentar",
+    "previousPage": "Página anterior",
+    "nextPage": "Página siguiente",
+    "page": "Página {{page}} de {{totalPages}}"
+  },
   "categories": {
     "all": "Todas las categorías",
     "streaks": "Rachas",
@@ -43,13 +64,13 @@
     "types": {
       "anime": "Anime",
       "manga": "Manga",
-      "light-novel": "Novelas ligeras",
-      "vn": "Novelas visuales",
-      "game": "Videojuegos",
-      "video": "Vídeos",
-      "movie": "Películas",
-      "book": "Libros",
-      "tvShow": "Series"
+      "light-novel": "Novela Ligera",
+      "vn": "Novela Visual",
+      "game": "Videojuego",
+      "video": "Video",
+      "movie": "Película",
+      "book": "Libro",
+      "tvShow": "Programa Televisivo"
     },
     "noteTitle": "Nota",
     "cancel": "Cancelar",
@@ -84,6 +105,12 @@
     "shareStats": "Compartir estadísticas",
     "shareStatsTitle": "Compartir las estadísticas como imagen",
     "avatarAlt": "Avatar de {{username}}"
+  },
+  "privateProfile": {
+    "title": "Este perfil es privado",
+    "description": "{{username}} ha decidido mantener su perfil privado.",
+    "hint": "No puedes ver la actividad ni los detalles de este perfil.",
+    "backHome": "Volver al inicio"
   },
   "loadMore": "Cargar más",
   "loadMoreLogs": "Cargar más logs",

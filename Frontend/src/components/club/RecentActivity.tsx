@@ -1,252 +1,69 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import {
-  Bookmark,
-  MessageSquareText,
-  Star,
-  Play,
-  Book,
-  Clapperboard,
-  History,
-} from 'lucide-react';
-import { getClubRecentActivityFn } from '../../api/clubApi';
-import { Link } from 'react-router-dom';
-import UserAvatar from '../UserAvatar';
+import { History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
-import { useDateFormatting } from '../../hooks/useDateFormatting';
+import { getClubFeedFn } from '../../api/clubApi';
+import ActivityCard from '../social/ActivityCard';
+import Spinner from '../ui/Spinner';
 
 interface RecentActivityProps {
   clubId: string;
+  enabled?: boolean;
 }
 
-interface ActivityMetadata {
-  episodes?: number;
-  pages?: number;
-  time?: number;
-  xp?: number;
-  rating?: number;
-  hasSpoilers?: boolean;
-}
-
-interface Activity {
-  type: 'log' | 'review';
-  _id: string;
-  user: {
-    _id: string;
-    username: string;
-    avatar?: string;
-  };
-  media: {
-    _id: string;
-    title: string;
-  };
-  clubMedia: boolean;
-  content: string;
-  metadata: ActivityMetadata;
-  createdAt: string;
-}
-
-const getMediaTypeIcon = (metadata: ActivityMetadata) => {
-  // Try to determine media type from metadata
-  if (metadata.episodes) return <Play className="w-4 h-4 text-primary" />;
-  if (metadata.pages) return <Book className="w-4 h-4 text-secondary" />;
-  return <Clapperboard className="w-4 h-4 text-accent" />;
-};
-
-const formatActivityContent = (
-  activity: Activity,
-  t: TFunction<'clubs'>
-): string => {
-  if (activity.type === 'log') {
-    const parts = [];
-    if (activity.metadata.episodes) {
-      parts.push(t('activity.episodes', { count: activity.metadata.episodes }));
-    }
-    if (activity.metadata.pages) {
-      parts.push(t('activity.pages', { count: activity.metadata.pages }));
-    }
-    if (activity.metadata.time) {
-      parts.push(t('activity.minutes', { count: activity.metadata.time }));
-    }
-
-    const progressText =
-      parts.length > 0 ? parts.join(', ') : t('activity.generic');
-    return t('activity.logged', { progress: progressText });
-  }
-
-  const rating = activity.metadata.rating;
-  return rating
-    ? t('activity.reviewedRating', { rating })
-    : t('activity.reviewed');
-};
-
-export default function RecentActivity({ clubId }: RecentActivityProps) {
-  const { formatRelativeDate } = useDateFormatting();
+export default function RecentActivity({ clubId, enabled = true }: RecentActivityProps) {
   const { t } = useTranslation('clubs');
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
-      queryKey: ['clubRecentActivity', clubId],
-      queryFn: ({ pageParam = 1 }: { pageParam?: number }) =>
-        getClubRecentActivityFn(clubId, {
-          limit: 10,
-          days: 7,
-          page: pageParam,
-        }),
-      getNextPageParam: (
-        lastPage: { activities: Activity[]; total: number; hasMore: boolean },
-        allPages: Array<{
-          activities: Activity[];
-          total: number;
-          hasMore: boolean;
-        }>
-      ) => (lastPage.hasMore ? allPages.length + 1 : undefined),
-      enabled: !!clubId,
-      staleTime: Infinity,
-      initialPageParam: 1,
-    });
+  const feed = useInfiniteQuery({
+    queryKey: ['clubFeed', clubId],
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      getClubFeedFn(clubId, { before: pageParam, limit: 10 }),
+    initialPageParam: undefined,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    enabled: Boolean(clubId && enabled),
+  });
+  const activities = feed.data?.pages.flatMap((page) => page.activities) ?? [];
 
-  const activities = data?.pages.flatMap((page) => page.activities) || [];
-
-  if (isLoading && activities.length === 0) {
-    return (
-      <div className="card surface">
-        <div className="card-body">
-          <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-            <History className="text-xl" />
-            {t('activity.title')}
-          </h2>
-          <div className="space-y-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="avatar placeholder">
-                  <div className="bg-base-300 rounded-full w-8 h-8 animate-pulse"></div>
-                </div>
-                <div className="flex-1 space-y-1">
-                  <div className="h-3 bg-base-300 rounded animate-pulse w-3/4"></div>
-                  <div className="h-2 bg-base-300 rounded animate-pulse w-1/2"></div>
-                </div>
-              </div>
-            ))}
+  return (
+    <section className="card surface">
+      <div className="card-body gap-4">
+        <h2 className="card-title text-lg">
+          <History className="h-5 w-5" />
+          {t('activity.title')}
+        </h2>
+        {!enabled ? (
+          <p className="py-6 text-center text-sm text-base-content/60">
+            {t('activity.membersOnly')}
+          </p>
+        ) : feed.isLoading ? (
+          <div className="flex justify-center py-8" aria-busy="true">
+            <Spinner />
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoading && activities.length === 0) {
-    return (
-      <div className="card surface">
-        <div className="card-body">
-          <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-            <History className="text-xl" />
-            {t('activity.title')}
-          </h2>
-          <div className="text-center py-6 text-base-content/60">
-            <History className="mx-auto text-2xl mb-2 opacity-50" />
+        ) : activities.length === 0 ? (
+          <div className="py-6 text-center text-base-content/60">
+            <History className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p className="text-sm">{t('activity.empty')}</p>
             <p className="text-xs">{t('activity.emptyHint')}</p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card surface">
-      <div className="card-body">
-        <h2 className="card-title text-lg mb-4 flex items-center gap-2">
-          <History className="text-xl" />
-          {t('activity.title')}
-        </h2>
-
-        <div className="space-y-3">
-          {activities.map((activity: Activity) => (
-            <div
-              key={`${activity.type}-${activity._id}`}
-              className="flex items-start gap-3"
-            >
-              {/* User Avatar */}
-              <Link to={`/user/${activity.user.username}`} className="avatar">
-                <UserAvatar
-                  username={activity.user.username}
-                  avatar={activity.user.avatar}
-                  containerClassName="w-8 h-8 rounded-full"
-                  imageClassName="w-full h-full rounded-full object-cover"
-                  fallbackClassName="w-full h-full rounded-full bg-base-300 flex items-center justify-center"
-                  textClassName="text-xs font-semibold"
-                />
-              </Link>
-
-              {/* Activity Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <Link
-                    to={`/user/${activity.user.username}`}
-                    className="font-semibold text-sm truncate hover:underline"
-                  >
-                    {activity.user.username}
-                  </Link>
-                  <span className="text-sm text-base-content/70">
-                    {formatActivityContent(activity, t)}
-                  </span>
-                </div>
-
-                {/* Media Title as main line */}
-                <div className="flex items-center gap-1 mt-1">
-                  {activity.type === 'log' ? (
-                    <Bookmark className="w-3 h-3 text-primary flex-shrink-0" />
-                  ) : (
-                    <MessageSquareText className="w-3 h-3 text-secondary flex-shrink-0" />
-                  )}
-                  <span className="text-xs text-base-content/60 truncate">
-                    {activity.media.title}
-                  </span>
-                </div>
-
-                {/* Club Media Label */}
-                {activity.clubMedia && (
-                  <span className="text-xs text-primary font-semibold mt-1 block">
-                    {t('activity.clubMedia')}
-                  </span>
-                )}
-
-                {/* Timestamp */}
-                <span className="text-xs text-base-content/40 mt-1 block">
-                  {formatRelativeDate(new Date(activity.createdAt))}
-                </span>
-              </div>
-
-              {/* Activity Type Indicator */}
-              <div className="flex-shrink-0">
-                {activity.type === 'log' ? (
-                  getMediaTypeIcon(activity.metadata)
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-warning" />
-                    {activity.metadata.rating && (
-                      <span className="text-xs font-semibold">
-                        {activity.metadata.rating}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {hasNextPage && (
-          <div className="text-center mt-4">
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-            >
-              {isFetchingNextPage ? 'Loading...' : 'Load More'}
-            </button>
+        ) : (
+          <div className="space-y-3">
+            {activities.map((activity) => (
+              <ActivityCard
+                key={activity._id}
+                activity={activity}
+                highlighted={activity.isPinned}
+              />
+            ))}
           </div>
         )}
+        {feed.hasNextPage && (
+          <button
+            className="btn btn-sm self-center"
+            disabled={feed.isFetchingNextPage}
+            onClick={() => feed.fetchNextPage()}
+          >
+            {feed.isFetchingNextPage ? <Spinner size="sm" /> : t('activity.loadMore')}
+          </button>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

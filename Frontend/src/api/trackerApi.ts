@@ -23,10 +23,12 @@ import {
   ILongTermGoalsResponse,
   IJitenResponse,
   IMediaReview,
+  IConnectionsResponse,
+  ISocialSummary,
   ITag,
   SearchResultType,
   IRankingSummary,
-  IRankingHistoryPoint,
+  IRankingHistory,
   ITextSession,
   ITextLine,
   ITextSessionHistoryEntry,
@@ -50,9 +52,21 @@ import {
   IHiddenRecentMediaItem,
   IImmersionForecast,
   IImmersionForecastsResponse,
+  IXpCalculatorRequest,
+  IXpCalculatorResponse,
 } from '../types';
 
 const api = axiosInstance;
+
+export async function calculateXpScenarioFn(
+  request: IXpCalculatorRequest
+): Promise<IXpCalculatorResponse> {
+  const { data } = await api.post<IXpCalculatorResponse>(
+    'logs/calculate-xp',
+    request
+  );
+  return data;
+}
 
 export async function registerUserFn(
   user: IRegisterInput
@@ -526,8 +540,8 @@ export async function getRankingSummaryFn(username: string, timezone?: string) {
 
 export async function getRankingHistoryFn(
   username: string
-): Promise<IRankingHistoryPoint[]> {
-  const { data } = await api.get<IRankingHistoryPoint[]>(
+): Promise<IRankingHistory> {
+  const { data } = await api.get<IRankingHistory>(
     `users/${username}/ranking-history`
   );
   return data;
@@ -682,6 +696,35 @@ export async function updateLongTermGoalFn(
 
 export async function deleteLongTermGoalFn(goalId: string) {
   const { data } = await api.delete(`goals/long-term/${goalId}`);
+  return data;
+}
+
+export async function followUserFn(
+  username: string
+): Promise<{ relationship: ISocialSummary }> {
+  const { data } = await api.post(`users/${encodeURIComponent(username)}/follow`);
+  return data;
+}
+
+export async function unfollowUserFn(
+  username: string
+): Promise<{ relationship: NonNullable<IUser['social']> }> {
+  const { data } = await api.delete(
+    `users/${encodeURIComponent(username)}/follow`
+  );
+  return data;
+}
+
+export async function getConnectionsFn(
+  username: string,
+  direction: 'followers' | 'following',
+  page = 1,
+  limit = 20
+): Promise<IConnectionsResponse> {
+  const { data } = await api.get<IConnectionsResponse>(
+    `users/${encodeURIComponent(username)}/${direction}`,
+    { params: { page, limit } }
+  );
   return data;
 }
 
@@ -897,10 +940,18 @@ export async function deleteUserFn(userId: string) {
   return data;
 }
 
-export async function recalculateStatsFn(type: 'streaks' | 'xp') {
+export async function recalculateStatsFn({
+  type,
+  dryRun = false,
+}: {
+  type: 'streaks' | 'xp';
+  dryRun?: boolean;
+}) {
   const endpoint =
     type === 'streaks' ? 'recalculateStreaks' : 'recalculateStats';
-  const { data } = await api.get(`admin/${endpoint}`);
+  const { data } = await api.get(`admin/${endpoint}`, {
+    params: type === 'xp' ? { dryRun } : undefined,
+  });
   return data;
 }
 
@@ -1574,6 +1625,19 @@ export async function updateProfileLayoutFn(
   return data;
 }
 
+export async function updateSocialPrivacyFn(
+  socialPrivacy: Record<
+    'profile' | 'immersionActivity' | 'statistics',
+    import('../types').SocialVisibility
+  >
+): Promise<{ message: string; socialPrivacy: typeof socialPrivacy }> {
+  const { data } = await api.patch<{
+    message: string;
+    socialPrivacy: typeof socialPrivacy;
+  }>('users/settings/social-privacy', { socialPrivacy });
+  return data;
+}
+
 export interface IStatsCardTiles {
   timeSpentHours: number;
   dailyAvgHours: number;
@@ -1755,7 +1819,9 @@ export async function adminBackfillAchievementsFn(): Promise<{
   usersProcessed: number;
   usersWithNewAchievements: number;
 }> {
-  const { data } = await api.post('achievements/admin/backfill-all');
+  const { data } = await api.post('achievements/admin/backfill-all', {
+    revoke: false,
+  });
   return data;
 }
 
@@ -1774,6 +1840,30 @@ export async function adminBackfillRankAchievementsFn(): Promise<{
   granted: number;
 }> {
   const { data } = await api.post('admin/rank-achievements/backfill');
+  return data;
+}
+
+export interface IActivityBackfillStatus {
+  running: boolean;
+  total: number;
+  processed: number;
+  created: number;
+  existing: number;
+  skipped: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+export async function adminTriggerActivityBackfillFn(): Promise<
+  IActivityBackfillStatus & { message: string }
+> {
+  const { data } = await api.post('admin/activity-feed/backfill');
+  return data;
+}
+
+export async function getActivityBackfillStatusFn(): Promise<IActivityBackfillStatus> {
+  const { data } = await api.get('admin/activity-feed/backfill/status');
   return data;
 }
 

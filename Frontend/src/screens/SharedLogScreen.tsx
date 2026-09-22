@@ -7,6 +7,7 @@ import { getLogFn, createLogFn } from '../api/trackerApi';
 import { ICreateLog } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
+import LogPrivacyToggle from '../components/LogPrivacyToggle';
 import {
   Book,
   BookOpen,
@@ -129,6 +130,7 @@ function SharedLogScreen() {
   });
   const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [privateLog, setPrivateLog] = useState(false);
 
   const {
     data: sharedLog,
@@ -214,7 +216,7 @@ function SharedLogScreen() {
       time: customValues.time || undefined,
       chars: customValues.chars || undefined,
       pages: customValues.pages || undefined,
-      private: false,
+      private: privateLog,
       isAdult: sharedLog.isAdult || false,
       date: sharedLog.date,
       ...(sharedLog.mediaId && { mediaId: sharedLog.mediaId }),
@@ -644,6 +646,13 @@ function SharedLogScreen() {
                     </div>
                   </div>
                 </details>
+
+                <div className="mt-4">
+                  <LogPrivacyToggle
+                    checked={privateLog}
+                    onChange={setPrivateLog}
+                  />
+                </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-end mt-8 pt-6 border-t border-base-300">
                   <button

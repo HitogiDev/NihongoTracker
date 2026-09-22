@@ -25,9 +25,12 @@ export const LOG_TYPE_OPTIONS: {
   { value: 'audio', labelKey: 'mediaTypes.audio' },
 ];
 
-const LABEL_KEY_BY_TYPE = new Map(
-  LOG_TYPE_OPTIONS.map(({ value, labelKey }) => [value, labelKey])
-);
+const LABEL_KEY_BY_TYPE = new Map<string, ParseKeys<'common'>>([
+  ...LOG_TYPE_OPTIONS.map(
+    ({ value, labelKey }) => [value, labelKey] as const
+  ),
+  ['other', 'mediaTypes.other'],
+]);
 
 /** Translation key for a log type, for lists that build their own options. */
 export function getLogTypeLabelKey(

@@ -1,3 +1,4 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
 import type { ChangeEvent, CSSProperties, ReactNode } from 'react';
 import Field from '../components/ui/Field';
 import { useTranslation } from 'react-i18next';
@@ -68,6 +69,7 @@ import { useUserDataStore } from '../store/userData';
 import SessionIntelligenceModal from '../components/texthooker/SessionIntelligenceModal';
 import SessionIntelligenceChart from '../components/texthooker/SessionIntelligenceChart';
 import Spinner from '../components/ui/Spinner';
+import LogPrivacyToggle from '../components/LogPrivacyToggle';
 
 type LineEntry = {
   id: string;
@@ -359,6 +361,7 @@ function TextHooker() {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [privateLog, setPrivateLog] = useState(false);
   const [selectedIntelligenceEntry, setSelectedIntelligenceEntry] =
     useState<ITextSessionHistoryEntry | null>(null);
   const [isTimerEditOpen, setIsTimerEditOpen] = useState(false);
@@ -1968,6 +1971,7 @@ function TextHooker() {
   const { mutate: createLog, isPending: isLogging } = useMutation({
     mutationFn: createLogFn,
     onSuccess: async () => {
+      setPrivateLog(false);
       await persistPendingHistoryEntry();
       triggerLogAnimation(clearSessionLineHistoryAfterLog);
       queryClient.invalidateQueries({ queryKey: ['logs'] });
@@ -2014,6 +2018,7 @@ function TextHooker() {
         chars: currentSessionChars > 0 ? currentSessionChars : undefined,
         hours: Math.floor(totalMinutes / 60),
         minutes: totalMinutes % 60,
+        private: privateLog,
       });
       setIsQuickLogOpen(true);
       return;
@@ -2027,7 +2032,7 @@ function TextHooker() {
       type: media.type,
       description: media.title.contentTitleNative,
       isAdult: media.isAdult,
-      private: false,
+      private: privateLog,
     });
   };
 
@@ -3249,26 +3254,32 @@ function TextHooker() {
                 )}
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-base-content/10">
-                <button
-                  onClick={handleLogSession}
-                  disabled={isLogging || currentSessionChars === 0}
-                  className={`btn btn-primary w-full sm:w-auto transition-all ${isLogAnimating ? 'btn-success scale-105' : ''}`}
-                >
-                  {isLogging ? (
-                    <Spinner />
-                  ) : isLogAnimating ? (
-                    <>
-                      <span className="text-xl">✓</span>
-                      {t('texthooker:hooker.logged')}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      {t('texthooker:hooker.logSession')}
-                    </>
-                  )}
-                </button>
+              <div className="pt-4 border-t border-base-content/10 space-y-4">
+                <LogPrivacyToggle
+                  checked={privateLog}
+                  onChange={setPrivateLog}
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleLogSession}
+                    disabled={isLogging || currentSessionChars === 0}
+                    className={`btn btn-primary w-full sm:w-auto transition-all ${isLogAnimating ? 'btn-success scale-105' : ''}`}
+                  >
+                    {isLogging ? (
+                      <Spinner />
+                    ) : isLogAnimating ? (
+                      <>
+                        <span className="text-xl">✓</span>
+                        {t('texthooker:hooker.logged')}
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        {t('texthooker:hooker.logSession')}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -3420,7 +3431,7 @@ function TextHooker() {
                 </Field>
 
                 <Field label={t('hooker.settings.fontFamily')}>
-                  <select
+                  <DropdownSelect
                     value={fontFamily}
                     onChange={handleFontFamilyChange}
                     className="select select-sm w-full"
@@ -3430,11 +3441,11 @@ function TextHooker() {
                         {fontOption.label}
                       </option>
                     ))}
-                  </select>
+                  </DropdownSelect>
                 </Field>
 
                 <Field label={t('hooker.settings.theme')}>
-                  <select
+                  <DropdownSelect
                     value={hookerTheme}
                     onChange={(event) => setHookerTheme(event.target.value)}
                     className="select select-sm w-full"
@@ -3446,7 +3457,7 @@ function TextHooker() {
                           : themeOption.label}
                       </option>
                     ))}
-                  </select>
+                  </DropdownSelect>
                   <label className="label">
                     <span className="text-[10px] opacity-60">
                       {t('hooker.settings.themeScopeNote')}
@@ -3621,7 +3632,7 @@ function TextHooker() {
                           {t('hooker.intelligence.settingsHint')}
                         </p>
                         <Field label={t('hooker.intelligence.detectionMode')}>
-                          <select
+                          <DropdownSelect
                             className="select select-sm w-full"
                             value={attentionMode}
                             onChange={(event) =>
@@ -3639,7 +3650,7 @@ function TextHooker() {
                             <option value="off">
                               {t('hooker.intelligence.mode.off')}
                             </option>
-                          </select>
+                          </DropdownSelect>
                         </Field>
 
                       {attentionMode === 'manual' && (
@@ -3666,7 +3677,7 @@ function TextHooker() {
 
                       {attentionMode !== 'off' && (
                         <Field label={t('hooker.intelligence.afkThreshold')}>
-                          <select
+                          <DropdownSelect
                             className="select select-sm w-full focus:select-primary"
                             value={attentionAfkThreshold}
                             onChange={(event) =>
@@ -3681,7 +3692,7 @@ function TextHooker() {
                             <option value={600}>
                               {t('hooker.intelligence.tenMinutes')}
                             </option>
-                          </select>
+                          </DropdownSelect>
                         </Field>
                       )}
                       </>
@@ -3831,7 +3842,7 @@ function TextHooker() {
                 </Field>
 
                 <Field label={t('hooker.collab.title')}>
-                  <select
+                  <DropdownSelect
                     value={mode}
                     onChange={(e) =>
                       setMode(e.target.value as 'local' | 'host' | 'guest')
@@ -3841,7 +3852,7 @@ function TextHooker() {
                     <option value="local">{t('hooker.collab.local')}</option>
                     <option value="host">{t('hooker.collab.host')}</option>
                     <option value="guest">{t('hooker.collab.guest')}</option>
-                  </select>
+                  </DropdownSelect>
                 </Field>
 
                 {(mode === 'host' || mode === 'guest') && (

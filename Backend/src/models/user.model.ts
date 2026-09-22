@@ -22,6 +22,7 @@ import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
 import { getCustomizationDowngrade } from '../services/customization.js';
 import Tag from './tag.model.js';
+import Follow from './follow.model.js';
 
 const FAVORITE_MEDIA_TYPES = [
   'anime',
@@ -59,6 +60,29 @@ const SettingsSchema = new Schema<IUserSettings>(
     dismissedNotificationClubIds: { type: [String], default: [] },
     dismissedNotificationClubAt: { type: Schema.Types.Mixed, default: {} },
     lastSeenChangelogAt: { type: Date, default: null },
+    socialPrivacy: {
+      type: new Schema(
+        {
+          profile: {
+            type: String,
+            enum: ['public', 'followers', 'private'],
+            default: 'public',
+          },
+          immersionActivity: {
+            type: String,
+            enum: ['public', 'followers', 'private'],
+            default: 'public',
+          },
+          statistics: {
+            type: String,
+            enum: ['public', 'followers', 'private'],
+            default: 'public',
+          },
+        },
+        { _id: false }
+      ),
+      default: () => ({}),
+    },
   },
   { _id: false }
 );
@@ -349,6 +373,22 @@ UserSchema.pre(
   async function (this: IUser, next) {
     await Log.deleteMany({ user: this._id });
     next();
+  }
+);
+
+UserSchema.post(
+  'findOneAndDelete',
+  async function cleanupFollowRelationships(user: IUser | null) {
+    if (!user) return;
+    const { deleteSocialDataForUser } = await import(
+      '../services/activity.service.js'
+    );
+    await Promise.all([
+      Follow.deleteMany({
+        $or: [{ follower: user._id }, { following: user._id }],
+      }),
+      deleteSocialDataForUser(user._id),
+    ]);
   }
 );
 

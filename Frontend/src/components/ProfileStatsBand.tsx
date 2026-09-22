@@ -176,22 +176,8 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const chartWidth = 300;
   const chartHeight = 56;
   const padY = 6;
-  // Monthly view shows only the current calendar month; global spans all history.
-  const history = useMemo(() => {
-    const all = rankingHistory ?? [];
-    if (rankMode !== 'monthly') return all;
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    return all.filter((h) => {
-      const d = new Date(h.date);
-      return d.getFullYear() === year && d.getMonth() === month;
-    });
-  }, [rankingHistory, rankMode]);
-
-  const positions = history.map((h) =>
-    rankMode === 'global' ? h.globalPosition : h.monthlyPosition
-  );
+  const history = rankingHistory?.[rankMode] ?? [];
+  const positions = history.map((point) => point.position);
   const minPos = positions.length ? Math.min(...positions) : 0;
   const maxPos = positions.length ? Math.max(...positions) : 0;
   const posRange = Math.max(1, maxPos - minPos);

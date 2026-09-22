@@ -1,6 +1,10 @@
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import RankSnapshot from '../models/rankSnapshot.model.js';
+import {
+  getMonthBoundaries,
+  getMonthlyRankHistory,
+} from '../services/rankSnapshot.service.js';
 import Tag from '../models/tag.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
@@ -21,6 +25,8 @@ import {
   userRoles,
   SUPPORTED_LANGUAGES,
   SupportedLanguage,
+  SOCIAL_VISIBILITIES,
+  SocialVisibility,
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
@@ -49,6 +55,12 @@ import {
   resolveCustomizationUpdate,
   sanitizeCustomizationForDisplay,
 } from '../services/customization.js';
+import { getSocialSummary } from '../services/follow.service.js';
+import { canViewUserSocialCategory } from '../services/socialVisibility.service.js';
+import {
+  deleteSocialDataForUser,
+  syncImmersionActivityVisibility,
+} from '../services/activity.service.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -77,6 +89,12 @@ const BYTES_IN_MEGABYTE = 1024 * 1024;
 const DEFAULT_AVATAR_MAX_FILE_SIZE_BYTES = 3 * BYTES_IN_MEGABYTE;
 const DEFAULT_BANNER_MAX_FILE_SIZE_BYTES = 6 * BYTES_IN_MEGABYTE;
 const PATREON_MEDIA_MAX_FILE_SIZE_BYTES = 8 * BYTES_IN_MEGABYTE;
+const PUBLIC_STATISTICS_MATCH = {
+  $or: [
+    { 'settings.socialPrivacy.statistics': { $exists: false } },
+    { 'settings.socialPrivacy.statistics': 'public' },
+  ],
+};
 
 function hasAdminRole(user?: Partial<IUser> | null): boolean {
   const roles = user?.roles;
@@ -903,6 +921,73 @@ export async function updateProfileLayout(
   }
 }
 
+const SOCIAL_PRIVACY_DEFAULTS = {
+  profile: 'public',
+  immersionActivity: 'public',
+  statistics: 'public',
+} as const satisfies Record<string, SocialVisibility>;
+
+export async function updateSocialPrivacy(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { socialPrivacy } = req.body as {
+    socialPrivacy?: Partial<Record<keyof typeof SOCIAL_PRIVACY_DEFAULTS, unknown>>;
+  };
+
+  try {
+    if (!socialPrivacy || typeof socialPrivacy !== 'object') {
+      throw apiError(
+        'privacy.invalidSettings',
+        400,
+        'Social privacy settings are required'
+      );
+    }
+
+    const nextPrivacy: Record<
+      keyof typeof SOCIAL_PRIVACY_DEFAULTS,
+      SocialVisibility
+    > = { ...SOCIAL_PRIVACY_DEFAULTS };
+    for (const key of Object.keys(SOCIAL_PRIVACY_DEFAULTS) as Array<
+      keyof typeof SOCIAL_PRIVACY_DEFAULTS
+    >) {
+      const value = socialPrivacy[key];
+      if (
+        typeof value !== 'string' ||
+        !SOCIAL_VISIBILITIES.includes(value as SocialVisibility)
+      ) {
+        throw apiError(
+          'privacy.invalidVisibility',
+          400,
+          `Invalid visibility for ${key}`,
+          { field: key }
+        );
+      }
+      nextPrivacy[key] = value as SocialVisibility;
+    }
+
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+
+    user.settings = user.settings ?? { blurAdultContent: true };
+    user.settings.socialPrivacy = nextPrivacy;
+    user.markModified('settings.socialPrivacy');
+    await user.save();
+    await syncImmersionActivityVisibility(
+      user._id,
+      nextPrivacy.immersionActivity
+    );
+
+    return res.status(200).json({
+      message: 'Social privacy updated successfully',
+      socialPrivacy: nextPrivacy,
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 const FAVORITE_MEDIA_TYPES: MediaListMediaType[] = [
   'anime',
   'manga',
@@ -1120,20 +1205,54 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
   const viewer = res.locals.user as IUser | undefined;
   const canViewPrivateProfile =
     hasAdminRole(viewer) || isOwner(viewer, userFound._id);
+  const [canViewProfile, canViewStatistics, canViewImmersionActivity] =
+    await Promise.all([
+      canViewUserSocialCategory({
+        ownerId: userFound._id,
+        viewerId: viewer?._id,
+        settings: userFound.settings,
+        category: 'profile',
+        bypass: hasAdminRole(viewer),
+      }),
+      canViewUserSocialCategory({
+        ownerId: userFound._id,
+        viewerId: viewer?._id,
+        settings: userFound.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }),
+      canViewUserSocialCategory({
+        ownerId: userFound._id,
+        viewerId: viewer?._id,
+        settings: userFound.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }),
+    ]);
+  if (!canViewProfile) {
+    return next(
+      apiError('privacy.profileRestricted', 403, 'This profile is private')
+    );
+  }
 
   const visibleCustomization = sanitizeCustomizationForDisplay(
     userFound.customization,
     getDisplayCapabilities(userFound.patreon)
   );
+  const social = await getSocialSummary(userFound._id, viewer?._id);
 
   const sharedProfile = {
     _id: userFound._id,
     id: userFound._id,
     username: userFound.username,
-    stats: {
-      ...userFound.stats,
-      currentStreak: liveCurrentStreak,
-    },
+    ...(canViewStatistics
+      ? {
+          stats: {
+            ...userFound.stats,
+            currentStreak: liveCurrentStreak,
+          },
+        }
+      : {}),
     avatar: userFound.avatar,
     banner: userFound.banner,
     titles: userFound.titles,
@@ -1151,11 +1270,21 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     customization: visibleCustomization,
     // Resolved server-side because hours/chars/log counts are not on the user
     // document. Costs an aggregation only when the owner equipped one of those.
-    signature: await computeSignatureValue(
-      userFound,
-      visibleCustomization.signatureStat,
-      liveCurrentStreak
-    ),
+    ...(canViewStatistics
+      ? {
+          signature: await computeSignatureValue(
+            userFound,
+            visibleCustomization.signatureStat,
+            liveCurrentStreak
+          ),
+        }
+      : {}),
+    social,
+    socialAccess: {
+      profile: canViewProfile,
+      statistics: canViewStatistics,
+      immersionActivity: canViewImmersionActivity,
+    },
   };
 
   if (!canViewPrivateProfile) {
@@ -1191,6 +1320,54 @@ export async function getRanking(
     const timezone = (req.query.timezone as string) || 'UTC'; // Accept timezone as query parameter
     const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
     const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
+
+    // Current streaks are user-level values, not log-period aggregates. Read
+    // them directly so the ranking can also apply each user's timezone when a
+    // stored streak has gone stale since their last request.
+    if (filter === 'currentStreak') {
+      const streakUsers = await User.find({
+        $and: [
+          {
+            $or: [
+              { 'moderation.rankingBanned': { $exists: false } },
+              { 'moderation.rankingBanned': false },
+            ],
+          },
+          PUBLIC_STATISTICS_MATCH,
+        ],
+      })
+        .select(
+          'username avatar stats.userLevel stats.currentStreak stats.lastStreakDate settings.timezone patreon customization'
+        )
+        .lean();
+
+      const rankedStreakUsers = streakUsers
+        .map((streakUser) => ({
+          username: streakUser.username,
+          avatar: streakUser.avatar,
+          patreon: streakUser.patreon,
+          customization: streakUser.customization,
+          stats: {
+            userLevel: streakUser.stats?.userLevel ?? 1,
+            currentStreak: getLiveCurrentStreak(
+              streakUser.stats?.currentStreak ?? 0,
+              streakUser.stats?.lastStreakDate ?? null,
+              streakUser.settings?.timezone || 'UTC'
+            ),
+          },
+        }))
+        .filter((streakUser) => streakUser.stats.currentStreak > 0)
+        .sort(
+          (a, b) =>
+            b.stats.currentStreak - a.stats.currentStreak ||
+            a.username.localeCompare(b.username)
+        )
+        .slice(skip, skip + limit);
+
+      return res
+        .status(200)
+        .json(sanitizeRankingCosmetics(rankedStreakUsers));
+    }
 
     // Create date filter based on timeFilter using the provided timezone
     let dateFilter: { date?: { $gte?: Date; $lt?: Date } } = {};
@@ -1258,9 +1435,14 @@ export async function getRanking(
       const rankingUsers = await User.aggregate([
         {
           $match: {
-            $or: [
-              { 'moderation.rankingBanned': { $exists: false } },
-              { 'moderation.rankingBanned': false },
+            $and: [
+              {
+                $or: [
+                  { 'moderation.rankingBanned': { $exists: false } },
+                  { 'moderation.rankingBanned': false },
+                ],
+              },
+              PUBLIC_STATISTICS_MATCH,
             ],
           },
         },
@@ -1439,9 +1621,14 @@ export async function getRanking(
       const rankingUsers = await User.aggregate([
         {
           $match: {
-            $or: [
-              { 'moderation.rankingBanned': { $exists: false } },
-              { 'moderation.rankingBanned': false },
+            $and: [
+              {
+                $or: [
+                  { 'moderation.rankingBanned': { $exists: false } },
+                  { 'moderation.rankingBanned': false },
+                ],
+              },
+              PUBLIC_STATISTICS_MATCH,
             ],
           },
         },
@@ -1694,43 +1881,32 @@ export async function getRankingSummary(
   res: Response,
   next: NextFunction
 ) {
-  const getMonthBoundaries = (timezone: string) => {
-    const now = new Date();
-    let userNow: Date;
-    try {
-      userNow = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-    } catch (error) {
-      userNow = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
-    }
-
-    const offset = now.getTime() - userNow.getTime();
-    const monthStartLocal = new Date(
-      userNow.getFullYear(),
-      userNow.getMonth(),
-      1
-    );
-    const nextMonthLocal = new Date(
-      userNow.getFullYear(),
-      userNow.getMonth() + 1,
-      1
-    );
-
-    return {
-      monthStart: new Date(monthStartLocal.getTime() + offset),
-      monthEnd: new Date(nextMonthLocal.getTime() + offset),
-    };
-  };
-
   try {
     const { username } = req.params;
     const timezoneParam = (req.query.timezone as string) || undefined;
 
     const userDoc = await User.findOne({ username })
-      .select('username stats settings.timezone')
+      .select('username stats settings.timezone settings.socialPrivacy')
       .lean();
 
     if (!userDoc || !userDoc.stats) {
       throw apiError('user.notFound', 404, 'User not found');
+    }
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: userDoc._id,
+        viewerId: viewer?._id,
+        settings: userDoc.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'This user has restricted their statistics'
+      );
     }
 
     const timezone = timezoneParam || userDoc.settings?.timezone || 'UTC';
@@ -1785,9 +1961,19 @@ export async function getRankingSummary(
       },
       {
         $match: {
-          $or: [
-            { 'user.moderation.rankingBanned': { $exists: false } },
-            { 'user.moderation.rankingBanned': false },
+          $and: [
+            {
+              $or: [
+                { 'user.moderation.rankingBanned': { $exists: false } },
+                { 'user.moderation.rankingBanned': false },
+              ],
+            },
+            {
+              $or: [
+                { 'user.settings.socialPrivacy.statistics': { $exists: false } },
+                { 'user.settings.socialPrivacy.statistics': 'public' },
+              ],
+            },
           ],
         },
       },
@@ -1831,9 +2017,19 @@ export async function getRankingSummary(
       },
       {
         $match: {
-          $or: [
-            { 'user.moderation.rankingBanned': { $exists: false } },
-            { 'user.moderation.rankingBanned': false },
+          $and: [
+            {
+              $or: [
+                { 'user.moderation.rankingBanned': { $exists: false } },
+                { 'user.moderation.rankingBanned': false },
+              ],
+            },
+            {
+              $or: [
+                { 'user.settings.socialPrivacy.statistics': { $exists: false } },
+                { 'user.settings.socialPrivacy.statistics': 'public' },
+              ],
+            },
           ],
         },
       },
@@ -1852,9 +2048,14 @@ export async function getRankingSummary(
     ]);
 
     const totalUsers = await User.countDocuments({
-      $or: [
-        { 'moderation.rankingBanned': { $exists: false } },
-        { 'moderation.rankingBanned': false },
+      $and: [
+        {
+          $or: [
+            { 'moderation.rankingBanned': { $exists: false } },
+            { 'moderation.rankingBanned': false },
+          ],
+        },
+        PUBLIC_STATISTICS_MATCH,
       ],
     });
 
@@ -1915,9 +2116,19 @@ export async function getRankingSummary(
       },
       {
         $match: {
-          $or: [
-            { 'user.moderation.rankingBanned': { $exists: false } },
-            { 'user.moderation.rankingBanned': false },
+          $and: [
+            {
+              $or: [
+                { 'user.moderation.rankingBanned': { $exists: false } },
+                { 'user.moderation.rankingBanned': false },
+              ],
+            },
+            {
+              $or: [
+                { 'user.settings.socialPrivacy.statistics': { $exists: false } },
+                { 'user.settings.socialPrivacy.statistics': 'public' },
+              ],
+            },
           ],
         },
       },
@@ -1993,23 +2204,47 @@ export async function getRankingHistory(
 ) {
   try {
     const { username } = req.params;
-    const userDoc = await User.findOne({ username }).select('_id').lean();
+    const userDoc = await User.findOne({ username })
+      .select('_id settings.socialPrivacy')
+      .lean();
     if (!userDoc) {
       throw apiError('user.notFound', 404, 'User not found');
     }
-
-    const snapshots = await RankSnapshot.find({ userId: userDoc._id })
-      .sort({ date: 1 })
-      .select('date globalPosition monthlyPosition -_id')
-      .lean();
-
-    return res.status(200).json(
-      snapshots.map((s) => ({
-        date: s.date,
-        globalPosition: s.globalPosition,
-        monthlyPosition: s.monthlyPosition,
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: userDoc._id,
+        viewerId: viewer?._id,
+        settings: userDoc.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
       }))
-    );
+    ) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'This user has restricted their statistics'
+      );
+    }
+
+    const [snapshots, monthly] = await Promise.all([
+      RankSnapshot.find({ userId: userDoc._id })
+        .sort({ date: 1 })
+        .select('date globalPosition -_id')
+        .lean(),
+      getMonthlyRankHistory(
+        userDoc._id,
+        userDoc.settings?.timezone || 'UTC'
+      ),
+    ]);
+
+    return res.status(200).json({
+      global: snapshots.map((snapshot) => ({
+        date: snapshot.date,
+        position: snapshot.globalPosition,
+      })),
+      monthly,
+    });
   } catch (error) {
     return next(error as customError);
   }
@@ -2094,9 +2329,14 @@ export async function getMediumRanking(
     const pipeline: any[] = [
       {
         $match: {
-          $or: [
-            { 'moderation.rankingBanned': { $exists: false } },
-            { 'moderation.rankingBanned': false },
+          $and: [
+            {
+              $or: [
+                { 'moderation.rankingBanned': { $exists: false } },
+                { 'moderation.rankingBanned': false },
+              ],
+            },
+            PUBLIC_STATISTICS_MATCH,
           ],
         },
       },
@@ -2324,6 +2564,8 @@ export async function clearUserData(
       throw apiError('user.notFound', 404, 'User not found');
     }
 
+    await deleteSocialDataForUser(user._id);
+
     // Delete all logs
     await Log.deleteMany({ user: user._id });
 
@@ -2364,6 +2606,22 @@ export async function getImmersionList(
   try {
     const user = await User.findOne({ username: req.params.username });
     if (!user) throw apiError('user.notFound', 404, 'User not found');
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.immersionRestricted',
+        403,
+        'This user has restricted their immersion activity'
+      );
+    }
 
     type StatusFilter =
       | 'all'
@@ -3027,12 +3285,40 @@ export async function compareUserStats(
 
     // Verify users exist
     const [userDoc1, userDoc2] = await Promise.all([
-      User.findOne({ username: user1 }).select('_id username'),
-      User.findOne({ username: user2 }).select('_id username'),
+      User.findOne({ username: user1 }).select(
+        '_id username settings.socialPrivacy'
+      ),
+      User.findOne({ username: user2 }).select(
+        '_id username settings.socialPrivacy'
+      ),
     ]);
 
     if (!userDoc1 || !userDoc2) {
       return res.status(404).json({ message: 'One or both users not found' });
+    }
+    const viewer = res.locals.user as IUser | undefined;
+    const [canViewUser1, canViewUser2] = await Promise.all([
+      canViewUserSocialCategory({
+        ownerId: userDoc1._id,
+        viewerId: viewer?._id,
+        settings: userDoc1.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }),
+      canViewUserSocialCategory({
+        ownerId: userDoc2._id,
+        viewerId: viewer?._id,
+        settings: userDoc2.settings,
+        category: 'statistics',
+        bypass: hasAdminRole(viewer),
+      }),
+    ]);
+    if (!canViewUser1 || !canViewUser2) {
+      throw apiError(
+        'privacy.statisticsRestricted',
+        403,
+        'One or both users have restricted their statistics'
+      );
     }
 
     // Get stats for both users in parallel
@@ -3185,6 +3471,22 @@ export async function getGanttData(
   try {
     const user = await User.findOne({ username: req.params.username }).lean();
     if (!user) throw apiError('user.notFound', 404, 'User not found');
+    const viewer = res.locals.user as IUser | undefined;
+    if (
+      !(await canViewUserSocialCategory({
+        ownerId: user._id,
+        viewerId: viewer?._id,
+        settings: user.settings,
+        category: 'immersionActivity',
+        bypass: hasAdminRole(viewer),
+      }))
+    ) {
+      throw apiError(
+        'privacy.immersionRestricted',
+        403,
+        'This user has restricted their immersion activity'
+      );
+    }
 
     const typeFilter = req.query.type as string | undefined;
     const timezone = (req.query.timezone as string) || 'UTC';

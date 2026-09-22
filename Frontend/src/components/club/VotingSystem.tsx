@@ -1,3 +1,4 @@
+import DropdownSelect from '../ui/DropdownSelect';
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
@@ -450,7 +451,7 @@ export default function VotingSystem({
                   <span className="text-xs uppercase tracking-wide text-base-content/60">
                     {t('voting.timespan')}
                   </span>
-                  <select
+                  <DropdownSelect
                     className="select select-sm"
                     value={resultsTimespan}
                     onChange={(event) =>
@@ -462,7 +463,7 @@ export default function VotingSystem({
                         {t(option.labelKey)}
                       </option>
                     ))}
-                  </select>
+                  </DropdownSelect>
                 </label>
               </div>
 

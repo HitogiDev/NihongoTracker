@@ -13,7 +13,8 @@ import {
   anilistSearchProxy,
   googleBooksSearchProxy,
 } from '../controllers/media.controller.js';
-import { protect } from '../middlewares/authMiddleware.js';
+import { optionalProtect, protect } from '../middlewares/authMiddleware.js';
+import { getCommunity } from '../controllers/mediaSocial.controller.js';
 
 import { searchYouTubeVideo, searchYouTubePlaylist } from '../services/searchYoutube.js';
 
@@ -27,6 +28,7 @@ router.get('/multi-search', multiSearchMedia);
 router.get('/youtube/video', searchYouTubeVideo);
 router.get('/youtube/playlist', searchYouTubePlaylist);
 router.get('/reviews/:reviewId', getMediaReviewById);
+router.get('/:mediaType/:contentId/community', optionalProtect, getCommunity);
 router.get('/:mediaType/:contentId/reviews', getMediaReviews);
 router.post('/:mediaType/:contentId/reviews', protect, addMediaReview);
 router.put(

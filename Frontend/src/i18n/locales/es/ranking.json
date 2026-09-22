@@ -8,7 +8,8 @@
   "scope": {
     "total": "Total",
     "reading": "Lectura",
-    "listening": "Escucha"
+    "listening": "Escucha",
+    "streaks": "Rachas"
   },
   "metrics": {
     "xp": "XP",
@@ -17,13 +18,15 @@
     "time": "Tiempo",
     "episodes": "Episodios",
     "characters": "Caracteres",
-    "pages": "Páginas"
+    "pages": "Páginas",
+    "streaks": "Racha actual"
   },
   "filterLabel": "{{scope}} · {{metric}}",
   "columnHeader": "{{filter}} ({{unit}})",
   "units": {
     "hours": "Horas",
-    "xp": "XP"
+    "xp": "XP",
+    "days": "días"
   },
   "time": {
     "allTime": "Histórico",

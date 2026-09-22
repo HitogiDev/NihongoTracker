@@ -1,5 +1,7 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState, useEffect } from 'react';
 import Field from '../components/ui/Field';
+import DatePickerInput from '../components/ui/DatePickerInput';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
@@ -23,6 +25,7 @@ import {
   BarChart,
   Info,
   Settings,
+  Ellipsis,
 } from 'lucide-react';
 import {
   getClubFn,
@@ -36,6 +39,7 @@ import {
   transferLeadershipFn,
   updateClubFn,
   updateClubWithFilesFn,
+  updateClubMemberRoleFn,
 } from '../api/clubApi';
 import useSearch from '../hooks/useSearch';
 import {
@@ -48,10 +52,12 @@ import { useUserDataStore } from '../store/userData';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
 import ClubRankingsTab from '../components/club/ClubRankingsTab';
-import ClubGoalsCard from '../components/club/ClubGoalsCard';
 import EditClubMediaModal from '../components/club/EditClubMediaModal';
 import QuickLog from '../components/QuickLog';
 import RecentActivity from '../components/club/RecentActivity';
+import ClubObjectives, {
+  ClubIndividualObjectives,
+} from '../components/club/ClubObjectives';
 import UserAvatar from '../components/UserAvatar';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
 import { usePatreonBadgeText } from '../hooks/usePatreonBadgeText';
@@ -183,9 +189,9 @@ function ClubDetailScreen() {
   // Join club mutation
   const joinMutation = useMutation({
     mutationFn: () => joinClubFn(clubId!),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
-      toast.success(data.message || t('toast.joined'));
+      toast.success(t('toast.joined'));
     },
     onError: (error: unknown) => {
       let errorMessage = t('toast.joinFailed');
@@ -212,7 +218,7 @@ function ClubDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['club', clubId] });
 
       // Check if club was disbanded (user was last member)
-      if (club?.userRole === 'leader' && club.memberCount === 1) {
+      if ((club?.userRole === 'owner' || club?.userRole === 'leader') && club.memberCount === 1) {
         toast.success(t('toast.disbanded'));
         navigate('/clubs');
       } else if (club?.userStatus === 'pending') {
@@ -367,16 +373,22 @@ function ClubDetailScreen() {
   });
 
   const canManageClub = (() => {
-    return club?.userRole === 'leader' || club?.userRole === 'moderator';
+    return ['owner', 'leader', 'moderator', 'event_manager'].includes(
+      club?.userRole ?? 'member'
+    );
   })();
 
-  const canEditClubSettings = club?.userRole === 'leader';
+  const canEditClubSettings = club?.userRole === 'owner' || club?.userRole === 'leader';
+  const canCreateChallenges = canManageClub;
+  const canPinObjectives = ['owner', 'leader', 'moderator'].includes(
+    club?.userRole ?? 'member'
+  );
 
   // Pending membership requests (leaders only)
   const { data: pendingRequests, refetch: refetchPending } = useQuery({
     queryKey: ['clubPending', clubId],
     queryFn: () => getPendingMembershipRequestsFn(clubId!),
-    enabled: !!clubId && club?.userRole === 'leader',
+    enabled: !!clubId && (club?.userRole === 'owner' || club?.userRole === 'leader'),
   });
 
   const membershipActionMutation = useMutation({
@@ -397,6 +409,13 @@ function ClubDetailScreen() {
       if (error instanceof Error) errorMessage = error.message;
       toast.error(errorMessage);
     },
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: 'moderator' | 'event_manager' | 'member' }) =>
+      updateClubMemberRoleFn(clubId!, memberId, role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['club', clubId] }),
+    onError: () => toast.error(t('toast.roleUpdateFailed')),
   });
 
   const kickMemberMutation = useMutation({
@@ -504,7 +523,7 @@ function ClubDetailScreen() {
   const canLeaveClub = (() => {
     if (!club?.isUserMember) return false;
 
-    if (club.userRole === 'leader' && club.memberCount > 1) return false;
+    if ((club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1) return false;
 
     return true;
   })();
@@ -512,7 +531,7 @@ function ClubDetailScreen() {
   const getLeaveButtonText = (() => {
     if (!club) return t('detail.leave');
 
-    if (club.userRole === 'leader') {
+    if (club.userRole === 'owner' || club.userRole === 'leader') {
       if (club.memberCount === 1) {
         return t('detail.disband');
       }
@@ -525,7 +544,7 @@ function ClubDetailScreen() {
   const handleLeaveClick = () => {
     if (!club) return;
 
-    if (club.userRole === 'leader' && club.memberCount === 1) {
+    if ((club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount === 1) {
       setIsDisbandConfirmModalOpen(true);
       return;
     }
@@ -764,10 +783,13 @@ function ClubDetailScreen() {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
+      case 'owner':
       case 'leader':
         return <Shield className="text-warning w-4 h-4" />;
       case 'moderator':
         return <BadgeCheck className="text-info w-4 h-4" />;
+      case 'event_manager':
+        return <Clock className="text-accent w-4 h-4" />;
       default:
         return null;
     }
@@ -775,6 +797,12 @@ function ClubDetailScreen() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
+      case 'owner':
+        return (
+          <span className="badge badge-warning badge-xs">
+            {t('roles.owner')}
+          </span>
+        );
       case 'leader':
         return (
           <span className="badge badge-warning badge-xs">
@@ -785,6 +813,12 @@ function ClubDetailScreen() {
         return (
           <span className="badge badge-info badge-xs">
             {t('roles.moderator')}
+          </span>
+        );
+      case 'event_manager':
+        return (
+          <span className="badge badge-accent badge-xs">
+            {t('roles.event_manager')}
           </span>
         );
       default:
@@ -904,16 +938,16 @@ function ClubDetailScreen() {
                       // leader-with-members case; `btn-disabled` only sets
                       // pointer-events:none and leaves the button focusable.
                       className={`btn btn-sm ${
-                        club.userRole === 'leader' && club.memberCount > 1
+                        (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1
                           ? ''
-                          : club.userRole === 'leader' && club.memberCount === 1
+                          : (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount === 1
                             ? 'btn-warning'
                             : 'btn-error'
                       }`}
                       onClick={handleLeaveClick}
                       disabled={leaveMutation.isPending || !canLeaveClub}
                       title={
-                        club.userRole === 'leader' && club.memberCount > 1
+                        (club.userRole === 'owner' || club.userRole === 'leader') && club.memberCount > 1
                           ? t('detail.transferHint')
                           : undefined
                       }
@@ -1002,7 +1036,7 @@ function ClubDetailScreen() {
           >
             <Users className="mr-2 w-4 h-4" />
             {t('detail.members')}
-            {club?.userRole === 'leader' &&
+            {(club?.userRole === 'owner' || club?.userRole === 'leader') &&
               pendingRequests?.pending &&
               pendingRequests.pending.length > 0 && (
                 <span className="badge badge-warning badge-sm ml-2">
@@ -1071,32 +1105,25 @@ function ClubDetailScreen() {
                   />
                 </div>
               </div>
-              {/* Recent Activity (Activity Feed) */}
               {club.isUserMember && club.userStatus === 'active' && (
-                <div className="card surface">
-                  <div className="card-body">
-                    <h2 className="card-title text-lg mb-2">
-                      {t('detail.activityFeed')}
-                    </h2>
-                    <p className="text-sm text-base-content/60 mb-4">
-                      {t('detail.activityFeedHint')}
-                    </p>
-                    <RecentActivity clubId={club._id} />
-                  </div>
-                </div>
+                <>
+                  <ClubObjectives
+                    clubId={club._id}
+                    canManage={canCreateChallenges}
+                    canPin={canPinObjectives}
+                    onManageCollective={
+                      canEditClubSettings
+                        ? () => setIsClubGoalsModalOpen(true)
+                        : undefined
+                    }
+                  />
+                  <RecentActivity clubId={club._id} />
+                </>
               )}
             </div>
 
             {/* Right Column - Sidebar: About, Rules, Tags */}
             <div className="space-y-6">
-              {canEditClubSettings && (
-                <ClubGoalsCard
-                  clubGoals={club.clubGoals}
-                  canManage={canEditClubSettings}
-                  onManage={() => setIsClubGoalsModalOpen(true)}
-                />
-              )}
-
               {/* About */}
               {club.description && (
                 <div className="card surface">
@@ -1123,6 +1150,10 @@ function ClubDetailScreen() {
                     </p>
                   </div>
                 </div>
+              )}
+
+              {club.isUserMember && club.userStatus === 'active' && (
+                <ClubIndividualObjectives clubId={club._id} />
               )}
 
               {/* Tags */}
@@ -1339,6 +1370,14 @@ function ClubDetailScreen() {
                           )}
 
                           <div className="flex flex-col gap-2 text-xs text-base-content/60 mb-4">
+                            {media.community && (
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {t('media.participants', {
+                                  count: media.community.participantCount,
+                                })}
+                              </div>
+                            )}
                             <div className="flex items-center justify-between">
                               <span>
                                 Start:{' '}
@@ -1435,7 +1474,7 @@ function ClubDetailScreen() {
                 <h2 className="card-title text-lg mb-4">
                   {t('detail.membersCount', { count: club.memberCount })}
                 </h2>
-                {club.userRole === 'leader' &&
+                {(club.userRole === 'owner' || club.userRole === 'leader') &&
                   pendingRequests?.pending &&
                   pendingRequests.pending.length > 0 && (
                     <div className="mb-8">
@@ -1518,7 +1557,13 @@ function ClubDetailScreen() {
                   {club.members
                     .filter((member) => member.status === 'active')
                     .sort((a, b) => {
-                      const roleOrder = { leader: 0, moderator: 1, member: 2 };
+                      const roleOrder = {
+                        owner: 0,
+                        leader: 0,
+                        moderator: 1,
+                        event_manager: 2,
+                        member: 3,
+                      };
                       return roleOrder[a.role] - roleOrder[b.role];
                     })
                     .map((member, index) => {
@@ -1595,47 +1640,101 @@ function ClubDetailScreen() {
                             </div>
                           </div>
 
-                          {(club?.userRole === 'leader' ||
+                          {(club?.userRole === 'owner' ||
+                            club?.userRole === 'leader' ||
                             club?.userRole === 'moderator') &&
                             member.user._id !== user?._id && (
-                              <div className="mt-3 pt-3 pb-3 border-t border-base-300 space-y-2 px-3">
-                                {club?.userRole === 'leader' &&
-                                  member.role !== 'leader' && (
-                                    <button
-                                      className="btn btn-outline btn-xs w-full"
-                                      onClick={() => {
-                                        setSelectedNewLeader({
-                                          userId: member.user._id,
-                                          username: member.user.username,
-                                        });
-                                        setIsTransferLeadershipModalOpen(true);
-                                      }}
-                                      disabled={
-                                        transferLeadershipMutation.isPending
-                                      }
-                                    >
-                                      {t('detail.transferLeadership')}
-                                    </button>
+                              <div className="mt-3 flex justify-end border-t border-base-300 px-3 pb-3 pt-3">
+                                <div className="dropdown dropdown-end">
+                                  <button
+                                    type="button"
+                                    tabIndex={0}
+                                    className="btn btn-ghost btn-sm btn-square"
+                                    aria-label={t('detail.manage')}
+                                  >
+                                    <Ellipsis className="h-4 w-4" />
+                                  </button>
+                                  <ul
+                                    tabIndex={0}
+                                    className="dropdown-content menu surface-raised z-[100] w-56 p-2"
+                                  >
+                                {(club?.userRole === 'owner' || club?.userRole === 'leader') &&
+                                  member.role !== 'leader' && member.role !== 'owner' && (
+                                    <li>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedNewLeader({
+                                            userId: member.user._id,
+                                            username: member.user.username,
+                                          });
+                                          setIsTransferLeadershipModalOpen(true);
+                                        }}
+                                        disabled={
+                                          transferLeadershipMutation.isPending
+                                        }
+                                      >
+                                        {t('detail.transferLeadership')}
+                                      </button>
+                                    </li>
                                   )}
-                                {((club?.userRole === 'leader' &&
-                                  member.role !== 'leader') ||
+                                {(club?.userRole === 'owner' || club?.userRole === 'leader') &&
+                                  member.role !== 'owner' && (
+                                  <>
+                                    <li className="menu-title">
+                                      <span>{t('detail.manage')}</span>
+                                    </li>
+                                    {(['member', 'moderator', 'event_manager'] as const).map(
+                                      (role) => (
+                                        <li key={role}>
+                                          <button
+                                            type="button"
+                                            className={
+                                              (member.role === 'leader'
+                                                ? 'member'
+                                                : member.role) === role
+                                                ? 'active'
+                                                : ''
+                                            }
+                                            onClick={() =>
+                                              roleMutation.mutate({
+                                                memberId: member.user._id,
+                                                role,
+                                              })
+                                            }
+                                            disabled={roleMutation.isPending}
+                                          >
+                                            {t(`roles.${role}`)}
+                                          </button>
+                                        </li>
+                                      )
+                                    )}
+                                  </>
+                                )}
+                                {(((club?.userRole === 'owner' || club?.userRole === 'leader') &&
+                                  member.role !== 'leader' && member.role !== 'owner') ||
                                   (club?.userRole === 'moderator' &&
                                     member.role === 'member')) && (
-                                  <button
-                                    className="btn btn-error btn-outline btn-xs w-full"
-                                    onClick={() =>
-                                      setKickTarget({
-                                        userId: member.user._id,
-                                        username: member.user.username,
-                                      })
-                                    }
-                                    disabled={kickMemberMutation.isPending}
-                                  >
-                                    {kickMemberMutation.isPending
-                                      ? t('detail.removing')
-                                      : t('detail.kickMember')}
-                                  </button>
+                                  <li>
+                                    <button
+                                      type="button"
+                                      className="text-error"
+                                      onClick={() =>
+                                        setKickTarget({
+                                          userId: member.user._id,
+                                          username: member.user.username,
+                                        })
+                                      }
+                                      disabled={kickMemberMutation.isPending}
+                                    >
+                                      {kickMemberMutation.isPending
+                                        ? t('detail.removing')
+                                        : t('detail.kickMember')}
+                                    </button>
+                                  </li>
                                 )}
+                                  </ul>
+                                </div>
                               </div>
                             )}
                         </div>
@@ -1649,7 +1748,7 @@ function ClubDetailScreen() {
 
         {/* Rankings Tab */}
         {activeTab === 'rankings' && clubId && (
-          <ClubRankingsTab clubId={clubId} />
+          <ClubRankingsTab clubId={clubId} clubName={club?.name} />
         )}
       </div>
 
@@ -1682,7 +1781,7 @@ function ClubDetailScreen() {
             >
               {/* Media Type */}
               <Field label={t('addMedia.mediaType')}>
-                <select
+                <DropdownSelect
                   className="select w-full"
                   value={mediaForm.mediaType}
                   onChange={(e) => {
@@ -1704,7 +1803,7 @@ function ClubDetailScreen() {
                   <option value="game">{t('common:mediaTypes.game')}</option>
                   <option value="video">{t('common:mediaTypes.video')}</option>
                   <option value="movie">{t('common:mediaTypes.movie')}</option>
-                </select>
+                </DropdownSelect>
               </Field>
 
               {/* Title with Search */}
@@ -1807,12 +1906,10 @@ function ClubDetailScreen() {
 
               {/* Start Date */}
               <Field label={t('addMedia.startRequired')}>
-                <input
-                  type="date"
-                  className="input w-full"
+                <DatePickerInput
                   value={mediaForm.startDate}
-                  onChange={(e) =>
-                    setMediaForm({ ...mediaForm, startDate: e.target.value })
+                  onChange={(startDate) =>
+                    setMediaForm({ ...mediaForm, startDate })
                   }
                   required
                 />
@@ -1820,12 +1917,10 @@ function ClubDetailScreen() {
 
               {/* End Date */}
               <Field label={t('addMedia.endRequired')}>
-                <input
-                  type="date"
-                  className="input w-full"
+                <DatePickerInput
                   value={mediaForm.endDate}
-                  onChange={(e) =>
-                    setMediaForm({ ...mediaForm, endDate: e.target.value })
+                  onChange={(endDate) =>
+                    setMediaForm({ ...mediaForm, endDate })
                   }
                   required
                 />
@@ -2281,7 +2376,7 @@ function ClubDetailScreen() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="badge badge-primary badge-sm">
-                          Goal {index + 1}
+                          {t('goals.item')} {index + 1}
                         </span>
                       </div>
                       <button
@@ -2296,7 +2391,7 @@ function ClubDetailScreen() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field label={t('goals.type')}>
-                        <select
+                        <DropdownSelect
                           className="select w-full"
                           value={goal.type}
                           onChange={(e) => {
@@ -2341,7 +2436,7 @@ function ClubDetailScreen() {
                             {t('goals.episodes')}
                           </option>
                           <option value="pages">{t('goals.pages')}</option>
-                        </select>
+                        </DropdownSelect>
                       </Field>
 
                       {goal.type === 'time' ? (
@@ -2403,7 +2498,7 @@ function ClubDetailScreen() {
                       )}
 
                       <Field label={t('media.period')}>
-                        <select
+                        <DropdownSelect
                           className="select w-full"
                           value={goal.period}
                           onChange={(e) =>
@@ -2449,7 +2544,7 @@ function ClubDetailScreen() {
                           <option value="indefinite">
                             {t('goals.indefinite')}
                           </option>
-                        </select>
+                        </DropdownSelect>
                       </Field>
 
                       <div className="flex items-end">
@@ -2473,30 +2568,26 @@ function ClubDetailScreen() {
                       {goal.period === 'custom' ? (
                         <>
                           <Field label={t('goals.startDate')}>
-                            <input
-                              type="date"
-                              className="input w-full"
+                            <DatePickerInput
                               value={goal.startDate || ''}
-                              onChange={(e) =>
+                              onChange={(startDate) =>
                                 updateClubGoalDraft(
                                   index,
                                   'startDate',
-                                  e.target.value
+                                  startDate
                                 )
                               }
                             />
                           </Field>
 
                           <Field label={t('goals.endDate')}>
-                            <input
-                              type="date"
-                              className="input w-full"
+                            <DatePickerInput
                               value={goal.endDate || ''}
-                              onChange={(e) =>
+                              onChange={(endDate) =>
                                 updateClubGoalDraft(
                                   index,
                                   'endDate',
-                                  e.target.value
+                                  endDate
                                 )
                               }
                             />

@@ -1,0 +1,69 @@
+{
+  "activity": {
+    "achievement": "desbloqueó un logro",
+    "clubJoined": "se unió a un club",
+    "clubMilestone": "ayudó al club a alcanzar {{count}} miembros",
+    "challengeCompleted": "completó el reto",
+    "challengeJoined": "se unió al reto",
+    "challengeStarted": "creó el reto",
+    "generic": "compartió una actualización",
+    "goalCompleted": "completó la meta cooperativa",
+    "goalProgress": "avanzó la meta cooperativa",
+    "immersionLog": "registró una sesión de inmersión",
+    "listened": "escuchó",
+    "read": "leyó",
+    "watched": "vio",
+    "notable": "Destacada",
+    "notableSession": "completó una sesión de inmersión destacada",
+    "review": "publicó una reseña"
+  },
+  "comments": {
+    "add": "Añadir un comentario",
+    "cancel": "Cancelar",
+    "count": "{{count}}/1000",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "edited": "Editado",
+    "empty": "Todavía no hay comentarios.",
+    "loadError": "No se pudieron cargar los comentarios.",
+    "like": "Me gusta esta respuesta",
+    "moreActions": "Más acciones del comentario",
+    "placeholder": "Escribe una respuesta...",
+    "readGuidelines": "Lee las normas del sitio antes de publicar",
+    "post": "Publicar",
+    "save": "Guardar",
+    "show": "Mostrar comentarios",
+    "unlike": "Ya no me gusta esta respuesta"
+  },
+  "feed": {
+    "empty": {
+      "clubs": "Todavía no hay actividad de tus clubes.",
+      "following": "Todavía no hay actividad de las personas que sigues.",
+      "followingHint": "Sigue a otros estudiantes desde sus perfiles para crear tu feed.",
+      "global": "Todavía no hay actividad pública."
+    },
+    "loadError": "No se pudo cargar el feed de actividad.",
+    "loadMore": "Cargar más",
+    "retry": "Intentar de nuevo",
+    "scopes": {
+      "clubs": "Clubes",
+      "following": "Siguiendo",
+      "global": "Global"
+    },
+    "subtitle": "Consulta el progreso y los logros recientes de la comunidad.",
+    "title": "Actividad"
+  },
+  "metrics": {
+    "characters_one": "{{count}} carácter",
+    "characters_other": "{{count}} caracteres",
+    "episodes_one": "{{count}} episodio",
+    "episodes_other": "{{count}} episodios",
+    "minutes_one": "{{count}} minuto",
+    "minutes_other": "{{count}} minutos",
+    "pages_one": "{{count}} página",
+    "pages_other": "{{count}} páginas"
+  },
+  "reactions": {
+    "like": "Me gusta"
+  }
+}

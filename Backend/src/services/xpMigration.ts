@@ -1,8 +1,10 @@
+/* eslint-disable max-classes-per-file, no-await-in-loop */
 import { AnyBulkWriteOperation } from 'mongoose';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import { updateLevelAndXp } from './updateStats.js';
+import { calculateLevel } from './calculateLevel.js';
 import { ILog } from '../types.js';
 import {
   computeXp,
@@ -10,6 +12,7 @@ import {
   getLogCategory,
   medianOf,
   normalizeJitenDifficulty,
+  roughLogMinutes,
   weightedPercentile,
   CONSUMED_DIFFICULTY_MIN_HOURS,
   CONSUMED_DIFFICULTY_PERCENTILE,
@@ -22,6 +25,14 @@ export interface IXpMigrationSummary {
   totalUsers: number;
   processedUsers: number;
   updatedLogs: number;
+  previousXp: number;
+  recalculatedXp: number;
+  xpDelta: number;
+  usersWithStatsChanges: number;
+  usersWithLevelChanges: number;
+  difficultyTaggedLogs: number;
+  fullBonusLogs: number;
+  fullBonusPercent: number;
   dryRun: boolean;
   errors: string[];
 }
@@ -35,6 +46,7 @@ const SPEED_WINDOW = 50;
  */
 class RollingSpeed {
   private byType = new Map<string, number[]>();
+
   private combined: number[] = [];
 
   push(type: ILog['type'], chars: number, timeMin: number) {
@@ -63,7 +75,7 @@ const CONSUMED_WINDOW_MS =
   CONSUMED_DIFFICULTY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
 /**
- * Rolling consumed-difficulty signal during replay: hours-weighted p75 of
+ * Rolling consumed-difficulty signal during replay: hours-weighted median of
  * the difficulty consumed within the window before each log's date.
  */
 class RollingConsumedDifficulty {
@@ -73,7 +85,7 @@ class RollingConsumedDifficulty {
     this.samples.push({ at: atMs, hours, difficulty });
   }
 
-  p75(nowMs: number): number | null {
+  percentile(nowMs: number): number | null {
     const cutoff = nowMs - CONSUMED_WINDOW_MS;
     this.samples = this.samples.filter((s) => s.at >= cutoff);
     const totalHours = this.samples.reduce((sum, s) => sum + s.hours, 0);
@@ -86,28 +98,37 @@ class RollingConsumedDifficulty {
 }
 
 /**
- * Recomputes every log's XP with the v2 formula via chronological replay.
+ * Recomputes every log's XP with the v3 formula via chronological replay.
  *
  * Order matters: each log's difficulty multiplier depends on the category
  * level accumulated up to that moment, and the personal reading speed evolves
  * with the user's history, so logs are replayed oldest-first per user. Set
  * dryRun to compute the summary without writing anything.
  */
-export async function recalculateAllUsersXpV2(
+export async function recalculateAllUsersXpV3(
   options: { dryRun?: boolean } = {}
 ): Promise<IXpMigrationSummary> {
   const dryRun = options.dryRun ?? false;
-  const users = await User.find({});
+  const totalUsers = await User.countDocuments({});
+  const users = User.find({}).sort({ _id: 1 }).cursor();
 
   const summary: IXpMigrationSummary = {
-    totalUsers: users.length,
+    totalUsers,
     processedUsers: 0,
     updatedLogs: 0,
+    previousXp: 0,
+    recalculatedXp: 0,
+    xpDelta: 0,
+    usersWithStatsChanges: 0,
+    usersWithLevelChanges: 0,
+    difficultyTaggedLogs: 0,
+    fullBonusLogs: 0,
+    fullBonusPercent: 0,
     dryRun,
     errors: [],
   };
 
-  for (const user of users) {
+  for await (const user of users) {
     try {
       const logs = await Log.find({ user: user._id }).sort({
         date: 1,
@@ -169,13 +190,20 @@ export async function recalculateAllUsersXpV2(
             difficulty,
             categoryLevel: category ? categoryLevel : 0,
             consumedDifficulty: category
-              ? consumed[category].p75(logAtMs)
+              ? consumed[category].percentile(logAtMs)
               : null,
           }
         );
 
+        summary.previousXp += log.xp;
+        summary.recalculatedXp += xp;
+        if (difficulty !== null) {
+          summary.difficultyTaggedLogs += 1;
+          if (breakdown.multiplier === 1.3) summary.fullBonusLogs += 1;
+        }
+
         if (log.xp !== xp || log.xpBreakdown?.version !== breakdown.version) {
-          summary.updatedLogs++;
+          summary.updatedLogs += 1;
           if (!dryRun) {
             bulkOps.push({
               updateOne: {
@@ -183,6 +211,10 @@ export async function recalculateAllUsersXpV2(
                 update: { $set: { xp, xpBreakdown: breakdown } },
               },
             });
+            if (bulkOps.length >= 500) {
+              await Log.bulkWrite(bulkOps, { ordered: false });
+              bulkOps.length = 0;
+            }
           }
         }
 
@@ -207,11 +239,41 @@ export async function recalculateAllUsersXpV2(
           difficulty !== null &&
           breakdown.timeCreditedMin > 0
         ) {
-          consumed[category].push(
-            logAtMs,
-            breakdown.timeCreditedMin / 60,
-            difficulty
-          );
+          const historyHours = roughLogMinutes({
+            type: log.type,
+            time: log.time,
+            chars: log.chars,
+            pages: log.pages,
+            episodes: log.episodes,
+          }) / 60;
+          if (historyHours > 0) {
+            consumed[category].push(logAtMs, historyHours, difficulty);
+          }
+        }
+      }
+
+      if (user.stats) {
+        const nextLevels = [
+          calculateLevel(userXp),
+          calculateLevel(readingXp),
+          calculateLevel(listeningXp),
+        ];
+        if (
+          user.stats.userXp !== userXp ||
+          user.stats.readingXp !== readingXp ||
+          user.stats.listeningXp !== listeningXp ||
+          user.stats.userLevel !== nextLevels[0] ||
+          user.stats.readingLevel !== nextLevels[1] ||
+          user.stats.listeningLevel !== nextLevels[2]
+        ) {
+          summary.usersWithStatsChanges += 1;
+        }
+        if (
+          user.stats.userLevel !== nextLevels[0] ||
+          user.stats.readingLevel !== nextLevels[1] ||
+          user.stats.listeningLevel !== nextLevels[2]
+        ) {
+          summary.usersWithLevelChanges += 1;
         }
       }
 
@@ -232,13 +294,18 @@ export async function recalculateAllUsersXpV2(
         }
       }
 
-      summary.processedUsers++;
+      summary.processedUsers += 1;
     } catch (error) {
       summary.errors.push(
         `Error processing user ${user.username}: ${(error as Error).message}`
       );
     }
   }
+
+  summary.xpDelta = summary.recalculatedXp - summary.previousXp;
+  summary.fullBonusPercent = summary.difficultyTaggedLogs
+    ? Math.round((summary.fullBonusLogs / summary.difficultyTaggedLogs) * 10000) / 100
+    : 0;
 
   return summary;
 }

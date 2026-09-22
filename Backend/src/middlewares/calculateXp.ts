@@ -15,6 +15,7 @@ import {
   getUserReadingSpeedCph,
   normalizeJitenDifficulty,
   LogCategory,
+  XP_FORMULA_VERSION,
 } from '../services/xp.js';
 
 function isImportLogs(body: any): body is IImportLogs {
@@ -159,9 +160,18 @@ export async function calculateXp(
     const personalSpeedCph = await makeSpeedResolver(owner?._id)(type);
 
     const mediaId = body.mediaId ?? existing?.mediaId;
-    let difficulty = mediaId
-      ? ((await difficultiesByContentId([mediaId])).get(mediaId) ?? null)
-      : null;
+    const existingUsesV3 =
+      existing?.xpBreakdown?.version === XP_FORMULA_VERSION;
+    const sameMedia = Boolean(
+      existing && (mediaId ?? null) === (existing.mediaId ?? null)
+    );
+    let difficulty: number | null = null;
+    if (existingUsesV3 && sameMedia) {
+      difficulty = existing?.xpBreakdown?.difficulty ?? null;
+    } else if (mediaId) {
+      difficulty =
+        (await difficultiesByContentId([mediaId])).get(mediaId) ?? null;
+    }
 
     // On a fresh log whose media has no cached Jiten difficulty yet, resolve it
     // live so the bonus applies immediately instead of only after the media
@@ -177,7 +187,12 @@ export async function calculateXp(
 
     // Edits reuse the comfort snapshotted at creation; fresh logs compute it
     // from the owner's level + recently consumed difficulty.
-    const storedComfort = existing?.xpBreakdown?.comfortAt ?? null;
+    const sameCategory =
+      existing && getLogCategory(existing.type) === getLogCategory(type);
+    const storedComfort =
+      existingUsesV3 && sameCategory
+        ? (existing?.xpBreakdown?.comfortAt ?? null)
+        : null;
     const consumedDifficulty =
       storedComfort === null
         ? await makeConsumedDifficultyResolver(owner?._id)(
@@ -197,7 +212,9 @@ export async function calculateXp(
         personalSpeedCph,
         difficulty,
         categoryLevel:
-          existing?.xpBreakdown?.categoryLevelAt ??
+          (existingUsesV3 && sameCategory
+            ? existing?.xpBreakdown?.categoryLevelAt
+            : undefined) ??
           categoryLevelFor(type, owner),
         consumedDifficulty,
         comfortAt: storedComfort,

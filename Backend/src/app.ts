@@ -27,6 +27,8 @@ import changelogRoutes from './routes/changelog.routes.js';
 import textSessionRoutes from './routes/textSession.routes.js';
 import apiKeyRoutes from './routes/apiKey.routes.js';
 import achievementRoutes from './routes/achievement.routes.js';
+import activityRoutes from './routes/activity.routes.js';
+import mediaRecommendationRoutes from './routes/mediaRecommendation.routes.js';
 import swaggerRoutes from './swagger.js';
 import { metaTagsMiddleware } from './middlewares/metaTags.js';
 
@@ -80,6 +82,8 @@ app.use('/api/tags', tagRoutes);
 app.use('/api/changelogs', changelogRoutes);
 app.use('/api/api-keys', apiKeyRoutes);
 app.use('/api/achievements', achievementRoutes);
+app.use('/api/activities', activityRoutes);
+app.use('/api/media-recommendations', mediaRecommendationRoutes);
 app.use('/api/docs', swaggerRoutes);
 app.use('/og-image', ogImageRoutes);
 app.use('/api/og-image', ogImageRoutes);

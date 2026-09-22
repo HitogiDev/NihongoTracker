@@ -1,3 +1,4 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -118,7 +119,7 @@ function ListsDiscoverScreen() {
             </button>
           </form>
 
-          <select
+          <DropdownSelect
             className="select"
             value={sort}
             onChange={(e) => {
@@ -129,9 +130,9 @@ function ListsDiscoverScreen() {
             <option value="popular">{t('lists.sort.popular')}</option>
             <option value="recent">{t('lists.sort.recent')}</option>
             <option value="updated">{t('lists.sort.updated')}</option>
-          </select>
+          </DropdownSelect>
 
-          <select
+          <DropdownSelect
             className="select"
             value={mediaType}
             onChange={(e) => {
@@ -144,7 +145,7 @@ function ListsDiscoverScreen() {
                 {t(option.labelKey)}
               </option>
             ))}
-          </select>
+          </DropdownSelect>
         </div>
 
         {isLoading ? (

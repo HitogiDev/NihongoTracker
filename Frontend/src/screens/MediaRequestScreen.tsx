@@ -1,3 +1,4 @@
+import DropdownSelect from '../components/ui/DropdownSelect';
 import { useState } from 'react';
 import Field from '../components/ui/Field';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -168,7 +169,7 @@ export default function MediaRequestScreen() {
                   />
                 </Field>
                 <Field label={t('mediaRequest.mediaType')}>
-                  <select
+                  <DropdownSelect
                     className="select w-full"
                     value={form.type}
                     onChange={(e) =>
@@ -183,7 +184,7 @@ export default function MediaRequestScreen() {
                         {t(mediaType.labelKey)}
                       </option>
                     ))}
-                  </select>
+                  </DropdownSelect>
                 </Field>
                 <Field label={t('mediaRequest.romajiTitle')}>
                   <input

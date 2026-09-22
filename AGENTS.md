@@ -95,6 +95,10 @@ Throw `customError(message, statusCode, kind?)` from controllers/services and pa
 - Required `episodes`, `pages`, `time`, and `chars` fields depend on the log type through schema functions. Check the model before changing validation.
 - Production indexes are managed explicitly with `npm run migrate:indexes:prod`; schema indexes are automatically applied only in development.
 
+XP formula v3 uses 135 base XP per credited hour. Difficulty is normalized from Jiten's 0-5 scale. Effective comfort is the category-level estimate corrected by at most ±0.25 Jiten using the hours-weighted median from the last 90 days after 10 tagged hours. The challenge bonus grows from 0% at comfort to 30% at comfort +0.5 Jiten, capped at Jiten 5. Treat this as relative challenge, not measured comprehension. Keep log creation, imports, AniList sync, preview, migration, and calculator on `services/xp.ts`.
+
+Club goals and opt-in challenges share the unified objective model in `models/clubChallenge.model.ts` and `services/clubObjectives.service.ts`. Use `mode: collective` for club-wide progress and `mode: individual` for participant-based progress. Legacy embedded `clubGoals` are mirrored lazily by `syncLegacyClubObjectives` so existing clubs remain compatible.
+
 ### Achievements
 
 `services/achievements/achievementEngine.ts` dispatches by `condition.type`; implementations live in `services/achievements/conditions/*.condition.ts`. When adding a condition type, add its evaluator, its engine switch case, and a test under `Backend/src/__tests__/achievements/conditions/`.
@@ -178,6 +182,7 @@ Do not use removed v4 classes: `input-bordered`, `select-bordered`, `textarea-bo
 - The navbar is absolute and 80 px high. Use `pt-20`/`HEADER_OFFSET` when a child container supplies normal vertical padding, and `pt-28`/`HEADER_OFFSET_CONTENT` when content begins directly below the offset.
 - Use daisyUI semantic colors. Media colors live only in `constants/mediaColors.ts`; chart colors come from `useThemeColors()`.
 - Use `lucide-react` icons sized by Tailwind classes, not the numeric `size` prop.
+- Date fields use `react-day-picker` with the `rdp-themed` Create Log appearance. Reuse `components/ui/DatePickerInput.tsx`; do not add native `<input type="date">` controls.
 - Never interpolate Tailwind class fragments. Map variants to complete literal class strings so Tailwind v4 can detect them.
 
 ## Maintaining this guidance

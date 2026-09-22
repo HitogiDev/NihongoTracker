@@ -16,6 +16,27 @@
   "activity": {
     "title": "Immersion Activity"
   },
+  "social": {
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "friends": "Friends",
+    "followingLabel": "Following",
+    "recommendations": "Recommendations",
+    "followers": "followers",
+    "following": "following",
+    "mutual": "Mutual",
+    "followersTitle": "{{username}}'s followers",
+    "followingTitle": "People {{username}} follows",
+    "peopleCount_one": "{{count}} person",
+    "peopleCount_other": "{{count}} people",
+    "noFollowers": "No followers yet.",
+    "noFollowing": "Not following anyone yet.",
+    "loadError": "Could not load this list.",
+    "retry": "Retry",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page {{page}} of {{totalPages}}"
+  },
   "categories": {
     "all": "All Categories",
     "streaks": "Streaks",
@@ -43,13 +64,13 @@
     "types": {
       "anime": "Anime",
       "manga": "Manga",
-      "light-novel": "Light Novels",
-      "vn": "Visual Novels",
-      "game": "Games",
-      "video": "Videos",
-      "movie": "Movies",
-      "book": "Books",
-      "tvShow": "TV Shows"
+      "light-novel": "Light Novel",
+      "vn": "Visual Novel",
+      "game": "Video Game",
+      "video": "Video",
+      "movie": "Movie",
+      "book": "Book",
+      "tvShow": "TV Show"
     },
     "noteTitle": "Note",
     "cancel": "Cancel",
@@ -84,6 +105,12 @@
     "shareStats": "Share stats",
     "shareStatsTitle": "Share stats as an image",
     "avatarAlt": "{{username}} avatar"
+  },
+  "privateProfile": {
+    "title": "This profile is private",
+    "description": "{{username}} has chosen to keep their profile private.",
+    "hint": "You cannot view this profile's activity or details.",
+    "backHome": "Back to home"
   },
   "loadMore": "Load More",
   "loadMoreLogs": "Load More Logs",

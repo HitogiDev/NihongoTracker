@@ -1,8 +1,16 @@
+import DropdownSelect from '../ui/DropdownSelect';
 import { useState } from 'react';
 import Field from '../ui/Field';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { X, ArrowLeft, ArrowRight, Check, Calendar } from 'lucide-react';
+import {
+  X,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Calendar,
+  Trash2,
+} from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import {
   createMediaVotingFn,
@@ -81,7 +89,7 @@ export default function CreateVotingWizard({
 
   // Helper function to format date for display
   const formatDateForDisplay = (date: Date | undefined) => {
-    if (!date) return 'Select date';
+    if (!date) return t('wizard.selectDate');
     return date.toLocaleDateString(getLocale(), {
       year: 'numeric',
       month: 'short',
@@ -159,8 +167,8 @@ export default function CreateVotingWizard({
     onSuccess: () => {
       const message =
         votingData.candidateSubmissionType === 'member_suggestions'
-          ? 'Voting created! Members can now submit suggestions.'
-          : 'Voting created successfully!';
+          ? t('toast.votingCreatedWithSuggestions')
+          : t('toast.votingCreated');
       toast.success(message);
       invalidateVotingQueries();
       queryClient.invalidateQueries({ queryKey: ['club', club._id] });
@@ -169,7 +177,7 @@ export default function CreateVotingWizard({
     },
     onError: (error: unknown) => {
       const message =
-        error instanceof Error ? error.message : 'Failed to launch voting';
+        error instanceof Error ? error.message : t('toast.votingLaunchFailed');
       toast.error(message);
     },
   });
@@ -188,9 +196,16 @@ export default function CreateVotingWizard({
       votingEndDate: undefined,
       consumptionStartDate: undefined,
       consumptionEndDate: undefined,
+      testingMode: false,
     });
     setCandidates([]);
     resetTempCandidate();
+  };
+
+  const handleClose = () => {
+    if (finalizeVotingMutation.isPending) return;
+    resetWizard();
+    onClose();
   };
 
   const resetTempCandidate = () => {
@@ -245,10 +260,19 @@ export default function CreateVotingWizard({
       return;
     }
 
+    if (candidates.some((candidate) => candidate.mediaId === tempCandidate.mediaId)) {
+      toast.error(t('toast.candidateAlreadyAdded'));
+      return;
+    }
+
     const newCandidate = { ...tempCandidate };
     setCandidates((prev) => [...prev, newCandidate]);
     resetTempCandidate();
     toast.success(t('toast.candidateAdded'));
+  };
+
+  const handleRemoveCandidate = (index: number) => {
+    setCandidates((prev) => prev.filter((_, candidateIndex) => candidateIndex !== index));
   };
 
   const validateStep1 = () => {
@@ -262,6 +286,11 @@ export default function CreateVotingWizard({
 
     if (!title.trim()) {
       toast.error(t('toast.votingTitleRequired'));
+      return false;
+    }
+
+    if (votingData.mediaType === 'custom' && !votingData.customMediaType.trim()) {
+      toast.error(t('toast.customMediaTypeRequired'));
       return false;
     }
 
@@ -318,22 +347,52 @@ export default function CreateVotingWizard({
     setCurrentStep(2);
   };
 
+  const handleStep2Submit = () => {
+    if (
+      votingData.candidateSubmissionType === 'manual' &&
+      candidates.length === 0
+    ) {
+      toast.error(t('toast.candidateRequired'));
+      return;
+    }
+    setCurrentStep(3);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="modal modal-bottom sm:modal-middle modal-open">
-      <div className="modal-box max-w-4xl">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-xl">
-            Create Voting - Step {currentStep} of 3
-          </h3>
-          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
+      <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-bold text-xl">{t('wizard.title')}</h3>
+              <span className="badge badge-primary badge-sm">
+                {t('wizard.stepCount', { current: currentStep, total: 3 })}
+              </span>
+            </div>
+            <p className="text-sm text-base-content/60 mt-1">
+              {t(
+                currentStep === 1
+                  ? 'wizard.setupHint'
+                  : currentStep === 2
+                    ? 'wizard.candidatesHint'
+                    : 'wizard.confirmHint'
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle shrink-0"
+            onClick={handleClose}
+            aria-label={t('common.close')}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Progress Steps */}
-        <div className="steps w-full mb-8">
+        <ul className="steps steps-vertical sm:steps-horizontal w-full mb-8">
           <div className={`step ${currentStep >= 1 ? 'step-primary' : ''}`}>
             {t('wizard.stepSetup')}
           </div>
@@ -343,7 +402,7 @@ export default function CreateVotingWizard({
           <div className={`step ${currentStep >= 3 ? 'step-primary' : ''}`}>
             {t('wizard.stepConfirm')}
           </div>
-        </div>
+        </ul>
 
         {/* Step 1: Basic Information */}
         {currentStep === 1 && (
@@ -404,7 +463,7 @@ export default function CreateVotingWizard({
               </Field>
 
               <Field label={t('editVoting.mediaTypeRequired')}>
-                <select
+                <DropdownSelect
                   value={votingData.mediaType}
                   onChange={(e) =>
                     setVotingData((prev) => ({
@@ -419,7 +478,7 @@ export default function CreateVotingWizard({
                       {tKey(type.labelKey)}
                     </option>
                   ))}
-                </select>
+                </DropdownSelect>
               </Field>
 
               {votingData.mediaType === 'custom' && (
@@ -852,10 +911,7 @@ export default function CreateVotingWizard({
           votingData.candidateSubmissionType === 'manual' && (
             <div className="space-y-6">
               <div className="alert alert-info">
-                <div className="text-sm">
-                  Add candidates for the voting. You can search for{' '}
-                  {votingData.mediaType} from AniList or add them manually.
-                </div>
+                <div className="text-sm">{t('wizard.manualCandidatesNote')}</div>
               </div>
 
               {/* Add Candidate Form */}
@@ -870,7 +926,13 @@ export default function CreateVotingWizard({
                       <div className="relative">
                         <input
                           type="text"
-                          placeholder={`Search for ${votingData.mediaType}...`}
+                          placeholder={t('wizard.searchPlaceholder', {
+                            mediaType: tKey(
+                              MEDIA_TYPES.find(
+                                (type) => type.value === votingData.mediaType
+                              )?.labelKey ?? 'wizard.mediaTypes.custom'
+                            ),
+                          })}
                           value={searchQuery}
                           onChange={(e) => {
                             setSearchQuery(e.target.value);
@@ -890,10 +952,11 @@ export default function CreateVotingWizard({
                           <div className="card surface max-h-60 overflow-y-auto mt-2">
                             <div className="card-body p-2">
                               {searchResults.map((result) => (
-                                <div
+                                <button
+                                  type="button"
                                   key={result.contentId}
                                   onClick={() => handleSelectResult(result)}
-                                  className="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer rounded"
+                                  className="flex items-center gap-3 p-3 hover:bg-base-200 cursor-pointer rounded text-left w-full"
                                 >
                                   <img
                                     src={result.contentImage || ''}
@@ -913,14 +976,14 @@ export default function CreateVotingWizard({
                                       {result.type}
                                     </div>
                                   </div>
-                                </div>
+                                </button>
                               ))}
                             </div>
                           </div>
                         )}
                     </Field>
 
-                    <div className="divider">OR</div>
+                    <div className="divider">{t('wizard.or')}</div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field label={t('common.titleRequired')}>
@@ -987,14 +1050,19 @@ export default function CreateVotingWizard({
               {/* Current Candidates */}
               {candidates.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-lg mb-4">
-                    Candidates ({candidates.length})
-                  </h4>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <h4 className="font-semibold text-lg">
+                      {t('wizard.candidateList')}
+                    </h4>
+                    <span className="badge badge-ghost">
+                      {t('wizard.candidateCount', { count: candidates.length })}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {candidates.map((candidate, index) => (
-                      <div key={index} className="card surface">
+                      <div key={candidate.mediaId} className="card surface">
                         <div className="card-body p-4">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-start gap-3">
                             {candidate.image && (
                               <img
                                 src={candidate.image}
@@ -1009,7 +1077,7 @@ export default function CreateVotingWizard({
                                 }`}
                               />
                             )}
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                               <h5 className="font-medium">{candidate.title}</h5>
                               {candidate.description && (
                                 <p className="text-sm text-base-content/60 line-clamp-2">
@@ -1017,6 +1085,15 @@ export default function CreateVotingWizard({
                                 </p>
                               )}
                             </div>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs btn-square text-error shrink-0"
+                              onClick={() => handleRemoveCandidate(index)}
+                              aria-label={t('wizard.removeCandidate')}
+                              title={t('wizard.removeCandidate')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1048,11 +1125,11 @@ export default function CreateVotingWizard({
                   <div className="stat-value text-lg">
                     {votingData.suggestionStartDate
                       ? votingData.suggestionStartDate.toLocaleDateString()
-                      : 'Not set'}{' '}
+                      : t('wizard.notSet')}{' '}
                     -{' '}
                     {votingData.suggestionEndDate
                       ? votingData.suggestionEndDate.toLocaleDateString()
-                      : 'Not set'}
+                      : t('wizard.notSet')}
                   </div>
                   <div className="stat-desc">
                     {t('wizard.suggestionPeriodHint')}
@@ -1068,10 +1145,7 @@ export default function CreateVotingWizard({
             <div className="alert alert-success">
               <div>
                 <h4 className="font-medium">{t('wizard.readyTitle')}</h4>
-                <p className="text-sm mt-1">
-                  Review the information below and click "Launch Voting" to make
-                  it live.
-                </p>
+                <p className="text-sm mt-1">{t('wizard.confirmNote')}</p>
               </div>
             </div>
 
@@ -1119,11 +1193,11 @@ export default function CreateVotingWizard({
                     </span>{' '}
                     {votingData.votingStartDate
                       ? votingData.votingStartDate.toLocaleDateString()
-                      : 'Not set'}{' '}
+                      : t('wizard.notSet')}{' '}
                     -{' '}
                     {votingData.votingEndDate
                       ? votingData.votingEndDate.toLocaleDateString()
-                      : 'Not set'}
+                      : t('wizard.notSet')}
                   </div>
                   <div>
                     <span className="font-medium">
@@ -1131,18 +1205,18 @@ export default function CreateVotingWizard({
                     </span>{' '}
                     {votingData.consumptionStartDate
                       ? votingData.consumptionStartDate.toLocaleDateString()
-                      : 'Not set'}{' '}
+                      : t('wizard.notSet')}{' '}
                     -{' '}
                     {votingData.consumptionEndDate
                       ? votingData.consumptionEndDate.toLocaleDateString()
-                      : 'Not set'}
+                      : t('wizard.notSet')}
                   </div>
                   {votingData.candidateSubmissionType === 'manual' && (
                     <div>
                       <span className="font-medium">
                         {t('wizard.summaryCandidateList')}
                       </span>{' '}
-                      {candidates.length} added
+                      {t('wizard.candidateCount', { count: candidates.length })}
                     </div>
                   )}
                 </div>
@@ -1165,7 +1239,7 @@ export default function CreateVotingWizard({
           )}
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="btn btn-outline"
             disabled={finalizeVotingMutation.isPending}
           >
@@ -1181,8 +1255,12 @@ export default function CreateVotingWizard({
 
           {currentStep === 2 && (
             <button
-              onClick={() => setCurrentStep(3)}
+              onClick={handleStep2Submit}
               className="btn btn-primary"
+              disabled={
+                votingData.candidateSubmissionType === 'manual' &&
+                candidates.length === 0
+              }
             >
               {t('wizard.next')}
               <ArrowRight className="w-4 h-4" />
@@ -1196,7 +1274,7 @@ export default function CreateVotingWizard({
               className="btn btn-primary"
             >
               {finalizeVotingMutation.isPending ? (
-                'Launching...'
+                t('wizard.launching')
               ) : (
                 <>
                   <Check className="w-4 h-4" />
@@ -1207,7 +1285,7 @@ export default function CreateVotingWizard({
           )}
         </div>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
+      <div className="modal-backdrop" onClick={handleClose}></div>
     </div>
   );
 }

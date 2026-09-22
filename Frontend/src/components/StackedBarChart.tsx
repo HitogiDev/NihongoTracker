@@ -16,6 +16,7 @@ import { MEDIA_TYPE_COLORS } from '../constants/mediaColors';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useTimezone } from '../hooks/useTimezone';
 import { convertToUserTimezone } from '../utils/timezone';
+import { getLogTypeLabelKey } from '../utils/logTypes';
 
 ChartJS.register(
   CategoryScale,
@@ -216,13 +217,10 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
         return aggregated.minutes / 60;
       });
 
+      const labelKey = getLogTypeLabelKey(stat.type);
+
       return {
-        label:
-          stat.type === 'vn'
-            ? 'Visual Novel'
-            : stat.type === 'game'
-              ? 'Video Game'
-              : stat.type.charAt(0).toUpperCase() + stat.type.slice(1),
+        label: labelKey ? tCommon(labelKey) : stat.type,
         data,
         backgroundColor: typeColors[stat.type] || typeColors.other,
       };
@@ -421,14 +419,13 @@ const StackedBarChart: React.FC<StackedBarChartProps> = ({
     );
   }
 
+  const selectedTypeLabelKey = getLogTypeLabelKey(selectedType);
   const typeLabel =
     selectedType === 'all'
       ? tCommon('allMediaTypes')
-      : selectedType === 'vn'
-        ? 'Visual Novel'
-        : selectedType === 'game'
-          ? 'Video Game'
-          : selectedType.charAt(0).toUpperCase() + selectedType.slice(1);
+      : selectedTypeLabelKey
+        ? tCommon(selectedTypeLabelKey)
+        : selectedType;
 
   const timeframeLabel =
     timeframe === 'today'

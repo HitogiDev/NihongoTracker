@@ -1,5 +1,7 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { useState } from 'react';
 import Field from './ui/Field';
+import DatePickerInput from './ui/DatePickerInput';
 import { useTranslation } from 'react-i18next';
 import type { ParseKeys } from 'i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -368,7 +370,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
             <div className="card surface-muted">
               <div className="card-body p-4">
                 <Field label={t('modal.goalDuration')} className="mb-4">
-                  <select
+                  <DropdownSelect
                     className="select w-full"
                     value={goalDuration}
                     onChange={(e) => {
@@ -378,12 +380,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                   >
                     <option value="daily">{t('modal.dailyGoal')}</option>
                     <option value="long-term">{t('modal.longTermGoal')}</option>
-                  </select>
+                  </DropdownSelect>
                 </Field>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Field label={t('modal.goalType')}>
-                    <select
+                    <DropdownSelect
                       className="select w-full"
                       value={
                         goalDuration === 'daily'
@@ -410,7 +412,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                           {t(config.labelKey as ParseKeys<'goals'>)}
                         </option>
                       ))}
-                    </select>
+                    </DropdownSelect>
                   </Field>
                   <Field
                     label={
@@ -464,7 +466,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
 
                   {goalDuration === 'long-term' && (
                     <Field label={t('modal.displayProgress')}>
-                      <select
+                      <DropdownSelect
                         className="select w-full"
                         value={newLongTermGoal.displayTimeframe}
                         onChange={(e) => {
@@ -485,7 +487,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                         <option value="monthly">
                           {t('modal.monthlyProgress')}
                         </option>
-                      </select>
+                      </DropdownSelect>
                     </Field>
                   )}
                 </div>
@@ -493,9 +495,8 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                 {goalDuration === 'long-term' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <Field label={t('modal.startDate')}>
-                      <input
-                        type="date"
-                        className={`input w-full ${errors.startDate ? 'input-error' : ''}`}
+                      <DatePickerInput
+                        className={errors.startDate ? 'input-error' : ''}
                         value={
                           typeof newLongTermGoal.startDate === 'string'
                             ? newLongTermGoal.startDate
@@ -503,10 +504,10 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                 .toISOString()
                                 .split('T')[0]
                         }
-                        onChange={(e) => {
+                        onChange={(startDate) => {
                           setNewLongTermGoal({
                             ...newLongTermGoal,
-                            startDate: e.target.value,
+                            startDate,
                           });
                           setErrors({});
                         }}
@@ -519,9 +520,8 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     </Field>
 
                     <Field label={t('modal.targetDate')}>
-                      <input
-                        type="date"
-                        className={`input w-full ${errors.targetDate ? 'input-error' : ''}`}
+                      <DatePickerInput
+                        className={errors.targetDate ? 'input-error' : ''}
                         value={
                           typeof newLongTermGoal.targetDate === 'string'
                             ? newLongTermGoal.targetDate
@@ -529,10 +529,10 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                 .toISOString()
                                 .split('T')[0]
                         }
-                        onChange={(e) => {
+                        onChange={(targetDate) => {
                           setNewLongTermGoal({
                             ...newLongTermGoal,
-                            targetDate: e.target.value,
+                            targetDate,
                           });
                           setErrors({});
                         }}
@@ -614,7 +614,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       {isEditing ? (
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                           <div>
-                            <select
+                            <DropdownSelect
                               className="select select-sm w-full"
                               value={editGoal.type || goal.type}
                               onChange={(e) => {
@@ -632,7 +632,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                   </option>
                                 )
                               )}
-                            </select>
+                            </DropdownSelect>
                           </div>
                           <div>
                             <input

@@ -30,6 +30,11 @@ const swaggerDocument = {
     { name: 'Tags', description: 'User tag management' },
     { name: 'Changelogs', description: 'Application changelogs' },
     { name: 'Notifications', description: 'User notifications' },
+    { name: 'Activity', description: 'Social activity, reactions & comments' },
+    {
+      name: 'Media Social',
+      description: 'Media community data and recommendations',
+    },
     { name: 'Text Sessions', description: 'TextHooker session management' },
     { name: 'Patreon', description: 'Patreon integration & badges' },
     {
@@ -81,6 +86,7 @@ const swaggerDocument = {
           stats: { $ref: '#/components/schemas/UserStats' },
           settings: { $ref: '#/components/schemas/UserSettings' },
           titles: { type: 'array', items: { type: 'string' } },
+          social: { $ref: '#/components/schemas/SocialSummary' },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
         },
@@ -120,6 +126,109 @@ const swaggerDocument = {
             type: 'array',
             items: { type: 'string' },
           },
+          socialPrivacy: {
+            $ref: '#/components/schemas/SocialPrivacy',
+          },
+        },
+      },
+      SocialPrivacy: {
+        type: 'object',
+        required: [
+          'profile',
+          'immersionActivity',
+          'statistics',
+        ],
+        properties: {
+          profile: { $ref: '#/components/schemas/SocialVisibility' },
+          immersionActivity: {
+            $ref: '#/components/schemas/SocialVisibility',
+          },
+          statistics: { $ref: '#/components/schemas/SocialVisibility' },
+        },
+      },
+      SocialVisibility: {
+        type: 'string',
+        enum: ['public', 'followers', 'private'],
+      },
+      SocialSummary: {
+        type: 'object',
+        properties: {
+          followerCount: { type: 'integer', minimum: 0 },
+          followingCount: { type: 'integer', minimum: 0 },
+          isFollowing: { type: 'boolean' },
+          isFollowedBy: { type: 'boolean' },
+          mutualFollow: { type: 'boolean' },
+        },
+      },
+      ConnectionUser: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          username: { type: 'string' },
+          avatar: { type: 'string' },
+          followedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ActivityActor: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          username: { type: 'string' },
+          avatar: { type: 'string' },
+        },
+      },
+      SocialActivity: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          actor: { $ref: '#/components/schemas/ActivityActor' },
+          type: { type: 'string' },
+          targetType: { type: 'string' },
+          targetId: { type: 'string' },
+          club: { type: 'string', nullable: true },
+          metadata: { type: 'object', additionalProperties: true },
+          visibility: { $ref: '#/components/schemas/SocialVisibility' },
+          importance: { type: 'string', enum: ['normal', 'important'] },
+          reactionCounts: {
+            type: 'object',
+            properties: {
+              like: { type: 'integer', minimum: 0 },
+            },
+          },
+          currentReaction: {
+            type: 'string',
+            enum: ['like'],
+            nullable: true,
+          },
+          commentCount: { type: 'integer', minimum: 0 },
+          occurredAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ActivityComment: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          activity: { type: 'string' },
+          user: { $ref: '#/components/schemas/ActivityActor' },
+          content: { type: 'string', maxLength: 1000 },
+          editedAt: { type: 'string', format: 'date-time', nullable: true },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      MediaRecommendation: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          sender: { $ref: '#/components/schemas/ActivityActor' },
+          recipient: { $ref: '#/components/schemas/ActivityActor' },
+          mediaId: { type: 'string' },
+          mediaType: { type: 'string' },
+          message: { type: 'string', maxLength: 280 },
+          status: {
+            type: 'string',
+            enum: ['pending', 'viewed', 'dismissed', 'accepted'],
+          },
+          createdAt: { type: 'string', format: 'date-time' },
         },
       },
       Log: {
@@ -507,6 +616,56 @@ const swaggerDocument = {
     },
   },
   paths: {
+    '/logs/calculate-xp': {
+      post: {
+        tags: ['Logs'],
+        summary: 'Calculate an XP v3 scenario without saving a log',
+        description:
+          'Supports public simulations and personal calculations using the authenticated user context.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['mode', 'contextMode', 'type'],
+                properties: {
+                  mode: { type: 'string', enum: ['direct', 'inverse'] },
+                  contextMode: { type: 'string', enum: ['personal', 'simulation'] },
+                  type: { type: 'string' },
+                  mediaId: { type: 'string' },
+                  difficultyJiten: { type: 'number', minimum: 0, maximum: 5, nullable: true },
+                  input: {
+                    type: 'object',
+                    properties: {
+                      time: { type: 'number', minimum: 0 },
+                      chars: { type: 'number', minimum: 0 },
+                      pages: { type: 'number', minimum: 0 },
+                      episodes: { type: 'number', minimum: 0 },
+                    },
+                  },
+                  targetXp: { type: 'number', exclusiveMinimum: 0 },
+                  unit: { type: 'string', enum: ['time', 'chars', 'pages', 'episodes'] },
+                  simulation: {
+                    type: 'object',
+                    properties: {
+                      categoryLevel: { type: 'number', minimum: 0 },
+                      consumedDifficultyJiten: { type: 'number', minimum: 0, maximum: 5, nullable: true },
+                      personalSpeedCph: { type: 'number', minimum: 0, nullable: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'XP, breakdown, effective context and optional inverse quantity' },
+          400: { description: 'Invalid scenario' },
+          401: { description: 'Personal context requires authentication' },
+        },
+      },
+    },
     // ──────────────── Auth ────────────────
     '/auth/register': {
       post: {
@@ -896,6 +1055,426 @@ const swaggerDocument = {
         },
       },
     },
+    '/users/{username}/followers': {
+      get: {
+        tags: ['Users'],
+        summary: 'List a user\'s followers',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: {
+          200: { description: 'Paginated followers' },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/{username}/following': {
+      get: {
+        tags: ['Users'],
+        summary: 'List users followed by a user',
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: {
+          200: { description: 'Paginated following list' },
+          404: { description: 'User not found' },
+        },
+      },
+    },
+    '/users/{username}/relationship': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get the current user\'s relationship with a profile',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 200: { description: 'Relationship status and counts' } },
+      },
+    },
+    '/users/{username}/follow': {
+      post: {
+        tags: ['Users'],
+        summary: 'Follow a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: {
+          201: { description: 'Follow created' },
+          200: { description: 'Already following' },
+          400: { description: 'Cannot follow yourself' },
+        },
+      },
+      delete: {
+        tags: ['Users'],
+        summary: 'Unfollow a user',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'username',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 200: { description: 'Relationship removed or absent' } },
+      },
+    },
+    '/media/{mediaType}/{contentId}/community': {
+      get: {
+        tags: ['Media Social'],
+        summary: 'Get privacy-aware community data for a media title',
+        parameters: [
+          {
+            name: 'mediaType',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'contentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'relation',
+            in: 'query',
+            required: false,
+            schema: {
+              type: 'string',
+              enum: ['followers', 'friends', 'following'],
+            },
+            description:
+              'Connection group whose privacy-visible media progress should be returned',
+          },
+        ],
+        responses: { 200: { description: 'Community data and activities' } },
+      },
+    },
+    '/media-recommendations': {
+      get: {
+        tags: ['Media Social'],
+        summary: 'List received or sent media recommendations',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'direction',
+            in: 'query',
+            schema: { type: 'string', enum: ['received', 'sent'] },
+          },
+        ],
+        responses: { 200: { description: 'Paginated recommendations' } },
+      },
+      post: {
+        tags: ['Media Social'],
+        summary: 'Recommend media to a user who follows the sender',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['recipientUsername', 'mediaId', 'mediaType'],
+                properties: {
+                  recipientUsername: { type: 'string' },
+                  mediaId: { type: 'string' },
+                  mediaType: { type: 'string' },
+                  message: { type: 'string', maxLength: 280 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Recommendation sent' },
+          409: { description: 'Duplicate recommendation' },
+        },
+      },
+    },
+    '/media-recommendations/{recommendationId}/status': {
+      patch: {
+        tags: ['Media Social'],
+        summary: 'Update the status of a received recommendation',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'recommendationId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['status'],
+                properties: {
+                  status: {
+                    type: 'string',
+                    enum: ['viewed', 'dismissed', 'accepted'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Recommendation updated' } },
+      },
+    },
+    '/activities': {
+      get: {
+        tags: ['Activity'],
+        summary: 'Get the authenticated user\'s social activity feed',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'scope',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: ['following', 'clubs', 'global'],
+              default: 'following',
+            },
+          },
+          {
+            name: 'clubId',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'before',
+            in: 'query',
+            description: 'Opaque cursor returned by the previous page',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'A visibility-filtered activity page',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    activities: {
+                      type: 'array',
+                      items: { $ref: '#/components/schemas/SocialActivity' },
+                    },
+                    nextCursor: {
+                      type: 'string',
+                      nullable: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/activities/{activityId}/reaction': {
+      put: {
+        tags: ['Activity'],
+        summary: 'Add or change a reaction',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['type'],
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['like'],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Reaction saved' },
+          404: { description: 'Activity not found or not visible' },
+          429: { description: 'Social action rate limit exceeded' },
+        },
+      },
+      delete: {
+        tags: ['Activity'],
+        summary: 'Remove the authenticated user\'s reaction',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 204: { description: 'Reaction removed or absent' } },
+      },
+    },
+    '/activities/{activityId}/comments': {
+      get: {
+        tags: ['Activity'],
+        summary: 'List comments on a visible activity',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+        ],
+        responses: { 200: { description: 'Paginated comments' } },
+      },
+      post: {
+        tags: ['Activity'],
+        summary: 'Comment on a visible activity',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['content'],
+                properties: {
+                  content: { type: 'string', minLength: 1, maxLength: 1000 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: 'Comment created' },
+          429: { description: 'Social action rate limit exceeded' },
+        },
+      },
+    },
+    '/activities/{activityId}/comments/{commentId}': {
+      patch: {
+        tags: ['Activity'],
+        summary: 'Edit the authenticated user\'s comment',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'commentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['content'],
+                properties: {
+                  content: { type: 'string', minLength: 1, maxLength: 1000 },
+                },
+              },
+            },
+          },
+        },
+        responses: { 200: { description: 'Comment updated' } },
+      },
+      delete: {
+        tags: ['Activity'],
+        summary: 'Delete an owned comment, or moderate it as an administrator',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        parameters: [
+          {
+            name: 'activityId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+          {
+            name: 'commentId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+          },
+        ],
+        responses: { 204: { description: 'Comment deleted' } },
+      },
+    },
     '/users/{username}/logs': {
       get: {
         tags: ['Users'],
@@ -1270,6 +1849,33 @@ const swaggerDocument = {
         },
         responses: {
           200: { description: 'Settings updated' },
+        },
+      },
+    },
+    '/users/settings/social-privacy': {
+      patch: {
+        tags: ['Users'],
+        summary: 'Update social privacy settings',
+        security: [{ cookieAuth: [] }, { apiKeyAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['socialPrivacy'],
+                properties: {
+                  socialPrivacy: {
+                    $ref: '#/components/schemas/SocialPrivacy',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Privacy settings updated' },
+          400: { description: 'Invalid visibility or incomplete settings' },
         },
       },
     },

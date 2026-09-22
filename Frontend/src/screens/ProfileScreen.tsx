@@ -90,6 +90,9 @@ function ProfileScreen() {
   const limit = 10;
   const { user, username } = useOutletContext<OutletProfileContextType>();
   const { user: loggedUser } = useUserDataStore();
+  const canViewStatistics = user?.socialAccess?.statistics !== false;
+  const canViewImmersionActivity =
+    user?.socialAccess?.immersionActivity !== false;
   const { getCurrentTime, getDayBounds, formatDateOnly, formatDate } =
     useDateFormatting();
   const [showFullAbout, setShowFullAbout] = useState(false);
@@ -418,7 +421,7 @@ function ProfileScreen() {
     },
     initialPageParam: 1,
     staleTime: Infinity,
-    enabled: !!username,
+    enabled: Boolean(username && canViewImmersionActivity),
   });
 
   const displayedLogs = (() => {
@@ -610,7 +613,10 @@ function ProfileScreen() {
   // Left-column widgets keyed by id — rendered in the order/visibility the
   // owner configured in Settings → Profile (see resolveProfileLayout).
   const widgetNodes: Partial<Record<ProfileWidgetId, React.ReactNode>> = {
-    profileStats: username ? <ProfileStatsBand username={username} /> : null,
+    profileStats:
+      username && canViewStatistics ? (
+        <ProfileStatsBand username={username} />
+      ) : null,
     about: (
       <div className="card w-full surface">
         <div className="card-body w-full p-4 sm:p-6">
@@ -675,7 +681,7 @@ function ProfileScreen() {
         blurAdult={loggedUser?.settings?.blurAdultContent ?? false}
       />
     ) : null,
-    progressStats: (
+    progressStats: canViewStatistics ? (
       <div className="card w-full surface">
         <div className="card-body w-full p-4 sm:p-6">
           <h2 className="card-title mb-4">{t('progress.title')}</h2>
@@ -737,8 +743,8 @@ function ProfileScreen() {
           </div>
         </div>
       </div>
-    ),
-    immersionActivity: (
+    ) : null,
+    immersionActivity: canViewImmersionActivity ? (
       <div className="card w-full surface overflow-visible">
         <div className="card-body w-full p-4 sm:p-6 overflow-visible">
           <h2 className="card-title mb-4">{t('activity.title')}</h2>
@@ -750,7 +756,7 @@ function ProfileScreen() {
           )}
         </div>
       </div>
-    ),
+    ) : null,
     immersionGoals: username ? <ImmersionGoals username={username} /> : null,
     achievements: username ? (
       <AchievementShowcaseWidget username={username} />

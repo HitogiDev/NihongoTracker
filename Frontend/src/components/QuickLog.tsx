@@ -1,3 +1,4 @@
+import DropdownSelect from './ui/DropdownSelect';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import Field from './ui/Field';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +16,8 @@ import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import type { ValidationKey } from '../utils/validation';
 import { useValidationText } from '../hooks/useValidationText';
+import LogPrivacyToggle from './LogPrivacyToggle';
+import TagSelector from './TagSelector';
 
 interface QuickLogProps {
   open: boolean;
@@ -28,12 +31,15 @@ interface QuickLogProps {
 export interface QuickLogInitialValues {
   type?: ILog['type'];
   description?: string;
+  comment?: string;
+  tags?: string[];
   episodes?: number;
   volume?: number;
   chars?: number;
   pages?: number;
   hours?: number;
   minutes?: number;
+  private?: boolean;
 }
 
 const LAST_LOGGED_VOLUME_KEY_PREFIX = 'nt_last_logged_volume';
@@ -124,6 +130,8 @@ function QuickLog({
   );
   const [logType, setLogType] = useState<ILog['type'] | null>(null);
   const [logDescription, setLogDescription] = useState<string>('');
+  const [logComment, setLogComment] = useState<string>('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [episodes, setEpisodes] = useState<number>(0);
   const [loggedVolume, setLoggedVolume] = useState<number | undefined>(
     undefined
@@ -146,6 +154,7 @@ function QuickLog({
   const [customDuration, setCustomDuration] = useState<number | undefined>(
     undefined
   );
+  const [privateLog, setPrivateLog] = useState(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
   const lastSeedRef = useRef<string | null>(null);
   const pendingVolumeRef = useRef<{
@@ -328,6 +337,12 @@ function QuickLog({
     if (Object.prototype.hasOwnProperty.call(initialValues, 'description')) {
       setLogDescription(initialValues.description ?? '');
     }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'comment')) {
+      setLogComment(initialValues.comment ?? '');
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'tags')) {
+      setSelectedTags(initialValues.tags ?? []);
+    }
     if (Object.prototype.hasOwnProperty.call(initialValues, 'episodes')) {
       setEpisodes(initialValues.episodes ?? 0);
     }
@@ -345,6 +360,9 @@ function QuickLog({
     }
     if (Object.prototype.hasOwnProperty.call(initialValues, 'minutes')) {
       setMinutes(initialValues.minutes ?? 0);
+    }
+    if (Object.prototype.hasOwnProperty.call(initialValues, 'private')) {
+      setPrivateLog(initialValues.private ?? false);
     }
   }, [open, initialValues]);
 
@@ -424,6 +442,8 @@ function QuickLog({
   function resetForm() {
     setLogType(null);
     setLogDescription('');
+    setLogComment('');
+    setSelectedTags([]);
     setEpisodes(0);
     setLoggedVolume(undefined);
     setSeriesVolumes(undefined);
@@ -438,6 +458,7 @@ function QuickLog({
     setDefaultDuration(0);
     setCustomDuration(undefined);
     setShowTime(false);
+    setPrivateLog(false);
     lastSeedRef.current = null;
     onClose();
   }
@@ -456,9 +477,10 @@ function QuickLog({
 
   // Validate form before submission
   const isFormValid = () => {
+    const description = logComment.trim() || logDescription;
     const validation = validateQuickLogData({
       type: logType,
-      description: logDescription,
+      description,
       episodes,
       chars,
       pages,
@@ -491,7 +513,7 @@ function QuickLog({
 
     mutate({
       type: logType,
-      description: logDescription,
+      description: logComment.trim() || logDescription,
       episodes,
       volume:
         (logType === 'manga' || logType === 'light-novel') &&
@@ -504,8 +526,9 @@ function QuickLog({
       chars,
       pages,
       date: new Date(),
-      private: false,
+      private: privateLog,
       isAdult: false,
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
     } as ICreateLog);
   }
 
@@ -590,7 +613,7 @@ function QuickLog({
     <>
       {open && (
         <dialog className="modal modal-bottom sm:modal-middle modal-open">
-          <div className="modal-box w-full max-w-lg max-h-[90vh] overflow-y-auto p-0">
+          <div className="modal-box w-full max-w-lg max-h-[90vh] overflow-x-hidden overflow-y-auto p-0">
             <div className="card-body">
               <div className="flex justify-between items-center">
                 <h2 className="card-title">{t('quick.title')}</h2>
@@ -606,7 +629,7 @@ function QuickLog({
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex flex-col gap-4 flex-grow min-w-0">
                     <Field label={t('quick.selectType')}>
-                      <select
+                      <DropdownSelect
                         className="select w-full"
                         onChange={(e) =>
                           setLogType(e.target.value as ILog['type'])
@@ -621,7 +644,7 @@ function QuickLog({
                             {tCommon(labelKey)}
                           </option>
                         ))}
-                      </select>
+                      </DropdownSelect>
                     </Field>
 
                     {logType && (
@@ -664,6 +687,19 @@ function QuickLog({
                               ))}
                             </ul>
                           </div>
+                        </Field>
+
+                        <Field
+                          label={t('quick.comment')}
+                          aside={t('quick.markdownSupported')}
+                        >
+                          <textarea
+                            className="textarea w-full"
+                            rows={3}
+                            placeholder={t('quick.commentPlaceholder')}
+                            value={logComment}
+                            onChange={(e) => setLogComment(e.target.value)}
+                          ></textarea>
                         </Field>
 
                         {/* Media-specific input fields */}
@@ -984,6 +1020,21 @@ function QuickLog({
                       </ul>
                     </div>
                   </div>
+                )}
+
+                {logType && (
+                  <TagSelector
+                    selectedTags={selectedTags}
+                    onChange={setSelectedTags}
+                    label={t('quick.tags')}
+                  />
+                )}
+
+                {logType && (
+                  <LogPrivacyToggle
+                    checked={privateLog}
+                    onChange={setPrivateLog}
+                  />
                 )}
 
                 {logType && (

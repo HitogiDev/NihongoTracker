@@ -2,7 +2,15 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUserDataStore } from '../store/userData';
 
-function ProfileNavbar({ username }: { username: string | undefined }) {
+function ProfileNavbar({
+  username,
+  canViewStatistics = true,
+  canViewImmersionActivity = true,
+}: {
+  username: string | undefined;
+  canViewStatistics?: boolean;
+  canViewImmersionActivity?: boolean;
+}) {
   const { t } = useTranslation('profile');
   const location = useLocation();
   const loggedUser = useUserDataStore((state) => state.user);
@@ -41,30 +49,34 @@ function ProfileNavbar({ username }: { username: string | undefined }) {
               {t('tabs.overview')}
             </Link>
           </li>
-          <li>
-            <Link
-              to={`/user/${username}/stats`}
-              className={
-                isActive(`/user/${username}/stats`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
-            >
-              {t('tabs.stats')}
-            </Link>
-          </li>
-          <li>
-            <Link
-              to={`/user/${username}/list`}
-              className={
-                isActive(`/user/${username}/list`)
-                  ? 'active bg-primary text-primary-content'
-                  : ''
-              }
-            >
-              {t('tabs.immersionList')}
-            </Link>
-          </li>
+          {canViewStatistics && (
+            <li>
+              <Link
+                to={`/user/${username}/stats`}
+                className={
+                  isActive(`/user/${username}/stats`)
+                    ? 'active bg-primary text-primary-content'
+                    : ''
+                }
+              >
+                {t('tabs.stats')}
+              </Link>
+            </li>
+          )}
+          {canViewImmersionActivity && (
+            <li>
+              <Link
+                to={`/user/${username}/list`}
+                className={
+                  isActive(`/user/${username}/list`)
+                    ? 'active bg-primary text-primary-content'
+                    : ''
+                }
+              >
+                {t('tabs.immersionList')}
+              </Link>
+            </li>
+          )}
           <li>
             <Link
               to={`/user/${username}/lists`}

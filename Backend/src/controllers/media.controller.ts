@@ -35,6 +35,10 @@ import {
   decrementNotification,
   removeNotifications,
 } from '../services/notifications.service.js';
+import {
+  recordReviewActivity,
+} from '../services/activityEvents.service.js';
+import { deleteActivitiesBySource } from '../services/activity.service.js';
 
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
 const REVIEW_SUMMARY_MAX_LENGTH = 150;
@@ -633,6 +637,15 @@ export async function addMediaReview(
       likes: [],
     });
 
+    await recordReviewActivity({
+      reviewId: review._id as Types.ObjectId,
+      userId,
+      mediaContentId: contentId,
+      mediaType,
+      summary: trimmedSummary,
+      rating,
+    });
+
     return res
       .status(201)
       .json({ message: 'Review added successfully', review });
@@ -875,6 +888,9 @@ export async function deleteMediaReview(
       entityType: 'mediaReview',
       entityId: review._id.toString(),
     });
+    await deleteActivitiesBySource('mediaReview', [
+      review._id as Types.ObjectId,
+    ]);
 
     return res.status(200).json({ message: 'Review deleted successfully' });
   } catch (error) {

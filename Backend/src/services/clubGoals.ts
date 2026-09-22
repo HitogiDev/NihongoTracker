@@ -1,119 +1,158 @@
 import { Types } from 'mongoose';
 import { Club } from '../models/club.model.js';
-import Log from '../models/log.model.js';
-import { IClubGoal } from '../types.js';
+import User from '../models/user.model.js';
+import { IClub, IClubGoal } from '../types.js';
+import { createActivity } from './activity.service.js';
+import {
+  aggregateVisibleLogMetricByUser,
+  ClubLogMetricRow,
+} from './clubLogMetrics.service.js';
 
 function getStartOfUtcWeek(date: Date): Date {
   const utc = new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      0,
-      0,
-      0,
-      0
-    )
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
   );
-  const day = utc.getUTCDay();
-  const delta = (day + 6) % 7;
-  utc.setUTCDate(utc.getUTCDate() - delta);
+  utc.setUTCDate(utc.getUTCDate() - ((utc.getUTCDay() + 6) % 7));
   return utc;
 }
 
-function getGoalWindow(
+export function getGoalWindow(
   goal: IClubGoal,
   now = new Date()
 ): { start?: Date; end?: Date } {
   if (goal.period === 'weekly') {
     return { start: getStartOfUtcWeek(now), end: now };
   }
-
   if (goal.period === 'monthly') {
     return {
-      start: new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0)
-      ),
+      start: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
       end: now,
     };
   }
-
   if (goal.period === 'custom') {
-    return {
-      start: goal.startDate,
-      end: goal.endDate,
-    };
+    return { start: goal.startDate, end: goal.endDate };
   }
-
-  return {
-    start: goal.createdAt || goal.startDate,
-    end: now,
-  };
+  return { start: goal.createdAt ?? goal.startDate, end: now };
 }
 
-/**
- * Recalculates all active (and inactive) club goals' `currentProgress` by summing
- * members' logs in the goal timeframe and writing the totals to the club doc.
- */
-export async function recalculateClubGoalsProgress(
-  clubId: string
-): Promise<void> {
-  const club = await Club.findById(clubId).select('members clubGoals');
-  if (!club) return;
-
-  const memberIds = (club.members || [])
+function activeMemberIds(club: Pick<IClub, 'members'>): Types.ObjectId[] {
+  return club.members
     .filter((member) => member.status === 'active')
-    .map((member) => new Types.ObjectId(member.user));
+    .map((member) => member.user);
+}
 
-  // If no members, set all progress to 0 and save
-  if (!memberIds.length) {
-    if (Array.isArray(club.clubGoals) && club.clubGoals.length) {
-      club.clubGoals.forEach((g) => (g.currentProgress = 0));
-      await club.save();
-    }
-    return;
-  }
+async function goalRows(
+  club: Pick<IClub, 'members'>,
+  goal: IClubGoal,
+  viewerId?: Types.ObjectId
+): Promise<ClubLogMetricRow[]> {
+  const window = getGoalWindow(goal);
+  return aggregateVisibleLogMetricByUser({
+    ownerIds: activeMemberIds(club),
+    viewerId,
+    metric: goal.type,
+    startDate: window.start,
+    endDate: window.end,
+  });
+}
 
-  // For each goal, sum the appropriate log field across all member logs in window
-  for (const goal of club.clubGoals as IClubGoal[]) {
-    const field =
-      goal.type === 'time'
-        ? 'time'
-        : goal.type === 'chars'
-          ? 'chars'
-          : goal.type === 'episodes'
-            ? 'episodes'
-            : 'pages';
+export async function getCooperativeGoalsProgress(
+  club: IClub,
+  viewerId?: Types.ObjectId
+) {
+  const calculated = await Promise.all(
+    club.clubGoals.map(async (goal) => ({
+      goal,
+      rows: await goalRows(club, goal, viewerId),
+    }))
+  );
+  const contributorIds = [
+    ...new Set(
+      calculated.flatMap(({ rows }) => rows.map((row) => row._id.toString()))
+    ),
+  ].map((id) => new Types.ObjectId(id));
+  const users = await User.find({ _id: { $in: contributorIds } })
+    .select('_id username avatar')
+    .lean();
+  const userById = new Map(users.map((user) => [user._id.toString(), user]));
 
-    const window = getGoalWindow(goal);
-    const match: any = {
-      user: { $in: memberIds },
-      ...(window.start || window.end
-        ? {
-            date: {
-              ...(window.start ? { $gte: new Date(window.start) } : {}),
-              ...(window.end ? { $lte: new Date(window.end) } : {}),
+  return Promise.all(
+    calculated.map(async ({ goal, rows }) => {
+      const currentTotal = rows.reduce((sum, row) => sum + row.value, 0);
+      const percentage = Math.min(
+        100,
+        Math.round((currentTotal / Math.max(goal.target, 1)) * 1000) / 10
+      );
+      const completed = currentTotal >= goal.target;
+      const goalId = goal._id;
+      const actor = goal.createdBy ?? activeMemberIds(club)[0];
+      if (goalId && actor) {
+        const bucket = completed ? 100 : Math.floor(percentage / 25) * 25;
+        if (bucket >= 25) {
+          await createActivity({
+            actor,
+            type: completed
+              ? 'cooperative_goal_completed'
+              : 'cooperative_goal_progress',
+            targetType: 'clubGoal',
+            targetId: goalId,
+            club: club._id,
+            metadata: {
+              clubName: club.name,
+              goalTitle: goal.title,
+              metric: goal.type,
+              target: goal.target,
+              progress: currentTotal,
+              percentage,
             },
-          }
-        : {}),
-    };
+            importance: completed ? 'important' : 'normal',
+            dedupeKey: `clubGoal:${goalId.toString()}:${bucket}`,
+          });
+        }
+      }
+      return {
+        _id: goal._id,
+        title: goal.title,
+        description: goal.description,
+        createdBy: goal.createdBy,
+        type: goal.type,
+        target: goal.target,
+        period: goal.period,
+        isActive: goal.isActive,
+        startDate: goal.startDate,
+        endDate: goal.endDate,
+        completedAt: goal.completedAt,
+        createdAt: goal.createdAt,
+        currentTotal,
+        percentage,
+        remaining: Math.max(0, goal.target - currentTotal),
+        completed,
+        contributors: rows
+          .map((row) => ({
+            user: userById.get(row._id.toString()),
+            value: row.value,
+          }))
+          .filter((entry) => entry.user)
+          .sort((left, right) => right.value - left.value),
+      };
+    })
+  );
+}
 
-    // Only match documents that have the numeric field present or non-null.
-    match[field] = { $exists: true };
-
-    const res = await Log.aggregate([
-      { $match: match },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: { $ifNull: [`$${field}`, 0] } },
-        },
-      },
-    ]);
-
-    const total = (res && res[0] && res[0].total) || 0;
-    (goal as any).currentProgress = total;
-  }
-
+export async function recalculateClubGoalsProgress(
+  clubId: string,
+  viewerId?: Types.ObjectId
+): Promise<void> {
+  const club = await Club.findById(clubId).select('name members clubGoals');
+  if (!club) return;
+  const rowsByGoal = await Promise.all(
+    club.clubGoals.map((goal) => goalRows(club, goal, viewerId))
+  );
+  const totals = rowsByGoal.map((rows) =>
+    rows.reduce((sum, row) => sum + row.value, 0)
+  );
+  totals.forEach((total, index) => {
+    club.clubGoals[index].currentProgress = total;
+  });
   await club.save();
 }

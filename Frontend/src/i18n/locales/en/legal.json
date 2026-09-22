@@ -989,7 +989,7 @@
     "hero": {
       "badge": "Independent and community-supported",
       "title": "Support NihongoTracker and help me keep <hl>building</hl>",
-      "subtitle": "The core tracker stays free forever. Your support helps cover hosting and gives me time to work on new tools, session insights, and profile customization.",
+      "subtitle": "The tracker stays free forever. Your support helps cover hosting and gives me time to work on new tools, session insights, and profile customization.",
       "cta": "Support NihongoTracker",
       "seeBenefits": "Explore supporter benefits",
       "noteEyebrow": "A note from Hitogi",
@@ -1068,7 +1068,7 @@
     "why": {
       "badge": "Where your support goes",
       "title": "What your support pays for",
-      "subtitle": "I use your support for the practical work behind NihongoTracker and to keep the core tracker free for everyone.",
+      "subtitle": "I use your support for the practical work behind NihongoTracker and to keep the tracker free forever.",
       "items": {
         "lights": {
           "title": "Server and service costs",

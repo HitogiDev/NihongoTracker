@@ -1379,75 +1379,87 @@ function MediaCard({
   const currentStatus =
     media.mediaStatus ?? (media.isCompleted ? 'completed' : null);
   const statusCfg = currentStatus ? STATUS_CONFIG[currentStatus] : null;
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
   return (
     <div
-      className={`card bg-base-100 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer border ${config.border}`}
+      className={`card relative focus-within:z-30 bg-base-100 shadow-sm transition-all duration-300 group cursor-pointer border ${isStatusMenuOpen ? '' : 'hover:shadow-lg'} ${config.border}`}
       onClick={handleCardClick}
     >
-      <figure className="relative aspect-[3/4] overflow-hidden">
-        {/* Status dropdown button — top right */}
-        {isOwnProfile && (
-          <div
-            className="dropdown dropdown-end absolute top-2 right-2 z-20"
-            onClick={(e) => e.stopPropagation()}
+      {/* Status dropdown button at the top right */}
+      {isOwnProfile && (
+        <div
+          className="dropdown dropdown-end absolute top-2 right-2 z-40"
+          onClick={(e) => e.stopPropagation()}
+          onFocusCapture={() => setIsStatusMenuOpen(true)}
+          onBlurCapture={(event) => {
+            const nextFocusedElement = event.relatedTarget;
+            if (
+              !(nextFocusedElement instanceof Node) ||
+              !event.currentTarget.contains(nextFocusedElement)
+            ) {
+              setIsStatusMenuOpen(false);
+            }
+          }}
+        >
+          <button
+            type="button"
+            tabIndex={0}
+            className={`btn btn-xs btn-circle ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
+            disabled={isToggling}
+            aria-label={t('list.setStatus')}
           >
-            <button
-              type="button"
-              tabIndex={0}
-              className={`btn btn-xs btn-circle ${statusCfg ? statusCfg.badgeClass.replace('badge-', 'btn-') : 'btn-ghost bg-base-100/80 border-base-300'}`}
-              disabled={isToggling}
-              aria-label={t('list.setStatus')}
-            >
-              {isToggling ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : statusCfg ? (
-                <statusCfg.icon className="w-4 h-4" />
-              ) : (
-                <Circle className="w-4 h-4" />
-              )}
-            </button>
-            <ul
-              tabIndex={0}
-              className="dropdown-content z-50 menu p-1 surface-raised w-36 text-sm"
-            >
-              {(
-                Object.entries(STATUS_CONFIG) as [
-                  keyof typeof STATUS_CONFIG,
-                  (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
-                ][]
-              ).map(([key, cfg]) => (
-                <li key={key}>
-                  <button
-                    className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
-                    onClick={() => onSetStatus(media, key)}
-                  >
-                    <cfg.icon className="w-3 h-3" />
-                    {t(cfg.labelKey)}
-                  </button>
-                </li>
-              ))}
-              <li>
-                <div className="divider my-1"></div>
-              </li>
-              <li>
+            {isToggling ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : statusCfg ? (
+              <statusCfg.icon className="w-4 h-4" />
+            ) : (
+              <Circle className="w-4 h-4" />
+            )}
+          </button>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-50 menu p-1 surface-raised w-36 text-sm"
+          >
+            {(
+              Object.entries(STATUS_CONFIG) as [
+                keyof typeof STATUS_CONFIG,
+                (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG],
+              ][]
+            ).map(([key, cfg]) => (
+              <li key={key}>
                 <button
-                  className="gap-2 text-error"
-                  onClick={() => onRemoveMedia(media)}
+                  className={`gap-2 ${currentStatus === key ? 'active' : ''}`}
+                  onClick={() => onSetStatus(media, key)}
                 >
-                  <Trash2 className="w-3 h-3" />
-                  {t('header.remove')}
+                  <cfg.icon className="w-3 h-3" />
+                  {t(cfg.labelKey)}
                 </button>
               </li>
-            </ul>
-          </div>
-        )}
+            ))}
+            <li>
+              <div className="divider my-1"></div>
+            </li>
+            <li>
+              <button
+                className="gap-2 text-error"
+                onClick={() => onRemoveMedia(media)}
+              >
+                <Trash2 className="w-3 h-3" />
+                {t('header.remove')}
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
+
+      <figure className="relative aspect-[3/4] overflow-hidden">
 
         {media.contentImage || media.coverImage ? (
           <img
             src={media.contentImage || media.coverImage}
             alt={media.title.contentTitleNative}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${(media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) && user?.settings?.blurAdultContent ? 'filter blur-sm' : ''}`}
+            className={`w-full h-full object-cover transition-transform duration-300 ${isStatusMenuOpen ? '' : 'group-hover:scale-105'} ${(media.type === 'vn' ? (media.isAdultImage ?? false) : media.isAdult) && user?.settings?.blurAdultContent ? 'filter blur-sm' : ''}`}
             loading="lazy"
           />
         ) : (
@@ -1473,7 +1485,9 @@ function MediaCard({
           </div>
         )} */}
 
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none">
+        <div
+          className={`absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 flex items-center justify-center z-0 pointer-events-none ${isStatusMenuOpen ? '' : 'group-hover:opacity-100'}`}
+        >
           <div className="text-white text-center p-4">
             <TrendingUp className="w-6 h-6 mx-auto mb-2" />
             <p className="text-sm font-medium">{t('list.viewDetails')}</p>
@@ -1483,7 +1497,7 @@ function MediaCard({
         {isOwnProfile && (
           <button
             type="button"
-            className="btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            className={`btn btn-primary btn-sm btn-circle absolute bottom-2 right-2 z-20 shadow-sm opacity-0 transition-opacity duration-300 ${isStatusMenuOpen ? 'pointer-events-none' : 'group-hover:opacity-100'}`}
             onClick={(e) => {
               e.stopPropagation();
               onLogMedia(media);

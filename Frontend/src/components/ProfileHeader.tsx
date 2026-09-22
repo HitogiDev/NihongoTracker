@@ -1,13 +1,28 @@
 import ProfileNavbar from './ProfileNavbar';
 import { useTranslation } from 'react-i18next';
-import { getApiErrorMessage } from '../utils/apiError';
+import {
+  getApiErrorMessage,
+  isPrivateProfileError,
+} from '../utils/apiError';
 import ShareStatsModal from './ShareStatsModal';
 import { useEffect, useState } from 'react';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
-import { Heart, Share2 } from 'lucide-react';
-import { getUserFn } from '../api/trackerApi';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import {
+  Handshake,
+  Heart,
+  Inbox,
+  Lock,
+  Share2,
+  UserRoundCheck,
+  UserRoundPlus,
+} from 'lucide-react';
+import {
+  followUserFn,
+  getUserFn,
+  unfollowUserFn,
+} from '../api/trackerApi';
 import { AxiosError } from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { OutletProfileContextType } from '../types';
 import { getPatreonBadgeProps } from '../utils/patreonBadge';
@@ -22,12 +37,44 @@ import {
 } from '../utils/customization';
 import { getAchievementName } from '../utils/achievementText';
 import BannerEffectOverlay from './BannerEffectOverlay';
+import { useUserDataStore } from '../store/userData';
+import Spinner from './ui/Spinner';
+
+function PrivateProfileNotice({ username }: { username: string }) {
+  const { t } = useTranslation('profile');
+
+  return (
+    <main className="flex min-h-[calc(100vh-5rem)] items-center justify-center bg-base-200 px-4 pb-16 pt-28">
+      <div className="card surface w-full max-w-xl">
+        <div className="card-body items-center gap-4 p-8 text-center sm:p-12">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Lock className="h-8 w-8" aria-hidden="true" />
+          </div>
+          <h1 className="card-title text-2xl">
+            {t('privateProfile.title')}
+          </h1>
+          <p className="max-w-md text-base-content/80">
+            {t('privateProfile.description', { username })}
+          </p>
+          <p className="max-w-md text-sm text-base-content/60">
+            {t('privateProfile.hint')}
+          </p>
+          <Link to="/" className="btn btn-primary mt-2">
+            {t('privateProfile.backHome')}
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
 
 export default function ProfileHeader() {
   const { t } = useTranslation('profile');
   const badgeText = usePatreonBadgeText();
   const { username = '' } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const currentUser = useUserDataStore((state) => state.user);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -40,15 +87,18 @@ export default function ProfileHeader() {
     queryFn: () => getUserFn(username as string),
     staleTime: Infinity,
   });
+  const isPrivateProfile = isPrivateProfileError(userError);
 
-  if (userError) {
-    if (userError instanceof AxiosError) {
-      if (userError.status === 404) navigate('/404', { replace: true });
-      toast.error(userError.response?.data.message);
-    } else {
-      toast.error(getApiErrorMessage(userError));
+  useEffect(() => {
+    if (!userError || isPrivateProfile) return;
+
+    if (userError instanceof AxiosError && userError.response?.status === 404) {
+      navigate('/404', { replace: true });
+      return;
     }
-  }
+
+    toast.error(getApiErrorMessage(userError));
+  }, [isPrivateProfile, navigate, userError]);
 
   const patreonBadge = getPatreonBadgeProps(user?.patreon);
   const customization = user?.customization;
@@ -60,10 +110,27 @@ export default function ProfileHeader() {
     user?.signature?.stat,
     user?.signature?.value
   );
+  const isOwnProfile = currentUser?.username === user?.username;
+  const followMutation = useMutation({
+    mutationFn: () =>
+      user?.social?.isFollowing
+        ? unfollowUserFn(username)
+        : followUserFn(username),
+    onSuccess: ({ relationship }) => {
+      queryClient.setQueryData(['user', username], (previous: typeof user) =>
+        previous ? { ...previous, social: relationship } : previous
+      );
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
 
   useEffect(() => {
     setAvatarLoadFailed(false);
   }, [user?.avatar]);
+
+  if (isPrivateProfile) {
+    return <PrivateProfileNotice username={username} />;
+  }
 
   return (
     // The owner's accent is set here, on the wrapper around the header *and*
@@ -154,18 +221,80 @@ export default function ProfileHeader() {
                   })}
                 </p>
               )}
+              {!isLoadingUser && user?.social && (
+                <div className="mt-2 flex items-center justify-center gap-4 text-sm text-white/90 sm:justify-start">
+                  <Link
+                    to={`/user/${encodeURIComponent(user.username)}/followers`}
+                    className="link link-hover"
+                  >
+                    <span className="font-semibold">
+                      {user.social.followerCount.toLocaleString()}
+                    </span>{' '}
+                    {t('social.followers')}
+                  </Link>
+                  <Link
+                    to={`/user/${encodeURIComponent(user.username)}/following`}
+                    className="link link-hover"
+                  >
+                    <span className="font-semibold">
+                      {user.social.followingCount.toLocaleString()}
+                    </span>{' '}
+                    {t('social.following')}
+                  </Link>
+                </div>
+              )}
             </div>
-            {username && (
-              <button
-                type="button"
-                onClick={() => setShareOpen(true)}
-                className="btn btn-sm gap-2 sm:ml-auto sm:mb-2 bg-black/30 hover:bg-black/50 border-white/20 text-white backdrop-blur-sm"
-                title={t('header.shareStatsTitle')}
-              >
-                <Share2 className="h-4 w-4" />
-                {t('header.shareStats')}
-              </button>
-            )}
+            <div className="flex items-center gap-2 sm:ml-auto sm:mb-2">
+              {currentUser && isOwnProfile && (
+                <Link
+                  to="/recommendations"
+                  className="btn btn-sm gap-2 bg-base-100/95 text-base-content shadow-sm backdrop-blur-sm hover:bg-base-100"
+                >
+                  <Inbox className="h-4 w-4" />
+                  {t('social.recommendations')}
+                </Link>
+              )}
+              {currentUser && !isOwnProfile && user && (
+                <button
+                  type="button"
+                  onClick={() => followMutation.mutate()}
+                  className={`btn btn-sm gap-2 shadow-sm backdrop-blur-sm ${
+                    user.social?.isFollowing
+                      ? 'bg-base-100/95 text-base-content hover:bg-base-100'
+                      : 'btn-primary'
+                  }`}
+                  disabled={followMutation.isPending}
+                >
+                  {followMutation.isPending ? (
+                    <Spinner size="sm" />
+                  ) : user.social?.isFollowing ? (
+                    user.social.mutualFollow ? (
+                      <Handshake className="h-4 w-4" />
+                    ) : (
+                      <UserRoundCheck className="h-4 w-4" />
+                    )
+                  ) : (
+                    <UserRoundPlus className="h-4 w-4" />
+                  )}
+                  {user.social?.isFollowing
+                    ? user.social.mutualFollow
+                      ? t('social.friends')
+                      : t('social.followingLabel')
+                    : t('social.follow')}
+                </button>
+              )}
+              {currentUser && isOwnProfile && user?.socialAccess?.statistics !== false && (
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(true)}
+                  className="btn btn-sm gap-2 bg-black/30 hover:bg-black/50 border-white/20 text-white backdrop-blur-sm"
+                  title={t('header.shareStatsTitle')}
+                >
+                  <Share2 className="h-4 w-4" />
+                  {t('header.shareStats')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -176,7 +305,11 @@ export default function ProfileHeader() {
           onClose={() => setShareOpen(false)}
         />
       )}
-      <ProfileNavbar username={user?.username} />
+      <ProfileNavbar
+        username={user?.username}
+        canViewStatistics={user?.socialAccess?.statistics}
+        canViewImmersionActivity={user?.socialAccess?.immersionActivity}
+      />
       <Outlet context={{ user, username } satisfies OutletProfileContextType} />
     </div>
   );

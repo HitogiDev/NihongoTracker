@@ -197,6 +197,9 @@
   "search": {
     "failed": "Search operation failed"
   },
+  "social": {
+    "rateLimited": "You are doing that too quickly. Please try again shortly."
+  },
   "tag": {
     "fieldsRequired": "Name and color are required",
     "invalidId": "Invalid tag ID",
@@ -241,6 +244,43 @@
     "noFile": "No file provided",
     "sourceDimensionPositive": "{{field}} must be greater than 0",
     "storageFailed": "Error uploading file to storage"
+  },
+  "activity": {
+    "invalidId": "That activity ID is invalid",
+    "invalidCommentId": "That comment ID is invalid",
+    "invalidClubId": "That club ID is invalid",
+    "invalidCursor": "That feed cursor is invalid",
+    "invalidScope": "That feed scope is invalid",
+    "invalidReaction": "Choose a supported reaction",
+    "notFound": "Activity not found",
+    "clubMembershipRequired": "You must be a member to view this club feed",
+    "commentRequired": "Enter a comment",
+    "commentTooLong": "Comments must be 1000 characters or less",
+    "commentNotFound": "Comment not found",
+    "commentNotFoundOrForbidden": "Comment not found or you are not its author"
+  },
+  "follow": {
+    "self": "You cannot follow yourself"
+  },
+  "mediaRecommendation": {
+    "alreadyResolved": "This recommendation was already resolved",
+    "duplicate": "You already recommended this title to this user",
+    "fieldsRequired": "Choose a recipient and media",
+    "followRequired": "You can only recommend media to users who follow you",
+    "invalidId": "That recommendation ID is invalid",
+    "invalidMediaType": "That media type is invalid",
+    "invalidStatus": "That recommendation status is invalid",
+    "mediaNotFound": "Media not found",
+    "messageTooLong": "Messages must be {{max}} characters or less",
+    "notFound": "Recommendation not found",
+    "self": "You cannot recommend media to yourself"
+  },
+  "privacy": {
+    "immersionRestricted": "This user has limited who can see their immersion activity",
+    "invalidSettings": "Social privacy settings are required",
+    "invalidVisibility": "Choose a valid privacy option",
+    "profileRestricted": "This profile is private",
+    "statisticsRestricted": "This user has limited who can see their statistics"
   },
   "user": {
     "aboutTooLong": "Your bio must be 2000 characters or less",

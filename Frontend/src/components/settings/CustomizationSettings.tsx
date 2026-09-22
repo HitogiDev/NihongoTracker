@@ -1,3 +1,4 @@
+import DropdownSelect from '../ui/DropdownSelect';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -413,7 +414,7 @@ export default function CustomizationSettings() {
               {t('customization.noTitles')}
             </p>
           ) : (
-            <select
+            <DropdownSelect
               className="select mt-3 w-full max-w-md"
               value={draft.equippedTitle ?? ''}
               onChange={(event) =>
@@ -429,7 +430,7 @@ export default function CustomizationSettings() {
                   {title.label}
                 </option>
               ))}
-            </select>
+            </DropdownSelect>
           )}
         </div>
       </div>

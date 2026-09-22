@@ -71,6 +71,27 @@ export const ERROR_CODES = [
   'user.emailInvalid',
   'user.usernameConfirmMismatch',
 
+  // Social graph
+  'follow.self',
+  'privacy.invalidSettings',
+  'privacy.invalidVisibility',
+  'privacy.profileRestricted',
+  'privacy.immersionRestricted',
+  'privacy.statisticsRestricted',
+  'social.rateLimited',
+  'activity.invalidId',
+  'activity.invalidCommentId',
+  'activity.invalidClubId',
+  'activity.invalidCursor',
+  'activity.invalidScope',
+  'activity.invalidReaction',
+  'activity.notFound',
+  'activity.clubMembershipRequired',
+  'activity.commentRequired',
+  'activity.commentTooLong',
+  'activity.commentNotFound',
+  'activity.commentNotFoundOrForbidden',
+
   // Avatar / banner uploads
   'upload.cropWithoutFile',
   'upload.avatarCropWithoutFile',
@@ -201,6 +222,19 @@ export const ERROR_CODES = [
   'mediaRequest.nativeTitleRequired',
   'mediaRequest.invalidType',
   'mediaRequest.invalidAction',
+
+  // Media recommendations
+  'mediaRecommendation.fieldsRequired',
+  'mediaRecommendation.invalidMediaType',
+  'mediaRecommendation.messageTooLong',
+  'mediaRecommendation.self',
+  'mediaRecommendation.mediaNotFound',
+  'mediaRecommendation.followRequired',
+  'mediaRecommendation.duplicate',
+  'mediaRecommendation.notFound',
+  'mediaRecommendation.alreadyResolved',
+  'mediaRecommendation.invalidId',
+  'mediaRecommendation.invalidStatus',
 
   // Changelog
   'changelog.notFound',

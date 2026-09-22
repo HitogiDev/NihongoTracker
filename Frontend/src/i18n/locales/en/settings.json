@@ -384,6 +384,31 @@
     "timezoneHint": "All dates and times will be displayed in your selected timezone",
     "title": "Preferences"
   },
+  "privacy": {
+    "fields": {
+      "immersionActivity": {
+        "help": "Controls who can see immersion sessions in your social activity feed.",
+        "label": "Immersion activity"
+      },
+      "profile": {
+        "help": "Controls who can open your profile and see its public sections.",
+        "label": "Profile"
+      },
+      "statistics": {
+        "help": "Controls who can see your totals, charts, rankings, and progress statistics.",
+        "label": "Statistics"
+      }
+    },
+    "save": "Save privacy settings",
+    "saved": "Privacy settings updated",
+    "subtitle": "Choose who can see each part of your social activity.",
+    "title": "Social privacy",
+    "visibility": {
+      "followers": "Followers",
+      "private": "Only me",
+      "public": "Everyone"
+    }
+  },
   "profile": {
     "about": "About Me",
     "aboutPlaceholder": "Tell people what you read, watch, or study (Markdown supported)",
@@ -449,6 +474,7 @@
     "advanced": "Data Management",
     "customization": "Customization",
     "patreon": "Patreon",
+    "privacy": "Privacy",
     "preferences": "Preferences",
     "profile": "Profile"
   },

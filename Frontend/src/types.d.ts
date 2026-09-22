@@ -158,6 +158,11 @@ export interface IUser {
     notificationsLastViewedAt?: string | Date | null;
     dismissedNotificationClubIds?: string[];
     dismissedNotificationClubAt?: Record<string, string | Date>;
+    socialPrivacy?: {
+    profile: SocialVisibility;
+    immersionActivity: SocialVisibility;
+    statistics: SocialVisibility;
+    };
   };
   statsLayout?: StatsGroupLayout[];
   profileLayout?: ProfileWidgetLayout[];
@@ -165,7 +170,127 @@ export interface IUser {
   customization?: IUserCustomization;
   /** Resolved server-side from `customization.signatureStat` (profile reads). */
   signature?: { stat: SignatureStat; value: number } | null;
+  social?: ISocialSummary;
+  socialAccess?: {
+    profile: boolean;
+    statistics: boolean;
+    immersionActivity: boolean;
+  };
   matchPassword: (enteredPassword: string) => Promise<boolean>;
+}
+
+export interface ISocialRelationship {
+  isFollowing: boolean;
+  isFollowedBy: boolean;
+  mutualFollow: boolean;
+}
+
+export interface ISocialSummary extends ISocialRelationship {
+  followerCount: number;
+  followingCount: number;
+}
+
+export interface IConnectionUser {
+  _id: string;
+  username: string;
+  avatar?: string;
+  followedAt: string;
+}
+
+export interface IConnectionsResponse {
+  users: IConnectionUser[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type SocialVisibility = 'public' | 'followers' | 'private';
+
+export type ActivityType =
+  | 'immersion_log'
+  | 'notable_immersion_session'
+  | 'media_started'
+  | 'media_completed'
+  | 'media_review'
+  | 'journal_entry'
+  | 'level_milestone'
+  | 'streak_milestone'
+  | 'achievement_unlocked'
+  | 'personal_record'
+  | 'goal_completed'
+  | 'challenge_joined'
+  | 'challenge_completed'
+  | 'club_joined'
+  | 'club_milestone'
+  | 'club_challenge_started'
+  | 'cooperative_goal_progress'
+  | 'cooperative_goal_completed';
+
+export type ActivityReactionType = 'like';
+
+export interface ISocialActivity {
+  _id: string;
+  actor: { _id: string; username: string; avatar?: string };
+  type: ActivityType;
+  targetType: string;
+  targetId: string;
+  club?: string | null;
+  metadata?: Record<string, unknown>;
+  visibility: SocialVisibility;
+  importance: 'normal' | 'important';
+  reactionCounts: Partial<Record<ActivityReactionType, number>>;
+  currentReaction: ActivityReactionType | null;
+  commentCount: number;
+  occurredAt: string;
+}
+
+export interface IMediaCommunityFriend {
+  user: { _id: string; username: string; avatar?: string };
+  status?: string | null;
+  completedAt?: string | null;
+  updatedAt: string;
+}
+
+export interface IMediaCommunityPerson extends IMediaCommunityFriend {
+  relation: 'followers' | 'friends' | 'following';
+  progress: {
+    chars: number;
+    episodes: number;
+    pages: number;
+    time: number;
+    volume: number | null;
+  };
+}
+
+export interface IMediaCommunityResponse {
+  stats: {
+    trackingUsers: number;
+    completedUsers: number;
+    inProgressUsers: number;
+    completionRate: number | null;
+    completionDaysAverage: number | null;
+    completionDaysMedian: number | null;
+    completionTimeSampleSize: number;
+    reviewCount: number;
+    averageRating: number | null;
+  };
+  friends: {
+    consuming: IMediaCommunityFriend[];
+    completed: IMediaCommunityFriend[];
+  };
+  people: IMediaCommunityPerson[];
+  activities: ISocialActivity[];
+}
+
+export interface IActivityComment {
+  _id: string;
+  activity: string;
+  user: { _id: string; username: string; avatar?: string };
+  content: string;
+  likeCount: number;
+  currentUserLiked: boolean;
+  editedAt?: string;
+  createdAt: string;
 }
 
 /** Mirrors Backend/src/types.ts — keep both lists in sync. */
@@ -378,6 +503,7 @@ export type sortTypes = 'asc' | 'desc';
 export type filterTypes =
   | 'userLevel'
   | 'userXp'
+  | 'currentStreak'
   | 'userChars'
   | 'readingXp'
   | 'readingLevel'
@@ -572,8 +698,50 @@ export interface IXpBreakdown {
   difficulty: number | null;
   categoryLevelAt: number;
   comfortAt?: number | null;
+  targetDifficulty?: number | null;
   multiplier: number;
   version: number;
+}
+
+export type XpCalculatorMode = 'direct' | 'inverse';
+export type XpCalculatorContextMode = 'personal' | 'simulation';
+export type XpCalculatorUnit = 'time' | 'chars' | 'pages' | 'episodes';
+
+export interface IXpCalculatorRequest {
+  mode: XpCalculatorMode;
+  contextMode: XpCalculatorContextMode;
+  type: ILog['type'];
+  mediaId?: string;
+  difficultyJiten?: number | null;
+  input?: Pick<ILog, 'time' | 'chars' | 'pages' | 'episodes'>;
+  targetXp?: number;
+  unit?: XpCalculatorUnit;
+  simulation?: {
+    categoryLevel?: number;
+    consumedDifficultyJiten?: number | null;
+    personalSpeedCph?: number | null;
+  };
+}
+
+export interface IXpCalculatorResponse {
+  xp: number;
+  breakdown: IXpBreakdown;
+  context: {
+    mode: XpCalculatorContextMode;
+    category: 'reading' | 'listening' | null;
+    categoryLevel: number;
+    consumedDifficultyJiten: number | null;
+    personalSpeedCph: number;
+    difficultyJiten: number | null;
+    comfortJiten: number;
+    targetDifficultyJiten: number;
+    bonusPercent: number;
+  };
+  inverse: {
+    targetXp: number;
+    unit: XpCalculatorUnit;
+    quantity: number;
+  } | null;
 }
 
 export interface ILog {
@@ -672,8 +840,12 @@ export interface IRankingSummary extends IRankingSummaryDetails {
 
 export interface IRankingHistoryPoint {
   date: string;
-  globalPosition: number;
-  monthlyPosition: number;
+  position: number;
+}
+
+export interface IRankingHistory {
+  global: IRankingHistoryPoint[];
+  monthly: IRankingHistoryPoint[];
 }
 
 export interface AnilistSearchResult {
@@ -849,6 +1021,7 @@ export interface IMediaDocument {
   synonyms?: string[] | null;
   isAdult: boolean;
   isAdultImage?: boolean;
+  jitenDifficulty?: number | null;
   lastLogDate?: string;
   /** Number of the requesting user's logs for this media (immersion list only). */
   logCount?: number;
@@ -1156,9 +1329,16 @@ export interface IJitenResponse {
 }
 
 // Club-related interfaces
+export type ClubRole =
+  | 'owner'
+  | 'leader'
+  | 'moderator'
+  | 'event_manager'
+  | 'member';
+
 export interface IClubMember {
   user: IUser;
-  role: 'leader' | 'moderator' | 'member';
+  role: ClubRole;
   joinedAt: Date;
   status: 'active' | 'pending' | 'banned';
 }
@@ -1190,6 +1370,17 @@ export interface IClubMedia {
   }>;
   createdAt?: Date;
   updatedAt?: Date;
+  community?: {
+    participantCount: number;
+    participants: Array<{ _id: string; username: string; avatar?: string }>;
+    aggregateProgress: {
+      logs: number;
+      time: number;
+      chars: number;
+      pages: number;
+      episodes: number;
+    };
+  };
 }
 
 export interface IMediaReview {
@@ -1280,6 +1471,10 @@ export interface IClubMediaVoting {
 }
 
 export interface IClubGoal {
+  _id?: string;
+  title?: string;
+  description?: string;
+  createdBy?: string;
   type: 'time' | 'chars' | 'episodes' | 'pages';
   target: number;
   period: 'weekly' | 'monthly' | 'custom' | 'indefinite';
@@ -1288,6 +1483,70 @@ export interface IClubGoal {
   startDate?: string;
   endDate?: string;
   createdAt?: string;
+  completedAt?: string;
+  currentTotal?: number;
+  percentage?: number;
+  remaining?: number;
+  completed?: boolean;
+  contributors?: Array<{
+    user: { _id: string; username: string; avatar?: string };
+    value: number;
+  }>;
+}
+
+export type ClubChallengeMetric =
+  | 'time'
+  | 'chars'
+  | 'pages'
+  | 'episodes'
+  | 'active_days';
+
+export type ClubObjectiveMode = 'collective' | 'individual';
+export type ClubObjectivePeriod =
+  | 'weekly'
+  | 'monthly'
+  | 'custom'
+  | 'indefinite';
+
+export interface IClubChallenge {
+  _id: string;
+  title: string;
+  description?: string;
+  creator: { _id: string; username: string; avatar?: string } | string;
+  club?: string | null;
+  mode: ClubObjectiveMode;
+  period?: ClubObjectivePeriod;
+  legacyGoalId?: string;
+  isPinned: boolean;
+  scope: 'global' | 'official' | 'club';
+  startDate: string;
+  endDate: string;
+  metric: ClubChallengeMetric;
+  goal: number;
+  participants: string[];
+  completedParticipants: string[];
+  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
+  visibility: 'public' | 'members';
+  createdAt: string;
+}
+
+export interface IClubObjective extends IClubChallenge {
+  progress: number;
+  percentage: number;
+  remaining: number;
+  completed: boolean;
+  contributors?: Array<{
+    user: { _id: string; username: string; avatar?: string };
+    value: number;
+  }>;
+  participantProgress?: IClubChallengeProgress[];
+}
+
+export interface IClubChallengeProgress {
+  user: { _id: string; username: string; avatar?: string };
+  progress: number;
+  percentage: number;
+  completed: boolean;
 }
 
 export interface IClub {
@@ -1307,6 +1566,8 @@ export interface IClub {
   rules?: string;
   isActive: boolean;
   mediaVotings: IClubMediaVoting[];
+  pinnedActivities?: string[];
+  pinnedObjective?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -1314,7 +1575,7 @@ export interface IClub {
 export interface IClubResponse extends IClub {
   memberCount: number;
   isUserMember: boolean;
-  userRole?: 'leader' | 'moderator' | 'member';
+  userRole?: ClubRole;
   userStatus?: 'active' | 'pending' | 'banned';
 }
 
@@ -1336,6 +1597,9 @@ export type NotificationType =
   | 'comment_like'
   | 'mention'
   | 'follow'
+  | 'activity_reaction'
+  | 'activity_comment'
+  | 'media_recommendation'
   | 'club_join_request'
   | 'club_join_approved'
   | 'club_join_rejected'
@@ -1630,6 +1894,27 @@ export type UnifiedFeedFilter = 'all' | 'logs' | 'achievements';
 // ─── Media Lists ──────────────────────────────────────────────────────────────
 
 export type MediaListMediaType = IMediaDocument['type'];
+
+export type MediaRecommendationStatus =
+  | 'pending'
+  | 'viewed'
+  | 'dismissed'
+  | 'accepted';
+
+export interface IMediaRecommendation {
+  _id: string;
+  sender: { _id: string; username: string; avatar?: string };
+  recipient: { _id: string; username: string; avatar?: string };
+  mediaId: string;
+  mediaType: MediaListMediaType;
+  media: IMediaDocument | null;
+  message?: string;
+  status: MediaRecommendationStatus;
+  viewedAt?: string | null;
+  respondedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface IMediaListEntry {
   mediaId: string;
