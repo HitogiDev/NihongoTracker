@@ -5,6 +5,13 @@
     "global": "Global",
     "medium": "Por tipo"
   },
+  "audience": {
+    "label": "Personas en la clasificación",
+    "all": "Todos",
+    "following": "Siguiendo",
+    "mutuals": "Mutuos",
+    "empty": "Nadie de este grupo tiene actividad en la clasificación todavía."
+  },
   "scope": {
     "total": "Total",
     "reading": "Lectura",
@@ -58,6 +65,7 @@
   "avatarAlt": "Avatar de {{username}}",
   "unknownUser": "Usuario",
   "loading": "Cargando la clasificación...",
+  "empty": "No hay actividad para estos filtros.",
   "loadingMore": "Cargando más...",
   "loadMore": "Cargar más puestos",
   "scopeLabel": "Ámbito",

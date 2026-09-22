@@ -5,6 +5,13 @@
     "global": "Global",
     "medium": "By Medium"
   },
+  "audience": {
+    "label": "Ranking audience",
+    "all": "Everyone",
+    "following": "Following",
+    "mutuals": "Mutuals",
+    "empty": "No people in this group have ranking activity yet."
+  },
   "scope": {
     "total": "Total",
     "reading": "Reading",
@@ -58,6 +65,7 @@
   "avatarAlt": "{{username}}'s Avatar",
   "unknownUser": "User",
   "loading": "Loading rankings...",
+  "empty": "No ranking activity found for these filters.",
   "loadingMore": "Loading more...",
   "loadMore": "Load More Rankings",
   "scopeLabel": "Scope",

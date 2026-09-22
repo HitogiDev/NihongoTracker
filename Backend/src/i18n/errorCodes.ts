@@ -78,6 +78,7 @@ export const ERROR_CODES = [
   'privacy.profileRestricted',
   'privacy.immersionRestricted',
   'privacy.statisticsRestricted',
+  'ranking.invalidAudience',
   'social.rateLimited',
   'activity.invalidId',
   'activity.invalidCommentId',

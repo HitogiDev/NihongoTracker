@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   activityFind: vi.fn(),
   aggregateMetric: vi.fn(),
   buildVisibleActivityFilter: vi.fn(),
+  followerIds: vi.fn(),
   followedIds: vi.fn(),
   reactionFind: vi.fn(),
   userFind: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('../services/clubLogMetrics.service.js', () => ({
 vi.mock('../services/socialVisibility.service.js', () => ({
   buildVisibleActivityFilter: mocks.buildVisibleActivityFilter,
   canViewActivity: vi.fn(),
+  getFollowerUserIds: mocks.followerIds,
   getFollowedUserIds: mocks.followedIds,
   getVisibleSocialOwnerIds: mocks.visibleOwnerIds,
 }));
@@ -45,6 +47,7 @@ function activityQuery() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.followerIds.mockResolvedValue([]);
   mocks.followedIds.mockResolvedValue([]);
   mocks.buildVisibleActivityFilter.mockReturnValue({ visibility: 'public' });
   mocks.activityFind.mockReturnValue(activityQuery());
@@ -65,9 +68,17 @@ describe('club feed and leaderboard privacy', () => {
       scope: 'clubs',
     });
 
-    expect(mocks.buildVisibleActivityFilter).toHaveBeenCalledWith(viewerId, []);
+    expect(mocks.buildVisibleActivityFilter).toHaveBeenCalledWith(
+      viewerId,
+      [],
+      []
+    );
     expect(mocks.activityFind).toHaveBeenCalledWith({
-      $and: [{ club: { $in: [clubId] } }, { visibility: 'public' }],
+      $and: [
+        { type: { $ne: 'club_joined' } },
+        { club: { $in: [clubId] } },
+        { visibility: 'public' },
+      ],
     });
   });
 

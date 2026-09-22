@@ -7,6 +7,7 @@ import Log from '../models/log.model.js';
 import { ActivityReactionType, ActivityType, SocialVisibility } from '../types.js';
 import {
   buildVisibleActivityFilter,
+  getFollowerUserIds,
   getFollowedUserIds,
   getVisibleSocialOwnerIds,
 } from './socialVisibility.service.js';
@@ -329,11 +330,14 @@ export async function getMediaCommunityActivities(input: {
   viewerId?: Types.ObjectId;
   limit?: number;
 }) {
-  const followedIds = input.viewerId
-    ? await getFollowedUserIds(input.viewerId)
-    : [];
+  const [followedIds, followerIds] = input.viewerId
+    ? await Promise.all([
+        getFollowedUserIds(input.viewerId),
+        getFollowerUserIds(input.viewerId),
+      ])
+    : [[], []];
   const visibility = input.viewerId
-    ? buildVisibleActivityFilter(input.viewerId, followedIds)
+    ? buildVisibleActivityFilter(input.viewerId, followedIds, followerIds)
     : { visibility: 'public' as const };
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 20);
   const activities = (await Activity.find({

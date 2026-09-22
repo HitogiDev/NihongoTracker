@@ -16,6 +16,7 @@ import {
   PROFILE_ACCENTS,
   SIGNATURE_STATS,
   BANNER_EFFECTS,
+  SOCIAL_VISIBILITIES,
 } from '../types.js';
 import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
@@ -66,17 +67,17 @@ const SettingsSchema = new Schema<IUserSettings>(
         {
           profile: {
             type: String,
-            enum: ['public', 'followers', 'private'],
+            enum: SOCIAL_VISIBILITIES,
             default: 'public',
           },
           immersionActivity: {
             type: String,
-            enum: ['public', 'followers', 'private'],
+            enum: SOCIAL_VISIBILITIES,
             default: 'public',
           },
           statistics: {
             type: String,
-            enum: ['public', 'followers', 'private'],
+            enum: SOCIAL_VISIBILITIES,
             default: 'public',
           },
         },

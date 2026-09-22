@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { updateSocialPrivacyFn } from '../../api/trackerApi';
 import { useUserDataStore } from '../../store/userData';
-import type { SocialVisibility } from '../../types';
+import type {
+  ISocialPrivacySettings,
+  SocialVisibility,
+} from '../../types';
 import { getApiErrorMessage } from '../../utils/apiError';
 import Spinner from '../ui/Spinner';
 
@@ -14,9 +17,7 @@ type PrivacyKey =
   | 'immersionActivity'
   | 'statistics';
 
-type PrivacySettings = Record<PrivacyKey, SocialVisibility>;
-
-const DEFAULTS: PrivacySettings = {
+const DEFAULTS: ISocialPrivacySettings = {
   profile: 'public',
   immersionActivity: 'public',
   statistics: 'public',
@@ -28,12 +29,17 @@ const FIELDS: PrivacyKey[] = [
   'statistics',
 ];
 
-const VISIBILITIES: SocialVisibility[] = ['public', 'followers', 'private'];
+const SOCIAL_VISIBILITIES: SocialVisibility[] = [
+  'public',
+  'followers',
+  'following',
+  'private',
+];
 
 export default function SocialPrivacySettings() {
   const { t } = useTranslation('settings');
   const { user, setUser } = useUserDataStore();
-  const [privacy, setPrivacy] = useState<PrivacySettings>({
+  const [privacy, setPrivacy] = useState<ISocialPrivacySettings>({
     ...DEFAULTS,
     ...user?.settings?.socialPrivacy,
   });
@@ -83,11 +89,11 @@ export default function SocialPrivacySettings() {
             onChange={(event) =>
               setPrivacy((current) => ({
                 ...current,
-                [field]: event.target.value as SocialVisibility,
+                [field]: event.target.value as ISocialPrivacySettings[PrivacyKey],
               }))
             }
           >
-            {VISIBILITIES.map((visibility) => (
+            {SOCIAL_VISIBILITIES.map((visibility) => (
               <option key={visibility} value={visibility}>
                 {t(`privacy.visibility.${visibility}`)}
               </option>

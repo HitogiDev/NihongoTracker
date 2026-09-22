@@ -40,6 +40,7 @@ vi.mock('../models/log.model.js', () => ({
 }));
 vi.mock('../services/socialVisibility.service.js', () => ({
   buildVisibleActivityFilter: vi.fn(),
+  getFollowerUserIds: vi.fn(),
   getFollowedUserIds: mocks.followedIds,
   getVisibleSocialOwnerIds: mocks.visibleOwnerIds,
 }));

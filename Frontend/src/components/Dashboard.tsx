@@ -54,8 +54,10 @@ import {
 import ActivityCard from './social/ActivityCard';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 
+type DashboardActivityScope = Exclude<ActivityFeedScope, 'user'>;
+
 const ACTIVITY_SCOPES: Array<{
-  value: ActivityFeedScope;
+  value: DashboardActivityScope;
   icon: React.ElementType;
 }> = [
   { value: 'following', icon: Users },
@@ -104,7 +106,7 @@ function Dashboard() {
   const [selectedMedia, setSelectedMedia] = useState<
     IMediaDocument | undefined
   >();
-  const [activityScope, setActivityScope] = useState<ActivityFeedScope>(() =>
+  const [activityScope, setActivityScope] = useState<DashboardActivityScope>(() =>
     requestedFeed === 'following' ||
     requestedFeed === 'clubs' ||
     requestedFeed === 'global'

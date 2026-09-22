@@ -70,8 +70,8 @@ router.get('/:username/relationship', protect, getRelationship);
 router.post('/:username/follow', protect, followRateLimit, followProfile);
 router.delete('/:username/follow', protect, followRateLimit, unfollowProfile);
 
-router.get('/ranking', getRanking);
-router.get('/ranking/media', getMediumRanking);
+router.get('/ranking', optionalProtect, getRanking);
+router.get('/ranking/media', optionalProtect, getMediumRanking);
 router.get('/:username/ranking-summary', optionalProtect, getRankingSummary);
 router.get('/:username/ranking-history', optionalProtect, getRankingHistory);
 

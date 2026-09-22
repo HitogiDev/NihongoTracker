@@ -54,6 +54,7 @@ import {
   IImmersionForecastsResponse,
   IXpCalculatorRequest,
   IXpCalculatorResponse,
+  ISocialPrivacySettings,
 } from '../types';
 
 const api = axiosInstance;
@@ -177,6 +178,7 @@ export async function getMediumRankingFn(params: {
     | 'book'
     | 'audio';
   metric: 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
+  audience?: import('../types').RankingAudience;
   timeFilter?: string;
   timezone?: string;
   start?: string;
@@ -1627,10 +1629,7 @@ export async function updateProfileLayoutFn(
 }
 
 export async function updateSocialPrivacyFn(
-  socialPrivacy: Record<
-    'profile' | 'immersionActivity' | 'statistics',
-    import('../types').SocialVisibility
-  >
+  socialPrivacy: ISocialPrivacySettings
 ): Promise<{ message: string; socialPrivacy: typeof socialPrivacy }> {
   const { data } = await api.patch<{
     message: string;

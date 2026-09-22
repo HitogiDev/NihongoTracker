@@ -406,6 +406,7 @@
     "subtitle": "Elige quién puede ver cada parte de tu actividad social.",
     "title": "Privacidad social",
     "visibility": {
+      "following": "Personas que sigues",
       "followers": "Seguidores",
       "private": "Solo yo",
       "public": "Todo el mundo"

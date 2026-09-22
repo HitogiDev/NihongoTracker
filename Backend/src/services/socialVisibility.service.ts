@@ -4,6 +4,7 @@ import User from '../models/user.model.js';
 import {
   IActivity,
   ILog,
+  ISocialPrivacySettings,
   IUserSettings,
   SocialVisibility,
 } from '../types.js';
@@ -13,10 +14,9 @@ export type SocialPrivacyCategory =
   | 'immersionActivity'
   | 'statistics';
 
-const DEFAULT_SOCIAL_PRIVACY: Record<
-  SocialPrivacyCategory,
-  SocialVisibility
-> = {
+export type RankingAudience = 'all' | 'following' | 'mutual';
+
+const DEFAULT_SOCIAL_PRIVACY: ISocialPrivacySettings = {
   profile: 'public',
   immersionActivity: 'public',
   statistics: 'public',
@@ -33,11 +33,12 @@ export function isVisibilityAllowed(
   actorId: Types.ObjectId,
   visibility: SocialVisibility,
   viewerId: Types.ObjectId | undefined,
-  isFollowing: boolean
+  viewerFollowsOwner: boolean,
+  ownerFollowsViewer: boolean
 ): boolean {
   if (viewerId?.equals(actorId) || visibility === 'public') return true;
   if (visibility === 'private' || !viewerId) return false;
-  return isFollowing;
+  return visibility === 'followers' ? viewerFollowsOwner : ownerFollowsViewer;
 }
 
 export async function canViewUserSocialCategory(options: {
@@ -54,6 +55,12 @@ export async function canViewUserSocialCategory(options: {
   if (visibility === 'public') return true;
   if (visibility === 'private' || !viewerId) return false;
 
+  if (visibility === 'following') {
+    return Boolean(
+      await Follow.exists({ follower: ownerId, following: viewerId })
+    );
+  }
+
   return Boolean(await Follow.exists({ follower: viewerId, following: ownerId }));
 }
 
@@ -63,21 +70,62 @@ export async function getFollowedUserIds(
   return Follow.find({ follower: viewerId }).distinct('following');
 }
 
+export async function getFollowerUserIds(
+  viewerId: Types.ObjectId
+): Promise<Types.ObjectId[]> {
+  return Follow.find({ following: viewerId }).distinct('follower');
+}
+
+export async function getRankingAudienceUserIds(
+  viewerId: Types.ObjectId,
+  audience: Exclude<RankingAudience, 'all'>
+): Promise<Types.ObjectId[]> {
+  const [followedUserIds, followerUserIds] = await Promise.all([
+    getFollowedUserIds(viewerId),
+    getFollowerUserIds(viewerId),
+  ]);
+  const followerSet = new Set(followerUserIds.map((id) => id.toString()));
+  const relationshipIds =
+    audience === 'mutual'
+      ? followedUserIds.filter((id) => followerSet.has(id.toString()))
+      : followedUserIds;
+  const candidateIds = [viewerId, ...relationshipIds];
+
+  const owners = await User.find({ _id: { $in: candidateIds } })
+    .select('_id settings.socialPrivacy')
+    .lean();
+  const followedSet = new Set(followedUserIds.map((id) => id.toString()));
+
+  return owners
+    .filter((owner) =>
+      isVisibilityAllowed(
+        owner._id,
+        getSocialVisibility(owner.settings, 'statistics'),
+        viewerId,
+        followedSet.has(owner._id.toString()),
+        followerSet.has(owner._id.toString())
+      )
+    )
+    .map((owner) => owner._id);
+}
+
 export async function getVisibleSocialOwnerIds(options: {
   ownerIds: Types.ObjectId[];
   viewerId?: Types.ObjectId;
-  category: SocialPrivacyCategory;
+  category: Exclude<SocialPrivacyCategory, 'profile'>;
 }): Promise<Types.ObjectId[]> {
   const { ownerIds, viewerId, category } = options;
   if (ownerIds.length === 0) return [];
 
-  const [followedUserIds, owners] = await Promise.all([
+  const [followedUserIds, followerUserIds, owners] = await Promise.all([
     viewerId ? getFollowedUserIds(viewerId) : Promise.resolve([]),
+    viewerId ? getFollowerUserIds(viewerId) : Promise.resolve([]),
     User.find({ _id: { $in: ownerIds } })
       .select('_id settings.socialPrivacy')
       .lean(),
   ]);
   const followedSet = new Set(followedUserIds.map((id) => id.toString()));
+  const followerSet = new Set(followerUserIds.map((id) => id.toString()));
 
   return owners
     .filter((owner) =>
@@ -85,7 +133,8 @@ export async function getVisibleSocialOwnerIds(options: {
         owner._id,
         getSocialVisibility(owner.settings, category),
         viewerId,
-        followedSet.has(owner._id.toString())
+        followedSet.has(owner._id.toString()),
+        followerSet.has(owner._id.toString())
       )
     )
     .map((owner) => owner._id);
@@ -93,20 +142,23 @@ export async function getVisibleSocialOwnerIds(options: {
 
 export function buildVisibleActivityFilter(
   viewerId: Types.ObjectId,
-  followedUserIds: Types.ObjectId[]
+  followedUserIds: Types.ObjectId[],
+  followerUserIds: Types.ObjectId[]
 ): FilterQuery<IActivity> {
-  const visibilityClauses: FilterQuery<IActivity>[] = [{ actor: viewerId }];
-  if (isVisibilityAllowed(viewerId, 'public', viewerId, false)) {
-    visibilityClauses.push({ visibility: 'public' });
-  }
-  if (
-    followedUserIds.some((actorId) =>
-      isVisibilityAllowed(actorId, 'followers', viewerId, true)
-    )
-  ) {
+  const visibilityClauses: FilterQuery<IActivity>[] = [
+    { actor: viewerId },
+    { visibility: 'public' },
+  ];
+  if (followedUserIds.length > 0) {
     visibilityClauses.push({
       actor: { $in: followedUserIds },
       visibility: 'followers',
+    });
+  }
+  if (followerUserIds.length > 0) {
+    visibilityClauses.push({
+      actor: { $in: followerUserIds },
+      visibility: 'following',
     });
   }
   return {
@@ -148,10 +200,16 @@ export async function canViewActivity(
     Boolean(
       await Follow.exists({ follower: viewerId, following: activity.actor })
     );
+  const isFollowedBy =
+    activity.visibility === 'following' &&
+    Boolean(
+      await Follow.exists({ follower: activity.actor, following: viewerId })
+    );
   return isVisibilityAllowed(
     activity.actor,
     activity.visibility,
     viewerId,
-    isFollowing
+    isFollowing,
+    isFollowedBy
   );
 }

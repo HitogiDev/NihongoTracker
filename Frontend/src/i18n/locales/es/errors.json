@@ -275,6 +275,9 @@
     "notFound": "No se encontró la recomendación",
     "self": "No puedes recomendarte contenido a ti mismo"
   },
+  "ranking": {
+    "invalidAudience": "Ese grupo de clasificación no es válido"
+  },
   "privacy": {
     "immersionRestricted": "Este usuario ha limitado quién puede ver su actividad de inmersión",
     "invalidSettings": "Los ajustes de privacidad social son obligatorios",

@@ -37,6 +37,7 @@ vi.mock('../models/media.model.js', () => ({ MediaBase: {} }));
 vi.mock('../services/socialVisibility.service.js', () => ({
   buildVisibleActivityFilter: vi.fn(),
   canViewActivity: mocks.canViewActivity,
+  getFollowerUserIds: vi.fn(),
   getFollowedUserIds: vi.fn(),
 }));
 

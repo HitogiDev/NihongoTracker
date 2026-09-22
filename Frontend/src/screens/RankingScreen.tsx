@@ -11,13 +11,21 @@ import {
   Bookmark,
   BookmarkX,
   MoreHorizontal,
+  Globe2,
+  UserRoundCheck,
+  Handshake,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 
 import { getRankingFn, getMediumRankingFn } from '../api/trackerApi';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { filterTypes, IStats, IUserCustomization } from '../types';
+import {
+  filterTypes,
+  IStats,
+  IUserCustomization,
+  type RankingAudience,
+} from '../types';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTimezone } from '../hooks/useTimezone';
 import { numberWithCommas } from '../utils/utils';
@@ -75,6 +83,7 @@ type RankingMediumMetric = 'xp' | 'time' | 'episodes' | 'chars' | 'pages';
 
 type RankingDefaults = {
   mode?: RankingMode;
+  audience?: RankingAudience;
   timeFilter?: RankingTimeFilter;
   xpFilter?: filterTypes;
   displayMode?: RankingDisplayMode;
@@ -94,6 +103,7 @@ const VALID_TIME_FILTERS: RankingTimeFilter[] = [
   'custom',
 ];
 const VALID_MODES: RankingMode[] = ['global', 'medium'];
+const VALID_AUDIENCES: RankingAudience[] = ['all', 'following', 'mutual'];
 const VALID_SCOPES: filterTypes[] = [
   'userXp',
   'readingXp',
@@ -182,6 +192,7 @@ function RankingScreen() {
     useState<RankingDefaults>(initialDefaults);
   const [limit] = useState(10);
   const modeParam = searchParams.get('mode');
+  const audienceParam = searchParams.get('audience');
   const scopeParam = searchParams.get('scope');
   const timeParam = searchParams.get('time');
   const metricParam = searchParams.get('metric');
@@ -210,6 +221,13 @@ function RankingScreen() {
     : isOneOf(initialDefaults.displayMode, VALID_DISPLAY_MODES)
       ? initialDefaults.displayMode
       : 'xp';
+
+  const resolvedAudience =
+    user && isOneOf(audienceParam, VALID_AUDIENCES)
+      ? audienceParam
+      : user && isOneOf(initialDefaults.audience, VALID_AUDIENCES)
+        ? initialDefaults.audience
+        : 'all';
 
   const resolvedTimeFilterCandidate = isOneOf(timeParam, VALID_TIME_FILTERS)
     ? timeParam
@@ -242,6 +260,9 @@ function RankingScreen() {
   const [displayMode, setDisplayMode] =
     useState<RankingDisplayMode>(resolvedDisplayMode);
   const [mode, setMode] = useState<RankingMode>(resolvedMode);
+  const [audience, setAudience] =
+    useState<RankingAudience>(resolvedAudience);
+  const rankingAudience: RankingAudience = user ? audience : 'all';
   const [mediumType, setMediumType] =
     useState<RankingMediumType>(resolvedMediumType);
   const mediumMetricOptions: Record<
@@ -346,6 +367,7 @@ function RankingScreen() {
 
   const currentDefaults: RankingDefaults = {
     mode,
+    audience: rankingAudience,
     timeFilter,
     xpFilter,
     displayMode,
@@ -367,6 +389,7 @@ function RankingScreen() {
   const isDefaultMatch =
     hasSavedDefaults &&
     savedDefaults.mode === currentDefaults.mode &&
+    (savedDefaults.audience ?? 'all') === currentDefaults.audience &&
     savedDefaults.timeFilter === currentDefaults.timeFilter &&
     savedDefaults.xpFilter === currentDefaults.xpFilter &&
     savedDefaults.displayMode === currentDefaults.displayMode &&
@@ -429,6 +452,7 @@ function RankingScreen() {
       timezone,
       startDate,
       endDate,
+      rankingAudience,
     ],
     queryFn: ({ pageParam }) =>
       getRankingFn({
@@ -439,6 +463,7 @@ function RankingScreen() {
         timezone, // Pass user's timezone to backend
         start: startDate || undefined,
         end: endDate || undefined,
+        audience: rankingAudience,
       }),
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (lastPage.length < limit) return undefined;
@@ -465,6 +490,7 @@ function RankingScreen() {
       timezone,
       startDate,
       endDate,
+      rankingAudience,
     ],
     queryFn: ({ pageParam }) =>
       getMediumRankingFn({
@@ -476,6 +502,7 @@ function RankingScreen() {
         timezone,
         start: startDate || undefined,
         end: endDate || undefined,
+        audience: rankingAudience,
       }),
     getNextPageParam: (lastPage, _allPages, lastPageParam) => {
       if (lastPage.length < limit) return undefined;
@@ -541,10 +568,20 @@ function RankingScreen() {
   }, [xpFilter, displayMode]);
 
   useEffect(() => {
+    if (!user && audience !== 'all') {
+      setAudience('all');
+    }
+  }, [user, audience]);
+
+  useEffect(() => {
     const params = new URLSearchParams();
 
     if (mode !== 'global') {
       params.set('mode', mode);
+    }
+
+    if (rankingAudience !== 'all') {
+      params.set('audience', rankingAudience);
     }
 
     if (timeFilter !== 'month') {
@@ -579,6 +616,7 @@ function RankingScreen() {
     setSearchParams(params, { replace: true });
   }, [
     mode,
+    rankingAudience,
     timeFilter,
     startDate,
     endDate,
@@ -713,6 +751,10 @@ function RankingScreen() {
   const firstMediumBadge = getPatreonBadgeProps(firstMediumUser?.patreon);
   const secondMediumBadge = getPatreonBadgeProps(secondMediumUser?.patreon);
   const thirdMediumBadge = getPatreonBadgeProps(thirdMediumUser?.patreon);
+  const isRankingEmpty =
+    mode === 'global'
+      ? (rankedUsers?.pages[0]?.length ?? 0) === 0
+      : (mediumUsers?.pages[0]?.length ?? 0) === 0;
 
   // (units displayed inline per mode)
 
@@ -768,6 +810,11 @@ function RankingScreen() {
     return labelKey ? tCommon(labelKey) : type;
   };
 
+  const getAudienceButtonClass = (value: RankingAudience) =>
+    audience === value
+      ? 'join-item btn btn-primary btn-sm flex-1 sm:flex-none'
+      : 'join-item btn btn-outline btn-sm flex-1 sm:flex-none';
+
   return (
     <div className="min-h-screen pt-20 bg-base-200">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -780,6 +827,41 @@ function RankingScreen() {
           </div>
           <p className="text-base-content/70">{t('subtitle')}</p>
         </div>
+
+        {user && (
+          <div className="flex justify-center mb-4">
+            <div
+              className="join w-full sm:w-auto"
+              role="group"
+              aria-label={t('audience.label')}
+            >
+              <button
+                type="button"
+                className={getAudienceButtonClass('all')}
+                onClick={() => setAudience('all')}
+              >
+                <Globe2 className="w-4 h-4" />
+                {t('audience.all')}
+              </button>
+              <button
+                type="button"
+                className={getAudienceButtonClass('following')}
+                onClick={() => setAudience('following')}
+              >
+                <UserRoundCheck className="w-4 h-4" />
+                {t('audience.following')}
+              </button>
+              <button
+                type="button"
+                className={getAudienceButtonClass('mutual')}
+                onClick={() => setAudience('mutual')}
+              >
+                <Handshake className="w-4 h-4" />
+                {t('audience.mutuals')}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
           {xpFilter !== 'currentStreak' && (
@@ -1687,6 +1769,18 @@ function RankingScreen() {
                     </tr>
                   </thead>
                   <tbody>
+                    {isRankingEmpty && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="py-12 text-center text-base-content/70"
+                        >
+                          {audience === 'all'
+                            ? t('empty')
+                            : t('audience.empty')}
+                        </td>
+                      </tr>
+                    )}
                     {(mode === 'global'
                       ? rankedUsers?.pages
                       : mediumUsers?.pages

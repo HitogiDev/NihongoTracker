@@ -26,6 +26,7 @@ import {
   SUPPORTED_LANGUAGES,
   SupportedLanguage,
   SOCIAL_VISIBILITIES,
+  ISocialPrivacySettings,
   SocialVisibility,
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
@@ -56,7 +57,11 @@ import {
   sanitizeCustomizationForDisplay,
 } from '../services/customization.js';
 import { getSocialSummary } from '../services/follow.service.js';
-import { canViewUserSocialCategory } from '../services/socialVisibility.service.js';
+import {
+  canViewUserSocialCategory,
+  getRankingAudienceUserIds,
+  type RankingAudience,
+} from '../services/socialVisibility.service.js';
 import {
   deleteSocialDataForUser,
   syncImmersionActivityVisibility,
@@ -943,11 +948,59 @@ export async function updateProfileLayout(
   }
 }
 
-const SOCIAL_PRIVACY_DEFAULTS = {
+const SOCIAL_PRIVACY_DEFAULTS: ISocialPrivacySettings = {
   profile: 'public',
   immersionActivity: 'public',
   statistics: 'public',
-} as const satisfies Record<string, SocialVisibility>;
+};
+
+const RANKING_AUDIENCES: RankingAudience[] = [
+  'all',
+  'following',
+  'mutual',
+];
+const RANKING_MODERATION_MATCH = {
+  $or: [
+    { 'moderation.rankingBanned': { $exists: false } },
+    { 'moderation.rankingBanned': false },
+  ],
+};
+
+async function getRankingUserMatch(req: Request, res: Response) {
+  const requestedAudience = (req.query.audience as string) || 'all';
+  if (!RANKING_AUDIENCES.includes(requestedAudience as RankingAudience)) {
+    throw apiError(
+      'ranking.invalidAudience',
+      400,
+      'Invalid ranking audience'
+    );
+  }
+
+  const audience = requestedAudience as RankingAudience;
+  if (audience === 'all') {
+    return { $and: [RANKING_MODERATION_MATCH, PUBLIC_STATISTICS_MATCH] };
+  }
+
+  const viewer = res.locals.user as IUser | undefined;
+  if (!viewer) {
+    throw apiError(
+      'auth.notAuthenticated',
+      401,
+      'Sign in to filter rankings by your connections'
+    );
+  }
+
+  const audienceUserIds = await getRankingAudienceUserIds(
+    viewer._id,
+    audience
+  );
+  return {
+    $and: [
+      RANKING_MODERATION_MATCH,
+      { _id: { $in: audienceUserIds } },
+    ],
+  };
+}
 
 export async function updateSocialPrivacy(
   req: Request,
@@ -967,10 +1020,6 @@ export async function updateSocialPrivacy(
       );
     }
 
-    const nextPrivacy: Record<
-      keyof typeof SOCIAL_PRIVACY_DEFAULTS,
-      SocialVisibility
-    > = { ...SOCIAL_PRIVACY_DEFAULTS };
     for (const key of Object.keys(SOCIAL_PRIVACY_DEFAULTS) as Array<
       keyof typeof SOCIAL_PRIVACY_DEFAULTS
     >) {
@@ -986,8 +1035,13 @@ export async function updateSocialPrivacy(
           { field: key }
         );
       }
-      nextPrivacy[key] = value as SocialVisibility;
     }
+
+    const nextPrivacy: ISocialPrivacySettings = {
+      profile: socialPrivacy.profile as SocialVisibility,
+      immersionActivity: socialPrivacy.immersionActivity as SocialVisibility,
+      statistics: socialPrivacy.statistics as SocialVisibility,
+    };
 
     const user = await User.findById(res.locals.user._id);
     if (!user) throw apiError('user.notFound', 404, 'User not found');
@@ -1342,22 +1396,13 @@ export async function getRanking(
     const timezone = (req.query.timezone as string) || 'UTC'; // Accept timezone as query parameter
     const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
     const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
+    const rankingUserMatch = await getRankingUserMatch(req, res);
 
     // Current streaks are user-level values, not log-period aggregates. Read
     // them directly so the ranking can also apply each user's timezone when a
     // stored streak has gone stale since their last request.
     if (filter === 'currentStreak') {
-      const streakUsers = await User.find({
-        $and: [
-          {
-            $or: [
-              { 'moderation.rankingBanned': { $exists: false } },
-              { 'moderation.rankingBanned': false },
-            ],
-          },
-          PUBLIC_STATISTICS_MATCH,
-        ],
-      })
+      const streakUsers = await User.find(rankingUserMatch)
         .select(
           'username avatar stats.userLevel stats.currentStreak stats.lastStreakDate settings.timezone patreon customization'
         )
@@ -1456,17 +1501,7 @@ export async function getRanking(
       // Lookup user details with aggregated stats
       const rankingUsers = await User.aggregate([
         {
-          $match: {
-            $and: [
-              {
-                $or: [
-                  { 'moderation.rankingBanned': { $exists: false } },
-                  { 'moderation.rankingBanned': false },
-                ],
-              },
-              PUBLIC_STATISTICS_MATCH,
-            ],
-          },
+          $match: rankingUserMatch,
         },
         {
           $lookup: {
@@ -1642,17 +1677,7 @@ export async function getRanking(
       // Default behavior - get all-time stats with hours calculated from logs
       const rankingUsers = await User.aggregate([
         {
-          $match: {
-            $and: [
-              {
-                $or: [
-                  { 'moderation.rankingBanned': { $exists: false } },
-                  { 'moderation.rankingBanned': false },
-                ],
-              },
-              PUBLIC_STATISTICS_MATCH,
-            ],
-          },
+          $match: rankingUserMatch,
         },
         {
           $lookup: {
@@ -2299,6 +2324,7 @@ export async function getMediumRanking(
     const timezone = (req.query.timezone as string) || 'UTC';
     const startParam = (req.query.start as string) || undefined; // YYYY-MM-DD
     const endParam = (req.query.end as string) || undefined; // YYYY-MM-DD
+    const rankingUserMatch = await getRankingUserMatch(req, res);
 
     // Date filter (copied from getRanking)
     let dateGte: Date | undefined = undefined;
@@ -2350,17 +2376,7 @@ export async function getMediumRanking(
     // Build pipeline
     const pipeline: any[] = [
       {
-        $match: {
-          $and: [
-            {
-              $or: [
-                { 'moderation.rankingBanned': { $exists: false } },
-                { 'moderation.rankingBanned': false },
-              ],
-            },
-            PUBLIC_STATISTICS_MATCH,
-          ],
-        },
+        $match: rankingUserMatch,
       },
       {
         $lookup: {

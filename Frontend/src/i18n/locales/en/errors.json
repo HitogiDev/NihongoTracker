@@ -275,6 +275,9 @@
     "notFound": "Recommendation not found",
     "self": "You cannot recommend media to yourself"
   },
+  "ranking": {
+    "invalidAudience": "That ranking audience is not valid"
+  },
   "privacy": {
     "immersionRestricted": "This user has limited who can see their immersion activity",
     "invalidSettings": "Social privacy settings are required",

@@ -176,11 +176,7 @@ export interface IUserSettings {
   dismissedNotificationClubIds?: string[];
   dismissedNotificationClubAt?: Record<string, Date | string>;
   lastSeenChangelogAt?: Date | null;
-  socialPrivacy?: {
-    profile: SocialVisibility;
-    immersionActivity: SocialVisibility;
-    statistics: SocialVisibility;
-  };
+  socialPrivacy?: ISocialPrivacySettings;
 }
 
 export interface IPatreonData {
@@ -535,8 +531,19 @@ export const ACTIVITY_TYPES = [
 ] as const;
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
-export const SOCIAL_VISIBILITIES = ['public', 'followers', 'private'] as const;
+export const SOCIAL_VISIBILITIES = [
+  'public',
+  'followers',
+  'following',
+  'private',
+] as const;
 export type SocialVisibility = (typeof SOCIAL_VISIBILITIES)[number];
+
+export interface ISocialPrivacySettings {
+  profile: SocialVisibility;
+  immersionActivity: SocialVisibility;
+  statistics: SocialVisibility;
+}
 
 export const ACTIVITY_REACTIONS = [
   'like',

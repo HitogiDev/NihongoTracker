@@ -148,7 +148,7 @@ const swaggerDocument = {
       },
       SocialVisibility: {
         type: 'string',
-        enum: ['public', 'followers', 'private'],
+        enum: ['public', 'followers', 'following', 'private'],
       },
       SocialSummary: {
         type: 'object',

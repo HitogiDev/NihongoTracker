@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Types } from 'mongoose';
 import {
+  buildVisibleActivityFilter,
   buildVisibleImmersionLogFilter,
+  canViewActivity,
   canViewUserSocialCategory,
   getSocialVisibility,
+  getRankingAudienceUserIds,
   getVisibleSocialOwnerIds,
 } from '../services/socialVisibility.service.js';
 
@@ -77,6 +80,35 @@ describe('social visibility', () => {
     });
   });
 
+  it.each(['profile', 'immersionActivity', 'statistics'] as const)(
+    'requires the owner to follow the viewer for following-only %s',
+    async (category) => {
+      mocks.exists
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ _id: 1 });
+      const options = {
+        ownerId: new Types.ObjectId(),
+        viewerId: new Types.ObjectId(),
+        settings: {
+          blurAdultContent: false,
+          socialPrivacy: {
+            profile: 'following' as const,
+            immersionActivity: 'following' as const,
+            statistics: 'following' as const,
+          },
+        },
+        category,
+      };
+
+      await expect(canViewUserSocialCategory(options)).resolves.toBe(false);
+      await expect(canViewUserSocialCategory(options)).resolves.toBe(true);
+      expect(mocks.exists).toHaveBeenCalledWith({
+        follower: options.ownerId,
+        following: options.viewerId,
+      });
+    }
+  );
+
   it('does not expose follower-only resources to signed-out viewers', async () => {
     await expect(
       canViewUserSocialCategory({
@@ -134,6 +166,7 @@ describe('social visibility', () => {
   it('applies the same visibility rules to community statistic owners', async () => {
     const publicOwner = new Types.ObjectId();
     const followedOwner = new Types.ObjectId();
+    const followingOwner = new Types.ObjectId();
     const privateOwner = new Types.ObjectId();
     const viewerId = new Types.ObjectId();
     userFind.mockReturnValue({
@@ -149,23 +182,131 @@ describe('social visibility', () => {
               settings: { socialPrivacy: { statistics: 'followers' } },
             },
             {
+              _id: followingOwner,
+              settings: { socialPrivacy: { statistics: 'following' } },
+            },
+            {
               _id: privateOwner,
               settings: { socialPrivacy: { statistics: 'private' } },
             },
           ]),
       }),
     });
-    mocks.find.mockReturnValue({
-      distinct: () => Promise.resolve([followedOwner]),
-    });
+    mocks.find.mockImplementation((filter: Record<string, unknown>) => ({
+      distinct: () =>
+        Promise.resolve(
+          'follower' in filter ? [followedOwner] : [followingOwner]
+        ),
+    }));
 
     await expect(
       getVisibleSocialOwnerIds({
-        ownerIds: [publicOwner, followedOwner, privateOwner],
+        ownerIds: [publicOwner, followedOwner, followingOwner, privateOwner],
         viewerId,
         category: 'statistics',
       })
-    ).resolves.toEqual([publicOwner, followedOwner]);
+    ).resolves.toEqual([publicOwner, followedOwner, followingOwner]);
+  });
+
+  it('returns only visible followed users and can narrow them to mutuals', async () => {
+    const publicOwner = new Types.ObjectId();
+    const followerOnlyOwner = new Types.ObjectId();
+    const followingOnlyOwner = new Types.ObjectId();
+    const privateOwner = new Types.ObjectId();
+    const viewerId = new Types.ObjectId();
+    const followedIds = [
+      publicOwner,
+      followerOnlyOwner,
+      followingOnlyOwner,
+      privateOwner,
+    ];
+    const followerIds = [followingOnlyOwner, privateOwner];
+    const owners = [
+      {
+        _id: viewerId,
+        settings: { socialPrivacy: { statistics: 'private' } },
+      },
+      {
+        _id: publicOwner,
+        settings: { socialPrivacy: { statistics: 'public' } },
+      },
+      {
+        _id: followerOnlyOwner,
+        settings: { socialPrivacy: { statistics: 'followers' } },
+      },
+      {
+        _id: followingOnlyOwner,
+        settings: { socialPrivacy: { statistics: 'following' } },
+      },
+      {
+        _id: privateOwner,
+        settings: { socialPrivacy: { statistics: 'private' } },
+      },
+    ];
+    userFind.mockImplementation((filter: { _id: { $in: Types.ObjectId[] } }) => ({
+      select: () => ({
+        lean: () =>
+          Promise.resolve(
+            owners.filter((owner) => filter._id.$in.includes(owner._id))
+          ),
+      }),
+    }));
+    mocks.find.mockImplementation((filter: Record<string, unknown>) => ({
+      distinct: () =>
+        Promise.resolve('follower' in filter ? followedIds : followerIds),
+    }));
+
+    await expect(
+      getRankingAudienceUserIds(viewerId, 'following')
+    ).resolves.toEqual([
+      viewerId,
+      publicOwner,
+      followerOnlyOwner,
+      followingOnlyOwner,
+    ]);
+    await expect(
+      getRankingAudienceUserIds(viewerId, 'mutual')
+    ).resolves.toEqual([viewerId, followingOnlyOwner]);
+  });
+
+  it('builds activity visibility clauses for both follow directions', () => {
+    const viewerId = new Types.ObjectId();
+    const followedOwner = new Types.ObjectId();
+    const followingOwner = new Types.ObjectId();
+
+    expect(
+      buildVisibleActivityFilter(viewerId, [followedOwner], [followingOwner])
+    ).toEqual({
+      $or: [
+        { actor: viewerId },
+        { visibility: 'public' },
+        {
+          actor: { $in: [followedOwner] },
+          visibility: 'followers',
+        },
+        {
+          actor: { $in: [followingOwner] },
+          visibility: 'following',
+        },
+      ],
+    });
+  });
+
+  it('allows following-only activity when its owner follows the viewer', async () => {
+    const ownerId = new Types.ObjectId();
+    const viewerId = new Types.ObjectId();
+    mocks.exists.mockResolvedValue({ _id: new Types.ObjectId() });
+
+    await expect(
+      canViewActivity(
+        { actor: ownerId, visibility: 'following' },
+        viewerId
+      )
+    ).resolves.toBe(true);
+    expect(mocks.exists).toHaveBeenCalledWith({
+      follower: ownerId,
+      following: viewerId,
+    });
   });
 
 });

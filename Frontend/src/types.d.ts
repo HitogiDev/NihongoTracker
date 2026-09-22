@@ -159,11 +159,7 @@ export interface IUser {
     notificationsLastViewedAt?: string | Date | null;
     dismissedNotificationClubIds?: string[];
     dismissedNotificationClubAt?: Record<string, string | Date>;
-    socialPrivacy?: {
-    profile: SocialVisibility;
-    immersionActivity: SocialVisibility;
-    statistics: SocialVisibility;
-    };
+    socialPrivacy?: ISocialPrivacySettings;
   };
   statsLayout?: StatsGroupLayout[];
   profileLayout?: ProfileWidgetLayout[];
@@ -205,7 +201,17 @@ export interface IConnectionsResponse {
   limit: number;
 }
 
-export type SocialVisibility = 'public' | 'followers' | 'private';
+export type SocialVisibility =
+  | 'public'
+  | 'followers'
+  | 'following'
+  | 'private';
+
+export interface ISocialPrivacySettings {
+  profile: SocialVisibility;
+  immersionActivity: SocialVisibility;
+  statistics: SocialVisibility;
+}
 
 export type ActivityType =
   | 'immersion_log'
@@ -534,11 +540,14 @@ export interface IRankingParams {
   limit?: number;
   sort?: sortTypes;
   filter?: filterTypes;
+  audience?: RankingAudience;
   timeFilter?: string; // Add time filter parameter
   timezone?: string; // Add timezone parameter
   start?: string; // YYYY-MM-DD
   end?: string; // YYYY-MM-DD
 }
+
+export type RankingAudience = 'all' | 'following' | 'mutual';
 
 export interface ILogsParams extends Pick<IRankingParams, 'page' | 'limit'> {
   mediaId?: string;

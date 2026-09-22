@@ -16,6 +16,7 @@ import {
 import {
   buildVisibleActivityFilter,
   canViewActivity,
+  getFollowerUserIds,
   getFollowedUserIds,
 } from './socialVisibility.service.js';
 
@@ -219,10 +220,14 @@ export async function getActivityFeed(input: {
 }) {
   const limit = parseActivityLimit(input.limit);
   const before = parseBefore(input.before);
-  const followedUserIds = await getFollowedUserIds(input.viewerId);
+  const [followedUserIds, followerUserIds] = await Promise.all([
+    getFollowedUserIds(input.viewerId),
+    getFollowerUserIds(input.viewerId),
+  ]);
   const visibility = buildVisibleActivityFilter(
     input.viewerId,
-    followedUserIds
+    followedUserIds,
+    followerUserIds
   );
   const clauses: FilterQuery<IActivity>[] = [{ type: { $ne: 'club_joined' } }];
 
