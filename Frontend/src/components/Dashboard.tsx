@@ -52,6 +52,7 @@ import {
   getActivityFeedFn,
 } from '../api/activitiesApi';
 import ActivityCard from './social/ActivityCard';
+import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 
 const ACTIVITY_SCOPES: Array<{
   value: ActivityFeedScope;
@@ -78,6 +79,7 @@ function getRecentMediaRailLimit(width: number) {
 function Dashboard() {
   const { t } = useTranslation('home');
   const { user, setUser } = useUserDataStore();
+  const hideRankingFeatures = useHideRankingFeatures();
   const username = user?.username;
   const userTimezone = user?.settings?.timezone ?? 'UTC';
   const [searchParams] = useSearchParams();
@@ -142,7 +144,7 @@ function Dashboard() {
   const { data: rankingSummary } = useQuery({
     queryKey: ['rankingSummary', username, userTimezone],
     queryFn: () => getRankingSummaryFn(username ?? '', userTimezone),
-    enabled: !!username,
+    enabled: !!username && !hideRankingFeatures,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -445,7 +447,13 @@ function Dashboard() {
           </h1>
           <p className="text-base-content/70 mt-1">{t(greetingKey)}</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+        <div
+          className={
+            hideRankingFeatures
+              ? 'grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto'
+              : 'grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto'
+          }
+        >
           <Link to="/log" className="btn btn-primary btn-lg">
             <Plus className="w-5 h-5" />
             {t('dashboard.actions.createLog')}
@@ -457,10 +465,12 @@ function Dashboard() {
             <User className="w-5 h-5" />
             {t('dashboard.actions.profile')}
           </Link>
-          <Link to="/ranking" className="btn btn-accent btn-lg">
-            <ChartNoAxesColumn className="w-5 h-5" />
-            {t('dashboard.actions.rankings')}
-          </Link>
+          {!hideRankingFeatures && (
+            <Link to="/ranking" className="btn btn-accent btn-lg">
+              <ChartNoAxesColumn className="w-5 h-5" />
+              {t('dashboard.actions.rankings')}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -473,7 +483,13 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        className={
+          hideRankingFeatures
+            ? 'grid grid-cols-1 gap-4'
+            : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+        }
+      >
         <div className="card bg-gradient-to-br from-secondary/10 to-secondary/5 shadow-sm">
           <div className="card-body">
             <div className="flex items-center gap-3">
@@ -494,7 +510,8 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
+        {!hideRankingFeatures && (
+          <div className="card bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
           <div className="card-body">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-primary text-primary-content">
@@ -512,7 +529,8 @@ function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -678,7 +696,7 @@ function Dashboard() {
             />
           </div>
 
-          <ClubRanking username={user.username} />
+          {!hideRankingFeatures && <ClubRanking username={user.username} />}
         </div>
       </div>
 

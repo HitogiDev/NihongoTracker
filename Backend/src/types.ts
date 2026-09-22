@@ -166,6 +166,7 @@ export interface IUserCustomization {
 export interface IUserSettings {
   blurAdultContent: boolean;
   hideUnmatchedLogsAlert?: boolean;
+  hideRankingFeatures?: boolean;
   timezone?: string;
   language?: SupportedLanguage;
   hiddenRecentMedia?: string[];
@@ -931,6 +932,7 @@ export interface IUpdateRequest {
   discordId?: string;
   blurAdultContent?: string;
   hideUnmatchedLogsAlert?: string;
+  hideRankingFeatures?: string;
   hiddenRecentMedia?: string;
   timezone?: string;
   // string, not SupportedLanguage: PUT /users is multipart/form-data

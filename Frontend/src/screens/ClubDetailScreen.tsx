@@ -49,6 +49,7 @@ import {
   youtubeChannelInfo,
 } from '../types.d';
 import { useUserDataStore } from '../store/userData';
+import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 import CreateVotingWizard from '../components/club/CreateVotingWizard';
 import VotingSystem from '../components/club/VotingSystem';
 import ClubRankingsTab from '../components/club/ClubRankingsTab';
@@ -157,6 +158,7 @@ function ClubDetailScreen() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useUserDataStore();
+  const hideRankingFeatures = useHideRankingFeatures();
   const maxAllowedMemberLimit = getMaxClubMemberLimitForUser(user);
 
   // Fetch club data
@@ -1044,13 +1046,13 @@ function ClubDetailScreen() {
                 </span>
               )}
           </button>
-          <button
+          {!hideRankingFeatures && <button
             className={`tab ${activeTab === 'rankings' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('rankings')}
           >
             <BarChart className="mr-2 w-4 h-4" />
             {t('tabs.rankings')}
-          </button>
+          </button>}
         </div>
 
         {/* Tab Content */}

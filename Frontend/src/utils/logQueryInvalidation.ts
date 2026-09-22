@@ -18,6 +18,10 @@ export const invalidateLogScreenQueries = (
   type: ILog['type'] | null | undefined,
   username?: string
 ) => {
+  // A new log creates a social activity entry. Refresh every dashboard feed
+  // scope so the entry appears without a manual reload.
+  void queryClient.invalidateQueries({ queryKey: ['socialActivities'] });
+
   if (!type) return;
   queryClient.invalidateQueries({ queryKey: ['immersionForecasts'] });
   const keys = LOG_SCREEN_QUERY_KEYS[type];

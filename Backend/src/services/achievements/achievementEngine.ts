@@ -38,6 +38,7 @@ import {
 import User from '../../models/user.model.js';
 import { isValidTimezone } from '../../constants/timezone.js';
 import { recordAchievementActivity } from '../activityEvents.service.js';
+import { isRankingAchievementKey } from './rankingVisibility.js';
 
 // Condition types whose result depends on where calendar days / clock hours fall
 const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
@@ -258,6 +259,17 @@ export async function checkAchievements(
 
     if (unearnedAchievements.length === 0) return [];
 
+    const hasRankingAchievements = unearnedAchievements.some((achievement) =>
+      isRankingAchievementKey(achievement.key)
+    );
+    const userPreference = hasRankingAchievements
+      ? await User.findById(userId)
+          .select('settings.hideRankingFeatures')
+          .lean()
+      : null;
+    const hideRankingFeatures =
+      userPreference?.settings?.hideRankingFeatures === true;
+
     // One lookup per check, and only when a date-based condition is in play
     const needsTimezone = unearnedAchievements.some((a) =>
       TIMEZONE_SENSITIVE_CONDITIONS.has(a.condition?.type)
@@ -286,30 +298,33 @@ export async function checkAchievements(
                 achievement: achievement._id,
                 unlockedAt: new Date(),
                 progress,
-                notified: false,
+                notified:
+                  hideRankingFeatures && isRankingAchievementKey(achievement.key),
               },
             },
             { upsert: true, new: false }
           );
           newlyGranted.push(achievement as unknown as IAchievement);
 
-          await createNotification({
-            recipient: userId,
-            type: 'achievement_unlocked',
-            title: `Achievement unlocked: ${achievement.name}`,
-            // The client already translates achievement text from its key, so
-            // it only needs the key here, not the English name.
-            titleKey: 'achievement.unlocked',
-            body: achievement.description,
-            bodyKey: 'achievement.unlockedBody',
-            link: '/achievements',
-            entityType: 'achievement',
-            entityId: achievement._id.toString(),
-            meta: {
-              iconSlug: achievement.iconSlug,
-              achievementKey: achievement.key,
-            },
-          });
+          if (!(hideRankingFeatures && isRankingAchievementKey(achievement.key))) {
+            await createNotification({
+              recipient: userId,
+              type: 'achievement_unlocked',
+              title: `Achievement unlocked: ${achievement.name}`,
+              // The client already translates achievement text from its key, so
+              // it only needs the key here, not the English name.
+              titleKey: 'achievement.unlocked',
+              body: achievement.description,
+              bodyKey: 'achievement.unlockedBody',
+              link: '/achievements',
+              entityType: 'achievement',
+              entityId: achievement._id.toString(),
+              meta: {
+                iconSlug: achievement.iconSlug,
+                achievementKey: achievement.key,
+              },
+            });
+          }
           await recordAchievementActivity(
             userId,
             achievement as unknown as IAchievement
@@ -447,37 +462,47 @@ export async function grantAchievement(
   });
   if (existing) return false;
 
-  await UserAchievement.create({
-    user: userId,
-    achievement: achievementId,
-    unlockedAt: new Date(),
-    progress: 0,
-    notified: false,
-    manuallyGranted: true,
-  });
-
   const achievement = await Achievement.findById(achievementId)
     // `key` is what the client translates the name from — without it the
     // notification renders its raw `{{name}}` placeholder.
     .select('key name description iconSlug')
     .lean();
 
+  const hideRankingFeatures = isRankingAchievementKey(achievement?.key)
+    ? (
+        await User.findById(userId)
+          .select('settings.hideRankingFeatures')
+          .lean()
+      )?.settings?.hideRankingFeatures === true
+    : false;
+
+  await UserAchievement.create({
+    user: userId,
+    achievement: achievementId,
+    unlockedAt: new Date(),
+    progress: 0,
+    notified: hideRankingFeatures,
+    manuallyGranted: true,
+  });
+
   if (achievement) {
-    await createNotification({
-      recipient: userId,
-      type: 'achievement_unlocked',
-      title: `Achievement unlocked: ${achievement.name}`,
-      titleKey: 'achievement.unlocked',
-      body: achievement.description,
-      bodyKey: 'achievement.unlockedBody',
-      link: '/achievements',
-      entityType: 'achievement',
-      entityId: achievementId.toString(),
-      meta: {
-        iconSlug: achievement.iconSlug,
-        achievementKey: achievement.key,
-      },
-    });
+    if (!hideRankingFeatures) {
+      await createNotification({
+        recipient: userId,
+        type: 'achievement_unlocked',
+        title: `Achievement unlocked: ${achievement.name}`,
+        titleKey: 'achievement.unlocked',
+        body: achievement.description,
+        bodyKey: 'achievement.unlockedBody',
+        link: '/achievements',
+        entityType: 'achievement',
+        entityId: achievementId.toString(),
+        meta: {
+          iconSlug: achievement.iconSlug,
+          achievementKey: achievement.key,
+        },
+      });
+    }
     await recordAchievementActivity(
       userId,
       achievement as unknown as IAchievement

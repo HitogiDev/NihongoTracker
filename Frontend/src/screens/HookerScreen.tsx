@@ -2030,7 +2030,7 @@ function TextHooker() {
       time: Math.floor(seconds / 60),
       chars: currentSessionChars,
       type: media.type,
-      description: media.title.contentTitleNative,
+      description: '',
       isAdult: media.isAdult,
       private: privateLog,
     });

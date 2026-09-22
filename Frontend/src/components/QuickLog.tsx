@@ -513,7 +513,7 @@ function QuickLog({
 
     mutate({
       type: logType,
-      description: logComment.trim() || logDescription,
+      description: logComment.trim() || (contentId ? '' : logDescription),
       episodes,
       volume:
         (logType === 'manga' || logType === 'light-novel') &&

@@ -504,6 +504,9 @@ function SettingsScreen() {
   const [hideUnmatchedAlert, setHideUnmatchedAlert] = useState(
     user?.settings?.hideUnmatchedLogsAlert || false
   );
+  const [hideRankingFeatures, setHideRankingFeatures] = useState(
+    user?.settings?.hideRankingFeatures || false
+  );
   const [timezone, setTimezone] = useState(
     user?.settings?.timezone || detectedTimezone
   );
@@ -638,7 +641,16 @@ function SettingsScreen() {
       }
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['user', 'ranking'].includes(query.queryKey[0] as string);
+          return [
+            'user',
+            'ranking',
+            'ranking-medium',
+            'rankingSummary',
+            'rankingHistory',
+            'clubMemberRankings',
+            'clubMediaRankings',
+            'notifications',
+          ].includes(query.queryKey[0] as string);
         },
       });
     },
@@ -660,7 +672,16 @@ function SettingsScreen() {
       aboutRef.current = data.about || '';
       void queryClient.invalidateQueries({
         predicate: (query) => {
-          return ['user', 'ranking'].includes(query.queryKey[0] as string);
+          return [
+            'user',
+            'ranking',
+            'ranking-medium',
+            'rankingSummary',
+            'rankingHistory',
+            'clubMemberRankings',
+            'clubMediaRankings',
+            'notifications',
+          ].includes(query.queryKey[0] as string);
         },
       });
     },
@@ -687,7 +708,16 @@ function SettingsScreen() {
         setUser(data);
         void queryClient.invalidateQueries({
           predicate: (query) => {
-            return ['user', 'ranking'].includes(query.queryKey[0] as string);
+            return [
+            'user',
+            'ranking',
+            'ranking-medium',
+            'rankingSummary',
+            'rankingHistory',
+            'clubMemberRankings',
+            'clubMediaRankings',
+            'notifications',
+            ].includes(query.queryKey[0] as string);
           },
         });
       },
@@ -747,6 +777,8 @@ function SettingsScreen() {
         formData.append('blurAdultContent', value.toString());
       } else if (prefType === 'hideUnmatchedLogsAlert') {
         formData.append('hideUnmatchedLogsAlert', value.toString());
+      } else if (prefType === 'hideRankingFeatures') {
+        formData.append('hideRankingFeatures', value.toString());
       }
 
       updatePreferences(formData);
@@ -762,6 +794,9 @@ function SettingsScreen() {
   const hideUnmatchedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const hideRankingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   // Initialize state from user data once
   useEffect(() => {
@@ -770,6 +805,7 @@ function SettingsScreen() {
       setUsername(user.username || '');
       setBlurAdult(user.settings?.blurAdultContent || false);
       setHideUnmatchedAlert(user.settings?.hideUnmatchedLogsAlert || false);
+      setHideRankingFeatures(user.settings?.hideRankingFeatures || false);
       setTimezone(user.settings?.timezone || detectedTimezone);
       setIsInitialized(true);
     }
@@ -857,6 +893,31 @@ function SettingsScreen() {
   }, [
     hideUnmatchedAlert,
     user?.settings?.hideUnmatchedLogsAlert,
+    debouncedUpdatePreferences,
+    isInitialized,
+  ]);
+
+  useEffect(() => {
+    if (
+      isInitialized &&
+      user?.settings?.hideRankingFeatures !== hideRankingFeatures
+    ) {
+      if (hideRankingTimeoutRef.current) {
+        clearTimeout(hideRankingTimeoutRef.current);
+      }
+      hideRankingTimeoutRef.current = setTimeout(() => {
+        debouncedUpdatePreferences('hideRankingFeatures', hideRankingFeatures);
+      }, 500);
+    }
+
+    return () => {
+      if (hideRankingTimeoutRef.current) {
+        clearTimeout(hideRankingTimeoutRef.current);
+      }
+    };
+  }, [
+    hideRankingFeatures,
+    user?.settings?.hideRankingFeatures,
     debouncedUpdatePreferences,
     isInitialized,
   ]);
@@ -2988,6 +3049,33 @@ function SettingsScreen() {
                               checked={hideUnmatchedAlert}
                               onChange={(e) =>
                                 setHideUnmatchedAlert(e.target.checked)
+                              }
+                              disabled={isPreferencesPending}
+                            />
+                          </div>
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="flex w-full cursor-pointer items-center justify-between gap-4">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="font-medium">
+                              {t('preferences.hideRankingFeatures')}
+                            </span>
+                            <span className="text-sm text-base-content/60">
+                              {t('preferences.hideRankingFeaturesHint')}
+                            </span>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {isPreferencesPending && (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            )}
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-accent"
+                              checked={hideRankingFeatures}
+                              onChange={(e) =>
+                                setHideRankingFeatures(e.target.checked)
                               }
                               disabled={isPreferencesPending}
                             />

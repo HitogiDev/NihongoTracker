@@ -343,7 +343,7 @@ function LogScreen() {
         try {
           await createLogFn({
             type: 'video',
-            description: override.description || video.title.contentTitleNative,
+            description: override.description || '',
             playlistBatchId,
             playlistBatchTitle,
             mediaId: channel.contentId,
@@ -593,9 +593,8 @@ function LogScreen() {
   ) => {
     // Handle YouTube video selection
     if (logData.type === 'video' && group.__youtubeChannelInfo) {
-      // Set video title as media name/description
+      // Set video title as the media name without filling the optional notes.
       handleInputChange('mediaName', group.title.contentTitleNative);
-      handleInputChange('description', group.title.contentTitleNative);
       handleInputChange('titleNative', group.title.contentTitleNative);
       handleInputChange('titleEnglish', group.title.contentTitleEnglish);
 
@@ -631,7 +630,6 @@ function LogScreen() {
       handleInputChange('mediaId', group.contentId);
       handleInputChange('img', group.contentImage);
       handleInputChange('cover', group.coverImage);
-      handleInputChange('description', group.title.contentTitleNative);
       handleInputChange('isAdult', group.isAdult);
       handleInputChange('isAdultImage', group.isAdultImage ?? false);
       handleInputChange(
@@ -768,7 +766,7 @@ function LogScreen() {
     createLog({
       type: logData.type,
       mediaId: logData.mediaId,
-      description: logData.description || logData.mediaName,
+      description: logData.description || (logData.mediaId ? '' : logData.mediaName),
       mediaData,
       episodes: logData.watchedEpisodes,
       volume:

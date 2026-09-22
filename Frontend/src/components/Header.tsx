@@ -39,6 +39,7 @@ import { useNotificationCount } from '../hooks/useNotificationCount';
 import { hasAvatarFrame } from '../utils/customization';
 import UserAvatar from './UserAvatar';
 import { useTranslation } from 'react-i18next';
+import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 
 type ThemeMode = 'dark' | 'light' | 'system';
 
@@ -69,6 +70,7 @@ const resolveThemeForDocument = (theme: ThemeMode) => {
 function Header() {
   const { t } = useTranslation(['nav', 'common']);
   const { user, logout } = useUserDataStore();
+  const hideRankingFeatures = useHideRankingFeatures();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -236,7 +238,7 @@ function Header() {
                     {t('links.stats')}
                   </Link>
                 </li>
-                <li>
+                {!hideRankingFeatures && <li>
                   <Link
                     to="/ranking"
                     className="rounded-lg font-medium hover:bg-primary/10 hover:text-primary transition-all duration-200 whitespace-nowrap"
@@ -244,7 +246,7 @@ function Header() {
                     <BarChart className="w-4 h-4" />
                     {t('links.ranking')}
                   </Link>
-                </li>
+                </li>}
                 <li>
                   <Link
                     to="/clubs"
@@ -383,14 +385,14 @@ function Header() {
                   {t('links.stats')}
                 </Link>
               </li>
-              <li>
+              {!hideRankingFeatures && <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"
                   to="/ranking"
                 >
                   {t('links.ranking')}
                 </Link>
-              </li>
+              </li>}
               <li>
                 <Link
                   className="px-3 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/30 whitespace-nowrap"

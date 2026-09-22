@@ -151,6 +151,7 @@ export interface IUser {
   settings?: {
     blurAdultContent: boolean;
     hideUnmatchedLogsAlert?: boolean;
+    hideRankingFeatures?: boolean;
     timezone?: string;
     language?: 'en' | 'es';
     statsLayout?: StatsGroupLayout[];

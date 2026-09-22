@@ -12,6 +12,7 @@ import {
 } from '../api/trackerApi';
 import ShareStatsModal from './ShareStatsModal';
 import { effectiveLogMinutes } from '../utils/immersionTime';
+import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 
 interface ProfileStatsBandProps {
   username: string;
@@ -86,6 +87,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
   const { t } = useTranslation('profile');
   const { formatNumber, formatDate } = useDateFormatting();
   const location = useLocation();
+  const hideRankingFeatures = useHideRankingFeatures();
   const chartRef = useRef<HTMLDivElement | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   // daisyUI tooltips are hover-only; touch devices need an explicit toggle.
@@ -137,14 +139,14 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
     queryKey: ['rankingSummary', username],
     queryFn: () => getRankingSummaryFn(username),
     staleTime: 1000 * 60 * 5,
-    enabled: !!username,
+    enabled: !!username && !hideRankingFeatures,
   });
 
   const { data: rankingHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['rankingHistory', username],
     queryFn: () => getRankingHistoryFn(username),
     staleTime: 1000 * 60 * 5,
-    enabled: !!username && isOverview,
+    enabled: !!username && isOverview && !hideRankingFeatures,
   });
 
   // Shares the query key with AchievementShowcaseWidget on the profile page
@@ -240,7 +242,7 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
             {t('stats.title')}
           </button>
           <div className="flex items-center gap-3">
-            {collapsed && (
+            {collapsed && !hideRankingFeatures && (
               <div className="flex items-center gap-4 text-sm">
                 <span className="text-base-content/60">
                   Global{' '}
@@ -270,8 +272,10 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
 
         {!collapsed && (
           <>
-            {/* Rankings */}
-            <div className="flex flex-wrap items-end gap-x-10 gap-y-2">
+             {!hideRankingFeatures && (
+               <>
+             {/* Rankings */}
+             <div className="flex flex-wrap items-end gap-x-10 gap-y-2">
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">
                   {t('stats.globalRanking')}
@@ -390,9 +394,11 @@ export default function ProfileStatsBand({ username }: ProfileStatsBandProps) {
                   </div>
                 )}
               </div>
-            )}
+             )}
+               </>
+             )}
 
-            {/* Totals */}
+             {/* Totals */}
             <div className="flex flex-wrap items-end gap-x-8 gap-y-2">
               <div>
                 <div className="text-xs uppercase tracking-wide text-base-content/60">

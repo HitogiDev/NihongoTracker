@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
 
 function GitHubIcon() {
   return (
@@ -31,6 +32,7 @@ function DiscordIcon() {
 function Footer() {
   const { t } = useTranslation('nav');
   const { user } = useUserDataStore();
+  const hideRankingFeatures = useHideRankingFeatures();
 
   return (
     <footer className="footer footer-vertical sm:footer-horizontal mt-auto border-t border-base-300 bg-base-300 p-10 text-base-content">
@@ -96,9 +98,11 @@ function Footer() {
 
       <nav>
         <h6 className="footer-title">{t('footer.community')}</h6>
-        <Link to="/ranking" className="link link-hover">
-          {t('links.ranking')}
-        </Link>
+        {(!user || !hideRankingFeatures) && (
+          <Link to="/ranking" className="link link-hover">
+            {t('links.ranking')}
+          </Link>
+        )}
         <Link to="/clubs" className="link link-hover">
           {t('links.clubs')}
         </Link>

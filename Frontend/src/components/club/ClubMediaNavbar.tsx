@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Info, BarChart, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useHideRankingFeatures } from '../../hooks/useRankingVisibility';
 
 function ClubMediaNavbar({
   clubId,
@@ -16,6 +17,7 @@ function ClubMediaNavbar({
   clubMediaId?: string;
 }) {
   const { t } = useTranslation('clubs');
+  const hideRankingFeatures = useHideRankingFeatures();
   const buildUnified = (tab?: string) => {
     if (mediaType && contentId && clubId && clubMediaId) {
       const base = `/${mediaType}/${contentId}?clubId=${encodeURIComponent(
@@ -46,12 +48,12 @@ function ClubMediaNavbar({
               {t('media.tabs.activity')}
             </Link>
           </li>
-          <li>
+          {!hideRankingFeatures && <li>
             <Link to={buildUnified('rankings')}>
               <BarChart className="mr-1 w-4 h-4" />
               {t('media.tabs.rankings')}
             </Link>
-          </li>
+          </li>}
         </ul>
       </div>
     </div>

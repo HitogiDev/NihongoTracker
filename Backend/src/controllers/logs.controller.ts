@@ -37,6 +37,7 @@ import {
   checkAchievements,
   dismissAchievementNotifications,
 } from '../services/achievements/achievementEngine.js';
+import { isRankingAchievementKey } from '../services/achievements/rankingVisibility.js';
 import {
   deleteActivitiesBySource,
 } from '../services/activity.service.js';
@@ -1697,8 +1698,6 @@ export async function createLog(
 
   try {
     if (!type) throw apiError('log.typeRequired', 400, 'Log type is required');
-    if (!description)
-      throw apiError('log.descriptionRequired', 400, 'Description is required');
 
     const isUnknownDate = Boolean(unknownDate);
 
@@ -1990,7 +1989,7 @@ export async function createLog(
     let celebration: ILogCelebration | undefined;
     try {
       const freshUser = await User.findById(res.locals.user._id).select(
-        'stats'
+        'stats settings.hideRankingFeatures'
       );
       if (freshUser?.stats) {
         const stats = freshUser.stats;
@@ -2007,7 +2006,11 @@ export async function createLog(
         if (stats.userLevel > levelBeforeLog) {
           celebration.levelUp = { from: levelBeforeLog, to: stats.userLevel };
         }
-        if (!savedLog.private && !savedLog.unknownDate) {
+        if (
+          !freshUser.settings?.hideRankingFeatures &&
+          !savedLog.private &&
+          !savedLog.unknownDate
+        ) {
           const rank = await computeMonthlyOvertakes(
             res.locals.user._id,
             savedLog.xp ?? 0
@@ -2019,9 +2022,15 @@ export async function createLog(
       console.error('celebration payload failed after createLog', err);
     }
 
-    return res
-      .status(200)
-      .json({ ...savedLog.toObject(), newAchievements, celebration });
+    const visibleAchievements = res.locals.user.settings?.hideRankingFeatures
+      ? newAchievements.filter((achievement) => !isRankingAchievementKey(achievement.key))
+      : newAchievements;
+
+    return res.status(200).json({
+      ...savedLog.toObject(),
+      newAchievements: visibleAchievements,
+      celebration,
+    });
   } catch (error) {
     return next(error as customError);
   }

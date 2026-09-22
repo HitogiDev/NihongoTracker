@@ -61,6 +61,7 @@ import {
   deleteSocialDataForUser,
   syncImmersionActivityVisibility,
 } from '../services/activity.service.js';
+import { suppressPendingRankingAchievementFeedback } from '../services/achievements/rankingVisibility.js';
 
 type ImmersionMediaType =
   | 'anime'
@@ -167,6 +168,7 @@ export async function updateUser(
     discordId,
     blurAdultContent,
     hideUnmatchedLogsAlert,
+    hideRankingFeatures,
     timezone,
     language,
     about,
@@ -181,6 +183,7 @@ export async function updateUser(
     if (!user) {
       throw apiError('user.notFound', 404, 'User not found');
     }
+    const wasHidingRankingFeatures = user.settings?.hideRankingFeatures === true;
 
     const hasPatreonMediaAccess =
       user.patreon?.isActive &&
@@ -483,6 +486,7 @@ export async function updateUser(
     if (
       blurAdultContent !== undefined ||
       hideUnmatchedLogsAlert !== undefined ||
+      hideRankingFeatures !== undefined ||
       timezone !== undefined ||
       language !== undefined
     ) {
@@ -495,6 +499,10 @@ export async function updateUser(
       if (hideUnmatchedLogsAlert !== undefined) {
         updatedSettings.hideUnmatchedLogsAlert =
           hideUnmatchedLogsAlert === 'true';
+      }
+
+      if (hideRankingFeatures !== undefined) {
+        updatedSettings.hideRankingFeatures = hideRankingFeatures === 'true';
       }
 
       if (timezone !== undefined) {
@@ -529,6 +537,20 @@ export async function updateUser(
     }
 
     const updatedUser = await user.save();
+
+    if (
+      !wasHidingRankingFeatures &&
+      updatedUser.settings?.hideRankingFeatures === true
+    ) {
+      try {
+        await suppressPendingRankingAchievementFeedback(updatedUser._id);
+      } catch (feedbackError) {
+        console.error(
+          'Failed to clear pending ranking achievement feedback:',
+          feedbackError
+        );
+      }
+    }
 
     // Sync updated user to Meilisearch
     indexUser(updatedUser);

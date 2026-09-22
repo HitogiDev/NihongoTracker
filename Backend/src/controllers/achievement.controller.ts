@@ -9,6 +9,7 @@ import {
   dismissAchievementNotifications,
   grantAchievement,
 } from '../services/achievements/achievementEngine.js';
+import { isRankingAchievementKey } from '../services/achievements/rankingVisibility.js';
 import { Types } from 'mongoose';
 
 /**
@@ -274,6 +275,10 @@ export async function getPendingAchievements(
 ) {
   try {
     const userId = res.locals.user._id as Types.ObjectId;
+    const user = await User.findById(userId)
+      .select('settings.hideRankingFeatures')
+      .lean();
+    const hideRankingFeatures = user?.settings?.hideRankingFeatures === true;
 
     const pending = await UserAchievement.find({
       user: userId,
@@ -306,7 +311,13 @@ export async function getPendingAchievements(
     );
 
     const result = pending
-      .filter((ua) => ua.achievement)
+      .filter((ua) => {
+        if (!ua.achievement) return false;
+        if (!hideRankingFeatures) return true;
+        return !isRankingAchievementKey(
+          (ua.achievement as { key?: string }).key
+        );
+      })
       .map((ua) => {
         const a = ua.achievement as any;
         const rarityPercent = 0; // will be computed on the client from the main list

@@ -374,6 +374,8 @@
     "blurAdultHint": "Hide explicit content by default",
     "hideUnmatched": "Hide Unmatched Logs Alert",
     "hideUnmatchedHint": "Don't show alerts about unmatched logs",
+    "hideRankingFeatures": "Hide ranking features",
+    "hideRankingFeaturesHint": "Hide ranking positions, leaderboards, and overtake messages for you. You will still appear in rankings for others.",
     "language": {
       "help": "Language used across the interface. Saved to your account and synced across devices.",
       "label": "Language"

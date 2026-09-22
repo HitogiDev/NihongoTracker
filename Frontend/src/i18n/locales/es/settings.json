@@ -374,6 +374,8 @@
     "blurAdultHint": "Ocultar el contenido explícito por defecto",
     "hideUnmatched": "Ocultar el aviso de logs sin emparejar",
     "hideUnmatchedHint": "No mostrar avisos sobre logs sin emparejar",
+    "hideRankingFeatures": "Ocultar funciones de ranking",
+    "hideRankingFeaturesHint": "Oculta para ti las posiciones, clasificaciones y avisos de adelantamiento. Los demás seguirán viéndote en los rankings.",
     "language": {
       "help": "Idioma de toda la interfaz. Se guarda en tu cuenta y se sincroniza entre dispositivos.",
       "label": "Idioma"
