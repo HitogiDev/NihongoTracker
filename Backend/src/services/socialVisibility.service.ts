@@ -6,6 +6,7 @@ import {
   ILog,
   ISocialPrivacySettings,
   IUserSettings,
+  CommentPermission,
   SocialVisibility,
 } from '../types.js';
 
@@ -20,6 +21,7 @@ const DEFAULT_SOCIAL_PRIVACY: ISocialPrivacySettings = {
   profile: 'public',
   immersionActivity: 'public',
   statistics: 'public',
+  commenting: 'everyone',
 };
 
 export function getSocialVisibility(
@@ -27,6 +29,28 @@ export function getSocialVisibility(
   category: SocialPrivacyCategory
 ): SocialVisibility {
   return settings?.socialPrivacy?.[category] ?? DEFAULT_SOCIAL_PRIVACY[category];
+}
+
+export async function canCommentOnUserLogs(
+  ownerId: Types.ObjectId,
+  viewerId: Types.ObjectId
+): Promise<boolean> {
+  const owner = await User.findById(ownerId)
+    .select('settings.socialPrivacy.commenting')
+    .lean();
+  const permission: CommentPermission =
+    owner?.settings?.socialPrivacy?.commenting ?? 'everyone';
+
+  if (permission === 'nobody') return false;
+  if (permission === 'everyone') return true;
+
+  return Boolean(
+    await Follow.exists(
+      permission === 'followers'
+        ? { follower: viewerId, following: ownerId }
+        : { follower: ownerId, following: viewerId }
+    )
+  );
 }
 
 export function isVisibilityAllowed(

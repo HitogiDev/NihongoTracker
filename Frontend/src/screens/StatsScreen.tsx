@@ -30,6 +30,7 @@ import {
   Search,
   Star,
   Timer,
+  Trophy,
   TrendingUp,
   X,
   Zap,
@@ -60,8 +61,10 @@ import {
 import PieChart from '../components/PieChart';
 import ProgressChart from '../components/ProgressChart';
 import SpeedChart from '../components/SpeedChart';
+import DifficultySpeedChart from '../components/DifficultySpeedChart';
 import StackedBarChart from '../components/StackedBarChart';
 import GanttChart from '../components/GanttChart';
+import ImmersionRanking from '../components/ImmersionRanking';
 import TagFilter from '../components/TagFilter';
 import { getMediaTypeColor } from '../constants/mediaColors';
 import { useTimezone } from '../hooks/useTimezone';
@@ -80,6 +83,7 @@ const CATEGORY_OPTIONS = [
   { id: 'overview', labelKey: 'tabs.overview', Icon: Gauge },
   { id: 'charts', labelKey: 'tabs.charts', Icon: LineChart },
   { id: 'timeline', labelKey: 'tabs.timeline', Icon: BarChart3 },
+  { id: 'ranking', labelKey: 'tabs.ranking', Icon: Trophy },
 ] as const;
 
 type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
@@ -250,7 +254,10 @@ const DEFAULT_GROUPS_LAYOUT: StatsGroupLayout[] = [
   {
     id: 'chartReading',
     visible: true,
-    cards: [{ id: 'readingSpeedChart', visible: true }],
+    cards: [
+      { id: 'readingSpeedChart', visible: true },
+      { id: 'readingSpeedByDifficultyChart', visible: true },
+    ],
   },
   {
     id: 'chartProgress',
@@ -619,6 +626,7 @@ function StatsScreen() {
   const cardWrapperClasses: Partial<Record<string, string>> = {
     progressTimelineChart: 'md:col-span-2 lg:col-span-3',
     readingSpeedChart: 'md:col-span-2 lg:col-span-3',
+    readingSpeedByDifficultyChart: 'md:col-span-2 lg:col-span-3',
   };
 
   const renderLayoutSection = (
@@ -2032,6 +2040,24 @@ function StatsScreen() {
                     </div>
                   </div>
                 ) : null,
+              readingSpeedByDifficultyChart:
+                showReadingMetrics &&
+                userStats.readingSpeedByDifficultyData &&
+                userStats.readingSpeedByDifficultyData.length > 0 ? (
+                  <div className="card surface h-full">
+                    <div className="card-body">
+                      <h3 className="card-title text-xl mb-4">
+                        <TrendingUp className="w-6 h-6 text-primary" />
+                        {t('charts.readingSpeedByDifficulty')}
+                      </h3>
+                      <div className="w-full" style={{ height: '400px' }}>
+                        <DifficultySpeedChart
+                          data={userStats.readingSpeedByDifficultyData}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null,
               progressTimelineChart: (
                 <div className="card surface h-full">
                   <div className="card-body">
@@ -2160,6 +2186,16 @@ function StatsScreen() {
               </div>
             </div>
           </div>
+        )}
+        {activeCategory === 'ranking' && (
+          <ImmersionRanking
+            username={username}
+            timezone={timezone}
+            typeFilter={selectedTypes}
+            allTypesSelected={isAllTypesSelected}
+            start={ganttCustomStart || undefined}
+            end={ganttCustomEnd || undefined}
+          />
         )}
       </div>
     </div>

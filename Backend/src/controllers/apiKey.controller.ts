@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { apiError } from '../i18n/errorCodes.js';
 import { Request, Response, NextFunction } from 'express';
+import { apiError } from '../i18n/errorCodes.js';
 import ApiKey from '../models/apiKey.model.js';
 
 const MAX_KEYS_PER_USER = 10;
@@ -21,7 +21,7 @@ export async function generateApiKey(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
     const { name, expiresAt } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -80,7 +80,7 @@ export async function listApiKeys(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     const keys = await ApiKey.find({ user: user._id })
       .select('-key')
@@ -103,7 +103,7 @@ export async function deleteApiKey(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
     const { id } = req.params;
 
     const apiKey = await ApiKey.findOneAndDelete({

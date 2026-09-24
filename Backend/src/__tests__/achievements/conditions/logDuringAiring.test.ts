@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { evaluateLogDuringAiring } from '../../../services/achievements/conditions/logDuringAiring.condition.js';
 
+import Log from '../../../models/log.model.js';
+
 vi.mock('../../../models/log.model.js', () => ({
   default: { aggregate: vi.fn() },
 }));
-
-import Log from '../../../models/log.model.js';
 
 describe('evaluateLogDuringAiring', () => {
   beforeEach(() => vi.clearAllMocks());

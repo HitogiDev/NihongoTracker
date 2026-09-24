@@ -28,7 +28,8 @@
       "vn": "Novela Visual",
       "movie": "Película",
       "tvShow": "Programa Televisivo",
-      "game": "Videojuego"
+      "game": "Videojuego",
+      "book": "Libro"
     },
     "languages": {
       "eng": "Inglés",
@@ -54,6 +55,12 @@
     "recalculateTitle": "Recalcular la racha de esta persona",
     "recalculateBody": "Reconstruye la racha a partir de todos los logs de <b>{{username}}</b>.",
     "recalculateAction": "Recalcular racha",
+    "grantAchievementTitle": "Otorgar un logro",
+    "grantAchievementBody": "Elige un logro para añadirlo al perfil de esta persona.",
+    "selectAchievement": "Selecciona un logro",
+    "grantAchievementAction": "Otorgar logro",
+    "achievementGranted": "Logro otorgado",
+    "achievementAlreadyOwned": "Esta persona ya tiene ese logro",
     "rankingBanTitle": "Vetar de las clasificaciones",
     "rankingBanBody": "No aparecerá en la clasificación global ni en el resumen de clasificación.",
     "banTitle": "Vetar la cuenta",
@@ -88,6 +95,23 @@
       "streakRecalculated": "Racha de {{username}} recalculada (actual: {{streak}})",
       "streakFailed": "No se pudo recalcular la racha de esta persona"
     }
+  },
+  "bans": {
+    "tab": "Vetos",
+    "title": "Personas vetadas",
+    "description": "Consulta las cuentas vetadas de las clasificaciones o del sitio.",
+    "filters": {
+      "all": "Todos",
+      "ranking": "Clasificaciones",
+      "site": "Sitio"
+    },
+    "username": "Usuario",
+    "banType": "Tipo de veto",
+    "updatedAt": "Última actualización",
+    "action": "Acción",
+    "openModeration": "Moderar",
+    "empty": "No hay personas vetadas en esta lista.",
+    "page": "Página {{page}} de {{totalPages}}"
   },
   "queue": {
     "title": "Solicitudes de contenido",

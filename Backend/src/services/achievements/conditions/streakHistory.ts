@@ -43,10 +43,10 @@ export async function getStreakRuns(
   let prev = rows[0]._id;
   let length = 1;
 
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = 1; i < rows.length; i += 1) {
     const key = rows[i]._id;
     if (toTime(key) - toTime(prev) === dayMs) {
-      length++;
+      length += 1;
     } else {
       runs.push({ startKey: start, endKey: prev, length });
       start = key;

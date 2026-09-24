@@ -227,7 +227,9 @@ export default function ActivityCard({
     ? t("activity.listened")
     : ["anime", "video", "movie", "tv show"].includes(logType)
       ? t("activity.watched")
-      : t("activity.read");
+      : activityType === "game"
+        ? t("activity.played")
+        : t("activity.read");
   const metricParts = [
     metadataNumber(activity, "time")
       ? t("metrics.minutes", { count: metadataNumber(activity, "time") })
@@ -325,6 +327,7 @@ export default function ActivityCard({
   const hasMediaCover = Boolean(mediaImage && linkedMediaPath);
   const expandedWithMedia = descriptionExpanded && hasMediaCover;
   const commentsId = `activity-${activity._id}-comments`;
+  const showCommentsButton = activity.commentCount > 0 || activity.canComment !== false;
 
   const renderMediaCover = (className: string) =>
     mediaImage && linkedMediaPath ? (
@@ -476,20 +479,22 @@ export default function ActivityCard({
               </div>
 
               <div className="card-actions ml-auto items-center gap-0">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm gap-1 px-2 text-base-content/60"
-                  aria-controls={commentsId}
-                  aria-expanded={commentsOpen}
-                  disabled={!currentUser}
-                  onClick={() => setCommentsOpen((open) => !open)}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  {activity.commentCount > 0 && (
-                    <span>{activity.commentCount}</span>
-                  )}
-                  <span className="sr-only">{t("comments.show")}</span>
-                </button>
+                {showCommentsButton && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm gap-1 px-2 text-base-content/60"
+                    aria-controls={commentsId}
+                    aria-expanded={commentsOpen}
+                    disabled={!currentUser}
+                    onClick={() => setCommentsOpen((open) => !open)}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {activity.commentCount > 0 && (
+                      <span>{activity.commentCount}</span>
+                    )}
+                    <span className="sr-only">{t("comments.show")}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className={

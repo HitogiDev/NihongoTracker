@@ -256,6 +256,7 @@
     "clubMembershipRequired": "You must be a member to view this club feed",
     "commentRequired": "Enter a comment",
     "commentTooLong": "Comments must be 1000 characters or less",
+    "commentingNotAllowed": "This user does not allow you to comment on their activity",
     "commentNotFound": "Comment not found",
     "commentNotFoundOrForbidden": "Comment not found or you are not its author"
   },

@@ -80,10 +80,10 @@ const LogSchema = new Schema<ILog>(
     xpBreakdown: { type: xpBreakdownSchema, default: null },
     episodes: {
       type: Number,
-      required: function (this: ILog) {
+      required (this: ILog) {
         return this.type === 'anime';
       },
-      default: function (this: ILog) {
+      default (this: ILog) {
         return this.type === 'anime' ? 1 : undefined;
       },
     },
@@ -93,7 +93,7 @@ const LogSchema = new Schema<ILog>(
     },
     pages: {
       type: Number,
-      required: function (this: ILog) {
+      required (this: ILog) {
         const hasChars = hasPositiveValue(this.chars);
         const hasTime = hasPositiveValue(this.time);
         return (
@@ -106,7 +106,7 @@ const LogSchema = new Schema<ILog>(
     },
     time: {
       type: Number,
-      required: function (this: ILog) {
+      required (this: ILog) {
         const hasChars = hasPositiveValue(this.chars);
         const hasPages = hasPositiveValue(this.pages);
         return (
@@ -124,7 +124,7 @@ const LogSchema = new Schema<ILog>(
     },
     chars: {
       type: Number,
-      required: function (this: ILog) {
+      required (this: ILog) {
         const hasTime = hasPositiveValue(this.time);
         const hasPages = hasPositiveValue(this.pages);
         return (

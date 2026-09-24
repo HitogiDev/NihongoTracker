@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { IMediaDocument } from '../types.js';
 import { Request, Response, NextFunction } from 'express';
+import { IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 
 type MediaDocument = Pick<
@@ -255,9 +255,9 @@ function parseDuration(duration: string): number {
 
   if (!match) return 0;
 
-  const hours = parseInt(match[1] || '0');
-  const minutes = parseInt(match[2] || '0');
-  const seconds = parseInt(match[3] || '0');
+  const hours = parseInt(match[1] || '0', 10);
+  const minutes = parseInt(match[2] || '0', 10);
+  const seconds = parseInt(match[3] || '0', 10);
 
   return hours * 60 + minutes + Math.round(seconds / 60);
 }
@@ -420,7 +420,7 @@ export async function getYouTubePlaylistInfo(playlistId: string): Promise<{
     if (!vd) continue;
 
     const duration = parseDuration(vd.contentDetails?.duration ?? 'PT0S');
-    const channelId = vd.snippet.channelId;
+    const {channelId} = vd.snippet;
     const cd = channelDetails.get(channelId);
 
     const video: MediaDocument = {

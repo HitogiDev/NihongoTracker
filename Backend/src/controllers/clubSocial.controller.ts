@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { apiError } from '../i18n/errorCodes.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import Activity from '../models/activity.model.js';
+import UserAchievement from '../models/userAchievement.model.js';
 import ClubChallenge from '../models/clubChallenge.model.js';
 import { Club } from '../models/club.model.js';
 import {
@@ -35,6 +36,10 @@ import {
   getClubLeaderboard,
 } from '../services/clubLeaderboard.service.js';
 import { getClubObjectives as listClubObjectives } from '../services/clubObjectives.service.js';
+import {
+  checkAchievements,
+  dismissAchievementNotifications,
+} from '../services/achievements/achievementEngine.js';
 
 function objectId(value: string, label: string): Types.ObjectId {
   if (!Types.ObjectId.isValid(value)) {
@@ -362,7 +367,23 @@ export async function completeClubChallenge(
       challenge,
       res.locals.user._id
     );
-    return res.status(200).json({ completed: true, progress });
+    const newAchievements = await checkAchievements(res.locals.user._id, {
+      trigger: 'clubChallengeComplete',
+    });
+    if (newAchievements.length > 0) {
+      const achievementIds = newAchievements.map(
+        (achievement) => achievement._id as Types.ObjectId
+      );
+      await UserAchievement.updateMany(
+        {
+          user: res.locals.user._id,
+          achievement: { $in: achievementIds },
+        },
+        { $set: { notified: true } }
+      );
+      await dismissAchievementNotifications(res.locals.user._id, achievementIds);
+    }
+    return res.status(200).json({ completed: true, progress, newAchievements });
   } catch (error) {
     return next(error as customError);
   }

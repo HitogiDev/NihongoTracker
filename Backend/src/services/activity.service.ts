@@ -10,11 +10,13 @@ import {
   ACTIVITY_REACTIONS,
   ActivityReactionType,
   ActivityType,
+  CommentPermission,
   IActivity,
   SocialVisibility,
 } from '../types.js';
 import {
   buildVisibleActivityFilter,
+  canCommentOnUserLogs,
   canViewActivity,
   getFollowerUserIds,
   getFollowedUserIds,
@@ -28,6 +30,11 @@ interface ActivityActor {
   _id: Types.ObjectId;
   username: string;
   avatar?: string;
+  settings?: {
+    socialPrivacy?: {
+      commenting?: CommentPermission;
+    };
+  };
 }
 
 interface ActivityFeedDocument {
@@ -42,6 +49,7 @@ interface ActivityFeedDocument {
   importance: 'normal' | 'important';
   reactionCounts: Partial<Record<ActivityReactionType, number>>;
   commentCount: number;
+  canComment?: boolean;
   occurredAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -176,7 +184,6 @@ export async function createActivity(
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.error('Failed to create social activity:', error);
     return null;
   }
@@ -274,7 +281,10 @@ export async function getActivityFeed(input: {
   }
 
   const activities = (await Activity.find({ $and: clauses })
-    .populate('actor', 'username avatar')
+    .populate(
+      'actor',
+      'username avatar settings.socialPrivacy.commenting'
+    )
     .sort({ occurredAt: -1, _id: -1 })
     .limit(limit + 1)
     .lean()) as unknown as ActivityFeedDocument[];
@@ -294,16 +304,38 @@ export async function getActivityFeed(input: {
       reaction.type,
     ])
   );
+  const followedIdSet = new Set(followedUserIds.map((id) => id.toString()));
+  const followerIdSet = new Set(followerUserIds.map((id) => id.toString()));
 
   return {
     activities: enrichedPageItems.map((activity) => ({
       ...activity,
       currentReaction: reactionByActivity.get(activity._id.toString()) ?? null,
+      canComment: canCommentForActivityActor(
+        activity.actor,
+        followedIdSet,
+        followerIdSet
+      ),
     })),
     nextCursor: hasMore
       ? `${pageItems[pageItems.length - 1]?.occurredAt.toISOString()}|${pageItems[pageItems.length - 1]?._id.toString()}`
       : null,
   };
+}
+
+function canCommentForActivityActor(
+  actor: ActivityActor,
+  followedIds: Set<string>,
+  followerIds: Set<string>
+): boolean {
+  const permission = actor.settings?.socialPrivacy?.commenting ?? 'everyone';
+  if (permission === 'nobody' || permission === 'everyone') {
+    return permission === 'everyone';
+  }
+  const actorId = actor._id.toString();
+  return permission === 'followers'
+    ? followedIds.has(actorId)
+    : followerIds.has(actorId);
 }
 
 async function requireVisibleActivity(
@@ -421,7 +453,7 @@ export async function listActivityComments(
   page: number,
   limit: number
 ) {
-  await requireVisibleActivity(activityId, viewerId);
+  const activity = await requireVisibleActivity(activityId, viewerId);
   const [comments, total] = await Promise.all([
     ActivityComment.find({ activity: activityId })
       .populate('user', 'username avatar')
@@ -432,6 +464,18 @@ export async function listActivityComments(
     ActivityComment.countDocuments({ activity: activityId }),
   ]);
   const commentIds = comments.map((comment) => comment._id);
+  const parentCommentIds = comments
+    .map((comment) => comment.parentComment)
+    .filter((commentId): commentId is Types.ObjectId => Boolean(commentId));
+  const parentComments = parentCommentIds.length
+    ? await ActivityComment.find({ _id: { $in: parentCommentIds } })
+        .populate('user', 'username avatar')
+        .select('user content')
+        .lean()
+    : [];
+  const parentCommentById = new Map(
+    parentComments.map((comment) => [comment._id.toString(), comment])
+  );
   const viewerLikes =
     commentIds.length > 0
       ? await ActivityCommentLike.find({
@@ -447,21 +491,44 @@ export async function listActivityComments(
   return {
     comments: comments.map((comment) => ({
       ...comment,
+      parentComment: comment.parentComment?.toString() ?? null,
+      parentCommentPreview: comment.parentComment
+        ? (parentCommentById.get(comment.parentComment.toString()) ?? null)
+        : null,
       currentUserLiked: likedCommentIds.has(comment._id.toString()),
     })),
     total,
+    canComment: await canCommentOnUserLogs(activity.actor, viewerId),
   };
 }
 
 export async function createActivityComment(
   activityId: Types.ObjectId,
   userId: Types.ObjectId,
-  content: string
+  content: string,
+  parentCommentId?: Types.ObjectId
 ) {
   const activity = await requireVisibleActivity(activityId, userId);
+  if (!(await canCommentOnUserLogs(activity.actor, userId))) {
+    throw apiError(
+      'activity.commentingNotAllowed',
+      403,
+      'This user does not allow you to comment on their activity'
+    );
+  }
+  const parentComment = parentCommentId
+    ? await ActivityComment.findOne({
+        _id: parentCommentId,
+        activity: activityId,
+      }).select('user')
+    : null;
+  if (parentCommentId && !parentComment) {
+    throw apiError('activity.commentNotFound', 404, 'Comment not found');
+  }
   const comment = await ActivityComment.create({
     activity: activityId,
     user: userId,
+    parentComment: parentCommentId ?? null,
     content,
   });
   await Activity.updateOne(
@@ -469,7 +536,7 @@ export async function createActivityComment(
     { $inc: { commentCount: 1 } }
   );
   await comment.populate('user', 'username avatar');
-  return { activity, comment };
+  return { activity, comment, parentComment };
 }
 
 export async function editActivityComment(
@@ -507,6 +574,10 @@ export async function deleteActivityComment(
   await comment.deleteOne();
   await Promise.all([
     ActivityCommentLike.deleteMany({ comment: comment._id }),
+    ActivityComment.updateMany(
+      { parentComment: comment._id },
+      { $set: { parentComment: null } }
+    ),
     Activity.updateOne(
       { _id: comment.activity },
       { $inc: { commentCount: -1 } }

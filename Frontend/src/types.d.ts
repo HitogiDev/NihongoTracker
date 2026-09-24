@@ -17,6 +17,7 @@ export type StatsCardId =
   | 'timeDistributionChart'
   | 'xpDistributionChart'
   | 'readingSpeedChart'
+  | 'readingSpeedByDifficultyChart'
   | 'progressTimelineChart';
 
 export type StatsGroupId =
@@ -207,10 +208,17 @@ export type SocialVisibility =
   | 'following'
   | 'private';
 
+export type CommentPermission =
+  | 'everyone'
+  | 'followers'
+  | 'following'
+  | 'nobody';
+
 export interface ISocialPrivacySettings {
   profile: SocialVisibility;
   immersionActivity: SocialVisibility;
   statistics: SocialVisibility;
+  commenting?: CommentPermission;
 }
 
 export type ActivityType =
@@ -248,6 +256,7 @@ export interface ISocialActivity {
   reactionCounts: Partial<Record<ActivityReactionType, number>>;
   currentReaction: ActivityReactionType | null;
   commentCount: number;
+  canComment?: boolean;
   occurredAt: string;
 }
 
@@ -293,6 +302,12 @@ export interface IActivityComment {
   _id: string;
   activity: string;
   user: { _id: string; username: string; avatar?: string };
+  parentComment?: string | null;
+  parentCommentPreview?: {
+    _id: string;
+    user: { _id: string; username: string; avatar?: string };
+    content: string;
+  } | null;
   content: string;
   likeCount: number;
   currentUserLiked: boolean;
@@ -1160,6 +1175,12 @@ interface IUserStats {
       utcMillis: number;
     };
   }>;
+  readingSpeedByDifficultyData?: Array<{
+    date: Date;
+    type: string;
+    difficulty: number;
+    charsPerHour: number;
+  }>;
   timeRange: 'today' | 'week' | 'month' | 'year' | 'total' | 'custom';
   selectedType: string;
   timezone: string;
@@ -1811,6 +1832,7 @@ export interface IAchievement {
   order?: number;
   rarityPercent?: number;
   isEarned?: boolean;
+  isActive?: boolean;
   unlockedAt?: string | null;
   progress?: number;
   /**

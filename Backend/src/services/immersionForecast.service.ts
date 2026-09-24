@@ -107,14 +107,13 @@ export async function getForecastProgressTotal(
   metric: ImmersionForecastMetric,
   now = new Date()
 ): Promise<number> {
-  const field =
-    metric === 'chars'
-      ? '$chars'
-      : metric === 'pages'
-        ? '$pages'
-        : metric === 'episodes'
-          ? '$episodes'
-          : '$time';
+  const fieldByMetric: Record<ImmersionForecastMetric, string> = {
+    chars: '$chars',
+    pages: '$pages',
+    episodes: '$episodes',
+    minutes: '$time',
+  };
+  const field = fieldByMetric[metric];
   const result = await Log.aggregate([
     {
       $match: {
@@ -250,14 +249,11 @@ export function calculateForecastSchedule({
   const actualSinceCreation = Math.max(0, currentProgress - startingProgress);
   const behindBy = Math.ceil(Math.max(0, expectedByToday - actualSinceCreation));
 
-  const status =
-    remaining === 0
-      ? 'completed'
-      : remainingDays === 0
-        ? 'overdue'
-        : behindBy > 0
-          ? 'behind'
-          : 'on_track';
+  let status: 'completed' | 'overdue' | 'behind' | 'on_track';
+  if (remaining === 0) status = 'completed';
+  else if (remainingDays === 0) status = 'overdue';
+  else if (behindBy > 0) status = 'behind';
+  else status = 'on_track';
   return {
     currentProgress,
     remaining,

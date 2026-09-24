@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * XP formula v3 migration script.
  *

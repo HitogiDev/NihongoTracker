@@ -22,16 +22,21 @@
   },
   "charts": {
     "bar": "Barras",
+    "difficultyAxis": "Dificultad de Jiten (%)",
     "hours": "Horas",
     "immersionTimeline": "Cronología de inmersión",
     "line": "Líneas",
     "metric": "Métrica:",
     "progressTimeline": "Progreso en el tiempo",
+    "readingSpeedByDifficulty": "Velocidad de lectura según la dificultad de Jiten",
+    "readingSpeedAxis": "Velocidad de lectura (caracteres/hora)",
     "readingSpeedOverTime": "Velocidad de lectura en el tiempo",
     "timeDistribution": "Distribución del tiempo",
     "timelineFailed": "No se pudieron cargar los datos de la cronología.",
     "timelineHint": "Cada barra va desde tu primera hasta tu última sesión logueada",
     "view": "Vista:",
+    "tooltipDifficulty": "Dificultad: {{value}}%",
+    "tooltipSpeed": "Velocidad: {{value}} caracteres/hora",
     "xpDistribution": "Distribución de la XP"
   },
   "common": {
@@ -136,6 +141,26 @@
     "week": "Semana",
     "year": "Año"
   },
+  "ranking": {
+    "empty": "No hay obras inmersadas que coincidan con los filtros seleccionados.",
+    "global": "Global",
+    "hours": "Horas",
+    "individual": "Individual",
+    "loadFailed": "No se pudo cargar el ranking de inmersión.",
+    "loadMore": "Cargar más",
+    "loading": "Cargando el ranking de inmersión...",
+    "loadingMore": "Cargando más...",
+    "logs": "Logs",
+    "metricLabel": "Métrica del ranking",
+    "noTypes": "Selecciona al menos un tipo de obra para ver el ranking.",
+    "position": "#",
+    "scopeLabel": "Alcance del ranking",
+    "subtitle": "Compara tus obras inmersadas con la comunidad.",
+    "title": "Ranking de inmersión",
+    "users": "Usuarios",
+    "work": "Obra",
+    "xp": "XP"
+  },
   "range": {
     "allTime": "Histórico",
     "thisMonth": "Este mes",
@@ -179,6 +204,7 @@
   "tabs": {
     "charts": "Gráficas",
     "overview": "Resumen",
+    "ranking": "Ranking",
     "timeline": "Cronología"
   },
   "typeDescriptor": {

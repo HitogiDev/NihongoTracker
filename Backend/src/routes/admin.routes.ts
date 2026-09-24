@@ -6,6 +6,7 @@ import {
   deleteUserById,
   getAdminStats,
   getAdminUsers,
+  getAdminBannedUsers,
   searchAdminLogs,
   resetUserPassword,
   getPatronStats,
@@ -59,6 +60,12 @@ router.get(
 );
 
 router.get('/users', protect, checkPermission(userRoles.admin), getAdminUsers);
+router.get(
+  '/users/banned',
+  protect,
+  checkPermission(userRoles.admin),
+  getAdminBannedUsers
+);
 
 // Admin log routes
 router.delete(

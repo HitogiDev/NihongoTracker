@@ -431,6 +431,16 @@
     "totalTime": "Tiempo total",
     "totalXp": "XP total"
   },
+  "comparison": {
+    "ahead": "{{value}} por delante",
+    "behind": "{{value}} por detrás",
+    "log": "registro",
+    "logs": "registros",
+    "same": "Iguales",
+    "summary": "Tienes {{myCount}} {{myLabel}} • {{username}} tiene {{theirCount}} {{theirLabel}}",
+    "title": "Comparación: tú vs {{username}}",
+    "vs": "vs"
+  },
   "toast": {
     "reviewAdded": "Reseña publicada",
     "reviewContentRequired": "La reseña no puede estar vacía.",

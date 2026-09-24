@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Converts legacy club `leader` roles to the canonical `owner` role.
  *

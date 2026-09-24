@@ -28,6 +28,7 @@ const MEDIA_TYPES: {
   { value: 'movie', labelKey: 'mediaRequest.types.movie' },
   { value: 'tv show', labelKey: 'mediaRequest.types.tvShow' },
   { value: 'game', labelKey: 'mediaRequest.types.game' },
+  { value: 'book', labelKey: 'mediaRequest.types.book' },
 ];
 
 const EMPTY_FORM: ICreateMediaRequest = {

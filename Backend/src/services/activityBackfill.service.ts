@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop, no-continue */
 import { Types } from 'mongoose';
 import Activity from '../models/activity.model.js';
 import Log from '../models/log.model.js';
@@ -183,7 +182,6 @@ async function runActivityBackfill(): Promise<void> {
     }
   } catch (error) {
     backfillState.error = (error as Error)?.message ?? String(error);
-    // eslint-disable-next-line no-console
     console.error('Activity feed backfill failed:', error);
   } finally {
     backfillState.running = false;
@@ -214,7 +212,6 @@ export function startActivityBackfill(): {
     finishedAt: null,
     error: null,
   };
-  // eslint-disable-next-line no-void
   void runActivityBackfill();
   return { started: true, state: getActivityBackfillState() };
 }

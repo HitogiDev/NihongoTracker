@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import { apiError } from '../i18n/errorCodes.js';
 import Tag from '../models/tag.model.js';
 import User from '../models/user.model.js';
-import { Types } from 'mongoose';
 
 // @desc    Get all tags for a user by username
 // @route   GET /api/tags/user/:username
@@ -30,7 +30,7 @@ export async function getUserTagsByUsername(req: Request, res: Response) {
 export async function createTag(req: Request, res: Response) {
   try {
     const userId = res.locals.user._id;
-    const user = res.locals.user;
+    const {user} = res.locals;
     const { name, color } = req.body;
 
     if (!name || !color) {

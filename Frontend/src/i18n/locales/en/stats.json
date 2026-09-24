@@ -22,16 +22,21 @@
   },
   "charts": {
     "bar": "Bar",
+    "difficultyAxis": "Jiten difficulty (%)",
     "hours": "Hours",
     "immersionTimeline": "Immersion Timeline",
     "line": "Line",
     "metric": "Metric:",
     "progressTimeline": "Progress Timeline",
+    "readingSpeedByDifficulty": "Reading Speed by Jiten Difficulty",
+    "readingSpeedAxis": "Reading speed (characters/hour)",
     "readingSpeedOverTime": "Reading Speed Over Time",
     "timeDistribution": "Time Distribution",
     "timelineFailed": "Could not load timeline data.",
     "timelineHint": "Each bar spans from your first to your last log session for",
     "view": "View:",
+    "tooltipDifficulty": "Difficulty: {{value}}%",
+    "tooltipSpeed": "Speed: {{value}} characters/hour",
     "xpDistribution": "XP Distribution"
   },
   "common": {
@@ -134,6 +139,26 @@
     "week": "Week",
     "year": "Year"
   },
+  "ranking": {
+    "empty": "No immersed works match the selected filters.",
+    "global": "Global",
+    "hours": "Hours",
+    "individual": "Individual",
+    "loadFailed": "Could not load the immersion ranking.",
+    "loadMore": "Load more",
+    "loading": "Loading the immersion ranking...",
+    "loadingMore": "Loading more...",
+    "logs": "Logs",
+    "metricLabel": "Ranking metric",
+    "noTypes": "Select at least one work type to view the ranking.",
+    "position": "#",
+    "scopeLabel": "Ranking scope",
+    "subtitle": "Compare your immersed works with the community.",
+    "title": "Immersion ranking",
+    "users": "Users",
+    "work": "Work",
+    "xp": "XP"
+  },
   "range": {
     "allTime": "All Time",
     "thisMonth": "This Month",
@@ -177,6 +202,7 @@
   "tabs": {
     "charts": "Charts",
     "overview": "Overview",
+    "ranking": "Ranking",
     "timeline": "Timeline"
   },
   "typeDescriptor": {

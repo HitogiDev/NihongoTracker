@@ -399,6 +399,10 @@
       "statistics": {
         "help": "Controla quién puede ver tus totales, gráficos, clasificaciones y estadísticas de progreso.",
         "label": "Estadísticas"
+      },
+      "commenting": {
+        "help": "Controla quién puede comentar en tu actividad de registros. Los comentarios existentes seguirán visibles.",
+        "label": "Comentarios en mis registros"
       }
     },
     "save": "Guardar ajustes de privacidad",
@@ -410,6 +414,12 @@
       "followers": "Seguidores",
       "private": "Solo yo",
       "public": "Todo el mundo"
+    },
+    "commenting": {
+      "everyone": "Todo el mundo",
+      "followers": "Seguidores",
+      "following": "Personas que sigues",
+      "nobody": "Nadie"
     }
   },
   "profile": {

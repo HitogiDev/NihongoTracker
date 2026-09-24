@@ -47,8 +47,8 @@ export async function evaluateAutoCompleteForUserMedia(
     }).lean()) as IMediaDocument | null;
 
     let mediaCharTotal: number | null = null;
-    if (media && typeof (media as any).characters === 'number') {
-      const c = Number((media as any).characters);
+    if (media && typeof media.characters === 'number') {
+      const c = Number(media.characters);
       if (Number.isFinite(c) && c > 0) mediaCharTotal = c;
     }
 
@@ -100,7 +100,7 @@ export async function evaluateAutoCompleteForUserMedia(
         console.debug(
           'Jiten lookup failed for',
           mediaId,
-          (err as any)?.message ?? err
+          (err instanceof Error ? err.message : err)
         );
       }
     }
@@ -108,7 +108,7 @@ export async function evaluateAutoCompleteForUserMedia(
     let shouldComplete: boolean | null = null;
 
     if (normalizedType === 'anime' || normalizedType === 'tv show') {
-      const totalEpisodes = Number((media as any)?.episodes ?? 0);
+      const totalEpisodes = Number(media?.episodes ?? 0);
       if (Number.isFinite(totalEpisodes) && totalEpisodes > 0) {
         shouldComplete = Number(totals.totalEpisodes || 0) >= totalEpisodes;
       }
@@ -162,20 +162,18 @@ export async function evaluateAutoCompleteForUserMedia(
         },
         { new: true, upsert: true }
       );
-    } else {
+    } else if (existing && existing.completed && !existing.autoCompleteSuppressed) {
       // Not completed according to totals. If previously completed by auto (not user-suppressed), unset it.
-      if (existing && existing.completed && !existing.autoCompleteSuppressed) {
-        await UserMediaStatus.updateOne(
-          { _id: existing._id },
-          {
-            $set: {
-              completed: false,
-              completedAt: null,
-              status: 'in_progress',
-            },
-          }
-        );
-      }
+      await UserMediaStatus.updateOne(
+        { _id: existing._id },
+        {
+          $set: {
+            completed: false,
+            completedAt: null,
+            status: 'in_progress',
+          },
+        }
+      );
     }
   } catch (error) {
     console.error('evaluateAutoCompleteForUserMedia error', error);

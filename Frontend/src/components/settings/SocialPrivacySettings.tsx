@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { updateSocialPrivacyFn } from '../../api/trackerApi';
 import { useUserDataStore } from '../../store/userData';
 import type {
+  CommentPermission,
   ISocialPrivacySettings,
   SocialVisibility,
 } from '../../types';
@@ -15,18 +16,21 @@ import Spinner from '../ui/Spinner';
 type PrivacyKey =
   | 'profile'
   | 'immersionActivity'
-  | 'statistics';
+  | 'statistics'
+  | 'commenting';
 
 const DEFAULTS: ISocialPrivacySettings = {
   profile: 'public',
   immersionActivity: 'public',
   statistics: 'public',
+  commenting: 'everyone',
 };
 
 const FIELDS: PrivacyKey[] = [
   'profile',
   'immersionActivity',
   'statistics',
+  'commenting',
 ];
 
 const SOCIAL_VISIBILITIES: SocialVisibility[] = [
@@ -34,6 +38,13 @@ const SOCIAL_VISIBILITIES: SocialVisibility[] = [
   'followers',
   'following',
   'private',
+];
+
+const COMMENT_PERMISSIONS: CommentPermission[] = [
+  'everyone',
+  'followers',
+  'following',
+  'nobody',
 ];
 
 export default function SocialPrivacySettings() {
@@ -93,11 +104,17 @@ export default function SocialPrivacySettings() {
               }))
             }
           >
-            {SOCIAL_VISIBILITIES.map((visibility) => (
-              <option key={visibility} value={visibility}>
-                {t(`privacy.visibility.${visibility}`)}
-              </option>
-            ))}
+            {field === 'commenting'
+              ? COMMENT_PERMISSIONS.map((permission) => (
+                  <option key={permission} value={permission}>
+                    {t(`privacy.commenting.${permission}`)}
+                  </option>
+                ))
+              : SOCIAL_VISIBILITIES.map((visibility) => (
+                  <option key={visibility} value={visibility}>
+                    {t(`privacy.visibility.${visibility}`)}
+                  </option>
+                ))}
           </DropdownSelect>
         </fieldset>
       ))}

@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
+import axios from 'axios';
 import TextSession from '../models/textSession.model.js';
 import { MediaBase as Media } from '../models/media.model.js';
 import { apiError } from '../i18n/errorCodes.js';
-import axios from 'axios';
 import { computeTextSessionIntelligence } from '../services/textSessionIntelligence.js';
 import { hasSessionIntelligenceAccess } from '../services/textSessionAccess.js';
 import { ITextSessionIntelligenceSettings, IUser } from '../types.js';

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { Club } from '../models/club.model.js';
@@ -7,7 +8,6 @@ import User from '../models/user.model.js';
 import { MediaBase } from '../models/media.model.js';
 import Log from '../models/log.model.js';
 import uploadFile, { uploadFileWithCleanup } from '../services/uploadFile.js';
-import { Types } from 'mongoose';
 import {
   ICreateClubRequest,
   IClubResponse,
@@ -15,6 +15,8 @@ import {
   IClub,
   IClubMember,
   IClubGoal,
+  IClubMedia,
+  IUser,
 } from '../types.js';
 import {
   completeVotingDocument,
@@ -181,8 +183,8 @@ export async function getClubs(
       membership = 'all',
     } = req.query;
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
     const userId = res.locals.user?._id;
 
@@ -353,7 +355,7 @@ export async function createClub(
 ): Promise<Response<IClub> | void> {
   try {
     const userId = res.locals.user._id;
-    let clubData: ICreateClubRequest = req.body;
+    const clubData: ICreateClubRequest = req.body;
 
     // Parse JSON-stringified arrays from FormData
     if (typeof clubData.tags === 'string') {
@@ -446,7 +448,7 @@ export async function createClub(
           apiError(
             'upload.failed',
             400,
-            'File upload failed: ' + (error as Error).message
+            `File upload failed: ${  (error as Error).message}`
           )
         );
       }
@@ -561,6 +563,7 @@ export async function joinClub(
       await User.findByIdAndUpdate(userId, {
         $push: { clubs: clubId },
       });
+      await checkAchievements(userId, { trigger: 'clubJoin' });
       await recordClubJoinedActivity({
         userId,
         clubId: club._id as Types.ObjectId,
@@ -710,7 +713,7 @@ export async function updateClub(
   try {
     const { clubId } = req.params;
     const userId = res.locals.user._id;
-    let updateData = req.body;
+    const updateData = req.body;
 
     if (!Types.ObjectId.isValid(clubId)) {
       return res.status(400).json({ message: 'Invalid club ID' });
@@ -831,7 +834,7 @@ export async function updateClub(
           apiError(
             'upload.failed',
             400,
-            'File upload failed: ' + (error as Error).message
+            `File upload failed: ${  (error as Error).message}`
           )
         );
       }
@@ -852,7 +855,7 @@ export async function updateClub(
 
     allowedFields.forEach((field) => {
       if (updateData[field] !== undefined) {
-        (club as any)[field] = updateData[field];
+        club.set(field, updateData[field]);
       }
     });
 
@@ -960,6 +963,9 @@ export async function manageJoinRequests(
         clubName: club.name,
         memberCount: club.members.filter((member) => member.status === 'active').length,
       });
+      await checkAchievements(new Types.ObjectId(memberId), {
+        trigger: 'clubJoin',
+      });
 
       await createNotification({
         recipient: memberId,
@@ -975,7 +981,7 @@ export async function manageJoinRequests(
       });
 
       return res.status(200).json({ message: 'Member approved' });
-    } else if (action === 'reject') {
+    } if (action === 'reject') {
       club.members = club.members.filter(
         (member) => !member.user.equals(memberId)
       );
@@ -995,9 +1001,8 @@ export async function manageJoinRequests(
       });
 
       return res.status(200).json({ message: 'Member rejected' });
-    } else {
-      return res.status(400).json({ message: 'Invalid action' });
     }
+    return res.status(400).json({ message: 'Invalid action' });
   } catch (error) {
     return next(error as customError);
   }
@@ -1423,7 +1428,7 @@ export async function getClubMedia(
             type: media.mediaType,
           });
 
-          const obj = (media as any).toObject();
+          const obj = (media as IClubMedia & { toObject(): IClubMedia }).toObject();
 
           // Respect computed active state (in case stored flag is stale)
           const start = media.startDate ? new Date(media.startDate) : null;
@@ -1446,7 +1451,7 @@ export async function getClubMedia(
           };
         } catch (error) {
           return {
-            ...(media as any).toObject(),
+            ...(media as IClubMedia & { toObject(): IClubMedia }).toObject(),
             mediaDocument: null,
           };
         }
@@ -2100,7 +2105,7 @@ export async function voteForCandidate(
       return res.status(400).json({ message: 'Voting period has ended' });
     }
 
-    const candidateIdx = parseInt(candidateIndex);
+    const candidateIdx = parseInt(candidateIndex, 10);
     if (candidateIdx < 0 || candidateIdx >= voting.candidates.length) {
       return res.status(404).json({ message: 'Candidate not found' });
     }
@@ -2242,12 +2247,12 @@ export async function getClubRecentActivity(
     );
 
     // Calculate date range
-    const daysNum = parseInt(days as string);
+    const daysNum = parseInt(days as string, 10);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysNum);
 
-    const limitNum = parseInt(limit as string);
-    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string, 10);
+    const pageNum = parseInt(page as string, 10);
     const skipNum = (pageNum - 1) * limitNum;
     // type for recentLogs
     interface IRecentLog {
@@ -2326,7 +2331,7 @@ export async function getClubRecentActivity(
     const activities = recentLogs
       .map((log) => {
         // Try to get populated media title
-        let mediaTitle =
+        const mediaTitle =
           log.media?.titleEnglish ||
           log.media?.titleRomaji ||
           log.media?.titleNative ||
@@ -2354,7 +2359,7 @@ export async function getClubRecentActivity(
             time: log.time,
             xp: log.xp,
           },
-          createdAt: (log as any).createdAt,
+          createdAt: log.createdAt,
         };
       })
       .sort(
@@ -2415,8 +2420,8 @@ export async function getClubMediaLogs(
       res.locals.user?._id
     );
 
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
     // Get logs from club members for this media after the start date
@@ -2957,7 +2962,7 @@ export async function getClubMemberRankings(
     );
 
     // Create date filter based on period
-    let dateFilter: { createdAt?: { $gte?: Date; $lt?: Date } } = {};
+    const dateFilter: { createdAt?: { $gte?: Date; $lt?: Date } } = {};
     const now = new Date();
 
     if (period === 'week') {
@@ -3034,11 +3039,12 @@ export async function getClubMemberRankings(
           totalHours: 0,
         };
 
+        const userObj = member.userObj as unknown as Partial<IUser>;
         return {
           user: {
             _id: member.userId,
-            username: (member.userObj as any)?.username || 'Unknown',
-            avatar: (member.userObj as any)?.avatar,
+            username: userObj?.username || 'Unknown',
+            avatar: userObj?.avatar,
             stats: {
               userLevel: Math.max(1, calculateLevel(stats.totalXp || 0)),
               userXp: stats.totalXp || 0,

@@ -399,6 +399,10 @@
       "statistics": {
         "help": "Controls who can see your totals, charts, rankings, and progress statistics.",
         "label": "Statistics"
+      },
+      "commenting": {
+        "help": "Controls who can comment on your log activity. Existing comments remain visible.",
+        "label": "Comments on my logs"
       }
     },
     "save": "Save privacy settings",
@@ -410,6 +414,12 @@
       "followers": "Followers",
       "private": "Only me",
       "public": "Everyone"
+    },
+    "commenting": {
+      "everyone": "Everyone",
+      "followers": "Followers",
+      "following": "People you follow",
+      "nobody": "No one"
     }
   },
   "profile": {

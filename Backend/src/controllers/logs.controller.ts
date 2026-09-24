@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
+import { ObjectId, PipelineStage, Types } from 'mongoose';
+import axios from 'axios';
 import { MediaBase, Anime, Manga, Reading } from '../models/media.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import {
@@ -14,22 +16,20 @@ import {
 } from '../types.js';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';
-import { ObjectId, PipelineStage, Types } from 'mongoose';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
-import updateStats from '../services/updateStats.js';
+import updateStats, {
+  updateLevelAndXp,
+  recalculateUserXpFromLogs,
+} from '../services/updateStats.js';
 import {
   recalculateStreaksForUser,
   updateStreakWithLog,
   getLiveCurrentStreak,
 } from '../services/streaks.js';
 import { searchAnilist } from '../services/searchAnilist.js';
-import {
-  updateLevelAndXp,
-  recalculateUserXpFromLogs,
-} from '../services/updateStats.js';
+
 import { getYouTubeChannelInfo } from '../services/searchYoutube.js';
-import axios from 'axios';
 import { evaluateAutoCompleteForUserMedia } from '../services/autoComplete.js';
 import { recalculateAllUsersXpV3 } from '../services/xpMigration.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
@@ -48,6 +48,11 @@ import {
   calculateXpScenario,
   XpCalculatorRequest,
 } from '../services/xpCalculator.js';
+import {
+  buildReadingSpeedByDifficultyData,
+  IReadingSpeedDifficultyLog,
+  IReadingSpeedDifficultyMedia,
+} from '../services/readingSpeed.service.js';
 import {
   buildVisibleImmersionLogFilter,
   canViewUserSocialCategory,
@@ -76,13 +81,14 @@ function getMediaTitle(media?: IMediaWithTitle | null): string {
 
 function getDescriptionWithMediaFallback(
   description: string | null | undefined,
-  media?: IMediaWithTitle | null
+  media?: IMediaWithTitle | null,
+  mediaTitle?: string | null
 ): string {
   if (typeof description === 'string' && description.trim().length > 0) {
     return description;
   }
 
-  return getMediaTitle(media);
+  return getMediaTitle(media) || mediaTitle?.trim() || '';
 }
 
 function hasAdminRole(user?: Partial<IUser> | null): boolean {
@@ -173,7 +179,7 @@ export async function getRecentLogs(
   next: NextFunction
 ) {
   const { user } = res.locals as { user: Omit<IUser, 'password'> };
-  const limit = req.query.limit ? parseInt(req.query.limit as string) : 4;
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 4;
 
   try {
     const recentLogs = await Log.aggregate([
@@ -285,6 +291,7 @@ export async function getRecentLogs(
           date: 1,
           unknownDate: 1,
           description: 1,
+          mediaTitle: 1,
           type: 1,
           time: 1,
           chars: 1,
@@ -304,7 +311,7 @@ export async function getRecentLogs(
 
     const normalizedRecentLogs = recentLogs.map((log) => ({
       ...log,
-      description: getDescriptionWithMediaFallback(log.description, log.media),
+      description: getDescriptionWithMediaFallback(log.description, log.media, log.mediaTitle),
     }));
 
     return res.status(200).json(normalizedRecentLogs);
@@ -319,9 +326,9 @@ export async function getGlobalFeed(
   next: NextFunction
 ) {
   const { user } = res.locals;
-  const limitParam = parseInt(req.query.limit as string) || 20;
+  const limitParam = parseInt(req.query.limit as string, 10) || 20;
   const limit = Math.min(Math.max(limitParam, 1), 100);
-  const pageParam = parseInt(req.query.page as string) || 1;
+  const pageParam = parseInt(req.query.page as string, 10) || 1;
   const page = Math.max(pageParam, 1);
   const typeFilter = (req.query.type as string) || 'all';
   const timeRange = (req.query.timeRange as string) || 'day';
@@ -444,7 +451,7 @@ export async function getGlobalFeed(
 
     const normalizedFeedLogs = feedLogs.map((log) => ({
       ...log,
-      description: getDescriptionWithMediaFallback(log.description, log.media),
+      description: getDescriptionWithMediaFallback(log.description, log.media, log.mediaTitle),
     }));
 
     return res.status(200).json(normalizedFeedLogs);
@@ -692,12 +699,12 @@ export async function getUserLogs(
   next: NextFunction
 ) {
   const page =
-    req.query.page != undefined && parseInt(req.query.page as string) >= 0
-      ? parseInt(req.query.page as string)
+      req.query.page !== undefined && req.query.page !== null && parseInt(req.query.page as string, 10) >= 0
+      ? parseInt(req.query.page as string, 10)
       : 1;
   const limit =
-    req.query.limit != undefined && parseInt(req.query.limit as string) >= 0
-      ? parseInt(req.query.limit as string)
+      req.query.limit !== undefined && req.query.limit !== null && parseInt(req.query.limit as string, 10) >= 0
+      ? parseInt(req.query.limit as string, 10)
       : 10;
   const skip = (page - 1) * limit;
 
@@ -706,7 +713,7 @@ export async function getUserLogs(
     : null;
   const endDate = req.query.end ? new Date(req.query.end as string) : null;
 
-  const type = req.query.type;
+  const {type} = req.query;
 
   const search = req.query.search as string;
   const sortBy = (req.query.sortBy as string) || 'date';
@@ -755,11 +762,12 @@ export async function getUserLogs(
     };
 
     const parseTagIds = (value: unknown): Types.ObjectId[] => {
-      const rawTags = Array.isArray(value)
-        ? value
-        : typeof value === 'string'
-          ? value.split(',')
-          : [];
+      let rawTags: unknown[] = [];
+      if (Array.isArray(value)) {
+        rawTags = value;
+      } else if (typeof value === 'string') {
+        rawTags = value.split(',');
+      }
 
       return rawTags
         .map((tag) => (typeof tag === 'string' ? tag.trim() : ''))
@@ -793,7 +801,7 @@ export async function getUserLogs(
     }
     const canViewPrivateLogs = canViewPrivateLog(viewer, userExists._id);
 
-    let initialMatch: IInitialMatch = {
+    const initialMatch: IInitialMatch = {
       user: userExists._id,
     };
 
@@ -931,7 +939,7 @@ export async function getUserLogs(
 
     const sortFieldName = Object.keys(sortObject)[0] || 'date';
 
-    let pipeline: PipelineStage[] = [
+    const pipeline: PipelineStage[] = [
       {
         $match: initialMatch,
       },
@@ -976,7 +984,7 @@ export async function getUserLogs(
         },
       },
       {
-        $sort: { sortValue: sortDirection === 'asc' ? 1 : -1 } as any,
+        $sort: { sortValue: sortDirection === 'asc' ? (1 as const) : (-1 as const) },
       },
     ];
 
@@ -1046,6 +1054,7 @@ export async function getUserLogs(
           xp: 1,
           xpBreakdown: 1,
           description: 1,
+          mediaTitle: 1,
           playlistBatchId: 1,
           playlistBatchTitle: 1,
           episodes: 1,
@@ -1070,7 +1079,7 @@ export async function getUserLogs(
 
     const normalizedLogs = logs.map((log) => ({
       ...log,
-      description: getDescriptionWithMediaFallback(log.description, log.media),
+      description: getDescriptionWithMediaFallback(log.description, log.media, log.mediaTitle),
     }));
 
     return res.status(200).json(normalizedLogs);
@@ -1206,7 +1215,8 @@ export async function getLog(req: Request, res: Response, next: NextFunction) {
       type: foundLog.type,
       description: getDescriptionWithMediaFallback(
         foundLog.description,
-        foundLog.mediaData
+        foundLog.mediaData,
+        foundLog.mediaTitle
       ),
       episodes: foundLog.type === 'anime' ? foundLog.episodes : undefined,
       volume: foundLog.volume,
@@ -1432,7 +1442,7 @@ export async function adminDeleteLogsBulk(
 
       user.markModified('stats');
       await user.save();
-      await recalculateStreaksForUser(user._id as any);
+      await recalculateStreaksForUser(user._id);
     }
 
     return res.status(200).json({ deletedCount: logsToDelete.length });
@@ -1457,7 +1467,7 @@ export async function adminDeleteLog(
     // Set locals so updateStats can update the correct user's stats
     res.locals.log = deletedLog;
     // Overwrite user context to the log owner for stats update
-    (res.locals as any).user = {
+    res.locals.user = {
       id: deletedLog.user,
       _id: deletedLog.user,
     };
@@ -1635,7 +1645,7 @@ export async function adminUpdateLog(
 
     // Set locals for stats calculation to target log owner
     res.locals.log = updatedLog;
-    (res.locals as any).user = {
+    res.locals.user = {
       id: updatedLog.user,
       _id: updatedLog.user,
     };
@@ -1648,14 +1658,14 @@ export async function adminUpdateLog(
 
     // If the date changed, recalc streaks for the log owner
     if (originalDate?.toISOString() !== updatedLog.date?.toISOString()) {
-      await recalculateStreaksForUser(updatedLog.user as any);
+      await recalculateStreaksForUser(updatedLog.user);
     }
 
     // Re-evaluate auto-complete after admin updated a log
     try {
       if (updatedLog.mediaId) {
         await evaluateAutoCompleteForUserMedia(
-          updatedLog.user as any,
+          updatedLog.user,
           String(updatedLog.mediaId),
           String(updatedLog.type)
         );
@@ -1682,6 +1692,7 @@ export async function createLog(
     type,
     mediaId,
     description,
+    mediaTitle,
     playlistBatchId,
     playlistBatchTitle,
     pages,
@@ -1819,6 +1830,7 @@ export async function createLog(
       xp,
       xpBreakdown: req.body.xpBreakdown ?? null,
       description,
+      mediaTitle: typeof mediaTitle === 'string' ? mediaTitle.trim() : undefined,
       playlistBatchId,
       playlistBatchTitle,
       private: privateLog === true,
@@ -1856,26 +1868,6 @@ export async function createLog(
         trigger: 'streak',
       });
       newAchievements.push(...streakAchievements);
-    }
-
-    // These are returned inline and revealed by the client right away, so mark
-    // them notified — otherwise the /me/pending drain would replay them later.
-    if (newAchievements.length > 0) {
-      const achievementIds = newAchievements.map(
-        (a) => a._id as Types.ObjectId
-      );
-      await UserAchievement.updateMany(
-        {
-          user: res.locals.user._id,
-          achievement: { $in: achievementIds },
-        },
-        { $set: { notified: true } }
-      );
-      // The reveal the client is about to play replaces the bell entry.
-      await dismissAchievementNotifications(
-        res.locals.user._id,
-        achievementIds
-      );
     }
 
     const finalMediaId = logMedia ? logMedia.contentId : mediaId;
@@ -1961,9 +1953,33 @@ export async function createLog(
           String(finalMediaId),
           statusType
         );
+        newAchievements.push(
+          ...(await checkAchievements(res.locals.user._id, {
+            trigger: 'mediaComplete',
+          }))
+        );
       }
     } catch (err) {
       console.error('auto-complete evaluation failed after createLog', err);
+    }
+
+    // These are returned inline and revealed by the client right away, so mark
+    // them notified only after auto-completion has also been evaluated.
+    if (newAchievements.length > 0) {
+      const achievementIds = newAchievements.map(
+        (a) => a._id as Types.ObjectId
+      );
+      await UserAchievement.updateMany(
+        {
+          user: res.locals.user._id,
+          achievement: { $in: achievementIds },
+        },
+        { $set: { notified: true } }
+      );
+      await dismissAchievementNotifications(
+        res.locals.user._id,
+        achievementIds
+      );
     }
 
     // If this media was hidden from recent media, unhide it since user is actively logging it
@@ -1993,7 +2009,7 @@ export async function createLog(
         'stats settings.hideRankingFeatures'
       );
       if (freshUser?.stats) {
-        const stats = freshUser.stats;
+        const {stats} = freshUser;
         celebration = {
           xpGained: savedLog.xp ?? 0,
           streak: stats.currentStreak ?? 0,
@@ -2052,16 +2068,14 @@ async function createImportedMedia(
   mediaIds?: IImportStats['anilistMediaId']
 ) {
   try {
-    let logsMediaId: IImportStats['anilistMediaId'] | undefined;
+    const requestedMediaIds = mediaIds;
     let createdMediaCount = 0;
 
-    logsMediaId = mediaIds;
-
     if (
-      logsMediaId &&
-      (logsMediaId.anime.length > 0 ||
-        logsMediaId.manga.length > 0 ||
-        logsMediaId['light-novel'].length > 0)
+      requestedMediaIds &&
+      (requestedMediaIds.anime.length > 0 ||
+        requestedMediaIds.manga.length > 0 ||
+        requestedMediaIds['light-novel'].length > 0)
     ) {
       const userLogs = await Log.find({ user: userId });
       if (!userLogs) return 0;
@@ -2069,11 +2083,11 @@ async function createImportedMedia(
         (acc, log) => {
           if (log.mediaId) {
             if (log.type === 'anime') {
-              acc.anime.push(parseInt(log.mediaId));
+              acc.anime.push(parseInt(log.mediaId, 10));
             } else if (log.type === 'manga') {
-              acc.manga.push(parseInt(log.mediaId));
+              acc.manga.push(parseInt(log.mediaId, 10));
             } else if (log.type === 'light-novel') {
-              acc['light-novel'].push(parseInt(log.mediaId));
+              acc['light-novel'].push(parseInt(log.mediaId, 10));
             }
           }
           return acc;
@@ -2091,13 +2105,13 @@ async function createImportedMedia(
       }
     }
 
-    for (const type in logsMediaId) {
+    for (const type in requestedMediaIds) {
       if (
-        logsMediaId[type as keyof IImportStats['anilistMediaId']].length > 0
+        requestedMediaIds[type as keyof IImportStats['anilistMediaId']].length > 0
       ) {
         const existingMedia = await MediaBase.find({
           contentId: {
-            $in: logsMediaId[type as keyof IImportStats['anilistMediaId']].map(
+            $in: requestedMediaIds[type as keyof IImportStats['anilistMediaId']].map(
               (id) => id.toString()
             ),
           },
@@ -2105,7 +2119,7 @@ async function createImportedMedia(
         const existingContentIds = new Set(
           existingMedia.map((media) => media.contentId)
         );
-        const newMediaId = logsMediaId[
+        const newMediaId = requestedMediaIds[
           type as keyof IImportStats['anilistMediaId']
         ].filter((id) => !existingContentIds.has(id.toString()));
         const mediaData = await searchAnilist({
@@ -2126,7 +2140,8 @@ async function createImportedMedia(
               ordered: false,
             });
           }
-          return (createdMediaCount += mediaData.length);
+          createdMediaCount += mediaData.length;
+          return createdMediaCount;
         }
       }
     }
@@ -2190,8 +2205,8 @@ export async function importLogs(
             log.type === 'manga' ||
             log.type === 'light-novel')
         ) {
-          if (!acc.anilistMediaId[log.type].includes(parseInt(log.mediaId))) {
-            acc.anilistMediaId[log.type].push(parseInt(log.mediaId));
+          if (!acc.anilistMediaId[log.type].includes(parseInt(log.mediaId, 10))) {
+            acc.anilistMediaId[log.type].push(parseInt(log.mediaId, 10));
           }
         }
         return acc;
@@ -2389,6 +2404,9 @@ interface IUserStats {
     charsPerHour?: number | null;
     localDate?: ILocalDateInfo;
   }>;
+  readingSpeedByDifficultyData: ReturnType<
+    typeof buildReadingSpeedByDifficultyData
+  >;
   timeRange: 'today' | 'week' | 'month' | 'year' | 'total';
   selectedType: string;
   timezone: string;
@@ -2598,7 +2616,7 @@ export async function getUserStats(
       daysPeriod = 1;
     }
 
-    let aggregationMatch: any = {
+    const aggregationMatch: any = {
       user: user._id,
       private: { $ne: true },
       ...dateFilter,
@@ -2621,7 +2639,7 @@ export async function getUserStats(
       aggregationMatch.tags = tagFilter;
     }
 
-    let totalsMatch: any = {
+    const totalsMatch: any = {
       user: user._id,
       private: { $ne: true },
       ...dateFilter,
@@ -2768,8 +2786,8 @@ export async function getUserStats(
       const sourceDate =
         dateValue instanceof Date ? dateValue : new Date(dateValue);
       const parts = dateFormatter.formatToParts(sourceDate);
-      const partValue = (type: Intl.DateTimeFormatPart['type']) =>
-        parts.find((part) => part.type === type)?.value || '00';
+      const partValue = (partType: Intl.DateTimeFormatPart['type']) =>
+        parts.find((part) => part.type === partType)?.value || '00';
 
       const year = Number(partValue('year')) || 0;
       const month = Number(partValue('month')) || 1;
@@ -2798,12 +2816,12 @@ export async function getUserStats(
       };
     };
 
-    const filteredStatsByType =
-      type === 'all'
-        ? statsByType
-        : Array.isArray(type)
-          ? statsByType.filter((stat) => type.includes(stat.type))
-          : statsByType.filter((stat) => stat.type === type);
+    let filteredStatsByType = statsByType;
+    if (type !== 'all') {
+      filteredStatsByType = Array.isArray(type)
+        ? statsByType.filter((stat) => type.includes(stat.type))
+        : statsByType.filter((stat) => stat.type === type);
+    }
 
     const totals = filteredStatsByType.reduce(
       (acc, stat) => {
@@ -2848,11 +2866,11 @@ export async function getUserStats(
 
     totals.dayCount = daysPeriod;
 
-    const completeStats: IStatByType[] = logTypes.map((type) => {
-      const typeStat = statsByType.find((stat) => stat.type === type);
+    const completeStats: IStatByType[] = logTypes.map((mediaType) => {
+      const typeStat = statsByType.find((stat) => stat.type === mediaType);
       return (
         typeStat || {
-          type,
+          type: mediaType,
           count: 0,
           totalXp: 0,
           totalChars: 0,
@@ -2946,6 +2964,87 @@ export async function getUserStats(
       localDate: createLocalDateInfo(entry.date),
     }));
 
+    const readingTypes = [
+      'light-novel',
+      'reading',
+      'manga',
+      'vn',
+      'game',
+      'book',
+    ];
+    const selectedReadingTypes =
+      type === 'all'
+        ? readingTypes
+        : (Array.isArray(type) ? type : [type]).filter((entry) =>
+            readingTypes.includes(entry)
+          );
+
+    const readingSpeedByDifficultyLogs = selectedReadingTypes.length
+      ? await Log.aggregate([
+          {
+            $match: {
+              user: user._id,
+              private: { $ne: true },
+              ...dateFilter,
+              unknownDate: { $ne: true },
+              type: { $in: selectedReadingTypes },
+              time: { $gt: 0 },
+              chars: { $gt: 0 },
+              ...(includedTagsParam || excludedTagsParam
+                ? {
+                    tags: {
+                      ...(includedTagsParam
+                        ? {
+                            $in: includedTagsParam
+                              .split(',')
+                              .map((id) => new Types.ObjectId(id)),
+                          }
+                        : {}),
+                      ...(excludedTagsParam
+                        ? {
+                            $nin: excludedTagsParam
+                              .split(',')
+                              .map((id) => new Types.ObjectId(id)),
+                          }
+                        : {}),
+                    },
+                  }
+                : {}),
+            },
+          },
+          {
+            $project: {
+              date: 1,
+              type: 1,
+              time: 1,
+              chars: 1,
+              mediaId: 1,
+            },
+          },
+          { $sort: { date: 1 } },
+        ])
+      : [];
+
+    const difficultyMediaIds = Array.from(
+      new Set(
+        readingSpeedByDifficultyLogs
+          .map((entry) => entry.mediaId)
+          .filter((mediaId): mediaId is string => Boolean(mediaId))
+      )
+    );
+    const difficultyMedia = difficultyMediaIds.length
+      ? await MediaBase.find({
+          contentId: { $in: difficultyMediaIds },
+          jitenDifficulty: { $ne: null },
+        })
+          .select('contentId jitenDifficulty')
+          .lean()
+      : [];
+    const readingSpeedByDifficultyData = buildReadingSpeedByDifficultyData(
+      readingSpeedByDifficultyLogs as IReadingSpeedDifficultyLog[],
+      difficultyMedia as IReadingSpeedDifficultyMedia[]
+    );
+
     const streaks = {
       currentStreak: getLiveCurrentStreak(
         user.stats?.currentStreak ?? 0,
@@ -2959,6 +3058,7 @@ export async function getUserStats(
       totals,
       statsByType: statsWithLocalDates,
       readingSpeedData: readingSpeedWithLocalDates,
+      readingSpeedByDifficultyData,
       timeRange,
       selectedType: Array.isArray(type) ? type.join(',') : type,
       timezone: userTimezone,
@@ -3017,13 +3117,13 @@ export async function recalculateStreaks(
       try {
         await recalculateStreaksForUser(user._id);
 
-        results.updatedUsers++;
+        results.updatedUsers += 1;
       } catch (error) {
         results.errors.push(
           `Error processing user ${user.username}: ${(error as Error).message}`
         );
       }
-      results.processedUsers++;
+      results.processedUsers += 1;
     }
 
     return res.status(200).json({
@@ -3085,7 +3185,7 @@ export async function syncManabeIds(
         const manabeLogs = response.data as IManabeLogs[];
 
         if (!manabeLogs || manabeLogs.length === 0) {
-          results.processedUsers++;
+          results.processedUsers += 1;
           continue;
         }
 
@@ -3096,8 +3196,6 @@ export async function syncManabeIds(
         });
 
         results.totalLogsChecked += userLogs.length;
-
-        let updatedCount = 0;
 
         // Match logs by exact timestamp
         for (const userLog of userLogs) {
@@ -3111,17 +3209,16 @@ export async function syncManabeIds(
           if (matchingManabeLog) {
             userLog.manabeId = matchingManabeLog._id;
             await userLog.save();
-            updatedCount++;
-            results.totalLogsUpdated++;
+            results.totalLogsUpdated += 1;
           }
         }
 
-        results.processedUsers++;
+        results.processedUsers += 1;
       } catch (error) {
         results.errors.push(
           `Error processing user ${user.username}: ${(error as Error).message}`
         );
-        results.processedUsers++;
+        results.processedUsers += 1;
       }
     }
 
@@ -3611,7 +3708,7 @@ export async function getGlobalMediaStats(
     };
 
     const recent =
-      recentStats[0] || ({ thisWeek: [], thisMonth: [], today: [] } as any);
+      recentStats[0] || { thisWeek: [], thisMonth: [], today: [] };
     const thisWeek = recent.thisWeek[0] || {
       count: 0,
       episodes: 0,
@@ -3772,7 +3869,7 @@ export async function getRecentMediaLogs(
 
     const normalizedLogs = logs.map((log) => ({
       ...log,
-      description: getDescriptionWithMediaFallback(log.description, log.media),
+      description: getDescriptionWithMediaFallback(log.description, log.media, log.mediaTitle),
     }));
 
     return res.status(200).json(normalizedLogs);

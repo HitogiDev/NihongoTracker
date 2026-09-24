@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
+import fac from 'fast-average-color-node';
 import {
   Anime,
   Manga,
@@ -13,9 +14,8 @@ import User from '../models/user.model.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import MediaReview from '../models/mediaReview.model.js';
 import { customError } from '../middlewares/errorMiddleware.js';
-import fac from 'fast-average-color-node';
 import { searchAnilist } from '../services/searchAnilist.js';
-import { getIgdbGame } from '../services/searchIgdb.js';
+import { getIgdbGame, searchIgdb } from '../services/searchIgdb.js';
 import {
   searchGoogleBooks,
   getGoogleBook,
@@ -39,6 +39,7 @@ import {
   recordReviewActivity,
 } from '../services/activityEvents.service.js';
 import { deleteActivitiesBySource } from '../services/activity.service.js';
+import type { IMediaDocument } from '../types.js';
 
 const REVIEW_SUMMARY_MIN_LENGTH = 20;
 const REVIEW_SUMMARY_MAX_LENGTH = 150;
@@ -97,6 +98,52 @@ async function indexGameMediaForSearch(media: any[]) {
       type: doc.type,
     }))
   );
+}
+
+async function resolveIgdbSearchResults(
+  results: IMediaDocument[]
+): Promise<any[]> {
+  if (results.length === 0) return [];
+
+  const contentIds = results.map((result) => result.contentId);
+  const existingMedia = await MediaBase.find({
+    type: 'game',
+    contentId: { $in: contentIds },
+  })
+    .select('contentId title contentImage coverImage isAdult synonyms type')
+    .lean();
+
+  const existingIds = new Set(existingMedia.map((item) => item.contentId));
+  const newMedia = results.filter((item) => !existingIds.has(item.contentId));
+
+  if (newMedia.length > 0) {
+    await Promise.all(
+      newMedia.map((media) =>
+        VideoGame.findOneAndUpdate(
+          { contentId: media.contentId, type: 'game' },
+          { $setOnInsert: media },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        ).exec()
+      )
+    );
+  }
+
+  const persistedMedia = await MediaBase.find({
+    type: 'game',
+    contentId: { $in: contentIds },
+  })
+    .select('contentId title contentImage coverImage isAdult synonyms type')
+    .lean();
+
+  await indexGameMediaForSearch(persistedMedia);
+
+  const mediaByContentId = new Map(
+    persistedMedia.map((media) => [media.contentId, media])
+  );
+
+  return contentIds
+    .map((contentId) => mediaByContentId.get(contentId))
+    .filter((media): media is (typeof persistedMedia)[number] => Boolean(media));
 }
 
 export async function getMedia(
@@ -279,15 +326,13 @@ export async function getMedia(
         normalizedMediaType === 'movie')
     ) {
       const searchType =
-        normalizedMediaType === 'movie'
+        normalizedMediaType === 'movie' || normalizedMediaType === 'anime'
           ? 'ANIME'
-          : normalizedMediaType === 'anime'
-            ? 'ANIME'
-            : 'MANGA';
+          : 'MANGA';
       const searchFormat = normalizedMediaType === 'movie' ? 'MOVIE' : null;
 
       const mediaAnilist = await searchAnilist({
-        ids: [parseInt(contentId)],
+        ids: [parseInt(contentId, 10)],
         type: searchType,
         format: searchFormat,
       });
@@ -315,9 +360,8 @@ export async function getMedia(
           ...completionStatus,
           jiten: jitenResponse ? jitenResponse.data : null,
         });
-      } else {
-        return res.status(404).json({ message: 'Media not found' });
       }
+      return res.status(404).json({ message: 'Media not found' });
     }
 
     if (!media && normalizedMediaType === 'game') {
@@ -418,7 +462,7 @@ export async function anilistSearchProxy(
     }
 
     const searchType =
-      type === 'movie' ? 'ANIME' : type === 'anime' ? 'ANIME' : 'MANGA';
+      type === 'movie' || type === 'anime' ? 'ANIME' : 'MANGA';
 
     const format = req.query.format ? String(req.query.format) : null;
     const idsParam = req.query.ids ? String(req.query.ids) : null;
@@ -484,8 +528,8 @@ export async function searchMedia(
       book: 'book',
     };
     const type = normalizedTypeMap[rawType] ?? rawType;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.perPage as string) || 10;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.perPage as string, 10) || 10;
     const offset = (page - 1) * limit;
 
     if (!title || !type)
@@ -512,12 +556,41 @@ export async function searchMedia(
         return res.status(200).json([]);
       }
 
-      const media = await searchDocuments('game', normalizedTitle, {
+      const localResults = await searchDocuments('game', normalizedTitle, {
         limit,
         offset,
       });
 
-      return res.status(200).json(media.hits);
+      // The dump is the fast local catalogue, but it can lag behind IGDB or
+      // exclude a valid title while applying the Japanese/main-game filters.
+      // Use the live API to fill missing results on the first page.
+      if (offset > 0 || localResults.hits.length >= limit) {
+        return res.status(200).json(localResults.hits);
+      }
+
+      const igdbResults = await searchIgdb(
+        normalizedTitle,
+        Math.max(limit * 3, 30)
+      );
+      const localContentIds = new Set(
+        localResults.hits.map((item) => item.contentId)
+      );
+      const missingIgdbResults = igdbResults
+        .filter((item) => !localContentIds.has(item.contentId))
+        .slice(0, Math.max(limit - localResults.hits.length, 0));
+      const persistedIgdbResults = await resolveIgdbSearchResults(
+        missingIgdbResults
+      );
+      const seenContentIds = new Set<string>();
+      const combinedResults = [...localResults.hits, ...persistedIgdbResults]
+        .filter((item) => {
+          if (seenContentIds.has(item.contentId)) return false;
+          seenContentIds.add(item.contentId);
+          return true;
+        })
+        .slice(0, limit);
+
+      return res.status(200).json(combinedResults);
     }
 
     const media = await searchDocuments(type, title, { limit, offset });
@@ -537,7 +610,7 @@ export async function multiSearchMedia(
 ) {
   try {
     const title = req.query.search as string;
-    const limit = parseInt(req.query.perPage as string) || 3;
+    const limit = parseInt(req.query.perPage as string, 10) || 3;
 
     if (!title || title.trim().length < 2) {
       return res.status(400).json({ message: 'Search query too short' });

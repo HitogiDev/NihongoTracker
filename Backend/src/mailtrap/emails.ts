@@ -26,7 +26,7 @@ export async function sendVerificationEmail(
   language?: string | null
 ) {
   try {
-    const subject = getEmailStrings(language).verification.subject;
+    const {subject} = getEmailStrings(language).verification;
     const verificationURL = `${getBaseUrl()}/verify-email/${token}`;
     const html = verificationEmailTemplate(verificationURL, language ?? 'en');
     return await sendEmail(to, subject, html, 'Verification');
@@ -41,7 +41,7 @@ export async function sendPasswordResetEmail(
   language?: string | null
 ) {
   try {
-    const subject = getEmailStrings(language).passwordReset.subject;
+    const {subject} = getEmailStrings(language).passwordReset;
     const html = passwordResetRequestTemplate(link, language ?? 'en');
     return await sendEmail(to, subject, html, 'PasswordReset');
   } catch (error) {
@@ -54,7 +54,7 @@ export async function sendPasswordResetSuccessEmail(
   language?: string | null
 ) {
   try {
-    const subject = getEmailStrings(language).passwordResetSuccess.subject;
+    const {subject} = getEmailStrings(language).passwordResetSuccess;
     const html = passwordResetSuccessTemplate(language ?? 'en');
     return await sendEmail(to, subject, html, 'PasswordResetSuccess');
   } catch (error) {

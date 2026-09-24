@@ -95,7 +95,9 @@ function normalizeVolume(volume: IGoogleBookVolume): IMediaDocument | null {
   return doc;
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
 
 // Short-lived in-memory cache. Typing (and re-typing) the same query fires many
 // identical searches; Google Books rate-limits bursts with 429, so caching both
@@ -125,7 +127,7 @@ export async function searchGoogleBooks(
   // Retry once on a 429 (transient burst rate-limit) before giving up, so a
   // momentary throttle doesn't surface as an empty "No results" flicker.
   const MAX_ATTEMPTS = 2;
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
       const { data } = await axios.get<IGoogleBooksResponse>(url);
       const results = (data.items ?? [])

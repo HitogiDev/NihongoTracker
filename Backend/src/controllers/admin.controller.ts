@@ -1,11 +1,12 @@
+import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
+import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import { apiError } from '../i18n/errorCodes.js';
 import Log from '../models/log.model.js';
-import { Request, Response, NextFunction } from 'express';
-import { IUser } from '../types.js';
+import { IUser , IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { deleteFile } from '../services/uploadFile.js';
-import bcrypt from 'bcryptjs';
 import { checkPatreonMembershipForUser } from '../controllers/patreon.controller.js';
 import { recalculateStreaksForUser } from '../services/streaks.js';
 import {
@@ -18,7 +19,7 @@ import {
 } from '../services/vndbDumpSync.js';
 import UserMediaStatus from '../models/userMediaStatus.model.js';
 import { MediaBase } from '../models/media.model.js';
-import { IMediaDocument } from '../types.js';
+
 import { backfillRankHistory } from '../services/rankSnapshot.service.js';
 import { backfillRankAchievements } from '../services/achievements/cronAchievements.service.js';
 import {
@@ -26,7 +27,6 @@ import {
   getJitenBackfillState,
 } from '../services/jiten.js';
 import { addMediaToIndex } from '../services/meilisearch/mediaIndex.js';
-import { Types } from 'mongoose';
 import {
   getActivityBackfillState,
   startActivityBackfill,
@@ -142,8 +142,8 @@ export async function getAdminUsers(
   next: NextFunction
 ) {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
     const search = (req.query.search as string) || '';
     const skip = (page - 1) * limit;
 
@@ -186,7 +186,7 @@ export async function getAdminUsers(
         return {
           ...user,
           stats: { userXp: user.stats?.userXp || 0, userHours },
-          lastActivity: (lastLog as any)?.createdAt || null,
+          lastActivity: lastLog?.createdAt || null,
         };
       })
     );
@@ -196,6 +196,70 @@ export async function getAdminUsers(
       total,
       page,
       totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
+export async function getAdminBannedUsers(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const page = Math.max(1, Number.parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, Number.parseInt(req.query.limit as string, 10) || 50)
+    );
+    const type = (req.query.type as string) || 'all';
+
+    if (!['all', 'ranking', 'site'].includes(type)) {
+      throw apiError('common.validationError', 400, 'Invalid ban filter');
+    }
+
+    let moderationQuery: Record<string, unknown>;
+    if (type === 'ranking') {
+      moderationQuery = { 'moderation.rankingBanned': true };
+    } else if (type === 'site') {
+      moderationQuery = { 'moderation.banned': true };
+    } else {
+      moderationQuery = {
+        $or: [
+          { 'moderation.rankingBanned': true },
+          { 'moderation.banned': true },
+        ],
+      };
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(moderationQuery)
+        .select(
+          'username roles moderation.rankingBanned moderation.banned moderation.banReason moderation.updatedAt moderation.updatedByUsername'
+        )
+        .sort({ 'moderation.updatedAt': -1, username: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(moderationQuery),
+    ]);
+
+    return res.status(200).json({
+      users: users.map((user) => ({
+        _id: user._id,
+        username: user.username,
+        roles: user.roles,
+        rankingBanned: user.moderation?.rankingBanned ?? false,
+        banned: user.moderation?.banned ?? false,
+        banReason: user.moderation?.banReason ?? '',
+        updatedAt: user.moderation?.updatedAt ?? null,
+        updatedByUsername: user.moderation?.updatedByUsername ?? '',
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      type,
     });
   } catch (error) {
     return next(error as customError);
@@ -286,8 +350,8 @@ export async function searchAdminLogs(
   next: NextFunction
 ) {
   try {
-    const page = parseInt((req.query.page as string) || '1');
-    const limit = Math.min(parseInt((req.query.limit as string) || '20'), 100);
+    const page = parseInt((req.query.page as string) || '1', 10);
+    const limit = Math.min(parseInt((req.query.limit as string) || '20', 10), 100);
     const skip = (page - 1) * limit;
     const search = (req.query.search as string) || '';
     const type = (req.query.type as string) || '';
@@ -515,9 +579,9 @@ export async function markLogsWithoutStatusToInProgress(
             completedAt: statusToSet === 'completed' ? new Date() : null,
             autoCompleteSuppressed: true,
           });
-          created++;
-          if (statusToSet === 'completed') completed++;
-          else inProgress++;
+          created += 1;
+          if (statusToSet === 'completed') completed += 1;
+          else inProgress += 1;
         } catch (err) {
           // ignore duplicate key races
         }
@@ -536,9 +600,9 @@ export async function markLogsWithoutStatusToInProgress(
             },
           }
         );
-        updated++;
-        if (statusToSet === 'completed') completed++;
-        else inProgress++;
+        updated += 1;
+        if (statusToSet === 'completed') completed += 1;
+        else inProgress += 1;
       }
     }
 
@@ -634,10 +698,10 @@ export async function syncPatreonMembers(
     for (const user of users) {
       const result = await checkPatreonMembershipForUser(user._id.toString());
       if (result === null) {
-        failed++;
+        failed += 1;
       } else {
-        checked++;
-        if (result.updated) updated++;
+        checked += 1;
+        if (result.updated) updated += 1;
       }
     }
 
@@ -744,7 +808,7 @@ export async function updateUserModerationByUsername(
         updatedAt: now,
         updatedBy,
         updatedByUsername,
-      } as any);
+      });
     }
 
     if (hasBanned && currentBanned !== nextBanned) {
@@ -756,7 +820,7 @@ export async function updateUserModerationByUsername(
         updatedAt: now,
         updatedBy,
         updatedByUsername,
-      } as any);
+      });
     }
 
     if (hasReason && currentReason !== nextReason) {
@@ -768,7 +832,7 @@ export async function updateUserModerationByUsername(
         updatedAt: now,
         updatedBy,
         updatedByUsername,
-      } as any);
+      });
     }
 
     const MAX_HISTORY_ENTRIES = 100;
@@ -782,7 +846,7 @@ export async function updateUserModerationByUsername(
       updatedBy,
       updatedByUsername,
       history: trimmedHistory,
-    } as any;
+    };
 
     await user.save();
 

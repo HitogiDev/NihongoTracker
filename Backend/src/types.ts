@@ -177,6 +177,7 @@ export interface IUserSettings {
   dismissedNotificationClubAt?: Record<string, Date | string>;
   lastSeenChangelogAt?: Date | null;
   socialPrivacy?: ISocialPrivacySettings;
+  achievementShowcase?: string[];
 }
 
 export interface IPatreonData {
@@ -539,10 +540,19 @@ export const SOCIAL_VISIBILITIES = [
 ] as const;
 export type SocialVisibility = (typeof SOCIAL_VISIBILITIES)[number];
 
+export const COMMENT_PERMISSIONS = [
+  'everyone',
+  'followers',
+  'following',
+  'nobody',
+] as const;
+export type CommentPermission = (typeof COMMENT_PERMISSIONS)[number];
+
 export interface ISocialPrivacySettings {
   profile: SocialVisibility;
   immersionActivity: SocialVisibility;
   statistics: SocialVisibility;
+  commenting?: CommentPermission;
 }
 
 export const ACTIVITY_REACTIONS = [
@@ -578,6 +588,12 @@ export interface IActivityReaction extends Document {
 export interface IActivityComment extends Document {
   activity: Types.ObjectId;
   user: Types.ObjectId;
+  parentComment?: Types.ObjectId | null;
+  parentCommentPreview?: {
+    _id: string;
+    user: { _id: string; username: string; avatar?: string };
+    content: string;
+  } | null;
   content: string;
   likeCount: number;
   editedAt?: Date;
@@ -838,6 +854,8 @@ export interface IXpBreakdown {
 }
 
 export interface ILog extends Document {
+  createdAt?: Date;
+  updatedAt?: Date;
   user: Types.ObjectId;
   type:
     | 'light-novel'
@@ -1727,6 +1745,10 @@ export type AchievementConditionType =
   | 'rankDethroned'
   | 'secretAchievementCount'
   | 'earlyAdopter'
+  | 'completedMediaCount'
+  | 'completedClubChallenges'
+  | 'readingListeningLevel'
+  | 'readingListeningDays'
   | 'manualGrant';
 
 export interface IAchievementCondition {
@@ -1784,7 +1806,14 @@ export interface IUserAchievement extends Document {
 }
 
 export interface IAchievementCheckContext {
-  trigger: 'log' | 'streak' | 'levelup' | 'manual';
+  trigger:
+    | 'log'
+    | 'streak'
+    | 'levelup'
+    | 'mediaComplete'
+    | 'clubChallengeComplete'
+    | 'clubJoin'
+    | 'manual';
   log?: ILog;
   streakValue?: number;
   levelValue?: number;

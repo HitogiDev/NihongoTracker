@@ -46,7 +46,7 @@ export async function* streamTsvRows(
     const cells = line.split('\t');
     const row: Record<string, string | null> = {};
 
-    for (let i = 0; i < headers.length; i++) {
+    for (let i = 0; i < headers.length; i += 1) {
       const raw = cells[i];
       if (raw === undefined || raw === '\\N') {
         row[headers[i]] = null;

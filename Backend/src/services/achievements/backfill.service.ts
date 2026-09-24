@@ -18,6 +18,9 @@ const TRIGGERS: IAchievementCheckContext['trigger'][] = [
   'log',
   'streak',
   'levelup',
+  'mediaComplete',
+  'clubChallengeComplete',
+  'clubJoin',
 ];
 
 export interface BackfillResult {
@@ -70,7 +73,7 @@ export async function backfillAchievementsForAllUsers(
 
       result.totalGranted += granted;
       result.totalRevoked += revoked.length;
-      if (granted > 0) result.usersWithNewAchievements++;
+      if (granted > 0) result.usersWithNewAchievements += 1;
 
       onUser?.({
         username: user.username,
@@ -83,7 +86,7 @@ export async function backfillAchievementsForAllUsers(
       console.error(`Backfill failed for ${user.username}:`, err);
     }
 
-    result.usersProcessed++;
+    result.usersProcessed += 1;
   }
 
   // Historical unlocks shouldn't pop the reveal modal on next login

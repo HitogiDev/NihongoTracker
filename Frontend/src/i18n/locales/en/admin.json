@@ -28,7 +28,8 @@
       "vn": "Visual Novel",
       "movie": "Movie",
       "tvShow": "TV Show",
-      "game": "Video Game"
+      "game": "Video Game",
+      "book": "Book"
     },
     "languages": {
       "eng": "English",
@@ -54,6 +55,12 @@
     "recalculateTitle": "Recalculate streak for this user",
     "recalculateBody": "Rebuilds streak from all existing logs for <b>{{username}}</b>.",
     "recalculateAction": "Recalculate streak",
+    "grantAchievementTitle": "Grant an achievement",
+    "grantAchievementBody": "Choose an achievement to add to this user's profile.",
+    "selectAchievement": "Select an achievement",
+    "grantAchievementAction": "Grant achievement",
+    "achievementGranted": "Achievement granted",
+    "achievementAlreadyOwned": "This user already has that achievement",
     "rankingBanTitle": "Ban from rankings",
     "rankingBanBody": "User will be hidden from global ranking and ranking summary.",
     "banTitle": "Ban user",
@@ -88,6 +95,23 @@
       "streakRecalculated": "{{username}}'s streak recalculated (current: {{streak}})",
       "streakFailed": "Failed to recalculate streak for this user"
     }
+  },
+  "bans": {
+    "tab": "Bans",
+    "title": "Banned users",
+    "description": "Review accounts banned from rankings or from using the site.",
+    "filters": {
+      "all": "All bans",
+      "ranking": "Ranking",
+      "site": "Site"
+    },
+    "username": "Username",
+    "banType": "Ban type",
+    "updatedAt": "Last updated",
+    "action": "Action",
+    "openModeration": "Moderate",
+    "empty": "No banned users in this list.",
+    "page": "Page {{page}} of {{totalPages}}"
   },
   "queue": {
     "title": "Media Requests",

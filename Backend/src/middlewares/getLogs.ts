@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import axios from 'axios';
+import { Types } from 'mongoose';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
-import axios from 'axios';
 import {
   IUser,
   ILog,
@@ -12,7 +13,6 @@ import {
   KechimochiCSVLog,
   IManabeLogs,
 } from '../types.js';
-import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
 import { MediaBase } from '../models/media.model.js';
@@ -47,6 +47,7 @@ interface ILogNT {
   mediaId?: string;
   date: Date;
   tagNames?: string[];
+  tags?: Types.ObjectId[];
 }
 
 function transformManabeLogsList(
@@ -78,7 +79,7 @@ function transformManabeLogsList(
   };
 
   return list
-    .filter((log) => logTypeMap.hasOwnProperty(log.medio))
+      .filter((log) => Object.prototype.hasOwnProperty.call(logTypeMap, log.medio))
     .map((log) => {
       const { logType, parametro } = logTypeMap[log.medio];
 
@@ -111,7 +112,7 @@ export async function getLogsFromAPI(
   next: NextFunction
 ) {
   try {
-    const user: Omit<IUser, 'password'> = res.locals.user;
+    const {user} = res.locals;
     if (!user) throw apiError('user.notFound', 404, 'User not found');
     if (!user.discordId) throw apiError('integration.discordIdNotSet', 400, 'Discord ID not set');
     const apiUrl = process.env.MANABE_API_URL;
@@ -133,11 +134,9 @@ export async function getLogsFromAPI(
       manabeId: { $exists: true },
     }).select('manabeId');
 
-    const newLogs = rawLogs.filter((log) => {
-      return !alreadyImportedLogs.some(
+    const newLogs = rawLogs.filter((log) => !alreadyImportedLogs.some(
         (importedLog) => importedLog.manabeId === log._id
-      );
-    });
+      ));
 
     if (!user.firstImport) {
       for (const logInfo of newLogs) {
@@ -255,18 +254,18 @@ function transformTMWLogsList(
   };
 
   return list
-    .filter((log) => mediaTypeMap.hasOwnProperty(log['Media Type']))
+      .filter((log) => Object.prototype.hasOwnProperty.call(mediaTypeMap, log['Media Type']))
     .map((log) => {
       const type = mediaTypeMap[log['Media Type']];
       const amount = parseFloat(log['Amount Logged']) || 0;
       const mediaName = (log['Media Name'] || '').trim();
-      const comment = (log['Comment'] || '').trim();
+      const comment = (log.Comment || '').trim();
       const hasUsableComment =
         comment.length > 0 && comment.toLowerCase() !== 'no comment';
 
       const NTLog: ILogNT = {
         user: user._id,
-        type: type,
+        type,
         date: new Date(log['Log Date']),
         description: mediaName,
       };
@@ -317,7 +316,7 @@ function transformTMWLogsList(
       if (
         hasUsableComment &&
         (/^v?\d+$/.test(log['Media Name']) ||
-          /^https?:\/\/(www\.)?youtu(be\.com|\.be)\//.test(log['Comment']))
+          /^https?:\/\/(www\.)?youtu(be\.com|\.be)\//.test(log.Comment))
       ) {
         NTLog.description = comment;
       }
@@ -356,7 +355,7 @@ function transformManabeTSVLogsList(
   };
 
   return list
-    .filter((log) => logTypeMap.hasOwnProperty(log.Medio))
+      .filter((log) => Object.prototype.hasOwnProperty.call(logTypeMap, log.Medio))
     .map((log) => {
       const { logType, parametro } = logTypeMap[log.Medio];
       const cantidad = parseFloat(log.Cantidad) || 0;
@@ -371,14 +370,14 @@ function transformManabeTSVLogsList(
 
       if (log.Tiempo) {
         const tiempo = parseFloat(log.Tiempo);
-        if (!isNaN(tiempo) && tiempo > 0) {
+          if (!Number.isNaN(Number(tiempo)) && tiempo > 0) {
           NTLog.time = tiempo;
         }
       }
 
       if (log.Caracteres) {
         const caracteres = parseFloat(log.Caracteres);
-        if (!isNaN(caracteres) && caracteres > 0) {
+          if (!Number.isNaN(Number(caracteres)) && caracteres > 0) {
           NTLog.chars = caracteres;
         }
       }
@@ -400,7 +399,7 @@ function transformVNCRLogsList(
   };
 
   return list
-    .filter((log) => mediaTypeMap.hasOwnProperty(log.media_type))
+      .filter((log) => Object.prototype.hasOwnProperty.call(mediaTypeMap, log.media_type))
     .map((log) => {
       const type = mediaTypeMap[log.media_type];
       // Convert seconds to minutes
@@ -408,7 +407,7 @@ function transformVNCRLogsList(
 
       const NTLog: ILogNT = {
         user: user._id,
-        type: type,
+        type,
         date: new Date(log.date),
         description: log.name,
       };
@@ -484,28 +483,28 @@ function transformOtherCSVLogsList(
 
       if (log.time) {
         const time = parseFloat(log.time);
-        if (!isNaN(time) && time > 0) {
+          if (!Number.isNaN(Number(time)) && time > 0) {
           NTLog.time = Math.round(time);
         }
       }
 
       if (log.characters) {
         const chars = parseFloat(log.characters);
-        if (!isNaN(chars) && chars > 0) {
+          if (!Number.isNaN(Number(chars)) && chars > 0) {
           NTLog.chars = Math.round(chars);
         }
       }
 
       if (log.episodes) {
         const episodes = parseFloat(log.episodes);
-        if (!isNaN(episodes) && episodes > 0) {
+          if (!Number.isNaN(Number(episodes)) && episodes > 0) {
           NTLog.episodes = Math.round(episodes);
         }
       }
 
       if (log.pages) {
         const pages = parseFloat(log.pages);
-        if (!isNaN(pages) && pages > 0) {
+          if (!Number.isNaN(Number(pages)) && pages > 0) {
           NTLog.pages = Math.round(pages);
         }
       }
@@ -716,9 +715,9 @@ export async function getLogsFromCSV(
         // Assign tag ObjectIds to each log and remove tagNames
         for (const log of logs) {
           if (log.tagNames) {
-            (log as any).tags = log.tagNames
+            log.tags = log.tagNames
               .map((name) => tagNameToId.get(name))
-              .filter(Boolean);
+              .filter((id): id is Types.ObjectId => id !== undefined);
             delete log.tagNames;
           }
         }

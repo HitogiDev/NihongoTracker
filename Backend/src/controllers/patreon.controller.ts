@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { apiError } from '../i18n/errorCodes.js';
-import User from '../models/user.model.js';
 import crypto from 'crypto';
 import axios from 'axios';
 import qs from 'qs';
+import User from '../models/user.model.js';
+import { apiError } from '../i18n/errorCodes.js';
 import { IPatreonIdentityResponse } from '../types.js';
 import { containsOffensiveText } from '../constants/profanityFilter.js';
 
@@ -30,7 +30,7 @@ function normalizeBaseUrl(value?: string): string {
 
 function isLocalUrl(value: string): boolean {
   try {
-    const hostname = new URL(value).hostname;
+    const {hostname} = new URL(value);
     return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname);
   } catch {
     return /localhost|127\.0\.0\.1|\[::1\]/i.test(value);
@@ -111,7 +111,7 @@ export async function linkPatreonAccount(
 ) {
   try {
     const { patreonEmail } = req.body;
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     // Email is now optional - OAuth is the preferred method
     if (patreonEmail && typeof patreonEmail === 'string') {
@@ -153,7 +153,7 @@ export async function unlinkPatreonAccount(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     user.patreon = {
       patreonId: undefined,
@@ -181,7 +181,7 @@ export async function updateCustomBadgeText(
 ) {
   try {
     const { customBadgeText } = req.body;
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     // Check if user has Enthusiast or Consumer tier
     if (
@@ -248,7 +248,7 @@ export async function updateBadgeColors(
 ) {
   try {
     const { badgeColor, badgeTextColor } = req.body;
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     // Check if user has Consumer tier
     if (!user.patreon?.isActive || user.patreon.tier !== 'consumer') {
@@ -334,7 +334,7 @@ export async function updateBadgeVisibility(
 ) {
   try {
     const { hideBadge } = req.body;
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     if (typeof hideBadge !== 'boolean') {
       return next(
@@ -388,7 +388,7 @@ export async function handlePatreonWebhook(
 
     // ✅ IMPORTANTE: req.body debe estar como string RAW para verificar firma
     // Express debe usar express.raw() o bodyParser.raw() para webhooks
-    const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+    const rawBody = (req as Request & { rawBody?: string }).rawBody || JSON.stringify(req.body);
 
     // Verify webhook signature using MD5 HMAC
     const hmac = crypto.createHmac('md5', webhookSecret);
@@ -489,7 +489,7 @@ async function handlePledgeCreateOrUpdate(event: any) {
       ...user.patreon,
       patreonId: patronId,
       patreonEmail: patronEmail?.toLowerCase(),
-      tier: tier,
+      tier,
       isActive: true,
       lastChecked: new Date(),
     };
@@ -535,7 +535,7 @@ export async function getPatreonStatus(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     res.status(200).json({
       patreonEmail: user.patreon?.patreonEmail,
@@ -559,7 +559,7 @@ export async function initiatePatreonOAuth(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
     const clientId = process.env.PATREON_CLIENT_ID;
 
     const { backendUrl } = getUrls(req);
@@ -661,7 +661,11 @@ export async function handlePatreonOAuthCallback(
       }
     );
 
-    const { access_token, refresh_token, expires_in } = tokenResponse.data;
+    const {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: expiresIn,
+    } = tokenResponse.data;
 
     const userFields = 'email,full_name,is_email_verified';
     const memberFields = 'patron_status,currently_entitled_amount_cents';
@@ -674,7 +678,7 @@ export async function handlePatreonOAuthCallback(
       'https://www.patreon.com/api/oauth2/v2/identity',
       {
         headers: {
-          Authorization: `Bearer ${access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         params: {
           'fields[user]': userFields,
@@ -713,16 +717,14 @@ export async function handlePatreonOAuthCallback(
       identityResponse.data.included?.filter((item) => item.type === 'tier') ||
       [];
 
-    const campaignTier = tiers.find((tier) => {
-      return (
+    const campaignTier = tiers.find((tier) => (
         activeMembership &&
         activeMembership.relationships?.currently_entitled_tiers?.data.some(
           (entitledTier) => entitledTier.id === tier.id
         )
-      );
-    });
+      ));
 
-    let campaignTierTitle: string | undefined | null =
+    const campaignTierTitle: string | undefined | null =
       campaignTier?.attributes.title.toLowerCase();
     let tier: 'donator' | 'enthusiast' | 'consumer' | null = null;
     if (
@@ -760,14 +762,14 @@ export async function handlePatreonOAuthCallback(
       );
     }
 
-    const tokenExpiry = new Date(Date.now() + expires_in * 1000);
+    const tokenExpiry = new Date(Date.now() + expiresIn * 1000);
 
     user.patreon = {
       ...user.patreon,
       patreonId,
       patreonEmail: patreonEmail?.toLowerCase() || undefined,
-      patreonAccessToken: access_token,
-      patreonRefreshToken: refresh_token,
+      patreonAccessToken: accessToken,
+      patreonRefreshToken: refreshToken,
       patreonTokenExpiry: tokenExpiry,
       tier,
       isActive,
@@ -818,16 +820,20 @@ export async function refreshPatreonToken(
       }
     );
 
-    const { access_token, refresh_token, expires_in } = tokenResponse.data;
+    const {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: expiresIn,
+    } = tokenResponse.data;
 
     // Update tokens
-    user.patreon.patreonAccessToken = access_token;
-    user.patreon.patreonRefreshToken = refresh_token;
-    user.patreon.patreonTokenExpiry = new Date(Date.now() + expires_in * 1000);
+    user.patreon.patreonAccessToken = accessToken;
+    user.patreon.patreonRefreshToken = refreshToken;
+    user.patreon.patreonTokenExpiry = new Date(Date.now() + expiresIn * 1000);
 
     await user.save();
 
-    return access_token;
+    return accessToken;
   } catch (error) {
     return null;
   }

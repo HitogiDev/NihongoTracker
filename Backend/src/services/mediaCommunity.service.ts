@@ -82,17 +82,19 @@ async function getMediaCommunityPeople(input: {
   if (!input.viewerId || !input.relation) return [];
 
   const followedIds = await getFollowedUserIds(input.viewerId);
-  const relationUserIds =
-    input.relation === 'following'
-      ? followedIds
-      : input.relation === 'followers'
-        ? ((await Follow.find({ following: input.viewerId }).distinct(
-            'follower'
-          )) as Types.ObjectId[])
-        : ((await Follow.find({
-            follower: { $in: followedIds },
-            following: input.viewerId,
-          }).distinct('follower')) as Types.ObjectId[]);
+  let relationUserIds: Types.ObjectId[];
+  if (input.relation === 'following') {
+    relationUserIds = followedIds;
+  } else if (input.relation === 'followers') {
+    relationUserIds = (await Follow.find({ following: input.viewerId }).distinct(
+      'follower'
+    )) as Types.ObjectId[];
+  } else {
+    relationUserIds = (await Follow.find({
+      follower: { $in: followedIds },
+      following: input.viewerId,
+    }).distinct('follower')) as Types.ObjectId[];
+  }
 
   if (relationUserIds.length === 0) return [];
 

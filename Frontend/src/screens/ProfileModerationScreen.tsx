@@ -9,6 +9,7 @@ import {
   Save,
   AlertTriangle,
   Clock3,
+  Award,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { Trans, useTranslation } from 'react-i18next';
@@ -16,13 +17,17 @@ import type { ParseKeys } from 'i18next';
 
 import {
   adminGetUserModerationFn,
+  adminGetAchievementsFn,
+  adminGrantAchievementFn,
   adminRecalculateUserStreakFn,
   adminUpdateUserModerationFn,
+  getUserAchievementsFn,
 } from '../api/trackerApi';
 import { OutletProfileContextType } from '../types';
 import { useUserDataStore } from '../store/userData';
 import { useDateFormatting } from '../hooks/useDateFormatting';
 import { getApiErrorMessage } from '../utils/apiError';
+import { getAchievementName } from '../utils/achievementText';
 
 type ModerationHistoryEntry = {
   field: 'rankingBanned' | 'banned' | 'banReason';
@@ -122,9 +127,21 @@ function ProfileModerationScreen() {
     staleTime: 0,
   });
 
+  const { data: achievementCatalog = [] } = useQuery({
+    queryKey: ['adminAchievements'],
+    queryFn: adminGetAchievementsFn,
+    enabled: Boolean(isAdmin),
+  });
+  const { data: userAchievements = [] } = useQuery({
+    queryKey: ['userAchievements', username],
+    queryFn: () => getUserAchievementsFn(username),
+    enabled: Boolean(username) && Boolean(isAdmin),
+  });
+
   const [rankingBanned, setRankingBanned] = useState(false);
   const [banned, setBanned] = useState(false);
   const [banReason, setBanReason] = useState('');
+  const [selectedAchievementKey, setSelectedAchievementKey] = useState('');
 
   useEffect(() => {
     if (!data?.moderation) return;
@@ -152,9 +169,13 @@ function ProfileModerationScreen() {
           const key = query.queryKey;
           if (!Array.isArray(key)) return false;
           return key.some((k) =>
-            ['profileModeration', 'ranking', 'rankingSummary', 'user'].includes(
-              String(k)
-            )
+            [
+              'profileModeration',
+              'ranking',
+              'rankingSummary',
+              'user',
+              'adminBannedUsers',
+            ].includes(String(k))
           );
         },
       });
@@ -183,6 +204,34 @@ function ProfileModerationScreen() {
       onError: (error) => {
         toast.error(getApiErrorMessage(error));
       },
+    });
+
+  const earnedAchievementKeys = new Set(
+    userAchievements.filter((achievement) => achievement.isEarned).map((a) => a.key)
+  );
+  const grantableAchievements = achievementCatalog.filter(
+    (achievement) =>
+      achievement.isActive !== false && !earnedAchievementKeys.has(achievement.key)
+  );
+
+  const { mutate: grantAchievement, isPending: isGrantingAchievement } =
+    useMutation({
+      mutationFn: () =>
+        adminGrantAchievementFn(username, selectedAchievementKey),
+      onSuccess: (result) => {
+        toast.success(
+          result.alreadyOwned
+            ? t('moderation.achievementAlreadyOwned')
+            : t('moderation.achievementGranted')
+        );
+        setSelectedAchievementKey('');
+        queryClient.invalidateQueries({
+          queryKey: ['userAchievements', username],
+        });
+        queryClient.invalidateQueries({ queryKey: ['myAchievements'] });
+        queryClient.invalidateQueries({ queryKey: ['achievementFeed'] });
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error)),
     });
 
   if (!isAdmin) {
@@ -344,6 +393,52 @@ function ProfileModerationScreen() {
                   <Save className="w-4 h-4" />
                 )}
                 {t('moderation.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="card surface">
+          <div className="card-body">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Award className="w-5 h-5 text-warning" />
+                  {t('moderation.grantAchievementTitle')}
+                </h3>
+                <p className="mt-1 text-sm text-base-content/60">
+                  {t('moderation.grantAchievementBody')}
+                </p>
+                <select
+                  className="select mt-3 w-full"
+                  value={selectedAchievementKey}
+                  onChange={(event) =>
+                    setSelectedAchievementKey(event.target.value)
+                  }
+                  disabled={isLoading || achievementCatalog.length === 0}
+                >
+                  <option value="">
+                    {t('moderation.selectAchievement')}
+                  </option>
+                  {grantableAchievements.map((achievement) => (
+                    <option key={achievement.key} value={achievement.key}>
+                      {getAchievementName(achievement)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => grantAchievement()}
+                disabled={!selectedAchievementKey || isGrantingAchievement}
+              >
+                {isGrantingAchievement ? (
+                  <span className="loading loading-spinner loading-sm" />
+                ) : (
+                  <Award className="w-4 h-4" />
+                )}
+                {t('moderation.grantAchievementAction')}
               </button>
             </div>
           </div>

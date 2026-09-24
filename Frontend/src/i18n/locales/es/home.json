@@ -56,8 +56,26 @@
     "noDifficulty": "Sin datos",
     "comfort": "Referencia estimada",
     "fullBonusAt": "Bonus completo en {{target}} Jiten",
-    "units": { "time": "minutos", "chars": "caracteres", "pages": "páginas", "episodes": "episodios" },
-    "types": { "reading": "Lectura", "lightNovel": "Novela Ligera", "manga": "Manga", "vn": "Novela Visual", "game": "Videojuego", "book": "Libro", "anime": "Anime", "video": "Video", "movie": "Película", "tvShow": "Programa Televisivo", "audio": "Audio", "other": "Otro" }
+    "units": {
+      "time": "minutos",
+      "chars": "caracteres",
+      "pages": "páginas",
+      "episodes": "episodios"
+    },
+    "types": {
+      "reading": "Lectura",
+      "lightNovel": "Novela Ligera",
+      "manga": "Manga",
+      "vn": "Novela Visual",
+      "game": "Videojuego",
+      "book": "Libro",
+      "anime": "Anime",
+      "video": "Video",
+      "movie": "Película",
+      "tvShow": "Programa Televisivo",
+      "audio": "Audio",
+      "other": "Otro"
+    }
   },
   "common": {
     "close": "Cerrar"
@@ -433,7 +451,7 @@
     "logBullet3": "XP y rachas calculadas solas",
     "logInstant": "Loguea en un momento",
     "logTracking": "Logueo de sesiones",
-    "rankBody": "Mira cómo te comparas con otros estudiantes, en global o por medio.",
+    "rankBody": "Mira cómo te comparas con otros aprendices, en global o por medio.",
     "rankBullet1": "Clasificaciones globales y por medio",
     "rankBullet2": "Clasificaciones mensuales e históricas",
     "rankBullet3": "Filtros por periodo, medio y escucha o lectura",

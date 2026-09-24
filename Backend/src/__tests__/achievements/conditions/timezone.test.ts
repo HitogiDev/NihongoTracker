@@ -1,11 +1,5 @@
+import { Types } from 'mongoose';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('../../../models/log.model.js', () => ({
-  default: {
-    aggregate: vi.fn(),
-    findOne: vi.fn(),
-  },
-}));
 
 import Log from '../../../models/log.model.js';
 import { evaluateLogTimeRange } from '../../../services/achievements/conditions/logTimeRange.condition.js';
@@ -13,6 +7,13 @@ import { evaluateLogOnDate } from '../../../services/achievements/conditions/log
 import { evaluateSingleDayHours } from '../../../services/achievements/conditions/singleDayHours.condition.js';
 import { evaluateSessionsInDay } from '../../../services/achievements/conditions/sessionsInDay.condition.js';
 import { evaluateWeeklyHours } from '../../../services/achievements/conditions/weeklyHours.condition.js';
+
+vi.mock('../../../models/log.model.js', () => ({
+  default: {
+    aggregate: vi.fn(),
+    findOne: vi.fn(),
+  },
+}));
 
 const TZ = 'Asia/Tokyo';
 
@@ -41,7 +42,7 @@ describe('date-based conditions honour the user timezone', () => {
 
   it('logTimeRange reads the hour in the given timezone', async () => {
     mockAggregate([]);
-    await evaluateLogTimeRange({} as any, 0, 6, 1, TZ);
+    await evaluateLogTimeRange(new Types.ObjectId(), 0, 6, 1, TZ);
 
     const project = pipeline().find((s) => s.$project)?.$project;
     expect(project.hour).toEqual({ $hour: { date: '$date', timezone: TZ } });
@@ -49,7 +50,7 @@ describe('date-based conditions honour the user timezone', () => {
 
   it('logTimeRange defaults to UTC when no timezone is supplied', async () => {
     mockAggregate([]);
-    await evaluateLogTimeRange({} as any, 0, 6, 1);
+    await evaluateLogTimeRange(new Types.ObjectId(), 0, 6, 1);
 
     const project = pipeline().find((s) => s.$project)?.$project;
     expect(project.hour).toEqual({ $hour: { date: '$date', timezone: 'UTC' } });
@@ -57,9 +58,11 @@ describe('date-based conditions honour the user timezone', () => {
 
   it('logOnDate matches month/day in the given timezone', async () => {
     mockFindOne();
-    await evaluateLogOnDate({} as any, '07-07', TZ);
+    await evaluateLogOnDate(new Types.ObjectId(), '07-07', TZ);
 
-    const filter = vi.mocked(Log.findOne).mock.calls[0][0] as any;
+    const filter = vi.mocked(Log.findOne).mock.calls[0][0] as unknown as {
+      $expr: { $and: unknown[] };
+    };
     expect(filter.$expr.$and).toEqual([
       { $eq: [{ $month: { date: '$date', timezone: TZ } }, 7] },
       { $eq: [{ $dayOfMonth: { date: '$date', timezone: TZ } }, 7] },
@@ -68,7 +71,7 @@ describe('date-based conditions honour the user timezone', () => {
 
   it('singleDayHours buckets days in the given timezone', async () => {
     mockAggregate([]);
-    await evaluateSingleDayHours({} as any, 10, TZ);
+    await evaluateSingleDayHours(new Types.ObjectId(), 10, TZ);
 
     expect(groupId(pipeline())).toEqual({
       $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: TZ },
@@ -77,7 +80,7 @@ describe('date-based conditions honour the user timezone', () => {
 
   it('sessionsInDay buckets days in the given timezone', async () => {
     mockAggregate([]);
-    await evaluateSessionsInDay({} as any, 5, TZ);
+    await evaluateSessionsInDay(new Types.ObjectId(), 5, TZ);
 
     expect(groupId(pipeline())).toEqual({
       $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: TZ },
@@ -86,7 +89,7 @@ describe('date-based conditions honour the user timezone', () => {
 
   it('weeklyHours buckets days in the given timezone', async () => {
     mockAggregate([]);
-    await evaluateWeeklyHours({} as any, 24, TZ);
+    await evaluateWeeklyHours(new Types.ObjectId(), 24, TZ);
 
     expect(groupId(pipeline())).toEqual({
       $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: TZ },
@@ -100,7 +103,7 @@ describe('date-based conditions honour the user timezone', () => {
       { _id: '2024-03-08', totalMinutes: 12 * 60 },
       { _id: '2024-03-15', totalMinutes: 12 * 60 },
     ]);
-    const result = await evaluateWeeklyHours({} as any, 24, 'America/New_York');
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24, 'America/New_York');
 
     // Exactly 7 days apart — must NOT be summed into one window
     expect(result).toEqual({ met: false, progress: 12 });

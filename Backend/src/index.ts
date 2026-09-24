@@ -1,10 +1,10 @@
 import 'dotenv/config';
-import app from './app.js';
-import { connectDB } from './db.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import TextSession from './models/textSession.model.js';
 import jwt from 'jsonwebtoken';
+import app from './app.js';
+import { connectDB } from './db.js';
+import TextSession from './models/textSession.model.js';
 import User from './models/user.model.js';
 import {
   IServerToClientEvents,
@@ -32,7 +32,9 @@ const MEILI_STARTUP_TIMEOUT_MS = 90000;
 const MEILI_RETRY_INTERVAL_MS = 3000;
 
 function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function waitForMeilisearchReady() {
@@ -196,25 +198,23 @@ io.on('connection', (socket) => {
           socket.emit('room_created', { roomId, hostToken });
           socket.emit('room_joined', { role: 'host', roomId });
         }
-      } else {
+      } else if (session) {
         // Guest
-        if (session) {
-          socket.join(roomId);
-          socket.data.role = 'guest';
-          socket.emit('room_joined', { role: 'guest', roomId });
-          if (session.lines.length > 0) {
-            const history = session.lines.map((l) => ({
-              id: l.id,
-              text: l.text,
-              japaneseCount: l.charsCount,
-              createdAt: l.createdAt,
-              elapsedSeconds: l.elapsedSeconds,
-            }));
-            socket.emit('load_history', history);
-          }
-        } else {
-          socket.emit('error_message', 'Room does not exist.');
+        socket.join(roomId);
+        socket.data.role = 'guest';
+        socket.emit('room_joined', { role: 'guest', roomId });
+        if (session.lines.length > 0) {
+          const history = session.lines.map((l) => ({
+            id: l.id,
+            text: l.text,
+            japaneseCount: l.charsCount,
+            createdAt: l.createdAt,
+            elapsedSeconds: l.elapsedSeconds,
+          }));
+          socket.emit('load_history', history);
         }
+      } else {
+        socket.emit('error_message', 'Room does not exist.');
       }
 
       // Broadcast updated user list
@@ -266,7 +266,9 @@ io.on('connection', (socket) => {
       if (updateResult.modifiedCount > 0 || updateResult.upsertedCount > 0) {
         socket.to(roomId).emit('receive_line', lineData);
       }
-    } catch (error) {}
+    } catch {
+      // Ignore failed room updates; the client can retry.
+    }
   });
 
   socket.on('delete_lines', async (data) => {
@@ -278,7 +280,9 @@ io.on('connection', (socket) => {
         { $pull: { lines: { id: { $in: lineIds } } } }
       );
       socket.to(roomId).emit('lines_deleted', { lineIds });
-    } catch (error) {}
+    } catch {
+      // Ignore failed room updates; the client can retry.
+    }
   });
 
   socket.on('restore_lines', async (data) => {
@@ -299,7 +303,9 @@ io.on('connection', (socket) => {
         { $push: { lines: { $each: dbLines } } }
       );
       socket.to(roomId).emit('lines_restored', { lines });
-    } catch (error) {}
+    } catch {
+      // Ignore failed room updates; the client can retry.
+    }
   });
 
   socket.on('disconnecting', async () => {

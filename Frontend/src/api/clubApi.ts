@@ -1,4 +1,5 @@
 import axiosInstance from './axiosConfig';
+import { revealAchievements } from '../store/achievementReveal';
 import {
   IClubListResponse,
   IClubResponse,
@@ -18,6 +19,7 @@ import {
   ClubObjectivePeriod,
   IClubGoal,
   ISocialActivity,
+  IAchievement,
 } from '../types';
 
 const api = axiosInstance;
@@ -679,8 +681,9 @@ export async function leaveClubChallengeFn(challengeId: string): Promise<void> {
 
 export async function completeClubChallengeFn(
   challengeId: string
-): Promise<{ completed: boolean; progress: number }> {
+): Promise<{ completed: boolean; progress: number; newAchievements?: IAchievement[] }> {
   const { data } = await api.post(`/clubs/challenges/${challengeId}/complete`);
+  revealAchievements(data?.newAchievements);
   return data;
 }
 

@@ -29,8 +29,8 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(currentDir, '../../.env') });
 
 const MONGO_URI =
   process.env.DATABASE_URL ||
@@ -48,7 +48,7 @@ async function main() {
       : 'LIVE RUN — logs and media will be rewritten'
   );
 
-  const db = mongoose.connection.db;
+  const {db} = mongoose.connection;
   if (!db) throw new Error('No database handle after connect');
 
   // ---- Step 1: rename `reading` logs to `light-novel` ---------------------

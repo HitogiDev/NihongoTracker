@@ -112,8 +112,8 @@ async function ensureWinnerMedia(
     freshClub &&
     hasExistingMediaForVoting(freshClub as unknown as IClub, voting)
   ) {
-    if (typeof (club as any).set === 'function') {
-      (club as any).set('currentMedia', freshClub.currentMedia);
+    if (typeof club.set === 'function') {
+      club.set('currentMedia', freshClub.currentMedia);
     }
     return;
   }
@@ -181,24 +181,24 @@ async function ensureWinnerMedia(
   if (freshClub) {
     const freshLegacyMedia = locateLegacyMedia(freshClub as unknown as IClub);
     if (freshLegacyMedia) {
-      (freshLegacyMedia as any).votingId = votingObjectId;
-      if (!(freshLegacyMedia as any).mediaId) {
-        (freshLegacyMedia as any).mediaId = winner.mediaId;
+      freshLegacyMedia.votingId = votingObjectId;
+      if (!freshLegacyMedia.mediaId) {
+        freshLegacyMedia.mediaId = winner.mediaId;
       }
-      if (!(freshLegacyMedia as any).mediaType) {
-        (freshLegacyMedia as any).mediaType = getMediaTypeForWinner(voting);
+      if (!freshLegacyMedia.mediaType) {
+        freshLegacyMedia.mediaType = getMediaTypeForWinner(voting);
       }
-      if (!(freshLegacyMedia as any).title) {
-        (freshLegacyMedia as any).title = winner.title;
+      if (!freshLegacyMedia.title) {
+        freshLegacyMedia.title = winner.title;
       }
-      if (!(freshLegacyMedia as any).description && winner.description) {
-        (freshLegacyMedia as any).description = winner.description;
+      if (!freshLegacyMedia.description && winner.description) {
+        freshLegacyMedia.description = winner.description;
       }
 
       await freshClub.save();
 
-      if (typeof (club as any).set === 'function') {
-        (club as any).set('currentMedia', freshClub.currentMedia);
+      if (typeof club.set === 'function') {
+        club.set('currentMedia', freshClub.currentMedia);
       }
       return;
     }
@@ -230,7 +230,6 @@ export async function completeVotingDocument(
 
   if (winnerDetails) {
     voting.winnerCandidate = winnerDetails;
-  } else {
   }
 
   voting.status = 'completed';

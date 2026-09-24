@@ -10,6 +10,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Types } from 'mongoose';
 
+// ─── Imports (after mocks) ────────────────────────────────────────────────────
+
+import { checkAchievements, grantAchievement } from '../../services/achievements/achievementEngine.js';
+import Achievement from '../../models/achievement.model.js';
+import UserAchievement from '../../models/userAchievement.model.js';
+import { evaluateLogCount } from '../../services/achievements/conditions/logCount.condition.js';
+import { evaluateStreak } from '../../services/achievements/conditions/streak.condition.js';
+import { evaluateTotalHours } from '../../services/achievements/conditions/totalHours.condition.js';
+
 // ─── Mock all models ──────────────────────────────────────────────────────────
 
 vi.mock('../../models/achievement.model.js', () => ({
@@ -82,15 +91,6 @@ vi.mock('../../services/achievements/conditions/platformAge.condition.js', () =>
   evaluatePlatformAge: vi.fn(),
 }));
 
-// ─── Imports (after mocks) ────────────────────────────────────────────────────
-
-import { checkAchievements, grantAchievement } from '../../services/achievements/achievementEngine.js';
-import Achievement from '../../models/achievement.model.js';
-import UserAchievement from '../../models/userAchievement.model.js';
-import { evaluateLogCount } from '../../services/achievements/conditions/logCount.condition.js';
-import { evaluateStreak } from '../../services/achievements/conditions/streak.condition.js';
-import { evaluateTotalHours } from '../../services/achievements/conditions/totalHours.condition.js';
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const userId = new Types.ObjectId();
@@ -112,13 +112,13 @@ function mockEarnedIds(ids: Types.ObjectId[]) {
     select: vi.fn().mockReturnValue({
       lean: vi.fn().mockResolvedValue(ids.map((id) => ({ achievement: id }))),
     }),
-  } as any);
+  } as unknown as ReturnType<typeof UserAchievement.find>);
 }
 
 function mockFindOneAndUpdate() {
   vi.mocked(UserAchievement.findOneAndUpdate).mockReturnValue({
     exec: vi.fn().mockResolvedValue(null),
-  } as any);
+  } as unknown as ReturnType<typeof UserAchievement.findOneAndUpdate>);
 }
 
 // ─── checkAchievements ────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ describe('checkAchievements', () => {
   it('returns [] when no achievements exist in DB', async () => {
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
     const result = await checkAchievements(userId, { trigger: 'log' });
     expect(result).toEqual([]);
   });
@@ -146,7 +146,7 @@ describe('checkAchievements', () => {
   it('does not evaluate logDuringAiring for a non-anime log', async () => {
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
 
     await checkAchievements(userId, {
       trigger: 'log',
@@ -168,7 +168,7 @@ describe('checkAchievements', () => {
 
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([achievement]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
 
     mockEarnedIds([]); // user has no earned achievements
 
@@ -185,7 +185,7 @@ describe('checkAchievements', () => {
     const achievement = makeAchievement();
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([achievement]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
 
     // User already has this achievement
     mockEarnedIds([achievement._id as Types.ObjectId]);
@@ -201,7 +201,7 @@ describe('checkAchievements', () => {
 
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([achievement]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
     mockEarnedIds([]);
     vi.mocked(evaluateLogCount).mockResolvedValue({ met: false, progress: 15 });
 
@@ -210,8 +210,8 @@ describe('checkAchievements', () => {
     expect(result).toEqual([]);
     // progress update is fire-and-forget (.exec().catch()), so we can't easily
     // assert findOneAndUpdate here, but we assert it was NOT called with upsert
-    const calls = vi.mocked(UserAchievement.findOneAndUpdate).mock.calls;
-    const upsertCall = calls.find((c) => (c[2] as any)?.upsert === true);
+    const {calls} = vi.mocked(UserAchievement.findOneAndUpdate).mock;
+      const upsertCall = calls.find((c) => (c[2] as { upsert?: boolean })?.upsert === true);
     expect(upsertCall).toBeUndefined();
   });
 
@@ -221,7 +221,7 @@ describe('checkAchievements', () => {
     });
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([achievement]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
     mockEarnedIds([]);
     vi.mocked(evaluateStreak).mockResolvedValue({ met: true, progress: 7 });
 
@@ -235,7 +235,7 @@ describe('checkAchievements', () => {
 
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([a1, a2]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
     mockEarnedIds([]);
     vi.mocked(evaluateLogCount).mockResolvedValue({ met: true, progress: 10 });
     vi.mocked(evaluateTotalHours).mockResolvedValue({ met: true, progress: 100 });
@@ -250,7 +250,7 @@ describe('checkAchievements', () => {
 
     vi.mocked(Achievement.find).mockReturnValue({
       lean: vi.fn().mockResolvedValue([a1, a2]),
-    } as any);
+    } as unknown as ReturnType<typeof Achievement.find>);
     mockEarnedIds([]);
 
     vi.mocked(evaluateLogCount)
@@ -273,7 +273,7 @@ describe('grantAchievement', () => {
 
   it('grants achievement and returns true when user does not have it', async () => {
     vi.mocked(UserAchievement.findOne).mockResolvedValue(null);
-    vi.mocked(UserAchievement.create).mockResolvedValue({} as any);
+    vi.mocked(UserAchievement.create).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof UserAchievement.create>>);
 
     const result = await grantAchievement(userId, achievementId);
     expect(result).toBe(true);
@@ -281,7 +281,7 @@ describe('grantAchievement', () => {
   });
 
   it('returns false and does NOT create a duplicate when user already has it', async () => {
-    vi.mocked(UserAchievement.findOne).mockResolvedValue({ _id: 'existing' } as any);
+    vi.mocked(UserAchievement.findOne).mockResolvedValue({ _id: 'existing' } as unknown as Awaited<ReturnType<typeof UserAchievement.findOne>>);
 
     const result = await grantAchievement(userId, achievementId);
     expect(result).toBe(false);

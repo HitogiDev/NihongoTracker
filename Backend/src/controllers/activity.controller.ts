@@ -162,17 +162,23 @@ export async function addComment(
   try {
     const activityId = parseObjectId(req.params.activityId);
     const content = parseCommentContent(req.body.content);
-    const { activity, comment } = await createActivityComment(
+    const parentCommentId = req.body.parentCommentId
+      ? parseObjectId(req.body.parentCommentId, 'activity.invalidCommentId')
+      : undefined;
+    const { activity, comment, parentComment } = await createActivityComment(
       activityId,
       res.locals.user._id,
-      content
+      content,
+      parentCommentId
     );
     await createNotification({
-      recipient: activity.actor,
+      recipient: parentComment?.user ?? activity.actor,
       actor: res.locals.user._id,
-      type: 'activity_comment',
-      title: `${res.locals.user.username} commented on your activity`,
-      titleKey: 'social.commented',
+      type: parentComment ? 'comment_reply' : 'activity_comment',
+      title: parentComment
+        ? `${res.locals.user.username} replied to your comment`
+        : `${res.locals.user.username} commented on your activity`,
+      titleKey: parentComment ? 'social.replied' : 'social.commented',
       body: content,
       link: `/?feed=following&activity=${String(activity._id)}`,
       entityType: 'activityComment',

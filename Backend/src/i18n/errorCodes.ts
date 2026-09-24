@@ -90,6 +90,7 @@ export const ERROR_CODES = [
   'activity.clubMembershipRequired',
   'activity.commentRequired',
   'activity.commentTooLong',
+  'activity.commentingNotAllowed',
   'activity.commentNotFound',
   'activity.commentNotFoundOrForbidden',
 

@@ -41,6 +41,7 @@ export async function getActivityCommentsFn(
 ): Promise<{
   comments: IActivityComment[];
   total: number;
+  canComment: boolean;
   page: number;
   limit: number;
 }> {
@@ -52,10 +53,12 @@ export async function getActivityCommentsFn(
 
 export async function addActivityCommentFn(
   activityId: string,
-  content: string
+  content: string,
+  parentCommentId?: string
 ): Promise<{ comment: IActivityComment }> {
   const { data } = await api.post(`/activities/${activityId}/comments`, {
     content,
+    ...(parentCommentId ? { parentCommentId } : {}),
   });
   return data;
 }

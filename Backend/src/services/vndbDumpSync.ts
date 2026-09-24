@@ -157,7 +157,7 @@ function mapStateToStatus(
 }
 
 async function getStateDocument(): Promise<IVndbDumpSyncState | null> {
-  return await VndbDumpSyncState.findById(VNDB_DUMP_SYNC_STATE_ID)
+  return VndbDumpSyncState.findById(VNDB_DUMP_SYNC_STATE_ID)
     .lean<IVndbDumpSyncState>()
     .exec();
 }
@@ -165,7 +165,7 @@ async function getStateDocument(): Promise<IVndbDumpSyncState | null> {
 async function updateState(
   update: Record<string, unknown>
 ): Promise<IVndbDumpSyncState | null> {
-  return await VndbDumpSyncState.findByIdAndUpdate(
+  return VndbDumpSyncState.findByIdAndUpdate(
     VNDB_DUMP_SYNC_STATE_ID,
     update,
     { new: true, upsert: true, setDefaultsOnInsert: true }
@@ -180,7 +180,7 @@ async function acquireLock(
   const now = new Date();
   const lockUntil = new Date(now.getTime() + getLockDurationMs());
 
-  return await VndbDumpSyncState.findOneAndUpdate(
+  return VndbDumpSyncState.findOneAndUpdate(
     {
       _id: VNDB_DUMP_SYNC_STATE_ID,
       $or: [
@@ -283,13 +283,13 @@ async function buildImageRatingMap(
   const headers = await readHeaderFile(path.join(dbDir, 'images.header'));
 
   for await (const row of streamTsvRows(path.join(dbDir, 'images'), headers)) {
-    const id = row['id'];
+    const {id} = row;
     if (!id) continue;
 
     // Only interested in cover images (prefix 'cv') — skip character/screenshot images
     if (!id.startsWith('cv')) continue;
 
-    const raw = row['c_sexual_avg'];
+    const raw = row.c_sexual_avg;
     const avg = raw !== null ? Number(raw) : 200; // default 200 if null
     map.set(id, avg >= 100);
   }
@@ -330,17 +330,17 @@ async function buildReleaseVnSets(
   )) {
     counters.scanned += 1;
 
-    const id = row['id'];
+    const {id} = row;
     if (!id) continue;
 
     // Japanese: olang (original language of this release) is 'ja'
-    if (row['olang'] === 'ja') {
+    if (row.olang === 'ja') {
       jaReleaseIds.add(id);
     }
 
     // Adult: ero flag or age rating >= 18
-    const hasEro = row['has_ero'];
-    const minage = row['minage'];
+    const hasEro = row.has_ero;
+    const {minage} = row;
     const isAdult =
       hasEro === 't' ||
       (minage !== null && Number.isFinite(Number(minage)) && Number(minage) >= 18);
@@ -349,7 +349,7 @@ async function buildReleaseVnSets(
       adultReleaseIds.add(id);
     }
 
-    const year = parseVndbReleaseYear(row['released']);
+    const year = parseVndbReleaseYear(row.released);
     if (year !== null) {
       releaseYears.set(id, year);
     }
@@ -367,8 +367,8 @@ async function buildReleaseVnSets(
     path.join(dbDir, 'releases_vn'),
     rvHeaders
   )) {
-    const releaseId = row['id'];
-    const vnId = row['vid'];
+    const releaseId = row.id;
+    const vnId = row.vid;
 
     if (!releaseId || !vnId) continue;
 
@@ -428,10 +428,10 @@ async function buildTitleMap(
   )) {
     counters.scanned += 1;
 
-    const vnId = row['id'];
-    const lang = row['lang'];
-    const title = row['title'];
-    const latin = row['latin'];
+    const vnId = row.id;
+    const {lang} = row;
+    const {title} = row;
+    const {latin} = row;
 
     if (!vnId || !lang) continue;
 
@@ -483,26 +483,26 @@ function normalizeVnRow(
   titleMap: Map<string, Map<string, { title: string | null; latin: string | null }>>,
   vnReleaseYears: Map<string, number>
 ): INormalizedVnMedia | null {
-  const id = row['id'];
+  const {id} = row;
   if (!id) return null;
 
   // Only import VNs with at least one Japanese release
   if (!japaneseVnIds.has(id)) return null;
 
-  const olang = row['olang'];
+  const {olang} = row;
   const { native, romaji, english } = resolveTitles(id, olang, titleMap);
 
   // Must have at least a native title
   const nativeTitle = native || english || id;
 
-  const imageId = row['image'] || row['c_image'];
+  const imageId = row.image || row.c_image;
   const contentImage = buildVndbImageUrl(imageId);
 
   // isAdultImage: look up the cover image's community sexual rating.
   // If the image isn't in the map (unvoted / no cover), default to false.
   const isAdultImage = imageId ? (imageRatingMap.get(imageId) ?? false) : false;
 
-  const rawDescription = row['description'];
+  const rawDescription = row.description;
   const mappedLang = mapLanguageCode(olang);
   const descriptionEntries: Array<{
     description: string;
@@ -516,7 +516,7 @@ function normalizeVnRow(
     });
   }
 
-  const synonyms = parseVnAliases(row['alias']);
+  const synonyms = parseVnAliases(row.alias);
   const isAdult = adultVnIds.has(id);
 
   return {

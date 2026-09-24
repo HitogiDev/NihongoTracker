@@ -415,6 +415,16 @@
     "totalXp": "Total XP",
     "charsPerHour": "chars/hour"
   },
+  "comparison": {
+    "ahead": "{{value}} ahead",
+    "behind": "{{value}} behind",
+    "log": "log",
+    "logs": "logs",
+    "same": "Same",
+    "summary": "You have {{myCount}} {{myLabel}} • {{username}} has {{theirCount}} {{theirLabel}}",
+    "title": "Comparison: You vs {{username}}",
+    "vs": "vs"
+  },
   "toast": {
     "reviewAdded": "Review added successfully",
     "reviewContentRequired": "Review content is required.",

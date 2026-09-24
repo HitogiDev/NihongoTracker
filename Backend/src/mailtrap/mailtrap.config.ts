@@ -21,8 +21,8 @@ export async function sendEmail(
     await client.send({
       from: sender,
       to: recipients instanceof Array ? recipients : [{ email: recipients }],
-      subject: subject,
-      html: html,
+      subject,
+      html,
       category: category || 'General',
     });
     console.log(

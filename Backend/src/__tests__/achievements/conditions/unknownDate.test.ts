@@ -1,11 +1,5 @@
+import { Types } from 'mongoose';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('../../../models/log.model.js', () => ({
-  default: {
-    aggregate: vi.fn(),
-    findOne: vi.fn(),
-  },
-}));
 
 import Log from '../../../models/log.model.js';
 import { evaluateLogTimeRange } from '../../../services/achievements/conditions/logTimeRange.condition.js';
@@ -13,6 +7,13 @@ import { evaluateLogOnDate } from '../../../services/achievements/conditions/log
 import { evaluateSingleDayHours } from '../../../services/achievements/conditions/singleDayHours.condition.js';
 import { evaluateSessionsInDay } from '../../../services/achievements/conditions/sessionsInDay.condition.js';
 import { evaluateWeeklyHours } from '../../../services/achievements/conditions/weeklyHours.condition.js';
+
+vi.mock('../../../models/log.model.js', () => ({
+  default: {
+    aggregate: vi.fn(),
+    findOne: vi.fn(),
+  },
+}));
 
 /** The $match filter the evaluator handed to Mongo. */
 function matchStage(): any {
@@ -31,22 +32,22 @@ describe('date-based conditions ignore unknownDate logs', () => {
   });
 
   it('logTimeRange excludes them', async () => {
-    await evaluateLogTimeRange({} as any, 0, 6, 1);
+    await evaluateLogTimeRange(new Types.ObjectId(), 0, 6, 1);
     expect(matchStage().unknownDate).toEqual({ $ne: true });
   });
 
   it('singleDayHours excludes them', async () => {
-    await evaluateSingleDayHours({} as any, 10);
+    await evaluateSingleDayHours(new Types.ObjectId(), 10);
     expect(matchStage().unknownDate).toEqual({ $ne: true });
   });
 
   it('sessionsInDay excludes them', async () => {
-    await evaluateSessionsInDay({} as any, 5);
+    await evaluateSessionsInDay(new Types.ObjectId(), 5);
     expect(matchStage().unknownDate).toEqual({ $ne: true });
   });
 
   it('weeklyHours excludes them', async () => {
-    await evaluateWeeklyHours({} as any, 24);
+    await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(matchStage().unknownDate).toEqual({ $ne: true });
   });
 
@@ -55,9 +56,11 @@ describe('date-based conditions ignore unknownDate logs', () => {
       select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }),
     } as never);
 
-    await evaluateLogOnDate({} as any, '01-01');
+    await evaluateLogOnDate(new Types.ObjectId(), '01-01');
 
-    const filter = vi.mocked(Log.findOne).mock.calls[0][0] as any;
+    const filter = vi.mocked(Log.findOne).mock.calls[0][0] as unknown as {
+      unknownDate?: { $ne: boolean };
+    };
     expect(filter.unknownDate).toEqual({ $ne: true });
   });
 });

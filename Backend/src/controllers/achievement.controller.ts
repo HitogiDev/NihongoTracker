@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { backfillAchievementsForAllUsers } from '../services/achievements/backfill.service.js';
 import { apiError } from '../i18n/errorCodes.js';
 import Achievement from '../models/achievement.model.js';
@@ -10,7 +11,7 @@ import {
   grantAchievement,
 } from '../services/achievements/achievementEngine.js';
 import { isRankingAchievementKey } from '../services/achievements/rankingVisibility.js';
-import { Types } from 'mongoose';
+import { IAchievement } from '../types.js';
 
 /**
  * Strip the machine-readable unlock condition from a secret achievement.
@@ -138,7 +139,7 @@ export async function getMyAchievements(
 ) {
   try {
     const userId = res.locals.user._id as Types.ObjectId;
-    return getUserAchievementsById(userId, true, res, next);
+    return await getUserAchievementsById(userId, true, res, next);
   } catch (error) {
     return next(error as customError);
   }
@@ -160,7 +161,7 @@ export async function getUserAchievementsByUsername(
       .lean();
     if (!user) throw apiError('user.notFound', 404, 'User not found');
 
-    return getUserAchievementsById(
+    return await getUserAchievementsById(
       user._id as Types.ObjectId,
       false,
       res,
@@ -195,7 +196,7 @@ async function getUserAchievementsById(
       userAchievements
         .filter((ua) => ua.achievement)
         .map((ua) => [
-          (ua.achievement as any)._id?.toString() ?? ua.achievement.toString(),
+          (ua.achievement as unknown as IAchievement)._id?.toString() ?? ua.achievement.toString(),
           ua,
         ])
     );
@@ -319,7 +320,7 @@ export async function getPendingAchievements(
         );
       })
       .map((ua) => {
-        const a = ua.achievement as any;
+        const a = ua.achievement as unknown as IAchievement;
         const rarityPercent = 0; // will be computed on the client from the main list
         return {
           userAchievementId: ua._id,
@@ -353,7 +354,7 @@ export async function getShowcase(
     const user = await User.findById(userId).select('settings').lean();
 
     const showcaseIds: string[] = (
-      (user?.settings as any)?.achievementShowcase ?? []
+      user?.settings?.achievementShowcase ?? []
     ).filter(
       (id: unknown) => typeof id === 'string' && Types.ObjectId.isValid(id)
     );
@@ -374,7 +375,7 @@ export async function getShowcase(
       earned
         .filter((ua) => ua.achievement)
         .map((ua) => [
-          (ua.achievement as any)._id?.toString() ?? ua.achievement.toString(),
+          (ua.achievement as unknown as IAchievement)._id?.toString() ?? ua.achievement.toString(),
           ua,
         ])
     );
@@ -382,7 +383,7 @@ export async function getShowcase(
       .map((id) => earnedMap.get(id))
       .filter(Boolean)
       .map((ua) => {
-        const a = (ua as any).achievement;
+        const a = ua?.achievement as unknown as IAchievement;
         if (!a || typeof a !== 'object') return ua;
         return {
           ...ua,
@@ -715,8 +716,8 @@ export async function adminBackfillAchievementsForAllUsers(
     return res.status(200).json({
       message:
         `Backfill complete: ${totalGranted} achievement(s) granted across ` +
-        `${usersWithNewAchievements} user(s) out of ${usersProcessed} processed` +
-        (revoke ? `, ${totalRevoked} revoked.` : '.'),
+        `${usersWithNewAchievements} user(s) out of ${usersProcessed} processed${
+        revoke ? `, ${totalRevoked} revoked.` : '.'}`,
       totalGranted,
       totalRevoked,
       usersProcessed,
@@ -738,7 +739,7 @@ export async function getAchievementFeed(
 ) {
   try {
     const limit = Math.min(
-      Math.max(parseInt(req.query.limit as string) || 20, 1),
+      Math.max(parseInt(req.query.limit as string, 10) || 20, 1),
       50
     );
 
@@ -785,7 +786,7 @@ export async function getUserAchievementActivity(
 ) {
   try {
     const limit = Math.min(
-      Math.max(parseInt(req.query.limit as string) || 10, 1),
+      Math.max(parseInt(req.query.limit as string, 10) || 10, 1),
       50
     );
 

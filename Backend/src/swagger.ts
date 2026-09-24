@@ -210,6 +210,7 @@ const swaggerDocument = {
           _id: { type: 'string' },
           activity: { type: 'string' },
           user: { $ref: '#/components/schemas/ActivityActor' },
+          parentComment: { type: 'string', nullable: true },
           content: { type: 'string', maxLength: 1000 },
           editedAt: { type: 'string', format: 'date-time', nullable: true },
           createdAt: { type: 'string', format: 'date-time' },
@@ -1029,6 +1030,55 @@ const swaggerDocument = {
         ],
         responses: {
           200: { description: 'Medium ranking data' },
+        },
+      },
+    },
+    '/users/immersion-ranking/global': {
+      get: {
+        tags: ['Users'],
+        summary: 'Get global immersion work rankings',
+        parameters: [
+          {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', minimum: 1, maximum: 50 },
+          },
+          {
+            name: 'metric',
+            in: 'query',
+            schema: { type: 'string', enum: ['xp', 'hours'] },
+          },
+          {
+            name: 'type',
+            in: 'query',
+            style: 'form',
+            explode: true,
+            schema: { type: 'array', items: { type: 'string' } },
+          },
+          {
+            name: 'timezone',
+            in: 'query',
+            schema: { type: 'string' },
+          },
+          {
+            name: 'start',
+            in: 'query',
+            schema: { type: 'string', format: 'date' },
+          },
+          {
+            name: 'end',
+            in: 'query',
+            schema: { type: 'string', format: 'date' },
+          },
+        ],
+        responses: {
+          200: { description: 'Global immersion ranking data' },
+          400: { description: 'Invalid ranking filters' },
         },
       },
     },

@@ -11,6 +11,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Types } from 'mongoose';
 
+import {
+  listCustomizationOptions,
+  resolveCustomizationUpdate,
+  sanitizeCustomizationForDisplay,
+  computeSignatureValues,
+  getDisplayCapabilities,
+  getCustomizationDowngrade,
+} from '../services/customization.js';
+
 // `vi.hoisted` so the mock factories below (which are hoisted above the imports)
 // can read this without hitting the temporal dead zone.
 const state = vi.hoisted(() => ({
@@ -41,15 +50,6 @@ vi.mock('../models/log.model.js', () => ({
     ),
   },
 }));
-
-import {
-  listCustomizationOptions,
-  resolveCustomizationUpdate,
-  sanitizeCustomizationForDisplay,
-  computeSignatureValues,
-  getDisplayCapabilities,
-  getCustomizationDowngrade,
-} from '../services/customization.js';
 
 type TestUser = Parameters<typeof listCustomizationOptions>[0] & {
   customization?: Record<string, unknown>;

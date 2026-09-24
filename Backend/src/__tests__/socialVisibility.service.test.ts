@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import {
   buildVisibleActivityFilter,
   buildVisibleImmersionLogFilter,
+  canCommentOnUserLogs,
   canViewActivity,
   canViewUserSocialCategory,
   getSocialVisibility,
@@ -16,18 +17,20 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const userFind = vi.hoisted(() => vi.fn());
+const userFindById = vi.hoisted(() => vi.fn());
 
 vi.mock('../models/follow.model.js', () => ({
   default: mocks,
 }));
 
 vi.mock('../models/user.model.js', () => ({
-  default: { find: userFind },
+  default: { find: userFind, findById: userFindById },
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
   userFind.mockReset();
+  userFindById.mockReset();
 });
 
 describe('social visibility', () => {
@@ -304,6 +307,39 @@ describe('social visibility', () => {
       )
     ).resolves.toBe(true);
     expect(mocks.exists).toHaveBeenCalledWith({
+      follower: ownerId,
+      following: viewerId,
+    });
+  });
+
+  it('allows owners to choose who can comment on their logs', async () => {
+    const ownerId = new Types.ObjectId();
+    const viewerId = new Types.ObjectId();
+    const ownerQuery = (commenting: string) => ({
+      select: () => ({
+        lean: () => Promise.resolve({ settings: { socialPrivacy: { commenting } } }),
+      }),
+    });
+
+    userFindById.mockReturnValue(ownerQuery('nobody'));
+    await expect(canCommentOnUserLogs(ownerId, viewerId)).resolves.toBe(false);
+
+    userFindById.mockReturnValue(ownerQuery('everyone'));
+    await expect(canCommentOnUserLogs(ownerId, viewerId)).resolves.toBe(true);
+
+    userFindById.mockReturnValue(ownerQuery('followers'));
+    mocks.exists.mockResolvedValueOnce(null).mockResolvedValueOnce({ _id: 1 });
+    await expect(canCommentOnUserLogs(ownerId, viewerId)).resolves.toBe(false);
+    await expect(canCommentOnUserLogs(ownerId, viewerId)).resolves.toBe(true);
+    expect(mocks.exists).toHaveBeenLastCalledWith({
+      follower: viewerId,
+      following: ownerId,
+    });
+
+    userFindById.mockReturnValue(ownerQuery('following'));
+    mocks.exists.mockResolvedValue({ _id: 1 });
+    await expect(canCommentOnUserLogs(ownerId, viewerId)).resolves.toBe(true);
+    expect(mocks.exists).toHaveBeenLastCalledWith({
       follower: ownerId,
       following: viewerId,
     });

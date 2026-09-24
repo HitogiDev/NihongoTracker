@@ -90,7 +90,7 @@ function cleanupOAuthStates() {
 // ─── Status ──────────────────────────────────────────────────────────────────
 
 function serializeStatus(user: IUser) {
-  const anilist = user.anilist;
+  const {anilist} = user;
   if (!anilist?.anilistId) {
     return { linked: false as const };
   }
@@ -353,7 +353,7 @@ async function runSync(
       throw apiError('anilist.notLinked', 400, 'No AniList account is linked');
     }
 
-    const lastSyncedAt = user.anilist.lastSyncedAt;
+    const {lastSyncedAt} = user.anilist;
     if (
       !options.backfill &&
       lastSyncedAt &&

@@ -321,6 +321,246 @@
     "xp_500000": {
       "description": "Earn 500,000 total XP.",
       "name": "Grand Master"
+    },
+    "hours_10": {
+      "name": "First Ten",
+      "description": "Log 10 total hours of immersion."
+    },
+    "hours_25": {
+      "name": "Quarter Century",
+      "description": "Log 25 total hours of immersion."
+    },
+    "hours_50": {
+      "name": "Half-Century",
+      "description": "Log 50 total hours of immersion."
+    },
+    "hours_250": {
+      "name": "Quarter Thousand",
+      "description": "Log 250 total hours of immersion."
+    },
+    "hours_750": {
+      "name": "Seven-Fifty Club",
+      "description": "Log 750 total hours of immersion."
+    },
+    "logs_5": {
+      "name": "Five on the Board",
+      "description": "Create 5 immersion logs."
+    },
+    "logs_25": {
+      "name": "A Growing Logbook",
+      "description": "Create 25 immersion logs."
+    },
+    "logs_250": {
+      "name": "Logbook Keeper",
+      "description": "Create 250 immersion logs."
+    },
+    "xp_5000": {
+      "name": "Five Thousand",
+      "description": "Earn 5,000 total XP."
+    },
+    "xp_25000": {
+      "name": "XP Reserve",
+      "description": "Earn 25,000 total XP."
+    },
+    "achievements_10": {
+      "name": "Badge Collector",
+      "description": "Unlock 10 achievements."
+    },
+    "achievements_25": {
+      "name": "Badge Cabinet",
+      "description": "Unlock 25 achievements."
+    },
+    "anime_episodes_12": {
+      "name": "Twelve Episodes In",
+      "description": "Log 12 anime episodes."
+    },
+    "anime_episodes_50": {
+      "name": "Seasoned Listener",
+      "description": "Log 50 anime episodes."
+    },
+    "anime_episodes_100": {
+      "name": "Opening Credits",
+      "description": "Log 100 anime episodes."
+    },
+    "manga_hours_10": {
+      "name": "Panel by Panel",
+      "description": "Log 10 hours of manga."
+    },
+    "manga_hours_50": {
+      "name": "Manga Marathon",
+      "description": "Log 50 hours of manga."
+    },
+    "light_novel_hours_10": {
+      "name": "New Volume",
+      "description": "Log 10 hours of light novels."
+    },
+    "light_novel_hours_50": {
+      "name": "Light Novel Library",
+      "description": "Log 50 hours of light novels."
+    },
+    "reading_hours_10": {
+      "name": "Page Turner",
+      "description": "Log 10 hours of free-form reading."
+    },
+    "reading_hours_50": {
+      "name": "Stack of Pages",
+      "description": "Log 50 hours of free-form reading."
+    },
+    "vn_hours_10": {
+      "name": "First Route",
+      "description": "Log 10 hours of visual novels."
+    },
+    "vn_hours_100": {
+      "name": "Route Collector",
+      "description": "Log 100 hours of visual novels."
+    },
+    "audio_hours_10": {
+      "name": "Ear for Japanese",
+      "description": "Log 10 hours of audio content."
+    },
+    "audio_hours_100": {
+      "name": "Audio Regular",
+      "description": "Log 100 hours of audio content."
+    },
+    "video_hours_10": {
+      "name": "Short-Form Listener",
+      "description": "Log 10 hours of video."
+    },
+    "video_hours_50": {
+      "name": "Screen Time",
+      "description": "Log 50 hours of video."
+    },
+    "game_hours_10": {
+      "name": "Press Start",
+      "description": "Log 10 hours of games."
+    },
+    "game_hours_50": {
+      "name": "Continue?",
+      "description": "Log 50 hours of games."
+    },
+    "movie_hours_10": {
+      "name": "Double Feature",
+      "description": "Log 10 hours of movies."
+    },
+    "movie_hours_50": {
+      "name": "Film Buff",
+      "description": "Log 50 hours of movies."
+    },
+    "tv_hours_10": {
+      "name": "Season Watcher",
+      "description": "Log 10 hours of TV shows."
+    },
+    "reading_level_5": {
+      "name": "Reading Takes Root",
+      "description": "Reach reading level 5."
+    },
+    "reading_level_10": {
+      "name": "Reading Momentum",
+      "description": "Reach reading level 10."
+    },
+    "reading_level_25": {
+      "name": "Reading Specialist",
+      "description": "Reach reading level 25."
+    },
+    "listening_level_5": {
+      "name": "Listening Takes Root",
+      "description": "Reach listening level 5."
+    },
+    "listening_level_10": {
+      "name": "Listening Momentum",
+      "description": "Reach listening level 10."
+    },
+    "listening_level_25": {
+      "name": "Listening Specialist",
+      "description": "Reach listening level 25."
+    },
+    "titles_5": {
+      "name": "Five Titles",
+      "description": "Log 5 different titles."
+    },
+    "titles_10": {
+      "name": "Ten Titles",
+      "description": "Log 10 different titles."
+    },
+    "titles_25": {
+      "name": "Quarter Century Shelf",
+      "description": "Log 25 different titles."
+    },
+    "titles_50": {
+      "name": "Fifty Titles",
+      "description": "Log 50 different titles."
+    },
+    "media_types_3_week": {
+      "name": "Three-Way Explorer",
+      "description": "Log 3 different media types in one week."
+    },
+    "media_types_4_week": {
+      "name": "Four Corners",
+      "description": "Log 4 different media types in one week."
+    },
+    "streak_14": {
+      "name": "Two Weeks Strong",
+      "description": "Maintain a 14-day immersion streak."
+    },
+    "streak_60": {
+      "name": "Two Months Strong",
+      "description": "Maintain a 60-day immersion streak."
+    },
+    "streak_180": {
+      "name": "Half-Year Habit",
+      "description": "Maintain a 180-day immersion streak."
+    },
+    "week_5h": {
+      "name": "Five-Hour Week",
+      "description": "Log 5 immersion hours in one week."
+    },
+    "week_10h": {
+      "name": "Ten-Hour Week",
+      "description": "Log 10 immersion hours in one week."
+    },
+    "week_16h": {
+      "name": "Sixteen-Hour Week",
+      "description": "Log 16 immersion hours in one week."
+    },
+    "day_2h": {
+      "name": "Two-Hour Session Day",
+      "description": "Log 2 immersion hours in one day."
+    },
+    "day_4h": {
+      "name": "Four-Hour Focus",
+      "description": "Log 4 immersion hours in one day."
+    },
+    "week_1h_7days": {
+      "name": "One Hour a Day",
+      "description": "Log at least 1 hour every day for 7 consecutive days."
+    },
+    "first_club": {
+      "name": "First Club",
+      "description": "Join an immersion club."
+    },
+    "completed_media_1": {
+      "name": "The End Credits",
+      "description": "Complete your first tracked title."
+    },
+    "completed_media_5": {
+      "name": "Five Finished",
+      "description": "Complete 5 tracked titles."
+    },
+    "completed_media_10": {
+      "name": "Completion Streak",
+      "description": "Complete 10 tracked titles."
+    },
+    "club_challenge_1": {
+      "name": "Challenge Accepted",
+      "description": "Complete an individual club challenge."
+    },
+    "reading_listening_level_10": {
+      "name": "Balanced Skills",
+      "description": "Reach level 10 in both reading and listening."
+    },
+    "reading_listening_days_7": {
+      "name": "Two Sides of Japanese",
+      "description": "Log reading and listening on the same day on 7 different days."
     }
   },
   "rarity": {

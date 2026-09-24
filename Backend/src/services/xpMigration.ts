@@ -1,4 +1,4 @@
-/* eslint-disable max-classes-per-file, no-await-in-loop */
+/* eslint-disable max-classes-per-file */
 import { AnyBulkWriteOperation } from 'mongoose';
 import Log from '../models/log.model.js';
 import User from '../models/user.model.js';

@@ -62,13 +62,13 @@ export async function evaluateWeeklyHours(
   let windowStart = 0;
   let windowMinutes = 0;
 
-  for (let i = 0; i < days.length; i++) {
+  for (let i = 0; i < days.length; i += 1) {
     windowMinutes += days[i].minutes;
 
     // Shrink window from the left while it exceeds 7 days
     while (days[i].date - days[windowStart].date >= SEVEN_DAYS_MS) {
       windowMinutes -= days[windowStart].minutes;
-      windowStart++;
+      windowStart += 1;
     }
 
     const windowHours = Math.floor(windowMinutes / 60);

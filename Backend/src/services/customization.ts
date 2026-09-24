@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import Achievement from '../models/achievement.model.js';
 import Log from '../models/log.model.js';
 import { EFFECTIVE_MINUTES_EXPR } from './achievements/conditions/effectiveMinutes.js';
@@ -17,7 +18,6 @@ import {
   SIGNATURE_STATS,
   SignatureStat,
 } from '../types.js';
-import { Types } from 'mongoose';
 
 /**
  * Cosmetic unlock rules.

@@ -53,7 +53,7 @@ export async function evaluateClubMvp(
       );
 
       if (top && top.totalXp > 0 && top._id.toString() === userId.toString()) {
-        wins++;
+        wins += 1;
         if (wins >= threshold) return { met: true, progress: wins };
       }
     }

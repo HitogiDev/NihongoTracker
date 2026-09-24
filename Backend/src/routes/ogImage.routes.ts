@@ -100,7 +100,7 @@ router.post(
   protect,
   async (_req: Request, res: Response) => {
     try {
-      const user = res.locals.user;
+      const {user} = res.locals;
 
       // Update the user's updatedAt field to force cache bust
       user.updatedAt = new Date();

@@ -1,11 +1,12 @@
+import { Types } from 'mongoose';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { evaluateWeeklyHours } from '../../../services/achievements/conditions/weeklyHours.condition.js';
+
+import Log from '../../../models/log.model.js';
 
 vi.mock('../../../models/log.model.js', () => ({
   default: { aggregate: vi.fn() },
 }));
-
-import Log from '../../../models/log.model.js';
 
 /**
  * Builds the aggregate result shape that weeklyHours.condition expects:
@@ -35,7 +36,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
 
   it('returns met=false and progress=0 with no logs', async () => {
     vi.mocked(Log.aggregate).mockResolvedValue([]);
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result).toEqual({ met: false, progress: 0 });
   });
 
@@ -43,7 +44,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
     vi.mocked(Log.aggregate).mockResolvedValue(
       makeDays([{ date: BASE, minutes: 24 * 60 }])
     );
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result.met).toBe(true);
     expect(result.progress).toBe(24);
   });
@@ -54,7 +55,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
       minutes: 4 * 60,
     }));
     vi.mocked(Log.aggregate).mockResolvedValue(makeDays(days));
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result.met).toBe(true);
     expect(result.progress).toBe(28);
   });
@@ -65,7 +66,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
       minutes: 3 * 60,
     }));
     vi.mocked(Log.aggregate).mockResolvedValue(makeDays(days));
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result.met).toBe(false);
     expect(result.progress).toBe(21);
   });
@@ -78,7 +79,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
         { date: daysFrom(BASE, 7), minutes: 12 * 60 }, // day 8 (7 days difference)
       ])
     );
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     // Neither individual window has 24h — each only has 12h
     expect(result.met).toBe(false);
     expect(result.progress).toBe(12);
@@ -92,7 +93,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
         { date: daysFrom(BASE, 6), minutes: 12 * 60 }, // 6 days later
       ])
     );
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result.met).toBe(true);
     expect(result.progress).toBe(24);
   });
@@ -109,7 +110,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
       minutes: 5 * 60,
     }));
     vi.mocked(Log.aggregate).mockResolvedValue(makeDays([...week1, ...week2]));
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result.met).toBe(true);
     expect(result.progress).toBe(35);
   });
@@ -123,7 +124,7 @@ describe('evaluateWeeklyHours — sliding window', () => {
         { date: new Date('2024-01-30'), minutes: 20 * 60 },
       ])
     );
-    const result = await evaluateWeeklyHours({} as any, 24);
+    const result = await evaluateWeeklyHours(new Types.ObjectId(), 24);
     expect(result.met).toBe(false);
     expect(result.progress).toBe(20);
   });

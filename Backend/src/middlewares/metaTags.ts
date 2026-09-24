@@ -26,8 +26,8 @@ function esc(s: string): string {
 }
 
 function formatNumber(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)  }M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)  }K`;
   return n.toLocaleString();
 }
 
@@ -156,7 +156,7 @@ async function mediaMeta(
     media.title.contentTitleNative ||
     '';
   // isAdult → use default OG image to avoid explicit content in embeds
-  const image = (media as any).isAdult
+  const image = media.isAdult
     ? `${protocol}://${host}/og-image.png`
     : media.coverImage ||
       media.contentImage ||
@@ -317,11 +317,11 @@ async function sharedLogMeta(
     }>('user', 'username avatar');
   if (!log || log.private) return null;
 
-  const username = (log.user as any)?.username ?? 'Someone';
+  const username = log.user?.username ?? 'Someone';
   const typeLabel = mediaTypeLabel(log.type);
   const title = log.mediaTitle ?? typeLabel;
   const metric = logMetricSummary(log);
-  const description = `${esc(username)} logged "${esc(title)}" (${typeLabel})${metric ? ' • ' + metric : ''} on NihongoTracker`;
+  const description = `${esc(username)} logged "${esc(title)}" (${typeLabel})${metric ? ` • ${  metric}` : ''} on NihongoTracker`;
 
   const image = `${protocol}://${host}/og-image.png`;
 
@@ -359,7 +359,7 @@ async function reviewMeta(
       'Media'
     : 'Media';
   const stars = review.rating ? '⭐'.repeat(Math.round(review.rating)) : '';
-  const summary = (review as any).summary ?? '';
+  const summary = review.summary ?? '';
   const image =
     media?.coverImage ||
     media?.contentImage ||

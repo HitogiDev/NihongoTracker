@@ -1072,6 +1072,19 @@ function SettingsScreen() {
       setBadgeColor('#ff69b4');
       setBadgeTextColor('#ffffff');
       setPatreonStatus({ isActive: false });
+      const currentUser = useUserDataStore.getState().user;
+      if (currentUser) {
+        useUserDataStore.getState().setUser({
+          ...currentUser,
+          patreon: {
+            ...currentUser.patreon,
+            patreonId: undefined,
+            patreonEmail: undefined,
+            tier: null,
+            isActive: false,
+          },
+        });
+      }
       // Invalidate user query to update profile display
       void queryClient.invalidateQueries({
         queryKey: ['user'],
@@ -1359,6 +1372,20 @@ function SettingsScreen() {
     try {
       const status = await getPatreonStatusFn();
       setPatreonStatus(status);
+      const currentUser = useUserDataStore.getState().user;
+      if (currentUser) {
+        useUserDataStore.getState().setUser({
+          ...currentUser,
+          patreon: {
+            ...currentUser.patreon,
+            ...status,
+            tier:
+              status.tier !== undefined
+                ? status.tier
+                : (currentUser.patreon?.tier ?? null),
+          },
+        });
+      }
 
       if (status.customBadgeText) {
         setCustomBadgeText(status.customBadgeText);

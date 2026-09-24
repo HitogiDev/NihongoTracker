@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resolveForecastTarget } from '../services/immersionForecast.service.js';
+
 const { findOne, fetchJitenDetail } = vi.hoisted(() => ({
   findOne: vi.fn(),
   fetchJitenDetail: vi.fn(),
@@ -10,8 +12,6 @@ vi.mock('../models/log.model.js', () => ({
   default: { aggregate: vi.fn(), find: vi.fn() },
 }));
 vi.mock('../services/jiten.js', () => ({ fetchJitenDetail }));
-
-import { resolveForecastTarget } from '../services/immersionForecast.service.js';
 
 const media = (fields: Record<string, unknown>) => ({
   contentId: 'media-1',

@@ -7,6 +7,7 @@ import { Anime } from '../models/media.model.js';
 import { IDailyGoal, IDailyGoalProgress, IMediaDocument } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
+
 const FALLBACK_TIMEZONE = 'UTC';
 
 export async function getDailyGoals(

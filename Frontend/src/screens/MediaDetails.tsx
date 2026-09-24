@@ -1128,15 +1128,17 @@ function MediaDetails() {
       const isEqual = difference === 0;
 
       return (
-        <div className="stat surface-muted p-3">
-          <div className="stat-title text-xs">{label}</div>
+        <div className="stat surface-muted h-full rounded-box border border-base-300/70 p-4">
+          <div className="stat-title text-xs font-medium">{label}</div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-            <div className="stat-value text-sm sm:text-lg text-primary truncate">
+            <div className="stat-value text-base sm:text-lg text-primary truncate">
               {formatter(myValue)}
               {unit}
             </div>
-            <div className="text-xs hidden sm:block">vs</div>
-            <div className="stat-value text-sm sm:text-lg text-base-content/60 truncate">
+            <div className="text-xs font-medium text-base-content/50 hidden sm:block">
+              {t('comparison.vs')}
+            </div>
+            <div className="stat-value text-base sm:text-lg text-base-content/60 truncate">
               {formatter(theirValue)}
               {unit}
             </div>
@@ -1167,8 +1169,10 @@ function MediaDetails() {
             )}
             <span className="truncate">
               {isEqual
-                ? 'Same'
-                : `${formatter(Math.abs(difference))}${unit} ${isHigher ? 'ahead' : 'behind'}`}
+                ? t('comparison.same')
+                : t(isHigher ? 'comparison.ahead' : 'comparison.behind', {
+                    value: `${formatter(Math.abs(difference))}${unit}`,
+                  })}
             </span>
           </div>
         </div>
@@ -1176,9 +1180,9 @@ function MediaDetails() {
     };
 
     return (
-      <div className="card bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20 shadow-sm">
-        <div className="card-body">
-          <h2 className="card-title text-lg mb-4 flex items-center gap-2">
+      <div className="card card-border surface">
+        <div className="card-body gap-5">
+          <h2 className="card-title text-lg flex items-center gap-2">
             <svg
               className="w-5 h-5 text-primary"
               fill="none"
@@ -1192,7 +1196,7 @@ function MediaDetails() {
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
               />
             </svg>
-            Comparison: You vs {username}
+            {t('comparison.title', { username })}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1242,7 +1246,7 @@ function MediaDetails() {
                       label={t('stats.readingSpeed')}
                       myValue={myStats.readingSpeed}
                       theirValue={theirStats.readingSpeed}
-                      unit=" chars/hr"
+                      unit={` ${t('stats.charsPerHour')}`}
                       formatter={(val) => Math.round(val).toString()}
                     />
                   )}
@@ -1267,17 +1271,21 @@ function MediaDetails() {
             )}
           </div>
 
-          <div className="mt-4 text-center">
+          <div className="border-t border-base-300 pt-4 text-center">
             <p className="text-sm text-base-content/70">
-              You have{' '}
-              <span className="font-semibold text-primary">
-                {myStats.logCount}
-              </span>{' '}
-              log{myStats.logCount !== 1 ? 's' : ''} • {username} has{' '}
-              <span className="font-semibold text-secondary">
-                {theirStats.logCount}
-              </span>{' '}
-              log{theirStats.logCount !== 1 ? 's' : ''}
+              {t('comparison.summary', {
+                myCount: myStats.logCount,
+                myLabel: t(
+                  myStats.logCount === 1 ? 'comparison.log' : 'comparison.logs'
+                ),
+                theirCount: theirStats.logCount,
+                theirLabel: t(
+                  theirStats.logCount === 1
+                    ? 'comparison.log'
+                    : 'comparison.logs'
+                ),
+                username,
+              })}
             </p>
           </div>
         </div>

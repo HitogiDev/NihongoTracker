@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { apiError } from '../i18n/errorCodes.js';
 import { Model, Types } from 'mongoose';
+import { apiError } from '../i18n/errorCodes.js';
 import MediaRequest from '../models/mediaRequest.model.js';
 import {
   Anime,
@@ -191,10 +191,10 @@ export async function getMediaRequests(
   next: NextFunction
 ) {
   try {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
     const limit = Math.min(
       100,
-      Math.max(1, parseInt(req.query.limit as string) || 20)
+      Math.max(1, parseInt(req.query.limit as string, 10) || 20)
     );
     const statusFilter = req.query.status as string | undefined;
 

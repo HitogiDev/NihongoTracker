@@ -424,6 +424,7 @@ export async function updateMediaCompletionStatusFn(payload: {
   source?: 'manual' | 'auto';
 }) {
   const { data } = await api.post(`users/media/status`, payload);
+  revealAchievements(data?.newAchievements);
   return data as {
     mediaId: string;
     type: IMediaDocument['type'];
@@ -437,6 +438,7 @@ export async function updateMediaCompletionStatusFn(payload: {
     isCompleted: boolean;
     completedAt: string | null;
     autoCompleteSuppressed: boolean;
+    newAchievements?: IAchievement[];
   };
 }
 
@@ -935,6 +937,37 @@ export async function getAdminUsersFn(params: {
   search?: string;
 }) {
   const { data } = await api.get('admin/users', { params });
+  return data;
+}
+
+export interface IAdminBannedUser {
+  _id: string;
+  username: string;
+  roles: string[];
+  rankingBanned: boolean;
+  banned: boolean;
+  banReason: string;
+  updatedAt: string | null;
+  updatedByUsername: string;
+}
+
+export interface IAdminBannedUsersResponse {
+  users: IAdminBannedUser[];
+  total: number;
+  page: number;
+  totalPages: number;
+  type: 'all' | 'ranking' | 'site';
+}
+
+export async function getAdminBannedUsersFn(params: {
+  page?: number;
+  limit?: number;
+  type?: 'all' | 'ranking' | 'site';
+}): Promise<IAdminBannedUsersResponse> {
+  const { data } = await api.get<IAdminBannedUsersResponse>(
+    'admin/users/banned',
+    { params }
+  );
   return data;
 }
 
@@ -1699,6 +1732,51 @@ export async function getGanttDataFn(
   const { data } = await api.get<IGanttMediaItem[]>(`users/${username}/gantt`, {
     params,
   });
+  return data;
+}
+
+export interface IGlobalImmersionRankingItem {
+  rank: number;
+  mediaId: string;
+  type: string;
+  title: string;
+  titleEnglish?: string;
+  contentImage?: string;
+  totalHours: number;
+  totalXp: number;
+  userCount: number;
+  logCount: number;
+}
+
+export interface IGlobalImmersionRankingResponse {
+  items: IGlobalImmersionRankingItem[];
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+}
+
+export async function getGlobalImmersionRankingFn(params: {
+  page?: number;
+  limit?: number;
+  metric: 'xp' | 'hours';
+  types?: string[];
+  timezone?: string;
+  start?: string;
+  end?: string;
+}): Promise<IGlobalImmersionRankingResponse> {
+  const queryParams = new URLSearchParams();
+  queryParams.set('metric', params.metric);
+  if (params.page) queryParams.set('page', String(params.page));
+  if (params.limit) queryParams.set('limit', String(params.limit));
+  if (params.timezone) queryParams.set('timezone', params.timezone);
+  if (params.start) queryParams.set('start', params.start);
+  if (params.end) queryParams.set('end', params.end);
+  params.types?.forEach((type) => queryParams.append('type', type));
+
+  const { data } = await api.get<IGlobalImmersionRankingResponse>(
+    'users/immersion-ranking/global',
+    { params: queryParams }
+  );
   return data;
 }
 

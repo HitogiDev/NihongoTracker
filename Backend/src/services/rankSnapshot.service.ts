@@ -305,7 +305,7 @@ export async function backfillRankHistory(): Promise<{
     cursor = new Date(cursor.getTime() + WEEK_MS)
   ) {
     snapshots += await computeAndStoreSnapshot(new Date(cursor));
-    weeks++;
+    weeks += 1;
   }
 
   return { weeks, snapshots };

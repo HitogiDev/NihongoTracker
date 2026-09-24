@@ -39,9 +39,11 @@ app.use(
   express.raw({ type: 'application/json' }),
   (req, res, next) => {
     if (req.body) {
-      (req as any).rawBody = req.body.toString('utf8');
+      const webhookRequest = req as Request & { rawBody?: string };
+      const rawBody = req.body.toString('utf8');
+      webhookRequest.rawBody = rawBody;
       try {
-        req.body = JSON.parse((req as any).rawBody);
+        req.body = JSON.parse(rawBody);
       } catch (e) {
         return res.status(400).json({ error: 'Invalid JSON' });
       }
@@ -96,9 +98,9 @@ app.use(
 );
 
 // Serve index.html for all non-API routes (SPA fallback)
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 app.use(
-  express.static(path.join(__dirname, '../dist'), {
+  express.static(path.join(currentDir, '../dist'), {
     index: false,
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('index.html')) {
@@ -131,7 +133,7 @@ app.get('*', (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.sendFile(path.join(currentDir, '../dist/index.html'));
 });
 
 // Error handlers

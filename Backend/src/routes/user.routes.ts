@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import {
   getRanking,
   getMediumRanking,
@@ -19,6 +20,7 @@ import {
   updateSocialPrivacy,
   updateFavorites,
   getGanttData,
+  getGlobalImmersionRanking,
   getCustomizationOptions,
   updateCustomization,
 } from '../controllers/users.controller.js';
@@ -30,7 +32,6 @@ import {
   getUserStats,
 } from '../controllers/logs.controller.js';
 import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
-import multer from 'multer';
 import {
   followProfile,
   getFollowers,
@@ -72,6 +73,11 @@ router.delete('/:username/follow', protect, followRateLimit, unfollowProfile);
 
 router.get('/ranking', optionalProtect, getRanking);
 router.get('/ranking/media', optionalProtect, getMediumRanking);
+router.get(
+  '/immersion-ranking/global',
+  optionalProtect,
+  getGlobalImmersionRanking
+);
 router.get('/:username/ranking-summary', optionalProtect, getRankingSummary);
 router.get('/:username/ranking-history', optionalProtect, getRankingHistory);
 

@@ -1,6 +1,7 @@
 import { ParamsDictionary } from 'express-serve-static-core';
-import { ICreateLog } from '../types.js';
 import { Router } from 'express';
+import multer from 'multer';
+import { ICreateLog } from '../types.js';
 import {
   getLog,
   createLog,
@@ -23,7 +24,6 @@ import {
 import { calculateXp } from '../middlewares/calculateXp.js';
 import { protect, optionalProtect } from '../middlewares/authMiddleware.js';
 import { csvToArray } from '../middlewares/csvToArray.js';
-import multer from 'multer';
 import {
   getLogsFromAPI,
   getLogsFromCSV,

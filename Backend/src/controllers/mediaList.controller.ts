@@ -215,7 +215,7 @@ export async function getMediaLists(
     );
     const sort = String(req.query.sort ?? 'popular');
     const search = typeof req.query.q === 'string' ? req.query.q.trim() : '';
-    const mediaType = req.query.mediaType;
+    const {mediaType} = req.query;
 
     const filter: Record<string, unknown> = { isPublic: true };
 
@@ -226,12 +226,14 @@ export async function getMediaLists(
       filter['entries.mediaType'] = mediaType;
     }
 
-    const sortStage: Record<string, 1 | -1> =
-      sort === 'recent'
-        ? { createdAt: -1 }
-        : sort === 'updated'
-          ? { updatedAt: -1 }
-          : { likeCount: -1, createdAt: -1 };
+    let sortStage: Record<string, 1 | -1>;
+    if (sort === 'recent') {
+      sortStage = { createdAt: -1 };
+    } else if (sort === 'updated') {
+      sortStage = { updatedAt: -1 };
+    } else {
+      sortStage = { likeCount: -1, createdAt: -1 };
+    }
 
     const [lists, total] = await Promise.all([
       MediaList.aggregate<IMediaList & { likeCount: number }>([
@@ -278,9 +280,9 @@ export async function getUserMediaLists(
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const isOwner = !!viewerId && owner._id.toString() === viewerId.toString();
+    const viewerIsOwner = !!viewerId && owner._id.toString() === viewerId.toString();
     const filter: Record<string, unknown> = { user: owner._id };
-    if (!isOwner) filter.isPublic = true;
+    if (!viewerIsOwner) filter.isPublic = true;
 
     const lists = await MediaList.find(filter)
       .populate('user', 'username avatar')

@@ -116,7 +116,7 @@ async function getDismissedClubDates(
   }
 
   user.settings = user.settings ?? ({} as IUserSettings);
-  const settings = user.settings;
+  const {settings} = user;
   const dismissedClubDates = normalizeDismissedClubDates(
     settings.dismissedNotificationClubAt
   );
@@ -336,7 +336,7 @@ async function getStoredNotificationItems(
     .lean();
 
   return notifications.map((notification) => {
-    const actor = notification.actor;
+    const {actor} = notification;
     const meta: Record<string, string> = {
       ...Object.fromEntries(
         Object.entries(
@@ -458,7 +458,7 @@ export async function markNotificationsAsRead(
   next: NextFunction
 ): Promise<Response | void> {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -486,7 +486,7 @@ export async function markNotificationsAsUnread(
   next: NextFunction
 ): Promise<Response | void> {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -514,7 +514,7 @@ export async function deleteNotification(
   next: NextFunction
 ): Promise<Response | void> {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' });

@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bold,
   Code,
+  CornerDownRight,
+  ChevronDown,
+  ChevronUp,
   EllipsisVertical,
   EyeOff,
   Heart,
@@ -13,10 +16,18 @@ import {
   ListOrdered,
   Pencil,
   Quote,
+  Reply,
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
-import { type RefObject, useRef, useState } from 'react';
+import {
+  type MouseEvent,
+  type RefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -43,8 +54,54 @@ interface ActivityCommentsProps {
 interface ActivityCommentsData {
   comments: IActivityComment[];
   total: number;
+  canComment: boolean;
   page: number;
   limit: number;
+}
+
+function flattenCommentThreads(
+  comments: IActivityComment[]
+): Array<{
+  comment: IActivityComment;
+  depth: number;
+  rootId: string;
+  parentComment?: IActivityComment;
+}> {
+  const commentIds = new Set(comments.map((comment) => comment._id));
+  const repliesByParent = new Map<string, IActivityComment[]>();
+  comments.forEach((comment) => {
+    if (!comment.parentComment || !commentIds.has(comment.parentComment)) return;
+    const replies = repliesByParent.get(comment.parentComment) ?? [];
+    replies.push(comment);
+    repliesByParent.set(comment.parentComment, replies);
+  });
+
+  const ordered: Array<{
+    comment: IActivityComment;
+    depth: number;
+    rootId: string;
+    parentComment?: IActivityComment;
+  }> = [];
+  const appendThread = (
+    comment: IActivityComment,
+    depth: number,
+    rootId: string,
+    parentComment?: IActivityComment,
+  ) => {
+    ordered.push({ comment, depth, rootId, parentComment });
+    repliesByParent.get(comment._id)?.forEach((reply) =>
+      appendThread(reply, depth + 1, rootId, comment)
+    );
+  };
+
+  comments
+    .filter(
+      (comment) =>
+        !comment.parentComment || !commentIds.has(comment.parentComment)
+    )
+    .forEach((comment) => appendThread(comment, 0, comment._id));
+
+  return ordered;
 }
 
 interface CommentFormattingToolbarProps {
@@ -198,14 +255,36 @@ export default function ActivityComments({
   const currentUser = useUserDataStore((state) => state.user);
   const [content, setContent] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<IActivityComment | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [highlightedCommentId, setHighlightedCommentId] = useState<
+    string | null
+  >(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const editingRef = useRef<HTMLTextAreaElement>(null);
   const commentsQuery = useQuery({
     queryKey: ['activityComments', activityId],
     queryFn: () => getActivityCommentsFn(activityId),
   });
+  const canComment = commentsQuery.data?.canComment === true;
+  const threadedComments = useMemo(
+    () => flattenCommentThreads(commentsQuery.data?.comments ?? []),
+    [commentsQuery.data?.comments]
+  );
+  const replyCountByRoot = useMemo(() => {
+    const counts = new Map<string, number>();
+    threadedComments.forEach(({ rootId, depth }) => {
+      if (depth > 0) counts.set(rootId, (counts.get(rootId) ?? 0) + 1);
+    });
+    return counts;
+  }, [threadedComments]);
+  const visibleThreadedComments = threadedComments.filter(
+    ({ rootId, depth }) => depth === 0 || expandedThreads.has(rootId),
+  );
 
   const refresh = async () => {
     await Promise.all([
@@ -216,10 +295,16 @@ export default function ActivityComments({
     ]);
   };
   const addMutation = useMutation({
-    mutationFn: () => addActivityCommentFn(activityId, content),
+    mutationFn: (input: { content: string; parentCommentId?: string }) =>
+      addActivityCommentFn(
+        activityId,
+        input.content,
+        input.parentCommentId
+      ),
     onSuccess: async () => {
       setContent('');
       setComposerOpen(false);
+      setReplyingTo(null);
       await refresh();
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -294,68 +379,144 @@ export default function ActivityComments({
   const cancelComment = () => {
     setContent('');
     setComposerOpen(false);
+    setReplyingTo(null);
     composerRef.current?.blur();
+  };
+
+  const startReply = (comment: IActivityComment) => {
+    setReplyingTo(comment);
+    setComposerOpen(true);
+    requestAnimationFrame(() => composerRef.current?.focus());
+  };
+
+  const toggleThread = (rootId: string) => {
+    setExpandedThreads((current) => {
+      const next = new Set(current);
+      if (next.has(rootId)) next.delete(rootId);
+      else next.add(rootId);
+      return next;
+    });
+  };
+
+  const getCommentExcerpt = (comment: Pick<IActivityComment, 'content'>) => {
+    const normalized = comment.content.replace(/\s+/g, ' ').trim();
+    return normalized.length > 90
+      ? `${normalized.slice(0, 87).trimEnd()}...`
+      : normalized;
+  };
+
+  useEffect(() => {
+    const clearHighlight = (event: globalThis.MouseEvent) => {
+      const clickedElement = event.target;
+      if (
+        clickedElement instanceof Element &&
+        clickedElement.closest('[data-comment-navigation]')
+      ) {
+        return;
+      }
+      setHighlightedCommentId(null);
+    };
+
+    document.addEventListener('click', clearHighlight);
+    return () => document.removeEventListener('click', clearHighlight);
+  }, []);
+
+  const focusComment = (event: MouseEvent<HTMLAnchorElement>, commentId: string) => {
+    event.preventDefault();
+    const target = document.getElementById(`comment-${commentId}`);
+    if (!target) return;
+
+    const rect = target.getBoundingClientRect();
+    const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    if (!isInViewport) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    setHighlightedCommentId(commentId);
   };
 
   return (
     <div className="space-y-3">
-      <div className="surface-muted p-3 shadow-sm sm:p-4">
-        <div className="space-y-2">
-          {composerOpen && (
-            <CommentFormattingToolbar
-              value={content}
-              onChange={setContent}
-              textareaRef={composerRef}
-              maxLength={1000}
-            />
-          )}
-          <textarea
-            ref={composerRef}
-            className="textarea textarea-sm focus:textarea-primary h-10 min-h-10 w-full resize-none"
-            rows={1}
-            maxLength={1000}
-            value={content}
-            onFocus={() => setComposerOpen(true)}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder={t('comments.placeholder')}
-            aria-label={t('comments.add')}
-          />
-          {composerOpen && (
-            <div className="flex items-end justify-between gap-3">
-              <span className="text-xs text-base-content/60">
-                {t('comments.count', { count: content.length })}
-              </span>
-              <div className="flex flex-col items-end gap-2">
-                <Link
-                  to="/guidelines"
-                  className="link link-primary text-right text-xs"
+      {canComment && (
+        <div className="surface-muted p-3 shadow-sm sm:p-4">
+          <div className="space-y-2">
+            {replyingTo && (
+              <div className="flex items-center justify-between gap-2 text-xs text-base-content/60">
+                <span>
+                  {t('comments.replyingTo', {
+                    username: replyingTo.user.username,
+                  })}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={cancelComment}
                 >
-                  {t('comments.readGuidelines')}
-                </Link>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    disabled={addMutation.isPending}
-                    onClick={cancelComment}
+                  {t('comments.cancel')}
+                </button>
+              </div>
+            )}
+            {composerOpen && (
+              <CommentFormattingToolbar
+                value={content}
+                onChange={setContent}
+                textareaRef={composerRef}
+                maxLength={1000}
+              />
+            )}
+            <textarea
+              ref={composerRef}
+              className="textarea textarea-sm focus:textarea-primary h-10 min-h-10 w-full resize-none"
+              rows={1}
+              maxLength={1000}
+              value={content}
+              onFocus={() => setComposerOpen(true)}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder={t('comments.placeholder')}
+              aria-label={t('comments.add')}
+            />
+            {composerOpen && (
+              <div className="flex items-end justify-between gap-3">
+                <span className="text-xs text-base-content/60">
+                  {t('comments.count', { count: content.length })}
+                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <Link
+                    to="/guidelines"
+                    className="link link-primary text-right text-xs"
                   >
-                    {t('comments.cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    disabled={!content.trim() || addMutation.isPending}
-                    onClick={() => addMutation.mutate()}
-                  >
-                    {addMutation.isPending && <Spinner size="sm" />}
-                    {t('comments.post')}
-                  </button>
+                    {t('comments.readGuidelines')}
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      disabled={addMutation.isPending}
+                      onClick={cancelComment}
+                    >
+                      {t('comments.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      disabled={!content.trim() || addMutation.isPending}
+                      onClick={() =>
+                        addMutation.mutate({
+                          content,
+                          parentCommentId: replyingTo?._id,
+                        })
+                      }
+                    >
+                      {addMutation.isPending && <Spinner size="sm" />}
+                      {t(replyingTo ? 'comments.reply' : 'comments.post')}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {commentsQuery.isLoading ? (
         <div className="space-y-3" aria-busy="true">
@@ -370,15 +531,30 @@ export default function ActivityComments({
         <p role="alert" className="surface-muted p-4 text-sm text-error">
           {t('comments.loadError')}
         </p>
-      ) : commentsQuery.data?.comments.length ? (
+      ) : threadedComments.length ? (
         <ul className="list gap-3 bg-transparent p-0">
-          {commentsQuery.data.comments.map((comment) => {
+          {visibleThreadedComments.map(
+            ({ comment, depth, rootId, parentComment }) => {
             const isOwner = currentUser?._id === comment.user._id;
             const isEditing = editingId === comment._id;
+            const replyCount = replyCountByRoot.get(rootId) ?? 0;
+            const isExpanded = expandedThreads.has(rootId);
+            const isReply = Boolean(comment.parentComment);
+            const parentReference =
+              parentComment ?? comment.parentCommentPreview ?? undefined;
             return (
               <li
                 key={comment._id}
-                className="list-row surface-muted p-3 shadow-sm sm:p-4"
+                id={`comment-${comment._id}`}
+                className={`${
+                  depth > 0
+                    ? 'list-row surface-muted ml-4 border-l-2 border-base-300 p-3 pl-3 shadow-sm sm:ml-8 sm:p-4'
+                    : 'list-row surface-muted p-3 shadow-sm sm:p-4'
+                } transition-colors duration-300 ${
+                  highlightedCommentId === comment._id
+                    ? 'border-2 border-primary'
+                    : ''
+                }`}
               >
                 <Link to={`/user/${encodeURIComponent(comment.user.username)}`}>
                   <div className="avatar">
@@ -393,15 +569,58 @@ export default function ActivityComments({
                   </div>
                 </Link>
                 <div className="list-col-grow min-w-0">
-                  <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-                      <Link
-                        to={`/user/${encodeURIComponent(comment.user.username)}`}
-                        className="link link-hover font-semibold text-primary"
-                      >
-                        {comment.user.username}
-                      </Link>
-                      {comment.editedAt && <span>{t('comments.edited')}</span>}
+                  <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <div
+                      className={
+                        isReply && parentReference
+                          ? 'flex min-w-0 flex-col justify-center gap-0.5 text-xs text-base-content/60'
+                          : 'flex flex-wrap items-center gap-2 text-xs text-base-content/60'
+                      }
+                    >
+                      {isReply && parentReference ? (
+                        <>
+                          <a
+                            href={`#comment-${parentReference._id}`}
+                            className="flex min-w-0 items-center gap-1 text-xs text-base-content/60 hover:text-primary"
+                            title={t('comments.jumpToParent')}
+                            data-comment-navigation
+                            onClick={(event) =>
+                              focusComment(event, parentReference._id)
+                            }
+                          >
+                            <CornerDownRight className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">
+                              {t('comments.replyingToComment', {
+                                username: parentReference.user.username,
+                                content: getCommentExcerpt(parentReference),
+                              })}
+                            </span>
+                          </a>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              to={`/user/${encodeURIComponent(comment.user.username)}`}
+                              className="link link-hover font-semibold text-primary"
+                            >
+                              {comment.user.username}
+                            </Link>
+                            {comment.editedAt && (
+                              <span>{t('comments.edited')}</span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            to={`/user/${encodeURIComponent(comment.user.username)}`}
+                            className="link link-hover font-semibold text-primary"
+                          >
+                            {comment.user.username}
+                          </Link>
+                          {comment.editedAt && (
+                            <span>{t('comments.edited')}</span>
+                          )}
+                        </>
+                      )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1 text-xs text-base-content/60">
                       {!isEditing && (
@@ -445,6 +664,16 @@ export default function ActivityComments({
                       <span>
                         {formatRelativeDateInTimezone(comment.createdAt)}
                       </span>
+                      {canComment && !isEditing && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs gap-1 px-1.5"
+                          onClick={() => startReply(comment)}
+                        >
+                          <Reply className="h-3.5 w-3.5" />
+                          {t('comments.reply')}
+                        </button>
+                      )}
                       {isOwner && !isEditing && (
                         <div className="dropdown dropdown-end">
                           <div
@@ -527,16 +756,36 @@ export default function ActivityComments({
                     </div>
                   ) : (
                     <div
-                      className="prose prose-sm mt-3 max-w-none wrap-break-word text-base-content [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      className={`prose prose-sm ${
+                        isReply && parentReference ? 'mt-2' : 'mt-3'
+                      } max-w-none wrap-break-word text-base-content [&>*:first-child]:mt-0 [&>*:last-child]:mb-0`}
                       dangerouslySetInnerHTML={{
                         __html: renderMarkdownWithSpoilers(comment.content),
                       }}
                     />
                   )}
+                  {depth === 0 && replyCount > 0 && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-xs mt-3 gap-1 px-1.5 text-primary"
+                      aria-expanded={isExpanded}
+                      onClick={() => toggleThread(rootId)}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      )}
+                      {isExpanded
+                        ? t('comments.hideReplies')
+                        : t('comments.showReplies', { count: replyCount })}
+                    </button>
+                  )}
                 </div>
               </li>
             );
-          })}
+            },
+          )}
         </ul>
       ) : (
         <p className="surface-muted p-4 text-sm text-base-content/60">

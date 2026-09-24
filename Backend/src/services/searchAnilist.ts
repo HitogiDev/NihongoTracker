@@ -136,7 +136,7 @@ export function toFuzzyDate(
 function cleanVariables<T extends object>(variables: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(variables).filter(
-      ([_, value]) => value !== undefined && value !== null
+        ([, value]) => value !== undefined && value !== null
     )
   ) as Partial<T>;
 }

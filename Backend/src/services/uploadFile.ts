@@ -5,9 +5,9 @@ import {
   uploadBytesResumable,
   deleteObject,
 } from 'firebase/storage';
+import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from '../firebaseConfig.js';
 import { apiError } from '../i18n/errorCodes.js';
-import { initializeApp } from 'firebase/app';
 
 initializeApp(firebaseConfig);
 
@@ -75,7 +75,7 @@ async function uploadFile(
 ): Promise<fileResponse> {
   validateImageFile(file, options);
 
-  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  const uniqueSuffix = `${Date.now()  }-${  Math.round(Math.random() * 1e9)}`;
   const storageRef = ref(
     storage,
     `${file.fieldname}s/${file.fieldname}-${uniqueSuffix}`
@@ -96,7 +96,7 @@ async function uploadFile(
       name: file.originalname,
       type: file.mimetype,
       size: file.size,
-      downloadURL: downloadURL,
+      downloadURL,
     };
   } catch (error) {
     console.error('Firebase upload error:', error);
@@ -118,7 +118,7 @@ export async function uploadFileWithCleanup(
   }
 
   // Upload new file
-  return await uploadFile(file, options);
+  return uploadFile(file, options);
 }
 
 // Function to delete a file from Firebase Storage

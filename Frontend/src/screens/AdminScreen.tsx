@@ -7,9 +7,11 @@ import { Link } from 'react-router-dom';
 import { useUserDataStore } from '../store/userData';
 import { numberWithCommas } from '../utils/utils';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import {
   getAdminStatsFn,
   getAdminUsersFn,
+  getAdminBannedUsersFn,
   deleteUserFn,
   recalculateStatsFn,
   syncManabeIdsFn,
@@ -42,8 +44,9 @@ import {
   type IVndbDumpSyncStatus,
   type IJitenBackfillStatus,
   type IActivityBackfillStatus,
+  type IAdminBannedUsersResponse,
 } from '../api/trackerApi';
-import { ArrowDown, ArrowUp, Users, Play } from 'lucide-react';
+import { ArrowDown, ArrowUp, Users, Play, ShieldAlert } from 'lucide-react';
 import type { IUpdateLogRequest } from '../types';
 import MediaRequestQueue from '../components/MediaRequestQueue';
 import MediaEditPanel from '../components/MediaEditPanel';
@@ -154,6 +157,7 @@ function formatBytes(bytes: number): string {
 }
 
 function AdminScreen() {
+  const { t } = useTranslation('admin');
   const { user } = useUserDataStore();
   const isAdmin = Array.isArray(user?.roles)
     ? (user?.roles as string[]).includes('admin')
@@ -164,6 +168,7 @@ function AdminScreen() {
   const [selectedTab, setSelectedTab] = useState<
     | 'overview'
     | 'users'
+    | 'bans'
     | 'logs'
     | 'requests'
     | 'media'
@@ -172,6 +177,10 @@ function AdminScreen() {
   >('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [userPage, setUserPage] = useState(1);
+  const [bannedUsersPage, setBannedUsersPage] = useState(1);
+  const [bannedUsersType, setBannedUsersType] = useState<
+    'all' | 'ranking' | 'site'
+  >('all');
 
   // User edit modal state
   const [editUserOpen, setEditUserOpen] = useState(false);
@@ -308,6 +317,18 @@ function AdminScreen() {
       return status?.running ? 2_000 : false;
     },
   });
+
+  const { data: bannedUsers, isLoading: bannedUsersLoading } = useQuery({
+    queryKey: ['adminBannedUsers', bannedUsersPage, bannedUsersType],
+    queryFn: () =>
+      getAdminBannedUsersFn({
+        page: bannedUsersPage,
+        limit: 50,
+        type: bannedUsersType,
+      }),
+    enabled: isAdmin && selectedTab === 'bans',
+    staleTime: 10_000,
+  }) as { data: IAdminBannedUsersResponse | undefined; isLoading: boolean };
 
   const { data: activityBackfillStatus } = useQuery({
     queryKey: ['adminActivityBackfillStatus'],
@@ -672,6 +693,13 @@ function AdminScreen() {
             Users
           </button>
           <button
+            className={`tab ${selectedTab === 'bans' ? 'tab-active' : ''}`}
+            onClick={() => setSelectedTab('bans')}
+          >
+            <ShieldAlert className="w-5 h-5 mr-2" />
+            {t('bans.tab')}
+          </button>
+          <button
             className={`tab ${selectedTab === 'logs' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('logs')}
           >
@@ -779,6 +807,129 @@ function AdminScreen() {
 
         {/* Media Tab */}
         {selectedTab === 'media' && <MediaEditPanel />}
+
+        {selectedTab === 'bans' && (
+          <section className="card surface">
+            <div className="card-body gap-5">
+              <div>
+                <h2 className="card-title">{t('bans.title')}</h2>
+                <p className="mt-1 text-sm text-base-content/60">
+                  {t('bans.description')}
+                </p>
+              </div>
+
+              <div className="join">
+                {(['all', 'ranking', 'site'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`join-item btn btn-sm ${bannedUsersType === type ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => {
+                      setBannedUsersType(type);
+                      setBannedUsersPage(1);
+                    }}
+                  >
+                    {t(`bans.filters.${type}`)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>{t('bans.username')}</th>
+                      <th>{t('bans.banType')}</th>
+                      <th>{t('moderation.banReason')}</th>
+                      <th>{t('bans.updatedAt')}</th>
+                      <th>{t('bans.action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bannedUsersLoading ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center">
+                          <span className="loading loading-spinner loading-md" />
+                        </td>
+                      </tr>
+                    ) : bannedUsers?.users.length ? (
+                      bannedUsers.users.map((row) => (
+                        <tr key={row._id}>
+                          <td className="font-medium">{row.username}</td>
+                          <td>
+                            <div className="flex flex-wrap gap-2">
+                              {row.rankingBanned && (
+                                <span className="badge badge-warning">
+                                  {t('bans.filters.ranking')}
+                                </span>
+                              )}
+                              {row.banned && (
+                                <span className="badge badge-error">
+                                  {t('bans.filters.site')}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="max-w-sm truncate" title={row.banReason}>
+                            {row.banReason || '-'}
+                          </td>
+                          <td>
+                            {row.updatedAt
+                              ? formatAdminDate(row.updatedAt)
+                              : '-'}
+                          </td>
+                          <td>
+                            <Link
+                              className="btn btn-ghost btn-sm"
+                              to={`/user/${encodeURIComponent(row.username)}/moderation`}
+                            >
+                              {t('bans.openModeration')}
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-base-content/60">
+                          {t('bans.empty')}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {(bannedUsers?.totalPages ?? 0) > 1 && (
+                <div className="flex justify-center">
+                  <div className="join">
+                    <button
+                      type="button"
+                      className="join-item btn btn-sm"
+                      disabled={bannedUsersPage <= 1}
+                      onClick={() => setBannedUsersPage((page) => page - 1)}
+                    >
+                      «
+                    </button>
+                    <span className="join-item btn btn-sm btn-ghost">
+                      {t('bans.page', {
+                        page: bannedUsersPage,
+                        totalPages: bannedUsers?.totalPages ?? 1,
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      className="join-item btn btn-sm"
+                      disabled={bannedUsersPage >= (bannedUsers?.totalPages ?? 1)}
+                      onClick={() => setBannedUsersPage((page) => page + 1)}
+                    >
+                      »
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Overview Tab */}
         {selectedTab === 'overview' && (

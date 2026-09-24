@@ -13,9 +13,9 @@ export async function evaluateLevel(
   const user = await User.findById(userId).select('stats').lean();
   if (!user?.stats) return { met: false, progress: 0 };
 
-  const validStats = ['userLevel', 'readingLevel', 'listeningLevel'];
-  const statKey = validStats.includes(stat) ? stat : 'userLevel';
-  const level = (user.stats as any)[statKey] ?? 1;
+  const validStats = ['userLevel', 'readingLevel', 'listeningLevel'] as const;
+  const statKey = validStats.find((key) => key === stat) ?? 'userLevel';
+  const level = user.stats[statKey] ?? 1;
 
   return { met: level >= threshold, progress: level };
 }

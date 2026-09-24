@@ -149,6 +149,11 @@ const MIGRATIONS = [
         description: 'Paginated activity comments',
       },
       {
+        key: { activity: 1, parentComment: 1, createdAt: -1 },
+        name: 'activity_1_parentComment_1_createdAt_-1',
+        description: 'Activity comment thread lookups',
+      },
+      {
         key: { user: 1, createdAt: -1 },
         name: 'user_1_createdAt_-1',
         description: 'Comment moderation by author',

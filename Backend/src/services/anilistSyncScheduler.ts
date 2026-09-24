@@ -22,7 +22,9 @@ const USER_DELAY_MS = 2100;
 let isRunning = false;
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 export async function runAnilistSyncCycle(): Promise<{

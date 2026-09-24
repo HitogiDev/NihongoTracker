@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
-import { Types } from 'mongoose';
 import { IEditedFields, ILog, IStats, IUser } from '../types.js';
 import { calculateLevel, calculateXp } from './calculateLevel.js';
 import User from '../models/user.model.js';
@@ -100,9 +100,9 @@ export default async function updateStats(
     if (!user || !user.stats) {
       throw apiError('user.noStats', 404, 'User does not have stats');
     }
-    let type: string,
-      xp: number,
-      editedFields: IEditedFields | null | undefined;
+    let type: string;
+      let xp: number;
+      let editedFields: IEditedFields | null | undefined;
     let log: ILog | null;
     const userStats = user.stats;
     if (res.locals.importedStats) {
@@ -154,10 +154,10 @@ export default async function updateStats(
     updateLevelAndXp(userStats, 'user');
 
     // Ensure we're handling NaN values
-    if (isNaN(userStats.listeningXp)) {
+    if (Number.isNaN(Number(userStats.listeningXp))) {
       userStats.listeningXp = 0;
     }
-    if (isNaN(userStats.readingXp)) {
+    if (Number.isNaN(Number(userStats.readingXp))) {
       userStats.readingXp = 0;
     }
 

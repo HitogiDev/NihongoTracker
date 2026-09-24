@@ -31,6 +31,10 @@ import { evaluateStreakAfterBreak } from './conditions/streakAfterBreak.conditio
 import { evaluateRankDethroned } from './conditions/rankDethroned.condition.js';
 import { evaluateSecretAchievementCount } from './conditions/secretAchievementCount.condition.js';
 import { evaluateEarlyAdopter } from './conditions/earlyAdopter.condition.js';
+import { evaluateCompletedMediaCount } from './conditions/completedMediaCount.condition.js';
+import { evaluateCompletedClubChallenges } from './conditions/completedClubChallenges.condition.js';
+import { evaluateReadingListeningLevel } from './conditions/readingListeningLevel.condition.js';
+import { evaluateReadingListeningDays } from './conditions/readingListeningDays.condition.js';
 import {
   createNotification,
   removeNotifications,
@@ -51,6 +55,7 @@ const TIMEZONE_SENSITIVE_CONDITIONS = new Set([
   'consecutiveDaysWithHours',
   'streakComeback',
   'streakAfterBreak',
+  'readingListeningDays',
 ]);
 
 /**
@@ -185,6 +190,22 @@ export async function evaluateCondition(
 
     case 'earlyAdopter':
       return evaluateEarlyAdopter(userId, condition.threshold ?? 100);
+
+    case 'completedMediaCount':
+      return evaluateCompletedMediaCount(userId, condition.threshold ?? 1);
+
+    case 'completedClubChallenges':
+      return evaluateCompletedClubChallenges(userId, condition.threshold ?? 1);
+
+    case 'readingListeningLevel':
+      return evaluateReadingListeningLevel(userId, condition.threshold ?? 1);
+
+    case 'readingListeningDays':
+      return evaluateReadingListeningDays(
+        userId,
+        condition.threshold ?? 7,
+        timezone
+      );
 
     case 'mediaReleasedBefore':
       return evaluateMediaReleasedBefore(
@@ -544,6 +565,9 @@ function getRelevantConditions(context: IAchievementCheckContext): string[] {
         'rankDethroned',
         'secretAchievementCount',
         'earlyAdopter',
+        'completedMediaCount',
+        'readingListeningLevel',
+        'readingListeningDays',
       ].filter(
         (condition) =>
           condition !== 'logDuringAiring' ||
@@ -553,7 +577,13 @@ function getRelevantConditions(context: IAchievementCheckContext): string[] {
     case 'streak':
       return ['streak', 'streakComeback', 'streakAfterBreak'];
     case 'levelup':
-      return ['level', 'totalXp'];
+      return ['level', 'totalXp', 'readingListeningLevel'];
+    case 'mediaComplete':
+      return ['completedMediaCount'];
+    case 'clubChallengeComplete':
+      return ['completedClubChallenges'];
+    case 'clubJoin':
+      return ['clubsJoined'];
     case 'manual':
       return [];
     default:

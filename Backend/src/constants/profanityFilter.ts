@@ -105,7 +105,7 @@ function stemVariants(token: string): string[] {
   const stripped = token.replace(/(ing|ers|er|es|ed|s)$/i, '');
   if (stripped && stripped !== token) {
     variants.add(stripped);
-    variants.add(stripped + 'e');
+    variants.add(`${stripped  }e`);
   }
   return [...variants];
 }

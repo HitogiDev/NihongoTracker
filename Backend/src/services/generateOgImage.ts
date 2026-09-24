@@ -53,7 +53,7 @@ export async function generateProfileOgImage(
 ): Promise<Buffer> {
   const { user } = options;
   const canvas = createCanvas(W, H);
-  const ctx = canvas.getContext('2d') as any;
+  const ctx = canvas.getContext('2d');
 
   // 1 ── Background ────────────────────────────────────────────────────────────
   if (user.banner) {
@@ -196,9 +196,9 @@ function drawFlatBg(ctx: any): void {
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   const step = 115;
-  for (let row = 0; row * step < H + step; row++) {
+  for (let row = 0; row * step < H + step; row += 1) {
     const offset = (row % 2) * (step / 2);
-    for (let col = 0; col * step < W + step; col++) {
+    for (let col = 0; col * step < W + step; col += 1) {
       ctx.fillText('日', col * step + offset, row * step);
     }
   }
@@ -245,7 +245,7 @@ function rrect(
 }
 
 function fmtNum(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)  }M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)  }K`;
   return n.toString();
 }

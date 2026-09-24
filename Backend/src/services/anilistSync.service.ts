@@ -135,7 +135,9 @@ export interface IAnilistViewer {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 /** Identify the account behind an access token (used right after OAuth). */

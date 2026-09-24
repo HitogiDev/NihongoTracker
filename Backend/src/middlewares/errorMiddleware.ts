@@ -2,13 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 
 export class customError extends Error {
   statusCode: number;
+
   kind?: string;
+
   /**
    * Stable identifier the client maps to a translated message. Optional so the
    * hundreds of existing `new customError(message, status)` call sites keep
    * working untouched while they are migrated to `apiError()`.
    */
   code?: string;
+
   /** Interpolation values for the translated message. */
   params?: Record<string, string | number>;
 
@@ -56,8 +59,8 @@ export function errorHandler(
       : new customError(err.message || 'Internal Server Error', 500);
 
   let statusCode = error.statusCode === 200 ? 500 : error.statusCode;
-  let message = error.message;
-  let code = error.code;
+  let {message} = error;
+  let {code} = error;
 
   // Manejo específico de errores de MongoDB
   if (err.name === 'CastError' && 'kind' in err && err.kind === 'ObjectId') {

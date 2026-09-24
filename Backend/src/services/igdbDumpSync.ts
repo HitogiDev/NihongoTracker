@@ -246,7 +246,7 @@ function mapStateToStatus(
 }
 
 async function getStateDocument(): Promise<IIgdbDumpSyncState | null> {
-  return await IgdbDumpSyncState.findById(IGDB_DUMP_SYNC_STATE_ID)
+  return IgdbDumpSyncState.findById(IGDB_DUMP_SYNC_STATE_ID)
     .lean<IIgdbDumpSyncState>()
     .exec();
 }
@@ -254,7 +254,7 @@ async function getStateDocument(): Promise<IIgdbDumpSyncState | null> {
 async function updateState(
   update: Record<string, unknown>
 ): Promise<IIgdbDumpSyncState | null> {
-  return await IgdbDumpSyncState.findByIdAndUpdate(
+  return IgdbDumpSyncState.findByIdAndUpdate(
     IGDB_DUMP_SYNC_STATE_ID,
     update,
     {
@@ -273,7 +273,7 @@ async function acquireLock(
   const now = new Date();
   const lockUntil = new Date(now.getTime() + getLockDurationMs());
 
-  return await IgdbDumpSyncState.findOneAndUpdate(
+  return IgdbDumpSyncState.findOneAndUpdate(
     {
       _id: IGDB_DUMP_SYNC_STATE_ID,
       $or: [
@@ -409,7 +409,7 @@ function parseStringArray(value: unknown): string[] {
   }
 
   return raw
-    .replace(/[{}\[\]"]/g, '')
+    .replace(/[{}"]/g, '').split('[').join('').split(']').join('')
     .split(',')
     .map((item) => item.trim())
     .filter((item) => item.length > 0 && item.toLowerCase() !== 'null');

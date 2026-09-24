@@ -114,16 +114,20 @@ function normalizeGame(game: IgdbGame): IMediaDocument | null {
   } as IMediaDocument;
 }
 
-export async function searchIgdb(query: string): Promise<IMediaDocument[]> {
+export async function searchIgdb(
+  query: string,
+  resultLimit = 50
+): Promise<IMediaDocument[]> {
   try {
     const accessToken = await getAccessToken();
     const clientId = process.env.IGDB_CLIENT_ID!;
+    const limit = Math.min(Math.max(Math.floor(resultLimit), 1), 50);
 
     const response = await axios.post<IgdbGame[]>(
       `${IGDB_API_URL}/games`,
       `search "${query.replace(/"/g, '\\"')}";
 fields name, category, cover.image_id, alternative_names.name, alternative_names.comment, summary, platforms.name, genres.name, screenshots.image_id, language_supports.language.locale, language_supports.language.name;
-limit 10;`,
+limit ${limit};`,
       {
         headers: {
           'Client-ID': clientId,

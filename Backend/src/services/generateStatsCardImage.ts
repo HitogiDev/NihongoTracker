@@ -73,7 +73,9 @@ function fmtCompact(n: number): string {
   for (const { limit, suffix } of units) {
     if (v < limit) continue;
     const scaled = v / limit;
-    const decimals = scaled < 10 ? 2 : scaled < 100 ? 1 : 0;
+    let decimals = 0;
+    if (scaled < 10) decimals = 2;
+    else if (scaled < 100) decimals = 1;
     // Trim trailing zeros / dot: 1.30 -> 1.3, 5.00 -> 5
     const s = scaled.toFixed(decimals).replace(/\.?0+$/, '');
     return `${s}${suffix}`;
@@ -127,7 +129,7 @@ export async function generateStatsCardImage(
 ): Promise<Buffer> {
   const { user, dateLabel, tiles } = options;
   const canvas = createCanvas(W * SCALE, H * SCALE);
-  const ctx = canvas.getContext('2d') as any;
+  const ctx = canvas.getContext('2d');
   ctx.scale(SCALE, SCALE);
 
   // 1 ── Background + 日 watermark ─────────────────────────────────────────────
@@ -336,9 +338,9 @@ function drawFlatBg(ctx: any): void {
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   const step = 115;
-  for (let row = 0; row * step < H + step; row++) {
+  for (let row = 0; row * step < H + step; row += 1) {
     const offset = (row % 2) * (step / 2);
-    for (let col = 0; col * step < W + step; col++) {
+    for (let col = 0; col * step < W + step; col += 1) {
       ctx.fillText('日', col * step + offset, row * step);
     }
   }
@@ -409,5 +411,5 @@ function withAlpha(hex: string, alpha: number): string {
 
 function clampLabel(label: string): string {
   const s = (label || '').trim();
-  return s.length > 40 ? s.slice(0, 39) + '…' : s;
+  return s.length > 40 ? `${s.slice(0, 39)  }…` : s;
 }

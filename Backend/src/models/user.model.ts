@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import bcrypt from 'bcryptjs';
 import {
   IUser,
   userRoles,
@@ -17,8 +18,8 @@ import {
   SIGNATURE_STATS,
   BANNER_EFFECTS,
   SOCIAL_VISIBILITIES,
+  COMMENT_PERMISSIONS,
 } from '../types.js';
-import bcrypt from 'bcryptjs';
 import Log from './log.model.js';
 import { calculateXp } from '../services/calculateLevel.js';
 import { getCustomizationDowngrade } from '../services/customization.js';
@@ -79,6 +80,11 @@ const SettingsSchema = new Schema<IUserSettings>(
             type: String,
             enum: SOCIAL_VISIBILITIES,
             default: 'public',
+          },
+          commenting: {
+            type: String,
+            enum: COMMENT_PERMISSIONS,
+            default: 'everyone',
           },
         },
         { _id: false }
@@ -380,7 +386,7 @@ UserSchema.pre(
 
 UserSchema.post(
   'findOneAndDelete',
-  async function cleanupFollowRelationships(user: IUser | null) {
+  async (user: IUser | null) => {
     if (!user) return;
     const { deleteSocialDataForUser } = await import(
       '../services/activity.service.js'
@@ -406,7 +412,7 @@ UserSchema.pre(
 UserSchema.method(
   'matchPassword',
   async function (enteredPassword: string): Promise<boolean> {
-    return await bcrypt.compare(enteredPassword, this.password);
+    return bcrypt.compare(enteredPassword, this.password);
   }
 );
 

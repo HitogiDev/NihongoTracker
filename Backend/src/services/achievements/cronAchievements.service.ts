@@ -178,7 +178,7 @@ async function checkFullImmersionMonth(
 
   let daysLogged = 0;
   for (const key of loggedKeys) {
-    if (key.startsWith(monthPrefix)) daysLogged++;
+    if (key.startsWith(monthPrefix)) daysLogged += 1;
   }
 
   return daysLogged >= total;
@@ -258,7 +258,7 @@ async function checkWeekendWarrior(
   const loggedSet = await getLoggedDayKeys(userId, timezone, start, end);
 
   // Walk back through the last 4 weekends (Sat + Sun pairs)
-  for (let w = 0; w < 4; w++) {
+  for (let w = 0; w < 4; w += 1) {
     const satKey = shiftDayKey(lastSatKey, -7 * w);
     const sunKey = shiftDayKey(satKey, 1);
     if (!loggedSet.has(satKey) || !loggedSet.has(sunKey)) return false;
@@ -300,7 +300,7 @@ async function checkMondayMotivation(
 
   // Longest run of Mondays exactly 7 days apart
   let run = 1;
-  for (let i = 1; i < mondayKeys.length; i++) {
+  for (let i = 1; i < mondayKeys.length; i += 1) {
     run = shiftDayKey(mondayKeys[i - 1], 7) === mondayKeys[i] ? run + 1 : 1;
     if (run >= 10) return true;
   }
@@ -435,7 +435,7 @@ export async function runDailyCronAchievements(): Promise<void> {
         for (const { year, month } of monthsToCheck) {
           if (await checkFullImmersionMonth(userId, year, month, timezone)) {
             if (await grantIfUnowned(userId, 'full_immersion_month')) {
-              granted++;
+              granted += 1;
             }
           }
         }
@@ -443,14 +443,14 @@ export async function runDailyCronAchievements(): Promise<void> {
         // 2. Clockwork — check last 14 days
         if (await checkClockwork14Days(userId, timezone)) {
           if (await grantIfUnowned(userId, 'clockwork')) {
-            granted++;
+            granted += 1;
           }
         }
 
         // 3. No Days Off
         if (await checkNoDaysOff(userId, createdAt, timezone)) {
           if (await grantIfUnowned(userId, 'no_days_off')) {
-            granted++;
+            granted += 1;
           }
         }
       } catch (err) {
@@ -489,13 +489,13 @@ async function awardWeeklyRanks(
     const userId = new Types.ObjectId(userIdString);
 
     if (position <= 10 && (await grantIfUnowned(userId, 'rank_top10', position))) {
-      granted++;
+      granted += 1;
     }
     if (position <= 3 && (await grantIfUnowned(userId, 'rank_podium', position))) {
-      granted++;
+      granted += 1;
     }
     if (position === 1 && (await grantIfUnowned(userId, 'rank_king', position))) {
-      granted++;
+      granted += 1;
     }
 
     // Save weekly snapshot for Consistent tracking
@@ -594,7 +594,7 @@ export async function backfillRankAchievements(options?: {
   while (cursor.getTime() < openWeekStart.getTime()) {
     const weekEnd = new Date(cursor.getTime() + WEEK_MS);
     granted += await awardWeeklyRanks(cursor, weekEnd, eligible);
-    weeks++;
+    weeks += 1;
     options?.onWeek?.({ weekStart: cursor, index: weeks, total });
     cursor = weekEnd;
   }
@@ -603,7 +603,7 @@ export async function backfillRankAchievements(options?: {
   // every week has been replayed.
   for (const { _id: userId } of users) {
     if (await checkRankConsistent(userId)) {
-      if (await grantIfUnowned(userId, 'rank_consistent')) granted++;
+      if (await grantIfUnowned(userId, 'rank_consistent')) granted += 1;
     }
   }
 
@@ -632,14 +632,14 @@ export async function runWeeklyCronAchievements(): Promise<void> {
         // 1. Weekend Warrior
         if (await checkWeekendWarrior(userId, timezone)) {
           if (await grantIfUnowned(userId, 'weekend_warrior')) {
-            granted++;
+            granted += 1;
           }
         }
 
         // 2. Monday Motivation
         if (await checkMondayMotivation(userId, timezone)) {
           if (await grantIfUnowned(userId, 'monday_motivation')) {
-            granted++;
+            granted += 1;
           }
         }
 
@@ -647,7 +647,7 @@ export async function runWeeklyCronAchievements(): Promise<void> {
         //    (rank_top10/podium/king were already granted by awardWeeklyRanks)
         if (await checkRankConsistent(userId)) {
           if (await grantIfUnowned(userId, 'rank_consistent')) {
-            granted++;
+            granted += 1;
           }
         }
       } catch (err) {

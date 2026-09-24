@@ -65,12 +65,12 @@ export async function evaluateMediaTypesInWeek(
   let maxTypes = 0;
   let windowStart = 0;
 
-  for (let i = 0; i < days.length; i++) {
+  for (let i = 0; i < days.length; i += 1) {
     add(days[i].types);
 
     while (days[i].time - days[windowStart].time >= WINDOW_MS) {
       remove(days[windowStart].types);
-      windowStart++;
+      windowStart += 1;
     }
 
     if (counts.size > maxTypes) maxTypes = counts.size;

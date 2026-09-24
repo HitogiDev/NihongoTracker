@@ -1,6 +1,6 @@
+import { Types } from 'mongoose';
 import User from '../models/user.model.js';
 import Log from '../models/log.model.js';
-import { Types } from 'mongoose';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -72,7 +72,7 @@ export async function recalculateStreaksForUser(
 
   let current = 0;
   let longest = 0;
-  for (let i = 0; i < dayKeys.length; i++) {
+  for (let i = 0; i < dayKeys.length; i += 1) {
     if (i === 0) {
       current = 1;
       longest = 1;

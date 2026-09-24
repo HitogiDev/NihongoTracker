@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
 import User from '../models/user.model.js';
 import ApiKey from '../models/apiKey.model.js';
-import { Request, Response, NextFunction } from 'express';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
 import { decodedJWT } from '../types.js';

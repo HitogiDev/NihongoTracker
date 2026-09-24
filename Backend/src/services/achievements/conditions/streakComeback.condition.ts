@@ -20,7 +20,7 @@ export async function evaluateStreakComeback(
   let bestBefore = runs[0].length;
   let bestComeback = 0;
 
-  for (let i = 1; i < runs.length; i++) {
+  for (let i = 1; i < runs.length; i += 1) {
     // Every run after the first follows a broken streak
     if (runs[i].length > bestBefore && runs[i].length > bestComeback) {
       bestComeback = runs[i].length;

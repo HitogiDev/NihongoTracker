@@ -322,6 +322,246 @@
     "xp_500000": {
       "description": "Consigue 500.000 XP en total.",
       "name": "Gran maestro"
+    },
+    "hours_10": {
+      "name": "Primeras diez horas",
+      "description": "Registra 10 horas de inmersión en total."
+    },
+    "hours_25": {
+      "name": "Cuarto de centenar",
+      "description": "Registra 25 horas de inmersión en total."
+    },
+    "hours_50": {
+      "name": "Medio centenar",
+      "description": "Registra 50 horas de inmersión en total."
+    },
+    "hours_250": {
+      "name": "Doscientas cincuenta horas",
+      "description": "Registra 250 horas de inmersión en total."
+    },
+    "hours_750": {
+      "name": "Club de las 750 horas",
+      "description": "Registra 750 horas de inmersión en total."
+    },
+    "logs_5": {
+      "name": "Cinco registros",
+      "description": "Crea 5 registros de inmersión."
+    },
+    "logs_25": {
+      "name": "Bitácora en marcha",
+      "description": "Crea 25 registros de inmersión."
+    },
+    "logs_250": {
+      "name": "Cronista de inmersión",
+      "description": "Crea 250 registros de inmersión."
+    },
+    "xp_5000": {
+      "name": "Cinco mil XP",
+      "description": "Consigue 5.000 XP en total."
+    },
+    "xp_25000": {
+      "name": "Reserva de XP",
+      "description": "Consigue 25.000 XP en total."
+    },
+    "achievements_10": {
+      "name": "Coleccionista de logros",
+      "description": "Desbloquea 10 logros."
+    },
+    "achievements_25": {
+      "name": "Vitrina de logros",
+      "description": "Desbloquea 25 logros."
+    },
+    "anime_episodes_12": {
+      "name": "Doce episodios",
+      "description": "Registra 12 episodios de anime."
+    },
+    "anime_episodes_50": {
+      "name": "Temporada completa",
+      "description": "Registra 50 episodios de anime."
+    },
+    "anime_episodes_100": {
+      "name": "Créditos iniciales",
+      "description": "Registra 100 episodios de anime."
+    },
+    "manga_hours_10": {
+      "name": "Viñeta a viñeta",
+      "description": "Registra 10 horas de manga."
+    },
+    "manga_hours_50": {
+      "name": "Maratón de manga",
+      "description": "Registra 50 horas de manga."
+    },
+    "light_novel_hours_10": {
+      "name": "Nuevo volumen",
+      "description": "Registra 10 horas de novelas ligeras."
+    },
+    "light_novel_hours_50": {
+      "name": "Biblioteca de novelas ligeras",
+      "description": "Registra 50 horas de novelas ligeras."
+    },
+    "reading_hours_10": {
+      "name": "Pasapáginas",
+      "description": "Registra 10 horas de lectura libre."
+    },
+    "reading_hours_50": {
+      "name": "Pila de páginas",
+      "description": "Registra 50 horas de lectura libre."
+    },
+    "vn_hours_10": {
+      "name": "Primera ruta",
+      "description": "Registra 10 horas de novelas visuales."
+    },
+    "vn_hours_100": {
+      "name": "Coleccionista de rutas",
+      "description": "Registra 100 horas de novelas visuales."
+    },
+    "audio_hours_10": {
+      "name": "Oído japonés",
+      "description": "Registra 10 horas de contenido de audio."
+    },
+    "audio_hours_100": {
+      "name": "Oyente fiel",
+      "description": "Registra 100 horas de contenido de audio."
+    },
+    "video_hours_10": {
+      "name": "Un rato de vídeo",
+      "description": "Registra 10 horas de vídeo."
+    },
+    "video_hours_50": {
+      "name": "Horas de pantalla",
+      "description": "Registra 50 horas de vídeo."
+    },
+    "game_hours_10": {
+      "name": "Pulsa start",
+      "description": "Registra 10 horas de videojuegos."
+    },
+    "game_hours_50": {
+      "name": "¿Continuar?",
+      "description": "Registra 50 horas de videojuegos."
+    },
+    "movie_hours_10": {
+      "name": "Doble función",
+      "description": "Registra 10 horas de películas."
+    },
+    "movie_hours_50": {
+      "name": "Aficionado al cine",
+      "description": "Registra 50 horas de películas."
+    },
+    "tv_hours_10": {
+      "name": "Maratón de series",
+      "description": "Registra 10 horas de series."
+    },
+    "reading_level_5": {
+      "name": "Despegue lector",
+      "description": "Alcanza el nivel 5 de lectura."
+    },
+    "reading_level_10": {
+      "name": "Ritmo lector",
+      "description": "Alcanza el nivel 10 de lectura."
+    },
+    "reading_level_25": {
+      "name": "Especialista en lectura",
+      "description": "Alcanza el nivel 25 de lectura."
+    },
+    "listening_level_5": {
+      "name": "Despegue auditivo",
+      "description": "Alcanza el nivel 5 de escucha."
+    },
+    "listening_level_10": {
+      "name": "Ritmo auditivo",
+      "description": "Alcanza el nivel 10 de escucha."
+    },
+    "listening_level_25": {
+      "name": "Especialista en escucha",
+      "description": "Alcanza el nivel 25 de escucha."
+    },
+    "titles_5": {
+      "name": "Cinco títulos",
+      "description": "Registra 5 títulos distintos."
+    },
+    "titles_10": {
+      "name": "Diez títulos",
+      "description": "Registra 10 títulos distintos."
+    },
+    "titles_25": {
+      "name": "Estantería de 25",
+      "description": "Registra 25 títulos distintos."
+    },
+    "titles_50": {
+      "name": "Cincuenta títulos",
+      "description": "Registra 50 títulos distintos."
+    },
+    "media_types_3_week": {
+      "name": "Explorador de tres medios",
+      "description": "Registra 3 tipos de medio distintos en una semana."
+    },
+    "media_types_4_week": {
+      "name": "Cuatro formatos",
+      "description": "Registra 4 tipos de medio distintos en una semana."
+    },
+    "streak_14": {
+      "name": "Dos semanas firmes",
+      "description": "Mantén una racha de inmersión de 14 días."
+    },
+    "streak_60": {
+      "name": "Dos meses firmes",
+      "description": "Mantén una racha de inmersión de 60 días."
+    },
+    "streak_180": {
+      "name": "Hábito de medio año",
+      "description": "Mantén una racha de inmersión de 180 días."
+    },
+    "week_5h": {
+      "name": "Semana de cinco horas",
+      "description": "Registra 5 horas de inmersión en una semana."
+    },
+    "week_10h": {
+      "name": "Semana de diez horas",
+      "description": "Registra 10 horas de inmersión en una semana."
+    },
+    "week_16h": {
+      "name": "Semana de dieciséis horas",
+      "description": "Registra 16 horas de inmersión en una semana."
+    },
+    "day_2h": {
+      "name": "Día de dos horas",
+      "description": "Registra 2 horas de inmersión en un día."
+    },
+    "day_4h": {
+      "name": "Cuatro horas de enfoque",
+      "description": "Registra 4 horas de inmersión en un día."
+    },
+    "week_1h_7days": {
+      "name": "Una hora al día",
+      "description": "Registra al menos 1 hora al día durante 7 días consecutivos."
+    },
+    "first_club": {
+      "name": "Primer club",
+      "description": "Únete a un club de inmersión."
+    },
+    "completed_media_1": {
+      "name": "Créditos finales",
+      "description": "Completa tu primer título registrado."
+    },
+    "completed_media_5": {
+      "name": "Cinco obras terminadas",
+      "description": "Completa 5 títulos registrados."
+    },
+    "completed_media_10": {
+      "name": "Diez obras terminadas",
+      "description": "Completa 10 títulos registrados."
+    },
+    "club_challenge_1": {
+      "name": "Reto aceptado",
+      "description": "Completa un reto individual de un club."
+    },
+    "reading_listening_level_10": {
+      "name": "Habilidades equilibradas",
+      "description": "Alcanza el nivel 10 tanto en lectura como en escucha."
+    },
+    "reading_listening_days_7": {
+      "name": "Dos caras del japonés",
+      "description": "Registra lectura y escucha el mismo día en 7 días distintos."
     }
   },
   "rarity": {

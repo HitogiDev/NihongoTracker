@@ -1,7 +1,7 @@
-import User from '../models/user.model.js';
 import { Request, Response, NextFunction } from 'express';
-import generateToken from '../libs/jwt.js';
 import { FilterQuery } from 'mongoose';
+import User from '../models/user.model.js';
+import generateToken from '../libs/jwt.js';
 import {
   ILogin,
   IRegister,
@@ -143,9 +143,9 @@ export async function register(
 }
 
 export async function login(req: Request, res: Response, next: NextFunction) {
-  const { login, password }: ILogin = req.body;
+  const { login: loginValue, password }: ILogin = req.body;
   try {
-    if (!login || !password)
+    if (!loginValue || !password)
       throw apiError(
         'auth.credentialsRequired',
         400,
@@ -153,7 +153,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       );
 
     const user = await User.findOne({
-      $or: [{ username: login }, { email: { $exists: true, $eq: login } }],
+      $or: [{ username: loginValue }, { email: { $exists: true, $eq: loginValue } }],
     })
       .collation({
         locale: 'en',
@@ -196,13 +196,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         moderation: user.moderation,
         customization: user.customization ?? {},
       });
-    } else {
-      throw apiError(
-        'auth.invalidCredentials',
-        401,
-        'Incorrect login or password'
-      );
     }
+    throw apiError(
+      'auth.invalidCredentials',
+      401,
+      'Incorrect login or password'
+    );
   } catch (error) {
     return next(error as customError);
   }
@@ -371,7 +370,7 @@ export async function resendVerificationEmail(
   next: NextFunction
 ) {
   try {
-    const user = res.locals.user;
+    const {user} = res.locals;
 
     if (!user) {
       throw apiError('auth.notAuthenticated', 401, 'User not authenticated');
