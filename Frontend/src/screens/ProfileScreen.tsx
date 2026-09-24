@@ -66,10 +66,11 @@ const DATE_ONLY: Intl.DateTimeFormatOptions = {
 
 const RARITY_ORDER: Record<AchievementRarity, number> = {
   common: 0,
-  rare: 1,
-  epic: 2,
-  legendary: 3,
-  secret: 4,
+  uncommon: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
+  secret: 5,
 };
 
 /** Module scope: key names, never text. */
@@ -1548,9 +1549,10 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
         legendary: 1,
         epic: 2,
         rare: 3,
-        common: 4,
+        uncommon: 4,
+        common: 5,
       };
-      return (rarityOrder[a.rarity] ?? 5) - (rarityOrder[b.rarity] ?? 5);
+      return (rarityOrder[a.rarity] ?? 6) - (rarityOrder[b.rarity] ?? 6);
     })
     .slice(0, 6);
 

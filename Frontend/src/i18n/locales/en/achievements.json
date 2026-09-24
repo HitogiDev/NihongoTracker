@@ -565,6 +565,7 @@
   },
   "rarity": {
     "common": "Common",
+    "uncommon": "Uncommon",
     "rare": "Rare",
     "epic": "Epic",
     "legendary": "Legendary",

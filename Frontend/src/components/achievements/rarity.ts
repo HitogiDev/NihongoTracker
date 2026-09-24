@@ -7,6 +7,7 @@ import { AchievementRarity } from '../../types';
  */
 export const RARITY_COLOR: Record<AchievementRarity, string> = {
   common:    '#9ca3af',
+  uncommon:  '#34d399',
   rare:      '#60a5fa',
   epic:      '#a855f7',
   legendary: '#fbbf24',

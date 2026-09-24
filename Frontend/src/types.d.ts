@@ -1806,6 +1806,7 @@ export interface IGanttMediaItem {
 
 export type AchievementRarity =
   | 'common'
+  | 'uncommon'
   | 'rare'
   | 'epic'
   | 'legendary'
@@ -1879,7 +1880,7 @@ declare global {
   interface Window {
     /**
      * Replays the achievement reveal modal with demo data.
-     * Optional rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'secret'.
+     * Optional rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'secret'.
      */
     previewAchievementReveal?: (rarity?: string) => void;
     /** Replays the post-log celebration overlay with demo data. */

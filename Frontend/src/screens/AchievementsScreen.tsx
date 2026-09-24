@@ -29,11 +29,13 @@ import {
   Zap,
   Eye,
   Circle,
+  CircleDot,
   Crown,
 } from 'lucide-react';
 
 const RARITY_ORDER: AchievementRarity[] = [
   'common',
+  'uncommon',
   'rare',
   'epic',
   'legendary',
@@ -51,6 +53,7 @@ const RARITY_CONFIG: Record<
   }
 > = {
   common: { labelKey: 'rarity.common', icon: Circle },
+  uncommon: { labelKey: 'rarity.uncommon', icon: CircleDot },
   rare: { labelKey: 'rarity.rare', icon: Star },
   epic: { labelKey: 'rarity.epic', icon: Zap },
   legendary: { labelKey: 'rarity.legendary', icon: Crown },
@@ -165,6 +168,13 @@ export default function AchievementsScreen() {
     return (a.order ?? 99) - (b.order ?? 99);
   });
 
+  const firstAchievementIdByRarity = new Map<AchievementRarity, string>();
+  filtered.forEach((achievement) => {
+    if (!firstAchievementIdByRarity.has(achievement.rarity)) {
+      firstAchievementIdByRarity.set(achievement.rarity, achievement._id);
+    }
+  });
+
   const groupedAchievements = (() => {
     const shouldGroup = grouped && !search.trim();
     if (!shouldGroup) return { ungrouped: filtered };
@@ -252,20 +262,26 @@ export default function AchievementsScreen() {
           {rarityBreakdown.map(
             ({ rarity, earned: earnedCount, total: totalCount }) =>
               totalCount > 0 && (
-                <div
+                <button
+                  type="button"
                   key={rarity}
-                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border"
+                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
                   style={{
                     borderColor: rarityTint(rarity, '40'),
                     color: RARITY_COLOR[rarity],
                     background: rarityTint(rarity, '10'),
                   }}
+                  onClick={() =>
+                    document
+                      .getElementById(`achievement-rarity-${rarity}`)
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
                 >
                   <span>{t(RARITY_CONFIG[rarity].labelKey)}</span>
                   <span className="opacity-60">
                     {earnedCount}/{totalCount}
                   </span>
-                </div>
+                </button>
               )
           )}
         </div>
@@ -463,7 +479,11 @@ export default function AchievementsScreen() {
             const group = filtered.filter((a) => a.rarity === rarity);
             if (group.length === 0) return null;
             return (
-              <div key={rarity}>
+              <div
+                key={rarity}
+                id={`achievement-rarity-${rarity}`}
+                className="scroll-mt-24"
+              >
                 <div
                   className="flex items-center gap-2 mb-3 text-sm font-bold capitalize"
                   style={{ color: RARITY_COLOR[rarity] }}
@@ -490,7 +510,17 @@ export default function AchievementsScreen() {
           {'ungrouped' in groupedAchievements ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {groupedAchievements.ungrouped.map((a) => (
-                <AchievementCard key={a._id} achievement={a} />
+                <div
+                  key={a._id}
+                  id={
+                    firstAchievementIdByRarity.get(a.rarity) === a._id
+                      ? `achievement-rarity-${a.rarity}`
+                      : undefined
+                  }
+                  className="scroll-mt-24"
+                >
+                  <AchievementCard achievement={a} />
+                </div>
               ))}
             </div>
           ) : (
@@ -500,7 +530,11 @@ export default function AchievementsScreen() {
                 const RarityIcon = config.icon;
                 const earnedCount = items.filter((a) => a.isEarned).length;
                 return (
-                  <div key={rarity} className="space-y-4">
+                  <div
+                    key={rarity}
+                    id={`achievement-rarity-${rarity}`}
+                    className="space-y-4 scroll-mt-24"
+                  >
                     <div className="flex items-center gap-3 pb-2 border-b border-base-300">
                       <div
                         className="p-2 rounded-lg"

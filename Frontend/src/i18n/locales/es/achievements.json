@@ -566,6 +566,7 @@
   },
   "rarity": {
     "common": "Común",
+    "uncommon": "Poco común",
     "rare": "Rara",
     "epic": "Épica",
     "legendary": "Legendaria",

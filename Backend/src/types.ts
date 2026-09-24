@@ -1703,6 +1703,7 @@ export interface IApiKey extends Document {
 
 export type AchievementRarity =
   | 'common'
+  | 'uncommon'
   | 'rare'
   | 'epic'
   | 'legendary'

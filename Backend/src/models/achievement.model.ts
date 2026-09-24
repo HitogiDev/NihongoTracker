@@ -76,7 +76,7 @@ const AchievementSchema = new Schema<IAchievement>(
     rarity: {
       type: String,
       required: true,
-      enum: ['common', 'rare', 'epic', 'legendary', 'secret'],
+      enum: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'secret'],
     },
     iconSlug: { type: String, required: true, trim: true },
     isSecret: { type: Boolean, default: false },

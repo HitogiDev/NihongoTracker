@@ -152,12 +152,13 @@ export function playOvertake() {
   ]);
 }
 
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'secret';
+type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'secret';
 
 /** Chord that scales with achievement rarity — richer the rarer. */
 export function playAchievement(rarity: Rarity = 'common') {
   const chords: Record<Rarity, number[]> = {
     common: [659.25, 987.77],
+    uncommon: [622.25, 932.33, 1244.51],
     rare: [587.33, 880, 1174.66],
     epic: [523.25, 783.99, 1046.5, 1318.5],
     legendary: [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98],
