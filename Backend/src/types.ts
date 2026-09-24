@@ -1817,6 +1817,8 @@ export interface IAchievementCheckContext {
   log?: ILog;
   streakValue?: number;
   levelValue?: number;
+  /** Admin backfills should not create historical social activity entries. */
+  recordActivity?: boolean;
 }
 
 export type MediaListMediaType =

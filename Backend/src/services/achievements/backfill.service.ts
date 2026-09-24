@@ -67,7 +67,10 @@ export async function backfillAchievementsForAllUsers(
 
       let granted = 0;
       for (const trigger of TRIGGERS) {
-        const newlyGranted = await checkAchievements(userId, { trigger });
+        const newlyGranted = await checkAchievements(userId, {
+          trigger,
+          recordActivity: false,
+        });
         granted += newlyGranted.length;
       }
 

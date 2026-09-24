@@ -622,7 +622,8 @@ export async function adminGrantAchievement(
 
     const granted = await grantAchievement(
       user._id as Types.ObjectId,
-      achievement._id as Types.ObjectId
+      achievement._id as Types.ObjectId,
+      { recordActivity: false }
     );
 
     if (!granted) {

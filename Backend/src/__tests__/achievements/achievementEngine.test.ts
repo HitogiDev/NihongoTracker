@@ -18,6 +18,7 @@ import UserAchievement from '../../models/userAchievement.model.js';
 import { evaluateLogCount } from '../../services/achievements/conditions/logCount.condition.js';
 import { evaluateStreak } from '../../services/achievements/conditions/streak.condition.js';
 import { evaluateTotalHours } from '../../services/achievements/conditions/totalHours.condition.js';
+import { recordAchievementActivity } from '../../services/activityEvents.service.js';
 
 // ─── Mock all models ──────────────────────────────────────────────────────────
 
@@ -34,6 +35,10 @@ vi.mock('../../models/achievement.model.js', () => ({
 // Notification delivery is a side effect of unlocking; keep it out of these tests.
 vi.mock('../../services/notifications.service.js', () => ({
   createNotification: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('../../services/activityEvents.service.js', () => ({
+  recordAchievementActivity: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../models/userAchievement.model.js', () => ({
@@ -179,6 +184,27 @@ describe('checkAchievements', () => {
     expect(result).toHaveLength(1);
     expect(result[0].key).toBe('test_achievement');
     expect(UserAchievement.findOneAndUpdate).toHaveBeenCalledOnce();
+    expect(recordAchievementActivity).toHaveBeenCalledOnce();
+  });
+
+  it('does not record activity when activity recording is disabled', async () => {
+    const achievement = makeAchievement({
+      condition: { type: 'logCount', threshold: 10 },
+    });
+
+    vi.mocked(Achievement.find).mockReturnValue({
+      lean: vi.fn().mockResolvedValue([achievement]),
+    } as unknown as ReturnType<typeof Achievement.find>);
+
+    mockEarnedIds([]);
+    vi.mocked(evaluateLogCount).mockResolvedValue({ met: true, progress: 10 });
+
+    await checkAchievements(userId, {
+      trigger: 'log',
+      recordActivity: false,
+    });
+
+    expect(recordAchievementActivity).not.toHaveBeenCalled();
   });
 
   it('skips achievements the user has already earned', async () => {
@@ -286,5 +312,25 @@ describe('grantAchievement', () => {
     const result = await grantAchievement(userId, achievementId);
     expect(result).toBe(false);
     expect(UserAchievement.create).not.toHaveBeenCalled();
+  });
+
+  it('does not record activity when an admin grant disables activity recording', async () => {
+    const achievement = makeAchievement({
+      description: 'Test description',
+      iconSlug: 'test',
+      rarity: 'common',
+    });
+    vi.mocked(Achievement.findById).mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      lean: vi.fn().mockResolvedValue(achievement),
+    } as unknown as ReturnType<typeof Achievement.findById>);
+    vi.mocked(UserAchievement.findOne).mockResolvedValue(null);
+    vi.mocked(UserAchievement.create).mockResolvedValue(
+      {} as unknown as Awaited<ReturnType<typeof UserAchievement.create>>
+    );
+
+    await grantAchievement(userId, achievementId, { recordActivity: false });
+
+    expect(recordAchievementActivity).not.toHaveBeenCalled();
   });
 });

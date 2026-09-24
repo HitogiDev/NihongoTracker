@@ -346,10 +346,12 @@ export async function checkAchievements(
               },
             });
           }
-          await recordAchievementActivity(
-            userId,
-            achievement as unknown as IAchievement
-          );
+          if (context.recordActivity !== false) {
+            await recordAchievementActivity(
+              userId,
+              achievement as unknown as IAchievement
+            );
+          }
         } else if (progress > 0) {
           // Update progress for countable achievements (non-blocking)
           UserAchievement.findOneAndUpdate(
@@ -475,7 +477,8 @@ export async function dismissAchievementNotifications(
  */
 export async function grantAchievement(
   userId: Types.ObjectId,
-  achievementId: Types.ObjectId
+  achievementId: Types.ObjectId,
+  options: { recordActivity?: boolean } = {}
 ): Promise<boolean> {
   const existing = await UserAchievement.findOne({
     user: userId,
@@ -524,10 +527,12 @@ export async function grantAchievement(
         },
       });
     }
-    await recordAchievementActivity(
-      userId,
-      achievement as unknown as IAchievement
-    );
+    if (options.recordActivity !== false) {
+      await recordAchievementActivity(
+        userId,
+        achievement as unknown as IAchievement
+      );
+    }
   }
 
   return true;
