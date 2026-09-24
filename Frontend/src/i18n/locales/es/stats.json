@@ -22,6 +22,8 @@
   },
   "charts": {
     "bar": "Barras",
+    "byLog": "Por log",
+    "byMediaAverage": "Media por obra",
     "difficultyAxis": "Dificultad de Jiten (%)",
     "hours": "Horas",
     "immersionTimeline": "Cronología de inmersión",
@@ -36,7 +38,10 @@
     "timelineHint": "Cada barra va desde tu primera hasta tu última sesión logueada",
     "view": "Vista:",
     "tooltipDifficulty": "Dificultad: {{value}}%",
+    "tooltipLogCount": "{{count}} logs",
+    "tooltipMedia": "Obra: {{value}}",
     "tooltipSpeed": "Velocidad: {{value}} caracteres/hora",
+    "unknownMedia": "Obra desconocida",
     "xpDistribution": "Distribución de la XP"
   },
   "common": {

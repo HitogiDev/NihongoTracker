@@ -22,6 +22,8 @@
   },
   "charts": {
     "bar": "Bar",
+    "byLog": "By log",
+    "byMediaAverage": "Average by media",
     "difficultyAxis": "Jiten difficulty (%)",
     "hours": "Hours",
     "immersionTimeline": "Immersion Timeline",
@@ -36,7 +38,10 @@
     "timelineHint": "Each bar spans from your first to your last log session for",
     "view": "View:",
     "tooltipDifficulty": "Difficulty: {{value}}%",
+    "tooltipLogCount": "{{count}} logs",
+    "tooltipMedia": "Media: {{value}}",
     "tooltipSpeed": "Speed: {{value}} characters/hour",
+    "unknownMedia": "Unknown media",
     "xpDistribution": "XP Distribution"
   },
   "common": {

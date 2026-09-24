@@ -3037,7 +3037,7 @@ export async function getUserStats(
           contentId: { $in: difficultyMediaIds },
           jitenDifficulty: { $ne: null },
         })
-          .select('contentId jitenDifficulty')
+          .select('contentId jitenDifficulty title')
           .lean()
       : [];
     const readingSpeedByDifficultyData = buildReadingSpeedByDifficultyData(

@@ -1178,6 +1178,8 @@ interface IUserStats {
   readingSpeedByDifficultyData?: Array<{
     date: Date;
     type: string;
+    mediaId: string;
+    mediaTitle: string;
     difficulty: number;
     charsPerHour: number;
   }>;

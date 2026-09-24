@@ -16,12 +16,20 @@ describe('buildReadingSpeedByDifficultyData', () => {
             mediaId: 'book-1',
           },
         ],
-        [{ contentId: 'book-1', jitenDifficulty: 2.5 }]
+        [
+          {
+            contentId: 'book-1',
+            jitenDifficulty: 2.5,
+            title: { contentTitleNative: '本の名前' },
+          },
+        ]
       )
     ).toEqual([
       {
         date,
         type: 'book',
+        mediaId: 'book-1',
+        mediaTitle: '本の名前',
         difficulty: 50,
         charsPerHour: 12000,
       },
@@ -44,8 +52,15 @@ describe('buildReadingSpeedByDifficultyData', () => {
           { ...log, mediaId: 'valid', chars: 0 },
         ],
         [
-          { contentId: 'missing-difficulty', jitenDifficulty: null },
-          { contentId: 'valid', jitenDifficulty: 4 },
+          {
+            contentId: 'missing-difficulty',
+            jitenDifficulty: null,
+          },
+          {
+            contentId: 'valid',
+            jitenDifficulty: 4,
+            title: { contentTitleEnglish: 'Valid' },
+          },
         ]
       )
     ).toEqual([]);

@@ -11,11 +11,18 @@ export interface IReadingSpeedDifficultyLog {
 export interface IReadingSpeedDifficultyMedia {
   contentId: string;
   jitenDifficulty?: number | null;
+  title?: {
+    contentTitleNative?: string;
+    contentTitleRomaji?: string;
+    contentTitleEnglish?: string;
+  };
 }
 
 export interface IReadingSpeedByDifficulty {
   date: Date;
   type: string;
+  mediaId: string;
+  mediaTitle: string;
   difficulty: number;
   charsPerHour: number;
 }
@@ -24,20 +31,33 @@ export function buildReadingSpeedByDifficultyData(
   logs: IReadingSpeedDifficultyLog[],
   media: IReadingSpeedDifficultyMedia[]
 ): IReadingSpeedByDifficulty[] {
-  const difficultyByContentId = new Map<string, number>();
+  const difficultyByContentId = new Map<
+    string,
+    { difficulty: number; title: string }
+  >();
 
   media.forEach((entry) => {
     const difficulty = normalizeJitenDifficulty(entry.jitenDifficulty);
     if (difficulty !== null) {
-      difficultyByContentId.set(entry.contentId, difficulty);
+      const title =
+        entry.title?.contentTitleNative ||
+        entry.title?.contentTitleRomaji ||
+        entry.title?.contentTitleEnglish ||
+        entry.contentId;
+      difficultyByContentId.set(entry.contentId, { difficulty, title });
     }
   });
 
   return logs.flatMap((log) => {
-    const difficulty = log.mediaId
+    const mediaInfo = log.mediaId
       ? difficultyByContentId.get(log.mediaId)
       : undefined;
-    if (difficulty === undefined || log.time <= 0 || log.chars <= 0) {
+    if (
+      mediaInfo === undefined ||
+      !log.mediaId ||
+      log.time <= 0 ||
+      log.chars <= 0
+    ) {
       return [];
     }
 
@@ -45,7 +65,9 @@ export function buildReadingSpeedByDifficultyData(
       {
         date: log.date,
         type: log.type,
-        difficulty,
+        mediaId: log.mediaId,
+        mediaTitle: mediaInfo.title,
+        difficulty: mediaInfo.difficulty,
         charsPerHour: (log.chars * 60) / log.time,
       },
     ];
