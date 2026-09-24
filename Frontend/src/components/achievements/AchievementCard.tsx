@@ -11,6 +11,7 @@ import {
 } from '../../utils/achievementText';
 import { useTranslation } from 'react-i18next';
 import { useDateFormatting } from '../../hooks/useDateFormatting';
+import { getAchievementIconSlug } from '../../utils/achievementIcon';
 
 /**
  * Secrets keep their vague public line on someone else's profile; the user who
@@ -39,6 +40,7 @@ const DATE_ONLY: Intl.DateTimeFormatOptions = {
 
 interface AchievementIconProps {
   iconSlug?: string;
+  achievementKey: string;
   rarity: AchievementRarity;
   isEarned?: boolean;
   size?: number;
@@ -46,6 +48,7 @@ interface AchievementIconProps {
 
 function AchievementIcon({
   iconSlug,
+  achievementKey,
   rarity,
   isEarned = false,
   size = 32,
@@ -67,7 +70,7 @@ function AchievementIcon({
   return (
     <span className={isEarned ? '' : 'text-base-content/30'}>
       <Icon
-        icon={`game-icons:${iconSlug}`}
+        icon={`game-icons:${getAchievementIconSlug(iconSlug, achievementKey)}`}
         width={size}
         height={size}
         color={isEarned ? RARITY_COLOR[rarity] : 'currentColor'}
@@ -199,6 +202,7 @@ export function AchievementDetailModal({
               <AchievementIcon
                 size={56}
                 iconSlug={isSecret ? undefined : achievement.iconSlug}
+                achievementKey={achievement.key}
                 rarity={rarity}
                 isEarned={isEarned}
               />
@@ -361,6 +365,7 @@ export default function AchievementCard({
           >
             <AchievementIcon
               iconSlug={isSecret ? undefined : achievement.iconSlug}
+              achievementKey={achievement.key}
               rarity={rarity}
               isEarned={isEarned}
               size={compact ? 24 : 32}

@@ -7,6 +7,7 @@ import { RARITY_COLOR, rarityTint } from './rarity';
 import { AchievementDetailModal } from './AchievementCard';
 import { useDateFormatting } from '../../hooks/useDateFormatting';
 import { getAchievementName } from '../../utils/achievementText';
+import { getAchievementIconSlug } from '../../utils/achievementIcon';
 
 interface AchievementFeedItemProps {
   item: IPendingAchievement;
@@ -81,7 +82,7 @@ export default function AchievementFeedItem({
       <div className="shrink-0">
         {a.iconSlug ? (
           <Icon
-            icon={`game-icons:${a.iconSlug}`}
+            icon={`game-icons:${getAchievementIconSlug(a.iconSlug, a.key)}`}
             width={26}
             height={26}
             color={color}

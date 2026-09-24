@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getUserAchievementActivityFn } from '../../api/trackerApi';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
+import { getAchievementIconSlug } from '../../utils/achievementIcon';
 
 interface UserAchievementFeedProps {
   username: string;
@@ -46,7 +47,7 @@ export default function UserAchievementFeed({
             <div className="shrink-0">
               {a.iconSlug ? (
                 <Icon
-                  icon={`game-icons:${a.iconSlug}`}
+                  icon={`game-icons:${getAchievementIconSlug(a.iconSlug, a.key)}`}
                   width={24}
                   height={24}
                   color={color}

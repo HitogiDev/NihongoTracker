@@ -10,6 +10,7 @@ import {
   getAchievementName,
 } from '../../utils/achievementText';
 import { useTranslation } from 'react-i18next';
+import { getAchievementIconSlug } from '../../utils/achievementIcon';
 import { useDateFormatting } from '../../hooks/useDateFormatting';
 
 /** Per-rarity particle intensity for the flip-reveal burst. */
@@ -225,7 +226,7 @@ export default function AchievementRevealModal({
             >
               {a.iconSlug ? (
                 <Icon
-                  icon={`game-icons:${a.iconSlug}`}
+                  icon={`game-icons:${getAchievementIconSlug(a.iconSlug, a.key)}`}
                   width={96}
                   height={96}
                   color={rarityColor}

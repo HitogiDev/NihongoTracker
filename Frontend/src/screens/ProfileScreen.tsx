@@ -14,6 +14,7 @@ import {
   getUserAchievementActivityFn,
 } from '../api/trackerApi';
 import { Icon } from '@iconify/react';
+import { getAchievementIconSlug } from '../utils/achievementIcon';
 import AchievementFeedItem from '../components/achievements/AchievementFeedItem';
 import { AchievementDetailModal } from '../components/achievements/AchievementCard';
 import { RARITY_COLOR, rarityTint } from '../components/achievements/rarity';
@@ -1600,7 +1601,7 @@ function AchievementShowcaseWidget({ username }: { username: string }) {
                   >
                     {a.iconSlug ? (
                       <Icon
-                        icon={`game-icons:${a.iconSlug}`}
+                        icon={`game-icons:${getAchievementIconSlug(a.iconSlug, a.key)}`}
                         width={32}
                         height={32}
                         color={color}

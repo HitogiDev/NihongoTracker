@@ -4,6 +4,7 @@ import { getAchievementFeedFn } from '../../api/trackerApi';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { RARITY_COLOR, rarityTint } from './rarity';
+import { getAchievementIconSlug } from '../../utils/achievementIcon';
 
 export default function GlobalAchievementFeed() {
   const { t } = useTranslation('achievements');
@@ -42,7 +43,7 @@ export default function GlobalAchievementFeed() {
             <div className="shrink-0">
               {a.iconSlug ? (
                 <Icon
-                  icon={`game-icons:${a.iconSlug}`}
+                  icon={`game-icons:${getAchievementIconSlug(a.iconSlug, a.key)}`}
                   width={28}
                   height={28}
                   color={rarityColor}
