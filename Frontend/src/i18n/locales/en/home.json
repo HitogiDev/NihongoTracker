@@ -158,6 +158,23 @@
     "manageHiddenDescription": "Media you hid from quick actions can be restored here. Restored media will reappear in recent media when logged again.",
     "manageHiddenEmpty": "Nothing hidden yet."
   },
+  "onboarding": {
+    "beFair": "Keep dates honest",
+    "guidelinesLink": "community guidelines",
+    "guidelinesPrefix": "For more details, read the",
+    "importBody": "Already have logs in another tracker? You can import them from Settings. Or skip this and start fresh today.",
+    "importLink": "Go to import settings",
+    "importTitle": "Bring your old logs, if you want",
+    "later": "Maybe later",
+    "logBody": "Open Create Log, choose what you read, watched, played, or listened to, fill in the details, then save.",
+    "logTitle": "How to log",
+    "startLogging": "Start logging",
+    "subtitle": "A few quick tips to help you get started and keep the rankings fair.",
+    "title": "Welcome to NihongoTracker",
+    "unknownDate": "When adding very old logs, if you do not know the date, open Advanced Options and choose Unknown date instead of guessing. This keeps date-based rankings fair.",
+    "whenBody": "Log while you immerse or as soon as you can afterward. The date defaults to today, so timely logs are the most accurate.",
+    "whenTitle": "Log close to the session"
+  },
   "features": {
     "hero": {
       "badge": "Built for immersion",

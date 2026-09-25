@@ -53,6 +53,7 @@ import {
 } from '../api/activitiesApi';
 import ActivityCard from './social/ActivityCard';
 import { useHideRankingFeatures } from '../hooks/useRankingVisibility';
+import GettingStartedModal from './GettingStartedModal';
 
 type DashboardActivityScope = Exclude<ActivityFeedScope, 'user'>;
 
@@ -118,6 +119,19 @@ function Dashboard() {
     title: string;
   } | null>(null);
   const [manageHiddenOpen, setManageHiddenOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+
+  useEffect(() => {
+    if (!username) return;
+    try {
+      if (sessionStorage.getItem('nihongoTracker:onboardingPending') === username) {
+        sessionStorage.removeItem('nihongoTracker:onboardingPending');
+        setOnboardingOpen(true);
+      }
+    } catch {
+      // Storage can be unavailable in private browsing modes.
+    }
+  }, [username]);
 
   const queryClient = useQueryClient();
 
@@ -427,6 +441,10 @@ function Dashboard() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8 space-y-8">
+      <GettingStartedModal
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+      />
       <QuickLog
         open={quickLogOpen}
         onClose={closeQuickLog}

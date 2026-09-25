@@ -177,6 +177,23 @@
     "manageHiddenDescription": "El contenido que ocultaste de las acciones rápidas se puede restaurar aquí. El contenido restaurado volverá a aparecer en el contenido reciente cuando se loguee de nuevo.",
     "manageHiddenEmpty": "Aún no hay contenido oculto."
   },
+  "onboarding": {
+    "beFair": "Mantén las fechas honestas",
+    "guidelinesLink": "normas de la comunidad",
+    "guidelinesPrefix": "Para más detalles, lee las",
+    "importBody": "¿Ya tienes registros en otro tracker? Puedes importarlos desde Ajustes. También puedes omitirlo y empezar hoy.",
+    "importLink": "Ir a importar datos",
+    "importTitle": "Importa tus registros anteriores si quieres",
+    "later": "Quizás después",
+    "logBody": "Abre Crear log, elige qué leíste, viste, jugaste o escuchaste, completa los detalles y guarda.",
+    "logTitle": "Cómo crear un log",
+    "startLogging": "Empezar a registrar",
+    "subtitle": "Unos consejos rápidos para empezar y mantener justa la clasificación.",
+    "title": "Te damos la bienvenida a NihongoTracker",
+    "unknownDate": "Al añadir logs muy antiguos, si no sabes la fecha, abre Opciones avanzadas y elige Fecha desconocida en vez de adivinar. Así la clasificación por fechas se mantiene justa.",
+    "whenBody": "Registra la inmersión mientras la haces o en cuanto puedas después. La fecha se establece en hoy de forma predeterminada, así que registrarla a tiempo es más preciso.",
+    "whenTitle": "Registra la sesión cuanto antes"
+  },
   "features": {
     "hero": {
       "badge": "Hecho para la inmersión",

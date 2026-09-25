@@ -10,7 +10,7 @@ import React, {
 import Field from '../components/ui/Field';
 import Button from '../components/ui/Button';
 import { buttonClass } from '../components/ui/buttons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   clearUserDataFn,
   importLogFileFn,
@@ -461,10 +461,13 @@ function SettingsScreen() {
   const { t } = useTranslation('settings');
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { user, setUser } = useUserDataStore();
   const detectedTimezone = getUserTimezone();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
+    searchParams.get('tab') === 'advanced' ? 'advanced' : 'profile'
+  );
   const [patreonStatus, setPatreonStatus] = useState<PatreonStatus>({
     isActive: false,
   });

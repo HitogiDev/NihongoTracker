@@ -198,6 +198,11 @@ function RegisterScreen() {
     mutationFn: registerUserFn,
     onSuccess: (data: ILoginResponse) => {
       setUser(data);
+      try {
+        sessionStorage.setItem('nihongoTracker:onboardingPending', data.username);
+      } catch {
+        // The onboarding is a convenience and should not block registration.
+      }
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error));
