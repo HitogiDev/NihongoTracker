@@ -1198,6 +1198,7 @@ export interface youtubeChannelInfo {
 export interface IDailyGoal {
   _id?: string;
   type: 'time' | 'chars' | 'episodes' | 'pages';
+  cadence?: 'daily' | 'weekly';
   target: number;
   isActive: boolean;
   createdAt?: Date;
@@ -1221,6 +1222,7 @@ export interface IDailyGoalProgress {
 export interface IDailyGoalsResponse {
   goals: IDailyGoal[];
   todayProgress: IDailyGoalProgress;
+  weeklyProgress: IDailyGoalProgress;
 }
 
 export interface ILongTermGoal {

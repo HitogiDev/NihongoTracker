@@ -9,6 +9,7 @@ const DailyGoalSchema = new Schema<IDailyGoal>(
       required: true,
       enum: ['time', 'chars', 'episodes', 'pages'],
     },
+    cadence: { type: String, enum: ['daily', 'weekly'], default: 'daily' },
     target: { type: Number, required: true, min: 1 },
     isActive: { type: Boolean, default: true },
   },
@@ -16,6 +17,6 @@ const DailyGoalSchema = new Schema<IDailyGoal>(
 );
 
 // Ensure only one active goal per type per user
-DailyGoalSchema.index({ user: 1, type: 1, isActive: 1 });
+DailyGoalSchema.index({ user: 1, type: 1, cadence: 1, isActive: 1 });
 
 export default model<IDailyGoal>('DailyGoal', DailyGoalSchema);

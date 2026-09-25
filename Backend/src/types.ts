@@ -1078,6 +1078,7 @@ export interface IDailyGoal extends Document {
   _id: Types.ObjectId;
   user: Types.ObjectId;
   type: 'time' | 'chars' | 'episodes' | 'pages';
+  cadence: 'daily' | 'weekly';
   target: number;
   isActive: boolean;
   createdAt: Date;

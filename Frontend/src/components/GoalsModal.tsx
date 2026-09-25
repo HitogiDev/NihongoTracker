@@ -68,13 +68,14 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   const { t } = useTranslation(['goals', 'common']);
   const [isCreating, setIsCreating] = useState(false);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
-  const [goalDuration, setGoalDuration] = useState<'daily' | 'long-term'>(
+  const [goalDuration, setGoalDuration] = useState<'daily' | 'weekly' | 'long-term'>(
     'daily'
   );
   const [newGoal, setNewGoal] = useState<
     Omit<IDailyGoal, '_id' | 'createdAt' | 'updatedAt'>
   >({
     type: 'time',
+    cadence: 'daily',
     target: 30,
     isActive: true,
   });
@@ -186,7 +187,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   );
 
   const validateGoal = (
-    goal: { type: string; target: number },
+    goal: { type: string; target: number; cadence?: 'daily' | 'weekly' },
     isEdit = false
   ) => {
     const validationErrors: Record<string, string> = {};
@@ -195,26 +196,30 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
       validationErrors.target = t('validation.targetPositive');
     }
 
-    if (goal.type === 'time' && goal.target > 1440) {
+    const targetScale = goal.cadence === 'weekly' ? 7 : 1;
+    if (goal.type === 'time' && goal.target > 1440 * targetScale) {
       validationErrors.target = t('validation.timeTooHigh');
     }
 
-    if (goal.type === 'chars' && goal.target > 100000) {
+    if (goal.type === 'chars' && goal.target > 100000 * targetScale) {
       validationErrors.target = t('validation.charsTooHigh');
     }
 
-    if (goal.type === 'episodes' && goal.target > 50) {
+    if (goal.type === 'episodes' && goal.target > 50 * targetScale) {
       validationErrors.target = t('validation.episodesTooHigh');
     }
 
-    if (goal.type === 'pages' && goal.target > 500) {
+    if (goal.type === 'pages' && goal.target > 500 * targetScale) {
       validationErrors.target = t('validation.pagesTooHigh');
     }
 
     // Check for duplicate goal types when creating
     if (!isEdit) {
       const existingGoal = goals.find(
-        (g) => g.type === goal.type && g.isActive
+        (g) =>
+          g.type === goal.type &&
+          (g.cadence || 'daily') === (goal.cadence || 'daily') &&
+          g.isActive
       );
       if (existingGoal) {
         validationErrors.duplicate = t('validation.duplicate', {
@@ -266,8 +271,9 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
   };
 
   const handleCreateGoal = () => {
-    if (goalDuration === 'daily') {
-      const validationErrors = validateGoal(newGoal);
+    if (goalDuration !== 'long-term') {
+      const recurringGoal = { ...newGoal, cadence: goalDuration };
+      const validationErrors = validateGoal(recurringGoal);
       setErrors(validationErrors);
 
       if (Object.keys(validationErrors).length > 0) {
@@ -277,7 +283,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
         return;
       }
 
-      createGoal(newGoal);
+      createGoal(recurringGoal);
     } else {
       // Handle long-term goal creation
       const validationErrors = validateLongTermGoal(newLongTermGoal);
@@ -314,6 +320,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
     setEditingGoal(goal._id!);
     setEditGoal({
       type: goal.type,
+      cadence: goal.cadence || 'daily',
       target: goal.target,
       isActive: goal.isActive,
     });
@@ -374,11 +381,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     className="select w-full"
                     value={goalDuration}
                     onChange={(e) => {
-                      setGoalDuration(e.target.value as 'daily' | 'long-term');
+                      setGoalDuration(e.target.value as 'daily' | 'weekly' | 'long-term');
                       setErrors({});
                     }}
                   >
                     <option value="daily">{t('modal.dailyGoal')}</option>
+                    <option value="weekly">{t('modal.weeklyGoal')}</option>
                     <option value="long-term">{t('modal.longTermGoal')}</option>
                   </DropdownSelect>
                 </Field>
@@ -388,12 +396,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     <DropdownSelect
                       className="select w-full"
                       value={
-                        goalDuration === 'daily'
+                        goalDuration !== 'long-term'
                           ? newGoal.type
                           : newLongTermGoal.type
                       }
                       onChange={(e) => {
-                        if (goalDuration === 'daily') {
+                        if (goalDuration !== 'long-term') {
                           setNewGoal({
                             ...newGoal,
                             type: e.target.value as IDailyGoal['type'],
@@ -416,8 +424,8 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                   </Field>
                   <Field
                     label={
-                      goalDuration === 'daily'
-                        ? t('modal.dailyTarget')
+                      goalDuration !== 'long-term'
+                        ? t(goalDuration === 'weekly' ? 'modal.weeklyTarget' : 'modal.dailyTarget')
                         : t('modal.totalTarget')
                     }
                   >
@@ -425,18 +433,18 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       type="number"
                       min="1"
                       className={`input w-full ${
-                        (goalDuration === 'daily' && errors.target) ||
+                        (goalDuration !== 'long-term' && errors.target) ||
                         (goalDuration === 'long-term' && errors.totalTarget)
                           ? 'input-error'
                           : ''
                       }`}
                       value={
-                        goalDuration === 'daily'
+                        goalDuration !== 'long-term'
                           ? newGoal.target
                           : newLongTermGoal.totalTarget
                       }
                       onChange={(e) => {
-                        if (goalDuration === 'daily') {
+                        if (goalDuration !== 'long-term') {
                           setNewGoal({
                             ...newGoal,
                             target: Number(e.target.value),
@@ -451,12 +459,12 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       }}
                       placeholder={t('modal.targetPlaceholder')}
                     />
-                    {((goalDuration === 'daily' && errors.target) ||
+                    {((goalDuration !== 'long-term' && errors.target) ||
                       (goalDuration === 'long-term' && errors.totalTarget)) && (
                       <label className="label">
                         <span className="text-error flex items-center gap-1">
                           <Clock12 className="w-4 h-4" />
-                          {goalDuration === 'daily'
+                          {goalDuration !== 'long-term'
                             ? errors.target
                             : errors.totalTarget}
                         </span>
@@ -553,7 +561,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                     <button
                       onClick={handleCreateGoal}
                       disabled={
-                        (goalDuration === 'daily'
+                        (goalDuration !== 'long-term'
                           ? isCreatingGoal
                           : isCreatingLongGoal) ||
                         Object.keys(errors).length > 0
@@ -561,7 +569,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                       className="btn btn-primary w-full"
                     >
                       {(
-                        goalDuration === 'daily'
+                        goalDuration !== 'long-term'
                           ? isCreatingGoal
                           : isCreatingLongGoal
                       ) ? (
@@ -574,8 +582,8 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                           <Save className="w-4 h-4" />
                           {t('modal.createGoal', {
                             duration:
-                              goalDuration === 'daily'
-                                ? t('modal.daily')
+                              goalDuration !== 'long-term'
+                                ? t(goalDuration === 'weekly' ? 'modal.weekly' : 'modal.daily')
                                 : t('modal.longTerm'),
                           })}
                         </>
@@ -612,7 +620,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                   >
                     <div className="card-body p-4">
                       {isEditing ? (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
                           <div>
                             <DropdownSelect
                               className="select select-sm w-full"
@@ -632,6 +640,21 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                                   </option>
                                 )
                               )}
+                            </DropdownSelect>
+                          </div>
+                          <div>
+                            <DropdownSelect
+                              className="select select-sm w-full"
+                              value={editGoal.cadence || goal.cadence || 'daily'}
+                              onChange={(e) =>
+                                setEditGoal({
+                                  ...editGoal,
+                                  cadence: e.target.value as 'daily' | 'weekly',
+                                })
+                              }
+                            >
+                              <option value="daily">{t('modal.daily')}</option>
+                              <option value="weekly">{t('modal.weekly')}</option>
                             </DropdownSelect>
                           </div>
                           <div>
@@ -698,7 +721,7 @@ function GoalsModal({ isOpen, onClose, goals, username }: GoalsModalProps) {
                             <Icon className={`w-6 h-6 ${config.color}`} />
                             <div>
                               <h4 className="font-semibold">
-                                {t(config.labelKey as ParseKeys<'goals'>)}
+                                {t(config.labelKey as ParseKeys<'goals'>)} · {t((goal.cadence || 'daily') === 'weekly' ? 'modal.weekly' : 'modal.daily')}
                               </h4>
                               <p className="text-sm text-base-content/70">
                                 {t('modal.target', {

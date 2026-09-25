@@ -218,6 +218,8 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
   };
 
   const activeGoals = goalsData?.goals.filter((goal) => goal.isActive) || [];
+  const dailyGoals = activeGoals.filter((goal) => (goal.cadence || 'daily') === 'daily');
+  const weeklyGoals = activeGoals.filter((goal) => goal.cadence === 'weekly');
   const activeLongTermGoals =
     longTermGoalsData?.goals.filter((goal) => goal.isActive) || [];
   const hasAnyActiveGoals =
@@ -247,10 +249,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
             <h3 className="text-xl font-bold text-base-content">
               {t('widget.emptyTitle')}
             </h3>
-            <p className="text-base-content/70 mt-2 mb-5">
-              Create your first daily or long-term goal and start tracking your
-              immersion progress.
-            </p>
+            <p className="text-base-content/70 mt-2 mb-5">{t('widget.emptyBody')}</p>
             <div className="flex justify-center">
               <button
                 onClick={() => setIsModalOpen(true)}
@@ -290,15 +289,16 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
               )}
             </div>
 
-            <div className="mb-6">
+            {[{ cadence: 'daily' as const, goals: dailyGoals }, { cadence: 'weekly' as const, goals: weeklyGoals }].map(({ cadence, goals }) => goals.length > 0 && (
+            <div className="mb-6" key={cadence}>
               <h3 className="text-lg font-semibold mb-3">
-                {t('widget.todayProgress')}
+                {t(cadence === 'weekly' ? 'widget.weeklyProgress' : 'widget.todayProgress')}
               </h3>
               <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
-                {activeGoals.map((goal) => {
-                  const current = goalsData?.todayProgress[goal.type] || 0;
-                  const isCompleted =
-                    goalsData?.todayProgress.completed[goal.type];
+                {goals.map((goal) => {
+                  const progress = cadence === 'weekly' ? goalsData?.weeklyProgress : goalsData?.todayProgress;
+                  const current = progress?.[goal.type] || 0;
+                  const isCompleted = progress?.completed[goal.type];
                   const percentage = getProgressPercentage(
                     current,
                     goal.target
@@ -347,6 +347,7 @@ function ImmersionGoals({ username }: { username: string | undefined }) {
                 })}
               </div>
             </div>
+            ))}
           </div>
         </div>
       )}

@@ -10,6 +10,38 @@ import { apiError } from '../i18n/errorCodes.js';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
+function dateParts(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  return Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+}
+
+function zonedMidnightUtc(localDate: Date, timeZone: string) {
+  const utcGuess = Date.UTC(
+    localDate.getFullYear(),
+    localDate.getMonth(),
+    localDate.getDate()
+  );
+  const parts = dateParts(new Date(utcGuess), timeZone);
+  const representedUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+  return new Date(utcGuess - (representedUtc - utcGuess));
+}
+
 export async function getDailyGoals(
   req: Request,
   res: Response,
@@ -26,9 +58,10 @@ export async function getDailyGoals(
     if (!foundUser) {
       throw apiError('user.notFound', 404, 'User not found');
     }
+    const foundUserId = foundUser._id;
 
     // Get user's goals
-    const goals = await DailyGoal.find({ user: foundUser._id }).sort({
+    const goals = await DailyGoal.find({ user: foundUserId }).sort({
       createdAt: -1,
     });
 
@@ -37,49 +70,52 @@ export async function getDailyGoals(
 
     // Get the current date in the user's timezone
     const now = new Date();
+    const currentParts = dateParts(now, userTimezone);
     const userDate = new Date(
-      now.toLocaleString('en-US', { timeZone: userTimezone })
+      Number(currentParts.year),
+      Number(currentParts.month) - 1,
+      Number(currentParts.day)
     );
-
-    // Get start and end of the current day in user's timezone
-    const startOfDayLocal = new Date(
-      userDate.getFullYear(),
-      userDate.getMonth(),
-      userDate.getDate()
+    const startOfDay = zonedMidnightUtc(userDate, userTimezone);
+    const endOfDay = zonedMidnightUtc(
+      new Date(userDate.getFullYear(), userDate.getMonth(), userDate.getDate() + 1),
+      userTimezone
     );
-    const endOfDayLocal = new Date(
-      userDate.getFullYear(),
-      userDate.getMonth(),
-      userDate.getDate() + 1
+    // Weekly windows follow the app's Sunday-through-Saturday convention.
+    const startOfWeekLocal = new Date(userDate);
+    startOfWeekLocal.setDate(
+      startOfWeekLocal.getDate() - startOfWeekLocal.getDay()
     );
+    const endOfWeekLocal = new Date(startOfWeekLocal);
+    endOfWeekLocal.setDate(endOfWeekLocal.getDate() + 7);
+    const startOfWeek = zonedMidnightUtc(startOfWeekLocal, userTimezone);
+    const endOfWeek = zonedMidnightUtc(endOfWeekLocal, userTimezone);
 
-    // Convert to UTC by calculating the offset
-    const offsetNow = now.getTime() - userDate.getTime();
-    const startOfDay = new Date(startOfDayLocal.getTime() + offsetNow);
-    const endOfDay = new Date(endOfDayLocal.getTime() + offsetNow);
-
-    const todayLogs = await Log.find({
-      user: foundUser._id,
-      date: { $gte: startOfDay, $lt: endOfDay },
-    });
-
-    // Calculate progress for each type
-    const progress: IDailyGoalProgress = {
-      date: userDate.toISOString().split('T')[0], // Use user's timezone date
-      time: 0,
-      chars: 0,
-      episodes: 0,
-      pages: 0,
-      completed: {
-        time: false,
-        chars: false,
-        episodes: false,
-        pages: false,
-      },
-    };
+    async function calculateProgress(
+      start: Date,
+      end: Date,
+      dateLabel: string
+    ) {
+      const logs = await Log.find({
+        user: foundUserId,
+        date: { $gte: start, $lt: end },
+      });
+      const progress: IDailyGoalProgress = {
+        date: dateLabel,
+        time: 0,
+        chars: 0,
+        episodes: 0,
+        pages: 0,
+        completed: {
+          time: false,
+          chars: false,
+          episodes: false,
+          pages: false,
+        },
+      };
 
     // Get media documents for anime logs to check episode duration
-    const animeLogMediaIds = todayLogs
+    const animeLogMediaIds = logs
       .filter((log) => log.type === 'anime' && log.mediaId && log.episodes)
       .map((log) => log.mediaId);
 
@@ -93,7 +129,7 @@ export async function getDailyGoals(
     );
 
     // Sum up today's activity
-    todayLogs.forEach((log) => {
+    logs.forEach((log) => {
       if (log.time && log.time > 0) {
         progress.time += log.time;
       } else if (log.type === 'anime' && log.episodes) {
@@ -108,9 +144,26 @@ export async function getDailyGoals(
       if (log.pages) progress.pages += log.pages;
     });
 
+      return progress;
+    }
+
+    const todayProgress = await calculateProgress(
+      startOfDay,
+      endOfDay,
+      `${currentParts.year}-${currentParts.month}-${currentParts.day}`
+    );
+    const weekStartParts = dateParts(startOfWeek, userTimezone);
+    const weeklyProgress = await calculateProgress(
+      startOfWeek,
+      endOfWeek,
+      `${weekStartParts.year}-${weekStartParts.month}-${weekStartParts.day}`
+    );
+
     // Check completion status for each active goal
     goals.forEach((goal) => {
       if (goal.isActive) {
+        const progress =
+          goal.cadence === 'weekly' ? weeklyProgress : todayProgress;
         const currentProgress = progress[goal.type];
         progress.completed[goal.type] = currentProgress >= goal.target;
       }
@@ -118,7 +171,8 @@ export async function getDailyGoals(
 
     return res.status(200).json({
       goals,
-      todayProgress: progress,
+      todayProgress,
+      weeklyProgress,
     });
   } catch (error) {
     return next(error as customError);
@@ -136,7 +190,7 @@ export async function createDailyGoal(
 ) {
   try {
     const { user } = res.locals;
-    const { type, target, isActive } = req.body;
+    const { type, target, isActive, cadence = 'daily' } = req.body;
 
     if (!type || !target) {
       throw apiError(
@@ -158,11 +212,17 @@ export async function createDailyGoal(
     if (!validTypes.includes(type)) {
       throw apiError('goal.invalidType', 400, 'Invalid goal type');
     }
+    if (!['daily', 'weekly'].includes(cadence)) {
+      throw apiError('goal.invalidTimeframe', 400, 'Invalid goal cadence');
+    }
 
     // Check if user already has an active goal of this type
     const existingGoal = await DailyGoal.findOne({
       user: user._id,
       type,
+      ...(cadence === 'daily'
+        ? { $or: [{ cadence: 'daily' }, { cadence: { $exists: false } }] }
+        : { cadence }),
       isActive: true,
     });
 
@@ -178,6 +238,7 @@ export async function createDailyGoal(
     const newGoal = new DailyGoal({
       user: user._id,
       type,
+      cadence,
       target,
       isActive: isActive !== undefined ? isActive : true,
     });
@@ -197,7 +258,7 @@ export async function updateDailyGoal(
   try {
     const { user } = res.locals;
     const { goalId } = req.params;
-    const { type, target, isActive } = req.body;
+    const { type, target, isActive, cadence } = req.body;
 
     const goal = await DailyGoal.findOne({
       _id: goalId,
@@ -206,6 +267,10 @@ export async function updateDailyGoal(
 
     if (!goal) {
       throw apiError('goal.notFound', 404, 'Goal not found');
+    }
+
+    if (cadence !== undefined && !['daily', 'weekly'].includes(cadence)) {
+      throw apiError('goal.invalidTimeframe', 400, 'Invalid goal cadence');
     }
 
     // Validate target if provided
@@ -217,7 +282,7 @@ export async function updateDailyGoal(
       );
     }
 
-    // Validate type if provided
+    // Validate the resulting type and cadence together when either changes.
     if (type !== undefined) {
       const validTypes = ['time', 'chars', 'episodes', 'pages'];
       if (!validTypes.includes(type)) {
@@ -225,27 +290,36 @@ export async function updateDailyGoal(
       }
 
       // Check if changing type would conflict with existing active goals
-      if (type !== goal.type && isActive !== false) {
-        const existingGoal = await DailyGoal.findOne({
-          user: user._id,
-          type,
-          isActive: true,
-          _id: { $ne: goalId },
-        });
+    }
 
-        if (existingGoal) {
-          throw apiError(
-            'goal.alreadyActive',
-            400,
-            `You already have an active ${type} goal. Please deactivate it first.`,
-            { type: String(type) }
-          );
-        }
+    const nextType = type ?? goal.type;
+    const nextCadence = cadence ?? goal.cadence ?? 'daily';
+    if (
+      isActive !== false &&
+      (nextType !== goal.type || nextCadence !== (goal.cadence ?? 'daily'))
+    ) {
+      const existingGoal = await DailyGoal.findOne({
+        user: user._id,
+        type: nextType,
+        ...(nextCadence === 'daily'
+          ? { $or: [{ cadence: 'daily' }, { cadence: { $exists: false } }] }
+          : { cadence: nextCadence }),
+        isActive: true,
+        _id: { $ne: goalId },
+      });
+      if (existingGoal) {
+        throw apiError(
+          'goal.alreadyActive',
+          400,
+          `You already have an active ${nextType} goal. Please deactivate it first.`,
+          { type: String(nextType) }
+        );
       }
     }
 
     // Update goal fields
     if (type !== undefined) goal.type = type;
+    if (cadence !== undefined) goal.cadence = cadence;
     if (target !== undefined) goal.target = target;
     if (isActive !== undefined) goal.isActive = isActive;
 
