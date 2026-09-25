@@ -676,6 +676,10 @@ export async function getDashboardHours(
 
 interface IInitialMatch {
   user: Types.ObjectId;
+  $or?: Array<
+    | { mediaTitle: { $regex: string; $options: string } }
+    | { mediaId: { $in: string[] } }
+  >;
   type?: string | { $in: string[] };
   private?: { $ne: true };
   date?: {
@@ -831,7 +835,21 @@ export async function getUserLogs(
     if (req.query.mediaTitle && typeof req.query.mediaTitle === 'string') {
       const mediaTitle = req.query.mediaTitle.trim();
       if (mediaTitle.length > 0) {
-        initialMatch.mediaTitle = { $regex: mediaTitle, $options: 'i' };
+        const escapedTitle = mediaTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const titleRegex = { $regex: escapedTitle, $options: 'i' };
+        const matchingMediaIds = await MediaBase.find({
+          $or: [
+            { 'title.contentTitleNative': titleRegex },
+            { 'title.contentTitleRomaji': titleRegex },
+            { 'title.contentTitleEnglish': titleRegex },
+            { synonyms: titleRegex },
+          ],
+        }).distinct('contentId');
+
+        initialMatch.$or = [
+          { mediaTitle: titleRegex },
+          { mediaId: { $in: matchingMediaIds } },
+        ];
       }
     }
 
