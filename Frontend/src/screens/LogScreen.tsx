@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Field from '../components/ui/Field';
+import DatePickerInput from '../components/ui/DatePickerInput';
+import { formatDateValue, parseDateValue } from '../utils/dateInput';
 import {
   ICreateLog,
   ILog,
@@ -19,16 +21,12 @@ import { toast } from 'react-toastify';
 import { AxiosError } from 'axios';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useSearch from '../hooks/useSearch';
-import { DayPicker } from 'react-day-picker';
 import { useUserDataStore } from '../store/userData';
 import { validateLogData } from '../utils/validation';
 import { invalidateLogScreenQueries } from '../utils/logQueryInvalidation.js';
 import MediaStats from '../components/MediaStats';
 import TagSelector from '../components/TagSelector';
 import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
   CircleCheck,
   CircleX,
   Info,
@@ -207,12 +205,20 @@ function LogScreen() {
   const [logData, setLogData] = useState<logDataType>(() =>
     createInitialLogState()
   );
+  const [dateInput, setDateInput] = useState('');
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isAdvancedOptions, setIsAdvancedOptions] = useState<boolean>(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, ValidationKey>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const parsedDateInput = parseDateValue(dateInput);
+  const isDateInputInvalid =
+    !logData.unknownDate &&
+    dateInput !== '' &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(dateInput) ||
+      !parsedDateInput ||
+      parsedDateInput > new Date());
 
   // ── Playlist state ────────────────────────────────────────────────────────
   const [playlistModalOpen, setPlaylistModalOpen] = useState(false);
@@ -489,6 +495,7 @@ function LogScreen() {
         date: undefined,
         youtubeChannelInfo: null,
       });
+      setDateInput('');
       setSelectedTags([]);
       setTouched({});
       void queryClient.invalidateQueries({
@@ -554,9 +561,12 @@ function LogScreen() {
 
     setErrors(validation.errors);
     setIsFormValid(
-      validation.isValid && !!logData.type && !!logData.mediaName.trim()
+      validation.isValid &&
+        !!logData.type &&
+        !!logData.mediaName.trim() &&
+        !isDateInputInvalid
     );
-  }, [logData, touched]);
+  }, [logData, touched, isDateInputInvalid]);
 
   const handleInputChange = (
     field: keyof typeof logData,
@@ -725,6 +735,11 @@ function LogScreen() {
       return;
     }
 
+    if (isDateInputInvalid) {
+      toast.error(t('create.invalidDate'));
+      return;
+    }
+
     const totalMinutes = logData.hours * 60 + logData.minutes;
 
     // Prepare media data based on log type
@@ -889,6 +904,7 @@ function LogScreen() {
                       onClick={() => {
                         const newType = option.value as ILog['type'];
                         setLogData(createInitialLogState(newType));
+                        setDateInput('');
                         setSelectedTags([]);
                         setTouched({});
                         setErrors({});
@@ -1549,6 +1565,7 @@ function LogScreen() {
                                   );
                                   if (isUnknownDate) {
                                     handleInputChange('date', undefined);
+                                    setDateInput('');
                                   }
                                 }}
                               />
@@ -1564,66 +1581,30 @@ function LogScreen() {
                           </div>
                           {!logData.unknownDate && (
                             <Field label={t('create.date')}>
-                              <div className="dropdown dropdown-top dropdown-end w-full">
-                                <div
-                                  tabIndex={0}
-                                  role="button"
-                                  className="input w-full flex items-center justify-between cursor-pointer"
-                                >
-                                  <span
-                                    className={
-                                      logData.date
-                                        ? 'text-base-content'
-                                        : 'text-base-content/50'
-                                    }
-                                  >
-                                    {logData.date instanceof Date
-                                      ? logData.date.toLocaleDateString()
-                                      : t('create.datePlaceholder')}
-                                  </span>
-                                  <Calendar className="w-4 h-4" />
-                                </div>
-                                <div
-                                  tabIndex={0}
-                                  className="dropdown-content z-[1000] card card-sm w-72 p-2 surface-raised"
-                                >
-                                  <DayPicker
-                                    className="rdp-themed"
-                                    components={{
-                                      Chevron: ({
-                                        orientation,
-                                      }: {
-                                        orientation?: string;
-                                      }) => {
-                                        const iconClass =
-                                          'w-4 h-4 text-base-content/60';
-                                        if (orientation === 'left')
-                                          return (
-                                            <ChevronLeft
-                                              className={iconClass}
-                                            />
-                                          );
-                                        return (
-                                          <ChevronRight className={iconClass} />
-                                        );
-                                      },
-                                    }}
-                                    mode="single"
-                                    selected={logData.date ?? new Date()}
-                                    onSelect={(date) => {
-                                      handleInputChange(
-                                        'date',
-                                        date || undefined
-                                      );
-                                      (
-                                        document.activeElement as HTMLElement
-                                      )?.blur?.();
-                                    }}
-                                    endMonth={new Date()}
-                                    disabled={(date) => date > new Date()}
-                                  />
-                                </div>
-                              </div>
+                              <DatePickerInput
+                                value={dateInput}
+                                onChange={(nextValue) => {
+                                  setDateInput(nextValue);
+                                  const parsedDate = parseDateValue(nextValue);
+                                  handleInputChange(
+                                    'date',
+                                    /^\d{4}-\d{2}-\d{2}$/.test(nextValue) &&
+                                      parsedDate &&
+                                      parsedDate <= new Date()
+                                      ? parsedDate
+                                      : undefined
+                                  );
+                                }}
+                                max={formatDateValue(new Date())}
+                                placeholder={t('create.datePlaceholder')}
+                                ariaLabel={t('create.date')}
+                                className={isDateInputInvalid ? 'input-error' : ''}
+                              />
+                              {isDateInputInvalid && (
+                                <p className="mt-1 text-sm text-error">
+                                  {t('create.invalidDate')}
+                                </p>
+                              )}
                             </Field>
                           )}
                         </div>

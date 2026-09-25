@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
+import { formatDateValue, parseDateValue } from '../../utils/dateInput';
 import 'react-day-picker/style.css';
 
 interface DatePickerInputProps {
@@ -17,29 +18,6 @@ interface DatePickerInputProps {
   ariaLabel?: string;
   className?: string;
   size?: 'sm' | 'md';
-}
-
-function parseDateValue(value?: string): Date | undefined {
-  if (!value) return undefined;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return undefined;
-
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  if (
-    date.getFullYear() !== Number(match[1]) ||
-    date.getMonth() !== Number(match[2]) - 1 ||
-    date.getDate() !== Number(match[3])
-  ) {
-    return undefined;
-  }
-  return date;
-}
-
-function formatDateValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 function DayPickerChevron({ orientation }: { orientation?: string }) {
@@ -71,60 +49,72 @@ export default function DatePickerInput({
   size = 'md',
 }: DatePickerInputProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const selectedValue = value ?? internalValue;
   const selectedDate = parseDateValue(selectedValue);
   const minDate = parseDateValue(min);
   const maxDate = parseDateValue(max);
   const inputClass =
     size === 'sm'
-      ? 'input input-sm w-full flex items-center justify-between cursor-pointer'
-      : 'input w-full flex items-center justify-between cursor-pointer';
+      ? 'input input-sm w-full pr-10'
+      : 'input w-full pr-10';
 
   const updateValue = (nextValue: string) => {
     if (value === undefined) setInternalValue(nextValue);
     onChange?.(nextValue);
   };
 
+  useEffect(() => {
+    if (!isCalendarOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (
+        event.target instanceof Node &&
+        !wrapperRef.current?.contains(event.target)
+      ) {
+        setIsCalendarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, [isCalendarOpen]);
+
   return (
-    <div className="dropdown dropdown-top dropdown-end w-full">
-      <button
+    <div ref={wrapperRef} className="relative w-full">
+      <input
         id={id}
-        ref={buttonRef}
-        type="button"
+        ref={inputRef}
+        name={name}
+        type="text"
+        autoComplete="off"
         className={`${inputClass} ${className}`}
+        value={selectedValue}
+        onChange={(event) => updateValue(event.target.value)}
+        required={required}
+        disabled={disabled}
+        placeholder={placeholder}
         aria-label={ariaLabel}
+      />
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm btn-square absolute right-1 top-1/2 z-10 -translate-y-1/2"
+        aria-label={ariaLabel ? `${ariaLabel} calendar` : 'Open calendar'}
         aria-haspopup="dialog"
-        aria-required={required}
+        aria-expanded={isCalendarOpen}
+        onClick={() => setIsCalendarOpen((open) => !open)}
         disabled={disabled}
       >
-        <span className={selectedDate ? 'text-base-content' : 'text-base-content/50'}>
-          {selectedDate ? selectedDate.toLocaleDateString() : placeholder}
-        </span>
         <Calendar className="w-4 h-4" />
       </button>
 
-      {(name || required) && (
-        <input
-          className="sr-only"
-          name={name}
-          value={selectedValue}
-          required={required}
-          tabIndex={-1}
-          aria-hidden="true"
-          onChange={() => undefined}
-          onInvalid={(event) => {
-            event.preventDefault();
-            buttonRef.current?.focus();
-          }}
-        />
-      )}
-
-      <div
+      {isCalendarOpen && <div
         tabIndex={0}
         role="dialog"
         aria-label={ariaLabel}
-        className="dropdown-content z-[1000] card card-sm w-72 p-2 surface-raised"
+        className="absolute bottom-full right-0 z-[1000] mb-2 card card-sm w-72 p-2 surface-raised"
       >
         <DayPicker
           className="rdp-themed"
@@ -142,11 +132,11 @@ export default function DatePickerInput({
           onSelect={(date) => {
             if (!date && required) return;
             updateValue(date ? formatDateValue(date) : '');
-            buttonRef.current?.focus();
-            buttonRef.current?.blur();
+            setIsCalendarOpen(false);
+            inputRef.current?.focus();
           }}
         />
-      </div>
+      </div>}
     </div>
   );
 }
