@@ -18,6 +18,8 @@ import { TimezoneProvider } from './contexts/TimezoneContext.tsx';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { setupChunkLoadRecoveryListeners } from './utils/chunkRecovery';
 import queryClient from './queryClient.ts';
+import { applyAppTheme, getSelectedCustomTheme, isCustomTheme } from './utils/appTheme';
+import type { ICustomTheme } from './types';
 
 function resolveInitialTheme() {
   if (typeof window === 'undefined') {
@@ -38,7 +40,24 @@ function resolveInitialTheme() {
 const initialLanguage = resolveInitialLanguage();
 
 if (typeof document !== 'undefined') {
-  document.documentElement.setAttribute('data-theme', resolveInitialTheme());
+  let palette: ICustomTheme | undefined;
+  if (localStorage.getItem('theme') === 'custom') {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('userData') || '{}')
+        ?.state?.user;
+      if (savedUser?.patreon?.isActive && savedUser.patreon.tier === 'consumer') {
+        palette = getSelectedCustomTheme(savedUser.settings);
+      }
+    } catch {
+      /* Ignore malformed saved state. */
+    }
+  }
+  applyAppTheme(
+    localStorage.getItem('theme') === 'custom' && isCustomTheme(palette)
+      ? 'custom'
+      : resolveInitialTheme(),
+    palette,
+  );
   document.documentElement.lang = initialLanguage;
 }
 

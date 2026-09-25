@@ -36,6 +36,7 @@ import {
 } from '../types.js';
 import { customError } from '../middlewares/errorMiddleware.js';
 import { apiError } from '../i18n/errorCodes.js';
+import { getPublicProfileTheme, parseCustomThemes } from '../services/customThemes.js';
 import { deleteFile, uploadFileWithCleanup } from '../services/uploadFile.js';
 import {
   cropAnimatedGifBuffer,
@@ -1281,6 +1282,42 @@ export async function updateCustomization(
   }
 }
 
+export async function updateCustomThemes(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const user = await User.findById(res.locals.user._id);
+    if (!user) throw apiError('user.notFound', 404, 'User not found');
+    if (!hasAdminRole(user) &&
+      (!user.patreon?.isActive || user.patreon.tier !== 'consumer')) {
+      throw apiError(
+        'customization.locked',
+        403,
+        'An active Consumer tier is required',
+      );
+    }
+    const themes = parseCustomThemes(req.body?.themes);
+    const profileThemeId: unknown = req.body?.profileThemeId ?? null;
+    if (!themes || (profileThemeId !== null &&
+      (typeof profileThemeId !== 'string' || !themes.some((theme) => theme.id === profileThemeId)))) {
+      throw apiError(
+        'customization.invalidValue',
+        400,
+        'Choose up to 10 named themes and a valid profile theme',
+      );
+    }
+    user.set('settings.customThemes', themes);
+    user.set('settings.profileThemeId', profileThemeId);
+    user.set('settings.customTheme', undefined);
+    await user.save();
+    return res.status(200).json({ themes, profileThemeId });
+  } catch (error) {
+    return next(error as customError);
+  }
+}
+
 export async function getUser(req: Request, res: Response, next: NextFunction) {
   const userFound = await User.findOne({
     username: req.params.username,
@@ -1360,6 +1397,12 @@ export async function getUser(req: Request, res: Response, next: NextFunction) {
     // Sanitized on read so an expired supporter stops rendering paid effects
     // without needing a migration or a background job.
     customization: visibleCustomization,
+    profileTheme: hasAdminRole(userFound) ||
+      (userFound.patreon?.isActive &&
+        userFound.patreon.tier === 'consumer' &&
+        (!userFound.patreon.manualTierExpiry || userFound.patreon.manualTierExpiry > new Date()))
+      ? getPublicProfileTheme(userFound.settings)
+      : undefined,
     // Resolved server-side because hours/chars/log counts are not on the user
     // document. Costs an aggregation only when the owner equipped one of those.
     ...(canViewStatistics

@@ -55,7 +55,8 @@
   "themeModes": {
     "dark": "oscuro",
     "light": "claro",
-    "system": "sistema"
+    "system": "sistema",
+    "custom": "personalizado"
   },
   "titles": {
     "about": "Acerca de",

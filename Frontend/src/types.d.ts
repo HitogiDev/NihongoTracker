@@ -151,6 +151,9 @@ export interface IUser {
   updatedAt?: Date;
   settings?: {
     blurAdultContent: boolean;
+    customTheme?: ICustomTheme;
+    customThemes?: ISavedCustomTheme[];
+    profileThemeId?: string | null;
     hideUnmatchedLogsAlert?: boolean;
     hideRankingFeatures?: boolean;
     timezone?: string;
@@ -166,6 +169,7 @@ export interface IUser {
   profileLayout?: ProfileWidgetLayout[];
   favorites?: IFavoriteEntry[];
   customization?: IUserCustomization;
+  profileTheme?: ICustomTheme;
   /** Resolved server-side from `customization.signatureStat` (profile reads). */
   signature?: { stat: SignatureStat; value: number } | null;
   social?: ISocialSummary;
@@ -202,11 +206,7 @@ export interface IConnectionsResponse {
   limit: number;
 }
 
-export type SocialVisibility =
-  | 'public'
-  | 'followers'
-  | 'following'
-  | 'private';
+export type SocialVisibility = 'public' | 'followers' | 'following' | 'private';
 
 export type CommentPermission =
   | 'everyone'
@@ -219,6 +219,19 @@ export interface ISocialPrivacySettings {
   immersionActivity: SocialVisibility;
   statistics: SocialVisibility;
   commenting?: CommentPermission;
+}
+
+export interface ICustomTheme {
+  background: string;
+  foreground: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+}
+
+export interface ISavedCustomTheme extends ICustomTheme {
+  id: string;
+  name: string;
 }
 
 export type ActivityType =

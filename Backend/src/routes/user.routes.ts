@@ -23,6 +23,7 @@ import {
   getGlobalImmersionRanking,
   getCustomizationOptions,
   updateCustomization,
+  updateCustomThemes,
 } from '../controllers/users.controller.js';
 import { exportLogsCSV } from '../controllers/export.controller.js';
 import {
@@ -62,6 +63,7 @@ router.get('/search', searchUsers);
 router.get('/me', protect, getCurrentUser);
 router.get('/me/customization', protect, getCustomizationOptions);
 router.patch('/me/customization', protect, updateCustomization);
+router.put('/me/custom-themes', protect, updateCustomThemes);
 
 router.get('/compare', optionalProtect, compareUserStats);
 

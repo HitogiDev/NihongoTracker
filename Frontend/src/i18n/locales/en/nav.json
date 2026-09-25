@@ -55,7 +55,8 @@
   "themeModes": {
     "dark": "dark",
     "light": "light",
-    "system": "system"
+    "system": "system",
+    "custom": "custom"
   },
   "titles": {
     "about": "About",
